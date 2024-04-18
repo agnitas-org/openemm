@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.exception.ValidationException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.Message;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
@@ -172,6 +172,13 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
+    public List<String> getMailinglistNames(Set<Integer> mailinglistIds, int companyId) {
+        return mailinglistIds.stream()
+                .map(id -> mailinglistDao.getMailinglistName(id, companyId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<Mailinglist> getAllMailingListsNames(int companyId) {
         return mailinglistDao.getMailingListsNames(companyId);
     }
@@ -263,7 +270,7 @@ public class MailinglistServiceImpl implements MailinglistService {
         }
 
         if (!validationErrors.isEmpty()) {
-            throw new ValidationException(validationErrors);
+            throw new RequestErrorException(validationErrors);
         }
     }
 	

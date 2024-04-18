@@ -1,0 +1,30 @@
+
+$campaign-status-badges-defs: (
+  open:       (background: #66aad5, icon: $fa-var-check),
+  active:     (background: $stat-or-badge-green, icon: $fa-var-paper-plane),
+  inactive:   (background: #707173, icon: $fa-var-ban),
+  complete:   (background: $stat-or-badge-dark-green, icon: $fa-var-check), // complete or completed in code
+  completed:  (background: $stat-or-badge-dark-green, icon: $fa-var-check), // complete or completed in code
+  tested:     (background: #7f51b2, icon: $fa-var-flask),
+  testing:    (background: #109e4d, icon: $fa-var-flask),
+  paused:     (background: #707173, icon: $fa-var-pause-circle),
+);
+
+@mixin campaign-status-badge($state) {
+  $background: map-get(map-get($campaign-status-badges-defs, $state), background);
+  $icon: map-get(map-get($campaign-status-badges-defs, $state), icon);
+  @include status-badge($background, $icon);
+}
+
+@each $state, $values in $campaign-status-badges-defs {
+  .campaign\.status\.#{$state} {
+    @include campaign-status-badge($state);
+  }
+}
+
+.badge-campaign-start-action_based {
+    background-color: $primary;
+}
+.badge-campaign-start-date_based {
+    background-color: #33b0b8;
+}

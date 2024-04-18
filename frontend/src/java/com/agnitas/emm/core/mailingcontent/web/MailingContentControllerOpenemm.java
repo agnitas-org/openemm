@@ -9,15 +9,14 @@ import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingContentService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.MailingContentService;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
@@ -27,13 +26,13 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 public class MailingContentControllerOpenemm extends MailingContentController {
 
     public MailingContentControllerOpenemm(MailinglistApprovalService mailinglistApprovalService, MailingService mailingService, MaildropService maildropService,
-                                           ComMailingContentService comMailingContentService, MailingContentService mailingContentService, ComTargetService targetService,
+                                           MailingContentService mailingContentService, ComTargetService targetService,
                                            UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
                                            ComMailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
                                            AgnTagService agnTagService, PreviewImageService previewImageService, DynTagChainValidator dynTagChainValidator,
                                            ExtendedConversionService extendedConversionService) {
 
-        super(mailinglistApprovalService, mailingService, maildropService, comMailingContentService, mailingContentService, targetService,
+        super(mailinglistApprovalService, mailingService, maildropService, mailingContentService, targetService,
                 userActivityLogService, profileFieldDao, mailingPropertiesRules, mailingBaseService, gridServiceWrapper, agnDynTagGroupResolverFactory,
                 agnTagService, previewImageService, dynTagChainValidator, extendedConversionService);
     }

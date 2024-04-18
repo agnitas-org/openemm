@@ -2,25 +2,33 @@ AGN.Lib.Controller.new('img-editor', function() {
   const Form = AGN.Lib.Form;
   let cropX, cropY;
   let cropWidth = 0, cropHeight = 0;
-  let originalImage;
-  let modifiedImage;
+  let originalImageSrc;
+  let image;
   let canvas;
   let context;
 
   this.addDomInitializer('img-editor', function() {
     canvas = document.getElementById('editor-canvas');
     context = canvas.getContext('2d');
-    initImage();
+    originalImageSrc = $('#editor-img').attr('src');
+    loadImage();
 
     // Should be disabled until some changes.
     getResultFile$().prop('disabled', true);
-    $('.modal').on('modal:close', () => AGN.Lib.Messages.warn('defaults.changesNotSaved'));
   });
 
-  function initImage() {
-    originalImage = new Image();
-    originalImage.src = $('#editor-img').attr('src');
-    originalImage.onload = onInitImageLoad;
+  function loadImage() {
+    image = new Image();
+    image.src = $('#editor-img').attr('src');
+    image.onload = function() {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      context.drawImage(image, 0, 0);
+      createResizable(); // tool btn controls enabled/disabled state of the resizable
+      updateSizeInputs();
+      resetSizePercent();
+      updateUIDimensions();
+    };
   }
 
   function updateSizeInputs(event, ui) {
@@ -35,23 +43,13 @@ AGN.Lib.Controller.new('img-editor', function() {
     $('#img-percent').val(100);
   }
 
-  function onInitImageLoad() {
-    canvas.width = originalImage.width;
-    canvas.height = originalImage.height;
-    context.drawImage(originalImage, 0, 0);
-    modifiedImage = originalImage.cloneNode();
-    createResizable(); // tool btn controls enabled/disabled state of the resizable
-    updateSizeInputs();
-    resetSizePercent();
-    updateUIDimensions();
-  }
-
   this.addAction({click: 'crop'}, async function() {
     disableAllTools('crop');
-    if (cropEnabled()) {
-      await saveCrop();
+    if (!cropEnabled()) {
+      toggleCrop();
+      return;
     }
-    toggleCrop();
+    await saveCrop();
   });
 
   async function saveCrop() {
@@ -62,12 +60,14 @@ AGN.Lib.Controller.new('img-editor', function() {
     const editFunc = function(tmpCanvas, tmpContext) {
       tmpCanvas.width = cropWidth;
       tmpCanvas.height = cropHeight;
-      tmpContext.drawImage(modifiedImage, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      tmpContext.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
     }
     await editImageWithFunction(editFunc);
+    toggleCrop();
   }
 
-  this.addAction({click: 'resize'}, function() {
+  this.addAction({click: 'resize'}, async function() {
+    await saveCrop();
     disableAllTools('resize');
     toggleResize();
   });
@@ -76,7 +76,7 @@ AGN.Lib.Controller.new('img-editor', function() {
     const editFunc = function(tmpCanvas, tmpContext) {
       tmpCanvas.width = ui.size.width;
       tmpCanvas.height = ui.size.height;
-      tmpContext.drawImage(modifiedImage, 0, 0, ui.size.width, ui.size.height);
+      tmpContext.drawImage(image, 0, 0, ui.size.width, ui.size.height);
     }
     await editImageWithFunction(editFunc);
   }
@@ -99,11 +99,11 @@ AGN.Lib.Controller.new('img-editor', function() {
 
   async function reloadImage(keepResultDisabledState) {
     await new Promise(resolve => {
-      modifiedImage.src = canvas.toDataURL();
+      image.src = canvas.toDataURL();
       if (!keepResultDisabledState) {
         getResultFile$().prop('disabled', false);
       }
-      modifiedImage.onload = resolve;
+      image.onload = resolve;
     });
   }
 
@@ -128,7 +128,7 @@ AGN.Lib.Controller.new('img-editor', function() {
 
       tmpContext.translate(tmpCanvas.width / 2, tmpCanvas.height / 2);
       tmpContext.rotate((counterclockwise ? -1 : 1) * Math.PI / 2);
-      tmpContext.drawImage(modifiedImage, -modifiedImage.width / 2, -modifiedImage.height / 2);
+      tmpContext.drawImage(image, -image.width / 2, -image.height / 2);
     }
     await editImageWithFunction(editFunc);
     updateUIDimensions();
@@ -153,10 +153,10 @@ AGN.Lib.Controller.new('img-editor', function() {
     context.save();
     if (vertically) {
       context.scale(1, -1);
-      context.drawImage(modifiedImage, 0, -canvas.height);
+      context.drawImage(image, 0, -canvas.height);
     } else {
       context.scale(-1, 1);
-      context.drawImage(modifiedImage, -canvas.width, 0);
+      context.drawImage(image, -canvas.width, 0);
     }
     context.restore();
     resetSizePercent();
@@ -200,16 +200,17 @@ AGN.Lib.Controller.new('img-editor', function() {
     canvas.width = newWidth;
     canvas.height = newHeight;
     context.save();
-    context.drawImage(modifiedImage, 0, 0, newWidth, newHeight);
+    context.drawImage(image, 0, 0, newWidth, newHeight);
     context.restore();
     getImgHeight$().val(newHeight);
     getImgWidth$().val(newWidth);
     updateUIDimensions();
+    getResultFile$().prop('disabled', false);
   }
 
   function getNewDimensionsToChangeSize() {
-    const oldWidth = modifiedImage.width;
-    const oldHeight = modifiedImage.height;
+    const oldWidth = image.width;
+    const oldHeight = image.height;
     let newWidth = getImgWidth$().val();
     let newHeight = getImgHeight$().val();
 
@@ -225,8 +226,8 @@ AGN.Lib.Controller.new('img-editor', function() {
 
   function getNewDimensionsToChangeSizeViaPercentage() {
     const percent = $('#img-percent').val();
-    const oldWidth = modifiedImage.width;
-    const oldHeight = modifiedImage.height;
+    const oldWidth = image.width;
+    const oldHeight = image.height;
     const newWidth = Math.round(oldWidth * (percent / 100));
     const newHeight = Math.round(oldHeight * (percent / 100));
     return {newWidth, newHeight};
@@ -309,7 +310,7 @@ AGN.Lib.Controller.new('img-editor', function() {
     getCanvas$().Jcrop({
       onChange: calculateCropData,
       onSelect: calculateCropData,
-      setSelect: [canvas.width / 8, canvas.height / 8, canvas.width / 2, canvas.height / 2]
+      setSelect: [0, 0, canvas.width, canvas.height]
     });
   }
 
@@ -335,6 +336,7 @@ AGN.Lib.Controller.new('img-editor', function() {
   }
 
   this.addAction({'click': 'save'}, async function() {
+    await saveCrop();
     await reloadImage(true);
     const $result = getResultFile$();
     let newSrc = canvas.toDataURL();
@@ -342,11 +344,11 @@ AGN.Lib.Controller.new('img-editor', function() {
     // Cut off a meta data prefix.
     const separatorPosition = newSrc.indexOf(',');
     if (separatorPosition >= 0) {
-        newSrc = newSrc.substring(separatorPosition + 1);
+      newSrc = newSrc.substring(separatorPosition + 1);
     }
 
     if ($result.val() != newSrc) {
-        $result.val(newSrc);
+      $result.val(newSrc);
     }
     Form.get(this.el).submit();
   });
@@ -357,7 +359,15 @@ AGN.Lib.Controller.new('img-editor', function() {
     reader.readAsDataURL(this.data.file);
     reader.onload = function (e) {
       $('#editor-img').attr('src', e.target.result);
-      initImage();
+      loadImage();
+      getResultFile$().prop('disabled', false);
     };
+  });
+
+  this.addAction({'click': 'reset'}, function() {
+    disableAllTools();
+    $('#editor-img').attr('src', originalImageSrc);
+    loadImage();
+    getResultFile$().prop('disabled', true); // disable input since file not changed, so nothing to update
   });
 });

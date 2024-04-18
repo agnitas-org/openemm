@@ -278,5 +278,13 @@ public interface MediatypeEmail extends Mediatype {
 	void setMailFormat(MailType mailType);
     
     void deleteDateBasedParameters();
+
+	boolean isCleanupTestsBeforeDelivery();
+
+	void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery);
+
+    boolean isClearance();
+
+    void setClearance(boolean clearance);
 }
 

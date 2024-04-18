@@ -1,3 +1,4 @@
+// TODO: EMMGUI-714: check usage and remove when old design will be removed
 AGN.Lib.DomInitializer.new("calendar-table", function () {
   var conf = this.config;
 

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <div class="decision-type-container">
     <div class="form-group">
@@ -112,7 +113,7 @@
             </div>
         </div>
     </div>
-    <c:if test="${param.showMailingLinks}">
+    <c:if test="${param.showMailingLinks and not emm:permissionAllowed('mailing.content.readonly', pageContext.request)}">
         <div class="form-group">
             <div class="col-sm-push-4 col-sm-8">
                 <div id="mailing_create_edit_link" >

@@ -47,7 +47,6 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.service.ProfileImportWorker;
@@ -56,7 +55,6 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
-import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -78,6 +76,7 @@ import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
@@ -490,7 +489,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
-				boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, admin.getCompanyID());
+				boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, admin.getCompanyID());
 				
 				// Read root JSON element
 				JsonToken readJsonToken = jsonReader.readNextToken();
@@ -532,7 +531,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					((RecipientImpl) recipient).setRecipientDao(recipientDao);
 					recipient.setCompanyID(admin.getCompanyID());
 					
-					List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+					List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 					for (String key : jsonObject.keySet()) {
 						if ("customer_id".equalsIgnoreCase(key)) {
 							throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
@@ -545,7 +544,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					removeTripleDateEntries(custParameters);
 					
 					if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, admin.getCompanyID())) {
-						custParameters.put(RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+						custParameters.put(RecipientStandardField.DoNotTrack.getColumnName(), 1);
 					}
 					
 					for (Entry<String, Object> entry : jsonObject.entrySet()) {
@@ -777,7 +776,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
-				boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, admin.getCompanyID());
+				boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, admin.getCompanyID());
 				
 				// Read root JSON element
 				JsonToken readJsonToken = jsonReader.readNextToken();
@@ -831,7 +830,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 								throw new RestfulClientException("No recipient found for update with email: " + requestedRecipientKeyValue);
 							}
 							
-							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+							List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 							for (String key : jsonObject.keySet()) {
 								if ("customer_id".equalsIgnoreCase(key)) {
 									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
@@ -871,7 +870,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 								throw new RestfulClientException("No recipient found for update with id: " + requestedRecipientKeyValue);
 							}
 
-							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+							List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 							for (String key : jsonObject.keySet()) {
 								if ("customer_id".equalsIgnoreCase(key)) {
 									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
@@ -927,11 +926,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							recipient.setCustParameters(recipientDao.getCustomerDataFromDb(admin.getCompanyID(), customerID, recipient.getDateFormat()));
 						} else {
 							if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, admin.getCompanyID())) {
-								recipient.getCustParameters().put(RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+								recipient.getCustParameters().put(RecipientStandardField.DoNotTrack.getColumnName(), 1);
 							}
 						}
 						
-						List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+						List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 						for (String key : jsonObject.keySet()) {
 							if (hiddenColumns.contains(key.toLowerCase())) {
 								throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");

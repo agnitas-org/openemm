@@ -2,6 +2,8 @@
 
   const Popover = {};
 
+  const popovers = [];
+
   const placementFunction = function (balloon, element) {
     const $balloon = $(balloon);
     const $e = $(element);
@@ -21,6 +23,16 @@
     return (windowHeight - bottom > top) ? 'bottom' : 'top';
   };
 
+  Popover.getOrCreate = function ($el, options) {
+    const defaultOpts = {
+      trigger: 'hover',
+      container: 'body',
+      animation: false,
+      content: $el.text(),
+    }
+    return Popover.get($el) || Popover.new($el, $.extend(defaultOpts, options));
+  }
+  
   Popover.new = function ($e, options) {
     if ($e.length !== 1) {
       return false;
@@ -40,6 +52,7 @@
       });
     }
 
+    popovers.push(popover);
     return popover;
   };
 
@@ -53,7 +66,10 @@
       return popover;
     }
 
-    return bootstrap.Popover.getInstance($e.closest('div.popover'));
+    const $needle = $e.closest('div.popover');
+    if ($needle.length) {
+      return bootstrap.Popover.getInstance($needle);
+    }
   };
 
   Popover.remove = function ($e) {
@@ -61,20 +77,32 @@
       return false;
     }
 
-    $e.popover('dispose');
+    const popoverIntance = bootstrap.Popover.getOrCreateInstance($e);
+    removePopover(popoverIntance);
     return true;
   };
 
   Popover.validate = function () {
-    $('.popover').each(function () {
-      const popover = bootstrap.Popover.getInstance($(this));
-      if (popover && popover.$element) {
-        if (!$.contains(document.body, popover.$element[0])) {
-          popover.destroy();
-        }
+    const allPopovers = Array.from(popovers);
+    _.each(allPopovers, function (popover) {
+      if (popover._element && !$.contains(document.body, popover._element)) {
+        removePopover(popover);
       }
     });
   };
 
+  function removePopover(popoverIntance) {
+    const popoverIndex = popovers.indexOf(popoverIntance);
+    if (popoverIndex !== -1) {
+      popovers.splice(popoverIndex, 1);
+    }
+
+    popoverIntance.dispose();
+  }
+
+  Popover.hide = function($el) {
+    Popover.get($el)?.hide();
+  }
+  
   AGN.Lib.Popover = Popover;
 })(jQuery);

@@ -6,6 +6,10 @@
         errors: function ($e, options) {
             var errors = [];
 
+            if (options.excludeHidden && $e.is(':hidden')) {
+              return [];
+            }
+
             var exactValue = $e.val();
             if (exactValue) {
                 var value = options.float === true ? parseFloat(exactValue) : parseInt(exactValue);

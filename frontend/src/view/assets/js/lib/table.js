@@ -27,6 +27,10 @@
       if (column.headerComponent) {
         column.headerComponent = AGN.Opt.TableHeaderComponents[column.headerComponent];
       }
+
+      if (column.comparator) {
+        column.comparator = AGN.Opt.Table['comparators'][column.comparator];
+      }
     });
 
     this.gridOptions = _.merge({

@@ -14,26 +14,32 @@ public enum ProfileFieldMode {
 	/**
 	 * Show this field in GUI for edit (StorageCode 0)
 	 */
-	Editable(0),
+	Editable(0, "visible"),
 	
 	/**
 	 * This field is shown but cannot be edited by the user (StorageCode 1)
 	 */
-	ReadOnly(1),
+	ReadOnly(1, "ReadOnly"),
 	
 	/**
 	 * This field is not intended to be shown in the GUI (StorageCode 2)
 	 */
-	NotVisible(2);
+	NotVisible(2, "notVisible");
 	
 	private int storageCode;
+	private final String messageKey;
 
 	public int getStorageCode() {
 		return storageCode;
 	}
 
-	ProfileFieldMode(int storageCode) {
+	public String getMessageKey() {
+		return messageKey;
+	}
+
+	ProfileFieldMode(int storageCode, String messageKey) {
 		this.storageCode = storageCode;
+		this.messageKey = messageKey;
 	}
 
 	public static ProfileFieldMode getProfileFieldModeForStorageCode(int storageCode) throws Exception {

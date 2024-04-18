@@ -78,7 +78,14 @@ public class ApacheTikaUtils {
 
     public static String getFileExtension(InputStream stream, boolean includeDot) {
         String contentType = getContentType(stream);
+        return getFileExtension(contentType, includeDot);
+    }
 
+    public static String getFileExtension(byte[] data, boolean includeDot) {
+        return getFileExtension(getContentType(data), includeDot);
+    }
+
+    private static String getFileExtension(String contentType, boolean includeDot) {
         TikaConfig config = TikaConfig.getDefaultConfig();
         try {
             String extension = config.getMimeRepository()

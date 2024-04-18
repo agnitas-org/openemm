@@ -27,14 +27,18 @@ public class ComHelpUtil {
 	private static Map<String, String> docMapping = null;
 	
 	public static String getHelpPageUrl(HttpServletRequest request) {
-		String langId = AgnUtils.getAdmin(request).getAdminLang().toLowerCase();
 		String pageKey = (String) request.getAttribute("agnHelpKey");
-		
+		return getHelpPageUrl(request, pageKey);
+	}
+
+	public static String getHelpPageUrl(HttpServletRequest request, String helpKey) {
+		String langId = AgnUtils.getAdmin(request).getAdminLang().toLowerCase();
+
 		String helpFileName = null;
-		if (StringUtils.isNotBlank(pageKey)) {
-			helpFileName = getDocMappingEntry(request, pageKey);
+		if (StringUtils.isNotBlank(helpKey)) {
+			helpFileName = getDocMappingEntry(request, helpKey);
 		}
-		
+
 		StringBuilder manualUrl = new StringBuilder();
 		// Some new SpringMVC based sites use url-context, so we must use the EMM systemurl for direct site root-context in manual links.
 		String systemUrl = ConfigService.getInstance().getValue(ConfigValue.SystemUrl);

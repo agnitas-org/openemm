@@ -11,6 +11,7 @@
 package com.agnitas.web;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Objects;
@@ -41,8 +42,8 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.TrackableLinkDao;
@@ -64,6 +65,7 @@ import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import com.agnitas.emm.core.trackablelinks.common.DeepTrackingMode;
+import com.agnitas.honeypot.service.HoneypotLinkService;
 import com.agnitas.rdir.processing.SubstituteLinkRdirPostProcessor;
 import com.agnitas.rdir.processing.SubstituteLinkResult;
 import com.agnitas.util.DeepTrackingToken;
@@ -105,6 +107,8 @@ public class RedirectServlet extends HttpServlet {
 	private SubstituteLinkRdirPostProcessor substituteLinkRdirPostProcessor;
 	
 	private ClickTrackingService clickTrackingService;
+	
+	private HoneypotLinkService honeypotLinkService;
 
 	/**
 	 * Service-Method, gets called everytime a User calls the servlet
@@ -132,24 +136,23 @@ public class RedirectServlet extends HttpServlet {
 		 * 
 		 * For error cases throw an Exception. This will send a redirect to a "404" page
 		 */
-        String agnUidString = request.getParameter("uid");
-        if (StringUtils.isBlank(agnUidString)) {
-        	String[] uriParts = StringUtils.strip(request.getRequestURI(), "/").split("/");
-			if (uriParts.length >= 2 && "r.html".equals(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 2].length() > 10) {
-				agnUidString = uriParts[uriParts.length - 2];
-			} else if (uriParts.length >= 1 && StringUtils.isNotBlank(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 1].length() > 10) {
-				agnUidString = uriParts[uriParts.length - 1];
-			}
-        }
-        
+		
+		// Determine UID string from request (either from request parameter or path)
+        final String agnUidString = uidStringFromRequest(request);
 
         try {
+        	// Decode UID string
 			ComExtensibleUID uid = decodeUid(agnUidString, request);
+			if (uid == null) {
+				logger.warn("got no UID for " + agnUidString);
+				throw new RedirectException(String.format("Got no UID for '%s'", agnUidString));
+			}
 			
 			if(isHeadRequest(request) && !getConfigService().getBooleanValue(ConfigValue.Rdir.RdirAllowHeadRequest, uid.getCompanyID())) {
 				throw new HttpMethodNotAllowedException(request.getMethod());
 			}
 			
+			// Determine device and client
 			final int deviceID = getDeviceService().getDeviceId(request.getHeader("User-Agent"));
 			final int clientID = getClientService().getClientId(request.getHeader("User-Agent"));
 			
@@ -160,10 +163,6 @@ public class RedirectServlet extends HttpServlet {
 			
 			getAccessDataService().logAccess(request, uid, deviceID);
 
-			if (uid == null) {
-				logger.warn("got no UID for " + agnUidString);
-				throw new RedirectException(String.format("Got no UID for '%s'", agnUidString));
-			}
 
 			final boolean cachingDisabled = StringUtils.equals(uid.getPrefix(), "nc"); // StringUtils.equals() is null-safe
 			TrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
@@ -177,6 +176,12 @@ public class RedirectServlet extends HttpServlet {
 			if (fullUrl == null) {
 				logger.error("service: could not personalize link");
 				throw new RedirectException("service: could not personalize link");
+			} 
+
+			if(showHoneypotLinkIntermediatePage(fullUrl, request, response, company, agnUidString, uid)) {
+				if(logger.isInfoEnabled()) {
+					logger.info("Showing honeypot intermediate page. Further link resolution is stopped here");
+				}
 			} else {
 				// Create substitute link if needed. This link has all the properties from original link but a different id and full URL.
 				if(getConfigService().getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, trackableLink.getCompanyID())) {
@@ -193,19 +198,13 @@ public class RedirectServlet extends HttpServlet {
 				
 				
 				fullUrl = emitDeeptrackingToken(trackableLink, recipientForUid, uid, fullUrl, response, company);
-				
+			
 				// Check for company-specific configuration to embed links in other measure system links like metalyzer
-				String externalMeasureSystemBaseLink = getConfigService().getValue(ConfigValue.ExternalMeasureSystemBaseLinkMailing, trackableLink.getCompanyID());
-				if (StringUtils.isNotBlank(externalMeasureSystemBaseLink)) {
-					fullUrl = externalMeasureSystemBaseLink.replace("<link>", URLEncoder.encode(fullUrl, "UTF-8"));
-				}
-
-				if (isIntelliAdUsed(trackableLink.getMailingID(), trackableLink.getCompanyID())) {
-					fullUrl = createIntelliAdLink(fullUrl, trackableLink.getMailingID(), trackableLink.getCompanyID());
-				}
-
-				sendRedirect(response, fullUrl, trackableLink.getCompanyID());
-
+				fullUrl = applyExternalMeasureSystemSettings(fullUrl, trackableLink);
+				fullUrl = applyIntelliAd(fullUrl, trackableLink);
+	
+				makeRedirectResponse(response, fullUrl);
+	
 				DeviceClass deviceClass = getDeviceService().getDeviceClassForStatistics(deviceID);
 				
 				if (RequestUtils.hasRangeHeader(request)) {
@@ -238,7 +237,7 @@ public class RedirectServlet extends HttpServlet {
         	
 			final String redirectionUrl = getRdirUndecodableLinkUrl();
 			
-			sendRedirect(response, redirectionUrl, 0);
+			makeRedirectResponse(response, redirectionUrl);
 		} catch (final DeprecatedUIDVersionException e) {
         	if (logger.isInfoEnabled()) {
         		logger.info("Deprecated UID: " + agnUidString, e);
@@ -246,7 +245,7 @@ public class RedirectServlet extends HttpServlet {
         	
 			final String redirectionUrl = getRdirUndecodableLinkUrl();
 			
-			sendRedirect(response, redirectionUrl, e.getUID().getCompanyID());
+			makeRedirectResponse(response, redirectionUrl);
 		} catch(final InvalidUIDException | UIDParseException e) {
         	if (logger.isInfoEnabled()) {
         		logger.info(String.format("Error handling UID: %s", agnUidString), e);
@@ -254,7 +253,7 @@ public class RedirectServlet extends HttpServlet {
         	
 			final String redirectionUrl = getRdirUndecodableLinkUrl();
 			
-			sendRedirect(response, redirectionUrl, 0);
+			makeRedirectResponse(response, redirectionUrl);
 		} catch (final Exception e) {
         	if (logger.isInfoEnabled()) {
         		logger.error("Exception in RDIR", e);
@@ -262,12 +261,72 @@ public class RedirectServlet extends HttpServlet {
         	
 			final String redirectionUrl = getRdirUndecodableLinkUrl();
 			
-			sendRedirect(response, redirectionUrl, 0);
+			makeRedirectResponse(response, redirectionUrl);
 		}
 	}
 	
 	private static final boolean isHeadRequest(final HttpServletRequest request) {
 		return "head".equalsIgnoreCase(request.getMethod());
+	}
+	
+	private static final String uidStringFromRequest(final HttpServletRequest request) {
+		String agnUidString = request.getParameter("uid");
+		
+		if (StringUtils.isBlank(agnUidString)) {
+			String[] uriParts = StringUtils.strip(request.getRequestURI(), "/").split("/");
+			if (uriParts.length >= 2 && "r.html".equals(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 2].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 2];
+			} else if (uriParts.length >= 1 && StringUtils.isNotBlank(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 1].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 1];
+			}
+		}
+		
+		return agnUidString;
+	}
+	
+	private final boolean showHoneypotLinkIntermediatePage(final String fullUrl, final HttpServletRequest request, final HttpServletResponse response, final Company company, final String uidString, final ComExtensibleUID uid) throws IOException {
+		final HoneypotLinkService service = getHoneypotLinkService();
+		
+		// Service not set, so feature is not supported / available. Do not show imtermediate page.
+		if(service == null) {
+			return false;
+		}
+		
+		// Target URL is not a honeypot link. Do not show imtermediate page.
+		if(!service.isShowHoneypotLinkRequestIntermediatePage(fullUrl, request, company.getId()) ) {
+			return false;
+		}
+		
+		final ConfigService configService = getConfigService();
+		final String parameterName = configService.getValue(ConfigValue.Honeypot.IntermediatePageConfirmParameterName);
+		final String parameterValue = configService.getValue(ConfigValue.Honeypot.IntermediatePageConfirmParameterValue);
+	
+		// Show intermediate page, if page has not already been shown to user and user accepted.
+		final boolean show = !parameterValue.equals(request.getParameter(parameterName));
+		
+		if(show) {
+			// Target URL must be the URL of the redirect servlet itself. The marker parameter is added by the intermediate page.
+			final String targetUrl = request.getParameterMap().isEmpty() 
+					? request.getRequestURL().toString()
+					: request.getRequestURL().append("?").append(request.getQueryString()).toString();
+			
+			final String redirectUrl = String.format("%s/hpl/showConfirm.action?u=%s&i=%s", company.getRdirDomain(), URLEncoder.encode(targetUrl), URLEncoder.encode(uidString));
+			
+			makeRedirectResponse(response, redirectUrl);
+		} else {
+			// Write to different log (need to use String-ed name because class does not exist in OpenEMM
+			LogManager.getLogger("com.agnitas.honeypot.web.HoneypotLinkConfirmController").info(String.format("Redirecting to target via honeypot page (company %d, mailing %d, customer %d, link %d)", uid.getCompanyID(), uid.getMailingID(), uid.getCustomerID(), uid.getUrlID()));
+		}
+		
+		return show;
+	}
+	
+	private final String applyExternalMeasureSystemSettings(final String fullUrl, final TrackableLink trackableLink) throws UnsupportedEncodingException {
+		final String externalMeasureSystemBaseLink = getConfigService().getValue(ConfigValue.ExternalMeasureSystemBaseLinkMailing, trackableLink.getCompanyID());
+		
+		return StringUtils.isNotBlank(externalMeasureSystemBaseLink)
+				? externalMeasureSystemBaseLink.replace("<link>", URLEncoder.encode(fullUrl, "UTF-8"))
+				: fullUrl;
 	}
 	
 	private final SubstituteLinkRdirPostProcessor getSubstituteLinkRdirPostProcessor() {
@@ -328,7 +387,15 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
-	private final void sendRedirect(final HttpServletResponse response, final String redirectUrl, final int companyID) throws IOException {
+	/**
+	 * Configures response to be a redirection.
+	 * 
+	 * @param response HTTP response
+	 * @param companyID company ID
+	 * 
+	 * @throws IOException on errors configuring response
+	 */
+	private final void makeRedirectResponse(final HttpServletResponse response, final String redirectUrl) throws IOException {
 		final String punycodeFullUrl = punycodeEncodeDomainInLink(redirectUrl);
 		response.sendRedirect(punycodeFullUrl);
 	}
@@ -611,7 +678,21 @@ public class RedirectServlet extends HttpServlet {
 		
 		return clickTrackingService;
 	}
-
+	
+	public final HoneypotLinkService getHoneypotLinkService() {
+		if(this.honeypotLinkService == null) {
+			this.honeypotLinkService = (HoneypotLinkService) getApplicationContext().getBean("HoneypotLinkService");
+		}
+		
+		return this.honeypotLinkService;
+	}
+	
+	private final String applyIntelliAd(final String fullUrl, final TrackableLink trackableLink) {
+		return isIntelliAdUsed(trackableLink.getMailingID(), trackableLink.getCompanyID())
+			? createIntelliAdLink(fullUrl, trackableLink.getMailingID(), trackableLink.getCompanyID())
+			: fullUrl;
+	}
+	
 	private boolean isIntelliAdUsed(int mailingId, int companyId) {
 		IntelliAdMailingSettings settings = getIntelliAdMailingSettingsCache().getIntelliAdSettings(companyId, mailingId);
 

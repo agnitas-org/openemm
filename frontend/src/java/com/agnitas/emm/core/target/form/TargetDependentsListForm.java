@@ -20,6 +20,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 
+// TODO: EMMGUI-714: remove when old design will be removed and replace with simple pagination form
 public class TargetDependentsListForm extends PaginationForm {
 
     private int targetId;

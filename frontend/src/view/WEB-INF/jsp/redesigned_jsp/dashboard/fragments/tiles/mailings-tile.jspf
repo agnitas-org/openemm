@@ -2,13 +2,9 @@
 <script id="dashboard-tile-mailings" type="text/x-mustache-template">
     <div class="tile draggable-tile" id="dashboard-mailings">
         <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
-            <div class="tile-controls">
-                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
+            <h1 class="tile-title">{{- tileName }}</h1>
         </div>
-        <div class="tile-body grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
+        <div class="tile-body grid js-scrollable" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
             <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                 <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
                 <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
@@ -41,7 +37,7 @@
                                             <mvc:message code="${mailing.workstatus}"/>
                                         </c:if>
                                     </c:set>
-                                    <span class="mailing-badge ${mailing.workstatus} small" data-tooltip="${mailingWorkStatus}"></span>
+                                    <span class="status-badge ${mailing.workstatus} small" data-tooltip="${mailingWorkStatus}"></span>
                                     <span class="d-inline-block text-truncate">${mailing.shortname}</span>
                                 </strong>
                                 <div class="card-text">
@@ -54,6 +50,6 @@
                 </div>
             </c:forEach>
         </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
     </div>
 </script>

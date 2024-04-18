@@ -728,7 +728,7 @@ public class BlockCollection {
 		
 		rc.content = data.company.info ("clearance-template", data.mailing.id ());
 		if (StringUtils.isBlank (rc.content)) {
-			rc.content = "<br><hr><br><a href=\"#\">Mailversand freigeben</a>";
+			rc.content = "<br><hr><br><a href=\"[agnCLEARANCE/]\">Mailversand freigeben</a>";
 		}
 		rc.cid = Const.Component.NAME_CLEARANCE;
 		rc.isParseable = true;

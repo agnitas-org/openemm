@@ -9,6 +9,12 @@
   }
 }
 
+#help-center-docs-tab {
+  .card-title {
+    color: var(--manual-title-color);
+  }
+}
+
 #help-center-support-tab {
   @include media-breakpoint-down(lg) {
     .bordered-box {

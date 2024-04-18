@@ -47,9 +47,10 @@
 }
 
 .sysstat {
+	min-height: 100vh;
 	display: grid;
-	grid-template-columns: auto;
-	grid-template-rows: 50px auto auto;
+	grid-template-columns: 1fr;
+	grid-template-rows: 50px 1fr min-content;
 	grid-template-areas:
 	"header"
 	"body"
@@ -181,12 +182,19 @@
 	padding: 5px 10px;
 }
 
+.sysstat__page-footer {
+	grid-area: footer;
+	padding: 0 10px 10px 10px;
+	display: flex;
+	justify-content: flex-end;
+	color: #6F6F6F;
+}
 
 .sysstat__footer {
-	grid-area: footer;
 	display: flex;
 	justify-content: center;
-	margin: 0px 20px;
+	width: 100%;
+	margin-top: 20px;
 }
 .sysstat__footer__content {
 	padding: 20px;

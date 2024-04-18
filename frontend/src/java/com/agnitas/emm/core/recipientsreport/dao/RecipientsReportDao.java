@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
@@ -31,6 +32,8 @@ public interface RecipientsReportDao {
     String getReportTextContent(int companyId, int reportId);
 
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
+
+    PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
 
     RecipientsReport getReport(int companyId, int reportId);
 

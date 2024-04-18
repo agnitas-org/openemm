@@ -21,14 +21,14 @@ AGN.Lib.CoreInitializer.new('popuot-window', function ($scope) {
     }
 
     $el.parent().append(
-      $('<div class="popout-window-link-container"></div>')
+      $('<figure>')
         .append($el)
         .append($(`
-          <div class="popout-window-link">
+          <figcaption>
             <span class="text-truncate">${src}</span>
             <a href="" class='link-secondary' data-popup="${src}" data-bs-dismiss="modal">
               ${t('defaults.window.popout')}&nbsp;<i class="icon icon-external-link-alt"></i>
             </a>
-          </div>`)));
+          </figcaption>`)));
   });
 });

@@ -1495,4 +1495,12 @@ public class DateUtilities {
 			}
 		}
 	}
+
+	public static Date getDateForZonedDateTime(ZonedDateTime zonedDateTime) {
+		return Date.from(zonedDateTime.toInstant());
+	}
+
+	public static ZonedDateTime getZonedDateTimeForDate(Date date) {
+		return ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+	}
 }

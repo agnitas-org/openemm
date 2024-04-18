@@ -56,7 +56,8 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups info(Message popup);
-    
+    Popups info(String code, Object ...arguments);
+
     /**
      * Add a new translatable warning popup.
      *
@@ -108,7 +109,9 @@ public interface Popups extends Serializable {
      * @param field a field name.
      * @param popup a popup content representation.
      * @return self.
+     * @deprecated Use fieldError instead. Recheck field error on ui after replacement
      */
+    @Deprecated(forRemoval = true)
     Popups field(String field, Message popup);
 
     /**
@@ -118,7 +121,9 @@ public interface Popups extends Serializable {
      * @param code a key of the translatable message.
      * @param arguments an arguments for the translatable message.
      * @return self.
+     * @deprecated Use fieldError instead. Recheck field error on ui after replacement
      */
+    @Deprecated(forRemoval = true)
     Popups field(String field, String code, Object... arguments);
 
     Popups fieldError(String field, Message popup);

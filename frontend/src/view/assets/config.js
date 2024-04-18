@@ -36,8 +36,13 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
 /* <c:set var="adminId" value="${emm:getAdminId(pageContext.request)}"/> */
         window.adminId = '${adminId}';
 
+/* <c:set var="companyId" value="${emm:getCompanyId(pageContext.request)}"/> */
+        window.companyId = '${companyId}';
+
 /* <c:set var="dateFormat" value="${emm:getDateFormat(pageContext.request)}"/> */
         window.adminDateFormat = '${dateFormat}';
+/* <c:set var="dateTimeFormat" value="${emm:getDateTimeFormat(pageContext.request)}"/> */
+        window.adminDateTimeFormat = '${dateTimeFormat}';
 
 /* <c:set var="aceEditorPath" value="${emm:aceEditorPath(pageContext.request)}"/> */
         window.aceEditorPath = '${aceEditorPath}';

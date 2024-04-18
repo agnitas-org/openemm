@@ -27,6 +27,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.messages.I18nString;
 
+// TODO: EMMGUI-714: remove when old design will be removed
+@Deprecated
 public class MailingRecipientExportWorker extends GenericExportWorker {
 	
 	public static final int MAILING_RECIPIENTS_ALL = 0;
@@ -41,7 +43,6 @@ public class MailingRecipientExportWorker extends GenericExportWorker {
 	private List<String> columns;
 	private String sortCriterion;
 	private boolean sortAscending;
-	private Locale locale;
 
 	/**
 	 * Descriptive username for manually executed exports (non-AutoExport)

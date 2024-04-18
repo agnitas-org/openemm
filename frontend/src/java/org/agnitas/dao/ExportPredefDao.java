@@ -115,6 +115,7 @@ public interface ExportPredefDao {
      *                The target id.
      * @return  List of ids or empty list.
      */
-	List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds,
-			int targetId);
+	List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds, int targetId);
+
+	List<Integer> getExportsContainingProfileField(int companyID, String profileFieldName);
 }

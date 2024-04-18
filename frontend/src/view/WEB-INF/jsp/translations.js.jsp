@@ -86,11 +86,14 @@ window.I18n = {
       60: '<mvc:message javaScriptEscape="true" code="default.minutes.60"/>'
     },
     defaults: {
+      apply: '<mvc:message javaScriptEscape="true" code="button.Apply"/>',
       delete: '<mvc:message javaScriptEscape="true" code="Delete" />',
       today: '<mvc:message javaScriptEscape="true" code="calendar.today.button" />',
-      clear: '<mvc:message javaScriptEscape="true" code="GWUA.datepicker.clear.button" />',
+      clear: '<mvc:message javaScriptEscape="true" code="button.Delete" />',
       days: '<mvc:message javaScriptEscape="true" code="days" />',
+      Days: '<mvc:message javaScriptEscape="true" code="Days" />',
       entries: '<mvc:message javaScriptEscape="true" code="default.entries" />',
+      enlargeEditor: '<mvc:message javaScriptEscape="true" code="editor.enlargeEditor" />',
       close: '<mvc:message javaScriptEscape="true" code="close" />',
       warning: '<mvc:message javaScriptEscape="true" code="warning" />',
       success: '<mvc:message javaScriptEscape="true" code="default.Success" />',
@@ -99,10 +102,12 @@ window.I18n = {
       yes: '<mvc:message javaScriptEscape="true" code="default.Yes" />',
       no: '<mvc:message javaScriptEscape="true" code="default.No" />',
       info: '<mvc:message javaScriptEscape="true" code="Info" />',
+      invalidEmail: '<mvc:message javaScriptEscape="true" code="error.invalid.email" />',
       ok: '<mvc:message javaScriptEscape="true" code="OK" />',
       cancel: '<mvc:message javaScriptEscape="true" code="button.Cancel"/>',
       logout: '<mvc:message javaScriptEscape="true" code="default.Logout"/>',
       relogin: '<mvc:message javaScriptEscape="true" code="logout.relogin"/>',
+      active: '<mvc:message javaScriptEscape="true" code="default.status.active" />',
       remember: {
         choice: '<mvc:message javaScriptEscape="true" code="remember.choice"/>'
       },
@@ -115,7 +120,15 @@ window.I18n = {
       files: '<mvc:message javaScriptEscape="true" code="mailing.files"/>',
       name: '<mvc:message javaScriptEscape="true" code="default.Name"/>',
       size: '<mvc:message javaScriptEscape="true" code="default.Size"/>',
-      changesNotSaved: '<mvc:message javaScriptEscape="true" code="changes_not_saved"/>'
+      changesNotSaved: '<mvc:message javaScriptEscape="true" code="changes_not_saved"/>',
+      listShowMax: '<mvc:message javaScriptEscape="true" code="default.list.show.max"/>',
+      leaveQuestion: '<mvc:message javaScriptEscape="true" code="grid.layout.leaveQuestion"/>',
+      OutOf: '<mvc:message javaScriptEscape="true" code="OutOf"/>',
+      value: '<mvc:message javaScriptEscape="true" code="Value"/>',
+      description: '<mvc:message javaScriptEscape="true" code="default.description"/>',
+      table: {
+        empty: '<mvc:message javaScriptEscape="true" code="noResultsFound"/>'
+      }
     },
     selects: {
       noMatches: '<mvc:message javaScriptEscape="true" code="default.noMatchesFor" />',
@@ -176,7 +189,7 @@ window.I18n = {
       },
       mailinglist: {
         errors:{
-          removed: '<mvc:message javaScriptEscape="true" code="default.selection.deleted"/>'
+          removed: '<mvc:message javaScriptEscape="true" code="error.mailing.mailinglist.deleted"/>'
         }
       },
       mediapool: {
@@ -193,7 +206,8 @@ window.I18n = {
         headline: '<mvc:message javaScriptEscape="true" code="error.global.headline"/>',
         text: '<mvc:message javaScriptEscape="true" code="error.default.message"/>',
         reload: '<mvc:message javaScriptEscape="true" code="error.reload"/>',
-        nothing_selected: '<mvc:message javaScriptEscape="true" code="error.default.nothing_selected"/>'
+        nothing_selected: '<mvc:message javaScriptEscape="true" code="error.default.nothing_selected"/>',
+        csrf: '<mvc:message javaScriptEscape="true" code="error.csrf"/>'
       },
       permission: {
         denied : {
@@ -364,6 +378,8 @@ window.I18n = {
         "mediatype_post": '<mvc:message javaScriptEscape="true" code="UserRight.mediatype.post"/>'
       },
 
+      icon: '<mvc:message javaScriptEscape="true" code="campaign.manager.icon" />',
+
       mailinglist: {
         short: '<mvc:message javaScriptEscape="true" code="workflow.mailinglist.short"/>'
       },
@@ -446,7 +462,11 @@ window.I18n = {
       },
       existing: {
         btn: '<mvc:message javaScriptEscape="true" code="recipient.existing.switch"/>'
-      }
+      },
+      hide: {
+        question: '<mvc:message javaScriptEscape="true" code="recipient.hide.question"/>'
+      },
+      maxColumnsSelected: '<mvc:message javaScriptEscape="true" code="error.maximum.recipient.columns"/>'
     },
     calendar: {
       error: {
@@ -612,10 +632,11 @@ window.I18n = {
 
       // for date filter
       from: '<mvc:message javaScriptEscape="true" code="operator.between"/>',
-      till: '<mvc:message javaScriptEscape="true" code="default.and"/>',
+      till: '<mvc:message javaScriptEscape="true" code="default.and"/>'
     },
     mailing: {
       default: {
+        editWithCampaign: '<mvc:message javaScriptEscape="true" code="mailing.EditWithCampaignManager"/>',
         target_group_name: '<mvc:message javaScriptEscape="true" code="statistic.all_subscribers"/>',
         interest_group_name: '<mvc:message javaScriptEscape="true" code="nointerestgroup"/>',
         dyn_tag_name: '<mvc:message javaScriptEscape="true" code="statistic.all_subscribers"/>',
@@ -625,7 +646,8 @@ window.I18n = {
         targetmode_or: '<mvc:message javaScriptEscape="true" code="mailing.targetmode.or"/>',
         sender_and_reply_emails_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.addresses.changed" />',
         sender_email_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.sender.changed" />',
-        reply_email_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.reply.changed" />'
+        reply_email_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.reply.changed" />',
+        grid: '<mvc:message javaScriptEscape="true" code="mailing.grid.GridMailing" />'
       },
       remember: {
         choice: '<mvc:message javaScriptEscape="true" code="remember.choice.mailing"/>'
@@ -669,10 +691,12 @@ window.I18n = {
       }
     },
     contentSource: {
+      mailingContentSelect: '<mvc:message javaScriptEscape="true" code="mailing.content.select" />',
       error: {
         block_not_set: '<mvc:message javaScriptEscape="true" code="error.mailing.contentblock.empty" />'
       }
     },
+    <%--TODO: EMMGUI-714: remove when old design will be removed. (if not used) --%>
     birtreport: {
       deactivateAll: '<mvc:message javaScriptEscape="true" code="report.deactivate.all" />',
       deactivateAllQuestion: '<mvc:message javaScriptEscape="true" code="report.deactivate.question" />'
@@ -688,7 +712,34 @@ window.I18n = {
         mailings: '<mvc:message javaScriptEscape="true" code="Mailings"/>',
         statistics: '<mvc:message javaScriptEscape="true" code="Statistics"/>',
         planning: '<mvc:message javaScriptEscape="true" code="dashboard.tile.planning"/>',
-        workflows: '<mvc:message javaScriptEscape="true" code="Workflow"/>'
+        workflows: '<mvc:message javaScriptEscape="true" code="Workflow"/>',
+        clickers: '<mvc:message javaScriptEscape="true" code="statistic.clicker"/>',
+        analysis: '<mvc:message javaScriptEscape="true" code="default.Analysis"/>',
+        openers: '<mvc:message javaScriptEscape="true" code="statistic.opener"/>'
       }
+    },
+    editableView: {
+      edit: '<mvc:message javaScriptEscape="true" code="default.view.edit" />',
+      save: '<mvc:message javaScriptEscape="true" code="default.view.save" />',
+      saved: '<mvc:message javaScriptEscape="true" code="GWUA.default.view.save"/>',
+      tile: {
+        state: {
+          visible: '<mvc:message javaScriptEscape="true" code="default.tile.hide" />',
+          hidden: '<mvc:message javaScriptEscape="true" code="default.tile.show" />',
+          main: '<mvc:message javaScriptEscape="true" code="default.tile.main" />'
+        },
+        error: {
+          cantRemove: '<mvc:message javaScriptEscape="true" code="error.tile.remove" />'
+        }
+      }
+    },
+    mediapool: {
+      imageGeneration: {
+        limitExceeded: '<mvc:message javaScriptEscape="true" code="image.ai.quota.exceeded"/>',
+        remainingGenerations: '<mvc:message javaScriptEscape="true" code="image.ai.quota" arguments="%s"/>'
+      }
+    },
+    url: {
+        invalid: '<mvc:message javaScriptEscape="true" code="error.linkUrlWrong"/>'
     }
   };

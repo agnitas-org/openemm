@@ -1,50 +1,135 @@
 
+@mixin navbar-active-tab-switch() {
+  .form-switch .form-check-input:checked {
+    border-color: $white;
+  }
+}
+
+@mixin collapsedNavbar() {
+  background-color: var(--main-bg-color);
+  position: absolute;
+  top: 35px;
+  left: -1px;
+  min-width: calc(100% + 2px);
+  border: $border-default;
+  border-radius: $border-radius;
+  padding: $gap-sm;
+
+  .navbar-nav {
+    border: $border-default;
+    border-radius: $border-radius;
+    overflow: hidden;
+    gap: 0;
+    padding: 0;
+
+    .btn {
+      border: none;
+      border-radius: 0;
+      font-size: 1rem;
+      text-align: left;
+      &:not(.active):not(:hover) {
+        color: var(--default-text-color);
+      }
+    }
+
+    li {
+      &:last-child .btn {
+        @include border-end-radius(0);
+
+        &:not(.active):not(:hover) {
+          border-right: none;
+        }
+      }
+
+      &:first-child .btn {
+        @include border-start-radius(0);
+
+        &:not(.active):not(:hover) {
+          border-left: none;
+        }
+      }
+    }
+  }
+}
+
 .navbar {
-  @extend .border;
   @extend .rounded;
   width: 100%;
 
   .navbar-nav {
     display: flex;
-    gap: $gap-sm;
     width: 100%;
     li {
-      flex: 1 1 0;
+      flex: 1;
+      min-width: 0;
+      transition: all 0.5s ease;
+
+      &.hovered {
+        min-width: unset;
+        flex-shrink: 0;
+      }
 
       .nav-item {
         width: 100%;
       }
 
       .btn {
-        border-radius: $border-radius-sm;
-        padding-block: 7px;
+        border-radius: 0;
+        padding-block: 5px;
         width: 100%;
 
-        &.active {
-          font-weight: 600;
-        }
-        
         &:not(.active):not(:hover) {
-          border-color: $gray-400;
-          color: $gray-600;     
+          font-weight: $font-weight-normal;
+          border-color: $light-grey;
+          color: var(--navbar-color);
+          border-inline: none;
+        }
+
+        &.active, &:hover {
+          @include navbar-active-tab-switch;
+        }
+      }
+
+      &:last-child .btn {
+        @include border-end-radius;
+
+        &:not(.active):not(:hover) {
+          border-right: $border-default;
+        }
+      }
+
+      &:first-child .btn {
+        @include border-start-radius;
+
+        &:not(.active):not(:hover) {
+          border-left: $border-default;
         }
       }
     }
   }
-  
+
   .navbar-toggler {
-    margin-left: $gap-sm;
+    @include border-start-radius(0);
+    border-color: $border-color;
+    color: var(--text-dark-gray-color);
   }
   
   .chosen-tab {
-    color: $c-white;
+    color: $white;
     flex-grow: 1;
-    border-radius: $border-radius-sm;
+    @include border-start-radius;
+    @include border-end-radius(0);
     font-weight: $font-weight-semibold;
-    
-    @include media-breakpoint-up(lg) {
-      display: none;
-    }    
+
+    @include navbar-active-tab-switch;
+  }
+
+  &.navbar-expand-lg {
+    .chosen-tab {
+      @include media-breakpoint-up(lg) {
+        display: none;
+      }
+    }
   }
   
   .navbar-collapse {
@@ -56,34 +141,16 @@
     }
     
     @include media-breakpoint-down(lg) {
-      background-color: $white;
-      position: absolute;
-      top: 56px;
-      left: -1px;
-      min-width: calc(100% + 2px);
-      border: 1px solid $border-color;
-      border-radius: $border-radius;
-      padding: $gap-sm;
-
-      .navbar-nav {
-        border: 1px solid $border-color;
-        border-radius: $border-radius;
-        overflow: hidden;
-        gap: 0;
-        padding: 0;
-
-        .btn {
-          border: none;
-          border-radius: 0;
-          font-size: 1rem;
-          text-align: left;
-          &:not(.active):not(:hover) {
-            color: $black;     
-          }
-        }
-      }
+      @include collapsedNavbar;
     }
   }
+
+  &:not(.navbar-expand-lg) {
+    .navbar-collapse {
+      @include collapsedNavbar;
+    }
+  }
+
   .collapsing {
     border: none;
   }

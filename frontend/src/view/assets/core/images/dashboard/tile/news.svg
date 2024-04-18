@@ -1,20 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="193" height="193" fill="none" viewBox="0 0 193 193">
-  <mask id="a" width="173" height="173" x="10" y="10" maskUnits="userSpaceOnUse" style="mask-type:alpha">
-    <path fill="#fff" stroke="silver" d="M10.5 10.5h172v172h-172z"/>
-  </mask>
-  <g mask="url(#a)">
-    <rect width="172.5" height="118.5" x="10.25" y="10.25" stroke="silver" stroke-width=".5" rx="4.75"/>
-    <mask id="b" fill="#fff">
-      <path d="M10 15a5 5 0 0 1 5-5h163a5 5 0 0 1 5 5v19H10V15Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" fill="none" viewBox="0 0 200 200">
+  <g clip-path="url(#a)">
+    <path fill="silver" fill-rule="evenodd" d="M10 1a9 9 0 0 0-9 9v180a9 9 0 0 0 9 9h180a9 9 0 0 0 9-9V10a9 9 0 0 0-9-9H10ZM0 10C0 4.477 4.477 0 10 0h180c5.523 0 10 4.477 10 10v180c0 5.523-4.477 10-10 10H10c-5.523 0-10-4.477-10-10V10Z" clip-rule="evenodd"/>
+    <mask id="b" width="180" height="92" x="10" y="10" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+      <path fill="#fff" d="M186 10H14a4 4 0 0 0-4 4v84a4 4 0 0 0 4 4h172a4 4 0 0 0 4-4V14a4 4 0 0 0-4-4Z"/>
     </mask>
-    <path fill="#0071B9" d="M10 15a5 5 0 0 1 5-5h163a5 5 0 0 1 5 5v19H10V15Z"/>
-    <path fill="silver" d="M9.5 15A5.5 5.5 0 0 1 15 9.5h163a5.5 5.5 0 0 1 5.5 5.5h-1a4.5 4.5 0 0 0-4.5-4.5H15a4.5 4.5 0 0 0-4.5 4.5h-1ZM183 34H10h173ZM9.5 34V15A5.5 5.5 0 0 1 15 9.5v1a4.5 4.5 0 0 0-4.5 4.5v19h-1ZM178 9.5a5.5 5.5 0 0 1 5.5 5.5v19h-1V15a4.5 4.5 0 0 0-4.5-4.5v-1Z" mask="url(#b)"/>
-    <path fill="silver" d="M15 39h163v10H15zm0 30h122v10H15zm0 30h149v10H15zm0-45h156v10H15zm0 30h163v10H15zm0 30h163v10H15z"/>
-    <rect width="75" height="14" x="15" y="15" fill="#fff" rx="3"/>
-    <rect width="35" height="10" x="143" y="15" fill="#fff" rx="3"/>
-    <rect width="172.5" height="118.5" x="10.25" y="139.25" stroke="silver" stroke-width=".5" rx="4.75"/>
-    <path fill="silver" d="M15 168h163v10H15z"/>
-    <rect width="75" height="15" x="15" y="144" fill="#999" rx="3"/>
-    <rect width="35" height="10" x="143" y="144" fill="#999" rx="3"/>
+    <g mask="url(#b)">
+      <path fill="#009BFF" d="M10 14a4 4 0 0 1 4-4h172a3.998 3.998 0 0 1 4 4v14H10V14Z"/>
+      <path fill="#fff" d="M62 14H16a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h46a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2Zm123 0h-28a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h28a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z"/>
+      <mask id="c" width="180" height="74" x="10" y="28" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+        <path fill="#fff" d="M10 28h180v70c0 1.06-.421 2.078-1.172 2.828A3.995 3.995 0 0 1 186 102H14a3.997 3.997 0 0 1-4-4V28Z"/>
+      </mask>
+      <g mask="url(#c)">
+        <path fill="#009BFF" d="M191 98a5.004 5.004 0 0 1-1.464 3.536A5.004 5.004 0 0 1 186 103H14a5.002 5.002 0 0 1-5-5h2a2.999 2.999 0 0 0 3 3h172a2.997 2.997 0 0 0 3-3h2Zm-177 5a5.002 5.002 0 0 1-5-5V28h2v70a2.999 2.999 0 0 0 3 3v2Zm177-75v70a5.004 5.004 0 0 1-1.464 3.536A5.004 5.004 0 0 1 186 103v-2a2.997 2.997 0 0 0 3-3V28h2Z"/>
+      </g>
+      <path fill="#4B4B4B" d="M183 32H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h168a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-69 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h99a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm58 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h157a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-37 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h120a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-15 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h105a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm63 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h168a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-25 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h143a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Z"/>
+    </g>
+    <mask id="d" width="180" height="82" x="10" y="108" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+      <path fill="#fff" d="M186 108H14a4 4 0 0 0-4 4v74a4 4 0 0 0 4 4h172a4 4 0 0 0 4-4v-74a4 4 0 0 0-4-4Z"/>
+    </mask>
+    <g mask="url(#d)">
+      <mask id="e" width="180" height="18" x="10" y="108" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+        <path fill="#fff" d="M10 112a3.998 3.998 0 0 1 4-4h172c1.061 0 2.078.421 2.828 1.172A3.995 3.995 0 0 1 190 112v14H10v-14Z"/>
+      </mask>
+      <g mask="url(#e)">
+        <path fill="silver" d="M9 112a5.002 5.002 0 0 1 5-5h172c1.326 0 2.598.527 3.536 1.464A5.004 5.004 0 0 1 191 112h-2c0-.796-.316-1.559-.879-2.121A2.996 2.996 0 0 0 186 109H14a2.999 2.999 0 0 0-3 3H9Zm0 14v-14a5.002 5.002 0 0 1 5-5v2a2.999 2.999 0 0 0-3 3v14H9Zm177-19c1.326 0 2.598.527 3.536 1.464A5.004 5.004 0 0 1 191 112v14h-2v-14c0-.796-.316-1.559-.879-2.121A2.996 2.996 0 0 0 186 109v-2Z"/>
+      </g>
+      <path fill="silver" d="M62 112H16a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h46a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2Z"/>
+      <path fill="#6F6F6F" d="M185 112h-28a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h28a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z"/>
+      <mask id="f" width="180" height="64" x="10" y="126" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+        <path fill="#fff" d="M10 126h180v60a3.995 3.995 0 0 1-1.172 2.828A3.995 3.995 0 0 1 186 190H14a3.997 3.997 0 0 1-4-4v-60Z"/>
+      </mask>
+      <g mask="url(#f)">
+        <path fill="silver" d="M191 186a5.004 5.004 0 0 1-1.464 3.536A5.004 5.004 0 0 1 186 191H14a5.002 5.002 0 0 1-5-5h2a2.998 2.998 0 0 0 3 3h172c.796 0 1.559-.316 2.121-.879A2.996 2.996 0 0 0 189 186h2Zm-177 5a5.002 5.002 0 0 1-5-5v-60h2v60a2.998 2.998 0 0 0 3 3v2Zm177-65v60a5.004 5.004 0 0 1-1.464 3.536A5.004 5.004 0 0 1 186 191v-2c.796 0 1.559-.316 2.121-.879A2.996 2.996 0 0 0 189 186v-60h2Z"/>
+      </g>
+      <path fill="#4B4B4B" d="M114 130H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h99a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm69 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h168a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-48 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h120a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm40 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h160a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm-21 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h139a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Zm29 10H15a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h168a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1Z"/>
+    </g>
   </g>
+  <defs>
+    <clipPath id="a">
+      <path fill="#fff" d="M0 0h200v200H0z"/>
+    </clipPath>
+  </defs>
 </svg>

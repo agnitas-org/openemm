@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -45,6 +44,7 @@ import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.service.ImportFileStatus;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
@@ -87,24 +87,33 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ImportProcessActionDao;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidatorWithWhitespace;
 import com.agnitas.emm.core.commons.validation.EmailValidator;
+import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
 import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.data.CsvDataProvider;
+import com.agnitas.emm.data.DataProvider;
+import com.agnitas.emm.data.ExcelDataProvider;
+import com.agnitas.emm.data.JsonDataProvider;
+import com.agnitas.emm.data.OdsDataProvider;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonReader;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.service.ColumnInfoService;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
-public class ProfileImportWorker implements Callable<ProfileImportWorker> {
+public class ProfileImportWorker {
     private static final transient Logger logger = LogManager.getLogger(ProfileImportWorker.class);
 
 	private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
@@ -154,21 +163,22 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private String temporaryErrorTableName = null;
 	private int completedPercent;
 	private Exception error;
-	private int duplicatesInCsvData = 0;
+	private int duplicatesInImportData = 0;
 	private int duplicatesInDatabase = 0;
 	private int blacklistedEmails = 0;
 	private Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics;
+	private Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> mailinglistStatusesForImportedRecipients;
 	private EmailValidator emailValidator = null;
 	private ImportQuotaCheckService importQuotaService;
-
-	/** All available CSV columnnames included in the CSV import file **/
-	private List<String> csvFileHeaders;
-
-	/** CSV columnnames that are used for this import **/
-	private List<String> importedDataFileColumns;
 	
-	/** CSV column indexes that are used for this import **/
-	private List<Integer> importedCsvFileColumnIndexes;
+	private boolean checkHtmlTags = true;
+	private boolean allowSafeHtmlTags = false;
+
+	/** All available data attributes included in the import file **/
+	private List<String> dataFileAttributes;
+
+	/** Data attributes that are used for this import **/
+	private List<String> importedDataFileAttributes;
 	
 	private List<ColumnMapping> columnMappingsByCsvIndex;
 	
@@ -238,6 +248,14 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		this.autoImport = autoImport;
 	}
 
+	public void setAllowSafeHtmlTags(boolean allowSafeHtmlTags) {
+		this.allowSafeHtmlTags = allowSafeHtmlTags;
+	}
+
+	public void setCheckHtmlTags(boolean checkHtmlTags) {
+		this.checkHtmlTags = checkHtmlTags;
+	}
+
 	public File getResultFile() {
 		return resultFile;
 	}
@@ -286,7 +304,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		this.mailingListIdsToAssign = mailingListIdsToAssign;
 	}
 
-    public void setInteractiveMode(boolean interactiveMode) {
+	public void setInteractiveMode(boolean interactiveMode) {
 		this.interactiveMode = interactiveMode;
 	}
 
@@ -326,7 +344,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return mailinglistAssignStatistics;
 	}
 
-    public Exception getError() {
+	public Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> getMailinglistStatusesForImportedRecipients() {
+		return mailinglistStatusesForImportedRecipients;
+	}
+
+	public Exception getError() {
 		return error;
 	}
 
@@ -343,11 +365,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	}
 
 	public List<String> getCsvFileHeaders() {
-		return csvFileHeaders;
+		return dataFileAttributes;
 	}
 
 	public List<String> getImportedDataFileColumns() {
-		return importedDataFileColumns;
+		return importedDataFileAttributes;
 	}
 
 	public void setCompletedPercent(int completedPercent) {
@@ -364,7 +386,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return currentProgressStatus;
 	}
 
-	@Override
 	public ProfileImportWorker call() throws Exception {
 		try {
 			importFile.setStatus(ImportFileStatus.IMPORTING);
@@ -444,13 +465,13 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 					// Create downloadable report files
 					currentProgressStatus = ImportItemizedProgress.REPORTING_SUCCESS_RECIPIENTS;
-					status.setImportedRecipientsCsv(createImportedRecipients(getImportFile().getLocalFile().getName() + "_valid_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					status.setImportedRecipientsCsv(createImportedRecipients(getImportFile().getLocalFile().getName() + "_valid_recipients", importProfile.getDatatype()));
 					currentProgressStatus = ImportItemizedProgress.REPORTING_INVALID_RECIPIENTS;
-					status.setInvalidRecipientsCsv(createInvalidRecipients(getImportFile().getLocalFile().getName() + "_invalid_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					status.setInvalidRecipientsCsv(createInvalidRecipients(getImportFile().getLocalFile().getName() + "_invalid_recipients", importedDataFileAttributes, importProfile.getDatatype()));
 					currentProgressStatus = ImportItemizedProgress.REPORTING_FIXED_RECIPIENTS;
-					status.setFixedByUserRecipientsCsv(createFixedByUserRecipients(getImportFile().getLocalFile().getName() + "_fixed_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					status.setFixedByUserRecipientsCsv(createFixedByUserRecipients(getImportFile().getLocalFile().getName() + "_fixed_recipients", importedDataFileAttributes, importProfile.getDatatype()));
 					currentProgressStatus = ImportItemizedProgress.REPORTING_DUPLICATED_RECIPIENTS;
-					status.setDuplicateInCsvOrDbRecipientsCsv(createDuplicateInCsvOrDbRecipients(getImportFile().getLocalFile().getName() + "_duplicate_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					status.setDuplicateInCsvOrDbRecipientsCsv(createDuplicateInCsvOrDbRecipients(getImportFile().getLocalFile().getName() + "_duplicate_recipients", importProfile.getDatatype()));
 
 					currentProgressStatus = ImportItemizedProgress.SENDING_REPORT_MAIL;
 					profileImportReporter.sendProfileImportReportMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
@@ -461,6 +482,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			} else {
 				waitingForInteraction = true;
 			}
+
+			importFile.setStatus(ImportFileStatus.IMPORTED);
 		} catch (DataAccessException | SQLException e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
 			status.setFatalError("Internal db error");
@@ -529,7 +552,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} finally {
 	        done = true;
 		}
-        importFile.setStatus(ImportFileStatus.IMPORTED);
         return this;
     }
 
@@ -680,7 +702,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		// Create synchronization infos
 		if (importProfile.getKeyColumns() != null && !importProfile.getKeyColumns().isEmpty() && importProfile.getCheckForDuplicates() == CheckForDuplicates.COMPLETE.getIntValue()) {
 			currentProgressStatus = ImportItemizedProgress.HANDLING_BLACKLIST;
-			duplicatesInCsvData = importRecipientsDao.markDuplicatesEntriesSingleTable(importProfile.getCompanyId(), temporaryImportTableName, importProfile.getKeyColumns(), importIndexColumn, duplicateIndexColumn);
+			duplicatesInImportData = importRecipientsDao.markDuplicatesEntriesSingleTable(importProfile.getCompanyId(), temporaryImportTableName, importProfile.getKeyColumns(), importIndexColumn, duplicateIndexColumn);
 			duplicatesInDatabase = importRecipientsDao.markDuplicatesEntriesCrossTable(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), "customer_id");
 		}
 		
@@ -700,10 +722,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		importModeHandler.handleNewCustomers(status, importProfile, temporaryImportTableName, duplicateIndexColumn, transferDbColumns, datasourceId);
 
 		currentProgressStatus = ImportItemizedProgress.HANDLING_EXISTING_RECIPIENTS;
-		importModeHandler.handleExistingCustomers(status, importProfile, temporaryImportTableName, importIndexColumn, transferDbColumns, datasourceId);
+		importModeHandler.handleExistingCustomersImproved(status, importProfile, temporaryImportTableName, importIndexColumn, transferDbColumns, datasourceId);
 
 		currentProgressStatus = ImportItemizedProgress.HANDLING_POSTPROCESSING;
 		mailinglistAssignStatistics = importModeHandler.handlePostProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign, importProfile.getMediatypes());
+		mailinglistStatusesForImportedRecipients = importRecipientsDao.getMailinglistStatusesForImportedRecipients(importProfile.getCompanyId(), mailingListIdsToAssign, importProfile.getMediatypes(), datasourceId);
 
 		setStatusValues();
 	}
@@ -723,47 +746,18 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		
 		fileSize = importFile.getLocalFile().length();
 				
-		// This counts csv lines (see also: escaped linebreaks in csv format) for the progressbar 100% value
-		char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
-		Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
+		// This counts data items (see also: escaped linebreaks in csv format) for the progressbar 100% value
 		
-		if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
-			try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-				csvReader.setAlwaysTrim(true);
-				linesInFile = csvReader.getCsvLineCount();
-				if (!importProfile.isNoHeaders()) {
-					linesInFile = linesInFile - 1;
-				}
+		try (DataProvider importDataProvider = getDataProvider()) {
+			int itemCount = 0;
+			while (importDataProvider.getNextItemData() != null) {
+				itemCount++;
 			}
-		} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
-			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
-				jsonReader.readNextToken();
-				
-				while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-					jsonReader.readNextToken();
-				}
-				
-				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-					throw new Exception("Json data does not contain expected JsonArray");
-				}
-				
-				int itemCount = 0;
-				while (jsonReader.readNextJsonNode()) {
-					Object currentObject = jsonReader.getCurrentObject();
-					if (currentObject == null || !(currentObject instanceof JsonObject)) {
-						throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
-					}
-					itemCount++;
-				}
-				
-				linesInFile = itemCount;
-			}
-		} else {
-			throw new RuntimeException("Invalid datatype: " + importProfile.getDatatype());
+			linesInFile = itemCount;
 		}
 
 		int maximumNumberOfRowsInImportFile = configService.getIntegerValue(ConfigValue.ProfileRecipientImportMaxRows, importProfile.getCompanyId());
-        long maximumImportFileSize = configService.getLongValue(ConfigValue.ProfileRecipientImportMaxFileSize, importProfile.getCompanyId());
+		long maximumImportFileSize = configService.getLongValue(ConfigValue.ProfileRecipientImportMaxFileSize, importProfile.getCompanyId());
 		if (fileSize > maximumImportFileSize) {
 			throw new ImportException(false, "error.import.maximum_filesize_exceeded_withsizehint", AgnUtils.getHumanReadableNumber(maximumImportFileSize, "Byte", false), maximumNumberOfRowsInImportFile);
         } else if (maximumNumberOfRowsInImportFile > 0 && linesInFile > maximumNumberOfRowsInImportFile) {
@@ -777,11 +771,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 		// Import csv data in temporary import table and set the correct number of lines found
 		try {
-			if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
-				linesInFile = importCsvDataInTemporaryTable();
-			} else {
-				linesInFile = importJsonDataInTemporaryTable();
-			}
+			linesInFile = importDataInTemporaryTable();
 		} catch (Exception e) {
 			logger.error("Error in structure: " + e.getMessage());
 			status.addError(ImportErrorType.STRUCTURE_ERROR);
@@ -808,7 +798,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} else if (importProfile.getCheckForDuplicates() == CheckForDuplicates.NO_CHECK.getIntValue()) {
 			status.setDoubleCheck(ImportStatus.DOUBLECHECK_NONE);
 		}
-		status.setDuplicatesInImportData(duplicatesInCsvData);
+		status.setDuplicatesInImportData(duplicatesInImportData);
 		status.setAlreadyInDb(duplicatesInDatabase);
 		status.setFields(columnMappingsByCsvIndex != null ? columnMappingsByCsvIndex.size() : 0);
 		status.setDatasourceID(datasourceId);
@@ -850,6 +840,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.ValueTooLarge.toString() + "' AND errorfixed = 0"));
 			status.setError(ImportErrorType.NUMBER_TOO_LARGE_ERROR, importRecipientsDao.getResultEntriesCount(
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.NumberTooLarge.toString() + "' AND errorfixed = 0"));
+			status.setError(ImportErrorType.INVALID_FORMAT_ERROR, importRecipientsDao.getResultEntriesCount(
+				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.NotAllowedHtmlContent.toString() + "' AND errorfixed = 0"));
 			status.setError(ImportErrorType.DBINSERT_ERROR, importRecipientsDao.getResultEntriesCount(
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason IS NULL AND errorfixed = 0"));
 		} else {
@@ -884,7 +876,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private final int importCsvDataInTemporaryTable() throws Exception {
+	private final int importDataInTemporaryTable() throws Exception {
 		setCompletedPercent(0);
 		currentProgressStatus = ImportItemizedProgress.IMPORTING_DATA_TO_TMP_TABLE;
 		
@@ -893,9 +885,24 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			
 			try {
 				connection.setAutoCommit(false);
-
-				try (InputStream inputStream = getImportInputStream()) {
-					return importCsvDataInTemporaryTable(inputStream, connection);
+				
+				try (DataProvider dataProvider = getDataProvider()) {
+					final List<String> additionalDbColumns = new ArrayList<>();
+					final List<String> additionalDbValues = new ArrayList<>();
+					
+					processHeaderData(dataProvider, additionalDbColumns, additionalDbValues);
+					
+					// Check if keycolumns are part of the imported data
+					for (String keyColumnName : importProfile.getKeyColumns()) {
+						if (!importedDBColumns.contains(keyColumnName.toLowerCase())) {
+							throw new ImportException(false, "error.import.missing.keyColumn", keyColumnName);
+						}
+					}
+					
+					checkHeaderForRestrictedColumns(additionalDbColumns);
+					checkHeaderForDuplicates();
+					csvDetermineDbColumnsToTransfer(additionalDbColumns);
+					return importDataInTemporaryTable(dataProvider, connection, additionalDbColumns, additionalDbValues);
 				} finally {
 					connection.commit();
 				}
@@ -905,47 +912,18 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 	
-	private final int importCsvDataInTemporaryTable(final InputStream stream, final Connection connection) throws Exception {
-		final char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
-		final Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-		
-		try (CsvReader csvReader = new CsvReader(stream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-			csvReader.setAlwaysTrim(true);
-
-			final List<String> additionalDbColumns = new ArrayList<>();
-			final List<String> additionalDbValues = new ArrayList<>();
-
-			processCsvHeaderData(csvReader, additionalDbColumns, additionalDbValues);
-			
-			// Check if keycolumns are part of the imported data
-			for (String keyColumnName : importProfile.getKeyColumns()) {
-				if (!importedDBColumns.contains(keyColumnName.toLowerCase())) {
-					throw new ImportException(false, "error.import.missing.keyColumn", keyColumnName);
-				}
-			}
-			
-			checkCsvHeaderForRestrictedColumns(additionalDbColumns);
-			checkCsvHeaderForDuplicates();
-			csvDetermineDbColumnsToTransfer(additionalDbColumns);
-			return importCsvDataInTemporaryTable(csvReader, connection, additionalDbColumns, additionalDbValues);
-		}
-	}
-	
-	private final void processCsvHeaderData(final CsvReader csvReader, final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
+	private final void processHeaderData(final DataProvider dataProvider, final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
 		if (importProfile.isNoHeaders()) {
-			// CSV file has no column headers in first line
+			// Import file has no column headers in first line
 			
-			importedDataFileColumns = new ArrayList<>();
-			
-			// Contains the index within the csv data entries for each sql parameter
-			importedCsvFileColumnIndexes = new ArrayList<>();
+			importedDataFileAttributes = new ArrayList<>();
 			
 			importedDBColumns = new ArrayList<>();
 			
-			csvFileHeaders = new ArrayList<>();
+			dataFileAttributes = new ArrayList<>();
 			
 			for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
-				csvFileHeaders.add(columnMapping.getFileColumn());
+				dataFileAttributes.add(columnMapping.getFileColumn());
 				if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 					if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
 						importedDBColumns.add(columnMapping.getDatabaseColumn().toLowerCase());
@@ -956,46 +934,39 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						if (csvIndex < 0) {
 							throw new Exception("Invalid csv mapping column: " + columnMapping.getFileColumn());
 						}
-						importedDataFileColumns.add(columnMapping.getFileColumn());
-						importedCsvFileColumnIndexes.add(csvIndex);
+						importedDataFileAttributes.add(columnMapping.getFileColumn());
 					} else {
                         tryImportIntoDbColumnWithoutDataInCsvFile(additionalDbColumns, additionalDbValues, columnMapping);
 					}
 				}
 			}
 		} else {
-			final List<String> headerData = csvReader.readNextCsvLine();
-			if (headerData == null) {
+			// First line contains the headers
+			dataFileAttributes = dataProvider.getAvailableDataPropertyNames();
+			if (dataFileAttributes == null) {
 				throw new ImportException(true, "error.import.no_file");
-			} else if (headerData.isEmpty()) {
+			} else if (dataFileAttributes.isEmpty()) {
 				throw new ImportException(false, "error.invalid.csvfile.noheaders");
 			}
 			
-			// First line contains the csv headers
-			csvFileHeaders = AgnUtils.makeListTrim(headerData);
-			
-			importedDataFileColumns = new ArrayList<>();
-			// Contains the index within the csv data entries for each sql parameter
-			importedCsvFileColumnIndexes = new ArrayList<>();
+			importedDataFileAttributes = new ArrayList<>();
 			
 			importedDBColumns = new ArrayList<>();
 			for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
 				if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 					if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
 						importedDBColumns.add(columnMapping.getDatabaseColumn().toLowerCase());
-						int csvIndex = csvFileHeaders.indexOf(columnMapping.getFileColumn());
+						int csvIndex = dataFileAttributes.indexOf(columnMapping.getFileColumn());
 						if (csvIndex < 0) {
 							throw new CsvDataException("CSV file doesn't contain expected column (is headerline missing?): " + columnMapping.getFileColumn(), 1);
 						}
-						importedDataFileColumns.add(columnMapping.getFileColumn());
-						importedCsvFileColumnIndexes.add(csvIndex);
+						importedDataFileAttributes.add(columnMapping.getFileColumn());
 					} else {
                         tryImportIntoDbColumnWithoutDataInCsvFile(additionalDbColumns, additionalDbValues, columnMapping);
 					}
 				}
 			}
 		}
-
 	}
 	
     private void tryImportIntoDbColumnWithoutDataInCsvFile(List<String> additionalDbColumns, List<String> additionalDbValues, ColumnMapping columnMapping) {
@@ -1003,7 +974,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
         try {
             additionalDbColumns.add(databaseColumn);
             additionalDbValues.add(getDefValForDB(columnMapping));
-        } catch (Exception e) {
+        } catch (@SuppressWarnings("unused") Exception e) {
             throw new ImportException(false, "error.import.invalidDataForField", databaseColumn);
         }
     }
@@ -1053,10 +1024,10 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
         }
     }
 
-	private void checkCsvHeaderForRestrictedColumns(final List<String> additionalDbColumns) throws Exception {
+	private void checkHeaderForRestrictedColumns(final List<String> additionalDbColumns) throws Exception {
 		if (admin != null) {
-			// Some fields that may not be imported by users via csv data, but must be set by the system
-			for (String dbColumnName : ImportUtils.getHiddenColumns(admin)) {
+			// Some fields that may not be imported by users via import data, but must be set by the system
+			for (String dbColumnName : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
 				if (importedDBColumns.contains(dbColumnName.toLowerCase()) || additionalDbColumns.contains(dbColumnName.toLowerCase())) {
 					throw new Exception("Invalid not allowed dbcolumn to import: " + dbColumnName);
 				}
@@ -1064,8 +1035,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 	
-	private final void checkCsvHeaderForDuplicates() throws Exception {
-		final String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvFileHeaders, importProfile.isAutoMapping());
+	private final void checkHeaderForDuplicates() throws Exception {
+		final String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(dataFileAttributes, importProfile.isAutoMapping());
 		
 		if (duplicateCsvColumn != null) {
 			throw new Exception("Invalid duplicate csvcolumn: " + duplicateCsvColumn);
@@ -1080,7 +1051,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		transferDbColumns.addAll(additionalDbColumns);
 	}
 	
-	private final int importCsvDataInTemporaryTable(final CsvReader csvReader, final Connection connection, final List<String> additionalDbColumns, List<String> additionalDbValues) throws Exception {
+	private final int importDataInTemporaryTable(final DataProvider dataProvider, final Connection connection, final List<String> additionalDbColumns, List<String> additionalDbValues) throws Exception {
 		final CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl");
 		
 		for (int i = 0; i < additionalDbValues.size(); i++) {
@@ -1135,13 +1106,21 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 			ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
 			columnMappingsByCsvIndex = new ArrayList<>();
-			for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
+			for (int i = 0; i < importedDataFileAttributes.size(); i++) {
 				columnMappingsByCsvIndex.add(importProfile.getMappingByDbColumn(importedDBColumns.get(i)));
 			}
 
+			final Map<String, ColumnMapping> columnMappingByDbColumn = new HashMap<>();
+			for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
+				if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
+					columnMappingByDbColumn.put(columnMapping.getDatabaseColumn(), columnMapping);
+				}
+			}
+			
 			// This csvDataLine contains all the csv data values, also the not imported ones
-			List<String> csvDataLine;
-			while ((csvDataLine = csvReader.readNextCsvLine()) != null) {
+			Map<String, Object> nextDataItem;
+			int dataItemIndex = 0;
+			while ((nextDataItem = dataProvider.getNextItemData()) != null) {
 				List<Object> batchValueEntry = new ArrayList<>();
 				batchValues.add(batchValueEntry);
 				
@@ -1152,65 +1131,67 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 							csvColumnsExpected++;
 						}
 					}
-					if (csvDataLine.size() != csvColumnsExpected) {
-						throw new Exception("Number of import file columns does not fit mapped columns in line " + csvReader.getReadCsvLines());
+					if (nextDataItem.size() != csvColumnsExpected) {
+						throw new Exception("Number of import file columns does not fit mapped columns in line " + (dataItemIndex + 1));
 					}
 				}
 				
 				try {
-					for (int columnIndex = 0; columnIndex < importedCsvFileColumnIndexes.size(); columnIndex++) {
+					for (int columnIndex = 0; columnIndex < importedDataFileAttributes.size(); columnIndex++) {
 						String importedDB = importedDBColumns.get(columnIndex);
 						if (StringUtils.isNotBlank(importedDB) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDB)) {
-							String csvValue = csvDataLine.get(importedCsvFileColumnIndexes.get(columnIndex));
-				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), csvValue, columnDataTypes, batchValueEntry);
+							Object dataValue = nextDataItem.get(importedDataFileAttributes.get(columnIndex));
+				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), dataValue, columnDataTypes, batchValueEntry);
 						}
 					}
 
-					// Add additional integer value to identify csv data item index
-					preparedStatement.setInt(importedCsvFileColumnIndexes.size() + 1, csvReader.getReadCsvLines());
+					// Add additional integer value to identify import data item index
+					preparedStatement.setInt(importedDataFileAttributes.size() + 1, (dataItemIndex + 1));
 					
 					preparedStatement.addBatch();
 				} catch (ProfileImportException e) {
 					preparedStatement.clearParameters();
 
 					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDataFileColumns.size());
+						createTemporaryErrorTable(importedDataFileAttributes.size());
 					}
 		        	
-					importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), e.getReasonCode(), e.getCsvFieldName());
-				} catch (Exception e) {
+					importRecipientsDao.addErroneousDataItem(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, nextDataItem, (dataItemIndex + 1), e.getReasonCode(), e.getCsvFieldName());
+				} catch (@SuppressWarnings("unused") Exception e) {
 					preparedStatement.clearParameters();
 
 					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDataFileColumns.size());
+						createTemporaryErrorTable(importedDataFileAttributes.size());
 					}
 		        	
-					importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), null, null);
+					importRecipientsDao.addErroneousDataItem(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, nextDataItem, (dataItemIndex + 1), null, null);
 				}
 				
-				if (csvReader.getReadCsvLines() % batchBlockSize == 0) {
+				if ((dataItemIndex + 1) % batchBlockSize == 0) {
 					try {
 						int[] results = preparedStatement.executeBatch();
 						connection.commit();
 						for (int i = 0; i < results.length; i++) {
 							if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-								int lineIndex = (csvReader.getReadCsvLines() - batchBlockSize) + i;
+								int lineIndex = ((dataItemIndex + 1) - batchBlockSize) + i;
 								throw new Exception("Line could not be imported: " + lineIndex);
 							}
 						}
-					} catch (BatchUpdateException e) {
+					} catch (@SuppressWarnings("unused") BatchUpdateException e) {
 						connection.rollback();
-						executeSingleStepUpdates(preparedStatement, batchValues, (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)));
+						executeSingleStepUpdates(preparedStatement, batchValues, ((dataItemIndex + 1) - ((dataItemIndex + 1) % batchBlockSize)));
 						connection.commit();
 					}
 					
 					batchValues.clear();
 					
 					hasUnexecutedData = false;
-					setCompletedPercent(Math.round(csvReader.getReadCsvLines() * 100f / linesInFile));
+					setCompletedPercent(Math.round((dataItemIndex + 1) * 100f / linesInFile));
 				} else {
 					hasUnexecutedData = true;
 				}
+				
+				dataItemIndex++;
 			}
 			
 			if (hasUnexecutedData) {
@@ -1220,20 +1201,20 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					connection.commit();
 					for (int i = 0; i < results.length; i++) {
 						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-							int lineIndex = (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)) + i;
+							int lineIndex = ((dataItemIndex + 1) - ((dataItemIndex + 1) % batchBlockSize)) + i;
 							throw new Exception("Line could not be imported: " + lineIndex);
 						}
 					}
-				} catch (BatchUpdateException e) {
+				} catch (@SuppressWarnings("unused") BatchUpdateException e) {
 					connection.rollback();
-					executeSingleStepUpdates(preparedStatement, batchValues, (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)));
+					executeSingleStepUpdates(preparedStatement, batchValues, ((dataItemIndex + 1) - ((dataItemIndex + 1) % batchBlockSize)));
 					connection.commit();
 				}
 				
 				batchValues.clear();
 			}
 
-			return csvReader.getReadCsvLines() - 1;
+			return dataItemIndex;
 		}
 	}
 	
@@ -1265,9 +1246,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				}
 				preparedStatement.setObject(batchValueEntry.size() + 1, Integer.valueOf(startingDataEntryIndex + entryIndex));
 				preparedStatement.execute();
-			} catch (SQLException e) {
+			} catch (@SuppressWarnings("unused") SQLException e) {
 				if (temporaryErrorTableName == null) {
-					createTemporaryErrorTable(importedDataFileColumns.size());
+					createTemporaryErrorTable(importedDataFileAttributes.size());
 				}
 				
 				// Bring error data back into datafiles order
@@ -1275,252 +1256,16 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				for (int i = 0; i < stringRepresentations.size(); i++) {
 					stringRepresentationsInDatafileOrder.add(null);
 				}
-				for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
-					stringRepresentationsInDatafileOrder.set(importedCsvFileColumnIndexes.get(i), stringRepresentations.get(i));
-				}
-	        	
-				importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, stringRepresentationsInDatafileOrder, startingDataEntryIndex + entryIndex, ReasonCode.Unknown, null);
-			}
-		}
-	}
-
-	private final int importJsonDataInTemporaryTable() throws Exception {
-		setCompletedPercent(0);
-		currentProgressStatus = ImportItemizedProgress.IMPORTING_DATA_TO_TMP_TABLE;
-
-		try(final Connection connection = importRecipientsDao.getDataSource().getConnection()) {
-			final boolean previousAutoCommit = connection.getAutoCommit();
-			
-			try {
-				connection.setAutoCommit(false);
 				
-				try {
-					try (final InputStream inputStream = getImportInputStream()) {
-						return importJsonDataInTemporaryTable(inputStream, connection);
-					}
-				} finally {
-					connection.commit();
-				}
-			} finally {
-				connection.setAutoCommit(previousAutoCommit);
-			}
-		}
-	}
-	
-	private final int importJsonDataInTemporaryTable(final InputStream stream, final Connection connection) throws Exception {
-		try(final JsonReader jsonReader = new Json5Reader(stream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
-			jsonReader.readNextToken();
-			
-			while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-				jsonReader.readNextToken();
-			}
-			
-			if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-				throw new Exception("Json data does not contain expected JsonArray");
-			}
-			
-			final List<String> additionalDbColumns = new ArrayList<>();
-			final List<String> additionalDbValues = new ArrayList<>();
-
-			importedDataFileColumns = new ArrayList<>();
-			importedCsvFileColumnIndexes = new ArrayList<>();
-			importedDBColumns = new ArrayList<>();
-			csvFileHeaders = new ArrayList<>();
-			columnMappingsByCsvIndex = new ArrayList<>();
-			
-			processJsonColumnData(additionalDbColumns, additionalDbValues);
-			checkJsonDataForRestrictedColumns(additionalDbColumns);
-			
-			// Check if keycolumns are part of the imported data
-			for (String keyColumnName : importProfile.getKeyColumns()) {
-				if (!importedDBColumns.contains(keyColumnName.toLowerCase())) {
-					throw new ImportException(false, "error.import.missing.keyColumn", keyColumnName);
-				}
-			}
-			
-			jsonDetermineDbColumnsToTransfer(additionalDbColumns);
-			
-			return importJsonDataInTemporaryTable(jsonReader, connection, additionalDbColumns, additionalDbValues);
-		}
-	}
-	
-	private final void processJsonColumnData(final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
-		for (final ColumnMapping columnMapping : importProfile.getColumnMapping()) {
-			if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
-				if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
-					importedDataFileColumns.add(columnMapping.getFileColumn());
-					importedCsvFileColumnIndexes.add(importedDataFileColumns.size() - 1);
-					importedDBColumns.add(columnMapping.getDatabaseColumn().toLowerCase());
-				} else {
-					// Import into db column without data in json file
-					additionalDbColumns.add(columnMapping.getDatabaseColumn());
-
-					if (StringUtils.isBlank(columnMapping.getDefaultValue())) {
-						additionalDbValues.add("NULL");
-					} else if (columnMapping.getDefaultValue().startsWith("'") && columnMapping.getDefaultValue().endsWith("'")
-						&& (DbUtilities.getColumnDataType(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl", columnMapping.getDatabaseColumn()).getSimpleDataType() == SimpleDataType.Date
-						|| DbUtilities.getColumnDataType(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl", columnMapping.getDatabaseColumn()).getSimpleDataType() == SimpleDataType.DateTime)) {
-						// Format date default value for db
-						String reformattedDate = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(importDateFormat.parse(columnMapping.getDefaultValue().substring(1, columnMapping.getDefaultValue().length() - 1)));
-						if (isOracleDB()) {
-							additionalDbValues.add("TO_DATE('" + reformattedDate + "', 'DD.MM.YYYY HH24:MI')");
-						} else {
-							additionalDbValues.add("STR_TO_DATE('" + reformattedDate + "', '%d.%m.%Y %H:%i:%s')");
-						}
-					} else {
-						additionalDbValues.add(columnMapping.getDefaultValue());
-					}
-				}
-			}
-		}
-	}
-	
-	private final void checkJsonDataForRestrictedColumns(final List<String> additionalDbColumns) throws Exception {
-		if (admin != null) {
-			// Some fields that may not be imported by users via import data, but must be set by the system
-			for (String dbColumnName : ImportUtils.getHiddenColumns(admin)) {
-				if (importedDBColumns.contains(dbColumnName.toLowerCase()) || additionalDbColumns.contains(dbColumnName.toLowerCase())) {
-					throw new Exception("Invalid not allowed dbcolumn to import: " + dbColumnName);
-				}
-			}
-		}
-	}
-	
-	private final void jsonDetermineDbColumnsToTransfer(final List<String> additionalDbColumns) {
-		transferDbColumns = new ArrayList<>();
-		transferDbColumns.addAll(importedDBColumns);
-		transferDbColumns.addAll(additionalDbColumns);
-	}
-	
-	private final int importJsonDataInTemporaryTable(final JsonReader jsonReader, final Connection connection, final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
-		insertIntoTemporaryImportTableSqlString = "INSERT INTO " + temporaryImportTableName + " ("
-				+ StringUtils.join(importedDBColumns, ", ")
-				+ (importedDBColumns.size() > 0 && additionalDbColumns.size() > 0 ? ", " : "")
-				+ StringUtils.join(additionalDbColumns, ", ")
-				+ (importedDBColumns.size() > 0 || additionalDbColumns.size() > 0 ? ", " : "")
-				+ importIndexColumn
-				+ ") VALUES ("
-				+ AgnUtils.repeatString("?", importedDBColumns.size(), ", ")
-				+ (importedDBColumns.size() > 0 && additionalDbValues.size() > 0 ? ", " : "")
-				+ StringUtils.join(additionalDbValues, ", ")
-				+ (importedDBColumns.size() > 0 || additionalDbValues.size() > 0 ? ", " : "")
-				+ "?"
-				+ ")";
-		
-		try(final PreparedStatement preparedStatement = connection.prepareStatement(insertIntoTemporaryImportTableSqlString)) {
-			List<List<Object>> batchValues = new ArrayList<>();
-			final int batchBlockSize = 1000;
-
-			final CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), temporaryImportTableName);
-			ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
-			
-			final Map<String, ColumnMapping> columnMappingByDbColumn = new HashMap<>();
-			for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
-				if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
-					columnMappingByDbColumn.put(columnMapping.getDatabaseColumn(), columnMapping);
-				}
-			}
-			
-			// This JsonObject contains all the data values, also the not imported ones
-			int jsonObjectCount = 0;
-			boolean hasUnexecutedData = false;
-
-			while (jsonReader.readNextJsonNode()) {
-				List<Object> batchValueEntry = new ArrayList<>();
-				batchValues.add(batchValueEntry);
-				
-				jsonObjectCount++;
-				final Object currentObject = jsonReader.getCurrentObject();
-				if (currentObject == null || !(currentObject instanceof JsonObject)) {
-					throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
-				}
-				final JsonObject jsonDataObject = (JsonObject) currentObject;
-				for (String jsonAttributeName : jsonDataObject.keySet()) {
-					if (!csvFileHeaders.contains(jsonAttributeName)) {
-						csvFileHeaders.add(jsonAttributeName);
-						columnMappingsByCsvIndex.add(importProfile.getMappingByDbColumn(jsonAttributeName));
-					}
+				for (int i = 0; i < importedDataFileAttributes.size(); i++) {
+					stringRepresentationsInDatafileOrder.set(i, stringRepresentations.get(i));
 				}
 				
-				try {
-					int columnIndex = -1;
-					for (String importedDBColumn : importedDBColumns) {
-						columnIndex++;
-						if (StringUtils.isNotBlank(importedDBColumn) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDBColumn)) {
-							final Object jsonValue = jsonDataObject.get(columnMappingByDbColumn.get(importedDBColumn).getFileColumn());
-							final String jsonValueString = jsonValue == null ? null : jsonValue.toString();
-				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingByDbColumn.get(importedDBColumn), jsonValueString, columnDataTypes, batchValueEntry);
-						}
-					}
-
-					// Add additional integer value to identify csv data item index
-					preparedStatement.setInt(importedDBColumns.size() + 1, jsonObjectCount);
-					
-					preparedStatement.addBatch();
-				} catch (ProfileImportException e) {
-					preparedStatement.clearParameters();
-
-					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDBColumns.size());
-					}
-		        	
-					importRecipientsDao.addErroneousJsonObject(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, e.getReasonCode(), e.getCsvFieldName());
-				} catch (Exception e) {
-					preparedStatement.clearParameters();
-
-					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDBColumns.size());
-					}
-		        	
-					importRecipientsDao.addErroneousJsonObject(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, null, null);
-				}
-				
-				if (jsonObjectCount % batchBlockSize == 0) {
-					try {
-						int[] results = preparedStatement.executeBatch();
-						connection.commit();
-						for (int i = 0; i < results.length; i++) {
-							if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-								int lineIndex = (jsonObjectCount - batchBlockSize) + i;
-								throw new Exception("Line could not be imported: " + lineIndex);
-							}
-						}
-					} catch (BatchUpdateException e) {
-						connection.rollback();
-						executeSingleStepUpdates(preparedStatement, batchValues, (jsonObjectCount - (jsonObjectCount % batchBlockSize)));
-						batchValues.clear();
-						connection.commit();
-					}
-					hasUnexecutedData = false;
-					setCompletedPercent(Math.round(jsonObjectCount * 100f / linesInFile));
-				} else {
-					hasUnexecutedData = true;
-				}
+				importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, stringRepresentationsInDatafileOrder, startingDataEntryIndex + entryIndex, ReasonCode.Unknown, null);
 			}
-			
-			if (hasUnexecutedData) {
-				// Execute the last open sql batch block
-				try {
-					final int[] results = preparedStatement.executeBatch();
-					connection.commit();
-					for (int i = 0; i < results.length; i++) {
-						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-							final int lineIndex = (jsonObjectCount - (jsonObjectCount % batchBlockSize)) + i;
-							throw new Exception("Line could not be imported: " + lineIndex);
-						}
-					}
-				} catch (BatchUpdateException e) {
-					connection.rollback();
-					executeSingleStepUpdates(preparedStatement, batchValues, (jsonObjectCount - (jsonObjectCount % batchBlockSize)));
-					batchValues.clear();
-					connection.commit();
-				}
-			}
-
-			return jsonObjectCount;
 		}
 	}
-
+	
 	public boolean hasRepairableErrors() {
 		if (temporaryErrorTableName != null) {
 			return importRecipientsDao.hasRepairableErrors(temporaryErrorTableName);
@@ -1534,7 +1279,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	 * @throws Exception
 	 */
 	public void setBeansAfterEditOnErrorEditPage(Map<String, String> changedValues) throws Exception {
-		List<Integer> updatedCsvIndexes = importRecipientsDao.updateTemporaryErrors(importProfile.getCompanyId(), temporaryErrorTableName, importedDataFileColumns, changedValues);
+		List<Integer> updatedCsvIndexes = importRecipientsDao.updateTemporaryErrors(importProfile.getCompanyId(), temporaryErrorTableName, importedDataFileAttributes, changedValues);
 		revalidateTemporaryErrorTable(updatedCsvIndexes);
 	}
 
@@ -1556,11 +1301,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				Map<String, Object> csvDataLine = importRecipientsDao.getErrorLine(temporaryErrorTableName, revalidateCsvIndex);
 				// This csvValues are only the imported ones, not imported columns are lost on the way
 				List<String> csvValues = new ArrayList<>();
-				for (int columnIndex = 0; columnIndex < importedCsvFileColumnIndexes.size(); columnIndex++) {
+				for (int columnIndex = 0; columnIndex < importedDataFileAttributes.size(); columnIndex++) {
 					csvValues.add((String) csvDataLine.get("data_" + (columnIndex + 1)));
 				}
 				try {
-					for (int columnIndex = 0; columnIndex < importedCsvFileColumnIndexes.size(); columnIndex++) {
+					for (int columnIndex = 0; columnIndex < importedDataFileAttributes.size(); columnIndex++) {
 						String importedDB = importedDBColumns.get(columnIndex);
 						if (StringUtils.isNotBlank(importedDB) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDB)) {
 							String csvValue = (String) csvDataLine.get("data_" + (columnIndex + 1));
@@ -1569,7 +1314,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					}
 
 					// Add additional integer value to identify csv data item index
-					preparedStatement.setInt(importedCsvFileColumnIndexes.size() + 1, revalidateCsvIndex);
+					preparedStatement.setInt(importedDataFileAttributes.size() + 1, revalidateCsvIndex);
 					
 					preparedStatement.executeUpdate();
 					importRecipientsDao.markErrorLineAsRepaired(importProfile.getCompanyId(), temporaryErrorTableName, revalidateCsvIndex);
@@ -1577,18 +1322,18 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					preparedStatement.clearParameters();
 
 					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDataFileColumns.size());
+						createTemporaryErrorTable(importedDataFileAttributes.size());
 					}
-		        	
+
 					importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, csvValues, revalidateCsvIndex, e.getReasonCode(), e.getCsvFieldName());
-				} catch (Exception e) {
+				} catch (@SuppressWarnings("unused") Exception e) {
 					preparedStatement.clearParameters();
 
 					if (temporaryErrorTableName == null) {
-						createTemporaryErrorTable(importedDataFileColumns.size());
+						createTemporaryErrorTable(importedDataFileAttributes.size());
 					}
-		        	
-					importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvValues, revalidateCsvIndex, null, null);
+
+					importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, csvValues, revalidateCsvIndex, null, null);
 				}
 				
 				doneLines++;
@@ -1597,36 +1342,38 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private void validateAndSetInsertParameter(ImportModeHandler importModeHandler, PreparedStatement preparedStatement, int columnIndex, ColumnMapping columnMapping, String dataValue, CaseInsensitiveMap<String, DbColumnType> columnDataTypes, List<Object> batchValueEntry) throws Exception {
+	private void validateAndSetInsertParameter(ImportModeHandler importModeHandler, PreparedStatement preparedStatement, int columnIndex, ColumnMapping columnMapping, Object dataValue, CaseInsensitiveMap<String, DbColumnType> columnDataTypes, List<Object> batchValueEntry) throws Exception {
+		String dataValueString = dataValue == null ? null : dataValue.toString();
+		
 		// Check mandatory import columns
-		if (columnMapping.isMandatory() && StringUtils.isBlank(dataValue)) {
+		if (columnMapping.isMandatory() && StringUtils.isBlank(dataValueString)) {
 			status.addErrorColumn(columnMapping.getFileColumn());
 			throw new ProfileImportException(ReasonCode.MissingMandatory, columnMapping.getFileColumn(), "Missing mandatory value for customer field: " + columnMapping.getDatabaseColumn());
-		} else if (StringUtils.isNotEmpty(columnMapping.getDefaultValue()) && StringUtils.isBlank(dataValue)) {
-			dataValue = columnMapping.getDefaultValue();
-			if (dataValue.startsWith("'") && dataValue.endsWith("'")) {
-				dataValue = dataValue.substring(1, dataValue.length() - 1);
+		} else if (StringUtils.isNotEmpty(columnMapping.getDefaultValue()) && StringUtils.isBlank(dataValueString)) {
+			dataValueString = columnMapping.getDefaultValue();
+			if (dataValueString.startsWith("'") && dataValueString.endsWith("'")) {
+				dataValueString = dataValueString.substring(1, dataValueString.length() - 1);
 			}
 		}
 		
 		// Decrypt encrypted csv data columns
 		if (profileFieldEncryptor != null && importProfile.getEncryptedColumns().contains(columnMapping.getDatabaseColumn())) {
 			try {
-				dataValue = profileFieldEncryptor.decryptFromBase64(dataValue, importProfile.getCompanyId());
-			} catch (Exception e) {
+				dataValueString = profileFieldEncryptor.decryptFromBase64(dataValueString, importProfile.getCompanyId());
+			} catch (@SuppressWarnings("unused") Exception e) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidEncryption, columnMapping.getFileColumn(), "Invalid encrypted value: " + dataValue);
+				throw new ProfileImportException(ReasonCode.InvalidEncryption, columnMapping.getFileColumn(), "Invalid encrypted value: " + dataValueString);
 			}
 		}
 		
 		// Validate and normalize emails
 		if ("email".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 			if (normalizeEmails) {
-				dataValue = AgnUtils.normalizeEmail(dataValue);
+				dataValueString = AgnUtils.normalizeEmail(dataValueString);
 			}
-			if (StringUtils.isNotBlank(dataValue) && !isEmailValid(dataValue)) {
+			if (StringUtils.isNotBlank(dataValueString) && !isEmailValid(dataValueString)) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidEmail, columnMapping.getFileColumn(), "Invalid email: " + dataValue);
+				throw new ProfileImportException(ReasonCode.InvalidEmail, columnMapping.getFileColumn(), "Invalid email: " + dataValueString);
 			}
 		}
 		
@@ -1634,53 +1381,53 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		if ("mailtype".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 			int mailtypeValue;
 			try {
-				mailtypeValue = Integer.parseInt(dataValue);
-			} catch (Exception e) {
+				mailtypeValue = Integer.parseInt(dataValueString);
+			} catch (@SuppressWarnings("unused") Exception e) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid non numeric mailtype: " + dataValue);
+				throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid non numeric mailtype: " + dataValueString);
 			}
 			if (mailtypeValue < 0 || mailtypeValue > ConfigService.MAXIMUM_ALLOWED_MAILTYPE) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidMailtype, columnMapping.getFileColumn(), "Invalid mailtype: " + dataValue);
+				throw new ProfileImportException(ReasonCode.InvalidMailtype, columnMapping.getFileColumn(), "Invalid mailtype: " + dataValueString);
 			}
 		}
 		
 		// Apply gender rules
 		if ("gender".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
-			Integer genderValue = importProfile.getGenderValueByFieldValue(dataValue);
+			Integer genderValue = importProfile.getGenderValueByFieldValue(dataValueString);
 			if (genderValue == null) {
-				Gender estimatedGender = Gender.getGenderByDefaultGenderMapping(dataValue);
+				Gender estimatedGender = Gender.getGenderByDefaultGenderMapping(dataValueString);
 				if (estimatedGender != Gender.UNKNOWN) {
 					genderValue = estimatedGender.getStorageValue();
 				}
 			}
 			if (genderValue == null || genderValue < 0 || genderValue > maxGenderValue) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidGender, columnMapping.getFileColumn(), "Invalid gender: " + dataValue);
+				throw new ProfileImportException(ReasonCode.InvalidGender, columnMapping.getFileColumn(), "Invalid gender: " + dataValueString);
 			}
-			dataValue = Integer.toString(genderValue);
+			dataValueString = Integer.toString(genderValue);
 		}
 		
 		// Check for non empty value for key columns
-		if (StringUtils.isBlank(dataValue) && importProfile.getKeyColumns().contains(columnMapping.getDatabaseColumn())) {
+		if (StringUtils.isBlank(dataValueString) && importProfile.getKeyColumns().contains(columnMapping.getDatabaseColumn())) {
 			status.addErrorColumn(columnMapping.getFileColumn());
 			throw new ProfileImportException(ReasonCode.MissingMandatory, columnMapping.getFileColumn(), "Missing mandatory value for customer field: " + columnMapping.getDatabaseColumn());
 		}
 
 		DbColumnType columnType = columnDataTypes.get(columnMapping.getDatabaseColumn());
 		// Check for empty and null value of data columns
-		if (StringUtils.isBlank(dataValue) && !importModeHandler.isNullValueAllowedForData(columnType, NullValuesAction.getFromInt(importProfile.getNullValuesAction()))) {
+		if (StringUtils.isBlank(dataValueString) && !importModeHandler.isNullValueAllowedForData(columnType, NullValuesAction.getFromInt(importProfile.getNullValuesAction()))) {
 			status.addErrorColumn(columnMapping.getFileColumn());
 			throw new ProfileImportException(ReasonCode.MissingMandatory, columnMapping.getFileColumn(), "Invalid NULL or empty value");
 		}
 		SimpleDataType simpleColumnDataType = columnType.getSimpleDataType();
 		if (simpleColumnDataType == SimpleDataType.Date) {
-			if (StringUtils.isBlank(dataValue)) {
+			if (StringUtils.isBlank(dataValueString)) {
 				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
-			} else if (DbUtilities.isNowKeyword(dataValue)) {
+			} else if (DbUtilities.isNowKeyword(dataValueString)) {
 				preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(new Date().getTime()));
 				if (batchValueEntry != null) {
 					batchValueEntry.add(new Timestamp(new Date().getTime()));
@@ -1689,31 +1436,36 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				try {
 					Date parsedDate;
 					if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
-						parsedDate = importDateFormat.parse(dataValue);
+						parsedDate = importDateFormat.parse(dataValueString);
+					} else if (dataValue instanceof Date) {
+						parsedDate = (Date) dataValue;
+					} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
+						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValueString);
 					} else {
-						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValue);
+						parsedDate = importDateFormat.parse(dataValueString);
 					}
+					
 					GregorianCalendar calendar = new GregorianCalendar();
 					calendar.setTime(parsedDate);
 					if (calendar.get(Calendar.YEAR) < 100) {
-						throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+						throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValueString);
 					}
 					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(parsedDate.getTime()));
 					if (batchValueEntry != null) {
 						batchValueEntry.add(new Timestamp(parsedDate.getTime()));
 					}
-				} catch (ParseException e) {
+				} catch (@SuppressWarnings("unused") ParseException e) {
 					status.addErrorColumn(columnMapping.getFileColumn());
-					throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+					throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValueString);
 				}
 			}
 		} else if (simpleColumnDataType == SimpleDataType.DateTime) {
-			if (StringUtils.isBlank(dataValue)) {
+			if (StringUtils.isBlank(dataValueString)) {
 				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
-			} else if (DbUtilities.isNowKeyword(dataValue)) {
+			} else if (DbUtilities.isNowKeyword(dataValueString)) {
 				preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(new Date().getTime()));
 				if (batchValueEntry != null) {
 					batchValueEntry.add(new Timestamp(new Date().getTime()));
@@ -1722,56 +1474,73 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				try {
 					Date parsedDate;
 					if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
-						parsedDate = importDateFormat.parse(dataValue);
+						parsedDate = importDateFormat.parse(dataValueString);
+					} else if (dataValue instanceof Date) {
+						parsedDate = (Date) dataValue;
+					} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
+						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValueString);
 					} else {
-						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValue);
+						parsedDate = importDateFormat.parse(dataValueString);
 					}
+					
 					GregorianCalendar calendar = new GregorianCalendar();
 					calendar.setTime(parsedDate);
 					if (calendar.get(Calendar.YEAR) < 100) {
-						throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+						throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValueString);
 					}
 					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(parsedDate.getTime()));
 					if (batchValueEntry != null) {
 						batchValueEntry.add(new Timestamp(parsedDate.getTime()));
 					}
-				} catch (ParseException e) {
+				} catch (@SuppressWarnings("unused") ParseException e) {
 					status.addErrorColumn(columnMapping.getFileColumn());
-					throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+					throw new ProfileImportException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValueString);
 				}
 			}
 		} else if (simpleColumnDataType == SimpleDataType.Numeric || simpleColumnDataType == SimpleDataType.Float) {
-			if (StringUtils.isBlank(dataValue)) {
+			if (StringUtils.isBlank(dataValueString)) {
 				preparedStatement.setNull(columnIndex + 1, Types.INTEGER);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
+			} else if (dataValue instanceof Number) {
+				if (simpleColumnDataType == SimpleDataType.Numeric) {
+					preparedStatement.setDouble(columnIndex + 1, ((Number) dataValue).intValue());
+					if (batchValueEntry != null) {
+						batchValueEntry.add(((Number) dataValue).intValue());
+					}
+				} else {
+					preparedStatement.setDouble(columnIndex + 1, ((Number) dataValue).doubleValue());
+					if (batchValueEntry != null) {
+						batchValueEntry.add(((Number) dataValue).doubleValue());
+					}
+				}
 			} else {
-				if (importProfile.getDecimalSeparator() != '.') {
-					dataValue = dataValue.replace(".", "").replace(Character.toString(importProfile.getDecimalSeparator()), ".");
+				if (importProfile.getDecimalSeparator() != '.' && dataValueString != null) {
+					dataValueString = dataValueString.replace(".", "").replace(Character.toString(importProfile.getDecimalSeparator()), ".");
 				}
 
-				if (dataValue.contains(".")) {
+				if (dataValueString != null && dataValueString.contains(".")) {
 					double value;
 					try {
-						value = Double.parseDouble(dataValue);
-					} catch (NumberFormatException e) {
+						value = Double.parseDouble(dataValueString);
+					} catch (@SuppressWarnings("unused") NumberFormatException e) {
 						status.addErrorColumn(columnMapping.getFileColumn());
-						throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValue);
+						throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValueString);
 					}
 					
 					if (isOracleDB()) {
 						if ("integer".equalsIgnoreCase(columnType.getTypeName())) {
 							if (value > 2147483647) {
 								status.addErrorColumn(columnMapping.getFileColumn());
-								throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+								throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValueString);
 							} else if (value < -2147483648) {
 								status.addErrorColumn(columnMapping.getFileColumn());
-								throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+								throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValueString);
 							}
 						} else if (columnType.getNumericPrecision() < Double.toString(value).length()) {
 							status.addErrorColumn(columnMapping.getFileColumn());
-							throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+							throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValueString);
 						}
 					} else {
 						if ("smallint".equalsIgnoreCase(columnType.getTypeName())) {
@@ -1802,16 +1571,16 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				} else {
 					long value;
 					try {
-						value = Long.parseLong(dataValue);
-					} catch (NumberFormatException e) {
+						value = Long.parseLong(dataValueString);
+					} catch (@SuppressWarnings("unused") NumberFormatException e) {
 						status.addErrorColumn(columnMapping.getFileColumn());
-						throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValue);
+						throw new ProfileImportException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValueString);
 					}
 					
 					if (isOracleDB()) {
 						if (columnType.getNumericPrecision() < Long.toString(value).length()) {
 							status.addErrorColumn(columnMapping.getFileColumn());
-							throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+							throw new ProfileImportException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValueString);
 						}
 					} else {
 						if ("smallint".equalsIgnoreCase(columnType.getTypeName())) {
@@ -1842,30 +1611,39 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				}
 			}
 		} else if (simpleColumnDataType == SimpleDataType.Characters) {
-			if (StringUtils.isBlank(dataValue)) {
+			if (StringUtils.isBlank(dataValueString)) {
 				preparedStatement.setNull(columnIndex + 1, Types.VARCHAR);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
-			} else if (dataValue.getBytes("UTF-8").length > columnDataTypes.get(columnMapping.getDatabaseColumn()).getCharacterLength()) {
+			} else if (dataValueString != null && dataValueString.getBytes("UTF-8").length > columnDataTypes.get(columnMapping.getDatabaseColumn()).getCharacterLength()) {
 				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.ValueTooLarge, columnMapping.getFileColumn(), "Value too large: " + dataValue);
+				throw new ProfileImportException(ReasonCode.ValueTooLarge, columnMapping.getFileColumn(), "Value too large: " + dataValueString);
 			} else {
-				preparedStatement.setString(columnIndex + 1, dataValue);
+				if (checkHtmlTags) {
+					// Check for unallowed html content
+					try {
+						HtmlChecker.checkForUnallowedHtmlTags(dataValueString, allowSafeHtmlTags);
+					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+						throw new ProfileImportException(ReasonCode.NotAllowedHtmlContent, columnMapping.getFileColumn(), "Not allowed HTML in content: " + dataValueString);
+					}
+				}
+					
+				preparedStatement.setString(columnIndex + 1, dataValueString);
 				if (batchValueEntry != null) {
-					batchValueEntry.add(dataValue);
+					batchValueEntry.add(dataValueString);
 				}
 			}
 		} else {
-			if (StringUtils.isBlank(dataValue)) {
+			if (StringUtils.isBlank(dataValueString)) {
 				preparedStatement.setNull(columnIndex + 1, Types.VARCHAR);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
 			} else {
-				preparedStatement.setString(columnIndex + 1, dataValue);
+				preparedStatement.setString(columnIndex + 1, dataValueString);
 				if (batchValueEntry != null) {
-					batchValueEntry.add(dataValue);
+					batchValueEntry.add(dataValueString);
 				}
 			}
 		}
@@ -1875,10 +1653,10 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return email != null && emailValidator.isValid(email) && email.equals(email.trim());
 	}
 
-	private File createImportedRecipients(String fileBaseName, boolean csvOutput) throws Exception {
+	private File createImportedRecipients(String fileBaseName, String dataType) {
 		String sqlPart = " FROM " + temporaryImportTableName;
 		if (temporaryImportTableName != null && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*)" + sqlPart) > 0) {
-			if (csvOutput) {
+			if (!"JSON".equalsIgnoreCase(dataType)) {
 				return createZippedCsvFile(fileBaseName, transferDbColumns, "SELECT " + StringUtils.join(transferDbColumns, ", ") + sqlPart);
 			} else {
 				return createZippedJsonFile(fileBaseName, transferDbColumns, "SELECT " + StringUtils.join(transferDbColumns, ", ") + sqlPart);
@@ -1888,13 +1666,13 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private File createInvalidRecipients(String fileBaseName, List<String> dataColumns, boolean csvOutput) throws Exception {
+	private File createInvalidRecipients(String fileBaseName, List<String> dataColumns, String dataType) {
 		List<String> exportColumns = new ArrayList<>();
 		for (int i = 0; i < dataColumns.size(); i++) {
 			exportColumns.add("data_" + (i + 1));
 		}
 		if (temporaryErrorTableName != null && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE errorfixed = 0") > 0) {
-			if (csvOutput) {
+			if (!"JSON".equalsIgnoreCase(dataType)) {
 				return createZippedCsvFile(fileBaseName, dataColumns, "SELECT " + StringUtils.join(exportColumns, ", ") + " FROM " + temporaryErrorTableName + " WHERE errorfixed = 0");
 			} else {
 				return createZippedJsonFile(fileBaseName, dataColumns, "SELECT " + StringUtils.join(exportColumns, ", ") + " FROM " + temporaryErrorTableName + " WHERE errorfixed = 0");
@@ -1915,13 +1693,13 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	 * @return
 	 * @throws Exception
 	 */
-	private File createFixedByUserRecipients(String fileBaseName, List<String> dataColumns, boolean csvOutput) throws Exception {
+	private File createFixedByUserRecipients(String fileBaseName, List<String> dataColumns, String dataType) {
 		List<String> exportColumns = new ArrayList<>();
 		for (int i = 0; i < dataColumns.size(); i++) {
 			exportColumns.add("data_" + (i + 1));
 		}
 		if (temporaryErrorTableName != null && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE errorfixed = 1") > 0) {
-			if (csvOutput) {
+			if (!"JSON".equalsIgnoreCase(dataType)) {
 				return createZippedCsvFile(fileBaseName, dataColumns, "SELECT " + StringUtils.join(exportColumns, ", ") + " FROM " + temporaryErrorTableName + " WHERE errorfixed = 1");
 			} else {
 				return createZippedJsonFile(fileBaseName, dataColumns, "SELECT " + StringUtils.join(exportColumns, ", ") + " FROM " + temporaryErrorTableName + " WHERE errorfixed = 1");
@@ -1931,7 +1709,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private File createDuplicateInCsvOrDbRecipients(String fileBaseName, boolean csvOutput) throws Exception {
+	private File createDuplicateInCsvOrDbRecipients(String fileBaseName, String dataType) {
 		String selectNumberOfDuplicatesSql = "SELECT COUNT(*) FROM " + temporaryImportTableName + " WHERE " + duplicateIndexColumn + " IS NOT NULL OR customer_id > 0";
 		if (temporaryImportTableName != null && importRecipientsDao.getResultEntriesCount(selectNumberOfDuplicatesSql) > 0) {
 			String selectDupliactesDataSql =
@@ -1942,7 +1720,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				+ " SELECT " + StringUtils.join(transferDbColumns, ", ") + ", 'in_file_and_db' AS " + duplicateIndexColumn + "_place FROM " + temporaryImportTableName + " WHERE " + duplicateIndexColumn + " IS NOT NULL AND customer_id > 0";
 			ArrayList<String> outputColumns = new ArrayList<>(transferDbColumns);
 			outputColumns.add(duplicateIndexColumn + "_place");
-			if (csvOutput) {
+			if (!"JSON".equalsIgnoreCase(dataType)) {
 				return createZippedCsvFile(fileBaseName, outputColumns, selectDupliactesDataSql);
 			} else {
 				return createZippedJsonFile(fileBaseName, outputColumns, selectDupliactesDataSql);
@@ -1952,7 +1730,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private File createZippedCsvFile(String fileBaseName, List<String> csvColumns, String sql) throws Exception {
+	private File createZippedCsvFile(String fileBaseName, List<String> csvColumns, String sql) {
 		String csvFileName = fileBaseName + ".csv";
 		String zipFileName = fileBaseName + "_" + importProfile.getCompanyId() + "_" + datasourceId + ".zip";
 		File path = AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY + "/" + importProfile.getCompanyId());
@@ -1969,7 +1747,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private File createZippedJsonFile(String fileBaseName, List<String> dataColumns, String sql) throws Exception {
+	private File createZippedJsonFile(String fileBaseName, List<String> dataColumns, String sql) {
 		String csvFileName = fileBaseName + FileUtils.JSON_EXTENSION;
 		String zipFileName = fileBaseName + "_" + importProfile.getCompanyId() + "_" + datasourceId + ".zip";
 		File path = AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY + "/" + importProfile.getCompanyId());
@@ -2003,7 +1781,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	}
 
 	private void assertEmptyFileIsAllowed() {
-		if (autoImport == null || !autoImport.isEmptyFileAllowed()) {
+		if(autoImport == null || !autoImport.isEmptyFileAllowed()) {
 			throw new ImportException(false, "autoimport.error.emptyFile", importFile.getRemoteFilePath());
 		}
 	}
@@ -2041,5 +1819,49 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	
 	public int getLinesInFile() {
 		return linesInFile;
+	}
+
+	private DataProvider getDataProvider() throws Exception {
+		switch (ImportDataType.getImportDataTypeForName(importProfile.getDatatype())) {
+			case CSV:
+				Character valueCharacter = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
+				return new CsvDataProvider(
+					importFile.getLocalFile(),
+					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
+					Charset.getCharsetById(importProfile.getCharset()).getCharsetName(),
+					Separator.getSeparatorById(importProfile.getSeparator()).getValueChar(),
+					valueCharacter,
+					valueCharacter == null ? '"' : valueCharacter,
+					false,
+					true,
+					importProfile.isNoHeaders(),
+					null);
+			case Excel:
+				return new ExcelDataProvider(
+					importFile.getLocalFile(),
+					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
+					true,
+					importProfile.isNoHeaders(),
+					null,
+					true,
+					null);
+			case JSON:
+				return new JsonDataProvider(
+					importFile.getLocalFile(),
+					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
+					null,
+					null);
+			case ODS:
+				return new OdsDataProvider(
+					importFile.getLocalFile(),
+					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
+					true,
+					importProfile.isNoHeaders(),
+					null,
+					true,
+					null);
+			default:
+				throw new RuntimeException("Invalid import datatype: " + importProfile.getDatatype());
+		}
 	}
 }

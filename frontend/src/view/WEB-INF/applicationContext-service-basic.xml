@@ -62,11 +62,12 @@
     </bean>
     
 	<bean id="UserGroupService" class="com.agnitas.emm.core.usergroup.service.impl.UserGroupServiceImpl">
-		<property name="userGroupDao" ref="AdminGroupDao" />
-		<property name="companyService" ref="ComCompanyService" />
-		<property name="conversionService" ref="conversionService" />
-		<property name="permissionFilter" ref="PermissionFilter" />
-		<property name="permissionService" ref="PermissionService" />
+		<constructor-arg name="configService" ref="ConfigService" />
+		<constructor-arg name="userGroupDao" ref="AdminGroupDao" />
+		<constructor-arg name="companyService" ref="ComCompanyService" />
+		<constructor-arg name="conversionService" ref="conversionService" />
+		<constructor-arg name="permissionFilter" ref="PermissionFilter" />
+		<constructor-arg name="permissionService" ref="PermissionService" />
     </bean>
     
     <bean id="SalutationService" class="com.agnitas.emm.core.salutation.service.impl.SalutationServiceImpl">
@@ -147,11 +148,6 @@
         <property name="bindingModelValidator" ref="bindingModelValidator"/>
     </bean>
 
-	<bean id="bindingBulkService" class="org.agnitas.emm.core.binding.service.impl.BindingBulkServiceImpl">
-		<property name="bindingService" ref="BindingService" />
-		<property name="bindingEntryDao" ref="BindingEntryDao" />
-	</bean>
-
 <!-- ============================================================================================================================== Blacklist -->
 	<bean id="BlacklistService" class="org.agnitas.emm.core.blacklist.service.impl.BlacklistServiceImpl">
 		<property name="blacklistDao" ref="BlacklistDao" />
@@ -220,14 +216,6 @@
 	<bean id="ClientService" class="com.agnitas.emm.core.mobile.service.impl.ClientServiceImpl">
 		<property name="clientDao" ref="ClientDao" />
 	</bean>
-
-<!-- ============================================================================================================================== Download -->
-	<bean id="DownloadService" class="org.agnitas.emm.core.download.service.DownloadServiceImpl" />
-
-<!-- ============================================================================================================================== SFTP -->
-	<bean id="SftpService" class="com.agnitas.service.impl.ComSftpServiceImpl">
-		<property name="sFtpHelperFactory" ref="SFtpHelperFactory" />
-	</bean>
 	
 	<!-- ============================================================================================================================== CompanySettings -->
 	<bean id="CompanySettingsDtoFactory" class="com.agnitas.emm.core.company.factory.impl.CompanySettingsDtoFactoryImpl">
@@ -275,6 +263,7 @@
 		<property name="embeddedClickStatDao" ref="EmbeddedClickStatDao" />
 		<property name="previewFactory" ref="PreviewFactory" />
 		<property name="configService" ref="ConfigService" />
+		<property name="ecsService" ref="EcsService" />
 	</bean>
 
 <!-- ============================================================================================================================== EMM actions -->
@@ -287,6 +276,8 @@
         <property name="conversionService" ref="conversionService"/>
         <property name="actionImporter" ref="ActionImporter"/>
         <property name="actionExporter" ref="ActionExporter"/>
+		<property name="userformService" ref="userformService"/>
+		<property name="mailingService" ref="MailingService"/>
     </bean>
 
 <!-- ============================================================================================================================== EMM action operations -->
@@ -404,13 +395,6 @@
 
 <!-- ============================================================================================================================== Import -->
 
-	<bean id="ImportWizardService" class="org.agnitas.service.impl.ImportWizardServiceImpl">
-		<property name="blacklistService" ref="BlacklistService" />
-        <property name="configService" ref="ConfigService" />
-		<property name="uploadService" ref="uploadService"/>
-	</bean>
-
-
 	<bean id="ProfileImportReporter" class="org.agnitas.web.ProfileImportReporter">
 		<property name="recipientsReportService" ref="RecipientsReportService" />
 		<property name="javaMailService" ref="JavaMailService" />
@@ -501,6 +485,8 @@
         <property name="userActivityLogService" ref="UserActivityLogService"/>
 		<property name="copyMailingService" ref="CopyMailingService"/>
         <property name="mediatypesDao" ref="MediatypesDao"/>
+        <!-- Self injection for transactions -->
+        <property name="selfReference" ref="MailingService"/>
 	</bean>
 
 <!-- ============================================================================================================================== Maildrop status -->
@@ -517,12 +503,10 @@
 <!-- ============================================================================================================================== Mailing component -->
 	<bean id="mailingComponentService" class="com.agnitas.emm.core.components.service.impl.ComMailingComponentsServiceImpl">
 		<property name="mimeTypeService" ref="MimeTypeService" />
-		<property name="sftpService" ref="SftpService" />
 		<property name="mailingDao" ref="MailingDao" />
         <property name="mailingComponentDao" ref="MailingComponentDao" />
 		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
 		<property name="configService" ref="ConfigService" />
-		<property name="uploadDao" ref="UploadDao" />
 		<property name="componentValidationService" ref="ComponentValidationService" />
         <property name="conversionService" ref="conversionService"/>
     </bean>
@@ -543,13 +527,6 @@
 	<bean id="MailingParameterService" class="com.agnitas.emm.core.mailing.service.impl.ComMailingParameterServiceImpl">
 		<property name="mailingParameterDao" ref="MailingParameterDao" />
 		<property name="mailingParameterLogService" ref="mailingParameterLogService"/>
-	</bean>
-
-<!-- ============================================================================================================================== Maildrop -->
-	<bean id="MaildropService" class="com.agnitas.emm.core.maildrop.service.MaildropServiceImpl">
-		<property name="maildropStatusDao" ref="MaildropStatusDao" />
-		<property name="mailingDao" ref="MailingDao" />
-
 	</bean>
 
 <!-- ============================================================================================================================== Mailinglists -->
@@ -623,7 +600,6 @@
 		<property name="profileFieldDao" ref="ProfileFieldDao"/>
         <property name="profileFieldValidationService" ref="ProfileFieldValidationService"/>
         <property name="columnInfoService" ref="ColumnInfoService" />
-        <property name="targetEqlQueryBuilder" ref="TargetEqlQueryBuilder"/>
 		<property name="recipientQueryBuilder" ref="RecipientQueryBuilder"/>
 		<property name="recipientWorkerFactory" ref="RecipientWorkerFactory"/>
 		<property name="adminService" ref="AdminService"/>
@@ -637,20 +613,16 @@
 		<property name="eqlFacade" ref="EqlFacade" />
     </bean>
 
-	<bean id="recipientBulkService" class="org.agnitas.emm.core.recipient.service.impl.RecipientBulkServiceImpl">
-		<property name="recipientDao" ref="RecipientDao" />
-		<property name="recipientService" ref="recipientService" />
-		<property name="validator" ref="modelValidator" />
-		<property name="recipientFactory" ref="RecipientFactory" />
-		<property name="configService" ref="ConfigService" />
-		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
-	</bean>
-
 <!-- ============================================================================================================================== Report -->
 	<bean id="BirtReportService" class="com.agnitas.emm.core.birtreport.service.impl.ComBirtReportServiceImpl">
 		<property name="birtReportDao" ref="BirtReportDao" />
+		<property name="campaignDao" ref="CampaignDao" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="dataSource" ref="dataSource" />
+		<property name="conversionService" ref="conversionService" />
+		<property name="birtStatisticsService" ref="BirtStatisticsService" />
+		<property name="birtReportFileService" ref="BirtReportFileService"/>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Server Prio -->
@@ -718,6 +690,7 @@
 		<property name="eqlValidatorService" ref="eqlValidatorService"/>
 		<property name="eqlReferenceItemsExtractor" ref="eqlReferenceItemsExtractor"/>
 		<property name="targetGroupDependencyService" ref="TargetGroupDependencyService"/>
+		<property name="mailingContentService" ref="MailingContentService" />
 	</bean>
 
 	<bean id="eqlValidatorService" class="com.agnitas.emm.core.target.eql.EqlValidatorServiceImpl">
@@ -766,22 +739,6 @@
 		<constructor-arg  ref="RestfulUserActivityLogDao" />
 		<constructor-arg  ref="SoapUserActivityLogDao" />
 	</bean>
-
-<!-- ============================================================================================================================== User form -->
-	<bean id="userformService" class="com.agnitas.emm.core.userform.service.impl.ComUserformServiceImpl">
-		<property name="userFormDao" ref="UserFormDao" />
-        <property name="emmActionDao" ref="EmmActionDao"/>
-		<property name="conversionService" ref="conversionService"/>
-		<property name="trackableLinkService" ref="FormTrackableLinkService"/>
-        <property name="userFormExporter" ref="UserFormExporter"/>
-		<property name="configService" ref="ConfigService"/>
-		<property name="uidService" ref="ExtensibleUIDService"/>
-		<property name="comRecipientDao" ref="RecipientDao"/>
-		<property name="profileFieldService" ref="ProfileFieldService"/>
-		<property name="companyTokenService" ref="CompanyTokenService" />
-		<property name="recipientService" ref="recipientService" />
-        <property name="userFormImporter" ref="UserFormImporter"/>
-    </bean>
 
 <!-- ============================================================================================================================== Velocity -->
 	<bean id="ScriptHelperService" class="com.agnitas.emm.core.scripthelper.service.ScriptHelperService">
@@ -868,6 +825,7 @@
 				<ref bean="Md5ProfileFieldHashTag" />
 				<ref bean="DateHashTag" />
 				<ref bean="AlterHashTag" />
+				<ref bean="AgeHashTag" />
 				<ref bean="Base64urlProfileFieldEncodingHashTag" />
 			</list>
 		</property>
@@ -879,9 +837,6 @@
 	</bean>
 
 <!-- ============================================================================================================================== Misc. -->
-	<bean id="imageHelperService" class="org.agnitas.emm.core.imagehelper.ImageHelperService">
-		<property name="configService" ref="ConfigService" />
-	</bean>
 
 	<bean id="linkcheckService" class="org.agnitas.service.LinkcheckService" >
 		<property name="configService" ref="ConfigService" />
@@ -948,8 +903,6 @@
 	<bean id="ProfileFieldService" class="com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl">
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
 		<property name="columnInfoService" ref="ColumnInfoService"/>
-		<property name="workflowService" ref="WorkflowService"/>
-		<property name="targetService" ref="targetService"/>
  	</bean>
 
 	<bean id="ProfileFieldValidationService" class="com.agnitas.emm.core.profilefields.service.impl.ProfileFieldValidationServiceImpl">
@@ -1094,16 +1047,6 @@
 	<bean id="MobilephoneNumberWhitelist" class="com.agnitas.emm.mobilephone.service.MobilephoneNumberWhitelistImpl">
 		<property name="mobilephoneNumberWhitelistDao" ref="MobilephoneNumberWhitelistDao" />
 	</bean>
-
-<!-- ============================================================================================================================== Upload -->
-	<bean id="uploadService" class="com.agnitas.emm.core.upload.service.impl.UploadServiceImpl">
-		<property name="uploadDao" ref="UploadDao" />
-		<property name="adminService" ref="AdminService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="javaMailService" ref="JavaMailService" />
-        <property name="conversionService" ref="conversionService"/>
-        <property name="configService" ref="ConfigService"/>
-    </bean>
     
     <bean id="PermissionService" class="com.agnitas.emm.core.permission.service.PermissionServiceImpl">
     	<property name="permissionDao" ref="PermissionDao" />
@@ -1164,7 +1107,12 @@
 		<property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
 	
-	<bean id="RestfulServiceHandler_blacklist" class="com.agnitas.emm.restful.blacklist.BlacklistRestfulServiceHandler">
+	<bean id="RestfulServiceHandler_blacklist" class="com.agnitas.emm.restful.blocklist.BlacklistRestfulServiceHandler">
+		<property name="userActivityLogDao" ref="RestfulUserActivityLogDao"/>
+		<property name="blacklistDao" ref="BlacklistDao" />
+	</bean>
+	
+	<bean id="RestfulServiceHandler_blocklist" class="com.agnitas.emm.restful.blocklist.BlocklistRestfulServiceHandler">
 		<property name="userActivityLogDao" ref="RestfulUserActivityLogDao"/>
 		<property name="blacklistDao" ref="BlacklistDao" />
 	</bean>
@@ -1212,7 +1160,7 @@
 		<property name="dynamicTagDao" ref="DynamicTagDao" />
 		<property name="targetDao" ref="TargetDao" />
 		<property name="thumbnailService" ref="ThumbnailService" />
-		<property name="mailingContentService" ref="mailingContentService" />
+		<property name="mailingContentService" ref="MailingContentService" />
 		<property name="maildropService" ref="MaildropService" />
 	</bean>
 	
@@ -1222,6 +1170,13 @@
 		<constructor-arg ref="MailingDao"/>
 		<constructor-arg ref="MailingSummaryDataSetFactory"/>
 		<constructor-arg ref="MailinglistDao"/>
+	</bean>
+	
+	<bean id="RestfulServiceHandler_workflow" class="com.agnitas.emm.restful.workflow.WorkflowRestfulServiceHandler">
+		<constructor-arg ref="ConfigService"/>
+		<constructor-arg ref="RestfulUserActivityLogDao"/>
+		<constructor-arg ref="WorkflowService"/>
+		<constructor-arg ref="WorkflowActivationService"/>
 	</bean>
 	
 	<bean id="RestfulQuotaService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
@@ -1269,14 +1224,6 @@
 		<constructor-arg ref="AdminService" />
 		<constructor-arg ref="RecipientFieldService" />
 		<constructor-arg ref="RestfulUserActivityLogDao" />
-	</bean>
-	
-	<bean id="RestfulServiceHandler_profilefield_old" class="com.agnitas.emm.restful.profilefield.ProfilefieldRestfulServiceHandlerOld">
-		<property name="userActivityLogDao" ref="RestfulUserActivityLogDao"/>
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="profileFieldService" ref="ProfileFieldService" />
-		<property name="adminService" ref="AdminService" />
-		<property name="profileFieldValidationService" ref="ProfileFieldValidationService" />
 	</bean>
 	
 	<bean id="RestfulServiceHandler_form" class="com.agnitas.emm.restful.form.FormRestfulServiceHandler">

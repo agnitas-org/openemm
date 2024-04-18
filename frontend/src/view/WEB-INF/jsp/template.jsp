@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="org.agnitas.dao.LicenseType"%>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
 <%@ page import="com.agnitas.util.ComHelpUtil" %>
@@ -210,7 +211,12 @@
 
                         <%
                         // Show Version on non-live servers only (and on all OpenEMM)
-                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance) || "Inhouse".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.System_License_Type)) || ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
+                        LicenseType licenseType = LicenseType.getLicenseTypeByID(ConfigService.getInstance().getValue(ConfigValue.System_License_Type));
+                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)
+                        		|| licenseType == LicenseType.Inhouse
+                                || licenseType == LicenseType.OpenEMM
+                                || licenseType == LicenseType.OpenEMM_Plus
+                        		|| ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
                         %>
                             <p class="version-sign">
                                 <strong>

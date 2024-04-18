@@ -424,7 +424,7 @@
 		<url-pattern>/v.html</url-pattern>
 	</servlet-mapping>
 
-	<!-- File download -->
+	<!-- File download
 	<servlet>
 		<servlet-name>FileDownloadServlet</servlet-name>
 		<servlet-class>org.agnitas.emm.core.download.web.FileDownloadServlet</servlet-class>
@@ -433,6 +433,7 @@
 		<servlet-name>FileDownloadServlet</servlet-name>
 		<url-pattern>/download</url-pattern>
 	</servlet-mapping>
+	-->
 
 	<!-- Welcome File -->
 	<welcome-file-list>
@@ -461,11 +462,11 @@
 	<!-- Error Pages -->
 	<error-page>
 		<exception-type>jakarta.servlet.ServletException</exception-type>
-		<location>/error.action</location>
+		<location>/error.action?allowRedesigned=true</location>
 	</error-page>
 	<error-page>
 		<exception-type>java.lang.Exception</exception-type>
-		<location>/error.action</location>
+		<location>/error.action?allowRedesigned=true</location>
 	</error-page>
 	<error-page>
 		<error-code>404</error-code>

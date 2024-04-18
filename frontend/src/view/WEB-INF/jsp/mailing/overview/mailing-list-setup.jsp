@@ -63,9 +63,11 @@
     </c:set>
 </emm:ShowByPermission>
 
-<c:if test="${isNewItemAvailable}">
-    <c:url var="createNewItemUrl2" value="${newItemUrl}" scope="request"/>
-    <c:set var="createNewItemLabel2" scope="request">
-        <mvc:message code="${newItemLabelKey}"/>
-    </c:set>
-</c:if>
+<emm:HideByPermission token="mailing.content.readonly">
+    <c:if test="${isNewItemAvailable}">
+        <c:url var="createNewItemUrl2" value="${newItemUrl}" scope="request"/>
+        <c:set var="createNewItemLabel2" scope="request">
+            <mvc:message code="${newItemLabelKey}"/>
+        </c:set>
+    </c:if>
+</emm:HideByPermission>

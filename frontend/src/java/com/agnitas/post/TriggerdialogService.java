@@ -73,4 +73,6 @@ public interface TriggerdialogService {
 	TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByMailingID(int mailingID) throws Exception;
 
 	List<LightweightMailing> getMailingsDependentOnProfileField(String column, int companyId);
+
+	void deletePlannedTriggerdialogDeliveries(int mailingID);
 }

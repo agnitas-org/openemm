@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.emm.core.components.service.MailingSendService;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingBase;
@@ -57,6 +58,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.agnitas.beans.Admin;
@@ -83,6 +85,7 @@ import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
@@ -99,6 +102,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     private static final Logger logger = LogManager.getLogger(ComMailingBaseServiceImpl.class);
 
+    private ComMailingBaseService selfReference;
     private ComMailingDao mailingDao;
     private GridServiceWrapper gridServiceWrapper;
     protected ComRecipientDao recipientDao;
@@ -117,6 +121,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     private MailinglistApprovalService mailinglistApprovalService;
     private ConfigService configService;
     private MailingSendService mailingSendService;
+    private MailingService mailingService;
 
     @Override
     public boolean isMailingExists(int mailingId, int companyId) {
@@ -148,27 +153,52 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
+    @Transactional
     public void bulkDelete(Set<Integer> mailingsIds, int companyId) {
         for (int mailingId : mailingsIds) {
-            deleteMailing(mailingId, companyId);
+            selfReference.deleteMailing(mailingId, companyId);
         }
     }
 
     @Override
+    @Transactional
     public boolean deleteMailing(int mailingId, int companyId) {
-        if (mailingDao.markAsDeleted(mailingId, companyId)) {
-            if (mailingSendService.cancelMailingDelivery(mailingId, companyId)) {
-                mailingDao.updateStatus(companyId, mailingId, MailingStatus.CANCELED, null);
-            }
+        if (!tryDeactivateMailing(mailingId, companyId) || !mailingDao.markAsDeleted(mailingId, companyId)) {
+            return false;
+        }
+        undoDynContentDao.deleteUndoDataForMailing(mailingId);
+        undoMailingComponentDao.deleteUndoDataForMailing(mailingId);
+        undoMailingDao.deleteUndoDataForMailing(mailingId);
+        return true;
+    }
 
-            undoDynContentDao.deleteUndoDataForMailing(mailingId);
-            undoMailingComponentDao.deleteUndoDataForMailing(mailingId);
-            undoMailingDao.deleteUndoDataForMailing(mailingId);
+    private boolean tryDeactivateMailing(int mailingId, int companyId) {
+        try {
+            return deactivateMailing(mailingId, companyId);
+        } catch (Exception e) {
+            logger.error("Can't deactivate mailing id = {}", mailingId, e);
+            return false;
+        }
+    }
 
+    private boolean deactivateMailing(int mailingId, int companyId) throws Exception {
+        Mailing mailing = getMailing(companyId, mailingId);
+        maildropService.isActiveMailing(mailingId, companyId);
+        if (!mailingSendService.isMailingActiveOrSent(mailing)) {
             return true;
         }
-
-        return false;
+        switch (mailing.getMailingType()) {
+            case DATE_BASED:		// $FALL-THROUGH$
+            case ACTION_BASED:
+                return mailingSendService.deactivateMailing(mailing, companyId, false);
+            case INTERVAL:
+                return mailingSendService.deactivateIntervalMailing(mailing);
+            default:
+            	if(!this.mailingService.isDeliveryComplete(companyId, mailing.getId())) {
+            		mailingSendService.cancelMailingDelivery(mailing.getId(), companyId);
+            	}
+        		return true;
+        }
     }
 
     @Override
@@ -487,8 +517,10 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
         // text template substitution in case of template completely empty
         String textTemplate = componentTextTemplate.getEmmBlock();
+        String defaultTextContent = SafeString.getLocaleString("mailing.textversion.default", admin.getLocale());
+
         if (StringUtils.isBlank(textTemplate)) {
-            componentTextTemplate.setEmmBlock(SafeString.getLocaleString("mailing.textversion.default", admin.getLocale()), "text/plain");
+            componentTextTemplate.setEmmBlock(defaultTextContent, "text/plain");
             popups.warning("mailing.textversion.empty");
 
             return;
@@ -527,28 +559,46 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                     return;
                 }
             } else {
-                for (DynamicTagContent tagContent : textTag.getDynContent().values()) {
-                    if (StringUtils.isNotBlank(tagContent.getDynContent())) {
-                        return;
-                    }
+                if (isTextTagContainsFilledTextBlockForAllRecipients(textTag)) {
+                    return;
                 }
             }
 
-            // text module substitution
             if (!dynamicTags.hasNext()) {
-                DynamicTagContent block = dynamicTagContentFactory.newDynamicTagContent();
-                block.setCompanyID(admin.getCompanyID());
-                block.setDynContent(SafeString.getLocaleString("mailing.textversion.default", admin.getLocale()));
-                block.setDynOrder(textTag.getMaxOrder() + 1);
-                block.setDynNameID(textTag.getId());
-                block.setMailingID(textTag.getMailingID());
-
-                textTag.addContent(block);
+                addDefaultTextVersionToTextDynTag(textTag, defaultTextContent, admin.getCompanyID());
                 popups.warning("mailing.textversion.empty");
-
                 return;
             }
         }
+    }
+
+    private void addDefaultTextVersionToTextDynTag(DynamicTag textTag, String defaultTextContent, int companyId) {
+        List<DynamicTagContent> textTagBlocksForAllRecipients = getTextTagBlocksForAllRecipients(textTag);
+        if (CollectionUtils.isEmpty(textTagBlocksForAllRecipients)) {
+            textTag.addContent(getNewTextBlockForAllRecipients(textTag, defaultTextContent, companyId));
+        } else {
+            textTagBlocksForAllRecipients.get(0).setDynContent(defaultTextContent);
+        }
+    }
+
+    private DynamicTagContent getNewTextBlockForAllRecipients(DynamicTag textTag, String defaultTextContent, int companyId) {
+        DynamicTagContent block = dynamicTagContentFactory.newDynamicTagContent();
+        block.setCompanyID(companyId);
+        block.setDynContent(defaultTextContent);
+        block.setDynOrder(textTag.getMaxOrder() + 1);
+        block.setDynNameID(textTag.getId());
+        block.setMailingID(textTag.getMailingID());
+        return block;
+    }
+
+    private boolean isTextTagContainsFilledTextBlockForAllRecipients(DynamicTag textTag) {
+        return getTextTagBlocksForAllRecipients(textTag).stream()
+                .anyMatch(content -> StringUtils.isNotBlank(content.getDynContent()));
+    }
+
+    private List<DynamicTagContent> getTextTagBlocksForAllRecipients(DynamicTag textTag) {
+        return textTag.getDynContent().values().stream()
+                .filter(content -> content.getTargetID() == 0).collect(Collectors.toList());
     }
 
     @Override
@@ -561,8 +611,8 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public List<MailingBase> getMailingsForComparison(Admin admin) {
-        return mailingDao.getMailingsForComparation(admin);
+    public PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
+        return mailingDao.getMailingsForComparison(filter, admin);
     }
 
     @Override
@@ -742,6 +792,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Required
+    public void setSelfReference(ComMailingBaseService comMailingBaseService) {
+        this.selfReference = comMailingBaseService;
+    }
+
+    @Required
     public void setDynamicTagContentDao(DynamicTagContentDao dynamicTagContentDao) {
         this.dynamicTagContentDao = dynamicTagContentDao;
     }
@@ -872,5 +927,9 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 	@Override
 	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded) {
 		return maildropService.getMailingsSentBetween(companyID, startDateIncluded, endDateExcluded);
+	}
+	
+	public final void setMailingService(final MailingService mailingService) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailing service");
 	}
 }

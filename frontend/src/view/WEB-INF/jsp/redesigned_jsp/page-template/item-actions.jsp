@@ -7,7 +7,7 @@
     <c:set var="item" value="${item.value}" />
 
     <c:if test="${item['dropDownItems'] eq null || (item['dropDownItems'] ne null && fn:length(item['dropDownItems']) gt 0)}">
-        <li class="<c:if test="${item['dropDownItems'] ne null}">dropdown</c:if><c:if test="${item['cls'] ne null}">${item['cls']}</c:if>">
+        <li class="<c:if test="${item['dropDownItems'] ne null}">dropdown </c:if><c:if test="${item['cls'] ne null}">${item['cls']}</c:if>" ${item['parentExtraAttributes']}>
             <c:set var="content">
                 <c:if test="${not empty item['iconBefore']}">
                     <i class="icon ${item['iconBefore']}"></i>
@@ -66,7 +66,7 @@
                                     </c:if>
                                     <c:if test="${itemOption['url'] ne null}">
                                         <li ${itemOption['disabled'] ? "class='disabled'" : ""} ${not empty itemOption['tooltip'] ? "data-tooltip='".concat(itemOption['tooltip']).concat("'") : ""}>
-                                            <a tabindex="-1" href="${itemOption['url']}" ${itemOption['extraAttributes']} class="dropdown-item ${itemOption['selected'] ? 'selected' : '?'}">
+                                            <a tabindex="-1" href="${itemOption['url']}" ${itemOption['extraAttributes']} class="dropdown-item ${itemOption['cls']} ${itemOption['selected'] ? 'selected' : ''}" ${item['parentExtraAttributes']}>
                                                 <c:if test="${itemOption['icon'] ne null}">
                                                     <i class="icon ${itemOption['icon']}"></i>
                                                 </c:if>

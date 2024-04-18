@@ -34,3 +34,8 @@ INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timesta
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('22.01.436', CURRENT_USER, CURRENT_TIMESTAMP);
+	
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('23.07.137', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('23.07.138', CURRENT_USER, CURRENT_TIMESTAMP);

@@ -16,11 +16,13 @@ import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface RecipientsReportService {
 
@@ -38,7 +40,12 @@ public interface RecipientsReportService {
 
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
+    PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
+
     PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
+
+    @Transactional
+    PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin);
 
     RecipientsReport getReport(int companyId, int reportId);
     

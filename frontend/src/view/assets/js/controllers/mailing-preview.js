@@ -1,5 +1,8 @@
 AGN.Lib.Controller.new('mailing-preview', function() {
     var Form = AGN.Lib.Form,
+        Messages = AGN.Lib.Messages,
+        Helpers = AGN.Lib.Helpers,
+        Select = AGN.Lib.Select,
         Storage = AGN.Lib.Storage;
 
     var RECIPIENT_MODE, TARGET_MODE;
@@ -129,13 +132,16 @@ AGN.Lib.Controller.new('mailing-preview', function() {
       controlAddToTestRunBtnVisibility();
     }
 
-    function controlTestRunContainerVisibility(hide) {
+    this.addAction({'click' : 'change-preview-customer-options'}, function() {
+      controlAddToTestRunBtnVisibility();
+    });
+
+  function controlTestRunContainerVisibility() {
       const $testRecipients = getTestRecipients$();
       if (!$testRecipients.exists()) {
           return;
       }
-
-      const hidden = $testRecipients.val().length <= 0 || !!hide;
+      const hidden = $testRecipients.val().length <= 0;
       $('#personalized-test-run-container').toggleClass('hidden', hidden);
     }
 
@@ -145,26 +151,59 @@ AGN.Lib.Controller.new('mailing-preview', function() {
 
     function controlAddToTestRunBtnVisibility() {
       const previewRecipientEmail = getEmailOfCurrentPreviewRecipient();
-      const $testRunRecipients = getTestRecipients$();
-      const isVisible = $testRunRecipients.find('option[value="' + previewRecipientEmail + '"]').length
-        && $testRunRecipients.val().indexOf(previewRecipientEmail) == -1;
+      const isVisible = Select.get(getTestRecipients$()).getSelectedValue().indexOf(previewRecipientEmail) === -1;
       $('[data-action="add-to-personalized-test-run"]').toggle(!!isVisible);
     }
 
   function getEmailOfCurrentPreviewRecipient() {
+    if (isRecipientChosenByInput()) {
+      return $('#customerEmail').val();
+    }
     return $('[name="customerATID"]').find(':selected').data('email');
   }
 
-  this.addAction({'change': 'change-personalized-test-recipients'}, function() {
+  function isRecipientChosenByInput() {
+    return $('[name="useCustomerEmail"]:checked').val() !== 'false';
+  }
+    
+  function validateEmailOfCurrentPreviewRecipient() {
+    return new Promise(function (resolve, reject) {
+      var email = getEmailOfCurrentPreviewRecipient();
+      if (!Helpers.isValidEmail(email)) {
+        Messages(t('defaults.error'), t('defaults.invalidEmail'), 'alert');
+        return;
+      }
+      $.get(AGN.url("/mailing/preview/" + MAILING_ID + "/isRecipient.action"), {email})
+        .done(function (resp)  {
+          if (resp.success) {
+            resolve(email);
+          } else {
+            AGN.Lib.JsonMessages(resp.popups, true);
+            reject();
+          }
+        });
+      });
+  }
+
+  this.addAction({
+    input: 'change-personalized-test-recipients',
+    change: 'change-personalized-test-recipients'
+  }, function() {
     controlTestRunVisibility();
   });
 
-  this.addAction({'click': 'add-to-personalized-test-run'}, function() {
-    const email = getEmailOfCurrentPreviewRecipient();
-    const $testRecipients = getTestRecipients$();
-    $testRecipients.val(_.union($testRecipients.val(), [email]));
-    AGN.Lib.CoreInitializer.run("select", $testRecipients);
-    controlTestRunVisibility();
+  this.addAction({'click': 'add-to-personalized-test-run'}, function () {
+    validateEmailOfCurrentPreviewRecipient()
+      .then(function (email) {
+        const $testRecipients = getTestRecipients$();
+        const testRecipients = Select.get($testRecipients);
+        if (!testRecipients.hasOption(email)) {
+          $testRecipients.append($('<option>', {value: email, text: email}));
+        }
+        $testRecipients.val(_.union($testRecipients.val(), [email]));
+        AGN.Lib.CoreInitializer.run("select", $testRecipients);
+        controlTestRunVisibility();
+      })
   });
 
     this.addAction({'click': 'personalized-test-run'}, function() {
@@ -176,7 +215,7 @@ AGN.Lib.Controller.new('mailing-preview', function() {
           if (resp && resp.success === true) {
             testRecipients$.val([]);
             AGN.Lib.CoreInitializer.run("select", testRecipients$);
-            controlTestRunContainerVisibility(true);
+            controlTestRunContainerVisibility();
           }
           AGN.Lib.JsonMessages(resp.popups, true);
         })

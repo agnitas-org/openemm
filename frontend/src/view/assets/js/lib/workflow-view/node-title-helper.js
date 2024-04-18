@@ -300,6 +300,7 @@
 
     //start on date
     if (Def.constants.startTypeDate === startType) {
+      // NOTE: after change something please backport change to the backend code
       title = t('workflow.start.start_date') + ':\n' + getDateDescription(data.date, data.hour, data.minute);
     }
     //start on event

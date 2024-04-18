@@ -47,6 +47,8 @@ public interface MailinglistService {
 
 	String getMailinglistName(int mailinglistId, int companyId);
 
+    List<String> getMailinglistNames(Set<Integer> mailinglistIds, int companyId);
+
 	List<Mailinglist> getAllMailingListsNames(int companyId);
 	
 	int saveMailinglist(int companyId, MailinglistDto mailinglist) throws ShortnameTooShortException;

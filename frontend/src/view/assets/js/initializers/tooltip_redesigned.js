@@ -38,22 +38,16 @@ Use `data-tooltip-src` attribute to generate a tooltip content (title option) fr
 ```
 */
 
-
-(function(){
-
+AGN.Lib.CoreInitializer.new('tooltip', function($scope = $(document)) {
   const Tooltip = AGN.Lib.Tooltip;
+  const HelpTooltip = AGN.Lib.HelpTooltip;
 
-  AGN.Lib.CoreInitializer.new('tooltip', function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
+  $('.tooltip').remove();
 
-    $('.tooltip').remove();
-
-    $scope.find('[data-tooltip], [data-tooltip-help]').each(function() {
-      const $e = $(this);
-      Tooltip.create($e, Tooltip.options($e));
-    });
+  $scope.find('[data-tooltip]').each(function() {
+    const $e = $(this);
+    Tooltip.create($e, Tooltip.options($e));
   });
 
-})();
+  $scope.all('[data-tooltip-help]').each((i, el) => new HelpTooltip($(el)));
+});

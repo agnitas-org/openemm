@@ -377,6 +377,14 @@
                                                         </div>
                                                     </li>
                                                 </c:if>
+                                                <li class="list-group-item" style="border: none;">
+                                                    <div class="checkbox">
+                                                        <label>
+                                                            <mvc:checkbox path="cleanupTestsBeforeDelivery" />
+                                                            <mvc:message code="mailing.delivery.cleanup" />
+                                                        </label>
+                                                    </div>
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>

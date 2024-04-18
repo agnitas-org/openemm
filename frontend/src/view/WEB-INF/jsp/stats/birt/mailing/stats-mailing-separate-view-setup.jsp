@@ -32,7 +32,6 @@
 <c:set var="BOUNCES_TYPE" value="<%= StatisticType.BOUNCES %>"/>
 <c:set var="BENCHMARK_TYPE" value="<%= StatisticType.BENCHMARK %>"/>
 <c:set var="TRACKING_POINT_TYPE" value="<%= StatisticType.TRACKING_POINT_WEEK_OVERVIEW %>"/>
-<c:set var="SOCIAL_NETWORKS_TYPE" value="<%= StatisticType.SOCIAL_NETWORKS %>"/>
 <c:set var="SIMPLE_TRACKING_POINT_TYPE" value="<%= StatisticType.SIMPLE_TRACKING_POINT %>"/>
 <c:set var="NUM_TRACKING_POINT_TYPE" value="<%= StatisticType.NUM_TRACKING_POINT_WEEK_OVERVIEW %>"/>
 <c:set var="ALPHA_TRACKING_POINT_TYPE" value="<%= StatisticType.ALPHA_TRACKING_POINT %>"/>

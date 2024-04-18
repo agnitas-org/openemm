@@ -165,7 +165,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="repeat"><mvc:message code="settings.RestfulUser.Confirm"/> *</label>
+                        <label class="control-label" for="repeat"><mvc:message code="settings.admin.Confirm"/> *</label>
                     </div>
                     <div class="col-sm-8">
                         <div class="input-group">

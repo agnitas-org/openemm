@@ -1,17 +1,15 @@
 
 <script id="dashboard-tile-empty" type="text/x-mustache-template">
     <div class="tile draggable-tile dashboard-plus-tile">
-        <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
-            <div class="tile-controls">
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
-        </div>
-        <div class="tile-body">
-            <button type="button" class="btn" data-action="select-tile">
-                <i class="icon icon-plus"></i>
-            </button>
-        </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
+    </div>
+</script>
+
+<script id="dashboard-tile-empty-overlay" type="text/x-mustache-template">
+    <div class="tile-overlay tile-overlay--hidden">
+        <button type="button" class="btn btn-lg btn-sm-horizontal btn-primary" data-action="select-tile">
+            <i class="icon icon-plus"></i>
+            <span class="text"><mvc:message code="default.tile.add" /></span>
+        </button>
     </div>
 </script>

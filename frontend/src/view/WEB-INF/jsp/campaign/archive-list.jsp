@@ -89,7 +89,7 @@
                     </display:column>
 
                     <display:column class="table-actions">
-                        <emm:ShowByPermission token="campaign.change">
+                        <emm:ShowByPermission token="campaign.show">
                             <c:url var="viewLink" value="/mailing/archive/${campaign.id}/view.action"/>
                             <a href="${viewLink}" class="hidden js-row-show"></a>
                         </emm:ShowByPermission>

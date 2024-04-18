@@ -14,10 +14,10 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 
 public enum PostalField {
 
-    COUNTRY("GWUA.post.country", ConfigValue.DefaultCountryField),
-    CITY("GWUA.post.city", ConfigValue.DefaultCityField),
-    STREET("GWUA.post.street", ConfigValue.DefaultStreetField),
-    CODE("GWUA.post.code", ConfigValue.DefaultPostalCodeField);
+    COUNTRY("company.settings.post.country", ConfigValue.DefaultCountryField),
+    CITY("company.settings.post.city", ConfigValue.DefaultCityField),
+    STREET("company.settings.post.street", ConfigValue.DefaultStreetField),
+    CODE("company.settings.post.code", ConfigValue.DefaultPostalCodeField);
 
     private final ConfigValue configValue;
     private final String messageKey;

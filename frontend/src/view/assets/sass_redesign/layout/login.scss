@@ -1,0 +1,119 @@
+
+$login-spacer: 30px;
+
+@mixin login-page-small-height {
+  @media only screen and (max-height: 800px) {
+    @content;
+  }
+}
+
+.login-page {
+  @include flex-center;
+  background: $dark-blue;
+  color: $white;
+  height: 100vh;
+
+  .form-text, .form-label {
+    color: inherit;
+  }
+
+  .form-label {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    font-size: $font-size-md;
+  }
+
+  #popups {
+    position: initial;
+    width: 100%;
+    padding: 0;
+
+    @include hide-scroll;
+
+    .popup {
+      flex: none; // prevent shrink!
+    }
+  }
+
+  iframe {
+    @include mobile {
+      display: none;
+    }
+  }
+}
+
+.login-form {
+  @include flex-column($gap-md);
+  flex-grow: 1;
+
+  @include size(100%);
+  max-width: 500px;
+  padding: $login-spacer;
+}
+
+.login-form__header {
+  @include flex-row($gap-sm);
+  align-items: center;
+
+  img {
+    background: $white;
+    border-radius: $border-radius-sm;
+  }
+}
+
+.login-form__version {
+  @include flex-column($gap-x-sm);
+
+  h1 {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  h3 {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    line-height: 1;
+  }
+}
+
+.login-form__body {
+  overflow: hidden;
+  padding-block: $login-spacer;
+  flex-grow: 1;
+  @include flex-column($login-spacer * 2);
+
+  @include login-page-small-height {
+    padding-block: 0;
+    gap: $login-spacer;
+  }
+}
+
+.login-form__content {
+  @include flex-column($login-spacer);
+
+  // adds additional space from the top when 'Back to login page' not exists
+  > * {
+    &:only-child {
+      padding-top: $login-spacer;
+
+      @include login-page-small-height {
+        padding-top: 0;
+      }
+    }
+  }
+}
+
+.login-form__nav {
+  font-size: $font-size-sm;
+}
+
+.login-page__extra-content {
+  @include flex-center;
+  @include size(100%);
+
+  @include mobile {
+    display: none;
+  }
+
+  padding: $login-spacer;
+}

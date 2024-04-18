@@ -10,25 +10,39 @@
 
 package com.agnitas.emm.core.action.web;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.dto.EmmActionDto;
+import com.agnitas.emm.core.action.form.EmmActionForm;
+import com.agnitas.emm.core.action.form.EmmActionsForm;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationParametersParser;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.action.service.impl.EmmActionValidationServiceImpl;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
+import org.agnitas.beans.LightProfileField;
 import org.agnitas.beans.factory.ActionOperationFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.MvcUtils;
 import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
@@ -46,31 +60,25 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.action.dto.EmmActionDto;
-import com.agnitas.emm.core.action.form.EmmActionForm;
-import com.agnitas.emm.core.action.form.EmmActionsForm;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationParametersParser;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.action.service.impl.EmmActionValidationServiceImpl;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
@@ -145,6 +153,7 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@PostMapping("/confirmBulkDelete.action")
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
 		if (CollectionUtils.isEmpty(form.getBulkIds())) {
 			popups.alert("bulkAction.nothing.action");
@@ -154,7 +163,8 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/bulkDelete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
-    public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
+	public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
         if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.action");
             return MESSAGES_VIEW;
@@ -183,6 +193,7 @@ public class EmmActionController implements XssCheckAware {
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String confirmDelete(Admin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
 		EmmAction emmAction = emmActionService.getEmmAction(id, admin.getCompanyID());
 		if (emmAction != null) {
@@ -197,7 +208,8 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(Admin admin, SimpleActionForm form, Popups popups) {
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
+	public String delete(Admin admin, SimpleActionForm form, Popups popups) {
         if (emmActionService.deleteEmmAction(form.getId(), admin.getCompanyID())) {
 			writeUserActivityLog(admin, "delete action", String.format("%s (ID: %d)", form.getShortname(), form.getId()));
 			popups.success(SELECTION_DELETED_MSG);
@@ -207,6 +219,38 @@ public class EmmActionController implements XssCheckAware {
         popups.alert(ERROR_MSG);
         return MESSAGES_VIEW;
     }
+
+	@GetMapping(value = "/deleteRedesigned.action")
+	@PermissionMapping("confirmDelete")
+	public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
+		validateDeletion(bulkIds);
+		List<String> items = emmActionService.getActionsNames(bulkIds, admin.getCompanyID());
+		MvcUtils.addDeleteAttrs(model, items,
+                "action.delete", "action.delete.question",
+                "bulkAction.delete.action", "bulkAction.delete.action.question");
+		return DELETE_VIEW;
+	}
+
+	@RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	@PermissionMapping("delete")
+	public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+		validateDeletion(bulkIds);
+
+		Map<Integer, String> descriptions = bulkIds.stream()
+				.collect(Collectors.toMap(Function.identity(), id -> emmActionService.getEmmActionName(id, admin.getCompanyID())));
+
+		emmActionService.bulkDelete(bulkIds, admin.getCompanyID());
+		bulkIds.forEach(id -> writeUserActivityLog(admin, "delete action", descriptions.get(id)));
+
+		popups.success(SELECTION_DELETED_MSG);
+		return "redirect:/action/list.action";
+	}
+
+	private void validateDeletion(Set<Integer> bulkIds) {
+		if (CollectionUtils.isEmpty(bulkIds)) {
+			throw new RequestErrorException(NOTHING_SELECTED_MSG);
+		}
+	}
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
 	public String create(Admin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
@@ -223,13 +267,16 @@ public class EmmActionController implements XssCheckAware {
 			return "redirect:/action/new.action";
 		}
 
+        emmAction.getActionOperations().forEach(operation
+                -> operation.setReadonly(emmActionService.isReadonlyOperation(operation, admin)));
+
 		model.addAttribute("form", conversionService.convert(emmAction, EmmActionForm.class));
 		loadViewData(admin, model, id);
 
 		return ACTIONS_VIEW;
 	}
 
-	@PostMapping("/save.action")
+    @PostMapping("/save.action")
 	public String save(Admin admin, @ModelAttribute("form") EmmActionForm form, Popups popups) {
 		try {
 			List<AbstractActionOperationParameters> parameters = actionOperationParametersParser.deSerializeActionModulesList(form.getModulesSchema());
@@ -270,6 +317,9 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	private boolean isValidAction(Admin admin, EmmActionForm form, List<AbstractActionOperationParameters> params, Popups popups) {
+        if (emmActionService.containsReadonlyOperations(form.getId(), admin)) {
+            throw new RequestErrorException(ERROR_MSG);
+        }
 		String shortname = form.getShortname();
 
 		if (StringUtils.trimToNull(shortname) == null) {
@@ -310,14 +360,18 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@GetMapping("/{id:\\d+}/usage.action")
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String usagesView(Admin admin, @PathVariable int id, Model model) {
 		model.addAttribute("actionId", id);
 		model.addAttribute(SHORTNAME, emmActionService.getEmmActionName(id, admin.getCompanyID()));
 		model.addAttribute("webFormsByActionId", userFormService.getUserFormNamesByActionID(admin.getCompanyID(), id));
 		model.addAttribute("dependentMailings", mailingService.getMailingsUsingEmmAction(id, admin.getCompanyID()));
-
 		return "actions_view_forms";
 	}
+
+    private boolean isRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed(Permission.TRIGGER_MANAGEMENT_UI_MIGRATION);
+    }
 
 	private void loadViewData(Admin admin, Model model, int actionId) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
@@ -330,19 +384,28 @@ public class EmmActionController implements XssCheckAware {
 		model.addAttribute("isForceSendingEnabled", configService.getBooleanValue(ConfigValue.ForceSending, admin.getCompanyID()));
 		
 		try {
-			final List<ProfileField> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), false)
+            Map<Boolean, List<ProfileField>> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), false)
 					.stream()
-					.filter(field -> field.getModeEdit() != ProfileFieldMode.ReadOnly)
-					.filter(field -> field.getModeEdit() != ProfileFieldMode.NotVisible)
-					.collect(Collectors.toList());
-			
-			model.addAttribute("AVAILABLE_PROFILE_FIELDS", profileFields);
+                    .collect(Collectors.partitioningBy(emmActionService::isReadonlyOperationRecipientField));
+
+            model.addAttribute("AVAILABLE_PROFILE_FIELDS", profileFields.get(false));
+            model.addAttribute("HIDDEN_PROFILE_FIELDS", getHiddenFields(profileFields));
 		} catch(final Exception e) {
-			model.addAttribute("AVAILABLE_PROFILE_FIELDS", Collections.EMPTY_LIST);
+			model.addAttribute("AVAILABLE_PROFILE_FIELDS", Collections.emptyList());
+            model.addAttribute("HIDDEN_PROFILE_FIELDS", Collections.emptyList());
 		}
 		
-		model.addAttribute("ACTION_READONLY", !this.emmActionService.canUserSaveAction(admin, actionId));
+		model.addAttribute("ACTION_READONLY", emmActionService.containsReadonlyOperations(actionId, admin));
+
+		if (isRedesign(admin) && actionId > 0) {
+			model.addAttribute("dependencies", emmActionService.getDependencies(actionId, admin.getCompanyID()));
+		}
 	}
+
+    private Map<String, String> getHiddenFields(Map<Boolean, List<ProfileField>> profileFields) {
+        return profileFields.get(true).stream()
+                .collect(Collectors.toMap(LightProfileField::getColumn, LightProfileField::getShortname));
+    }
 
 	private void writeUserActivityLog(Admin admin, UserAction userAction) {
         UserActivityUtil.log(userActivityLogService, admin, userAction, logger);

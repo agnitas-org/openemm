@@ -1,0 +1,15 @@
+
+#mailing-images-overview {
+  display: flex;
+
+  #mailing-images-upload-block {
+    min-height: 245px;
+    > .tile {
+      flex: 1;
+    }
+  }
+
+  #filter-tile {
+    flex: 1;
+  }
+}

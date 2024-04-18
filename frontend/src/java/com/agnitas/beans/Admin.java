@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import org.agnitas.beans.AdminGroup;
 
 import com.agnitas.emm.core.Permission;
@@ -160,6 +161,9 @@ public interface Admin {
      */
     boolean permissionAllowed(Permission... permissions);
 
+    boolean isRedesignedUiUsed();
+    boolean isRedesignedUiUsed(Permission permission);
+
     Locale getLocale();
 
     int getDefaultImportProfileID();
@@ -206,4 +210,8 @@ public interface Admin {
     void setEmployeeID(String employeeID);
 
     String getFullUsername();
+
+    PasswordReminderState getPasswordReminderState();
+
+    void setPasswordReminderState(PasswordReminderState passwordReminderState);
 }

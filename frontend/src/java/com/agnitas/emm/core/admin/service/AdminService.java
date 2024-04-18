@@ -10,30 +10,33 @@
 
 package com.agnitas.emm.core.admin.service;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import com.agnitas.emm.core.Permission;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import com.agnitas.beans.EmmLayoutBase;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.Tuple;
-
-import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.EmmLayoutBase;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.service.ServiceResult;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.Tuple;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public interface AdminService {
 
@@ -110,13 +113,18 @@ public interface AdminService {
             Integer filterAdminGroupId,
             Integer filterMailinglistId,
             String filterLanguage,
+            DateRange creationDate,
+            DateRange lastLoginDate,
+            String username,
             String sort,
             String direction,
             int pageNumber,
             int pageSize);
 
     List<AdminEntry> listAdminsByCompanyID(final int companyID);
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin);
+    List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin, UserActivityLogService.UserType type);
 
     PasswordState getPasswordState(Admin admin);
 
@@ -156,6 +164,10 @@ public interface AdminService {
 	
 	int getSecurityCodeMailingId(String language);
 	
+	int getOpenEmmDemoAccountWaitingMailingID(String language);
+	
+	int getOpenEmmDemoAccountDataMailingID(String language);
+	
 	PaginatedListImpl<AdminEntry> getRestfulUserList(
             int companyID,
             String searchFirstName,
@@ -166,14 +178,15 @@ public interface AdminService {
             Integer filterAdminGroupId,
             Integer filterMailinglistId,
             String filterLanguage,
+            DateRange creationDate,
+            DateRange lastLoginDate,
+            String username,
             String sort,
             String direction,
             int pageNumber,
             int pageSize);
 	
 	List<Admin> getAdmins(int companyID, boolean restful);
-	
-	boolean isDisabledMailingListsSupported();
 
 	void setDefaultPreferencesSettings(AdminPreferences preferences);
 	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
@@ -186,4 +199,10 @@ public interface AdminService {
     void saveDashboardLayout(String layout, Admin admin);
 
     String getDashboardLayout(Admin admin);
+
+    List<Admin> getAdminsToWarnAboutPasswordExpiration(CompaniesConstraints companyId);
+
+    int getPasswordExpirationMailingId(String language);
+
+    void setPasswordReminderState(int adminId, PasswordReminderState state);
 }

@@ -1,0 +1,37 @@
+<script id="workflow-copy-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="workflow.ownWorkflow.copyWorkflowTitle"/></h1>
+                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    {{ if (hasContent) { }}
+                        <mvc:message code="workflow.copy.withContentQuestion"/>
+                    {{ } else { }}
+                        <mvc:message code="workflow.copy.question"/>
+                    {{ } }}
+                </div>
+
+                <div class="modal-footer">
+                    {{ if (hasContent) { }}
+                        <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive" data-dismiss="modal" data-confirm-positive="true">
+                            <mvc:message code="workflow.copy.btn.withContent"/>
+                        </button>
+                        <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive" data-dismiss="modal" data-confirm-positive="false">
+                            <mvc:message code="workflow.copy.btn.onlyChain"/>
+                        </button>
+                    {{ } else { }}
+                        <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive" data-dismiss="modal" data-confirm-positive="false">
+                            <mvc:message code="button.Copy"/>
+                        </button>
+                    {{ } }}
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

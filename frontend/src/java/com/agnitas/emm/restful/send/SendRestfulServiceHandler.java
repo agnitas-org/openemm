@@ -31,6 +31,7 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.RecipientImpl;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
@@ -47,7 +48,6 @@ import org.agnitas.util.importvalues.Gender;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
@@ -58,6 +58,7 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
@@ -67,7 +68,6 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
-import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
 import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
@@ -106,69 +106,26 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	protected MailingPreviewService mailingPreviewService;
 	protected DatasourceDescriptionDao datasourceDescriptionDao;
 	protected ComBindingEntryDao bindingEntryDao;
+	protected MailingSendService mailingSendService;
 
-	@Required
-	public final void setConfigService(final ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "ConfigService is null");
-	}
-	
-	@Required
-	public final void setMailingPreviewService(final MailingPreviewService service) {
-		this.mailingPreviewService = Objects.requireNonNull(service, "MailingPreviewService is null");
-	}
-	
-	@Required
-	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
-		this.userActivityLogDao = userActivityLogDao;
-	}
-	
-	@Required
-	public void setMailingService(MailingService mailingService) {
-		this.mailingService = mailingService;
-	}
-	
-	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-	
-	@Required
-	public void setRecipientService(RecipientService recipientService) {
-		this.recipientService = recipientService;
-	}
-	
-	@Required
-	public void setMailinglistDao(MailinglistDao mailinglistDao) {
-		this.mailinglistDao = mailinglistDao;
-	}
-	
-	@Required
-	public void setMaildropService(MaildropService maildropService) {
-		this.maildropService = maildropService;
-	}
-	
-	@Required
-	public void setClassicTemplateGenerator(ClassicTemplateGenerator classicTemplateGenerator) {
-		this.classicTemplateGenerator = classicTemplateGenerator;
-	}
-	
-	@Required
-	public void setSendActionbasedMailingService(SendActionbasedMailingService sendActionbasedMailingService) {
-		this.sendActionbasedMailingService = sendActionbasedMailingService;
-	}
-
-	@Required
-	public void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
-		this.datasourceDescriptionDao = datasourceDescriptionDao;
-	}
-
-	@Required
-	public void setBindingEntryDao(final ComBindingEntryDao bindingEntryDao) {
-		this.bindingEntryDao = bindingEntryDao;
-	}
-	
-	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
-		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
+	public SendRestfulServiceHandler(final ConfigService configService, final MailingPreviewService mailingPreviewService, final RestfulUserActivityLogDao userActivityLogDao, final MailingService mailingService,
+			final ComMailingDao mailingDao, final RecipientService recipientService, final MailinglistDao mailinglistDao, final MaildropService maildropService, final ClassicTemplateGenerator classicTemplateGenerator,
+			final SendActionbasedMailingService sendActionbasedMailingService, final DatasourceDescriptionDao datasourceDescriptionDao, final ComBindingEntryDao bindingEntryDao,
+			final RecipientFieldService recipientFieldService, final MailingSendService mailingSendService) {
+		this.configService = Objects.requireNonNull(configService, "configService is null");
+		this.mailingPreviewService = Objects.requireNonNull(mailingPreviewService, "mailingPreviewService is null");
+		this.userActivityLogDao = Objects.requireNonNull(userActivityLogDao, "userActivityLogDao is null");
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService is null");
+		this.mailingDao = Objects.requireNonNull(mailingDao, "mailingDao is null");
+		this.recipientService = Objects.requireNonNull(recipientService, "recipientService is null");
+		this.mailinglistDao = Objects.requireNonNull(mailinglistDao, "mailinglistDao is null");
+		this.maildropService = Objects.requireNonNull(maildropService, "maildropService is null");
+		this.classicTemplateGenerator = Objects.requireNonNull(classicTemplateGenerator, "classicTemplateGenerator is null");
+		this.sendActionbasedMailingService = Objects.requireNonNull(sendActionbasedMailingService, "sendActionbasedMailingService is null");
+		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
+		this.bindingEntryDao = Objects.requireNonNull(bindingEntryDao, "bindingEntryDao is null");
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "recipientFieldService cannot be null");
+		this.mailingSendService = Objects.requireNonNull(mailingSendService, "mailingSendService is null");
 	}
 
 	@Override
@@ -183,8 +140,6 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Invalid http request method 'GET'. Only 'PUT' or 'POST' are supported for 'send'.");
 		} else if (requestMethod == RequestMethod.DELETE) {
 			throw new RestfulClientException("Invalid http request method 'DELETE'. Only 'PUT' or 'POST' are supported for 'send'.");
-		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
-			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else if (requestMethod == RequestMethod.PUT) {
@@ -202,7 +157,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object sendMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin, boolean extendedLogging) throws Exception {
+	protected Object sendMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin, @SuppressWarnings("unused") boolean extendedLogging) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SEND_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SEND_SHOW.toString() + "'");
 		}
@@ -212,8 +167,9 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		if (!AgnUtils.isNumber(restfulContext[0])) {
 			throw new RestfulClientException("Invalid MailingID: " + restfulContext[0]);
 		}
+		int companyID = admin.getCompanyID();
 		int mailingID = Integer.parseInt(restfulContext[0]);
-		if (!mailingDao.exist(mailingID, admin.getCompanyID())) {
+		if (!mailingDao.exist(mailingID, companyID)) {
 			throw new RestfulClientException("Invalid not existing MailingID: " + mailingID);
 		}
 		
@@ -222,144 +178,160 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		writeActivityLog(String.valueOf(mailingID), request, admin);
 
 		MaildropStatus maildropStatus = null;
-		Date sendDate = new Date();
+		Date sendDate = null;
 		int stepping = 0;
 		int blockSize = 0;
 		int customerID = 0;
 		String customerEmail = null;
+		String customerEmailFromData = null;
 		boolean alwaysCreateRecipient = false;
+		boolean cleanupAdminAndTestActions = false;
 		List<String> keyColumns = new ArrayList<>(Arrays.asList(new String[] { "email" }));
 		UserStatus userStatus = null;
 		
 		JsonObject profileData = null;
 		
-		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
-			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
-				JsonNode jsonNode = jsonReader.read();
-				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
-					JsonObject jsonObject = (JsonObject) jsonNode.getValue();
-					for (Entry<String, Object> entry : jsonObject.entrySet()) {
-						if ("send_type".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof String && ((String) entry.getValue()).length() == 1) {
-								try {
-									maildropStatus = MaildropStatus.fromCode(((String) entry.getValue()).charAt(0));
-								} catch (Exception e) {
-									throw new RestfulClientException("Invalid value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
-								}
-							} else {
-								throw new RestfulClientException("Invalid data type for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
-							}
-						} else if ("send_date".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof String) {
-								try {
-									sendDate = DateUtilities.parseIso8601DateTimeString((String) entry.getValue());
-								} catch (Exception e) {
-									throw new RestfulClientException("Invalid value for 'send_date'. String(Date) expected");
-								}
-							} else {
-								throw new RestfulClientException("Invalid data type for 'send_date'. String(Date) expected");
-							}
-						} else if ("stepping".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								stepping = (Integer) entry.getValue();
-							} else {
-								throw new RestfulClientException("Invalid data type for 'stepping'. Integer expected");
-							}
-						} else if ("block_size".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								blockSize = (Integer) entry.getValue();
-							} else {
-								throw new RestfulClientException("Invalid data type for 'block_size'. Integer expected");
-							}
-						} else if ("customer_id".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								customerID = (Integer) entry.getValue();
-							} else {
-								throw new RestfulClientException("Invalid data type for 'customer_id'. Integer expected");
-							}
-						} else if ("email".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof String && AgnUtils.isEmailValid((String) entry.getValue())) {
-
-								// Normalize email, if configured so
-								if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
-									customerEmail = AgnUtils.normalizeEmail((String) entry.getValue());
-								} else {
-									customerEmail = (String) entry.getValue();
-								}
-							} else {
-								throw new RestfulClientException("Invalid data type for 'email'. Email address expected");
-							}
-						} else if ("user_status".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								userStatus = UserStatus.getUserStatusByID((Integer) entry.getValue());
-							} else {
-								throw new RestfulClientException("Invalid data type for 'user_status'. Integer expected");
-							}
-						} else if ("data".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof JsonObject) {
-								profileData = (JsonObject) entry.getValue();
-							} else {
-								throw new RestfulClientException("Invalid data type for 'data'. JsonObject expected");
-							}
-						} else if ("keyColumns".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof String) {
-								keyColumns = AgnUtils.splitAndTrimList((String) entry.getValue());
-							} else if (entry.getValue() != null && entry.getValue() instanceof JsonArray) {
-								keyColumns = new ArrayList<>();
-								for (Object keyColumn : (JsonArray) entry.getValue()) {
-									if (keyColumn != null && keyColumn instanceof String) {
-										keyColumns.add((String) keyColumn);
-									} else {
-										throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+		if ((requestData != null && requestData.length > 0) || (requestDataFile != null && requestDataFile.length() > 0)) {
+			try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
+				try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
+					JsonNode jsonNode = jsonReader.read();
+					if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
+						JsonObject jsonObject = (JsonObject) jsonNode.getValue();
+						for (Entry<String, Object> entry : jsonObject.entrySet()) {
+							if ("send_type".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String && ((String) entry.getValue()).length() == 1) {
+									try {
+										maildropStatus = MaildropStatus.fromCode(((String) entry.getValue()).charAt(0));
+									} catch (@SuppressWarnings("unused") Exception e) {
+										throw new RestfulClientException("Invalid value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
 									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
+								}
+							} else if ("send_date".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String) {
+									try {
+										sendDate = DateUtilities.parseIso8601DateTimeString((String) entry.getValue());
+									} catch (@SuppressWarnings("unused") Exception e) {
+										throw new RestfulClientException("Invalid value for 'send_date'. String(Date) expected");
+									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'send_date'. String(Date) expected");
+								}
+							} else if ("stepping".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									stepping = (Integer) entry.getValue();
+								} else {
+									throw new RestfulClientException("Invalid data type for 'stepping'. Integer expected");
+								}
+							} else if ("block_size".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									blockSize = (Integer) entry.getValue();
+								} else {
+									throw new RestfulClientException("Invalid data type for 'block_size'. Integer expected");
+								}
+							} else if ("customer_id".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									customerID = (Integer) entry.getValue();
+								} else {
+									throw new RestfulClientException("Invalid data type for 'customer_id'. Integer expected");
+								}
+							} else if ("email".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String && AgnUtils.isEmailValid((String) entry.getValue())) {
+	
+									// Normalize email, if configured so
+									if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, companyID)) {
+										customerEmail = AgnUtils.normalizeEmail((String) entry.getValue());
+									} else {
+										customerEmail = (String) entry.getValue();
+									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'email'. Email address expected");
+								}
+							} else if ("user_status".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									userStatus = UserStatus.getUserStatusByID((Integer) entry.getValue());
+								} else {
+									throw new RestfulClientException("Invalid data type for 'user_status'. Integer expected");
+								}
+							} else if ("data".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof JsonObject) {
+									profileData = (JsonObject) entry.getValue();
+									if (profileData.get("email") != null) {
+										customerEmailFromData = (String) profileData.get("email");
+									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'data'. JsonObject expected");
+								}
+							} else if ("keyColumns".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String) {
+									keyColumns = AgnUtils.splitAndTrimList((String) entry.getValue());
+								} else if (entry.getValue() != null && entry.getValue() instanceof JsonArray) {
+									keyColumns = new ArrayList<>();
+									for (Object keyColumn : (JsonArray) entry.getValue()) {
+										if (keyColumn != null && keyColumn instanceof String) {
+											keyColumns.add((String) keyColumn);
+										} else {
+											throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+										}
+									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+								}
+							} else if ("alwaysCreateRecipient".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+									alwaysCreateRecipient = (Boolean) entry.getValue();
+								} else {
+									throw new RestfulClientException("Invalid data type for 'alwaysCreateRecipient'. Boolean expected");
+								}
+							} else if ("cleanupAdminAndTestActions".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+									cleanupAdminAndTestActions = (Boolean) entry.getValue();
+								} else {
+									throw new RestfulClientException("Invalid data type for 'cleanupAdminAndTestActions'. Boolean expected");
 								}
 							} else {
-								throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+								throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for 'send'");
 							}
-						} else if ("alwaysCreateRecipient".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
-								alwaysCreateRecipient = (Boolean) entry.getValue();
-							} else {
-								throw new RestfulClientException("Invalid data type for 'alwaysCreateRecipient'. Boolean expected");
-							}
-						} else {
-							throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for 'send'");
 						}
 					}
 				}
 			}
 		}
 		
-		if (maildropStatus == null) {
-			MailingType mailingType = mailingDao.getMailingType(mailingID);
-			if (mailingType == MailingType.NORMAL) {
-				maildropStatus = MaildropStatus.WORLD;
-			} else if (mailingType == MailingType.ACTION_BASED) {
-				maildropStatus = MaildropStatus.ACTION_BASED;
-			} else if (mailingType == MailingType.DATE_BASED) {
-				maildropStatus = MaildropStatus.DATE_BASED;
-			} else if (mailingType == MailingType.INTERVAL) {
-				maildropStatus = MaildropStatus.ON_DEMAND;
-			} else {
-				throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
-			}
-		} else if (customerID != 0 && StringUtils.isNotBlank(customerEmail)) {
+		if (customerID != 0 && StringUtils.isNotBlank(customerEmail)) {
 			throw new RestfulClientException("Colliding parameters customer_id and email detected. Only one of both is allowed");
 		}
-		
-		if (customerID == 0 && profileData != null && profileData.size() > 0) {
-			customerID = createRecipient(admin.getCompanyID(), mailingID, keyColumns, profileData, alwaysCreateRecipient);
-		}
 
-		if (customerID == 0 && StringUtils.isNotBlank(customerEmail)) {
-			List<Integer> result = recipientService.getRecipientIds(admin.getCompanyID(), "email", customerEmail);
-			if (result.size() > 1) {
-				throw new RestfulClientException("More than one recipient found for this email address");
-			} else if (result.size() < 1) {
-				throw new RestfulClientException("No recipient found for this email address");
-			} else {
-				customerID = result.get(0);
+		if (customerID == 0) {
+			if (StringUtils.isNotBlank(customerEmail)) {
+				List<Integer> result = recipientService.getRecipientIds(companyID, "email", customerEmail);
+				if (result.size() > 1) {
+					throw new RestfulClientException("More than one recipient found for this email address");
+				} else if (result.size() < 1) {
+					throw new RestfulClientException("No recipient found for this email address");
+				} else {
+					customerID = result.get(0);
+				}
+			} else if (StringUtils.isNotBlank(customerEmailFromData)) {
+				List<Integer> result = recipientService.getRecipientIds(companyID, "email", customerEmailFromData);
+				if (result.size() == 1) {
+					customerID = result.get(0);
+				}
 			}
+		}
+		
+		if ((customerID == 0 || alwaysCreateRecipient) && profileData != null && profileData.size() > 0) {
+			customerID = createRecipient(companyID, mailingID, keyColumns, profileData, alwaysCreateRecipient);
+		} else if (customerID != 0) {
+			if (!recipientService.recipientExists(companyID, customerID)) {
+				throw new RestfulClientException("No matching recipient found");
+			}
+		}
+		
+		
+		if (cleanupAdminAndTestActions) {
+			mailingSendService.clearTestActionsData(mailingID, companyID);
 		}
 		
 		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileData);
@@ -373,6 +345,36 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		Date genDate = new Date();
 		int startGen = 1;
 		MaildropEntry maildropEntry = new MaildropEntryImpl();
+
+		MailingType mailingType = mailingDao.getMailingType(mailingID);
+		
+		if (maildropStatus == null) {
+			if (mailingType == MailingType.NORMAL) {
+				maildropStatus = MaildropStatus.WORLD;
+			} else if (mailingType == MailingType.ACTION_BASED) {
+				maildropStatus = MaildropStatus.ACTION_BASED;
+			} else if (mailingType == MailingType.DATE_BASED) {
+				maildropStatus = MaildropStatus.DATE_BASED;
+			} else if (mailingType == MailingType.INTERVAL) {
+				maildropStatus = MaildropStatus.ON_DEMAND;
+			} else {
+				throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
+			}
+		} else {
+			if (mailingType == MailingType.NORMAL
+				&& (maildropStatus != MaildropStatus.WORLD && maildropStatus != MaildropStatus.ADMIN && maildropStatus != MaildropStatus.TEST)) {
+				throw new RestfulClientException("Invalid optional property value for 'send_type'. String 'W', 'A' or 'T' expected for normal mailings");
+			} else if (mailingType == MailingType.ACTION_BASED
+				&& (maildropStatus != MaildropStatus.ACTION_BASED)) {
+				throw new RestfulClientException("Invalid optional property value for 'send_type'. String 'E' expected for actionbased mailings");
+			} else if (mailingType == MailingType.DATE_BASED
+				&& (maildropStatus != MaildropStatus.DATE_BASED)) {
+				throw new RestfulClientException("Invalid optional property value for 'send_type'. String 'R' expected for datebased mailings");
+			} else if (mailingType == MailingType.INTERVAL
+				&& (maildropStatus != MaildropStatus.ON_DEMAND)) {
+				throw new RestfulClientException("Invalid optional property value for 'send_type'. String 'D' expected for interval mailings");
+			}
+		}
 
 		switch (maildropStatus) {
 			case ADMIN:
@@ -442,6 +444,10 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		if (maildropStatus == MaildropStatus.ACTION_BASED || maildropStatus == MaildropStatus.ON_DEMAND) {
+			if (sendDate != null) {
+				throw new RestfulClientException("This is an actionbased mailing. Therefore parameter send_date is not allowed. An actionbased Mailing will allways be sent immediatelly");
+			}
+			
 			if (!maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
 				maildropEntry.setGenStatus(startGen);
 				maildropEntry.setGenDate(genDate);
@@ -452,6 +458,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 				maildropEntry.setBlocksize(blockSize);
 	
 				mailing.getMaildropStatus().add(maildropEntry);
+				
+				mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.ACTIVE, new Date());
 	
 				mailingDao.saveMailing(mailing, isPreserveTrackableLinks);
 			}
@@ -503,6 +511,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 				GregorianCalendar aCal = new GregorianCalendar(TimeZone.getTimeZone(admin.getAdminTimezone()));
 				aCal.setTime(sendDate);
 				sendDate = aCal.getTime();
+			} else {
+				sendDate = new Date();
 			}
 			
 			maildropEntry.setSendDate(sendDate);
@@ -543,6 +553,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 					MailoutClient aClient = new MailoutClient();
 					aClient.invoke("fire", Integer.toString(maildropEntry.getId()));
 				}
+				
+				mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.SCHEDULED, new Date());
 			}
 			
 			if (maildropStatus == MaildropStatus.WORLD || maildropStatus == MaildropStatus.ADMIN || maildropStatus == MaildropStatus.TEST) {
@@ -652,7 +664,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			bindingEntry.setUserRemark("Added by restful service CollectedDelivery");
 			bindingEntry.setUserStatus(UserStatus.Active.getStatusCode());
 			bindingEntry.setUserType(UserType.World.getTypeCode());
-			bindingEntryDao.insertNewBinding(bindingEntry, companyID);
+			bindingEntryDao.insertBindings(companyID, bindingEntry);
 
 			return customerID;
 		}

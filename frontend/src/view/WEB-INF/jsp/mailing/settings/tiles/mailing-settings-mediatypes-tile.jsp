@@ -36,14 +36,14 @@
                             <c:set var="mediatypeItem">
                                 <li class="list-group-item checkbox" data-priority="${mt.priority}" data-mediatype="${mediaTypeName}" data-action="change-mediatype">
                                     <label>
-                                        <mvc:checkbox path="${mediaTypeName}Mediatype.active" value="true" disabled="${not MAILING_EDITABLE or mt.readonly}" />
+                                        <mvc:checkbox path="${mediaTypeName}Mediatype.active" value="true" disabled="${not MAILING_EDITABLE or mt.readonly or isSettingsReadonly}" />
                                         <c:if test="${mt.readonly}">
                                             <mvc:hidden path="${mediaTypeName}Mediatype.active" disabled="${not MAILING_EDITABLE}" />
                                         </c:if>
 
                                         <mvc:message code="mailing.MediaType.${mediaTypeName}" />
                                     </label>
-                                    <c:if test="${not empty mt and mt.active}">
+                                    <c:if test="${not empty mt and mt.active and not isSettingsReadonly}">
                                         <div class="list-group-item-controls">
                                             <a href="#" data-config="mediatypeCode: ${mediaTypeCode}" data-action="prioritise-mediatype-down">
                                                 <i class="icon icon-chevron-circle-down"></i>

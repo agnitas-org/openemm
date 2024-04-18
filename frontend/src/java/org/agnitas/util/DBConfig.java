@@ -127,13 +127,25 @@ public class DBConfig {
 		
 		return rc != null ? rc : dflt;
 	}
+	public boolean findInRecord (String key, boolean dflt) {
+		return Str.atob (findInRecord (key), dflt);
+	}
 
 	private static Pattern	parseLine = Pattern.compile ("([a-z0-9._+-]+):[ \t]*(.*)$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 	private boolean readConfig () {
 		if (content == null) {
-			String		filename = configPath != null ? configPath : System.getenv ("DBCFG_PATH");
-			File		fdesc = new File (filename != null ? filename : defaultConfigPath);
-
+			String	filename = configPath != null ? configPath : System.getenv ("DBCFG_PATH");
+			File	fdesc;
+			
+			if (filename == null) {
+				filename = Str.makePath ("$home", "etc", "dbcfg");
+				fdesc = new File (filename);
+				if (! fdesc.exists ()) {
+					fdesc = new File (defaultConfigPath);
+				}
+			} else {
+				fdesc = new File (filename);
+			}
 			try (FileInputStream stream = new FileInputStream (fdesc)) {
 				byte[]	buffer = new byte[(int) fdesc.length ()];
 				int	n = stream.read (buffer);

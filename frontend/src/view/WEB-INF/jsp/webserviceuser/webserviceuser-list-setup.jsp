@@ -11,6 +11,8 @@
 <c:set var="isBreadcrumbsShown" 	    value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	    value="Administration" 				scope="request" />
 
+<c:url var="switchDesignUrl" value="/administration/wsmanager/usersRedesigned.action" scope="request" />
+
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>

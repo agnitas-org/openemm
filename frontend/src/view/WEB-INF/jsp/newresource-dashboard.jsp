@@ -51,12 +51,14 @@
 
     <ul class="dropdown-menu">
     	<emm:ShowByPermission token="mailing.change">
-                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-            <li>
-                <a tabindex="-1" href="${mailingCreateLink}">
-                    <mvc:message code="mailing.create"/>
-                </a>
-            </li>
+            <emm:HideByPermission token="mailing.content.readonly">
+                    <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                <li>
+                    <a tabindex="-1" href="${mailingCreateLink}">
+                        <mvc:message code="mailing.create"/>
+                    </a>
+                </li>
+            </emm:HideByPermission>
 		</emm:ShowByPermission>
         <emm:ShowByPermission token="mailing.import">
             <li>

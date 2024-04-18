@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -18,39 +18,22 @@
 
     <fmt:formatDate var="currentServerTime" value="${emm:now()}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
 
-    <c:set var="isStatisticsViewPermitted" value="${false}"/>
+    <c:set var="statisticsViewAllowed" value="${false}"/>
     <emm:ShowByPermission token="stats.mailing">
-        <c:set var="isStatisticsViewPermitted" value="${true}"/>
+        <c:set var="statisticsViewAllowed" value="${true}"/>
     </emm:ShowByPermission>
-
-    <c:url var="mailingLink" value="/mailing/:mailingId:/settings.action"/>
-
-    <c:url var="mailingStatisticsViewUrl" value="/statistics/mailing/:mailingId:/view.action">
-        <c:param name="init" value="true"/>
-    </c:url>
 
     <script id="config:dashboard-calendar" type="application/json">
         {
-            "localeDatePattern": "${localeDatePattern}",
-            "currentServerTime": "${currentServerTime}",
             "firstDayOfWeek": ${firstDayOfWeek},
-            "isStatisticsViewPermitted": ${isStatisticsViewPermitted},
-            "urls": {
-                "CALENDAR_MAILINGS_LIST": "<c:url value="/calendar/mailings.action"/>",
-                "MAILING_VIEW": "${mailingLink}",
-                "MAILING_STATISTICS_VIEW": "${mailingStatisticsViewUrl}"
-            }
+            "statisticsViewAllowed": ${statisticsViewAllowed}
         }
     </script>
 
     <script id="dashboard-tile-calendar" type="text/x-mustache-template">
         <div id="calendar-tile" class="tile draggable-tile tile-{{- tileType }}" data-initializer="dashboard-calendar">
             <div class="tile-header">
-                <span class="tile-title">{{- tileName }}</span>
-                <div class="tile-controls">
-                    <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                    <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-                </div>
+                <h1 class="tile-title">{{- tileName }}</h1>
             </div>
             <div class="tile-body">
                 <table id="calendar-table" class="table table-borderless align-middle">
@@ -77,9 +60,7 @@
                     <%-- load by JS--%>
                 </div>
             </div>
-            <div>
-                <div class="highlight-container"></div>
-            </div>
+            {{= overlay }}
         </div>
     </script>
 </emm:ShowByPermission>

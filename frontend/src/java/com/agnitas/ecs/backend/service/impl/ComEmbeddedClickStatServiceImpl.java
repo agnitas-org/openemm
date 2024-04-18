@@ -10,12 +10,8 @@
 
 package com.agnitas.ecs.backend.service.impl;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.ecs.service.EcsService;
+import com.agnitas.emm.ecs.web.HeatmapStatInfo;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.ecs.backend.beans.ClickStatInfo;
 import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
@@ -31,7 +27,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.emm.ecs.web.HeatmapStatInfo;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of {@link EmbeddedClickStatService} interface
@@ -42,6 +42,7 @@ public class ComEmbeddedClickStatServiceImpl implements EmbeddedClickStatService
     private static final transient Logger logger = LogManager.getLogger(ComEmbeddedClickStatServiceImpl.class);
 
     private EmbeddedClickStatDao ecsDao;
+    private EcsService ecsService;
     private PreviewFactory previewFactory;
     private ConfigService configService;
 
@@ -59,7 +60,7 @@ public class ComEmbeddedClickStatServiceImpl implements EmbeddedClickStatService
         try {
             HeatmapStatInfo info = new HeatmapStatInfo();
             // get click statistics and color values for stat-labels
-            List<ClickStatColor> rangeColors = ecsDao.getClickStatColors(companyId);
+            List<ClickStatColor> rangeColors = ecsService.getClickStatColors(companyId);
             ClickStatInfo clickStatInfo = ecsDao.getClickStatInfo(companyId, mailingId, viewMode, deviceType);
             // create hidden elements containing clicks stats - to be used by javascript to
             // create clicks stat labels above the links
@@ -146,4 +147,7 @@ public class ComEmbeddedClickStatServiceImpl implements EmbeddedClickStatService
         this.configService = configService;
     }
 
+    public void setEcsService(EcsService ecsService) {
+        this.ecsService = ecsService;
+    }
 }

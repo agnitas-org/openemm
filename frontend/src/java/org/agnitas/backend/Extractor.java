@@ -144,7 +144,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 
 		for (EMMTag tmpTag : tagNames.values()) {
 			if ((!tmpTag.globalValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
-				if ((rmap[count] != null) && (!rmap[count].getIsnull())) {
+				if ((rmap[count] != null) && (!rmap[count].isnull())) {
 					tmpTag.setTagValue(rmap[count].get());
 				} else {
 					tmpTag.setTagValue(null);
@@ -209,7 +209,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 
 						if (bl != null) {
 							data.logging(Log.WARNING, "mailout", "Found " + what + ": " + check + " (" + cid + ") in " + bl.where() + " blocklist, ignored");
-							blist.writeBounce(data.mailing.id(), cid);
+							blist.writeBounce (data.mailing.id (), cid, m);
 							isBlocklisted = true;
 						}
 					}
@@ -246,19 +246,29 @@ public class Extractor implements ResultSetExtractor<Object> {
 			if (needSamples) {
 				Set <String>	seen = new HashSet <> ();
 				
-				for (int state = 0; state < 2; ++state) {
-					String	source;
+				for (int state = 0; state < 3; ++state) {
+					String	source = null;
+					boolean	single = false;
 					
 					switch (state) {
-					default:
-						source = null;
-						break;
 					case 0:
-						source = data.sampleEmails ();
-						break;
 					case 1:
-						source = data.deliveryCheckEmails ();
+						if (data.maildropStatus.isWorldMailing ()) {
+							if (state == 0) {
+								source = data.sampleEmails ();
+							} else {
+								source = data.deliveryCheckEmails ();
+							}
+						}
 						break;
+					case 2:
+						if (data.maildropStatus.isTestMailing ()) {
+							source = data.preDeliveryCheckEmails ();
+							single = true;
+						}
+						break;
+					default:
+						throw new RuntimeException("Unexpected state");
 					}
 					if (source != null) {
 						List<String> v = StringOps.splitString(source);
@@ -273,11 +283,13 @@ public class Extractor implements ResultSetExtractor<Object> {
 									emailTags.get(n).setTagValue(email);
 								}
 								for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
-									try {
-										mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), "1", tagNames);
-										mailer.writeContent(cinfo, 0, tagNames, rmap);
-									} catch (Exception e) {
-										data.logging(Log.ERROR, "mailout", "Failed to write sample mail: " + e.toString(), e);
+									if ((! single) || (n == MailType.HTML.getIntValue ())) {
+										try {
+											mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), "1", tagNames);
+											mailer.writeContent(cinfo, 0, tagNames, rmap);
+										} catch (Exception e) {
+											data.logging(Log.ERROR, "mailout", "Failed to write sample mail \"" + email + "\" in state " + state + ": " + e.toString(), e);
+										}
 									}
 								}
 							}

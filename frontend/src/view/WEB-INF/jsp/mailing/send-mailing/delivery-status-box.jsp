@@ -22,7 +22,7 @@
     <div class="well block">
         <b><mvc:message code="mailing.DistribStatus"/>:</b> <mvc:message code="statistic.DeliveryStatus.${deliveryStatus}"/>
     </div>
-    <c:if test="${form.deliveryStat.lastType ne 'NO'}">
+    <c:if test="${form.deliveryStat.lastType ne 'NO' and form.deliveryStat.sendEndTime ne null}">
         <div class="table-responsive vspace-top-10">
             <table class="table table-bordered table-striped table-equal-col-width">
                 <thead>
@@ -34,11 +34,11 @@
                 <tbody>
                 <tr>
                     <td><mvc:message code="Date"/></td>
-                    <td><fmt:formatDate value="${form.deliveryStat.lastDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></td>
+                    <td><fmt:formatDate value="${form.deliveryStat.sendEndTime}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></td>
                 </tr>
                 <tr>
                     <td><mvc:message code="default.Time"/></td>
-                    <td><fmt:formatDate value="${form.deliveryStat.lastDate}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" /></td>
+                    <td><fmt:formatDate value="${form.deliveryStat.sendEndTime}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" /></td>
                 </tr>
                 <tr>
                     <td><mvc:message code="Targets"/></td>

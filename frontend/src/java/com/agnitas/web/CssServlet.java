@@ -27,10 +27,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.Permission;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
 import org.apache.bval.util.StringUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
@@ -116,7 +114,7 @@ public class CssServlet extends HttpServlet {
 	}
 
 	private boolean isRedesignedVersionAvailable(HttpServletRequest request) {
-		return AgnUtils.allowed(request, Permission.USE_REDESIGNED_UI) && BooleanUtils.toBoolean(request.getParameter("redesigned"));
+		return BooleanUtils.toBoolean(request.getParameter("redesigned"));
 	}
 
 	private String getCssCache(boolean redesigned) {

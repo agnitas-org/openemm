@@ -81,10 +81,10 @@ For a modal with custom content, you can use mustache syntax on the template . T
     let opts = this.el.data('modal-set');
     opts = typeof opts === 'object' ? opts : Helpers.objFromString(opts);
 
-    Modal.createFromTemplate(opts, template);
+    Modal.fromTemplate(template, opts);
   });
 
-  $(document).on('hidden.bs.modal', '.modal',function() {
+  $(document).on('hidden.bs.modal', '.modal', function() {
     var $modal = $(this);
 
     $modal.trigger('modal:close');
@@ -93,6 +93,17 @@ For a modal with custom content, you can use mustache syntax on the template . T
       $modal.remove();
     }, 100);
   });
+
+  $(document).on('shown.bs.modal', '.modal', function() {
+    const $modals = $('.modal.show');
+    if ($modals.length > 1) {
+      fixMultipleModalsBackdropIssue($modals.last());
+    }
+  });
+
+  function fixMultipleModalsBackdropIssue($modal) {
+    $('.modal-backdrop.show').last().css('z-index', $modal.css('z-index'));
+  }
 
   // Fix for CKEditor + Bootstrap Modal (IE is only affected) issue with dropdowns on the toolbar
   // TODO: recheck this issue with Bootstrap 5

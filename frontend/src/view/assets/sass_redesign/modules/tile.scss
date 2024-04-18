@@ -1,49 +1,9 @@
 
 .tile {
   @extend .card;
-  background-color: $c-white;
+  border-color: var(--bs-border-color);
   height: 100%;
   overflow: hidden;
-
-  .tile-header {
-    @extend .card-header;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: none;
-    min-height: $tile-header-height;
-    background-color: transparent;
-    padding: 0 $gap;
-    color: $c-black;
-
-    @include font($font-size-lg);
-
-    .tile-title {
-      display: flex;
-      gap: $gap-sm;
-      align-items: center;
-    }
-
-    .tile-controls {
-      display: flex;
-      gap: $gap-sm;
-
-      .btn {
-        cursor: pointer;
-      }
-
-      .btn-icon {
-        @include mobile {
-          @include btn-icon($gap-sm - 1, $gap);
-        }
-      }
-    }
-
-    @include mobile {
-      padding-left: $gap-sm;
-      padding-right: $gap-x-sm;
-    }
-  }
 
   .card-title {
     margin-bottom: 0;
@@ -51,19 +11,14 @@
 
   .tile-body {
     @extend .card-body;
+    @include hide-scroll;
+    color: var(--default-text-color);
+    padding: $tile-body-spacer;
+    position: relative;
 
-    @include desktop {
-      padding: $gap 0;
-      @include hover-scroll();
-
-      @supports (-moz-appearance:none) {
-        padding-inline: $gap;
-      }
-    }
-
-    @include mobile {
-      padding-inline: $gap-sm;
-      @include hide-scroll();
+    &.tile-body--js-editor {
+      padding: 0;
+      min-height: 250px;
     }
   }
 
@@ -74,4 +29,224 @@
       }
     }
   }
+
+  &.collapsed {
+    .tile-body {
+      display: none;
+    }
+  }
+}
+
+.tile-header {
+  @extend .card-header;
+
+  @include flex-row($gap-sm);
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: none;
+  flex: 0 0 $tile-header-height;
+  background-color: transparent;
+  padding: $gap-sm $gap $gap-x-sm $gap;
+
+  @include mobile {
+    padding-left: $gap-sm;
+    padding-right: $gap-x-sm;
+  }
+}
+
+.tile-title {
+  @include flex-row($gap-sm);
+  align-items: center;
+  font-weight: 500;
+  color: var(--tile-title-color);
+
+  &.text-truncate {
+    display: block;
+  }
+}
+
+.tile-title-controls {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.tile-controls {
+  @include flex-row($gap-sm);
+  align-items: center;
+
+  .btn {
+    cursor: pointer;
+  }
+
+  .btn-icon {
+    @include mobile {
+      @include size(unset);
+      @include btn-icon($gap-sm - 1, $gap);
+    }
+  }
+
+  .form-check-label {
+    font-weight: normal;
+  }
+
+  .form-switch {
+    font-size: $font-size-base;
+    font-weight: normal;
+  }
+
+  > .select2-container {
+    min-width: 0;
+  }
+}
+
+.tile-footer {
+  @extend .card-footer;
+  border-top: 0;
+  padding: $gap-x-sm $gap-sm;
+  margin: 0;
+  background-color: var(--tile-footer-bg-color);
+  display: grid;
+
+  &.tile-footer--loader {
+    @extend .flex-center;
+
+    i {
+      font-size: 25px;
+    }
+  }
+
+  &.tile-footer--buttons {
+    @include flex-row($gap-sm);
+    padding: $gap-md;
+    background-color: inherit;
+    border-top: $border-default;
+  }
+}
+
+.tile--notification {
+  max-width: 700px;
+  height: auto;
+  @include center-absolute;
+
+  > .tile-footer {
+    padding: 0 $gap-md $gap-md $gap-md;
+    background-color: transparent;
+  }
+}
+
+.tile--md {
+  > .tile-header {
+    padding-block: $gap-sm - 1px;
+  }
+}
+
+.tile--sm {
+  > .tile-header {
+    color: var(--default-text-color);
+    min-height: 40px;
+    padding: 6px $gap-sm;
+  }
+
+  > .tile-body {
+    padding: $gap-sm;
+  }
+}
+
+.tile--md {
+  > .tile-header {
+    color: var(--default-text-color);
+    min-height: $tile-header-height;
+    padding: 7px $gap-md;
+  }
+
+  > .tile-body {
+    padding: $gap-md;
+  }
+}
+
+.tile-body__block {
+  padding-block: $tile-body-spacer;
+  position: relative;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    &:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -$tile-body-spacer;
+      right: -$tile-body-spacer;
+      height: 100%;
+      border-bottom: $border-default;
+      pointer-events: none;
+    }
+  }
+}
+
+@mixin tile-variant($state, $color) {
+  .tile--#{$state} {
+    border-color: $color;
+
+    .tile-header {
+      color: $white;
+      background-color: $color;
+
+      .tile-title {
+        color: $white;
+      }
+    }
+  }
+}
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include tile-variant($state, $color);
+}
+
+.tile--highlighted {
+  .tile-header {
+    color: var(--text-dark-gray-color);
+    background-color: var(--tile-highlighted-header-bg-color);
+    border-bottom: $border-default;
+  }
+}
+
+.tile--dark-blue {
+  border-color: $dark-blue;
+
+  .tile-header, .tile-body {
+    color: $white;
+    background: $dark-blue;
+  }
+}
+
+.tile--msg {
+  max-width: 350px;
+
+  .tile-header {
+    @include flex-column($gap);
+    padding: $gap;
+
+    img {
+      max-height: 100px;
+    }
+  }
+
+  .tile-body {
+    @include flex-column($gap-md);
+    align-items: center;
+  }
+
+  height: auto;
 }

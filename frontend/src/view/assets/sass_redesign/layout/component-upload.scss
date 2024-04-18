@@ -1,0 +1,25 @@
+$preview-item-size: 300px;
+
+#components-uploads-container {
+  @include flex-column($gap-md);
+}
+
+#components-upload-modal {
+  .modal-content {
+    max-height: 700px;
+  }
+}
+
+.component-upload__preview-wrapper {
+  @include size($preview-item-size);
+  @include flex-center;
+
+  img {
+    @include max-size(100%);
+  }
+
+  i {
+    font-size: 150px;
+    color: var(--input-icon-color);
+  }
+}

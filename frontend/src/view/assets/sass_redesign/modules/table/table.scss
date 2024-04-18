@@ -1,61 +1,128 @@
 
-$c-table-border: $gray-400;
-$table-spacing: $gap-sm;
-$border-block-gap: $gap-x-sm;
+$table-spacing: 10px;
+$table-header-height: 31px;
 $max-preview-width: 300px;
 
 // separator between header elements
 @mixin table-header-separator() {
-  &:not(:first-child)::before {
-    content: "";
-    position: absolute;
-    top: $border-block-gap;
-    bottom: $border-block-gap;
-    left: -1px;
-    width: 1px;
-    background-color: $c-table-border;
-  }
+  content: "";
+  position: absolute;
+  top: $table-spacing / 2;
+  bottom: $table-spacing / 2;
+  left: 0;
+  width: 1px;
+  background-color: var(--table-border-color);
 }
 
 @mixin sortable-link($icon) {
-  > a::before {
-    font-family: "Font Awesome 5 Free";
-    margin-right: 5px;
-    content: '#{$icon}';
+  > a::before, > span > a::before {
+    @include fa-content($icon);
+    margin-right: $table-spacing;
+  }
+}
+
+@mixin flex-table() {
+  @include flex-column;
+
+  thead {
+    tr {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    th {
+      flex-grow: 1;
+
+      &.additional-columns {
+        flex: none;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      height: auto;
+      @include flex-wrap;
+      align-items: center;
+      gap: $table-spacing / 2;
+      row-gap: $table-spacing;
+
+      padding: $table-spacing / 2 $table-spacing;
+      overflow: hidden;
+
+      &:not(.empty):hover {
+        td {
+          box-shadow: none;
+        }
+      }
+
+      border-color: transparent;
+    }
+
+    tr.empty > td {
+      width: 100%;
+    }
+
+    td {
+      padding: 0;
+    }
+  }
+
+  .table-cell-nowrap {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .table-actions {
+    width: auto;
+
+    div {
+      gap: $table-spacing / 2;
+    }
+  }
+}
+
+@mixin table-cell-sub-info() {
+  width: 100%;
+  color: var(--text-gray-color);
+
+  .icon {
+    font-size: $font-size-base;
   }
 }
 
 .table-rounded {
+  table-layout: fixed;
+  width: 100%;
   margin: 0;
   border-collapse: separate;
   border-spacing: 0;
+  color: var(--default-text-color);
 
-  thead {
-    background-color: $gray-100;
-    position: sticky;
-    top: 0;
+  tbody tr {
+    height: 40px;
   }
 
-  th, td {
-    border: none;
+  @include mobile {
+    @include flex-table;
+  }
 
-    @include mobile {
-      display: none;
-    }
+  thead {
+    background-color: var(--table-head-bg-color);
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   td {
-    padding-block: $gap-x-sm;
+    @extend .text-truncate;
+    padding-block: $table-spacing / 2;
     padding-inline: $table-spacing;
     vertical-align: middle;
-    white-space: nowrap;
+    border: none;
 
     &.js-checkable {
       text-align: center;
-
-      @include mobile {
-        vertical-align: top;
-      }
     }
 
     @include mobile { // prevent table row click on mobile
@@ -67,22 +134,31 @@ $max-preview-width: 300px;
   }
 
   th {
+    @extend .text-truncate;
     position: relative;
-    padding: $table-spacing;
-    white-space: nowrap;
+    padding: $table-spacing / 2 + 1 $table-spacing;
+    border: none;
 
-    color: $gray-700;
-    border-bottom: 1px solid $c-table-border;
-    @include font($font-size-base);
+    color: var(--table-head-text-color);
+    font-weight: $font-weight-semibold;
 
-    @include table-header-separator();
+    @include desktop {
+      &:not(.hidden) + th::before {
+        @include table-header-separator;
+      }
+    }
+    @include mobile {
+      &:not(.mobile-hidden) + th::before {
+        @include table-header-separator;
+      }
+    }
 
     &.sortable:not(.sorted) {
       @include sortable-link($fa-var-sort);
     }
 
     &.sorted {
-      color: $c-blue-27;
+      color: var(--table-sortable-color);
 
       &.order1 { // desc
         @include sortable-link($fa-var-sort-down);
@@ -93,103 +169,106 @@ $max-preview-width: 300px;
       }
     }
 
-    &.squeeze-column {
-      width: 1px;
+    &.flex-table-header {
+      &.sortable, &.sorted {
+        > a {
+          display: flex; // allows display switch inside the <th> on same line with sort arrows
+        }
+      }
+    }
+
+    &.bulk-ids-column {
+      width: 35px;
+      max-width: 35px;
+    }
+
+    &.additional-columns {
+      padding-block: 8px;
+      width: 50px;
+      max-width: 50px;
+
+      .dropdown {
+        @extend .flex-center;
+      }
     }
   }
 
   .table-actions {
-    width: 1px;
-
     div {
-      display: flex;
-      gap: $gap-sm;
+      @include flex-row($table-spacing);
+      justify-content: end;
     }
   }
 
+  // prevent hover effect from row with 'No records' message
   &.table-hover {
-    tr.empty:hover > * {
-      --bs-table-accent-bg: initial;
-      color: initial;
-    }
-  }
+    tbody {
+      tr:hover, tr.picked {
+        &:not(.empty) {
+          background: $table-hover-bg;
+          cursor: pointer;
 
-  .table__cell-mobile, .table__header-cell-mobile {
-    display: none;
-  }
-
-  &:not(.table-preview) {
-    .table__cell-mobile, .table__header-cell-mobile {
-      @include mobile {
-        display: table-cell;
+          > * {
+            color: var(--default-text-color);
+          }
+        }
+        &.empty > * {
+          --bs-table-accent-bg: initial;
+          color: initial;
+        }
       }
     }
   }
-}
 
-.extended-cell-wrapper {
-  @include flex(column, $gap-sm);
-  width: 100%;
-  overflow: hidden;
-}
-
-.extended-cell__box {
-  @include flex(row, $gap-x-sm);
-  align-items: baseline;
-
-  .icon {
-    font-size: $font-size-base;
+  &:not(.table-preview) {
+    .table-preview-visible {
+      display: none;
+    }
   }
-}
-
-.extended-cell__box--sm {
-  color: $gray-600;
-  font-size: $font-size-sm;
-}
-
-.table-preview__cell {
-  display: none;
 }
 
 .table-preview {
-  @include flex(column);
+  @include flex-table;
 
   tbody {
-    @include flex-wrap;
-    justify-content: space-around;
-
-    tr {
-      width: min(#{$max-preview-width}, 100%);
-    }
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(#{$max-preview-width}, 1fr));
   }
 
-  td, .table-actions {
-    display: none;
+  .js-checkable {
+    @include flex-center;
   }
 
-  th {
-    flex-grow: 1;
-
-    &.squeeze-column {
-      width: auto;
-      flex-grow: 0;
-    }
+  .table__cell-sub-info {
+    @include table-cell-sub-info;
   }
 
-  thead tr {
-    display: flex;
-    justify-content: space-between;
+  .table-preview-visible {
+    display: initial !important;
   }
 
-  .table-preview__cell {
-    display: flex;
-    overflow: hidden;
-    max-width: 100%;
+  .table-preview-hidden {
+    display: none !important;
+  }
+}
+
+.table-cell-wrapper {
+  @include flex-row($table-spacing / 2);
+  align-items: center;
+
+  span {
+    @extend .text-truncate;
+  }
+}
+
+.table__cell-sub-info {
+  @include mobile {
+    @include table-cell-sub-info;
   }
 }
 
 .table-cell__preview-wrapper {
-  @include flex-center;
+  @extend .flex-center;
   height: 200px;
 }
 
@@ -198,15 +277,20 @@ $max-preview-width: 300px;
   max-height: 100%;
 }
 
-.table__badge {
-  padding: 3px $gap-sm;
-  border: 1px solid $gray-400;
-  border-radius: 20px;
-  font-size: $font-size-sm;
-  color: $gray-700;
-  background: $gray-100;
+.table-row-wrapper {
+  display: contents;
 }
 
-.table__badge-sm {
-  padding-block: 0;
+tbody > tr.disabled {
+  text-decoration: none;
+  background-color: var(--input-disabled-bg-color);
+
+  td {
+    cursor: default;
+  }
+
+  .form-control {
+    pointer-events: none;
+    background-color: transparent;
+  }
 }

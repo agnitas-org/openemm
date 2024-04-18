@@ -1,58 +1,60 @@
 .header {
   display: flex;
   justify-content: space-between;
+  gap: $gap;
+  min-width: 0;
   align-items: center;
 
-  flex: 0 0 $headerHeight;
-  padding-inline: $gap;
-
-  background: $c-white;
-  border-bottom: 1px solid #C0C0C0;
+  padding-inline: $header-spacer;
 
   @include mobile {
-    padding-left: $gap-sm;
-    padding-right: $gap-x-sm;
+    padding-left: $header-spacer;
+    padding-right: $header-spacer / 2;
   }
 }
 
 .header__actions {
-  display: flex;
+  @include flex-row($header-spacer);
   align-items: center;
-  gap: $gap;
 
-  @include mobile {
-    gap: $gap-sm;
-  }
-}
+  .btn {
+    padding: $gap-x-sm - 2 8px;
+    gap: $gap-x-sm;
+    border-radius: $border-radius-sm;
+    border-width: 2px;
 
-.header__action {
-  @include flex-center();
-  gap: $gap-x-sm;
-  padding: $gap-x-sm 8px;
-  @include font($font-size-base);
-
-  &.btn {
-    border: none;
-    background-color: $c-sidemenu;
-  }
-
-  .icon {
-    font-size: $font-size-sm;
-  }
-
-  @include mobile {
-    @include size(40px);
-
-    &.btn::after {
-      display: none; // hide bootstrap arrow
-    }
+    @include button-variant(
+            $background: $dark-blue,
+            $border: transparent,
+            $color: $white
+    );
 
     span {
-      display: none;
+      @extend .text-truncate;
     }
 
-    .icon {
-      font-size: 22px;
+    @include mobile {
+      @include size(30px);
+
+      &.btn::after {
+        display: none; // hide bootstrap arrow
+      }
+
+      span {
+        display: none;
+      }
+
+      .icon {
+        font-size: $font-size-lg;
+      }
+    }
+
+    .dark-theme & {
+      @include button-variant(
+              $background: $main-bg-color-dark,
+              $border: $primary,
+              $color: $white
+      );
     }
   }
 }

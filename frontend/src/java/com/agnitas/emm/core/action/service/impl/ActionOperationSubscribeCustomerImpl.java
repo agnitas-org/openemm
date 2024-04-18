@@ -46,6 +46,7 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.mobilephone.MobilephoneNumber;
 import com.agnitas.emm.mobilephone.service.MobilephoneNumberWhitelist;
 import com.agnitas.emm.push.pushsubscription.service.PushSubscriptionService;
@@ -208,7 +209,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID)) {
-			reqParams.put("SYS_TRACKING_VETO", "1");
+			reqParams.put(RecipientStandardField.DoNotTrack.getColumnName(), "1");
 		}
 
 		// copy the request parameters into the customer

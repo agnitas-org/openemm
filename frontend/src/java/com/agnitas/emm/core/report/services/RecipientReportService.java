@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.report.services;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.beans.Admin;
@@ -95,4 +96,6 @@ public interface RecipientReportService {
     JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summary);
 
     byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) throws Exception;
+
+    String getRecipientTxtReport(int recipientId, int companyId, Locale locale);
 }

@@ -39,14 +39,10 @@
                         <div class="col-sm-8">
                             <c:choose>
                                 <c:when test="${not isWorkflowDriven}">
-                                    <mvc:form servletRelativeAction="/mailing/send/deactivate/confirm.action" modelAttribute="form" data-form="resource">
-                                        <mvc:hidden path="mailingID"/>
-
-                                        <a href="#" class="btn btn-regular btn-warning" data-form-confirm="">
-                                            <i class="icon icon-ban"></i>
-                                            <span class="text"><mvc:message code="btndeactivate" /></span>
-                                        </a>
-                                    </mvc:form>
+                                    <a href="<c:url value="/mailing/send/${form.mailingID}/deactivate/confirm.action" />" class="btn btn-regular btn-warning" data-confirm="">
+                                        <i class="icon icon-ban"></i>
+                                        <span class="text"><mvc:message code="btndeactivate" /></span>
+                                    </a>
                                 </c:when>
 
                                 <c:otherwise>

@@ -44,8 +44,6 @@ public interface ExportPredefService {
 
     ServiceResult<File> getExportFileToDownload(String exportFileName, Admin admin);
 
-    String getExportDownloadZipName(Admin admin);
-
     Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) throws Exception;
 
     Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException;

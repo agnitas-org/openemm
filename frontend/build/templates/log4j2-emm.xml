@@ -103,6 +103,18 @@
 			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
 			<TimeBasedTriggeringPolicy />
 		</RollingFile>
+		
+		<RollingFile name="HONEYPOT_PAGE_LOG" fileName="${sys:user.home}/logs/webapps/honeypot-page.log" filePattern="${sys:user.home}/logs/webapps/honeypot-page.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="TOTP_LOG" fileName="${sys:user.home}/logs/webapps/totp.log" filePattern="${sys:user.home}/logs/webapps/totp.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
 	</Appenders>
 	
 	<Loggers>
@@ -218,5 +230,19 @@
 		
 		<Logger name="net.htmlparser.jericho" level="OFF">
 		</Logger>
+		
+		<Logger name="com.agnitas.honeypot.web.HoneypotLinkConfirmController" level="info">
+			<AppenderRef ref="HONEYPOT_PAGE_LOG" />
+		</Logger>
+
+<!--  BEGIN: TOTP loggin -->		
+		<Logger name="com.agnitas.emm.core.logon.web.LogonControllerExtended" level="info">
+			<AppenderRef ref="TOTP_LOG" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.logon.totp.service.TotpTrustDeviceServiceImpl" level="info">
+			<AppenderRef ref="TOTP_LOG" />
+		</Logger>
+<!--  END: TOTP loggin -->		
 	</Loggers>
 </Configuration>

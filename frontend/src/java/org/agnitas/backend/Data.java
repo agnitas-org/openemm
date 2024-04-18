@@ -39,10 +39,11 @@ import org.agnitas.backend.dao.DkimDAO;
 import org.agnitas.backend.dao.RecipientDAO;
 import org.agnitas.backend.dao.TagDAO;
 import org.agnitas.backend.dao.TitleDAO;
+import org.agnitas.backend.dao.UrlDAO;
+import org.agnitas.backend.exceptions.CancelException;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.backend.exceptions.CancelException;
 import org.agnitas.preview.Page;
 import org.agnitas.util.Bit;
 import org.agnitas.util.DBConfig;
@@ -56,6 +57,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -138,6 +140,12 @@ public class Data {
 	 * if set, test VIP are still addressed, even if there are explicit test recipients selected
 	 */
 	protected boolean enforceTestVIP = false;
+	/*
+	 * optional set recipient to bounce if a bounce is
+	 * recorded on another mailinglist
+	 */
+	protected boolean bounceBleed = true;
+	protected int bounceBleedDuration = 180;
 	/**
 	 * database driver name
 	 */
@@ -175,6 +183,7 @@ public class Data {
 	 */
 	protected String sampleEmails = null;
 	protected String deliveryCheckEmails = null;
+	protected String preDeliveryCheckEmails = null;
 
 	/**
 	 * the user_status for this query
@@ -323,6 +332,11 @@ public class Data {
 	public String onePixelURL = null;
 	public String onePixelTag = "/g.html?";
 	/**
+	 * the base for honeypot URL
+	 */
+	public String honeyPotURL = null;
+	public String honeyPotTag = "/hplt.html?";
+	/**
 	 * the largest mailtype to generate
 	 */
 	public int masterMailtype = MailType.HTML_OFFLINE.getIntValue();
@@ -381,10 +395,6 @@ public class Data {
 	 * information about URL extensions
 	 */
 	public URLExtension extendURL = null;
-	/**
-	 * number of entries in URLlist
-	 */
-	public int urlcount = 0;
 	/**
 	 * all title tags
 	 */
@@ -494,7 +504,8 @@ public class Data {
 	/**
 	 * temp. tablespace
 	 */
-	protected String dbTempTablespace = null;
+	private String dbTempTablespace = null;
+	private boolean dbHasTablespaces = true;
 	/**
 	 * my incarnation
 	 */
@@ -506,7 +517,7 @@ public class Data {
 		syscfg = Systemconfig.create ();
 		selection = syscfg.selection ();
 		dbcfg = new DBConfig ();
-		emm = !"openemm".equalsIgnoreCase (Systemconfig.user);
+		emm = syscfg.get ("licence", LICENCE_UNSPEC) > 0;
 		String[]	dbids = dbcfg.ids ();
 		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : (emm ? "emm" : "openemm");
 	}
@@ -518,7 +529,7 @@ public class Data {
 	 * @param option    output option for logging
 	 */
 	public Data (String program, String option) {
-		setupLogging(program, (option == null || !option.equals("silent")));
+		setupLogging(program);
 	}
 	public Data (String program) {
 		this (program, null);
@@ -637,13 +648,9 @@ public class Data {
 	 * Setup logging interface
 	 *
 	 * @param program    to create the logging path
-	 * @param setprinter if we should also log to stdout
 	 */
-	protected void setupLogging(String program, boolean setprinter) {
+	protected void setupLogging(String program) {
 		log = new Log(program, logLevel, logIncarnation ());
-		if (setprinter) {
-			log.setPrinter(System.out);
-		}
 	}
 
 	/**
@@ -670,6 +677,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tsendSeconds = " + sendSeconds);
 		logging(Log.DEBUG, "init", "\tautoURL = " + autoURL);
 		logging(Log.DEBUG, "init", "\tonePixelURL = " + onePixelURL);
+		logging(Log.DEBUG, "init", "\thoneyPotURL = " + honeyPotURL);
 		logging(Log.DEBUG, "init", "\tmasterMailtype = " + masterMailtype);
 		logging(Log.DEBUG, "init", "\tlineLength = " + lineLength);
 		logging(Log.DEBUG, "init", "\tonepixlog = " + onepixlog);
@@ -679,12 +687,15 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tdbID = " + (dbID == null ? "*unset*" : dbID));
 		logging(Log.DEBUG, "init", "\tdbMS = " + (dbMS == null ? "*unset*" : dbMS));
 		logging(Log.DEBUG, "init", "\tdbTempTablespace = " + (dbTempTablespace == null ? "*unset*" : dbTempTablespace));
+		logging(Log.DEBUG, "init", "\tdbHasTablespaces = " + dbHasTablespaces);
 		logging(Log.DEBUG, "init", "\tdirectPath = " + directPath);
 		logging(Log.DEBUG, "init", "\tanonURL = " + anonURL);
 		logging(Log.DEBUG, "init", "\tlicenceID = " + licenceID);
 		logging(Log.DEBUG, "init", "\tlimitBlockOperations = " + limitBlockOperations);
 		logging(Log.DEBUG, "init", "\tlimitBlockOperationsMax = " + limitBlockOperationsMax);
 		logging(Log.DEBUG, "init", "\tenforceTestVIP = " + enforceTestVIP);
+		logging(Log.DEBUG, "init", "\tbounceBleed = " + bounceBleed);
+		logging(Log.DEBUG, "init", "\tbounceBleedDuration = " + bounceBleedDuration);
 		logging(Log.DEBUG, "init", "\tisPriorityMailing = " + isPriorityMailing);
 		logging(Log.DEBUG, "init", "\tmailingPriority = " + mailingPriority);
 		if (references != null) {
@@ -810,6 +821,7 @@ public class Data {
 		limitBlockOperations = cfg.cget("limit_block_operations", limitBlockOperations);
 		limitBlockOperationsMax = cfg.cget("limit_block_operations_max", limitBlockOperationsMax);
 		dbTempTablespace = cfg.cget("db_temp_tablespace");
+		dbHasTablespaces = dbcfg.findInRecord("tablespaces", dbHasTablespaces);
 		
 		company = new Company(this);
 		company.configure(cfg);
@@ -1228,60 +1240,10 @@ public class Data {
 	}
 
 	private void retrieveURLsForMeasurement() throws Exception {
-		List<Map<String, Object>> rc;
+		UrlDAO	urlDao = new UrlDAO (company.id (), mailing.id ());
 
-		URLlist = new ArrayList<>();
-		if (mailing.id() > 0) {
-			String	escape = dbase.isOracle () ? "" : "`";
-			
-			rc = dbase.query(
-				"SELECT url_id, full_url, " + escape + "usage" + escape + ", admin_link, original_url, static_value " +
-			 	"FROM rdir_url_tbl " +
-			 	"WHERE company_id = :companyID AND mailing_id = :mailingID AND (deleted IS NULL OR deleted = 0)",
-				"companyID", company.id(), "mailingID", mailing.id());
-			for (int n = 0; n < rc.size(); ++n) {
-				Map<String, Object> row = rc.get(n);
-				long id = dbase.asLong(row.get("url_id"));
-				String dest = dbase.asString(row.get("full_url"));
-				long usage = dbase.asLong(row.get("usage"));
-
-				if (usage != 0) {
-					URL url = new URL(id, dest, usage);
-
-					url.setAdminLink(dbase.asInt(row.get("admin_link")) > 0);
-					url.setOriginalURL(dbase.asString(row.get("original_url")));
-					url.setStaticValue(dbase.asInt(row.get("static_value")) == 1);
-					URLlist.add(url);
-				}
-			}
-		}
-		urlcount = URLlist.size();
-		getURLDetails();
-	}
-
-	private void getURLDetails() {
-		extendURL = new URLExtension(this);
-
-		List<Map<String, Object>> rq;
-		String query;
-
-		query = "SELECT url_id, param_key, param_value " +
-			"FROM rdir_url_param_tbl " +
-			"WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = :mailingID AND company_id = :companyID) AND param_type = :paramType " +
-			 "ORDER BY param_key";
-		try {
-			rq = dbase.query(query, "mailingID", mailing.id(), "companyID", company.id(), "paramType", "LinkExtension");
-			for (int n = 0; n < rq.size(); ++n) {
-				Map<String, Object> row = rq.get(n);
-				long urlID = dbase.asLong(row.get("url_id"));
-				String pKey = dbase.asString(row.get("param_key"));
-				String pVal = dbase.asString(row.get("param_value"));
-
-				extendURL.add(urlID, pKey, pVal);
-			}
-		} catch (Exception e) {
-			logging(Log.ERROR, "url-details", "Failed to retrieve url extension: " + e.toString(), e);
-		}
+		extendURL = new URLExtension (this);
+		URLlist = urlDao.retrieve (dbase, extendURL);
 	}
 
 	protected void retrieveCustomerTableLayout() throws Exception {
@@ -1319,6 +1281,7 @@ public class Data {
 		imageTemplateNoCache = company.infoSubstituted("imagelink-template-no-cache", mailing.id(), "%(rdir-domain)/image/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
 		mediapoolTemplate = company.infoSubstituted("imagelink-mediapool-template", mailing.id(), "%(rdir-domain)/mediapool_element/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
 		mediapoolTemplateNoCache = company.infoSubstituted("imagelink-mediapool-template-no-cache", mailing.id(), "%(rdir-domain)/mediapool_element/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
+		preDeliveryCheckEmails = company.infoSubstituted ("SpamCheckAddress", mailing.id ());
 
 		if (followupReference > 0) {
 			final int METHOD_NON_OPENER = 0;
@@ -1411,6 +1374,12 @@ public class Data {
 		}
 		if ((temp = company.info ("enforce-test-vip", mailing.id ())) != null) {
 			enforceTestVIP = Str.atob (temp, false);
+		}
+		if ((temp = company.info ("bounce-bleed", mailing.id ())) != null) {
+			bounceBleed = Str.atob (temp, false);
+		}
+		if ((temp = company.info ("bounce-bleed-duration", mailing.id ())) != null) {
+			bounceBleedDuration = Str.atoi (temp, bounceBleedDuration);
 		}
 
 		setupUrlAndTags(mailing.id ());
@@ -1661,6 +1630,9 @@ public class Data {
 		if ((url = company.infoSubstituted("url-onepixel")) != null) {
 			onePixelURL = url;
 		}
+		if ((url = company.infoSubstituted("url-honeypot")) != null) {
+			honeyPotURL = url;
+		}
 		if ((url = company.infoSubstituted("url-anon")) != null) {
 			anonURL = url;
 		}
@@ -1669,6 +1641,9 @@ public class Data {
 		}
 		if ((tag = company.infoSubstituted("url-onepixel-tag")) != null) {
 			onePixelTag = tag;
+		}
+		if ((tag = company.infoSubstituted("url-honeypot-tag")) != null) {
+			honeyPotTag = tag;
 		}
 		if ((tag = company.infoSubstituted("url-anon-tag")) != null) {
 			anonTag = tag;
@@ -1687,6 +1662,9 @@ public class Data {
 			}
 			if (onePixelURL == null) {
 				onePixelURL = rdirDomain + onePixelTag;
+			}
+			if (honeyPotURL == null) {
+				honeyPotURL = rdirDomain + honeyPotTag;
 			}
 			if (anonURL == null) {
 				anonURL = rdirDomain + anonTag;
@@ -2889,13 +2867,13 @@ public class Data {
 	public Log getLogger() {
 		return log;
 	}
-
+	
 	public boolean shouldRemoveDuplicateEMails() {
 		return removeDuplicateEMails && (!maildropStatus.isAdminMailing()) && (!maildropStatus.isTestMailing()) && (!maildropStatus.isPreviewMailing()) && (!maildropStatus.isVerificationMailing());
 	}
 
 	public String tempTablespace() {
-		return dbTempTablespace;
+		return dbHasTablespaces ? dbTempTablespace : null;
 	}
 
 	public int licenceID() {
@@ -2999,6 +2977,13 @@ public class Data {
 	public String deliveryCheckEmails () {
 		return company.isPermitted ("mia.premium") ? deliveryCheckEmails : null;
 	}
+	
+	/*
+	 * returns the pre delivery check address
+	 */
+	public String preDeliveryCheckEmails () {
+		return preDeliveryCheckEmails;
+	}
 
 	/**
 	 * if this is a dryrun test run
@@ -3036,6 +3021,14 @@ public class Data {
 		return enforceTestVIP;
 	}
 	
+	public boolean bounceBleed () {
+		return bounceBleed;
+	}
+	
+	public int bounceBleedDuration () {
+		return bounceBleedDuration;
+	}
+
 	protected Map <String, String> retrieveOverwrittenTestRecipientColumns () {
 		Map <String, String>	rc = null;
 		long			sourceCustomerID = maildropStatus.overwriteTestRecipient ();
@@ -3080,7 +3073,7 @@ public class Data {
 	 */
 	private void setStandardFields(Set<String> predef, Map<String, EMMTag> tags) {
 		collectMediatypes(predef);
-		predef.add("sys_tracking_veto");
+		predef.add(RecipientStandardField.DoNotTrack.getColumnName());
 		targetExpression.requestFields(predef);
 		for (EMMTag tag : tags.values()) {
 			try {
@@ -3288,7 +3281,7 @@ public class Data {
 	 * @return true of column value is NULL
 	 */
 	public boolean columnIsNull(int col) {
-		return layout.get(col).getIsnull();
+		return layout.get(col).isnull();
 	}
 
 	/**
@@ -3621,7 +3614,7 @@ public class Data {
 		if (URLTable == null) {
 			URLTable = new HashMap<>();
 
-			for (int n = 0; n < urlcount; ++n) {
+			for (int n = 0; n < URLlist.size (); ++n) {
 				url = URLlist.get(n);
 				URLTable.put(url.getUrl(), url);
 			}
@@ -3693,7 +3686,6 @@ public class Data {
 						url.setAdminLink(isAdminLink);
 						URLlist.add(url);
 						URLTable.put(rqurl, url);
-						++urlcount;
 						logging(Log.VERBOSE, "rqurl", "Added missing URL " + rqurl);
 					} else {
 						logging(Log.ERROR, "rqurl", "Failed to add missing URL " + rqurl);

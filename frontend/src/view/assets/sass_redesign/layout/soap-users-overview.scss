@@ -1,0 +1,17 @@
+
+#soap-users-overview {
+  @include flex-column;
+
+  #table-tile {
+    flex: 3;
+  }
+
+  #filter-tile {
+    flex: 1;
+  }
+
+  #new-user-tile {
+    height: auto;
+    flex-shrink: 0;
+  }
+}

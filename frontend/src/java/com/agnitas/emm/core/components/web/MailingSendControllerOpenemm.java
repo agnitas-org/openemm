@@ -1,5 +1,14 @@
 package com.agnitas.emm.core.components.web;
 
+import org.agnitas.dao.MailinglistDao;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.service.UserActivityLogService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import com.agnitas.dao.ComDkimDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
@@ -23,14 +32,6 @@ import com.agnitas.emm.premium.service.PremiumFeaturesService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/mailing/send")

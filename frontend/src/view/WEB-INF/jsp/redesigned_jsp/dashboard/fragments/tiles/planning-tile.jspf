@@ -14,22 +14,19 @@
 <script id="dashboard-tile-planning" type="text/x-mustache-template">
     <div class="tile draggable-tile tile-tall" id="dashboard-planning" data-initializer="dashboard-planning">
         <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
-            <div class="tile-controls">
-                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
+            <h1 class="tile-title">{{- tileName }}</h1>
         </div>
         <div class="tile-body">
-            <div id="schedule-send-date-container">
-                <span>Send date</span>
-                <div class="date-picker-container">
-                    <input id="schedule-start-date" type="text" name="fromDate" placeholder="From" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}', minFor: '#schedule-end-date'">
-                    <i class="icon icon-calendar-alt js-open-datepicker"></i>
+            <div data-date-range>
+                <label for="schedule-start-date" class="form-label"><mvc:message code="mailing.senddate" /></label>
+
+                <div class="date-picker-container mb-1">
+                    <mvc:message var="fromMsg" code="From" />
+                    <input id="schedule-start-date" type="text" name="fromDate" placeholder="${fromMsg}" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}'">
                 </div>
                 <div class="date-picker-container">
-                    <input id="schedule-end-date" type="text" name="toDate" placeholder="To" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}', maxFor: '#schedule-start-date'">
-                    <i class="icon icon-calendar-alt js-open-datepicker"></i>
+                    <mvc:message var="toMsg" code="To" />
+                    <input id="schedule-end-date" type="text" name="toDate" placeholder="${toMsg}" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}'">
                 </div>
             </div>
 
@@ -37,6 +34,6 @@
                 <%-- Loads by JS --%>
             </div>
         </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
     </div>
 </script>

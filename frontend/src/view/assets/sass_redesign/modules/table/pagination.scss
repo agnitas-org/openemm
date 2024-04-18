@@ -1,35 +1,30 @@
 .pagination {
-  border-radius: $border-radius;
-  border: $border-default;
-
   li {
-    @include flex-center();
-    @include size(30px, 25px);
-    @include font($font-size-sm);
-    color: $gray-700;
+    @include flex-center;
+    @include size(30px);
+    font-weight: $font-weight-semibold;
+    color: var(--table-head-text-color);
 
     &.active, &:hover {
-      color: $c-white;
-      background-color: $c-blue-27;
-    }
-
-    &:first-child {
-      @include border-start-radius;
-    }
-
-    &:last-child {
-      @include border-end-radius;
+      color: $white;
+      background-color: var(--pagination-active-bg-color);
     }
 
     &.disabled {
       cursor: not-allowed;
-      background-color: $gray-100;
-      color: $gray-400;
+      background-color: transparent;
+      color: var(--pagination-disabled-text-color);
     }
 
     a {
       width: 100%;
       text-align: center;
     }
+  }
+}
+
+.hide-pagination {
+  .pagination {
+    display: none;
   }
 }

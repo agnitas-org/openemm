@@ -630,18 +630,20 @@
                     <!-- Displays the invitation text and a button to create a new mailing, if the mailing list is empty. -->
                     <emm:ShowByPermission token="mailing.change">
                     <c:if test="${not forTemplates}">
-                        <display:setProperty name="basic.msg.empty_list_row">
-                            <tr class="empty">
-                                <td colspan="{0}">
-                                    <mvc:message code="mailing.create.first"/>
-                                        <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-                                    <a href="${mailingCreateLink}" class="btn btn-inverse btn-regular">
-                                        <i class="icon icon-plus"></i>
-                                        <span class="text"><mvc:message code="mailing.New_Mailing"/></span>
-                                    </a>
-                                </td>
-                            </tr>
-                        </display:setProperty>
+                        <emm:HideByPermission token="mailing.content.readonly">
+                            <display:setProperty name="basic.msg.empty_list_row">
+                                <tr class="empty">
+                                    <td colspan="{0}">
+                                        <mvc:message code="mailing.create.first"/>
+                                            <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                                        <a href="${mailingCreateLink}" class="btn btn-inverse btn-regular">
+                                            <i class="icon icon-plus"></i>
+                                            <span class="text"><mvc:message code="mailing.New_Mailing"/></span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </display:setProperty>
+                        </emm:HideByPermission>
                     </c:if>
                     </emm:ShowByPermission>
                     

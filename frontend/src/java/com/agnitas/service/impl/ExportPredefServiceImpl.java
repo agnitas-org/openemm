@@ -10,28 +10,8 @@
 
 package com.agnitas.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExportPredefService;
-import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.RecipientExportWorker;
-import org.agnitas.service.RecipientExportWorkerFactory;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.Charset;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
-import javax.sql.DataSource;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -43,7 +23,30 @@ import java.util.EnumSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import javax.sql.DataSource;
+
+import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.ExportPredef;
+import org.agnitas.dao.ExportPredefDao;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.exception.UnknownUserStatusException;
+import org.agnitas.emm.core.autoimport.service.RemoteFile;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.service.FileCompressionType;
+import org.agnitas.service.RecipientExportWorker;
+import org.agnitas.service.RecipientExportWorkerFactory;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.importvalues.Charset;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExportPredefService;
+import com.agnitas.service.ServiceResult;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
 
@@ -109,8 +112,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         RecipientExportWorker worker = recipientExportWorkerFactory.newWorker(export, admin);
         worker.setDataSource(dataSource);
         worker.setExportFile(tmpExportFile.getAbsolutePath());
-        worker.setZipped(true);
-        worker.setZippedFileName(getExportDownloadZipName(admin));
+        worker.setCompressionType(FileCompressionType.ZIP);
         worker.setUsername(admin.getUsername() + " (ID: " + admin.getAdminID() + ")");
         worker.setRemoteFile(new RemoteFile("", tmpExportFile, -1));
         worker.setMaximumExportLineLimit(configService.getIntegerValue(ConfigValue.ProfileRecipientExportMaxRows, admin.getCompanyID()));
@@ -120,26 +122,12 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     private File getTempRecipientExportFile(int companyId) {
         File companyCsvExportDirectory = getExportDirectory(companyId);
         String dateString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
-        File importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + ".zip");
+        File importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + ".csv.zip");
         int duplicateCount = 1;
         while (importTempFile.exists()) {
-            importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + "_" + (duplicateCount++) + ".zip");
+            importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + "_" + (duplicateCount++) + ".csv.zip");
         }
         return importTempFile;
-    }
-    
-    /**
-     * Generates a filename to be used for the Download.
-     * This name appear in the download window and is NOT the the real name within the webserver's filesystem.
-     *
-     * @param admin current user
-     * @return filename
-     */
-    @Override
-    public String getExportDownloadZipName(Admin admin) {
-        return admin.getCompany().getShortname() + "_"
-                + new SimpleDateFormat(DateUtilities.YYYYMD).format(new Date())
-                + ".zip";
     }
     
     private File getExportDirectory(int companyId) {
@@ -228,8 +216,9 @@ public class ExportPredefServiceImpl implements ExportPredefService {
 
     protected EnumSet<BindingEntry.UserType> getAvailableUserTypeOptions(Admin admin) {
         final EnumSet<BindingEntry.UserType> options = EnumSet.allOf(BindingEntry.UserType.class);
+        //options.removeAll(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP);
+        //options.remove(BindingEntry.UserType.WorldVIP);
         options.removeAll(Set.of(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP));
-
         return options;
     }
 

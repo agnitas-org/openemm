@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -2351,7 +2351,7 @@ return false;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"])</expression>
+                                                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"]) || "".equals(params["startDate"])</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3333">
@@ -2371,7 +2371,7 @@ return false;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"])</expression>
+                                                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"]) || "".equals(params["stopDate"])</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3415">
@@ -2393,7 +2393,7 @@ return false;
                                                             <property name="textAlign">left</property>
                                                             <text-data id="3310">
                                                                 <structure name="toc"/>
-                                                                <expression name="valueExpr">tr("From")</expression>
+                                                                <expression name="valueExpr">tr("mailing.SenderEmail")</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3306">

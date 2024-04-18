@@ -8,7 +8,6 @@
 
 */
 
-
 package org.agnitas.util;
 
 import java.io.BufferedInputStream;
@@ -66,6 +65,19 @@ public class ZipUtilities {
 			}
 			return entryList;
 		}
+	}
+	
+	public static List<String> getZipFileEntries(final File file, final char[] zipPassword) throws ZipException, IOException {
+		final List<String> entries = new ArrayList<>();
+		try (net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(file, zipPassword)) {
+			final List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+			if (fileHeaders != null) {
+				for (final FileHeader fileHeader : fileHeaders) {
+					entries.add(fileHeader.getFileName());
+				}
+			}
+		}
+		return entries;
 	}
 	
 	/**
@@ -351,7 +363,7 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileToExistingzipFile(File sourceFile, File zipFile) throws IOException {
-		try(ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
+		try (ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
 			addFileToOpenZipFileStream(sourceFile, zipOutputStream);
 		}
 	}
@@ -365,7 +377,7 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileToExistingzipFile(List<File> sourceFiles, File zipFile) throws IOException {
-		try(final ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
+		try (final ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
 			for (File file : sourceFiles) {
 				addFileToOpenZipFileStream(file, zipOutputStream);
 			}
@@ -416,8 +428,9 @@ public class ZipUtilities {
 		File originalFileTemp = new File(zipFile.getParentFile().getAbsolutePath() + "/" + String.valueOf(System.currentTimeMillis()));
 		zipFile.renameTo(originalFileTemp);
 		
-		final ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
+		ZipOutputStream zipOutputStream = null;
 		try {
+			zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
 			try (ZipFile sourceZipFile = new ZipFile(originalFileTemp)) {
 				// copy entries
 				Enumeration<? extends ZipEntry> srcEntries = sourceZipFile.entries();

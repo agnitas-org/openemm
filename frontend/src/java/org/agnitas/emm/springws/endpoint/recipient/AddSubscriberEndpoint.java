@@ -14,11 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.annotation.Resource;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -27,17 +24,20 @@ import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.AddSubscriberResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.agnitas.emm.springws.util.UserActivityLogAccess;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.springws.subscriptionrejection.service.SubscriptionRejectionService;
+
+import jakarta.annotation.Resource;
 
 @Endpoint
 public class AddSubscriberEndpoint extends BaseEndpoint {
@@ -108,7 +108,7 @@ public class AddSubscriberEndpoint extends BaseEndpoint {
 		model.setParameters(Utils.toCaseInsensitiveMap(request.getParameters(), true));
 
 		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId)) {
-			model.getParameters().put(RecipientUtils.COLUMN_DO_NOT_TRACK, "1");
+			model.getParameters().put(RecipientStandardField.DoNotTrack.getColumnName(), "1");
 		}
 
 		return model;

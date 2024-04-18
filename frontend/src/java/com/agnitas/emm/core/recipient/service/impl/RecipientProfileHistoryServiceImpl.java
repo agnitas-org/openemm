@@ -20,16 +20,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
 import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 /**
  * Implementation of {@link RecipientProfileHistoryService} interface.
@@ -80,7 +80,7 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 		List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
 
 		return Optional.ofNullable(allFields).orElse(Collections.emptyList()).stream()
-		.filter(field -> field.getHistorize() || RecipientProfileHistoryUtil.isDefaultColumn(field.getColumn()))
+		.filter(field -> field.getHistorize() || RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames().contains(field.getColumn()))
 		.peek(field -> {
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Included profile field column '%s' in history", field.getColumn()));

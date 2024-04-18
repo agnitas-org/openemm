@@ -41,7 +41,7 @@
             <div class="col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
-                        <c:set var="isMailinglistDenied" value="${not mailinglistEditable or not MAILING_EDITABLE or not emailSettingsEditable or workflowDriven}"/>
+                        <c:set var="isMailinglistDenied" value="${not mailinglistEditable or not MAILING_EDITABLE or not emailSettingsEditable or workflowDriven or isSettingsReadonly}"/>
                         <mvc:select path="mailinglistId" id="settingsGeneralMailingList" cssClass="form-control js-select" size="1"
                                        data-action="save-mailing-list-id"
                                        disabled="${isMailinglistDenied}"
@@ -72,7 +72,7 @@
                 <div class="col-sm-4">
                     <div class="input-group">
                         <div class="input-group-controls">
-                            <mvc:select path="archiveId" id="settings_general_campaign" cssClass="form-control js-select" disabled="${workflowDriven}">
+                            <mvc:select path="archiveId" id="settings_general_campaign" cssClass="form-control js-select" disabled="${workflowDriven or isSettingsReadonly}">
                                 <mvc:option value="0"><mvc:message code="mailing.NoCampaign"/></mvc:option>
                                 <c:forEach var="archive" items="${archives}" end="500">
                                     <mvc:option value="${archive.id}">${archive.shortname}</mvc:option>
@@ -84,7 +84,7 @@
                 </div>
                 <div class="col-sm-4">
                     <label class="toggle">
-                        <mvc:checkbox path="archived" disabled="${not emailSettingsEditable}"/>
+                        <mvc:checkbox path="archived" disabled="${not emailSettingsEditable or workflowDriven or isSettingsReadonly}"/>
                         <div class="toggle-control"></div>
                         <span class="text">
                             <mvc:message code="mailing.archived"/>
@@ -112,7 +112,7 @@
                             <mvc:select path="mailingType" id="settingsGeneralMailType" cssClass="form-control" 
                                         data-action="change-general-mailing-type"
                                         data-result-template="mailing-type-option"
-                                        disabled="${not MAILING_EDITABLE or workflowDriven or not emailSettingsEditable}">
+                                        disabled="${not MAILING_EDITABLE or workflowDriven or not emailSettingsEditable or isSettingsReadonly}">
                                 <mvc:option value="${NORMAL_MAILING_TYPE}">
                                     <mvc:message code="Normal_Mailing"/>
                                 </mvc:option>

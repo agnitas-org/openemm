@@ -278,11 +278,11 @@
 	</bean>
 
 	<bean id="ImportProfileDao" class="org.agnitas.dao.impl.ImportProfileDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="dataEncryptor" ref="DataEncryptor" />
-		<property name="emmActionOperationDao" ref="EmmActionOperationDao" />
-		<property name="mailingDao" ref="MailingDao" />
+    	<constructor-arg ref="dataSource" />
+    	<constructor-arg ref="JavaMailService" />
+    	<constructor-arg ref="DataEncryptor" />
+    	<constructor-arg ref="EmmActionOperationDao" />
+    	<constructor-arg ref="MailingDao" />
 	</bean>
 	
 <!-- ============================================================================================================================== Job queue -->
@@ -601,12 +601,6 @@
 	
 	<!-- ============================================================================================================================== Mobile phone whitelist -->
 	<bean id="MobilephoneNumberWhitelistDao" class="com.agnitas.emm.mobilephone.dao.MobilephoneNumberWhitelistDaoImpl" parent="_BaseDao" />
-	
-	<!-- ============================================================================================================================== Upload -->
-	<bean id="UploadDao" class="com.agnitas.emm.core.upload.dao.impl.ComUploadDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
 
 	<bean id="PermissionDao" class="com.agnitas.dao.impl.PermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionDaoImpl" parent="_BaseDao" />
@@ -622,6 +616,11 @@
 	<bean id="deliveryDao" class="com.agnitas.emm.core.delivery.dao.impl.DeliveryDaoImpl" parent="_BaseDao" />
 
 	<bean id="LayoutDao" class="com.agnitas.dao.impl.LayoutDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
+	<bean id="MailingRecipientsDao" class="com.agnitas.emm.core.mailing.dao.impl.MailingRecipientsDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>

@@ -1,14 +1,9 @@
 
-$c-calendar-day-alien:                   #C0C0C0;
-$c-calendar-day-alien-has-mailings:      $gray-700;
-$c-calendar-day-today:                   $primary;
-$c-calendar-day-selectable:              #D9D9D9;
-$calendar-day-hovered-border: $border-default;
-$calendar-day-selected-border: 1px solid #1A3258;
+$calendar-day-diameter: 35px;
 
 #calendar-table {
   text-align: center;
-  border: 1px solid #D0D0D0;
+  border: $border-default;
   border-radius: $border-radius;
   border-collapse: unset;
   height: 100%;
@@ -47,44 +42,48 @@ $calendar-day-selected-border: 1px solid #1A3258;
   display: inline-block;
   @include size(clamp(20px, 2vw, $calendar-day-diameter));
   line-height: clamp(20px, 2vw, $calendar-day-diameter);
-  font-size: clamp(0.5vw, 1rem, 1vw);
   text-align: center;
-  border: 1px solid transparent;
+  border: $border-transparent;
+
+  @include desktop {
+    font-size: clamp(0.5vw, $font-size-base, 1vw);
+  }
 
   @include mobile {
     @include size($calendar-day-diameter);
     line-height: $calendar-day-diameter;
-    font-size: 1rem;
   }
 }
 
 .calendar-day {
   border-radius: 50%;
-  border: 1px solid transparent;
+  border: $border-transparent;
 
   &:hover:not(.calendar-day--selected) {
-    border: $calendar-day-hovered-border;
+    border: $border-default;
   }
 }
 
 .calendar-day--selectable {
-  background-color: $c-calendar-day-selectable;
+  background-color: var(--calendar-selectable-cell-bg-color);
 }
 
 .calendar-day--today {
-  color: $c-white;
-  background-color: $c-calendar-day-today;
+  color: $white;
+  background-color: $primary;
 }
 
 .calendar-day--selected {
-  font-weight: 600;
-  border: $calendar-day-selected-border;
+  font-weight: $font-weight-semibold;
+  border: 1px solid var(--calendar-selected-border-color);
 }
 
 .calendar-day--alien {
-  color: $c-calendar-day-alien;
+  color: var(--calendar-other-month-color);
 
   &.calendar-day--selectable {
-    color: $c-calendar-day-alien-has-mailings;
+    background: var(--calendar-other-month-selectable-bg-color);
+    border: 1px solid var(--calendar-other-month-selectable-border-color);
+    color: var(--calendar-other-month-selectable-color);
   }
 }

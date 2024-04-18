@@ -1,0 +1,15 @@
+
+<script id="module-GetArchiveList" type="text/x-mustache-template">
+    <div class="tile-body" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="GetArchiveList"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+
+        <label class="form-label" for="module_{{- index}}.campaignID"><mvc:message code="mailing.archive"/></label>
+        <select name="modules[].campaignID" id="module_{{- index}}.campaignID" class="form-control js-select">
+            <c:forEach items="${archives}" var="campaign">
+                {{ var selectedSign = ${campaign.id} == campaignID ? 'selected="selected"' : ''; }}
+                <option value="${campaign.id}" {{- selectedSign}}>${campaign.shortname}</option>
+            </c:forEach>
+        </select>
+    </div>
+</script>

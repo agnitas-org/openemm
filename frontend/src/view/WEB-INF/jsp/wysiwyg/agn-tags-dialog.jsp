@@ -18,6 +18,9 @@
             </div>
 
             <div class="modal-body">
+                <div class="well block" style="margin-bottom: 10px">
+                    <p><mvc:message code="info.manual.agnTags" arguments="${emm:getHelpUrl(pageContext.request, 'agnTags')}" /></p>
+                </div>
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="agn-tag-name"><mvc:message code="htmled.tag"/>:</label>
@@ -59,7 +62,7 @@
                     </div>
                 </script>
 
-                <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
+                <c:set var="linkCreationExtendedAttrs">
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label checkbox-control-label" for="createLinkToggle"><mvc:message code="TrackableLink.createLink"/>:</label>
@@ -79,6 +82,18 @@
                             </div>
                         </div>
                     </div>
+                </c:set>
+
+                <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
+                    ${linkCreationExtendedAttrs}
+                </script>
+
+                <script type="text/x-mustache-template" id="agnFULLVIEW-extended-attributes">
+                    ${linkCreationExtendedAttrs}
+                </script>
+
+                <script type="text/x-mustache-template" id="agnWEBVIEW-extended-attributes">
+                    ${linkCreationExtendedAttrs}
                 </script>
 
                 <script type="application/json" data-initializer="wysiwyg-agn-tags">

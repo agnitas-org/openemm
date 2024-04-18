@@ -16,52 +16,33 @@
 
 
 .modal-content {
-  border: 1px solid $border-color;
-//  position: relative;
-//
-//  font-size: $fs-regular;
-//  color:     $c-black-85;
-//
-//  outline:          none;
-//  border-radius:    3px;
-//  background-clip:  padding-box;
-//  background-color: #fff;
-//
-//  @include shadow-variant(hardest);
+  border: $border-default;
+  background-color: var(--main-bg-color);
+  overflow: hidden;
 }
 
 .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @extend .tile-header;
   border-bottom-color: transparent;
-  height: $tile-header-height;
-  line-height: 26px;
-  padding-left: $gap;
-  padding-right: $gap;
-  font-weight: 600;
   font-size: $font-size-lg;
-  color: $c-black;
+
+  .modal-title {
+    @extend .tile-title;
+    line-height: 26px;
+  }
+  .modal-controls {
+    @extend .tile-controls;
+  }
+  .modal-title-controls {
+    @extend .tile-title-controls;
+  }
 }
 
-//.modal-title {
-//  max-width: calc(90% - 20px);
-//  float: left;
-//  margin: 0;
-//  margin-right: 20px;
-//  font-size:   $fs-xlarge;
-//  line-height: 22px;
-//  margin-top: 14px;
-//  font-weight: $fw-semi;
-//
-//  @include text-overflow();
-//}
-
 .modal-body {
-  @include hide-scroll();
+  @include hide-scroll;
   
 //  position: relative;
-  padding: $gap;
+  padding: $gap-md;
 //
 //  .modal-separator:last-child {
 //    display: none;
@@ -73,9 +54,9 @@
 }
 
 .modal-footer {
-  padding: $gap;
+  padding: $gap-md;
   padding-top: 0;
-  gap: $gap;
+  gap: $gap-md;
 
   border-top: none;
   & > * {
@@ -83,22 +64,23 @@
   }
 }
 
+.modal-content {
+  color: var(--default-text-color);
+}
+
 @include media-breakpoint-down(lg) {
-  .modal-backdrop.show {
-    opacity: 0;
-  }
-  
   .modal-dialog {
-    padding: $gap-sm + $headerHeight $gap-sm $gap-sm;
+    padding: $gap-sm + $header-height $gap-sm $gap-sm $gap-sm;
     
     .modal-content {
-      border: 1px solid $border-color;
+      border: $border-default;
       border-radius: $border-radius;
       height: auto;
     }
     
     .modal-header {
       padding: $gap-sm;
+      @include border-top-radius;
     }
     
     .modal-body {
@@ -118,6 +100,14 @@
     display: inline-flex;
     width: auto;
     text-align: initial;
+  }
+}
+
+.modal-dialog-full-height {
+  @extend .modal-dialog-scrollable;
+
+  .modal-content {
+    height: 100%;
   }
 }
 
@@ -156,10 +146,6 @@
   cursor: pointer;
 }
 
-.modal__close-icon {
-  cursor: pointer;
-}
-
 @mixin modal-variant($state, $color) {
   .modal {
     &-#{$state} {
@@ -168,13 +154,20 @@
       }
 
       .modal-header {
-        color: $c-white;
+        color: $white;
         background-color: $color;
-      }
 
-      .modal__close-icon {
-        &:hover, &:focus {
-          color: darken($color, 50%);
+        .modal-title {
+          color: $white;
+          font-weight: $font-weight-semibold;
+        }
+
+        .btn-close {
+          color: $white;
+
+          &:hover, &:focus {
+            color: darken($color, 50%);
+          }
         }
       }
     }
@@ -186,4 +179,13 @@
   $color: nth($conf, 2);
 
   @include modal-variant($state, $color);
+}
+
+.modal-editors-container {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: $gap-md;
+  width: 90vw;
+  height: calc(85vh - 120px); // 120px - modal except body
 }

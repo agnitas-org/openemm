@@ -10,6 +10,18 @@
 
 package org.agnitas.emm.core.userforms.impl;
 
+import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.userform.bean.UserForm;
+import org.agnitas.emm.core.userforms.UserformService;
+import org.agnitas.exceptions.FormNotFoundException;
+import org.agnitas.service.UserFormExporter;
+import org.agnitas.service.UserFormImporter;
+import org.agnitas.util.Tuple;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,19 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.agnitas.emm.core.userforms.UserformService;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.service.UserFormExporter;
-import org.agnitas.service.UserFormImporter;
-import org.agnitas.util.Tuple;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.dao.UserFormDao;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.userform.bean.UserForm;
 
 /**
  * Implementation of {@link UserformService}.

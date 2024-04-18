@@ -10,9 +10,11 @@
 
 package com.agnitas.service.impl;
 
+import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.preview.PreviewFactory;
 import org.agnitas.service.UserActivityLogService;
 
 import com.agnitas.emm.core.JavaMailService;
@@ -46,4 +48,6 @@ public abstract class ServiceLookupFactory {
 	abstract public AdminService getBeanAdminService();
 	abstract public MailingService getBeanMailingService();
 	abstract public MaildropStatusService getBeanMaildropStatusService();
+    abstract public PreviewFactory getBeanPreviewFactory();
+    abstract public ServerStatusService getBeanServerStatusService();
 }

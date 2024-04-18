@@ -17,6 +17,7 @@
           data-form="resource">
 
     <mvc:hidden path="id"/>
+    <input type="hidden" name="forAddress" value="${forAddress}"/>
 
     <div class="tile">
         <div class="tile-header">
@@ -118,7 +119,7 @@
 
             <div id="autoresponder-field-container" class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="mailingListId"><mvc:message code="mailloop.autoresponder.mailing"/></label>
+                    <label class="control-label" for="arMailingId"><mvc:message code="mailloop.autoresponder.mailing"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:select path="arMailingId" id="arMailingId" cssClass="form-control js-select" size="1">

@@ -1,10 +1,26 @@
 
 #image-editor-modal {
+
+  .modal-content {
+    min-width: 80vw;
+  }
+
   .modal-body {
     display: grid;
-    grid-template-columns: minmax(150px, 270px) auto minmax(200px, 270px);
-    gap: $gap;
+    grid-template-columns: minmax(200px, 270px) auto minmax(200px, 270px);
+    gap: $gap-md;
   }
+
+  #canvas-editor-area {
+    @include flex-center;
+  }
+}
+
+.jcrop-handle {
+  background-color: $primary;
+  border: none;
+  @include size($gap-sm);
+  opacity: 1 !important;
 }
 
 /* Selection Border */

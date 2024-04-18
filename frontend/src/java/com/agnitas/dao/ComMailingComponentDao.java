@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
@@ -65,4 +66,8 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 	int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents);
 
 	boolean updateBinBlockBulk(int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception;
+
+	List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, int companyID);
+
+	List<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter);
 }

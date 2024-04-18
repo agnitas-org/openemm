@@ -8,19 +8,7 @@ class CalendarTile extends DraggableTile {
   }
   
   #domInitializer() {
-    const CalendarService = AGN.Lib.CalendarService;
-    const Action = AGN.Lib.Action;
-  
-    CalendarService.setUp(this.config);
-    
-    AGN.Lib.DateFormat.getLocalizedShortWeekdays(navigator.language, this.config.firstDayOfWeek).forEach(weekDay => {
-      $('#calendar-header').append(`<td><div class="calendar-cell">${weekDay}</div></td>`);
-    });
-    CalendarService.generateMonthCalendar(CalendarService.getCurMonth(), CalendarService.getCurYear());
-    
-    Action.new({'change': '#month_list, #month_list_year'}, function() {
-      AGN.Lib.CalendarService.showDate();
-    });
+    new AGN.Lib.Calendar(this.el, this.config.firstDayOfWeek, this.config.statisticsViewAllowed);
   }
 
   get id() {

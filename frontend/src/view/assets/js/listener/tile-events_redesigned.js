@@ -14,7 +14,7 @@
 
   // on mobile whole tile header except actions clickable
   // on desktop only tile title clickable
-  $(document).on('click', '[data-toggle-tile] .tile-header', function(e) {
+  $(document).on('click', '[data-toggle-tile] > .tile-header', function(e) {
     const $tile = $(this).closest('.tile');
     const isCurrentScreenMobile = AGN.Lib.Helpers.isMobileView();
 
@@ -23,6 +23,7 @@
     }
     if ((isCurrentScreenMobile && !isHeaderControls(e.target)) || isHeaderTitle(e.target)) {
       Tile.toggle($tile);
+      AGN.Lib.Scrollbar.get($tile)?.update();
       return;
     }
     e.preventDefault();

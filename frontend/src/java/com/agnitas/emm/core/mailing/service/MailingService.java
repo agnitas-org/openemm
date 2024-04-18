@@ -10,14 +10,15 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
@@ -30,15 +31,12 @@ import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public interface MailingService {
 	
@@ -173,6 +171,8 @@ public interface MailingService {
 
     boolean checkMailingReferencesTemplate(int templateId, int companyId);
 
+    boolean isDynamicTemplateCheckboxVisible(Mailing mailing);
+
     boolean hasMediaType(int mailingId, MediaTypes type, int companyId);
 
 	String getMailingName(int mailingId, int companyId);
@@ -220,4 +220,5 @@ public interface MailingService {
 	boolean saveMailingDescriptiveData(Mailing mailing);
 
 	List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
+
 }

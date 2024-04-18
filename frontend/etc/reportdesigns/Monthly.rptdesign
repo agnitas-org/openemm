@@ -2573,7 +2573,7 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
                                 <cell id="162">
                                     <text-data id="431">
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale())</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="163">

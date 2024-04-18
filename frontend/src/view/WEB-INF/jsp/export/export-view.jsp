@@ -399,6 +399,20 @@
                     </mvc:select>
                 </div>
             </div>
+
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="export-decoded-values" class="control-label checkbox-control-label">
+                        <mvc:message code="export.decode.values"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <label class="toggle">
+                        <mvc:checkbox path="useDecodedValues" id="export-decoded-values"/>
+                        <div class="toggle-control"></div>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 

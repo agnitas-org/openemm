@@ -1,0 +1,36 @@
+<emm:instantiate var="now" type="java.util.Date" />
+<fmt:formatDate value="${now}" pattern="HH" timeZone="${adminZone}" var="currentHour" />
+<fmt:formatDate value="${now}" pattern="mm" timeZone="${adminZone}" var="currentMinutes" />
+
+<c:choose>
+    <c:when test="${isDateBasedMailing}">
+        <div class="col has-feedback">
+            <label for="sendTime" class="form-label text-truncate"><mvc:message code="mailing.SendingTimeDaily" /></label>
+
+            <div class="time-picker-container" data-field="split">
+                <input type="text" id="sendTime" name="sendTime" class="form-control js-timepicker" value="${currentHour}:${currentMinutes}"
+                       data-field-split="sendHour, sendMinute" data-field-split-rule=":" data-timepicker-options="mask: 'h:00'" ${not canSendOrActivateMailing or isWorkflowDriven ? 'disabled' : ''}/>
+
+                <div class="form-control-feedback-message">
+                    <mvc:message code="default.interval"/>: <mvc:message code="default.minutes.60"/>
+                </div>
+            </div>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="col">
+            <label for="sendDate" class="form-label text-truncate"><mvc:message code="default.date.time" /></label>
+
+            <div class="date-time-container">
+                <div class="date-picker-container">
+                    <fmt:formatDate value="${now}" pattern="${adminDateFormat}" timeZone="${adminZone}" var="currentDate" />
+                    <input name="sendDate" id="sendDate" value="${currentDate}" class="form-control js-datepicker" data-datepicker-options="minDate: 0" ${not canSendOrActivateMailing ? 'disabled' : ''}/>
+                </div>
+
+                <div class="time-picker-container" data-field="split">
+                    <input id="sendTime" type="text" name="sendTime" value="${currentHour}:${currentMinutes}" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" data-field-split="sendHour, sendMinute" data-field-split-rule=":" ${not canSendOrActivateMailing ? 'disabled' : ''}>
+                </div>
+            </div>
+        </div>
+    </c:otherwise>
+</c:choose>

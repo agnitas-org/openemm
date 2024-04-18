@@ -148,8 +148,16 @@ public class BC {
 		} else if (data.maildropStatus.isCampaignMailing() || data.maildropStatus.isVerificationMailing() || data.maildropStatus.isPreviewMailing()) {
 			String receiverQuery;
 
+			bounceBleeding ();
 			if (data.campaignForceSending || data.maildropStatus.isPreviewMailing()) {
-				partFrom = partExtend(customerTable + " cust LEFT OUTER JOIN " + bindingTable + " bind ON (cust.customer_id = bind.customer_id AND " + partMailinglist + ")");
+				String	mss = data.getMediaSubselect ();
+				String	query = customerTable + " cust LEFT OUTER JOIN " + bindingTable + " bind ON (cust.customer_id = bind.customer_id AND " + partMailinglist;
+				if (mss != null) {
+					query += " AND " + mss;
+				}
+				query += ")";
+
+				partFrom = partExtend(query);
 			} else {
 				partFrom = partFromPrepare;
 			}
@@ -381,11 +389,13 @@ public class BC {
 
 		try {
 			data.dbase.execute("TRUNCATE TABLE " + tname);
+			data.logging(Log.DEBUG, "bc", "Truncated table " + tname);
 		} catch (Exception e) {
 			data.logging(Log.WARNING, "bc", "Failed to truncate table " + tname + ": " + e.toString());
 		}
 		try {
 			data.dbase.execute("DROP TABLE " + tname);
+			data.logging(Log.DEBUG, "bc", "Removed table " + tname);
 			rc = true;
 		} catch (Exception e) {
 			data.logging(Log.ERROR, "bc", "Failed to drop table " + tname + ": " + e.toString());
@@ -462,9 +472,6 @@ public class BC {
 
 	private void getRestrictions(List<String> collect) {
 		collect.add(partSubselect);
-		if (!data.maildropStatus.isPreviewMailing()) {
-			collect.add(data.getMediaSubselect());
-		}
 		if (data.maildropStatus.isWorldMailing() || data.maildropStatus.isRuleMailing() || data.maildropStatus.isOnDemandMailing()) {
 			collect.add(data.getFollowupSubselect());
 		}
@@ -594,6 +601,17 @@ public class BC {
 		if (partUsertype != null) {
 			partSelect += " AND " + partUsertype;
 		}
+		if (!data.maildropStatus.isPreviewMailing()) {
+			String	mss = data.getMediaSubselect();
+			
+			if (mss != null) {
+				partSelect += " AND " + mss;
+				partCounter += " AND " + mss;
+				if (partReactivate != null) {
+					partReactivate += " AND " + mss;
+				}
+			}
+		}
 		
 		List <String> collect = new ArrayList <> ();
 		boolean limitSelect = data.maildropStatus.isWorldMailing () ||
@@ -667,6 +685,7 @@ public class BC {
 		
 		boolean	fail = false;
 		if ((! tableCreated) ||
+		    (! bounceBleeding ()) ||
 		    (! handleDuplicateAddreses (ctable)) ||
 		    (! prepareDailyLimits ()) ||
 		    (! removePrioritizedReceiver ()) ||
@@ -735,6 +754,81 @@ public class BC {
 		}
 	}
 
+	private boolean bounceBleeding () {
+		boolean	ok = true;
+		
+		if (data.bounceBleed ()) {
+			int	duration = data.bounceBleedDuration ();
+			
+			try {
+				String		query =
+					"SELECT customer_id, exit_mailing_id, mailinglist_id, mediatype " +
+					"FROM " + bindingTable + " bind " +
+					"WHERE ";
+				String		correct = null;
+				
+				if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
+					query += "customer_id = " + data.campaignCustomerID;
+				} else if (data.maildropStatus.isAdminMailing () ||
+					   data.maildropStatus.isTestMailing () ||
+					   data.maildropStatus.isRuleMailing () ||
+					   data.maildropStatus.isOnDemandMailing () ||
+					   data.maildropStatus.isWorldMailing ()) {
+					if (data.dbase.isOracle()) {
+						query += "EXISTS (SELECT 1 FROM " + table + " cust WHERE bind.customer_id = cust.customer_id)";
+					} else {
+						query += "customer_id IN (SELECT customer_id FROM " + table + ")";
+					}
+					correct = "DELETE FROM " + table + " WHERE customer_id = :customerID AND mediatype = :mediatype";
+				} else {
+					query = null;
+				}
+				if (query != null) {
+					Date	bleeding = new Date ();
+					
+					query += " AND user_status = :userStatus AND mailinglist_id != :mailinglistID AND timestamp > :bleeding";
+					bleeding.setTime (duration > 0 ? bleeding.getTime () - ((long) duration * 24 * 60 * 60 * 1000) : 0);
+
+					String mss = data.getMediaSubselect ();
+					if (mss != null) {
+						query += " AND " + mss;
+					}
+					String	update =
+						"UPDATE " + bindingTable + " " +
+						"SET timestamp = current_timestamp, user_status = :userStatus, exit_mailing_id = :exitMailingID, user_remark = :userRemark " +
+						"WHERE customer_id = :customerID AND mailinglist_id = :mailinglistID AND mediatype = :mediatype";
+					for (Map <String, Object> row : data.dbase.query (query,
+											  "userStatus", UserStatus.Bounce.getStatusCode (),
+											  "mailinglistID", data.mailinglist.id (),
+											  "bleeding", bleeding
+											 )) {
+						long	customerID = data.dbase.asLong (row.get ("customer_id"));
+						long	exitMailingID = data.dbase.asLong (row.get ("exit_mailing_id"));
+						long	mailinglistID = data.dbase.asLong (row.get ("mailinglist_id"));
+						int	mediatype = data.dbase.asInt (row.get ("mediatype"));
+						
+						if (correct != null) {
+							data.dbase.update (correct,
+									   "customerID", customerID,
+									   "mediatype", mediatype);
+						}
+						data.dbase.update (update,
+								   "userStatus", UserStatus.Bounce.getStatusCode (),
+								   "exitMailingID", exitMailingID,
+								   "userRemark", "bounce:bleed:" + mailinglistID,
+								   "customerID", customerID,
+								   "mailinglistID", data.mailinglist.id (),
+								   "mediatype", mediatype);
+						data.logging (Log.DEBUG, "bc", "Bleed bounce from mailinglist " + mailinglistID + " to " + data.mailinglist.id () + " for media type " + mediatype + " using exit mailing id " + exitMailingID + " for customer " + customerID);
+					}
+				}
+			} catch (SQLException e) {
+				data.logging (Log.WARNING, "bc", "Failed to bleed bounce: " + e.toString ());
+			}
+		}
+		return ok;
+	}
+	
 	private boolean handleDuplicateAddreses(String ctable) {
 		boolean ok = true;
 
@@ -1503,10 +1597,14 @@ public class BC {
 			} else {
 				rc = more;
 			}
+			String mss = data.getMediaSubselect ();
+			if (mss != null) {
+				rc += " AND " + mss;
+			}
 		}
 		return rc;
 	}
-
+	
 	private List<Reference> getReferences() {
 		if (sortedReferences == null) {
 			sortedReferences = new ArrayList<>(data.references.size());

@@ -12,6 +12,7 @@ package org.agnitas.dao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -67,7 +68,6 @@ public interface ImportRecipientsDao {
 
 	int insertNewCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
 
-	int updateFirstExistingCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 	int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId2) throws Exception;
 
 	int getNumberOfEntriesForInsert(String temporaryImportTableName, String duplicateIndexColumn);
@@ -80,7 +80,6 @@ public interface ImportRecipientsDao {
 	
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
-	int updateAllExistingCustomersByKeyColumn(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 	int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 
 	String createTemporaryCustomerErrorTable(int companyId, int datasourceId, List<String> columns, String sessionId) throws Exception;
@@ -132,4 +131,6 @@ public interface ImportRecipientsDao {
 	void updateColumnOfTemporaryCustomerImportTable(String temporaryImportTableName, String columnName, Object value);
 
 	int changeStatusInMailingListNotFoundInData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, List<UserType> inclusiveUserTypes, List<UserType> exclusiveUserTypes, String remark) throws Exception;
+
+	Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> getMailinglistStatusesForImportedRecipients(int companyID, List<Integer> mailinglistIDsToAssign, Set<MediaTypes> mediaTypes, int datasourceID) throws Exception;
 }

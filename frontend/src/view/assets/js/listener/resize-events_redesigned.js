@@ -11,7 +11,7 @@
     }
 
     viewportChanged = setTimeout(function() {
-      AGN.Lib.CoreInitializer.run(['equalizer', 'truncate', 'sizing', 'scrollable', 'dropdown-expand']);
+      AGN.Lib.CoreInitializer.run(['scrollable', 'truncated-text-popover']);
 
       _.each(AGN.Lib.Editor.all(), function(editor) {
         editor.resize();

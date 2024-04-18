@@ -91,6 +91,23 @@
         </emm:ShowByPermission>
     </c:if>
 
+	<c:if test="${autoImports ne null}">
+		<div class="form-group">
+			<div class="col-sm-4">
+				<label class="control-label" for="required-auto-import">
+					<mvc:message code="mailing.autoimport.required" />
+					<button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/RequiredAutoImport.xml"></button>
+				</label>
+			</div>
+			<div class="col-sm-8">
+				<mvc:select path="form.autoImportId" id="required-auto-import" cssClass="form-control js-select" form="intervalSettingsForm" disabled="${not canSendOrActivateMailing}">
+					<mvc:option value="0">---</mvc:option>
+					<mvc:options items="${autoImports}" itemValue="autoImportId" itemLabel="shortname"/>
+				</mvc:select>
+			</div>
+		</div>
+	</c:if>
+
     <%@ include file="fragments/mailing-send-prioritization.jspf" %>
     <%@ include file="fragments/mailing-send-encrypted.jspf" %>
     <%@ include file="fragments/mailing-send-size.jspf" %>

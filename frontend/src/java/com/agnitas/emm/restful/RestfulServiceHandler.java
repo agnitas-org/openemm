@@ -16,13 +16,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,12 +73,6 @@ public interface RestfulServiceHandler {
 			return new ByteArrayInputStream(requestData);
 		} else {
 			return new FileInputStream(requestDataFile);
-		}
-	}
-	
-	static void checkPermission(Admin admin, Permission permission) throws RestfulClientException {
-		if (!admin.permissionAllowed(Permission.WEBSERVICE_USER_CREATE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.WEBSERVICE_USER_CREATE.toString() + "'");
 		}
 	}
 

@@ -158,7 +158,7 @@ $c-inbox-mobile: #22c266;
 $c-inbox-spam: $c-gray-44;
 
 $preview-clients:(
-  internet-explorer $c-inbox-ie,
+  edge              $c-inbox-ie,
   firefox           $c-inbox-ff,
   opera             $c-inbox-opera,
   safari            $c-inbox-safari,

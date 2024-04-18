@@ -10,28 +10,34 @@
 
 package com.agnitas.emm.core.archive.service.impl;
 
-import com.agnitas.beans.Campaign;
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.emm.core.archive.service.CampaignService;
+import java.util.List;
+
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.web.forms.PaginationForm;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.List;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
+import com.agnitas.dao.CampaignDao;
+import com.agnitas.emm.core.archive.service.CampaignService;
 
 public class CampaignServiceImpl implements CampaignService {
-
+	private static final Logger logger = LogManager.getLogger(CampaignServiceImpl.class);
+	
     private CampaignDao campaignDao;
 
     @Override
-    public PaginatedListImpl<Campaign> getPaginatedList(Admin admin, PaginationForm form) {
-        int sortOrder = form.getOrder().equals("desc") ? 2 : 1;
-        List<Campaign> campaignList = campaignDao.getCampaignList(admin.getCompanyID(), form.getSort(), sortOrder);
-
-        return new PaginatedListImpl<>(campaignList, campaignList.size(), form.getNumberOfRows(), form.getPage(), form.getSort(), form.getOrder());
+    public PaginatedListImpl<Campaign> getOverview(Admin admin, PaginationForm form) {
+        return campaignDao.getOverview(admin.getCompanyID(), form.getSort(), form.ascending(), form.getPage(), form.getNumberOfRows());
     }
+
+	@Override
+	public List<Campaign> getCampaigns(int companyID) {
+		return campaignDao.getCampaigns(companyID);
+	}
 
     @Override
     public Campaign getCampaign(int campaignId, int companyID) {
@@ -39,8 +45,8 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
-    public List<MailingBase> getCampaignMailings(int campaignId, Admin admin) {
-        return campaignDao.getCampaignMailings(campaignId, admin);
+    public PaginatedListImpl<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin) {
+        return campaignDao.getCampaignMailings(campaignId, form, admin);
     }
 
     @Override
@@ -62,6 +68,21 @@ public class CampaignServiceImpl implements CampaignService {
     public boolean isDefinedForAutoOptimization(int campaignId, Admin admin) {
         return campaignDao.isDefinedForAutoOptimization(campaignId, admin);
     }
+
+    @Override
+    public boolean copySampleCampaigns(int newCompanyId, int fromCompanyId) {
+		try {
+			for (int sampleCampaignID : campaignDao.getSampleCampaignIDs(fromCompanyId)) {
+				Campaign sampleCampaign = campaignDao.getCampaign(sampleCampaignID, fromCompanyId);
+				sampleCampaign.setCompanyID(newCompanyId);
+				campaignDao.save(sampleCampaign);
+			}
+			return true;
+		} catch (Exception e) {
+			logger.error("Cannot copy sample campaigns to company " + newCompanyId, e);
+			return false;
+		}
+	}
 
     @Required
     public void setCampaignDao(CampaignDao campaignDao) {

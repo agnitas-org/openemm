@@ -15,6 +15,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
@@ -33,7 +34,8 @@ public interface AutoExportDao {
 
     void updateAutoExport(AutoExport autoExport) throws Exception;
 
-    List<AutoExport> getAutoExportsOverview(int companyId);
+    List<AutoExport> getAutoExports(int companyId);
+	List<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, int companyID);
 
     void deleteAutoExport(int autoExportId, int companyId);
 

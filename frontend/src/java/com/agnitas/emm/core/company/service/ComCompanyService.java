@@ -81,4 +81,7 @@ public interface ComCompanyService {
 	int getCompanyDatasource(int companyId);
 
 	int getNumberOfCompanies();
+
+    String getTechnicalContact(int companyId);
+
 }

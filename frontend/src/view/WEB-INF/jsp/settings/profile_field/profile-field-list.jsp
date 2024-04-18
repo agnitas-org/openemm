@@ -18,14 +18,11 @@
     <input type="hidden" name="page" value="${profileFields.pageNumber}"/>
     <input type="hidden" name="sort" value="${profileFields.sortCriterion}"/>
     <input type="hidden" name="dir" value="${profileFields.sortDirection}"/>
-    <input type="hidden" name="syncSorting" value="true"/>
 
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "profile-field-overview": {
-                "rows-count": ${profileForm.numberOfRows},
-                "column-name": ${emm:toJson(profileForm.sort)},
-                "ascending-order": ${profileForm.dir eq 'asc'}
+                "rows-count": ${profileForm.numberOfRows}
             }
         }
     </script>
@@ -74,7 +71,7 @@
                                id="fields"
                                name="profileFields"
                                sort="external"
-                               requestURI="/profiledb/profiledb.action?syncSorting=true"
+                               requestURI="/profiledb/profiledb.action"
                                partialList="true"
                                size="${profileForm.numberOfRows}"
                                excludedParams="*">

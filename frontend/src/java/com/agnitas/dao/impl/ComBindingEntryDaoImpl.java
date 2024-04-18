@@ -742,7 +742,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
         sql += " WHERE " + remarksNotLikeSummedRemarks();
         sql += getMailinglistFilterForRemarks(params, mailinglistId);
         sql += getTargetIdFilterForRemarks(targetId, companyId);
-        sql += " GROUP BY bind.user_remark ORDER BY 2 DESC)";
+        sql += " GROUP BY bind.user_remark ORDER BY 2 DESC) subselect";
         return sql;
     }
 
@@ -801,4 +801,13 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			handler.bindingChanged(companyID, recipientID, mailinglistID, mediatype, userStatus);
 		}
 	}
+
+    @Override
+	public void cleanAdminAndTestUnsubsriptions(int companyID, int mailingID) {
+		String sqlOptout = "UPDATE customer_" + companyID + "_binding_tbl SET exit_mailing_id = 0"
+			+ " WHERE exit_mailing_id = ?"
+				+ " AND user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "')"
+				+ " AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?)";
+		update(logger, sqlOptout, mailingID, mailingID);
+    }
 }

@@ -291,7 +291,6 @@
 				<include name="**/*create-tablespaces*" />
 				<include name="**/*create-user*" />
 				<include name="**/*fulldb*" />
-				<include name="**/emm-create-initial-password.sh" />
 				<exclude name="**/old/**" />
 			</fileset>
 		</copy>

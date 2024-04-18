@@ -280,9 +280,16 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
 				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
+				.diskSpaceFreePercentage(calcDiskSpaceFreePercentage())
 				.build();
 	}
-	
+
+	@Override
+    public int calcDiskSpaceFreePercentage() {
+        File rootDir = new File("/");
+        return (int) (rootDir.getFreeSpace() * 100 / rootDir.getTotalSpace());
+    }
+
 	@Override
 	public ServerStatus getAnonymousServerStatus(ServletContext servletContext) {
 		

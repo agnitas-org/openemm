@@ -214,12 +214,16 @@ category: Javascripts - Forms
 
   // gets the jquery wrapped form tag
   Form.getWrapper = function($needle) {
-    var $form;
+    let $form = $($needle.data('form-target'));
 
-    $form = $($needle.data('form-target'));
+    if ( !$form.exists() ) {
+      if ($needle.attr('form')) {
+        $form = $(`#${$needle.attr('form')}`)
+      }
 
-    if ( $form.length == 0 ) {
-       $form = $needle.closest('form');
+      if ( !$form.exists() ) {
+        $form = $needle.closest('form');
+      }
     }
 
     return $form;
@@ -297,8 +301,11 @@ category: Javascripts - Forms
   Form.prototype.setValue = function(field, value) {
     var node = this.form[field];
     if (typeof node === 'object') {
-      $(node).val([value]);
-      $(node).trigger('change');
+      if ($(node).is('select')) {
+        AGN.Lib.Select.get($(node)).selectValue(value);
+      } else {
+        $(node).val([value]).trigger('change');
+      }
     } else {
       if (typeof value === 'undefined') {
         delete this._data[field];
@@ -594,7 +601,7 @@ category: Javascripts - Forms
     }
 
     if (this.valid(validationOptions)) {
-      this.cleanErrors();
+      this.cleanFieldFeedback();
     } else {
       this.handleErrors();
       return false;
@@ -620,6 +627,7 @@ category: Javascripts - Forms
 
   Form.prototype.reset = function() {
     this.$form.trigger('reset');
+    AGN.Lib.CoreInitializer.run('select', this.$form);
   };
 
   Form.prototype.abort = function() {
@@ -637,9 +645,9 @@ category: Javascripts - Forms
 
   Form.prototype.bulkUpdate = function(group, value) {
     if (group) {
-      this.$form.find('[name^="' + group + '"]').prop('checked', value);
+      this.$form.find('[name^="' + group + '"]:not(:disabled)').prop('checked', value);
     } else {
-      this.$form.find('.js-bulk-ids').prop('checked', value);
+      this.$form.find('.js-bulk-ids:not(:disabled)').prop('checked', value);
     }
   };
 
@@ -673,16 +681,14 @@ category: Javascripts - Forms
     })
   };
 
-  Form.prototype.initFields = function($scope) {
-    var self = this;
+  Form.prototype.initFields = function($scope = $(document)) {
+    this.fields.length = 0;
 
-    if (!$scope) {
-      $scope = this.$form;
-    }
-
-    self.fields.length = 0;
-    _.each($scope.find('[data-field]'), function(field) {
-      self.fields.push(Field.create($(field)));
+    $scope.find('[data-field]').each((index, field) => {
+      const $field = $(field);
+      if (Form.getWrapper($field).is(this.$form)) {
+        this.fields.push(Field.create($field));
+      }
     });
   };
 
@@ -755,19 +761,41 @@ category: Javascripts - Forms
     }
   };
 
-  Form.prototype.cleanErrors = function($group) {
-    if (!$group) { $group = this.$form.find('.js-form-error') }
+  Form.prototype.cleanFieldFeedback = function ($field) {
+    cleanFieldFeedback$($field, this.$form);
+
+    if (!$field && this.$form.attr('id')) {
+      const $inputsOutsideForm = $(`:input[form='${(this.$form.attr('id'))}']`);
+      $inputsOutsideForm.each((index, input) => cleanFieldFeedback$($(input)))
+    }
+  }
+
+  Form.cleanFieldFeedback$ = function ($field) {
+    cleanFieldFeedback$($field);
+  }
+
+  function cleanFieldFeedback$($field, $form) {
+    let $group;
+    if (!$field) {
+      $group = $form.find('.js-form-field-feedback')
+    } else {
+      $group = $field.parent();
+    }
 
     _.each($group, function(group) {
-      var $group = $(group);
+      const $group = $(group);
 
-      $group.removeClass('has-alert has-feedback js-form-error');
-      $group.find('.js-form-error-ind').remove();
-      $group.find('.js-form-error-msg').remove();
+      $group.removeClass('has-alert has-feedback js-form-field-feedback has-success has-warning');
+      $group.find('.js-form-field-ind').remove();
+      $group.find('.js-form-field-msg').remove();
     });
-  };
+  }
 
-  function appendFeedbackMessage($field, message) {
+  Form.prototype.appendFeedbackMessage = function($field, message, type = 'alert') {
+    appendFeedbackMessage($field, message, type);
+  }
+
+  function appendFeedbackMessage($field, message, type = 'alert') {
     var anchor = $field;
     var editor = $field.data('_editor');
     var emojioneArea = $field.data('emojioneArea');
@@ -794,16 +822,24 @@ category: Javascripts - Forms
         }
       }
     }
-    const $feedbackMessage = $(`<div class="form-control-feedback-message js-form-error-msg">${message}</div>`);
-    const icon = showIcon ? '<span class="icon icon-state-warning form-control-feedback js-form-error-ind"></span>' : '';
+
+    let iconState = 'warning';
+    if (type === 'success') {
+      iconState = 'success';
+    }
+
+    const $feedbackMessage = $(`<div class="form-control-feedback-message js-form-field-msg">${message}</div>`);
+    const icon = showIcon ? `<span class="icon icon-state-${iconState} form-control-feedback js-form-field-ind"></span>` : '';
     $feedbackMessage.prepend(icon);
     anchor.parent().append($feedbackMessage);
+    editor?.resize();
   }
 
   Form.prototype.handleErrors = function() {
     var errorPos = [];
 
-    this.cleanErrors();
+    const self = this;
+    this.cleanFieldFeedback();
 
     var errors = this.errors().filter(function (error) {
       return error.field && error.field.length > 0;
@@ -812,8 +848,8 @@ category: Javascripts - Forms
     //print errors
     _.each(errors, function(error) {
       var $field = error.field;
-      markFieldInRed($field);
-      appendFeedbackMessage($field, error.msg);
+      self.markField($field);
+      self.appendFeedbackMessage($field, error.msg);
     });
 
     //calculate errors positions
@@ -862,11 +898,7 @@ category: Javascripts - Forms
   };
 
   Form.prototype.cleanFieldError$ = function($field) {
-    var $group = $field.closest('.js-form-error');
-
-    $group.removeClass('has-alert has-feedback js-form-error');
-    $group.find('.js-form-error-ind').remove();
-    $group.find('.js-form-error-msg').remove();
+    this.cleanFieldFeedback($field);
   };
 
   Form.prototype.showFieldError = function(field, message, disableScrolling) {
@@ -876,16 +908,24 @@ category: Javascripts - Forms
   };
 
   Form.prototype.showFieldError$ = function($field, message, disableScrolling) {
-    var $group = $field.parents('[class^="col"]');
+    showFieldError$($field, message, disableScrolling, this.$form)
+  };
 
-    $group.addClass('has-alert has-feedback js-form-error');
-    $group.find('.js-form-error-ind').remove();
-    $group.find('.js-form-error-msg').remove();
+  Form.showFieldError$ = function($field, message, disableScrolling) {
+    showFieldError$($field, message, disableScrolling)
+  };
+
+  function showFieldError$($field, message, disableScrolling, $form) {
+    const $group = $field.parent();
+
+    $group.addClass('has-alert has-feedback js-form-field-feedback');
+    $group.find('.js-form-field-ind').remove();
+    $group.find('.js-form-field-msg').remove();
 
     appendFeedbackMessage($field, message);
 
     if (disableScrolling !== true) {
-      var $view = this.$form.closest('[data-sizing=scroll], .modal').first();
+      var $view = $form ? $form.closest('.modal').first() : $field.closest('.modal').first();
       if ($view.exists()) {
         var $target = $(".has-alert").first();
 
@@ -895,16 +935,12 @@ category: Javascripts - Forms
         $view.scrollTop($field.offset().top - 25);
       }
     }
+  }
+
+  Form.prototype.markField = function ($field, markType = 'alert') {
+    $field.parent().addClass(`has-${markType} has-feedback js-form-field-feedback`);
   };
 
   AGN.Lib.Form = Form;
 
-  function markFieldInRed($field) {
-    var $td = $field.closest("td");
-    if ($td.length && $td.parents('.table-form').length) {
-      $td.addClass('has-alert js-form-error')
-    } else {
-      $field.parent().addClass('has-alert has-feedback js-form-error');
-    }
-  }
 })();

@@ -106,33 +106,91 @@
 //```
 //*/
 
-$notification-header-height: 40px;
+$notification-header-height: 30px;
 $popup-width: 435px;
 $popup-width-mobile: 61px;
 $popups-width: $popup-width + $gap-sm * 2;
 
-* {
+html {
   --popup-width: #{$popup-width};
   --popup-width-mobile: #{$popup-width-mobile};
 }
 
 .notification-simple {
   width: 100%;
-  padding: 6px 10px;
+  padding: $gap-x-sm $gap-sm;
   overflow: hidden;
 
   display: flex;
-  gap: 8px;
+  flex-shrink: 0;
+  gap: $gap-sm;
   align-items: center;
 
-  border: 1px solid $border-color;
+  border: $border-default;
   border-radius: $border-radius;
-
-  @include font(14px, 400);
-  color: $gray-600;
+  color: var(--text-gray-color);
 
   span {
     @extend .text-truncate;
+  }
+
+  a {
+    font-weight: $font-weight-semibold;
+    color: $primary;
+  }
+}
+
+.notification-simple--lg {
+  padding: $gap-sm - 1px;
+
+  span {
+    white-space: initial;
+  }
+}
+
+.statistics-notification {
+  width: 100%;
+  padding: $gap-sm;
+  background: $dark-blue;
+  color: $white;
+  border-radius: $border-radius;
+
+  flex-shrink: 0;
+  @include flex-row($gap-x-sm);
+  align-items: center;
+}
+
+.notification {
+  border-radius: $border-radius;
+  border: $border-default;
+  overflow: hidden;
+
+  .notification-header {
+    display: flex;
+    align-items: center;
+    height: $notification-header-height;
+    padding-inline: $gap-sm;
+
+    .notification-title {
+      @include flex-row($gap-x-sm);
+      align-items: center;
+    }
+  }
+
+  .notification-content {
+    padding: $gap-sm;
+    color: var(--default-text-color);
+  }
+}
+
+@mixin notification-variant($state, $color) {
+  .notification--#{$state} {
+    border-color: $color;
+
+    .notification-header {
+      color: $white;
+      background-color: $color;
+    }
   }
 }
 
@@ -152,7 +210,7 @@ $popups-width: $popup-width + $gap-sm * 2;
   display: flex;
   flex-direction: column;
   align-items: end;
-  gap: $gap;
+  gap: $gap-md;
   padding: $gap-sm;
 
   position: fixed;
@@ -166,8 +224,15 @@ $popups-width: $popup-width + $gap-sm * 2;
   }
 }
 
+@mixin notification-simple-variant($state, $color) {
+  .notification-simple--#{$state} {
+    color: $color;
+    border-color: $color;
+  }
+}
+
 @mixin popup-variant($state, $color) {
-  $darken: mix($gray-700, $color, 20%);
+  $darken: mix($dark-grey, $color, 20%);
 
   .popup {
     @include shadow-variant(light-bottom);
@@ -179,13 +244,14 @@ $popups-width: $popup-width + $gap-sm * 2;
       overflow: hidden;
 
       .popup-header {
-        @include font($font-size-lg, 600);
+        @include font($font-size-md);
         background-color: $color;
         display: flex;
+        align-items: center;
         line-height: 100%;
         color: $white;
         height: $notification-header-height;
-        padding: $gap-sm;
+        padding-inline: $gap-sm;
 
         @include desktop {
           .icon-caret-left {
@@ -195,10 +261,11 @@ $popups-width: $popup-width + $gap-sm * 2;
       }
 
       .popup-content {
-        background-color: $white;
+        background-color: var(--popup-content-bg-color);
+        color: var(--default-text-color);
         border: 1px solid $color;
         padding: $gap-sm;
-        @include border-bottom-radius();
+        @include border-bottom-radius;
 
         a {
           color: $primary;
@@ -271,11 +338,12 @@ $popups-width: $popup-width + $gap-sm * 2;
       .popup-tab {
         // width: controlled with JS;
         color: $white;
-        @include flex-center();
+        height: 100%;
+        @include flex-center;
         flex-grow: 1;
         
         &:not(.active) {
-          border-right: 1px solid mix($gray-700, $darken, 20%);
+          border-right: 1px solid mix($dark-grey, $darken, 20%);
         }
         
         &.active {
@@ -304,6 +372,8 @@ $popups-width: $popup-width + $gap-sm * 2;
   $color: nth($conf, 2);
 
   @include popup-variant($state, $color);
+  @include notification-simple-variant($state, $color);
+  @include notification-variant($state, $color);
 }
 
 .popups-bottom-right {

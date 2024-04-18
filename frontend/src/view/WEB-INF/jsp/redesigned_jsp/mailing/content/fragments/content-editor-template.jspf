@@ -1,0 +1,134 @@
+
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+
+<script id="content-editor-template" type="text/x-mustache-template">
+    {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
+    {{var disabled = isEditableMailing ? '' : 'disabled="disabled"';}}
+    
+    <div class="tile flex-grow-1"
+         data-controller="mailing-content-editor-controller"
+         data-initializer="mailing-content-editor-initializer">
+        <div class="tile-header">
+            <h1 class="tile-title">{{- dynTag.name }}</h1>
+        </div>
+        <div id="enlargeable-settings" class="tile-body" data-multi-editor>
+            <div id="multi-editor" class="tile">
+                <div class="tile-header">
+                    {{ if (showHTMLEditor || isContentGenerationAllowed) { }}
+                    <ul class="tile-title-controls gap-1">
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <li>
+                                <a href="#" class="btn btn-icon-sm btn-inverse active" data-toggle-tab="#tab-content-html">
+                                    <i class="icon icon-code"></i>
+                                </a>
+                            </li>
+                        </emm:HideByPermission>
+                        <emm:HideByPermission token="mailing.editor.hide">
+                            {{ if (showHTMLEditor) { }}
+                            <li>
+                                <a href="#" class="btn btn-icon-sm btn-inverse" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
+                                    <i class="icon icon-font"></i>
+                                </a>
+                            </li>
+                            {{ } }}
+                            <%@include file="ai-content-editor-tab.jspf" %>
+                        </emm:HideByPermission>
+                    </ul>
+                    {{ } }}
+                    <div class="tile-controls">
+                        <a href="#" class="btn-enlarge" data-enlarged-modal data-modal-set="title: {{- dynTag.name }}">
+                            <i class="icon icon-expand-arrows-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="tile-body p-0 border-0">
+                    <!-- HTML CODE EDITOR -->
+                    <emm:ShowByPermission token="mailing.editor.hide">
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} h-100" data-tab-show="true">
+                                <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                                <textarea id="content" data-show-char-counter="tile-footer" class="form-control js-editor" {{- readonly }}></textarea>
+                            </div>
+                        </emm:HideByPermission>
+                    </emm:ShowByPermission>
+
+                    <!-- WYSIWYG EDITOR -->
+                    <emm:HideByPermission token="mailing.editor.hide">
+                        <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} h-100">
+                            <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                        </div>
+                        <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height-ck-editor h-100">
+                            <textarea id="content" name="content"
+                                      class="form-control js-editor js-wysiwyg hidden"
+                                      data-show-char-counter="tile-footer"
+                                      data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                      {{- readonly }}></textarea>
+                        </div>
+                        
+                        <!-- AI EDITOR -->
+                        <jsp:include page="/WEB-INF/jsp/redesigned_jsp/mailing/fragments/ai-text-generation-tab-content.jsp" flush="true"/>
+                    </emm:HideByPermission>
+                </div>
+                <div class="tile-footer" data-tab-related="#tab-content-html"><%-- char counter added with js. see char-counter.js --%></div>
+            </div>
+            <div id="targets-settings" class="d-flex flex-column gap-2">
+                <div id="targets-order-box">
+                    <label class="form-label" for="targets-order">
+                        <mvc:message code="Target"/>
+                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/content/Order.xml"></a>
+                    </label>
+                    <div id="targets-order" class="droppable-area">
+                        <%-- targets populated with js mailing-content-editor-controller.js:initDynContent--%>
+                    </div>
+                    {{ if (isEditableMailing) { }}
+                    <div class="d-flex gap-1">
+                        <select id="target_groups" class="form-control js-select">
+                            <option value="0"><mvc:message code="statistic.all_subscribers"/></option>
+                            <c:forEach var="target" items="${targets}">
+                                <option value="${target.id}">${target.targetName}</option>
+                            </c:forEach>
+                        </select>
+                        <a href="#" class="btn btn-icon-sm btn-primary" data-action="addDynContent" data-tooltip="<mvc:message code="button.Add"/>">
+                            <i class="icon icon-plus"></i>
+                        </a>
+                    </div>
+                    {{ } }}
+                </div>
+                <div> <%-- Interest group--%>
+                    <label class="form-label" for="interest_groups">
+                        <mvc:message code="interestgroup"/>
+                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/content/Interest.xml" tabindex="-1" type="button"></a>
+                    </label>
+                    <select id="interest_groups" class="form-control js-select">
+                        <option value="">--</option>
+                        <c:forEach var="interestGroup" items="${form.availableInterestGroups}">
+                            <option value="${interestGroup.column}">${interestGroup.shortname}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="mailing-target-content-template" type="text/x-mustache-template">
+    <div id="{{-id}}" class="d-flex gap-1 target-row w-100">
+        <a href="#" class="btn btn-icon-sm btn-inverse target-row-handle">
+            <i class="icon icon-arrows-alt"></i>
+        </a>
+        <select class="form-control js-select" data-action="change-target">
+            <option value="0" {{- !targetId ? 'selected' : '' }}><mvc:message code="statistic.all_subscribers"/></option>
+            <c:forEach var="target" items="${targets}">
+                <option value="${target.id}" {{- ${target.id} === targetId ? 'selected' : '' }}>${target.targetName}</option>
+            </c:forEach>
+        </select>
+        <a href="#" class="btn btn-icon-sm btn-primary" data-action="edit-content-for-target">
+            <i class="icon icon-pen"></i>
+        </a>
+        <a href="#" class="btn btn-icon-sm btn-danger" data-action="deleteContentEntry">
+            <i class="icon icon-trash-alt"></i>
+        </a>
+    </div>
+</script>
+
+<%@include file="../fragments/ai-text-generation-apply-dialog.jspf" %>

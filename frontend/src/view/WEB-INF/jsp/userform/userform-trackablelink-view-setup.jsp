@@ -18,6 +18,8 @@
 <c:set var="agnBreadcrumbsRootKey" 	value="Forms" 										scope="request" />
 <c:set var="agnHelpKey" 			value="trackableLinkView" 							scope="request" />
 
+<c:url var="switchDesignUrl" value="/webform/${userFormId}/trackablelink/list.action" scope="request" />
+
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="user-form-id" value="${userFormId}"/>
 </emm:instantiate>

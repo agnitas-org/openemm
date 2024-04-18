@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.trackablelinks.web;
 
 import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,10 +88,9 @@ public class MailingTrackableLinkController implements XssCheckAware {
     private static final Logger logger = LogManager.getLogger(MailingTrackableLinkController.class);
 
     private static final String CHANGE_MSG = "%s changed from %s to %s. ";
-    private static final String MESSAGES_VIEW = "messages";
     private static final String ERROR_CODE = "Error";
     private static final String CHANGES_SAVED_CODE = "default.changes_saved";
-    private static final String REDIRECT_TO_LIST_STR = "redirect:/mailing/%d/trackablelink/list.action";
+    private static final String REDIRECT_TO_LIST_STR = "redirect:/mailing/%d/trackablelink/list.action?restoreSort=true";
     private static final String NOT_FORM_ACTIONS_ATTR = "notFormActions";
     private static final String EDIT_MESSAGE = "edit mailing links";
 
@@ -128,13 +128,13 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @RequestMapping("/list.action")
     public String list(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Model model,
-                       @RequestParam(required = false) Integer scrollToLinkId) throws MediatypesDaoException {
+                       @RequestParam(required = false) Integer scrollToLinkId, @RequestParam(required = false) boolean restoreSort) throws MediatypesDaoException {
         syncListForm(form);
-        int companyId = admin.getCompanyID();
-        Mailing mailing = trackableLinkService.getMailingForLinksOverview(mailingId, companyId, form.getIncludeDeleted());
+        FormUtils.updateSortingState(webStorage, WebStorage.TRACKABLE_LINKS, form, restoreSort);
+        Mailing mailing = trackableLinkService.getMailingForLinksOverview(mailingId, admin.getCompanyID(), form.getIncludeDeleted());
 
         addMailingModelAttrs(mailing, model, admin);
-        addLinkListModelAttrs(mailingId, model, companyId, mailing, scrollToLinkId);
+        addLinkListModelAttrs(mailingId, model, admin, mailing, scrollToLinkId);
         setupFormGlobalSettings(form, mailing);
         setupList(form, mailing.getTrackableLinks().values(), model);
 
@@ -142,15 +142,28 @@ public class MailingTrackableLinkController implements XssCheckAware {
         return "mailing_trackablelink_list";
     }
 
-    private void addLinkListModelAttrs(int mailingId, Model model, int companyId, Mailing mailing, Integer scrollToLinkId) {
+    private void addLinkListModelAttrs(int mailingId, Model model, Admin admin, Mailing mailing, Integer scrollToLinkId) {
+        int companyId = admin.getCompanyID();
+
         model.addAttribute(NOT_FORM_ACTIONS_ATTR, actionService.getEmmNotFormActions(companyId, false));
         model.addAttribute("scrollToLinkId", scrollToLinkId == null ? 0 : scrollToLinkId);
-        model.addAttribute("defaultExtensions", conversionService.convert(linkService.getDefaultExtensions(companyId), LinkProperty.class, ExtensionProperty.class));
+        addDefaultExtensionsModelAttr(model, companyId);
         model.addAttribute("allLinksExtensions", conversionService.convert(mailing.getCommonLinkExtensions(), LinkProperty.class, ExtensionProperty.class));
         model.addAttribute("hasDefaultLinkExtension", StringUtils.isNotBlank(configService.getValue(ConfigValue.DefaultLinkExtension, companyId)));
         model.addAttribute("SHOW_CREATE_SUBSTITUTE_LINK", configService.getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, companyId));
         model.addAttribute("isTrackingOnEveryPositionAvailable", trackableLinkService.isTrackingOnEveryPositionAvailable(companyId, mailingId));
         model.addAttribute("isAutoDeeptrackingEnabled", configService.isAutoDeeptracking(companyId));
+        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+    }
+
+    private boolean isSettingsReadonly(Admin admin) {
+        return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY);
+    }
+
+    private void addDefaultExtensionsModelAttr(Model model, int companyId) {
+        model.addAttribute("defaultExtensions", conversionService.convert(
+                linkService.getDefaultExtensions(companyId),
+                LinkProperty.class, ExtensionProperty.class));
     }
 
     private void setupList(TrackableLinksForm form, Collection<TrackableLink> links, Model model) {
@@ -223,6 +236,10 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @PostMapping("/bulkClearExtensions.action")
     public String bulkClearExtensions(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups) {
+        if (isSettingsReadonly(admin)) {
+            throw new UnsupportedOperationException();
+        }
+
         try {
             trackableLinkService.bulkClearExtensions(mailingId, admin.getCompanyID(), new HashSet<>(form.getBulkIds()));
             writeUserActivityLog(admin, "edit mailing", "ID = " + mailingId + ". Removed global and individual link extensions");
@@ -270,6 +287,10 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/activateTrackingLinksOnEveryPosition.action")
     public String activateTrackingLinksOnEveryPosition(@PathVariable int mailingId, TrackableLinksForm form,
                                                        Admin admin, Popups popups, HttpServletRequest req) {
+        if (isSettingsReadonly(admin)) {
+            throw new UnsupportedOperationException();
+        }
+
         try {
             mailingBaseService.activateTrackingLinksOnEveryPosition(admin,
                     mailingDao.getMailing(mailingId, admin.getCompanyID()), getApplicationContext(req));
@@ -283,6 +304,10 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @PostMapping("/saveAll.action")
     public String saveAll(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Popups popups) {
+        if (isSettingsReadonly(admin)) {
+            throw new UnsupportedOperationException();
+        }
+
         if (!intelliAdSettingsValid(form, popups)) {
             return MESSAGES_VIEW;
         }
@@ -385,10 +410,16 @@ public class MailingTrackableLinkController implements XssCheckAware {
         model.addAttribute(NOT_FORM_ACTIONS_ATTR, actionService.getEmmNotFormActions(companyId, false));
         model.addAttribute("isUrlEditingAllowed", trackableLinkService.isUrlEditingAllowed(admin, mailingId));
         model.addAttribute("SHOW_CREATE_SUBSTITUTE_LINK", configService.getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, companyId));
+        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+        addDefaultExtensionsModelAttr(model, companyId);
     }
 
     @PostMapping("/{linkId:\\d+}/save.action")
     public String save(@PathVariable int mailingId, @PathVariable int linkId, TrackableLinkForm form, Admin admin, Popups popups, HttpServletRequest req, RedirectAttributes redirectAttrs) throws TrackableLinkException {
+        if (isSettingsReadonly(admin)) {
+            throw new UnsupportedOperationException();
+        }
+
         TrackableLink link = trackableLinkService.getTrackableLink(admin.getCompanyID(), linkId);
         if (link == null) {
             popups.alert(ERROR_CODE);
@@ -584,13 +615,6 @@ public class MailingTrackableLinkController implements XssCheckAware {
             form.setPage(1);
         }
         webStorage.access(WebStorage.TRACKABLE_LINKS, storage -> {
-            if (StringUtils.isNoneBlank(form.getSort())) {
-                storage.setColumnName(form.getSort());
-                storage.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getOrder()));
-            } else {
-                form.setSort(storage.getColumnName());
-                form.setOrder(storage.isAscendingOrder() ? "ascending" : "descending");
-            }
             if (form.getIncludeDeleted() == null) {
                 form.setIncludeDeleted(storage.isIncludeDeleted());
             } else {

@@ -58,10 +58,11 @@ public class MailingSettingsFormValidator {
     private static final Logger LOGGER = LogManager.getLogger(MailingSettingsFormValidator.class);
 
     private static final String SHORTNAME_FIELD = "shortname";
-    private static final String SUBJECT_FIELD = "subject";
-    private static final String ENVELOPE_EMAIL = "envelopeEmail";
-    private static final String REPLY_EMAIL = "replyEmail";
-    private static final String FROM_EMAIL = "fromEmail";
+    private static final String SUBJECT_FIELD = "emailMediatype.subject";
+    private static final String ENVELOPE_EMAIL = "emailMediatype.envelopeEmail";
+    private static final String REPLY_EMAIL = "emailMediatype.replyEmail";
+    private static final String FROM_EMAIL = "emailMediatype.fromEmail";
+    private static final String PLAN_DATE_FIELD = "planDate";
 
     protected MailingService mailingService;
     protected ConfigService configService;
@@ -81,7 +82,7 @@ public class MailingSettingsFormValidator {
         isMediaTypesPresent(form, popups, options);
         containIllegalScriptElement(form, popups);
         validateMailingParams(form, admin, popups);
-        if (options.isEditable()) {
+        if (!options.isActiveOrSent()) {
             validatePlanDate(mailingId, workflowDriven(options.getWorkflowId()), form, admin, popups);
             validateTargets(options, form, admin, popups);
             validateMailingMod(form, mailing, popups);
@@ -160,13 +161,13 @@ public class MailingSettingsFormValidator {
         try {
             agnTagService.getDynTags(form.getFromFullname());
         } catch (Exception e) {
-            popups.field(SUBJECT_FIELD, "error.template.dyntags");
+            popups.fieldError(SUBJECT_FIELD, "error.template.dyntags");
         }
         try {
             agnTagService.resolveTags(form.getSubject(), companyId, 0, 0, 0);
             agnTagService.resolveTags(form.getFromFullname(), companyId, 0, 0, 0);
         } catch (Exception e) {
-            popups.field(SUBJECT_FIELD, "error.personalization_tag");
+            popups.fieldError(SUBJECT_FIELD, "error.personalization_tag");
         }
     }
 
@@ -174,8 +175,8 @@ public class MailingSettingsFormValidator {
         try {
             agnTagService.getDynTags(subject);
         } catch (DynTagException e) {
-            popups.field(SUBJECT_FIELD, "error.template.dyntags.subject");
-            e.printStackTrace();
+            popups.fieldError(SUBJECT_FIELD, "error.template.dyntags.subject");
+            LOGGER.error("Error while parsing dyn tags in subject", e);
         }
     }
 
@@ -184,7 +185,7 @@ public class MailingSettingsFormValidator {
             InternetAddress adr = new InternetAddress(form.getEnvelopeEmail());
             String email = adr.getAddress();
             if (!AgnUtils.isEmailValid(email)) {
-                popups.field(ENVELOPE_EMAIL, "error.mailing.envelope_adress");
+                popups.fieldError(ENVELOPE_EMAIL, "error.mailing.envelope_adress");
             }
         } catch (Exception e) {
             // do nothing
@@ -196,11 +197,11 @@ public class MailingSettingsFormValidator {
             InternetAddress adr = new InternetAddress(form.getReplyEmail());
             String email = adr.getAddress();
             if (!AgnUtils.isEmailValid(email)) {
-                popups.field(REPLY_EMAIL, "error.mailing.reply_adress");
+                popups.fieldError(REPLY_EMAIL, "error.mailing.reply_adress");
             }
         } catch (Exception exc) {
             if (!StringUtils.contains(form.getReplyEmail(), "[agn")) {
-                popups.field(REPLY_EMAIL, "error.mailing.reply_adress");
+                popups.fieldError(REPLY_EMAIL, "error.mailing.reply_adress");
             }
         }
     }
@@ -210,27 +211,27 @@ public class MailingSettingsFormValidator {
             InternetAddress adr = new InternetAddress(form.getFromEmail());
             String email = adr.getAddress();
             if (!AgnUtils.isEmailValid(email)) {
-                popups.field(FROM_EMAIL, "error.mailing.sender_adress");
+                popups.fieldError(FROM_EMAIL, "error.mailing.sender_adress");
             }
         } catch (Exception e) {
             if (!StringUtils.contains(form.getFromEmail(), "[agn")) {
-                popups.field(FROM_EMAIL, "error.mailing.sender_adress");
+                popups.fieldError(FROM_EMAIL, "error.mailing.sender_adress");
             }
         }
     }
     
     private void validateSubject(EmailMediatypeForm form, Popups popups) {
         if (form.getSubject().length() < 2) {
-            popups.field(SUBJECT_FIELD, "error.mailing.subject.too_short");
+            popups.fieldError(SUBJECT_FIELD, "error.mailing.subject.too_short");
         }
     }
 
     private void validateFromAndReplyFullNames(EmailMediatypeForm form, Popups popups) {
         if (StringUtils.length(form.getReplyFullname()) > 255) {
-            popups.field("replyFullname", "error.reply_fullname_too_long");
+            popups.fieldError("replyFullname", "error.reply_fullname_too_long");
         }
         if (StringUtils.length(form.getFromFullname()) > 255) {
-            popups.field("senderFullname", "error.sender_fullname_too_long");
+            popups.fieldError("senderFullname", "error.sender_fullname_too_long");
         }
         if (StringUtils.isBlank(form.getReplyFullname())) {
             form.setReplyFullname(form.getFromFullname());
@@ -247,17 +248,17 @@ public class MailingSettingsFormValidator {
 
     private void validateDescription(String description, Popups popups) {
         if (StringUtils.length(description) > 500) {
-            popups.field("description", "error.description.too.long");
+            popups.fieldError("description", "error.description.too.long");
         }
     }
 
     private void validateShortname(String shortname, Popups popups) {
         if (StringUtils.trimToNull(shortname) == null) {
-            popups.field(SHORTNAME_FIELD, "error.name.is.empty");
+            popups.fieldError(SHORTNAME_FIELD, "error.name.is.empty");
         } else if (StringUtils.trimToNull(shortname).length() < 3) {
-            popups.field(SHORTNAME_FIELD, "error.name.too.short");
+            popups.fieldError(SHORTNAME_FIELD, "error.name.too.short");
         } else if (shortname.length() >= 100) {
-            popups.field(SHORTNAME_FIELD, "error.shortname_too_long");
+            popups.fieldError(SHORTNAME_FIELD, "error.shortname_too_long");
         }
     }
 
@@ -292,13 +293,13 @@ public class MailingSettingsFormValidator {
                 Date originPlanDate = DateUtilities.midnight(mailingService.getMailingPlanDate(mailingId, admin.getCompanyID()), timeZone);
                 if (!planDate.equals(originPlanDate)) {
                     form.setPlanDate(admin.getDateFormat().format(today));
-                    popups.alert(workflowDriven
+                    popups.fieldError(PLAN_DATE_FIELD, workflowDriven
                             ? "error.mailing.plan.date.pastSetWithCampaignEditor"
                             : "error.mailing.plan.date.past");
                 }
             }
         } catch (ParseException e) {
-            popups.alert("error.mailing.wrong.plan.date.format");
+            popups.fieldError(PLAN_DATE_FIELD, "error.mailing.wrong.plan.date.format");
         }
     }
 

@@ -12,13 +12,8 @@
 <c:set var="VALIDATOR_RESULT_RESERVED" value="<%= ImportRecipientsDao.VALIDATOR_RESULT_RESERVED %>"/>
 <c:set var="ERROR_EDIT_REASON_KEY_RESERVED" value="<%= ImportRecipientsDao.ERROR_EDIT_REASON_KEY_RESERVED %>"/>
 
-<c:set var="automaticCancelMigration" value="true" />
-<emm:ShowByPermission token="automatic.import.cancel.rollback">
-    <c:set var="automaticCancelMigration" value="false" />
-</emm:ShowByPermission>
-
 <mvc:form servletRelativeAction="/recipient/import/errors/save.action" modelAttribute="form" id="errors-form" data-form="resource"
-          data-controller="${automaticCancelMigration ? 'recipient-import-errors-edit' : ''}" data-initializer="recipient-import-errors-edit"
+          data-controller="recipient-import-errors-edit" data-initializer="recipient-import-errors-edit"
           data-action="save-errors">
     <script type="application/json" data-initializer="web-storage-persist">
         {

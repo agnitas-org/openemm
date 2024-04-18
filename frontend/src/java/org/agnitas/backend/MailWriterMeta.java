@@ -19,22 +19,23 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.agnitas.backend.dao.DkimDAO;
+import org.agnitas.backend.dao.MailkeyDAO;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 import org.agnitas.util.Systemconfig;
-import org.agnitas.util.XMLRPCClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -82,6 +83,7 @@ public class MailWriterMeta extends MailWriter {
 	private boolean keepATmails;
 	private boolean keepPreviewMails;
 	private List<Reference> multi;
+	private List <MailkeyDAO.Mailkey> mailkeys;
 
 	/**
 	 * Constructor
@@ -109,6 +111,7 @@ public class MailWriterMeta extends MailWriter {
 		}
 		blockID = 1;
 		multi = null;
+		mailkeys = null;
 		setup();
 
 		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
@@ -207,16 +210,6 @@ public class MailWriterMeta extends MailWriter {
 				}
 			} catch (FileNotFoundException e) {
 				throw new IOException("Unable to write final stamp file " + fname + ".final: " + e.toString(), e);
-			}
-		}
-		if (data.isDirect() && (fname != null)) {
-			try {
-				boolean ok;
-
-				ok = (Boolean) XMLRPCClient.invoke(Data.syscfg.get ("direct-path-server", "localhost"), Data.syscfg.get ("direct-path-port", 9400), 2000, "unpack", fname);
-				data.logging(Log.DEBUG, "trigger", "Trigger direct path " + (ok ? "succeeded" : "failed"));
-			} catch (Exception e) {
-				data.logging(Log.DEBUG, "trigger", "Trigger direct path not reachable");
 			}
 		}
 	}
@@ -1149,18 +1142,34 @@ public class MailWriterMeta extends MailWriter {
 		Date sendDate = data.genericSendDate();
 
 		writer.openclose("send", "date", fmt.format(sendDate), "epoch", (sendDate.getTime () / 1000));
-		if (Str.atob (data.company.info ("dkim-extended"), false) && (data.dkimAvailable != null) && (data.dkimAvailable.size () > 0)) {
-			writer.opennode ("dkims");
-			for (int state = 0; state < 2; ++state) {
-				boolean	local = state == 0;
 
-				for (DkimDAO.DKIM dkim : data.dkimAvailable) {
-					if (dkim.local () == local) {
-						writer.single ("dkim", dkim.key (), "id", dkim.id (), "domain", dkim.domain (), "selector", dkim.selector ());
+		try {
+			if (mailkeys == null) {
+				mailkeys = (new MailkeyDAO (
+							    data.dbase, data.company.id (),
+							    Str.atob (data.company.info ("dkim-extended", data.mailing.id ()), false) && (data.dkimAvailable != null) && (data.dkimAvailable.size () > 0) ? data.dkimAvailable : null
+				)).mailkeys ();
+			}
+			if ((mailkeys != null) && (mailkeys.size () > 0)) {
+				writer.opennode ("mailkeys");
+				for (int state = 0; state < 2; ++state) {
+					boolean	local = state == 0;
+
+					for (MailkeyDAO.Mailkey mailkey : mailkeys) {
+						if (mailkey.local () == local) {
+							XMLWriter.Creator	cr = writer.create ("key", "id", mailkey.id (), "method", mailkey.method ());
+						
+							for (Entry <String, String> entry : mailkey.parameter ().entrySet ()) {
+								cr.add (entry.getKey (), entry.getValue ());
+							}
+							writer.single (cr, mailkey.key ());    
+						}
 					}
 				}
+				writer.close ("mailkeys");
 			}
-			writer.close ("dkims");
+		} catch (SQLException e) {
+			data.logging (Log.ERROR, "writer/meta", "Failed to retrieve keys: " + e.toString ());
 		}
 	}
 
@@ -1200,6 +1209,9 @@ public class MailWriterMeta extends MailWriter {
 	private void generalURLs() {
 		writer.single("auto_url", data.autoURL);
 		writer.single("onepixel_url", data.onePixelURL);
+		if (data.honeyPotURL != null) {
+			writer.single("honeypot_url", data.honeyPotURL);
+		}
 		writer.single("anon_url", data.anonURL);
 	}
 
@@ -1318,9 +1330,9 @@ public class MailWriterMeta extends MailWriter {
 	}
 
 	private void urls() throws IOException {
-		if (data.urlcount > 0) {
-			writer.opennode("urls", "count", data.urlcount);
-			for (int n = 0; n < data.urlcount; ++n) {
+		if ((data.URLlist != null) && (data.URLlist.size () > 0)) {
+			writer.opennode("urls", "count", data.URLlist.size ());
+			for (int n = 0; n < data.URLlist.size (); ++n) {
 				URL url = data.URLlist.get(n);
 				XMLWriter.Creator cr = writer.create("url", "id", url.getId(), "destination", url.getUrl(), "usage", url.getUsage());
 
@@ -1378,7 +1390,7 @@ public class MailWriterMeta extends MailWriter {
 			for (Reference r : multi) {
 				int index = r.getIdIndex();
 
-				if ((index != -1) && (!rmap[index].getIsnull())) {
+				if ((index != -1) && (!rmap[index].isnull())) {
 					c.add(r.name(), rmap[index].get());
 				}
 			}

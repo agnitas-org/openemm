@@ -93,4 +93,6 @@ public interface ImportProfileDao {
 	int findImportProfileIdByName(String name, int companyId);
 
 	boolean isColumnWasImported(String columnName, int id);
+
+	List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName);
 }

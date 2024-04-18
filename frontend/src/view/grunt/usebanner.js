@@ -10,6 +10,26 @@ module.exports = function(grunt){
         linebreak: true
       }
     },
+    css_redesigned: {
+      files:  {
+        src: ['<%= config.assets %>/application.redesigned.min.css']
+      },
+      options: {
+        position: 'top',
+        banner: grunt.file.read('./assets/banner/application.css'),
+        linebreak: true
+      }
+    },
+    landing: {
+      files:  {
+        src: ['<%= config.assets %>/landing.min.css']
+      },
+      options: {
+        position: 'top',
+        banner: grunt.file.read('./assets/banner/application.css'),
+        linebreak: true
+      }
+    },
     js: {
       files:  {
         src: ['<%= config.assets %>/application.min.js']

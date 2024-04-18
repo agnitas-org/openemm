@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -24,25 +24,28 @@
 
 <%@ include file="fragments/tiles/add-ons-tile.jspf" %>
 <%@ include file="fragments/tiles/statistics-tile.jspf" %>
+<%@ include file="fragments/tiles/clickers-tile.jspf" %>
+<%@ include file="fragments/tiles/openers-tile.jspf" %>
 <%@ include file="fragments/tiles/planning-tile.jspf" %>
 <%@ include file="fragments/tiles/news-tile.jspf" %>
 <%@ include file="fragments/tiles/imports-exports-tile.jspf" %>
 <%@ include file="fragments/tiles/mailings-tile.jspf" %>
 <%@ include file="fragments/tiles/workflows-tile.jspf" %>
 <%@ include file="fragments/tiles/empty-tile.jspf" %>
+<%@ include file="fragments/tiles/analysis-tile.jspf" %>
 <jsp:include page="fragments/tiles/calendar-tile.jsp" />
 
 <script id="dashboard-tiles-selection-modal" type="text/x-mustache-template">
     <div id="choose-tile-modal" class="modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <mvc:message code="dashboard.tile.add"/>
+                    <h1 class="modal-title"><mvc:message code="dashboard.tile.add"/></h1>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body js-scrollable">
                     <div class="row row-cols-4">
                         {{ _.each(tiles, function(tile) { }}
                             <div class="col" data-field="toggle-vis">
@@ -59,7 +62,7 @@
                                             {{ if (variant.disabled) { }}
                                                 <mvc:message code="error.dashboard.tile.space"/>
                                             {{ } else { }}
-                                                <i class="icon icon-plus"></i>
+                                                <i class="icon icon-plus absolute-center"></i>
                                             {{ } }}
                                         </div>
                                     </div>
@@ -68,7 +71,7 @@
                                     <div class="tile-name d-flex justify-content-between">
                                         <b>{{- tile.name }}</b>
                                         <input type="checkbox" id="switch-{{- tile.id }}-tile" class="icon-switch">
-                                        <label for="switch-{{- tile.id }}-tile" class="icon-switch__label">
+                                        <label for="switch-{{- tile.id }}-tile" class="icon-switch__label icon-switch__label--sm">
                                             <i class="colon-icon"><span class="colon-icon__dot"></span><span class="colon-icon__dot"></span></i>
                                             <i class="colon-icon" style="transform: rotate(90deg)"><span class="colon-icon__dot"></span><span class="colon-icon__dot"></span></i>
                                         </label>
@@ -98,7 +101,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <mvc:message code="dashboard.layout.select"/>
+                    <h1 class="modal-title"><mvc:message code="dashboard.layout.select"/></h1>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
@@ -136,7 +139,7 @@
 
 <script id="dashboard-schedule-day" type="text/x-mustache-template">
     <div class="schedule__day grid" style="--bs-columns: 1;">
-        <span class="schedule__day-date text-truncate">{{- dayOfWeek }}, {{- dateStr }}</span>
+        <h2 class="schedule__day-date text-truncate">{{- dayOfWeek }}, {{- dateStr }}</h2>
         <div class="schedule__day-mailings grid">
             {{ if (_.isEmpty(dayMailings)) { }}
                 <div class="notification-simple">
@@ -149,7 +152,7 @@
                         <span class="schedule__send-time">{{- mailing.sendTime }}</span>
                         <div class="schedule__mailing-info">
                             <div class="schedule__mailing-name">
-                                <span class="mailing-badge {{- mailing.workstatus }}" data-tooltip="{{- mailing.workstatusIn }}"></span>
+                                <span class="status-badge {{- mailing.workstatus }}" data-tooltip="{{- mailing.workstatusIn }}"></span>
                                 <span class="text-truncate">{{- mailing.shortname }}</span>
                             </div>
                             <div class="schedule__mailing-mailinglist">
@@ -161,5 +164,14 @@
                 {{ }) }}
             {{ } }}
         </div>
+    </div>
+</script>
+
+<script id="dashboard-tile-overlay" type="text/x-mustache-template">
+    <div class="tile-overlay tile-overlay--visible">
+        <button type="button" class="btn btn-danger btn-lg btn-sm-horizontal" data-action="delete-tile">
+            <i class="icon icon-trash-alt"></i>
+            <span class="text"><mvc:message code="default.tile.remove" /></span>
+        </button>
     </div>
 </script>

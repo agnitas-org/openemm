@@ -21,6 +21,7 @@ import com.agnitas.emm.core.report.bean.RecipientEntity;
 import com.agnitas.emm.core.report.bean.impl.RecipientEntityImpl;
 import com.agnitas.emm.core.report.enums.fields.RecipientFields;
 import com.agnitas.emm.core.report.mapper.Mapper;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 @Component
 public class RecipientEntityMapper implements Mapper<RecipientEntity> {
@@ -34,7 +35,7 @@ public class RecipientEntityMapper implements Mapper<RecipientEntity> {
         recipientEntity.setFirstName((String) map.get(RecipientFields.COLUMN_FIRST_NAME.getCode()));
         recipientEntity.setLastName((String) map.get(RecipientFields.COLUMN_LAST_NAME.getCode()));
         recipientEntity.setEmail((String) map.get(RecipientFields.COLUMN_EMAIL.getCode()));
-        recipientEntity.setTrackingVeto(NumberUtils.toInt((String) map.get(RecipientFields.COLUMN_TRACKING_VETO.getCode())) > 0);
+        recipientEntity.setTrackingVeto(NumberUtils.toInt((String) map.get(RecipientStandardField.DoNotTrack.getColumnName())) > 0);
         recipientEntity.setMailFormat(NumberUtils.toInt((String) map.get(RecipientFields.COLUMN_MAIL_TYPE.getCode()), 1));
 
         Map<String, Object> otherFields = map.entrySet().stream()

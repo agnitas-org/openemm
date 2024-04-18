@@ -19,8 +19,10 @@ import org.agnitas.beans.AdminGroup;
 import com.agnitas.emm.core.Permission;
 
 public class AdminGroupImpl implements AdminGroup {
+
 	protected int companyID;
 	protected String shortname;
+    protected String companyName;
 
 	protected Set<Permission> groupPermissions;
 	protected Set<Permission> companyPermissions;
@@ -57,7 +59,17 @@ public class AdminGroupImpl implements AdminGroup {
 		return shortname;
 	}
 
-	@Override
+    @Override
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    @Override
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    @Override
 	public int getGroupID() {
 		return groupID;
 	}

@@ -385,4 +385,19 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			return DbUtilities.RESERVED_WORDS_MYSQL_MARIADB.contains(fieldname);
 		}
 	}
+
+	@Override
+	public boolean hasRecipients(int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") > 0;
+	}
+
+	@Override
+	public boolean hasRecipientsWithNullValue(int companyID, String columnName) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE columnName IS NULL") > 0;
+	}
+	
+	@Override
+	public final int countCustomerEntries(final int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
+	}
 }

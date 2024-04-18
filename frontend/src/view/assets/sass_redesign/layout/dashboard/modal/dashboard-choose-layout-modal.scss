@@ -12,7 +12,7 @@
       }
       
       div {
-        background-color: $gray-400;
+        background-color: $light-grey;
       }
     }
   }
@@ -22,7 +22,7 @@
     .grid {
       background-color: darken($white, 10%);
       div {
-        background-color: darken($gray-400, 10%);
+        background-color: darken($light-grey, 10%);
       }
     }
   }

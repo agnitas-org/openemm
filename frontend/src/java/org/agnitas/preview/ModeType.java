@@ -11,7 +11,7 @@
 package org.agnitas.preview;
 
 public enum ModeType {
-	RECIPIENT(1), TARGET_GROUP(2);
+	RECIPIENT(1), TARGET_GROUP(2), MANUAL(3);
 
 	private final int code;
 

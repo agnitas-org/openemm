@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
-import com.agnitas.exception.DetailedValidationException;
+import com.agnitas.exception.DetailedRequestErrorException;
 import com.agnitas.messages.Message;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,14 +54,21 @@ public class TargetEditFormValidator {
     }
 
     public void throwEqlValidationException(String eql, EqlSyntaxError error) {
-        Map<String, Object> positionDetails = Map.of(
-                "symbol", error.getSymbol(),
-                "line", error.getLine(),
-                "column", error.getColumn());
-        throw new DetailedValidationException(positionDetails, getEqlErrorMsg(eql, error));
+        throw new DetailedRequestErrorException(
+                getPositionDetails(error),
+                getEqlErrorMsg(eql, error)
+        );
     }
 
-    private Message getEqlErrorMsg(String eql, EqlSyntaxError error) {
+    public Map<String, Object> getPositionDetails(EqlSyntaxError error) {
+        return Map.of(
+                "symbol", error.getSymbol(),
+                "line", error.getLine(),
+                "column", error.getColumn()
+        );
+    }
+
+    public Message getEqlErrorMsg(String eql, EqlSyntaxError error) {
         List<Object> msgArgs = new ArrayList<>(Arrays.asList(error.getLine(), error.getColumn(), error.getSymbol()));
 
         Character notBalancedPairChar = getNotBalancedPairChar(eql);

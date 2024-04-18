@@ -1,6 +1,6 @@
 {
   "name": "grunt-agnitas",
-  "description": "package for the agnitas js/css compiler and help compilation",
+  "description": "Package for the Agnitas js/css compiler and help compilation",
   "version": "0.2.0",
   "private": true,
   "dependencies": {
@@ -21,7 +21,7 @@
     "grunt-template": "^1.0.0",
     "load-grunt-config": "^3.0.1",
     "lodash": "^4.17.21",
-    "node-sass": "^8.0.0",
+    "sass": "^1.70.0",
     "time-grunt": "^2.0.0",
     "underscore.string": "^3.3.5"
   }

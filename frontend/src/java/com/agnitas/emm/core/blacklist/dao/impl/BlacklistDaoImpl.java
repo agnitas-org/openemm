@@ -30,8 +30,10 @@ import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
+import org.agnitas.util.Tuple;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,6 +44,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 
 public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	
@@ -133,15 +136,8 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	}
 
 	@Override
-	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums) {
-		return getBlacklistedRecipients(companyID, sort, direction, page, rownums, null);
-	}
-
-	@Override
-	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums, String likePattern) {
-		String wildcardLikePattern = replaceWildCardCharacters(StringUtils.defaultString(likePattern));
-
-		sort = getSortableColumn(sort);
+	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID) {
+		String sort = getSortableColumn(filter.getSort());
 
 		// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
 		String sortClause;
@@ -151,40 +147,27 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 			} else {
 				sortClause = " ORDER BY " + sort;
 			}
-			if (StringUtils.isNotBlank(direction)) {
-				sortClause = sortClause + " " + direction;
+			if (StringUtils.isNotBlank(filter.getOrder())) {
+				sortClause = sortClause + " " + filter.getOrder();
 			}
 		} catch (Exception e) {
 			logger.error("Invalid sort field", e);
 			sortClause = "";
 		}
 
-		/*
-		 * TODO Bugfix for Mantis ID 798
-		 * The following statement uses the "lowercase" function of the Database
-		 * this is not very efficient. But for now, there are some values in the DB which
-		 * are not lowercase. Therfore, as soon as all emails are lowercase remove the
-		 * statements for better performance.
-		 */
-		String whereClause = "";
-		if (StringUtils.isNotEmpty(wildcardLikePattern)) {
-			if (isOracleDB()) {
-				whereClause = " WHERE LOWER(email) LIKE LOWER('%' || ? || '%')";
-			} else {
-				whereClause = " WHERE LOWER(email) LIKE LOWER(CONCAT('%', ?, '%'))";
-			}
-		}
+		Tuple<String, List<Object>> queryParts = applyOverviewFilters(filter);
+		String whereClause = queryParts.getFirst();
+		List<Object> params = queryParts.getSecond();
 
 		int totalRows;
 		try {
-			if (StringUtils.isEmpty(wildcardLikePattern)) {
-				totalRows = selectInt(logger, "SELECT COUNT(email) FROM " + getCustomerBanTableName(companyID));
-			} else {
-				totalRows = selectInt(logger, "SELECT COUNT(email) FROM " + getCustomerBanTableName(companyID) + whereClause, wildcardLikePattern);
-			}
+			totalRows = selectInt(logger, "SELECT COUNT(email) FROM " + getCustomerBanTableName(companyID) + whereClause, params.toArray());
 		} catch (Exception e) {
 			totalRows = 0;
 		}
+
+		int page = filter.getPage();
+		int rownums = filter.getNumberOfRows();
 
 		// page numeration begins with 1
 		if (page < 1) {
@@ -210,17 +193,13 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 
         List<BlackListEntry> blacklistElements = null;
         if (isOracleDB()) {
-			if (StringUtils.isEmpty(wildcardLikePattern)) {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), offset + 1, offset + rownums);
-			} else {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), wildcardLikePattern, offset + 1, offset + rownums);
-			}
-        } else {
-			if (StringUtils.isEmpty(wildcardLikePattern)) {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), offset, rownums);
-			} else {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), wildcardLikePattern, offset, rownums);
-			}
+			ArrayList<Object> paramsCopy = new ArrayList<>(params);
+			paramsCopy.addAll(List.of(offset + 1, offset + rownums));
+			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
+		} else {
+			ArrayList<Object> paramsCopy = new ArrayList<>(params);
+			paramsCopy.addAll(List.of(offset, rownums));
+			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
         }
 
 		// Workaround: if you are on a page higher than 1 and the result of the
@@ -229,14 +208,46 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 		// with page 1 as parameter.
 		// if we then find nothing, there is nothing to find.
 		if (blacklistElements.size() == 0) {
-			if (StringUtils.isEmpty(wildcardLikePattern)) {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), 1, rownums);
-			} else {
-				blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), wildcardLikePattern, 1, rownums);
-			}
+			params.addAll(List.of(1, rownums));
+			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), params.toArray());
 		}
 
-		return new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, direction);
+		return new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
+	}
+
+	private Tuple<String, List<Object>> applyOverviewFilters(BlacklistOverviewFilter filter) {
+		StringBuilder whereClause = new StringBuilder(" WHERE ");
+		List<Object> params = new ArrayList<>();
+
+		if (StringUtils.isNotBlank(filter.getEmail())) {
+			/*
+			 * TODO Bugfix for Mantis ID 798
+			 * The following statement uses the "lowercase" function of the Database
+			 * this is not very efficient. But for now, there are some values in the DB which
+			 * are not lowercase. Therfore, as soon as all emails are lowercase remove the
+			 * statements for better performance.
+			 */
+			whereClause.append(getPartialSearchFilter("email"));
+			params.add(replaceWildCardCharacters(filter.getEmail()));
+		} else {
+			whereClause.append("1=1");
+		}
+
+		if (StringUtils.isNotBlank(filter.getReason())) {
+			whereClause.append(getPartialSearchFilterWithAnd("reason"));
+			params.add(filter.getReason());
+		}
+
+		if (filter.getCreationDate().getFrom() != null) {
+			whereClause.append(" AND timestamp >= ?");
+			params.add(filter.getCreationDate().getFrom());
+		}
+		if (filter.getCreationDate().getTo() != null) {
+			whereClause.append(" AND timestamp < ?");
+			params.add(DateUtilities.addDaysToDate(filter.getCreationDate().getTo(), 1));
+		}
+
+		return new Tuple<>(whereClause.toString(), params);
 	}
 
 	@Override

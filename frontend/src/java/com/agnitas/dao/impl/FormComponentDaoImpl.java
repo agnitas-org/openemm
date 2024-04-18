@@ -10,28 +10,31 @@
 
 package com.agnitas.dao.impl;
 
-import java.io.InputStream;
-import java.sql.Blob;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.FormComponentDao;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+
+import java.io.InputStream;
+import java.sql.Blob;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The Class FormComponentDaoImpl.
@@ -137,8 +140,69 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	 * @return the component descriptions
 	 */
 	@Override
-	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType) {
-		return select(logger, "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?", new FormComponentRowMapperWithoutData(), companyID, formID, componentType.getId());
+	public List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter) {
+		StringBuilder query = new StringBuilder("SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl");
+		List<Object> params = applyOverviewFilter(filter, query);
+
+		return select(logger, query.toString(), new FormComponentRowMapperWithoutData(), params.toArray());
+	}
+
+	private List<Object> applyOverviewFilter(UserFormImagesOverviewFilter filter, StringBuilder query) {
+		query.append(" WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?");
+		List<Object> params = new ArrayList<>(List.of(filter.getCompanyId(), filter.getFormId(), filter.getType().getId()));
+
+		if (StringUtils.isNotBlank(filter.getFileName())) {
+			query.append(getPartialSearchFilterWithAnd("name"));
+			params.add(filter.getFileName());
+		}
+
+		if (StringUtils.isNotBlank(filter.getDescription())) {
+			query.append(getPartialSearchFilterWithAnd("description"));
+			params.add(filter.getDescription());
+		}
+
+		if (filter.getUploadDate().getFrom() != null) {
+			query.append(" AND creation_date >= ?");
+			params.add(filter.getUploadDate().getFrom());
+		}
+		if (filter.getUploadDate().getTo() != null) {
+			query.append(" AND creation_date < ?");
+			params.add(DateUtilities.addDaysToDate(filter.getUploadDate().getTo(), 1));
+		}
+
+		if (filter.getFileSizeMin() != null && filter.getFileSizeMin() > 0) {
+			query.append(" AND data_size >= ?");
+			params.add(filter.getFileSizeMin() * 1000);
+		}
+		if (filter.getFileSizeMax() != null && filter.getFileSizeMax() > 0) {
+			query.append(" AND data_size <= ?");
+			params.add(filter.getFileSizeMax() * 1000);
+		}
+
+		if (filter.getHeightMin() != null && filter.getHeightMin() > 0) {
+			query.append(" AND height >= ?");
+			params.add(filter.getHeightMin());
+		}
+		if (filter.getHeightMax() != null && filter.getHeightMax() > 0) {
+			query.append(" AND height <= ?");
+			params.add(filter.getHeightMax());
+		}
+
+		if (filter.getWidthMin() != null && filter.getWidthMin() > 0) {
+			query.append(" AND width >= ?");
+			params.add(filter.getWidthMin());
+		}
+		if (filter.getWidthMax() != null && filter.getWidthMax() > 0) {
+			query.append(" AND width <= ?");
+			params.add(filter.getWidthMax());
+		}
+
+		if (CollectionUtils.isNotEmpty(filter.getMimetypes())) {
+			query.append(" AND mimetype IN (").append(AgnUtils.csvQMark(filter.getMimetypes().size())).append(")");
+			params.addAll(filter.getMimetypes());
+		}
+
+		return params;
 	}
 
 	/**
@@ -213,22 +277,31 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	}
 
 	@Override
-	public List<FormComponent> getFormComponents(int companyID, int formID) {
-		return getFormComponents(companyID, formID, Collections.emptyList());
+	public List<FormComponent> getFormComponents(Set<Integer> ids, UserFormImagesOverviewFilter filter) {
+		StringBuilder query = new StringBuilder("SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date, data FROM form_component_tbl");
+		List<Object> params = applyOverviewFilter(filter, query);
+
+		if (ids != null) {
+			query.append(" AND ").append(makeBulkInClauseForInteger("id", ids));
+		}
+
+		return select(logger, query.toString(), new FormComponentRowMapper(), params.toArray());
 	}
 
 	@Override
-	public List<FormComponent> getFormComponents(int companyId, int formID, List<FormComponentType> types) {
-		String sql = "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, " +
-				"width, height, creation_date, change_date, data FROM form_component_tbl " +
-				"WHERE company_id = ? AND (form_id = ? OR form_id = 0)";
+	public List<String> getComponentFileNames(Set<Integer> bulkIds, int formId, int companyID) {
+		String query = "SELECT name FROM form_component_tbl WHERE (form_id = ? OR form_id = 0) AND company_id = ? AND "
+				+ makeBulkInClauseForInteger("id", bulkIds);
 
-		if (CollectionUtils.isNotEmpty(types)) {
-			sql += " AND " + makeBulkInClauseForInteger("type",
-					types.stream().map(FormComponentType::getId).collect(Collectors.toList()));
-		}
+		return select(logger, query, StringRowMapper.INSTANCE, formId, companyID);
+	}
 
-		return select(logger, sql, new FormComponentRowMapper(), companyId, formID);
+	@Override
+	public void delete(Set<Integer> bulkIds, int formId, int companyID) {
+		String query = "DELETE FROM form_component_tbl WHERE company_id = ? AND form_id = ? AND "
+				+ makeBulkInClauseForInteger("id", bulkIds);
+
+		update(logger, query, companyID, formId);
 	}
 
 	@Override

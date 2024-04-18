@@ -65,6 +65,7 @@ public class CompanySettingsDto {
 	private boolean userBasedFavoriteTargets;
 	private boolean filterRecipientsOverviewForActiveRecipients;
 	private boolean autoDeeptracking;
+	private boolean cleanAdminAndTestRecipientsActivity;
 	private int expireStatistics;
 	private int expireSuccess;
 	private int expireRecipient;
@@ -517,6 +518,14 @@ public class CompanySettingsDto {
 
 	public void setFilterRecipientsOverviewForActiveRecipients(boolean filterRecipientsOverviewForActiveRecipients) {
 		this.filterRecipientsOverviewForActiveRecipients = filterRecipientsOverviewForActiveRecipients;
+	}
+
+	public boolean isCleanAdminAndTestRecipientsActivity() {
+		return cleanAdminAndTestRecipientsActivity;
+	}
+
+	public void setCleanAdminAndTestRecipientsActivity(boolean cleanAdminAndTestRecipientsActivity) {
+		this.cleanAdminAndTestRecipientsActivity = cleanAdminAndTestRecipientsActivity;
 	}
 
 	public boolean isAutoDeeptracking(){

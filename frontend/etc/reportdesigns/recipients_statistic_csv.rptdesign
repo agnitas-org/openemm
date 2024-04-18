@@ -2723,7 +2723,7 @@ return true;
                 </structure>
                 <structure>
                     <property name="name">dateGRDetailTitle</property>
-                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale());</expression>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale());</expression>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>

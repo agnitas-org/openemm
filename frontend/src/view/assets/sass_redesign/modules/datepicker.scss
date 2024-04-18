@@ -1,25 +1,21 @@
 
-$datepicker-border: $border-default;
-$datepicker-border-radius: 10px;
 $datepicker-item-size: 35px;
-$select-height-regular: 30px;
-$c-datepicker-btn: #4B4B4B;
 
 #ui-datepicker-div {
-  background-color: $c-white;
+  background-color: var(--main-bg-color);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 
-  border: $datepicker-border;
-  border-radius: $datepicker-border-radius;
+  border: $border-default;
+  border-radius: $border-radius;
 
-  @include flex(column, $gap-sm);
+  @include flex-column($gap-sm);
   padding: $gap-sm;
 }
 
 .ui-datepicker-calendar {
-  border: 1px solid #D0D0D0;
+  border: $border-default;
   border-collapse: unset;
-  border-radius: $datepicker-border-radius;
+  border-radius: $border-radius;
   border-spacing: 10px;
 
   th, td {
@@ -28,20 +24,18 @@ $c-datepicker-btn: #4B4B4B;
   }
 
   td {
-    @include font($font-size-sm, $font-weight-normal);
-
     a, span {
       @include size($datepicker-item-size);
       line-height: $datepicker-item-size;
       display: inline-block;
-      border: 1px solid transparent;
+      border: $border-transparent;
       border-radius: 50%;
-      color: $c-black;
+      color: var(--default-text-color);
     }
 
     &:not(.ui-datepicker-current-day) {
       a:hover {
-        border: $datepicker-border;
+        border: $border-default;
       }
     }
 
@@ -49,13 +43,13 @@ $c-datepicker-btn: #4B4B4B;
       font-weight: $font-weight-semibold;
 
       a {
-        border: 1px solid #1A3258;
+        border: 1px solid var(--calendar-selected-border-color);
       }
     }
 
     &.ui-datepicker-other-month, &.ui-state-disabled {
       span, a {
-        color: #C0C0C0;
+        color: var(--calendar-other-month-color);
       }
     }
 
@@ -65,6 +59,7 @@ $c-datepicker-btn: #4B4B4B;
   }
 
   th {
+    color: var(--default-text-color);
     &:not(.ui-datepicker-week-col) {
       font-weight: $font-weight-normal;
     }
@@ -72,11 +67,12 @@ $c-datepicker-btn: #4B4B4B;
 
   .ui-datepicker-week-col {
     font-weight: $font-weight-semibold;
+    color: var(--default-text-color);
   }
 }
 
 .ui-datepicker-title, .ui-datepicker-buttonpane {
-  @include flex(row, $gap-sm);
+  @include flex-row($gap-sm);
 
   button, {
     flex-grow: 1;
@@ -85,12 +81,6 @@ $c-datepicker-btn: #4B4B4B;
   .select-container {
     width: 50%;
   }
-}
-
-.ui-datepicker-buttonpane button {
-  border: $datepicker-border;
-  color: $c-datepicker-btn;
-  @include font($font-size-sm, $font-weight-normal);
 }
 
 .ui-datepicker-next, .ui-datepicker-prev, .ui-datepicker-close, .ui-datepicker-current {

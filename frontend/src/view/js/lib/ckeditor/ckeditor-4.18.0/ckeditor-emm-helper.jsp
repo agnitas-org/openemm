@@ -17,7 +17,10 @@
     }
 
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
-        const imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
+        let imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
+        if (window.isRedesignedUI) {
+          imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browserRedesigned.action?mailingID="/>' + mailingId : '';
+        }
         if (!isEditorVisible(textAreaId)) {
 
             const config = {
@@ -30,7 +33,7 @@
                 baseHref: '<c:url value="/${CKEDITOR_PATH}/"/>',
                 filebrowserImageBrowseUrl: imageBrowserUrl,
                 filebrowserImageBrowseLinkUrl: imageBrowserUrl,
-                filebrowserImageWindowWidth: '700',
+                filebrowserImageWindowWidth: window.isRedesignedUI ? '1200' : '700',
                 filebrowserImageWindowHeight: '600',
                 resize_enabled: !isResizeNotEnabled,
                 mailingId: mailingId,
@@ -74,7 +77,11 @@
                         event.editor.updateElement();
                     },
                     save: function(e) {
-                        $(document).trigger('ckeditor-save');
+                        if (window.isRedesignedUI) {
+                          $(e.sender.element.$).trigger('ckeditor-save');
+                        } else {
+                          $(document).trigger('ckeditor-save');
+                        }
                         e.cancel();
                     }
                 }

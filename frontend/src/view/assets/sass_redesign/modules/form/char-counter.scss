@@ -3,11 +3,11 @@
   position: relative;
   
   & > * {
-    color: $gray-700;
+    color: var(--text-dark-gray-color);
     position: absolute;
     top: 0;
     right: 0;
     margin-top: -21px;
-    font-size: 12px;
+    font-size: $font-size-sm;
   }
 }

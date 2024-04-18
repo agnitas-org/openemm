@@ -111,14 +111,9 @@ Sometimes it's useful to just extend the content of one tab when showing another
 
 (function(){
 
-  var Storage = AGN.Lib.Storage;
+  const Storage = AGN.Lib.Storage;
 
-  var init,
-      show,
-      hide,
-      getGroupId;
-
-  init = function($trigger) {
+  const init = function($trigger) {
     var target = $trigger.data('toggle-tab'),
         group = getGroupId($trigger, target),
         conf = Storage.get('toggle_tab' + group) || {},
@@ -142,7 +137,7 @@ Sometimes it's useful to just extend the content of one tab when showing another
     }
   };
 
-  show = function($trigger) {
+  const show = function($trigger) {
     var $siblings = $trigger.parents('ul').find('[data-toggle-tab]').not($trigger),
         target    = $trigger.data('toggle-tab'),
         group     = getGroupId($trigger, target),
@@ -150,12 +145,10 @@ Sometimes it's useful to just extend the content of one tab when showing another
         $icon     = $trigger.find('.tab-toggle'),
         $extends  = $($trigger.data('extends-tab'));
 
-    _.each($siblings, function(sibling) {
-      hide($(sibling));
-    });
+    _.each($siblings, sibling => hide($(sibling)));
 
     $trigger.addClass('active');
-    $trigger.closest('nav').find('.chosen-tab').text($trigger.text())
+    $trigger.closest('nav').find('.chosen-tab > span').text($trigger.text())
     $icon.removeClass('icon-angle-down').addClass('icon-angle-up');
     $target.removeClass('hidden');
     $extends.removeClass('hidden');
@@ -167,7 +160,7 @@ Sometimes it's useful to just extend the content of one tab when showing another
     AGN.Lib.CoreInitializer.run('load', $target);
   };
 
-  hide = function($trigger) {
+  const hide = function($trigger) {
     var target = $trigger.data('toggle-tab'),
         group  = getGroupId($trigger, target),
         $icon  = $trigger.find('.tab-toggle');
@@ -180,7 +173,7 @@ Sometimes it's useful to just extend the content of one tab when showing another
     Storage.set('toggle_tab' + group, {hidden: true})
   };
 
-  toggle = function($trigger) {
+  const toggle = function($trigger) {
     var target = $trigger.data('toggle-tab'),
         $target = $(target);
 
@@ -191,14 +184,9 @@ Sometimes it's useful to just extend the content of one tab when showing another
     }
   };
 
-  getGroupId = function($trigger, defaultValue) {
-    var group = $trigger.data('tab-group');
-
-    if (group) {
-      return "/" + group;
-    } else {
-      return defaultValue;
-    }
+  function getGroupId($trigger, defaultValue) {
+    const group = $trigger.data('tab-group');
+    return group ? `/${group}` : defaultValue;
   };
 
   AGN.Lib.Tab = {

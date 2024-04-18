@@ -55,6 +55,24 @@
 					${isLicenseStatusOK ? 'OK' : 'WARNING'}
 				</td>
 			</tr>
+			<tr>
+				<td>
+					<mvc:message code="serverStatus.status.discspace" />
+					<button class="icon icon-help" data-help="help_${helplanguage}/settings/serverstatus/DiskSpaceLeft.xml" tabindex="-1" type="button"></button>
+				</td>
+
+				<c:choose>
+					<c:when test="${serverStatus.diskSpaceFreePercentage >= 25}">
+						<td class="serverstatus_status serverstatus_status-success">>= 25%</td>
+					</c:when>
+					<c:when test="${serverStatus.diskSpaceFreePercentage >= 10}">
+						<td class="serverstatus_status serverstatus_status-warning">>= 10%</td>
+					</c:when>
+					<c:otherwise>
+						<td class="serverstatus_status serverstatus_status-error">< 10%</td>
+					</c:otherwise>
+				</c:choose>
+			</tr>
 			<tr class="${isOkImportStatus ? 'serverstatus_import_status_ok' : 'serverstatus_import_status_error'}">
 				<td colspan="2">
 					<c:url var="killRunningImportsUrl" value="/serverstatus/killRunningImports.action"/>

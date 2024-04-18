@@ -74,12 +74,7 @@ public class ProfileImportWorkerFactory {
 	}
 	
 	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, int companyID, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
-		ProfileImportWorker profileImportWorker;
-		if (configService.getBooleanValue(ConfigValue.UseImprovedProfileImport, companyID)) {
-			profileImportWorker = new ProfileImportWorkerWithExcel();
-		} else {
-			profileImportWorker = new ProfileImportWorker();
-		}
+		ProfileImportWorker profileImportWorker = new ProfileImportWorker();
 
 		profileImportWorker.setConfigService(configService);
 		profileImportWorker.setProfileImportReporter(profileImportReporter);
@@ -95,9 +90,11 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setImportFile(importFile);
 		profileImportWorker.setCustomerImportStatus(importStatus);
 		profileImportWorker.setImportQuotaCheckService(importQuotaCheckService);
+		profileImportWorker.setCheckHtmlTags(!configService.getBooleanValue(ConfigValue.NoHtmlCheckOnProfileImport, companyID));
+		profileImportWorker.setAllowSafeHtmlTags(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, companyID));
 		
 		if (importProfile.isMailinglistsAll()) {
-			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(importProfile.getCompanyId()).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
+			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(companyID).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
 		} else {
 			profileImportWorker.setMailingListIdsToAssign(mailingListIdsToAssign);
 		}

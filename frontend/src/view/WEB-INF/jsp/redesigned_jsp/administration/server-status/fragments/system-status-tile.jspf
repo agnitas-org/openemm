@@ -1,0 +1,114 @@
+<div id="system-status-tile" class="tile" data-editable-tile>
+    <div class="tile-header">
+        <h1 class="tile-title"><mvc:message code="settings.server.status" /></h1>
+
+        <div class="tile-controls">
+            <span class="status-badge status.${serverStatus.overallStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.overallStatus ? 'OK' : 'ERROR'}"></span>
+        </div>
+    </div>
+
+    <div class="tile-body js-scrollable">
+        <div class="row g-3">
+            <div class="col-12 d-flex align-items-center gap-2">
+                <span class="status-badge status.${serverStatus.jobQueueStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.jobQueueStatus ? 'OK' : 'ERROR'}"></span>
+                <p><mvc:message code="serverStatus.status.jobqueue" /></p>
+            </div>
+
+            <div class="col-12 d-flex align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="status-badge status.${serverStatus.importStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.importStatus ? 'OK' : 'STALLING'}"></span>
+                    <p><mvc:message code="serverStatus.status.import" /></p>
+                </div>
+
+                <c:if test="${not serverStatus.importStatus}">
+                    <button type="button" class="btn btn-sm btn-danger" data-action="cancel-imports">
+                        <mvc:message code="serverStatus.killImports" />
+                    </button>
+                </c:if>
+            </div>
+
+            <div class="col-12 d-flex align-items-center gap-2">
+                <span class="status-badge status.${serverStatus.dbStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.dbStatus ? 'OK' : 'ERROR'}"></span>
+                <p><mvc:message code="serverStatus.status.dbOverall" /></p>
+            </div>
+
+            <div class="col-12 d-flex align-items-center gap-2">
+                <span class="status-badge status.${serverStatus.dbConnectStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.dbConnectStatus ? 'OK' : 'Cannot connect to DB'}"></span>
+                <p><mvc:message code="serverStatus.status.dbConnection" /></p>
+            </div>
+
+            <div class="col-12 d-flex align-items-center gap-2">
+                <span class="status-badge status.${serverStatus.reportStatus ? 'success' : 'error'}" data-tooltip="${serverStatus.reportStatus ? 'OK' : 'ERROR'}"></span>
+                <p><mvc:message code="serverStatus.status.report" /></p>
+            </div>
+
+            <div class="col-12 d-flex align-items-center gap-2">
+                <span class="status-badge status.${serverStatus.licenseStatusOK ? 'success' : 'warning'}" data-tooltip="${serverStatus.licenseStatusOK ? 'OK' : 'WARNING'}"></span>
+                <p><mvc:message code="serverStatus.status.report" /></p>
+            </div>
+
+            <div class="col-12 d-flex align-items-center gap-2">
+                <c:choose>
+                    <c:when test="${serverStatus.diskSpaceFreePercentage >= 25}">
+                        <span class="badge badge--success">>= 25%</span>
+                    </c:when>
+                    <c:when test="${serverStatus.diskSpaceFreePercentage >= 10}">
+                        <span class="badge badge--warning">>= 10%</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="badge badge--error">< 10%</span>
+                    </c:otherwise>
+                </c:choose>
+                <p class="lh-1">
+                    <mvc:message code="serverStatus.status.discspace" />
+                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/settings/serverstatus/DiskSpaceLeft.xml"></a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="cancel-running-imports-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="serverStatus.killImports" /></h1>
+                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="notification-simple notification-simple--lg notification-simple--warning">
+                                <strong><mvc:message code="serverStatus.killImports.Xplain1" /></strong>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <p><mvc:message code="serverStatus.killImports.Xplain2" /></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger js-confirm-negative flex-grow-1" data-bs-dismiss="modal">
+                        <i class="icon icon-times"></i>
+                        <span class="text">
+                            <mvc:message code="button.Cancel"/>
+                        </span>
+                    </button>
+
+                    <button type="button" class="btn btn-primary js-confirm-positive flex-grow-1" data-bs-dismiss="modal">
+                        <i class="icon icon-check"></i>
+                        <span class="text">
+                            <mvc:message code="button.Proceed"/>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

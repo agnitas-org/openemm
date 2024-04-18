@@ -1,9 +1,9 @@
 ;(function() {
-  $(document).on('click', '.js-open-datepicker', function() {
-    const $datePickerInput = $(this).parent().find('.js-datepicker');
+  $(document).on('click', '.date-picker-container', function() {
+    const $input = $(this).find('.js-datepicker');
 
-    if (!$datePickerInput.datepicker('widget').is(":visible")) {
-      $datePickerInput.datepicker('show');
+    if (!$input.prop('disabled') && !$input.datepicker('widget').is(":visible")) {
+      $input.datepicker('show');
     }
   });
 })();

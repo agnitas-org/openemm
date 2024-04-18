@@ -9,6 +9,7 @@ AGN.Opt.Forms                 = window.AGN.Opt.Forms || (window.AGN.Opt.Forms = 
 AGN.Opt.Controllers           = window.AGN.Opt.Controllers || (window.AGN.Opt.Controllers = {});
 AGN.Opt.Templates             = window.AGN.Opt.Templates || (window.AGN.Opt.Templates = {});
 AGN.Opt.TableCellRenderers    = window.AGN.Opt.TableCellRenderers || (window.AGN.Opt.TableCellRenderers = {});
+AGN.Opt.Table                 = window.AGN.Opt.Table || (window.AGN.Opt.Table = {'comparators': {}});
 AGN.Opt.TableHeaderComponents = window.AGN.Opt.TableHeaderComponents || (window.AGN.Opt.TableHeaderComponents = {});
 AGN.Opt.Charts                = window.AGN.Opt.Charts || (window.AGN.Opt.Charts = {});
 AGN.Opt.Validators            = window.AGN.Opt.Validators || (window.AGN.Opt.Validators = {});

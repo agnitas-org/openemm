@@ -131,7 +131,7 @@
                 </div>
             </mvc:form>
             <div id="logon-copyright">
-                <p><mvc:message code="default.Copyright"/></p>
+                <p><mvc:message code="GWUA.default.Copyright.simple"/></p>
             </div>
         </div>
 

@@ -1,0 +1,23 @@
+
+.ace_editor {
+  border: 0;
+  border-radius: 0;
+  height: 100% !important;
+}
+
+[data-multi-editor] {
+  .tile-header {
+    padding: $gap-x-sm;
+  }
+
+  .tile-body {
+    padding: 0 !important;
+    border: none;
+  }
+
+  .btn-enlarge {
+    @extend .btn-sm;
+    padding-inline: $gap-sm;
+    font-size: $font-size-md;
+  }
+}

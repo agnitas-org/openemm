@@ -10,11 +10,15 @@
 
 package com.agnitas.emm.core.bounce.service.impl;
 
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.exception.RequestErrorException;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -22,6 +26,7 @@ import org.agnitas.dao.MailloopDao;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -62,7 +67,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         	if (blacklistService.blacklistCheck(mailloop.getFilterEmail(), companyId)) {
         		throw new BlacklistedFilterEmailException();
         	}
-        	if (mailloopDao.isAddressInUse(mailloop.getFilterEmail(), isNew)) {
+        	if (isInvalidFilterEmail(companyId, isNew, mailloop)) {
         		throw new EmailInUseException();
         	}
         }
@@ -72,6 +77,20 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         }
         
         return mailloopDao.saveMailloop(mailloop);
+    }
+
+    private boolean isInvalidFilterEmail(int companyId, boolean isNew, Mailloop mailloop) {
+        if (isNew) {
+            return mailloopDao.isAddressInUse(mailloop.getFilterEmail());
+        }
+        return isFilterEmailChanged(mailloop, companyId) && mailloopDao.isAddressInUse(mailloop.getFilterEmail());
+    }
+
+    private boolean isFilterEmailChanged(Mailloop updatedMailloop, int companyId) {
+        Mailloop oldMailloop = mailloopDao.getMailloop(updatedMailloop.getId(), companyId);
+        return !StringUtils.equalsIgnoreCase(
+                StringUtils.trim(oldMailloop.getFilterEmail()),
+                StringUtils.trim(updatedMailloop.getFilterEmail()));
     }
 
     @Override
@@ -84,6 +103,11 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         convertedList.forEach(item -> item.setCompanyDomain(companyDomain));
 
         return transformPaginatedList(paginatedListFromDb, convertedList);
+    }
+
+    @Override
+    public PaginatedListImpl<BounceFilterDto> overview(BounceFilterListForm filter) {
+        return mailloopDao.getPaginatedMailloopList(filter);
     }
 
     private PaginatedListImpl<BounceFilterDto> transformPaginatedList(PaginatedListImpl<MailloopEntry> paginatedListFromDb, List<BounceFilterDto> convertedList) {
@@ -104,9 +128,23 @@ public class BounceFilterServiceImpl implements BounceFilterService {
 
     @Override
     public boolean deleteBounceFilter(int filterId, int companyId) {
+        validateDeletion(Set.of(filterId));
         return mailloopDao.deleteMailloop(filterId, companyId);
     }
-    
+
+    @Override
+    public void delete(Set<Integer> ids, int companyId) {
+        validateDeletion(ids);
+        ids.forEach(id -> mailloopDao.deleteMailloop(id, companyId));
+    }
+
+    @Override
+    public void validateDeletion(Set<Integer> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
+    }
+
 	@Override
 	public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId) {
 		if (companyId > 0 && mailingId > 0) {
@@ -131,5 +169,10 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         return filters.stream()
                 .map(BounceFilterDto::getShortName)
                 .collect(Collectors.joining(", "));
+    }
+
+    @Override
+    public List<String> getBounceFilterNames(Set<Integer> ids, int companyId) {
+        return mailloopDao.getBounceFilterNames(ids, companyId);
     }
 }

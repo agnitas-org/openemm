@@ -149,6 +149,8 @@
                 </div>
             </emm:ShowByPermission>
 
+            <%@include file="./fragments/update-password-reminder-switch.jspf"%>
+
             <div data-field="password">
                 <div class="form-group">
                     <div class="col-sm-4">

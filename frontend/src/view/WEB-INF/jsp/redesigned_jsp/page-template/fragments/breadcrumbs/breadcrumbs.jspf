@@ -4,7 +4,10 @@
     <c:if test="${_navigation_navMsg == agnTitleKey or (isBreadcrumbsShown and _navigation_navMsg == agnBreadcrumbsRootKey)}">
         <c:set var="isHeadLineReady" value="true" />
         <c:set var="agnHeadLineIconClass" value="${_navigation_iconClass}"/>
-        <mvc:message var="agnHeadLineFirstCrumb" code="${_navigation_navMsg}" />
+
+        <c:if test="${empty agnHeadLineFirstCrumb}">
+            <mvc:message var="agnHeadLineFirstCrumb" code="${_navigation_navMsg}" />
+        </c:if>
     </c:if>
 </emm:ShowNavigation>
 
@@ -13,7 +16,7 @@
     <li><i class="icon icon-caret-right arrow"></i></li>
 </c:set>
 
-<ul class="breadcrumb">
+<ul class="breadcrumbs">
     <c:choose>
         <c:when test="${isHeadLineReady and isBreadcrumbsShown}">
             <c:set var="crumbs" scope="request">

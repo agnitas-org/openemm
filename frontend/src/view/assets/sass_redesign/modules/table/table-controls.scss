@@ -3,12 +3,9 @@ $pageBtnWidth: 30px;
 $pagesCount: 6;
 
 .table-controls {
-  padding: $gap-x-sm $gap-sm;
-  background-color: $gray-100;
-
-  border: 1px solid $c-table-border;
-  border-top: none;
-  @include border-bottom-radius;
+  padding: $table-spacing / 2 0 $table-spacing / 2 $table-spacing;
+  background-color: var(--table-head-bg-color);
+  height: 30px;
 
   display: flex;
   justify-content: space-between;
@@ -18,18 +15,22 @@ $pagesCount: 6;
     &.pages-#{$i} {
       @container (max-width: #{510px + ($pageBtnWidth * ($i - 2))}) {
         flex-direction: column;
-        gap: $gap;
+        gap: $table-spacing * 2;
       }
     }
+  }
+
+  .dark-theme & {
+    --select-dropdown-bg-color: var(--table-head-bg-color);
   }
 }
 
 .table-controls__entries-wrapper {
-  @include flex(row, $gap-x-sm);
+  @include flex-row($table-spacing / 2);
   align-items: center;
 
   @include font(clamp(13px, 2vw, $font-size-base), $font-weight-base);
-  color: $gray-700;
+  color: var(--table-head-text-color);
 
   span {
     white-space: nowrap;

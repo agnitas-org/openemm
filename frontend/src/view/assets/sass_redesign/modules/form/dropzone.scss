@@ -1,6 +1,6 @@
 
 .dropzone {
-  @include flex-center();
+  @include flex-center;
   border: 1px dashed $primary;
   border-radius: $border-radius;
   padding: $gap-sm;
@@ -10,6 +10,8 @@
   &.drag-over {
     background-color: rgba(0, 113, 185, 0.30);
   }
+
+  min-height: 77px;
 }
 
 .dropzone-text {

@@ -1,18 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring" prefix="mvc" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
-<%--@elvariable id="isWizard" type="java.lang.Boolean"--%>
 
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <c:set var="deletionUrl" value="/target/delete.action"/>
-            <c:if test="${isWizard}">
-                <c:set var="deletionUrl" value="/target/wizardDelete.action"/>
-            </c:if>
-            <mvc:form servletRelativeAction="${deletionUrl}" modelAttribute="simpleActionForm" method="POST">
+            <mvc:form servletRelativeAction="/target/delete.action" modelAttribute="simpleActionForm" method="POST">
                 <mvc:hidden path="id"/>
                 <div class="modal-header">
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">

@@ -49,6 +49,7 @@ public class ServerStatus {
     private String dbUrl;
     private String dbVersion;
     private boolean dbConnectStatus;
+    private int diskSpaceFreePercentage;
     private List<VersionStatus> dbVersionStatuses;
 
     public String getLicenseName() {
@@ -146,7 +147,11 @@ public class ServerStatus {
     public List<VersionStatus> getDbVersionStatuses() {
         return dbVersionStatuses;
     }
-    
+
+    public int getDiskSpaceFreePercentage() {
+        return diskSpaceFreePercentage;
+    }
+
     public static ServerStatus.StatusBuilder builder(String version, String installPath, Locale locale, final ConfigService configService) {
         return new ServerStatus.StatusBuilder(version, installPath, locale, configService);
     }
@@ -172,6 +177,7 @@ public class ServerStatus {
         private String dbUrl;
         private String dbVersion;
         private boolean dbConnectStatus;
+        private int diskSpaceFreePercentage;
         private final ConfigService configService;
     
         public StatusBuilder(String version, String installPath, Locale locale, final ConfigService configService) {
@@ -214,6 +220,11 @@ public class ServerStatus {
         
         public ServerStatus.StatusBuilder dbVersionStatuses(List<VersionStatus> versionStatuses) {
             this.dbVersionStatuses.addAll(versionStatuses);
+            return this;
+        }
+
+        public ServerStatus.StatusBuilder diskSpaceFreePercentage(int percentage) {
+            this.diskSpaceFreePercentage = percentage;
             return this;
         }
 
@@ -261,6 +272,7 @@ public class ServerStatus {
             serverStatus.dbConnectStatus = dbConnectStatus;
             
             serverStatus.dbVersionStatuses = dbVersionStatuses;
+            serverStatus.diskSpaceFreePercentage = diskSpaceFreePercentage;
             return serverStatus;
         }
     }

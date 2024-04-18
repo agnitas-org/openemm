@@ -27,5 +27,7 @@ public interface CalendarService {
 
     JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate);
 
+    JSONArray getMailingsRedesigned(Admin admin, LocalDate startDate, LocalDate endDate);
+
     boolean moveMailing(Admin admin, int mailingId, LocalDate date);
 }

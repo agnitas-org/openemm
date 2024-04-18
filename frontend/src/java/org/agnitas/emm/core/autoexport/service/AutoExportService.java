@@ -13,6 +13,8 @@ package org.agnitas.emm.core.autoexport.service;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
@@ -25,7 +27,10 @@ import com.agnitas.service.CsvImportExportDescription;
 
 public interface AutoExportService {
 
-    List<AutoExport> getAutoExportsOverview(Admin admin);
+    int MAX_SHORTNAME_LENGTH = 100;
+
+    List<AutoExport> getAutoExports(Admin admin);
+    List<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, Admin admin);
 
     List<AutoExport> getAutoExportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
@@ -71,7 +76,7 @@ public interface AutoExportService {
 
 	AutoExportStatus doExportReactionsAndStatusData(AutoExport autoExport) throws Exception;
 
-    AutoExport copyAutoExport(Admin admin, int autoExportId) throws Exception;
+    ServiceResult<AutoExport> copyAutoExport(Admin admin, int autoExportId) throws Exception;
 
     AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
 

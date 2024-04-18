@@ -38,18 +38,25 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.components.service.MailingSendService;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
+import com.agnitas.messages.I18nString;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -241,6 +248,8 @@ public class ComWorkflowValidationService {
     private ComMailingDao mailingDao;
     private MaildropStatusDao maildropStatusDao;
     private ProfileFieldDao profileFieldDao;
+    private MailingSendService mailingSendService;
+    private MailingService mailingService;
     private ComTargetDao targetDao;
 
     static {
@@ -556,6 +565,27 @@ public class ComWorkflowValidationService {
                 .anyMatch(this::hasForbiddenStatus);
     }
 
+    public List<Message> validateMailingDataAndComponents(List<WorkflowIcon> workflowIcons, Admin admin) {
+        Locale locale = admin.getLocale();
+        return workflowIcons.stream()
+                .filter(WorkflowUtils::isMailingIcon)
+                .map(WorkflowUtils::getMailingId)
+                .filter(id -> id > 0)
+                .map(id -> mailingService.getMailing(admin.getCompanyID(), id))
+                .flatMap(mailing -> collectMailingDataAndComponentErrors(mailing, locale)).collect(Collectors.toList());
+    }
+
+    private Stream<Message> collectMailingDataAndComponentErrors(Mailing mailing, Locale locale) {
+        return mailingSendService.isRequiredDataAndComponentsExists(mailing)
+                .getErrorMessages().stream()
+                .map(error -> getErrorMsgWithMailingName(error, locale, mailing.getShortname()));
+    }
+
+    private static Message getErrorMsgWithMailingName(Message error, Locale locale, String mailingName) {
+        return Message.exact(I18nString.getLocaleString("referencingObject.MAILING", locale, mailingName) + ":<br>"
+                + I18nString.getLocaleString(error.getCode(), locale, error.getArguments()));
+    }
+
     private boolean hasForbiddenStatus(MaildropEntry entry) {
         boolean result = false;
         if (entry.getStatus() == MaildropStatus.WORLD.getCode()) {
@@ -776,19 +806,19 @@ public class ComWorkflowValidationService {
         return false;
     }
 
-    public boolean isNotStartDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
+    public boolean isStartDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
         for (WorkflowIcon icon : workflowIcons) {
             if (icon.getType() == WorkflowIconType.START.getId()) {
                 WorkflowStart start = (WorkflowStart) icon;
                 if (checkHasDateInThePast(start, timezone)) {
-                    return false;
+                    return true;
                 }
                 if (WorkflowUtils.is(start, WorkflowStartEventType.EVENT_DATE)) {
                     start.setMinute(0);
                 }
             }
         }
-        return true;
+        return false;
     }
 
     public boolean isNotStopDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
@@ -1834,6 +1864,16 @@ public class ComWorkflowValidationService {
     @Required
     public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
+    }
+
+    @Required
+    public void setMailingSendService(MailingSendService mailingSendService) {
+        this.mailingSendService = mailingSendService;
+    }
+
+    @Required
+    public void setMailingService(MailingService mailingService) {
+        this.mailingService = mailingService;
     }
 
     @Required

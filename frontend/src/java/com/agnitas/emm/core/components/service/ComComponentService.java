@@ -10,23 +10,24 @@
 
 package com.agnitas.emm.core.components.service;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.component.service.ComponentModel;
-import org.agnitas.emm.core.component.service.ComponentService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-
-import org.springframework.web.multipart.MultipartFile;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.emm.core.components.dto.FormComponentDto;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.component.service.ComponentModel;
+import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ComComponentService extends ComponentService {
     
@@ -34,18 +35,21 @@ public interface ComComponentService extends ComponentService {
 
     int addMailingComponent(MailingComponent mailingComponent) throws Exception;
 
-	List<FormComponentDto> getFormImageComponents(int companyID, int formId);
+	List<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId);
 
-	Map<String, byte[]> getImageComponentsData(int companyId, int formId);
+	Map<String, byte[]> getImageComponentsData(UserFormImagesOverviewFilter filter, Set<Integer> ids, int companyId, int formId);
 
 	File getComponentArchive(String zipName, Map<String, byte[]> formComponentsData);
 
 	SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions);
 
-	SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting);
-
 	SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting);
+
+	ServiceResult<List<FormUploadComponentDto>> readComponentsFromZipFile(MultipartFile zipFile);
 
 	List<Message> validateComponents(List<FormUploadComponentDto> components, boolean checkDuplicate);
 
+    List<String> getComponentFileNames(Set<Integer> bulkIds, int formId, int companyID);
+
+    void delete(Set<Integer> bulkIds, int formId, Admin admin);
 }

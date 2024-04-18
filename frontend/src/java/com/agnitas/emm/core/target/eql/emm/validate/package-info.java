@@ -12,4 +12,3 @@
  * EMM-specific implementations of validator interfaces.
  */
 package com.agnitas.emm.core.target.eql.emm.validate;
-

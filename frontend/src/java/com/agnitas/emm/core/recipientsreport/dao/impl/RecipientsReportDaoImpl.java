@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
@@ -276,7 +277,8 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
                 StringRowMapper.INSTANCE, companyId, reportId);
         return typeValue != null ? RecipientsReport.RecipientReportType.valueOf(typeValue) : null;
     }
-    
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @Override
     public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types) {
         sortProperty = SORTABLE_COLUMNS.getOrDefault(sortProperty, DEFAULT_SORTABLE_COLUMN);
@@ -297,6 +299,44 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         }
         parameters.add(companyId);
         return selectPaginatedList(logger, sql, "recipients_report_tbl", sortProperty, direction, pageNumber, pageSize, REPORT_ROWS_MAPPER, parameters.toArray());
+    }
+    
+    @Override
+    public PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId) {
+        String sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id," +
+                " ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error," +
+                " NVL(a.username, 'AutoImport / AutoExport') AS username" +
+                " FROM recipients_report_tbl ir LEFT JOIN admin_tbl a ON a.admin_id = ir.admin_id" +
+                " WHERE ir.company_id = ?";
+        List<Object> params = new ArrayList<>(List.of(companyId));
+        sql += applyOverviewFilters(filter, params);
+        return selectPaginatedList(logger, sql, "recipients_report_tbl",
+                filter.getSortOrDefault(DEFAULT_SORTABLE_COLUMN), filter.ascending(),
+                filter.getPage(), filter.getNumberOfRows(), REPORT_ROWS_MAPPER, params.toArray());
+    }
+
+    private String applyOverviewFilters(RecipientsReportForm filter, List<Object> params) {
+        String filterSql = "";
+        if (filter.getTypes() != null && filter.getTypes().length > 0) {
+            filterSql += " AND type IN " + DbUtilities.joinForIN(filter.getTypes(), type -> type.name() + "_REPORT");
+        }
+
+        String dateClause = DbUtilities.getDateConstraint("REPORT_DATE", filter.getReportDate().getFrom(), filter.getReportDate().getTo(), isOracleDB());
+        if (StringUtils.isNotBlank(dateClause)) {
+            filterSql += " AND " + dateClause;
+        }
+        if (filter.getDatasourceId() != null) {
+            filterSql += getPartialSearchFilterWithAnd("ir.datasource_id", filter.getDatasourceId(), params);
+        }
+        if (StringUtils.isNotBlank(filter.getFileName())) {
+            filterSql += getPartialSearchFilterWithAnd("ir.filename");
+            params.add(filter.getFileName());
+        }
+        if (filter.getAdminId() > 0) {
+            filterSql += " AND ir.admin_id = ?";
+            params.add(filter.getAdminId());
+        }
+        return filterSql;
     }
 
     @Override

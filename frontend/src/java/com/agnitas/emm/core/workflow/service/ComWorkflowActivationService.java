@@ -474,13 +474,13 @@ public class ComWorkflowActivationService {
 				// Send normal or follow-up mailing.
 				MailingSendOptions options = MailingSendOptions.builder()
 						.setDate(sendDate)
-						.setAdminId(admin.getAdminID())
 						.setMaxRecipients(workflowMailing.getMaxRecipients())
 						.setBlockSize(workflowMailing.getBlocksize())
 						.setDefaultStepping(DEFAULT_STEPPING)
 						.setFollowupFor(getBaseMailingId(icon))
 						.setCheckForDuplicateRecords(workflowMailing.isDoubleCheck())
 						.setSkipWithEmptyTextContent(workflowMailing.isSkipEmptyBlocks())
+						.setCleanupTestsBeforeDelivery(true)
 						.setReportSendEmail(admin.getEmail())
 						.setReportSendAfter24h(workflowMailing.getAutoReport() == WorkflowMailing.AUTOMATIC_REPORT_1DAY)
 						.setReportSendAfter48h(workflowMailing.getAutoReport() == WorkflowMailing.AUTOMATIC_REPORT_2DAYS)
@@ -515,7 +515,6 @@ public class ComWorkflowActivationService {
 				// Send action-based or date-based mailing.
 				MailingSendOptions options = MailingSendOptions.builder()
 						.setDate(sendDate)
-						.setAdminId(admin.getAdminID())
 						.setDeliveryType(deliveryType)
 						.setRequiredAutoImport(findRequiredAutoImportId(workflowGraph, icon))
 						.setFromWorkflow(true)
@@ -562,7 +561,8 @@ public class ComWorkflowActivationService {
 	private int findRequiredAutoImportId(WorkflowGraph workflowGraph, WorkflowIcon workflowMailing) {
 		WorkflowIcon importIcon = workflowGraph.getPreviousIconByType(workflowMailing, WorkflowIconType.IMPORT.getId(), Collections.emptySet());
 		if (importIcon instanceof WorkflowImport) {
-			return ((WorkflowImport) importIcon).getImportexportId();
+			WorkflowImport autoImportIcon = ((WorkflowImport) importIcon);
+			return autoImportIcon.isErrorTolerant() ? 0 : autoImportIcon.getImportexportId();
 		}
 
 		return 0;
@@ -1084,31 +1084,11 @@ public class ComWorkflowActivationService {
 				}});
 			}};
 		} else if (icon.getType() == WorkflowIconType.IMPORT.getId()) {
-			WorkflowImport autoImport = (WorkflowImport) icon;
-
-			ConditionGroup incomingConditions = new ConditionGroup(false, true) {{
+			return new ConditionGroup(false, true) {{
 				for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
 					add(composeCondition(admin, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 				}
 			}};
-
-			if (autoImport.isErrorTolerant() || admin.permissionAllowed(Permission.WORKFLOW_REQUIRED_AUTO_IMPORT)) {
-				return incomingConditions;
-			} else {
-				if (condition == null) {
-					int autoImportTargetId = createImportTarget(companyId, workflowId, autoImport);
-					condition = new TargetCondition(autoImportTargetId);
-					cache.put(cacheKey, condition);
-				}
-
-				Condition importCondition = condition.clone();
-				importCondition.setPositive(positive);
-
-				return new ConditionGroup(true, true) {{
-					add(importCondition);
-					add(incomingConditions);
-				}};
-			}
 		}
 
 		if (condition == null) {
@@ -1304,17 +1284,6 @@ public class ComWorkflowActivationService {
 		} catch (Exception e) {
 			logger.error("Error while creating target group during campaign activation: " + e.getMessage(), e);
 		}
-		return 0;
-	}
-
-	private int createImportTarget(int companyId, int workflowId, WorkflowImport importIcon) {
-		int autoImportId = importIcon.getImportexportId();
-
-    	if (autoImportId > 0) {
-			String eql = String.format("FINISHED AUTOIMPORT %d", autoImportId);
-			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "auto-import succeeded")).getId();
-		}
-
 		return 0;
 	}
 

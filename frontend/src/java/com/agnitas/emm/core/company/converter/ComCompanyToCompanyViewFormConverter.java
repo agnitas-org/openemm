@@ -135,9 +135,10 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setDefaultTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, comCompany.getId())));
         settingsDto.setUserBasedFavoriteTargets(configService.isUserBasedFavoriteTargets(comCompany.getId()));
         settingsDto.setFilterRecipientsOverviewForActiveRecipients(configService.getBooleanValue(ConfigValue.FilterRecipientsOverviewForActiveRecipients, comCompany.getId()));
+        settingsDto.setCleanAdminAndTestRecipientsActivity(configService.getBooleanValue(ConfigValue.CleanAdminAndTestRecipientsActivities, comCompany.getId()));
         settingsDto.setAutoDeeptracking(configService.isAutoDeeptracking(comCompany.getId()));
         
-        settingsDto.setHtmlContentAllowed(configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, comCompany.getId()));
+        settingsDto.setHtmlContentAllowed(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, comCompany.getId()));
 
         settingsDto.setUseDefaultAddressFieldsForPost(configService.getBooleanValue(ConfigValue.UseDefaulAdressFieldsForPost, comCompany.getId()));
         settingsDto.setPostalFieldsMappings(getPostalFieldsMappings(comCompany.getId()));

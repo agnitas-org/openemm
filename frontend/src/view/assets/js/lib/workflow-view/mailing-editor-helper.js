@@ -2,6 +2,7 @@
     var Def = AGN.Lib.WM.Definitions,
         Node = AGN.Lib.WM.Node,
         EditorsHelper = AGN.Lib.WM.EditorsHelper,
+        Utils = AGN.Lib.WM.Utils,
         Dialogs = AGN.Lib.WM.Dialogs;
 
     var MailingEditorHelper = function(data, submitWorkflowForm) {
@@ -47,7 +48,11 @@
 
         this.fillEditorBase = function(node) {
             this.node = node;
-            this.mailingsStatus = $(this.formNameJId).find('input[checked=checked]').val() || 'all';
+            if (Utils.checkActivation()) {
+                this.mailingsStatus = 'all';
+            } else {
+                this.mailingsStatus = $(this.formNameJId).find('input[checked=checked]').val() || 'all';
+            }
             this.mailingsSort = this.defaultMailingsSort;
             this.mailingsOrder = this.defaultMailingsOrder;
             this.cleanOptions();
@@ -164,7 +169,7 @@
         this.setMailingLinks = function(mailingId) {
             var mailLink = '';
             if (mailingId != '0') {
-                if (!AGN.Lib.WM.Utils.checkActivation()) {
+                if (!Utils.checkActivation()) {
                     mailLink = '<a href="#" data-action="mailing-editor-edit">' + t('workflow.mailing.edit_mailing_link') + '</a> ';
                 } else {
                     const mailingUrl = AGN.url('/mailing/' + mailingId + '/settings.action');

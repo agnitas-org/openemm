@@ -1,0 +1,688 @@
+
+//.minimap-collapsed {
+//  height: 22px;
+//  width: 25px;
+//
+//  background-color: #f6f6f6;
+//  margin-right: 0;
+//  padding: 4px;
+//}
+//.minimap-collapsed .minimap-panner,
+//.minimap-collapsed .minimap-canvas {
+//  display: none;
+//}
+//.minimap-collapse {
+//  color: #d1d1d1;
+//  position: absolute;
+//  font-size: 18px;
+//  top: -4px;
+//  right: 6px;
+//  cursor: pointer;
+//  font-weight: bold;
+//
+//  z-index: 49;
+//}
+//
+//.minimap-collapse:hover {
+//  color: #0071b9;
+//}
+//
+//.minimap-collapse:before {
+//  content: "\2012";
+//}
+//
+//.minimap-collapsed .minimap-collapse:before {
+//  content: "+";
+//}
+//.node.animate-dropped {
+//  animation: node-dropped 100ms 1;
+//}
+//
+//.node.animate-auto-dropped {
+//  animation: node-auto-dropped 100ms 1;
+//}
+//
+//@keyframes node-auto-dropped {
+//  0% {
+//    transform: scale(1.2);
+//  }
+//
+//  99% {
+//    transform: scale(1);
+//  }
+//
+//  100% {
+//    transform: none;
+//  }
+//}
+//
+//@keyframes node-dropped {
+//  0% {
+//    transform: scale(1.1);
+//    opacity: 0.8;
+//  }
+//
+//  99% {
+//    transform: scale(1);
+//    opacity: 1;
+//  }
+//
+//  100% {
+//    transform: none;
+//    opacity: unset;
+//  }
+//}
+//.node.js-no-drop {
+//  cursor: no-drop !important;
+//}
+//.node.jtk-source-hover,
+//.node.jtk-target-hover {
+//  background-color: rgba(226, 226, 226, 0.3);
+//}
+//
+//.node .icon-footnote-number {
+//  position: absolute;
+//  bottom: 0;
+//  right: 0;
+//  padding: 0 5.2px;
+//  font-size: 1.1em;
+//  line-height: 1.4em;
+//  border-radius: 65%;
+//  background-color: #0071b9;
+//}
+//.icon-title.expanded {
+//  max-height: none;
+//  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+//  color: inherit;
+//  z-index: 19 !important; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_TITLE_HOVER */
+//}
+//
+//.dark-theme .icon-title.expanded {
+//  color: #000;
+//}
+//
+//.icon-title.expanded::after {
+//  display: none;
+//}
+//
+//.icon-overlay-title {
+//  display: block;
+//  position: absolute;
+//  top: 0;
+//  left: 0;
+//  width: 100%;
+//  height: 100%;
+//  text-align: center;
+//  line-height: 64px; /* Same width as node */
+//  margin: 0;
+//  font-size: 16px;
+//  font-weight: bold;
+//  color: royalblue;
+//}
+//
+//.icon-overlay-title:empty {
+//  display: none;
+//}
+//
+//.icon-overlay-image {
+//  display: block;
+//  position: absolute;
+//  top: 0;
+//  right: -2px;
+//  width: 60%;
+//  height: 60%;
+//}
+//
+//.icon-overlay-image img {
+//  width: 100%;
+//  height: auto;
+//}
+//
+//.icon-overlay-image img {
+//  width: 100%;
+//  height: auto;
+//}
+//
+//.icon-title-span:empty + br {
+//  display: none;
+//}
+//
+//.icon-title-span:empty {
+//  display: none;
+//}
+//
+//table#comment-footnotes-list {
+//  page-break-inside:auto !important;
+//}
+//
+//table#comment-footnotes-list tr {
+//  page-break-inside:avoid !important;
+//  page-break-after:auto !important;
+//}
+//
+//table#comment-footnotes-list tr td {
+//  page-break-inside: avoid !important;
+//  padding: 5px;
+//}
+//
+//footer#footnotes-container {
+//  padding: 15px 20px;
+//  background-color: #fff;
+//  border: 2px dotted #cccccc
+//}
+//
+//.ui-state-disabled {
+//  opacity: 1;
+//  cursor: pointer !important;
+//  filter: none;
+//}
+//.noBorder {
+//  border: 0;
+//}
+//
+//.actionPanel {
+//  float: right;
+//  height: 87px;
+//  border-left: 1px solid #d1d1d1;
+//}
+//
+//.actionPanel.actionPanel-sm {
+//  display: none;
+//}
+//
+//.actionPanel.actionPanel-sm .actionPanelButton {
+//  height: 77px;
+//  line-height: 77px;
+//  font-size: 18px;
+//  text-align: center;
+//  margin: 5px;
+//}
+//
+//.actionPanelTool {
+//  float: left;
+//  margin-right: 20px;
+//  margin-left: 6px;
+//  text-align: center;
+//}
+//
+//.actionMiddlePanel {
+//  float: right;
+//  margin-right: 45px;
+//  margin-top: 10px;
+//}
+//
+//.iconPanelTitle {
+//  margin-top: 4px;
+//}
+//
+//.actionPanelTitle {
+//  margin-top: 4px;
+//}
+//
+//.toolbarLeftTitle {
+//  margin-top: 4px;
+//  margin-left: 5px;
+//  margin-right: 2px;
+//}
+//
+///* TODO: delete*/
+//.boldTitle {
+//  font-weight: bold;
+//}
+//
+//.leftMenuLabel {
+//  width: 100%;
+//  text-align: center;
+//  margin-bottom: 6px;
+//  color: #3B3B3B;
+//}
+//
+//.leftMenuSeparator {
+//  width: 87px;
+//  border-top: 1px solid #d1d1d1;
+//}
+//
+//.actionPanelText {
+//  margin-top: 2px;
+//  margin-bottom: 10px;
+//}
+//.button-selected, button-selected:hover {
+//  background-color: #cccccc !important;
+//  border-radius: 4px;
+//}
+//
+//#deleteButton {
+//  background-image: url(assets/core/images/campaignManager/delete_s.png);
+//  background-size: 32px 32px;
+//}
+//
+//#deleteButton.disabled {
+//  background-image: url(assets/core/images/campaignManager/delete_g.png);
+//}
+//#undoButton {
+//  background-image: url(assets/core/images/campaignManager/undo_s.png);
+//}
+//
+//#undoButton.disabled {
+//  background-image: url(assets/core/images/campaignManager/undo_disabled_s.png);
+//}
+
+/* Dragable toolbar buttons */
+
+//.dialog-title-image[data-type="start"],
+//.dialog-title-image[data-type="stop"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/start.svg);
+//}
+//
+//.dialog-title-image[data-type="decision"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/decision.svg);
+//}
+//
+//.dialog-title-image[data-type="parameter"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/parameter.svg);
+//}
+//
+//.dialog-title-image[data-type="deadline"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/time.svg);
+//}
+//
+//.dialog-title-image[data-type="recipient"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/recipient.svg);
+//}
+//
+//.dialog-title-image[data-type="mailing"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/mailing.svg);
+//}
+//
+//.dialog-title-image[data-type="actionbased_mailing"] {
+//  background-image: url(assets/core/images/campaignManager/icon_actionbased_mailing_s.png);
+//}
+//
+//.dialog-title-image[data-type="mailing_mediatype_sms"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/sms.svg);
+//}
+//
+//.dialog-title-image[data-type="mailing_mediatype_post"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/postal.svg);
+//}
+//
+//.dialog-title-image[data-type="archive"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/archive.svg);
+//}
+//
+//.dialog-title-image[data-type="datebased_mailing"] {
+//  background-image: url(assets/core/images/campaignManager/icon_datebased_mailing_s.png);
+//}
+//
+//.dialog-title-image[data-type="followup_mailing"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/follow-up.svg);
+//}
+//
+//.dialog-title-image[data-type="import"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/import.svg);
+//}
+//
+//.dialog-title-image[data-type="export"] {
+//  background-image: url(assets/core/images/campaignManager/toolbar/export.svg);
+//}
+//
+//#scDOIButtonLabel {
+//  margin-bottom: 0px;
+//}
+//
+///*Context menu*/
+//
+//.context-menu-item {
+//  color: black;
+//}
+//
+//.context-menu-item.icon-delete {
+//  background-image: url(assets/core/images/campaignManager/delete_context.png);
+//}
+//
+//.context-menu-item.icon-delete.disabled {
+//  background-image: url(assets/core/images/campaignManager/delete_context_g.png);
+//}
+//
+//.context-menu-item.icon-connect {
+//  background-image: url(assets/core/images/campaignManager/icon_arrow_context.png);
+//}
+//
+//.context-menu-item.icon-connect.disabled {
+//  background-image: url(assets/core/images/campaignManager/icon_arrow_context_g.png);
+//}
+//
+//.context-menu-item.icon-disconnect {
+//  background-image: url(assets/core/images/campaignManager/icon_arrow_disconnect_context.png);
+//}
+//
+//.context-menu-item.icon-disconnect.disabled {
+//  background-image: url(assets/core/images/campaignManager/icon_arrow_disconnect_context_g.png);
+//}
+//
+//.context-menu-item.icon-edit {
+//  background-image: url(assets/core/images/campaignManager/edit_context.png);
+//}
+//
+//.context-menu-item.icon-edit.disabled {
+//  background-image: url(assets/core/images/campaignManager/edit_context_g.png);
+//}
+//
+//.context-menu-item.icon-comment {
+//  background-image: url(assets/core/images/campaignManager/comment_context.png);
+//}
+//
+//.context-menu-item.icon {
+//  min-height: 23px;
+//  display: block;
+//  font-family: Arial, sans-serif;
+//}
+//
+//
+//.context-menu-item:before {
+//  content: normal; /*Disables icons :before images from application.css for context menu items*/
+//}
+//
+//.context-menu-item span {
+//  margin-left: 6px;
+//  line-height: 23px;
+//}
+//
+//.context-menu-root {
+//  z-index: 40 !important; /* be careful modifying this, synchronize with JS: Z_INDEX_CONTEXT_MENU */
+//}
+//
+//.context-menu-item.hover {
+//  background-color: #76a8d2 !important;
+//  color: #ffffff;
+//}
+//
+//.js-navigation {
+//  background: url(assets/core/images/campaignManager/navigator_body.png);
+//  position: absolute;
+//  z-index: 30; /* be careful modifying this, synchronize with JS: Z_INDEX_NAVIGATOR_GLOBE */
+//  width: 41px;
+//  height: 41px;
+//  right: 20px;
+//  bottom: 20px;
+//}
+//
+//.js-navigation .js-navigation-top {
+//  background-image: url(assets/core/images/campaignManager/navigator_arrow_top.png);
+//  top: 0;
+//  left: 14px;
+//}
+//
+//.js-navigation .js-navigation-right {
+//  background-image: url(assets/core/images/campaignManager/navigator_arrow_right.png);
+//  top: 14px;
+//  left: 28px;
+//}
+//.js-navigation .js-navigation-bottom {
+//  background-image: url(assets/core/images/campaignManager/navigator_arrow_bottom.png);
+//  top: 28px;
+//  left: 14px;
+//}
+//.js-navigation .js-navigation-left {
+//  background-image: url(assets/core/images/campaignManager/navigator_arrow_left.png);
+//  top: 14px;
+//  left: 0;
+//}
+//.js-navigation-top, .js-navigation-right, .js-navigation-bottom, .js-navigation-left {
+//  position: absolute;
+//  background-position: 0 0;
+//  z-index: 31; /* be careful modifying this, synchronize with JS: Z_INDEX_NAVIGATOR_ARROWS */
+//  width: 13px;
+//  height: 13px;
+//}
+//.js-navigation-top:hover, .js-navigation-right:hover, .js-navigation-bottom:hover, .js-navigation-left:hover {
+//  background-position: 0 13px;
+//  cursor: pointer;
+//}
+//
+//.campaign-border {
+//  position: absolute;
+//  background: transparent;
+//  border: solid #d1d1d1;
+//  border-radius: 4px;
+//}
+//
+//.campaign-collapse-button {
+//  position: absolute;
+//  cursor: pointer;
+//  z-index: 11;
+//}
+//
+//.campaign-thumbnail {
+//  width: 32px;
+//  height: 32px;
+//  position: absolute;
+//  z-index: 11;
+//}
+//
+//.ui-widget-header {
+//  border: 1px solid #73A2D0;
+//  background: #73A2D0 url(../../../images/div_child_dialog_header.png) 50% 50% repeat-x;
+//  color: #ffffff;
+//  font-weight: bold;
+//}
+//
+//.ui-widget-content a {
+//  /*color: #2A5682;*/
+//}
+//
+//.ui-dialog .ui-dialog-titlebar {
+//  padding: 0 1em;
+//}
+//
+//.ui-dialog .ui-dialog-content {
+//  overflow: visible;
+//}
+//
+//.campaign-mailing-sort {
+//  padding: 0 0 5px 0;
+//}
+//
+//.campaign-mailing-sort .sort {
+//  float: left;
+//}
+//
+//.campaign-mailing-sort .sort-btn {
+//  margin-right: 40px;
+//}
+//
+//.campaign-mailing-sort {
+//  @extend .unselectable;
+//}
+//
+//.campaign-mailing-sort .sort-icon {
+//  cursor: pointer;
+//  float: left;
+//  padding: 4px;
+//}
+//
+//.campaign-mailing-sort .sort-icon:hover {
+//  background-color: #dadada;
+//  border-radius: 4px;
+//}
+//
+//.campaign-mailing-sort .change-date-sort-icon {
+//  background: #fff url(assets/core/images/campaignManager/calendar.png) 0 0 no-repeat;
+//  height: 17px;
+//  width: 17px;
+//}
+//
+//.campaign-mailing-sort .arrows {
+//  float: left;
+//  padding: 2px 0 0 6px;
+//}
+//
+//.campaign-mailing-sort .arrowUp{
+//  background: url(assets/core/images/campaignManager/sorted_acs.png) 2px 4px no-repeat;
+//}
+//.campaign-mailing-sort .arrowDown{
+//  background: url(assets/core/images/campaignManager/sorted_desc.png) 2px 4px no-repeat;
+//}
+//
+//.campaign-mailing-sort .arrowUp, .campaign-mailing-sort .arrowDown {
+//  height: 20px;
+//  width: 14px;
+//  float: left;
+//  cursor: pointer;
+//}
+//
+//.campaign-mailing-sort .arrowUp:hover, .campaign-mailing-sort .arrowDown:hover {
+//  background-color: #dadada;
+//  border-radius: 4px;
+//}
+//
+//.mailing-type-status-radio {
+//  margin-left: 65px;
+//}
+//
+//.settings_mailing_form_item {
+//  padding-top: 10px;
+//}
+//
+//.setting-mailing-left {
+//  margin-left: 140px;
+//}
+//
+//#legend-button-wrapper {
+//  position: absolute;
+//  bottom: 0;
+//  margin-left: 5px;
+//  margin-right: 2px;
+//}
+//
+//#legend-dopdown {
+//  overflow: auto;
+//  position: absolute;
+//  border: 1px solid rgb(209, 209, 209);
+//  color: rgb(85, 85, 85);
+//  background-color: rgb(246, 246, 246);
+//  height: 315px;
+//  top: 31px;
+//  vertical-align: middle;
+//  left: -14px;
+//  width: 220px;
+//  display: none;
+//  padding: 10px;
+//}
+//
+//.legend-dopdown-item {
+//  float: left;
+//  height: 64px;
+//}
+//
+//.legend-dopdown-item-name {
+//  display: table-cell;
+//  height: 64px;
+//  vertical-align: middle;
+//  text-align: left;
+//  padding: 0px 15px;
+//  width: 110px;
+//}
+//
+//.legend-dopdown-item-img {
+//  float: left;
+//}
+//.jtk-overlay.connection-label {
+//  background-color: white;
+//  border: 1px solid #61B7CF;
+//  border-radius: 4px;
+//  opacity: 0.7;
+//  padding: 0 5px;
+//  cursor: default;
+//  z-index: 9; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY */
+//}
+//
+//body.dark-theme .jtk-overlay.connection-label {
+//  color: black;
+//}
+//
+//.jtk-overlay.connection-label.jtk-hover {
+//  border: 1px solid #216477;
+//  opacity: 1;
+//  z-index: 12; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY_HOVER */
+//}
+//
+//.connection-label-top {
+//  margin-left: 14px;
+//  margin-top: 12px;
+//}
+//
+//.connection-label-bottom {
+//  margin-left: 16px;
+//  margin-top: -12px;
+//}
+//
+//.connection-label-left {
+//  margin-left: 16px;
+//  margin-top: 12px;
+//}
+//
+//.connection-label-right {
+//  margin-left: -15px;
+//  margin-top: 12px;
+//}
+//
+//#activating-campaign-dialog #inactivating-campaign-dialog {
+//  clear: both;
+//  visibility: hidden;
+//  overflow: hidden;
+//  height: 1px;
+//}
+//
+//#node-label-fulltext-popup {
+//  border: 1px solid #C0C0C0;
+//  padding: 4px;
+//  background-color: #ffffff;
+//  position: absolute;
+//  z-index: 100;
+//}
+//
+//#icon-label-popup-holder {
+//  z-index: 100;
+//}
+//
+//#dateTimePicker:after {
+//  clear: both;
+//  content: " ";
+//  display: table;
+//}
+//
+//body .ui-dialog {
+//  overflow: visible;
+//}
+//
+//body .ui-dialog .ui-dialog-content {
+//  overflow: visible;
+//}
+//
+//body .ui-dialog .dialog-title-image {
+//  display: block;
+//}
+//
+//.ui-widget .icon-help {
+//  font-family: FontAwesome;
+//}
+//
+//
+//@media all and (max-width: 900px) {
+//  .iconPanel {
+//    padding: 0 5px 0 5px;
+//  }
+//
+//  .iconPanelRow .toolbar__icon {
+//    margin-right: 0 !important;
+//  }
+//
+//  .actionPanelTool {
+//    margin-right: 6px;
+//  }
+//}
+//
+//.primary-operator, .decision-rule-operator {
+//  max-width: 100px;
+//}

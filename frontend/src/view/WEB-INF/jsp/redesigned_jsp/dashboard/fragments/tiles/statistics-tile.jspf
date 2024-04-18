@@ -6,42 +6,25 @@
 
     <div class="tile draggable-tile" id="dashboard-statistics">
         <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
+            <h1 class="tile-title">{{- tileName }}</h1>
             <c:if test="${mailingsAvailable}">
-                <div class="dropdown-container">
-                    <select id="mailing-statistics-item" class="form-control" data-action="redraw-mailing-statistics"
-                            data-select-options="dropdownAutoWidth: true, width: 'auto'">
-                        <c:forEach var="mailing" items="${worldmailinglist}" varStatus="status">
-                            <c:set var="optionValue" value="${mailing.shortname}"/>
-                            <c:if test="${status.index eq 0}">
-                                <mvc:message var="optionValue" code="dashboard.statistics.mailing.last_sent"/>
-                            </c:if>
-
-                            <option title="${mailing.shortname}" value="${mailing.mailingid}">${optionValue}</option>
-                        </c:forEach>
-                    </select>
+                <div class="tile-controls min-w-0">
+                    <%@ include file="../statistics-mailing-dropdown.jspf" %>
                 </div>
             </c:if>
-            <div class="tile-controls">
-                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
         </div>
         <div class="tile-body ${mailingsAvailable ? "has-chart" : ""}">
             <c:choose>
                 <c:when test="${mailingsAvailable}">
-                    <canvas id="statistics-chart" class="h-100">
-                            <%-- loads by js --%>
+                    <canvas class="h-100 clickable" data-action="open-mailing-statistics">
+                        <%-- Loads by JS --%>
                     </canvas>
                 </c:when>
                 <c:otherwise>
-                    <div class="notification-simple">
-                        <i class="icon icon-info-circle"></i>
-                        <span><mvc:message code="dashboard.mailing.noMailings" /></span>
-                    </div>
+                    <%@ include file="../statistics-no-mailings-notification.jspf" %>
                 </c:otherwise>
             </c:choose>
         </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
     </div>
 </script>

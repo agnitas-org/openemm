@@ -385,6 +385,15 @@
 
   &.btn-sm {
     gap: $gap-x-sm;
+    --bs-btn-padding-x: #{$gap};
+  }
+
+  &.btn-sm-horizontal {
+    --bs-btn-padding-x: #{$gap-sm};
+  }
+
+  &.btn-lg {
+    --bs-btn-padding-y: #{$gap-sm};
   }
 }
 
@@ -397,16 +406,35 @@
   }
 }
 
+@mixin btn-icon-sm() {
+  @include size(30px);
+  padding: 6px;
+
+  i {
+    font-size: $font-size-md;
+    @include flex-center;
+  }
+}
+
 .btn-icon {
   @include btn-icon($gap-sm - 1, $gap);
   &-sm {
-    @include btn-icon(6px, 1rem);
+    @include btn-icon-sm;
+  }
+  &-lg {
+    height: 40px;
+    padding: $gap-sm 23px;
+
+    i {
+      font-size: $font-size-xl;
+      @include flex-center;
+    }
   }
 }
 
 .btn-upload {
-  padding: 8px;
-  font-size: 1rem;
+  padding-inline: 7px;
+  font-size: $font-size-base;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -421,14 +449,14 @@
 }
 
 .btn-close {
-  opacity: 0.705;
-  margin: 0;
-  padding: 0;
-  min-width: $gap;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative;
+  color: var(--input-icon-color);
 
-  &:hover,
-  &:focus {
-    opacity: 9;
+  &:after {
+    @include fa-content($fa-var-times-circle);
+    @include center-absolute;
   }
 }
 
@@ -436,10 +464,62 @@
   @include button-variant(
           $background: $white,
           $border: $border-color,
-          $color: $dark,
+          $color: $dark-grey,
+          $hover-border: $primary,
+          $hover-color: $primary,
+          $active-background: $primary,
           $active-border: $primary,
-          $active-color: $primary
+          $active-color: white
   );
+  font-weight: $font-weight-base;
+}
+
+.btn-pill {
+  @extend .pill-badge;
+  font-size: $font-size-base;
+  @include button-variant(
+          $background: $x-light-grey,
+          $border: $border-color,
+          $color: $dark-grey,
+          $hover-color: $primary,
+  );
+}
+
+.btn-info {
+  --bs-btn-color: var(--bs-white);
+  --bs-btn-hover-color: var(--bs-white);
+  --bs-btn-active-color: var(--bs-btn-hover-color);
+}
+
+.btn-light {
+  --bs-btn-bg: var(--bs-white);
+  --bs-btn-color: #{$dark-blue};
+}
+
+.dark-theme {
+  .btn-inverse {
+    @include button-variant(
+            $background: $grey-blue,
+            $border: $border-color,
+            $color: $gray-100,
+            $hover-border: $primary,
+            $hover-background: $primary,
+            $hover-color: $white,
+            $active-background: $primary,
+            $active-border: $primary,
+            $active-color: $white
+    );
+  }
+
+  .btn-dark {
+    @include button-variant(
+            $gray-600,
+            $gray-600,
+            $hover-border: tint-color($gray-600, $btn-hover-border-tint-amount),
+            $active-background: tint-color($gray-600, $btn-active-bg-tint-amount),
+            $active-border: tint-color($gray-600, $btn-active-border-tint-amount)
+    );
+  }
 }
 
 //.btn-group {

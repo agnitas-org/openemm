@@ -10,13 +10,9 @@
 <script id="dashboard-tile-workflows" type="text/x-mustache-template">
     <div class="tile draggable-tile scheduled-items">
         <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
-            <div class="tile-controls">
-                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
+            <h1 class="tile-title">{{- tileName }}</h1>
         </div>
-        <div class="tile-body grid" style="--bs-columns: 1">
+        <div class="tile-body grid js-scrollable" style="--bs-columns: 1">
             <c:choose>
                 <c:when test="${not workflows.isEmpty()}">
                     <c:forEach var="workflow" items="${workflows}">
@@ -24,7 +20,7 @@
 
                         <a class="list-item overflow-hidden" href="<c:url value="/workflow/${workflow.id}/view.action" />">
                             <div class="item__info-container">
-                                <span class="status-badge small workflow.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
+                                <span class="status-badge small campaign.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
                                 <span class="item__name-label text-truncate">${workflow.name}</span>
                             </div>
 
@@ -62,6 +58,6 @@
                 </c:otherwise>
             </c:choose>
         </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
     </div>
 </script>

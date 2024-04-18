@@ -10,24 +10,27 @@
 
 package org.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
 import org.agnitas.dao.JobQueueDao;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.service.JobDto;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DAO handler for JobDto-Objects
@@ -244,6 +247,54 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading not deleted jobs from database", e);
 		}
+	}
+
+	@Override
+	public List<JobDto> getOverview(JobQueueOverviewFilter filter) {
+		StringBuilder query = new StringBuilder("SELECT * FROM job_queue_tbl");
+		List<Object> params = applyOverviewFilter(filter, query);
+		query.append(" ORDER BY id");
+
+		return select(logger, query.toString(), new Job_RowMapper(), params.toArray());
+	}
+
+	private List<Object> applyOverviewFilter(JobQueueOverviewFilter filter, StringBuilder query) {
+		query.append(" WHERE deleted <= 0");
+		List<Object> params = new ArrayList<>();
+
+		if (filter.getId() != null) {
+			query.append(getPartialSearchFilterWithAnd("id", filter.getId(), params));
+		}
+
+		if (filter.getRunning() != null) {
+			query.append(" AND running = ?");
+			params.add(BooleanUtils.toInteger(filter.getRunning()));
+		}
+
+		if (StringUtils.isNotBlank(filter.getName())) {
+			query.append(getPartialSearchFilterWithAnd("description"));
+			params.add(filter.getName());
+		}
+
+		if (filter.getSuccessful() != null) {
+			if (filter.getSuccessful()) {
+				query.append(" AND lastresult = ?");
+			} else {
+				query.append(" AND (lastresult IS NULL OR lastresult != ?)");
+			}
+			params.add("OK");
+		}
+
+		if (filter.getStartDate().getFrom() != null) {
+			query.append(" AND nextstart >= ?");
+			params.add(filter.getStartDate().getFrom());
+		}
+		if (filter.getStartDate().getTo() != null) {
+			query.append(" AND nextstart < ?");
+			params.add(DateUtilities.addDaysToDate(filter.getStartDate().getTo(), 1));
+		}
+
+		return params;
 	}
 	
 	@Override

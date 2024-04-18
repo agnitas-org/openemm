@@ -25,6 +25,7 @@
                 <mvc:hidden path="generationOptimization" />
                 <mvc:hidden path="checkForDuplicateRecords"/>
                 <mvc:hidden path="skipWithEmptyTextContent"/>
+                <mvc:hidden path="cleanupTestsBeforeDelivery"/>
                 <mvc:hidden path="maxRecipients" />
                 <mvc:hidden path="securitySettings.enableNotifications" />
                 <mvc:hidden path="securitySettings.enableNoSendCheckNotifications" />

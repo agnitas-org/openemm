@@ -135,6 +135,11 @@ public class PopupsImpl implements Popups {
     }
 
     @Override
+    public Popups info(String code, Object... arguments) {
+        return info(Message.of(code, arguments));
+    }
+
+    @Override
     public Popups warning(String code, Object... arguments) {
         return warning(Message.of(code, arguments));
     }

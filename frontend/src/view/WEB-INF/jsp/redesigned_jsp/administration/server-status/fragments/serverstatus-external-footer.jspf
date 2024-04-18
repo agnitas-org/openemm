@@ -1,0 +1,16 @@
+<%-- -*- scope: openemm -*- --%>
+<div class="system-status__support">
+    <div class="support__text">
+        <div class="support__text__head">
+            <mvc:message code="serverStatus.statusExternal.footer.headline.openemm" />
+        </div>
+        <div class="support__text__sub">
+            <mvc:message code="serverStatus.statusExternal.footer.subline.openemm" />
+        </div>
+    </div>
+    <div class="support__btn">
+        <a href="<mvc:message code="serverStatus.statusExternal.footer.button.link.openemm" />" class="btn btn-primary">
+            <span class="text"><mvc:message code="serverStatus.statusExternal.footer.button.openemm" /></span>
+        </a>
+    </div>
+</div>

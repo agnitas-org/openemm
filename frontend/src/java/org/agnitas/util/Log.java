@@ -159,7 +159,7 @@ public class Log {
 	public Log (String program, int level, long uniqueValue) {
 		this.level = level;
 		unique = uniqueValue != 0 ? "/ID:" + Long.toHexString (uniqueValue) : null;
-		printer = null;
+		printer = Str.atob (System.getProperty ("log.print", "false")) ? System.out : null;
 
 		String	separator = System.getProperty ("file.separator");
 		String	hostname;

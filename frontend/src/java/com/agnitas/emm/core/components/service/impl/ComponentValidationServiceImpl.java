@@ -15,7 +15,6 @@ import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LEN
 import java.io.InputStream;
 import java.util.List;
 
-import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -29,22 +28,19 @@ import com.agnitas.emm.core.components.form.AttachmentType;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.components.service.ComponentValidationService;
 import com.agnitas.emm.core.mimetypes.service.MimeTypeWhitelistService;
-import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import com.agnitas.messages.Message;
 
 @Service("ComponentValidationService")
 public class ComponentValidationServiceImpl implements ComponentValidationService {
 
-    private final ComUploadDao uploadDao;
     private final MimeTypeWhitelistService mimetypeWhitelistService;
     private final ComMailingComponentsService mailingComponentsService;
 	private final ConfigService configService;
 
-    public ComponentValidationServiceImpl(ComUploadDao uploadDao,
-                                          MimeTypeWhitelistService mimetypeWhitelistService,
+    public ComponentValidationServiceImpl(MimeTypeWhitelistService mimetypeWhitelistService,
                                           ComMailingComponentsService mailingComponentsService,
                                           ConfigService configService) {
-        this.uploadDao = uploadDao;
         this.mimetypeWhitelistService = mimetypeWhitelistService;
         this.mailingComponentsService = mailingComponentsService;
         this.configService = configService;
@@ -54,7 +50,7 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
     public boolean validateAttachment(int companyId, int mailingId, UploadMailingAttachmentDto attachment, List<Message> errors, List<Message> warnings) {
         boolean valid;
         if (attachment.isUsePdfUpload()) {
-        	valid = validatePdfUploadFields(attachment, errors);
+        	valid = mailingComponentsService.validatePdfUploadFields(attachment, errors);
 		} else {
 			valid = validateAttachmentFields(attachment, errors, warnings);
         }
@@ -66,15 +62,6 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
 
         return valid;
 	}
-
-	private boolean validatePdfUploadFields(UploadMailingAttachmentDto attachment, List<Message> errors) {
-        if (attachment.getUploadId() <= 0 || !uploadDao.exists(attachment.getUploadId())) {
-            errors.add(Message.of("mailing.errors.no_attachment_pdf_file"));
-            return false;
-        }
-
-        return true;
-    }
 
 	private boolean validateAttachmentFields(UploadMailingAttachmentDto attachment, List<Message> errors, List<Message> warnings) {
 		MultipartFile file = attachment.getAttachmentFile();

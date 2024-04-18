@@ -65,26 +65,28 @@
                     </a>
                     <ul class="tile-header-actions">
                         <emm:ShowByPermission token="mailing.extend_trackable_links">
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <i class="icon icon-pencil"></i>
-                                    <span class="text"><mvc:message code="bulkAction"/></span>
-                                    <i class="icon icon-caret-down"></i>
-                                </a>
+                            <c:if test="${not isSettingsReadonly}">
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                        <i class="icon icon-pencil"></i>
+                                        <span class="text"><mvc:message code="bulkAction"/></span>
+                                        <i class="icon icon-caret-down"></i>
+                                    </a>
 
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a href="#" data-form-url="<c:url value='/mailing/${mailingId}/trackablelink/bulkActionsView.action'/>" data-form-confirm>
-                                            <span class="text"><mvc:message code="TrackableLink.edit"/></span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" data-form-url="<c:url value='/mailing/${mailingId}/trackablelink/confirmBulkClearExtensions.action'/>" data-form-confirm>
-                                            <span class="text"><mvc:message code="ClearAllProperties"/></span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="#" data-form-url="<c:url value='/mailing/${mailingId}/trackablelink/bulkActionsView.action'/>" data-form-confirm>
+                                                <span class="text"><mvc:message code="TrackableLink.edit"/></span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#" data-form-url="<c:url value='/mailing/${mailingId}/trackablelink/confirmBulkClearExtensions.action'/>" data-form-confirm>
+                                                <span class="text"><mvc:message code="ClearAllProperties"/></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </c:if>
                         </emm:ShowByPermission>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -157,14 +159,14 @@
                                        partialList="false"
                                        decorator="com.agnitas.emm.core.trackablelinks.web.TrackableLinkListDecorator">
                             
-                            <display:column title="<input type='checkbox' data-form-bulk='bulkIds'/>" class="js-checkable align-center" sortable="false" headerClass="squeeze-column">
+                            <display:column title="<input type='checkbox' data-form-bulk='bulkIds' ${isSettingsReadonly ? 'disabled' : ''}/>" class="js-checkable align-center" sortable="false" headerClass="squeeze-column">
                                 <mvc:hidden path="links[${rowIndex}].id"/>
                                 <c:choose>
                                     <c:when test="${link.deleted}">
                                         <i class="icon icon-trash-o center-block"></i>
                                     </c:when>
                                     <c:otherwise>
-                                        <mvc:checkbox path="bulkIds" value="${link.id}" cssStyle="margin-left: 0"/>
+                                        <mvc:checkbox path="bulkIds" value="${link.id}" cssStyle="margin-left: 0" disabled="${isSettingsReadonly}"/>
                                     </c:otherwise>
                                 </c:choose>
                             </display:column>
@@ -185,7 +187,7 @@
                             </display:column>
 
                             <display:column headerClass="js-table-sort" class="align-top" titleKey="Description" sortable="true" sortProperty="description">
-                                <mvc:text path="links[${rowIndex}].shortname" cssClass="form-control"/>
+                                <mvc:text path="links[${rowIndex}].shortname" cssClass="form-control" disabled="${isSettingsReadonly}"/>
                             </display:column>
 
                             <display:column class="align-top" titleKey="LinkTracking" sortable="false">
@@ -194,7 +196,7 @@
                                         <mvc:message code="Text_and_HTML_Version" />
                                     </c:when>
                                     <c:otherwise>
-                                        <mvc:select path="links[${rowIndex}].usage" cssClass="form-control">
+                                        <mvc:select path="links[${rowIndex}].usage" cssClass="form-control" disabled="${isSettingsReadonly}">
                                             <mvc:option value="${TRACKABLE_NONE}"><mvc:message code="mailing.Not_Trackable" /></mvc:option>
                                             <mvc:option value="${TRACKABLE_ONLY_TEXT}"><mvc:message code="Only_Text_Version" /></mvc:option>
                                             <mvc:option value="${TRACKABLE_ONLY_HTML}"><mvc:message code="Only_HTML_Version" /></mvc:option>
@@ -205,7 +207,7 @@
                             </display:column>
 
                             <display:column class="align-top" titleKey="action.Action" sortable="false">
-                                <mvc:select path="links[${rowIndex}].action" cssClass="form-control js-select">
+                                <mvc:select path="links[${rowIndex}].action" cssClass="form-control js-select" disabled="${isSettingsReadonly}">
                                     <mvc:option value="0"><mvc:message code="settings.No_Action" /></mvc:option>
                                     <c:forEach var="action" items="${notFormActions}">
                                         <mvc:option value="${action.id}">${action.shortname}</mvc:option>
@@ -215,7 +217,7 @@
 
                             <display:column class="js-checkable align-center" titleKey="AdminLink" sortable="false">
                                 <label class="toggle">
-                                    <mvc:checkbox path="links[${rowIndex}].admin" disabled="${link.deleted}"/>
+                                    <mvc:checkbox path="links[${rowIndex}].admin" disabled="${link.deleted or isSettingsReadonly}"/>
                                     <div class="toggle-control"></div>
                                 </label>
                             </display:column>
@@ -223,21 +225,21 @@
                             <c:if test="${SHOW_CREATE_SUBSTITUTE_LINK}">
                                 <display:column class="js-checkable align-center" titleKey="CreateSubstituteLink" sortable="false">
                                    <label class="toggle">
-                                       <mvc:checkbox path="links[${rowIndex}].createSubstituteForAgnDynMulti" disabled="${link.deleted}"/>
+                                       <mvc:checkbox path="links[${rowIndex}].createSubstituteForAgnDynMulti" disabled="${link.deleted or isSettingsReadonly}"/>
                                        <div class="toggle-control"></div>
                                    </label>
                                 </display:column>
                             </c:if>
 
                             <display:column class="align-top" sortable="false" title="${deepTrackingTitle}">
-                                <mvc:select path="links[${rowIndex}].deepTracking" cssClass="form-control" disabled="${isAutoDeeptrackingEnabled}">
+                                <mvc:select path="links[${rowIndex}].deepTracking" cssClass="form-control" disabled="${isAutoDeeptrackingEnabled or isSettingsReadonly}">
                                     <mvc:option value="0"><mvc:message code="TrackableLink.deepTrack.non" /></mvc:option>
                                     <mvc:option value="1"><mvc:message code="TrackableLink.deepTrack.cookie" /></mvc:option>
                                 </mvc:select>
                             </display:column>
 
                             <emm:ShowByPermission token="mailing.extend_trackable_links">
-                                <display:column class="align-top" titleKey="mailing.extend_trackable_link" sortable="false">
+                                <display:column class="align-top" titleKey="default.advanced" sortable="false">
                                     <c:set var="extensionCount" value="${not empty link.extensions ? link.extensions.size() : 0}"/>
                                     <c:choose>
                                         <c:when test="${extensionCount > 0}">
@@ -285,7 +287,7 @@
                         </div>
                         <div class="col-sm-8">
                             <button type="button" class="btn btn-regular btn-primary" data-form-submit
-                                ${isTrackingOnEveryPositionAvailable ? '' : "disabled='disabled'"}
+                                ${isTrackingOnEveryPositionAvailable and not isSettingsReadonly ? '' : "disabled='disabled'"}
                                     data-form-url="<c:url value="/mailing/${mailingId}/trackablelink/activateTrackingLinksOnEveryPosition.action"/>">
                                 <span><mvc:message code="button.Activate" /></span>
                             </button>
@@ -299,7 +301,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:select path="openActionId" cssClass="form-control js-select" id="openActionId">
+                            <mvc:select path="openActionId" cssClass="form-control js-select" id="openActionId" disabled="${isSettingsReadonly}">
                                 <mvc:option value="0"><mvc:message code="settings.No_Action" /></mvc:option>
                                 <c:forEach var="action" items="${notFormActions}">
                                     <mvc:option value="${action.id}">${action.shortname}</mvc:option>
@@ -315,7 +317,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:select path="clickActionId" cssClass="form-control js-select" id="clickActionId">
+                            <mvc:select path="clickActionId" cssClass="form-control js-select" id="clickActionId" disabled="${isSettingsReadonly}">
                                 <mvc:option value="0">
                                     <mvc:message code="settings.No_Action" />
                                 </mvc:option>
@@ -336,7 +338,7 @@
 
                             <div class="col-sm-8">
                                 <label class="toggle">
-                                    <mvc:checkbox path="intelliAdEnabled" id="intelliAdEnabled" />
+                                    <mvc:checkbox path="intelliAdEnabled" id="intelliAdEnabled" disabled="${isSettingsReadonly}"/>
                                     <div class="toggle-control"></div>
                                 </label>
                             </div>
@@ -350,7 +352,7 @@
                             </div>
 
                             <div class="col-sm-8">
-                                <mvc:text path="intelliAdIdString" maxlength="500" id="intelliAdIdString" cssClass="form-control" />
+                                <mvc:text path="intelliAdIdString" maxlength="500" id="intelliAdIdString" cssClass="form-control" disabled="${isSettingsReadonly}"/>
                             </div>
                         </div>
                     </emm:ShowByPermission>
@@ -365,13 +367,13 @@
                 </div>
             </c:if>
         </tiles:putAttribute>
-        
+
         <tiles:putListAttribute name="footerItems">
             <tiles:addAttribute>
                 <button type="button" class="btn btn-large btn-primary pull-right"
                         data-form-target="#trackableLinkForm"
                         data-form-set="everyPositionLink: false"
-                        data-action="save">
+                        data-action="${isSettingsReadonly ? '' : 'save'}" ${isSettingsReadonly ? 'disabled' : ''}>
                     <span class="text"><mvc:message code="button.Save"/></span>
                 </button>
             </tiles:addAttribute>

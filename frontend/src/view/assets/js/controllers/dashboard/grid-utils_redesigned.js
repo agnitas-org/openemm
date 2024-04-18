@@ -2,19 +2,6 @@
   const Def = AGN.Lib.Dashboard.Definitions;
 
   const GridUtils = {
-    saveTilesLayout: function (tiles) {
-      GridUtils.setCurrentSchema(tiles);
-
-      $.ajax({
-        type: 'POST',
-        url: AGN.url('/dashboard/layout/save.action'),
-        data: { layout: JSON.stringify(Def.LAYOUT.CURRENT) },
-        async: false,
-        error: function() {
-          AGN.Lib.Messages.alert('defaults.error');
-        }
-      });
-    },
 
     setCurrentSchema: function (tiles) {
       if (!tiles) {
@@ -28,12 +15,16 @@
       return Def.LAYOUT.CURRENT.COLS_COUNT;
     },
 
+    $getTiles: function () {
+      return $('.draggable-tile');
+    },
+
     getTiles: function () {
-      return $('.tile').toArray().map($tile => $($tile).data('tile'));
+      return this.$getTiles().toArray().map($tile => $($tile).data('tile'));
     },
 
     removeAllTiles: function () {
-      $('.tile').each((i, tile) => $(tile).data('tile').remove());
+      this.$getTiles().each((i, tile) => $(tile).data('tile').remove());
     },
 
     getTileAtPosition: function (row, col, tiles) {
@@ -75,7 +66,6 @@
       const self = this;
 
       tile.$el.draggable({
-        handle: tile.$el.find('.draggable-button'),
         containment: Def.TILES_CONTAINER,
         opacity: 0.7,
         zIndex: 1000,
@@ -99,6 +89,10 @@
       });
     },
 
+    enableDraggable: function (enable) {
+      this.$getTiles().draggable("option", "disabled", !enable);
+    },
+
     setDroppable: function (tile) {
       if (tile.$el.is('.tile-wide')) {
         return;
@@ -112,7 +106,7 @@
           const droppableTile = self.getTile($(this));
           await self.swapTiles(draggableTile, droppableTile);
           self.updateTilesPositions();
-          self.saveTilesLayout();
+          self.setCurrentSchema();
         }
       });
     },

@@ -11,5 +11,17 @@
 package com.agnitas.emm.core.target.beans;
 
 public enum TargetComplexityGrade {
-    GREEN, YELLOW, RED
+    GREEN(10),
+    YELLOW(18),
+    RED(null);
+
+    private final Integer maxThreshold;
+
+    TargetComplexityGrade(Integer maxThreshold) {
+        this.maxThreshold = maxThreshold;
+    }
+
+    public Integer getMaxThreshold() {
+        return maxThreshold;
+    }
 }

@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.web.mvc.Popups;
 import jakarta.mail.internet.InternetAddress;
 import org.agnitas.service.ImportProfileService;
@@ -22,8 +23,6 @@ import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
 
 @Component
 public class ImportProfileFormValidator {
@@ -70,7 +69,7 @@ public class ImportProfileFormValidator {
             popups.alert("error.import.duplicate_profile_name");
         }
 
-        boolean isCustomerIdImported = importProfileService.isColumnWasImported(COLUMN_CUSTOMER_ID, form.getId());
+        boolean isCustomerIdImported = importProfileService.isColumnWasImported(RecipientStandardField.CustomerID.getColumnName(), form.getId());
         if (isCustomerIdImported && (form.getImportMode() == ImportMode.ADD.getIntValue() || form.getImportMode() == ImportMode.ADD_AND_UPDATE.getIntValue())) {
             popups.alert("error.import.customerid_insert");
         }

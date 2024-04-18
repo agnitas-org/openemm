@@ -66,7 +66,7 @@ public class ScriptHelperService {
 	public Object getAnonLastSentMailingByMailingID(int mailingID, int customerID) throws Exception {
 		Object returnObject = null;
 		try {
-			returnObject = generateBackEndHTMLPreview(mailingID, customerID);
+			returnObject = generateCachedBackEndHTMLPreview(mailingID, customerID);
 		} catch (Exception e) {
 			throw new Exception("ScriptHelperService failed to generate the html preview: " + e);
 		}
@@ -93,8 +93,8 @@ public class ScriptHelperService {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object generateBackEndHTMLPreview(int mailingID, int customerID) throws Exception {
-		return generateBackEndHTMLPreview(mailingID, customerID, false);
+	protected Object generateCachedBackEndHTMLPreview(int mailingID, int customerID) throws Exception {
+		return generateCachedBackEndHTMLPreview(mailingID, customerID, false);
 	}
 	
 	/**
@@ -107,9 +107,9 @@ public class ScriptHelperService {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object generateBackEndHTMLPreview(int mailingID, int customerID, boolean mobile) throws Exception {
+	protected Object generateCachedBackEndHTMLPreview(int mailingID, int customerID, boolean mobile) throws Exception {
 		Preview preview = previewFactory.createPreview();
-		Page page = preview.makePreview(mailingID,customerID,null,true, false);
+		Page page = preview.makePreview(mailingID,customerID,null,true, true);
 		if (page.getError() != null)  {
 			throw new Exception("ScriptHelperService::generateBackEndHTMLPreview: Error generating preview. mailingID: " + mailingID +
 					" customerID: " + customerID + "\n previewError: " + page.getError());

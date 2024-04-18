@@ -10,8 +10,45 @@
 
 package com.agnitas.emm.core.company.form;
 
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.web.forms.PaginationForm;
 
 public class CompanyListForm extends PaginationForm {
-	// nothing to do
+
+    private Integer id;
+    private String name;
+    private String description;
+    private CompanyStatus status;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public CompanyStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CompanyStatus status) {
+        this.status = status;
+    }
 }

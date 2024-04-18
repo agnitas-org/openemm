@@ -72,7 +72,7 @@ public class DashboardRecipientReport {
     }
 
     public enum Type {
-        IMPORT(RecipientsReport.EntityType.IMPORT, RecipientsReport.EntityExecution.MANUAL, "import"),
+        IMPORT(RecipientsReport.EntityType.IMPORT, RecipientsReport.EntityExecution.MANUAL, "import.csv_upload"),
         EXPORT(RecipientsReport.EntityType.EXPORT, RecipientsReport.EntityExecution.MANUAL, "Export"),
         AUTO_IMPORT(RecipientsReport.EntityType.IMPORT, RecipientsReport.EntityExecution.AUTOMATIC, "autoImport.autoImport"),
         AUTO_EXPORT(RecipientsReport.EntityType.EXPORT, RecipientsReport.EntityExecution.AUTOMATIC, "autoExport.autoExport");

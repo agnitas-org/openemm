@@ -31,23 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.ComRecipientMailing;
-import com.agnitas.beans.ComRecipientReaction;
-import com.agnitas.beans.WebtrackingHistoryEntry;
-import com.agnitas.emm.core.report.bean.RecipientEntity;
-import com.agnitas.emm.core.report.converter.impl.RecipientDeviceHistoryDtoConverter;
-import com.agnitas.emm.core.report.converter.impl.RecipientEntityDtoConverter;
-import com.agnitas.emm.core.report.converter.impl.RecipientMailingHistoryDtoConverter;
-import com.agnitas.emm.core.report.converter.impl.RecipientRetargetingHistoryDtoConverter;
-import com.agnitas.emm.core.report.converter.impl.RecipientStatusHistoryDtoConverter;
-import com.agnitas.emm.core.report.dto.RecipientDeviceHistoryDto;
-import com.agnitas.emm.core.report.dto.RecipientEntityDto;
-import com.agnitas.emm.core.report.dto.RecipientMailingHistoryDto;
-import com.agnitas.emm.core.report.dto.RecipientRetargetingHistoryDto;
-import com.agnitas.emm.core.report.dto.RecipientStatusHistoryDto;
 import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
 
 
@@ -59,17 +43,11 @@ import com.agnitas.emm.core.report.services.RecipientReportService;
  *    (SELECT MAX(id) + 1, 'InformationReport', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.InformationReportJobWorker', 0 FROM job_queue_tbl);
  */
 public class InformationReportJobWorker extends JobWorker {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(InformationReportJobWorker.class);
-	
-	private RecipientReportService recipientReportService;
-	private RecipientEntityDtoConverter recipientEntityDtoConverter;
-	private RecipientEntityDtoPrinter recipientEntityDtoPrinter;
-	private RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
-	private TableGenerator txtTableGenerator;
-	private RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter;
-	private RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter;
-	private RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter;
+
+	private static final Logger logger = LogManager.getLogger(InformationReportJobWorker.class);
+
+    protected RecipientReportService recipientReportService;
+    protected TableGenerator txtTableGenerator;
 
 	@Override
 	public String runJob() throws Exception {
@@ -79,13 +57,6 @@ public class InformationReportJobWorker extends JobWorker {
 		this.recipientReportService = (RecipientReportService) getApplicationContextForJobWorker().getBeansOfType(RecipientReportService.class).values().toArray()[0];
 		this.txtTableGenerator = getApplicationContextForJobWorker().getBean("txtTableGenerator", TableGenerator.class);
 
-		this.recipientEntityDtoConverter = new RecipientEntityDtoConverter();
-		this.recipientEntityDtoPrinter = new RecipientEntityDtoPrinter();
-		this.recipientStatusHistoryConverter = new RecipientStatusHistoryDtoConverter();
-		this.recipientMailingHistoryDtoConverter = new RecipientMailingHistoryDtoConverter();
-		this.recipientRetargetingHistoryDtoConverter = new RecipientRetargetingHistoryDtoConverter();
-		this.recipientDeviceHistoryDtoConverter = new RecipientDeviceHistoryDtoConverter();
-		
 		List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
 
 		List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
@@ -120,7 +91,7 @@ public class InformationReportJobWorker extends JobWorker {
 				List<Integer> customerIdList = jdbcTemplate.queryForList("SELECT customer_id FROM customer_" + companyID + "_tbl" + (StringUtils.isBlank(specialWhereClause) ? "" : " WHERE " + specialWhereClause) + " ORDER BY customer_id", Integer.class);
 				for (int customerID : customerIdList) {
 					try {
-						String informationReportText = getRecipientReport(companyID, customerID, locale);
+						String informationReportText = recipientReportService.getRecipientTxtReport(companyID, customerID, locale);
 						String fileName = filenamePattern.replace("[company_id]", Integer.toString(companyID));
 						for (String columnName : columnNames) {
 							if (fileName.contains("[" + columnName.toLowerCase() + "]")) {
@@ -195,42 +166,5 @@ public class InformationReportJobWorker extends JobWorker {
 		} else {
 			throw new Exception("Missing definition of SFTP or FTP destination host");
 		}
-	}
-
-	public String getRecipientReport(int companyId, int recipientId, Locale locale) {
-		// Recipient Info
-		RecipientEntity recipientEntity = recipientReportService.getRecipientInfo(recipientId, companyId);
-		RecipientEntityDto recipientEntityDto = recipientEntityDtoConverter.convert(recipientEntity, locale);
-		String recipientInfo = recipientEntityDtoPrinter.print(recipientEntityDto, locale);
-
-		// Status History
-		List<ComRecipientHistory> statusHistory = recipientReportService.getStatusHistory(recipientId, companyId);
-		List<RecipientStatusHistoryDto> statusHistoryDto = recipientStatusHistoryConverter.convert(statusHistory, locale);
-		String statusHistoryTable = txtTableGenerator.generate(statusHistoryDto, locale);
-
-		// Mailing History
-		List<ComRecipientMailing> mailingHistory = recipientReportService.getMailingHistory(recipientId, companyId);
-		List<RecipientMailingHistoryDto> mailingHistoryDto = recipientMailingHistoryDtoConverter.convert(mailingHistory, locale);
-		String mailingHistoryTable = txtTableGenerator.generate(mailingHistoryDto, locale);
-
-		// Deep Tracking (Retargeting) History
-		List<WebtrackingHistoryEntry> trackingHistory = recipientReportService.getRetargetingHistory(recipientId, companyId);
-		List<RecipientRetargetingHistoryDto> trackingHistoryDto = recipientRetargetingHistoryDtoConverter.convert(trackingHistory);
-		String trackingHistoryTable = txtTableGenerator.generate(trackingHistoryDto, locale);
-
-		// Device history
-		List<ComRecipientReaction> deviceHistory = recipientReportService.getDeviceHistory(recipientId, companyId);
-		List<RecipientDeviceHistoryDto> deviceHistoryDto = recipientDeviceHistoryDtoConverter.convert(deviceHistory, locale);
-		String deviceHistoryTable = txtTableGenerator.generate(deviceHistoryDto, locale);
-
-		// Union of report parts
-		StringBuilder report = new StringBuilder();
-		report.append(recipientInfo);
-		report.append(statusHistoryTable);
-		report.append(mailingHistoryTable);
-		report.append(trackingHistoryTable);
-		report.append(deviceHistoryTable);
-
-		return report.toString();
 	}
 }

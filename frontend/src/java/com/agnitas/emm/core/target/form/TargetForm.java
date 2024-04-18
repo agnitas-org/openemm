@@ -10,15 +10,24 @@
 
 package com.agnitas.emm.core.target.form;
 
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import org.agnitas.web.forms.PaginationForm;
 
 public class TargetForm extends PaginationForm {
 
-    private boolean showWorldDelivery;
-    private boolean showTestAndAdminDelivery;
-    private boolean searchNameChecked = true;
-    private boolean searchDescriptionChecked = true;
-    private String searchQueryText;
+    private boolean showWorldDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean showTestAndAdminDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchNameChecked = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchDescriptionChecked = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private String searchDescription;
+    private String searchName;
+    private TargetComplexityGrade searchComplexity;
+    private TargetGroupDeliveryOption searchDeliveryOption;
+    private DateRange searchCreationDate = new DateRange();
+    private DateRange searchChangeDate = new DateRange();
 
     public boolean isShowWorldDelivery() {
         return showWorldDelivery || !showTestAndAdminDelivery;
@@ -60,4 +69,51 @@ public class TargetForm extends PaginationForm {
         this.searchDescriptionChecked = searchDescriptionChecked;
     }
 
+    public String getSearchName() {
+        return searchName;
+    }
+
+    public void setSearchName(String searchName) {
+        this.searchName = searchName;
+    }
+
+    public String getSearchDescription() {
+        return searchDescription;
+    }
+
+    public void setSearchDescription(String searchDescription) {
+        this.searchDescription = searchDescription;
+    }
+
+    public DateRange getSearchCreationDate() {
+        return searchCreationDate;
+    }
+
+    public void setSearchCreationDate(DateRange searchCreationDate) {
+        this.searchCreationDate = searchCreationDate;
+    }
+
+    public DateRange getSearchChangeDate() {
+        return searchChangeDate;
+    }
+
+    public void setSearchChangeDate(DateRange searchChangeDate) {
+        this.searchChangeDate = searchChangeDate;
+    }
+
+    public TargetComplexityGrade getSearchComplexity() {
+        return searchComplexity;
+    }
+
+    public void setSearchComplexity(TargetComplexityGrade searchComplexity) {
+        this.searchComplexity = searchComplexity;
+    }
+
+    public TargetGroupDeliveryOption getSearchDeliveryOption() {
+        return searchDeliveryOption;
+    }
+
+    public void setSearchDeliveryOption(TargetGroupDeliveryOption searchDeliveryOption) {
+        this.searchDeliveryOption = searchDeliveryOption;
+    }
 }

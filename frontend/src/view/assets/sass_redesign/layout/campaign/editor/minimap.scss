@@ -1,0 +1,74 @@
+
+#minimap {
+  @include size(125px);
+  @include border;
+  position: relative;
+  overflow: hidden !important;
+  z-index: 46;
+}
+
+.minimap-panner {
+  position: absolute;
+  border: 1px solid #f6f6f6;
+  border-radius: 3px;
+  cursor: move;
+  background-color: $dark-grey;
+  opacity: 0.3;
+  z-index: 48;
+  transform-origin: 0 0 0;
+}
+
+.minimap-canvas {
+  position: relative;
+  z-index: 47;
+  transform-origin: 0 0 0;
+
+  top: 2px;
+  left: 2px;
+}
+
+.miniview-element {
+  background-color: $primary;
+  position: absolute;
+}
+
+.minimap-arrow {
+  @include flex-center;
+  font-size: 10px;
+  position: absolute;
+  z-index: 49;
+  padding: 3px;
+  color: var(--label-color);
+  &:hover {
+    background-color: rgba(0, 113, 185, 0.3);
+  }
+}
+
+[data-arrow="down"],
+[data-arrow="up"] {
+  width: 100%;
+  height: 10px;
+}
+
+[data-arrow="left"],
+[data-arrow="right"] {
+  top: 0;
+  height: 100%;
+  width: 10px;
+}
+
+[data-arrow="up"] {
+  top: 0;
+}
+
+[data-arrow="right"] {
+  right: 0;
+}
+
+[data-arrow="down"] {
+  bottom: 0;
+}
+
+[data-arrow="left"] {
+  left: 0;
+}

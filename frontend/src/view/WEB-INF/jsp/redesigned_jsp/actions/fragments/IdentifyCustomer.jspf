@@ -1,0 +1,45 @@
+<script id="module-IdentifyCustomer" type="text/x-mustache-template">
+    {{ var disabledAttr = readonly ? 'disabled' : '' }}
+    
+    <div class="tile-body" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="IdentifyCustomer"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label" for="module_{{- index}}.keyColumn"><mvc:message code="action.identifycust.usercol"/></label>
+
+                {{ var columnNameToSelect = !!keyColumn ? keyColumn.replace('#', '').toLowerCase() : '' }}
+
+                <select class="form-control js-select" name="modules[].keyColumn" id="module_{{- index}}.keyColumn" data-field="required" {{- disabledAttr }}>
+                    {{ if (readonly) { }}
+                        <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>
+                    {{ } else { }}
+                        <option value="">--</option>
+                        <c:forEach items="${columnInfo}" var="columnPair">
+                            {{ var selectedSign = ('${columnPair.key}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
+                            <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
+                        </c:forEach>
+                    {{ } }}
+                </select>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label"><mvc:message code="action.identifycust.passcolumn"/></label>
+
+                {{ var passColumnNameToSelect = !!passColumn ? passColumn.replace('#', '').toLowerCase() : ''; }}
+                <select class="form-control js-select" name="modules[].passColumn" id="module_{{- index}}.passColumn" {{- disabledAttr }}>
+                    {{ if (readonly) { }}
+                        <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[passColumnNameToSelect] }}</option>
+                    {{ } else { }}
+                        <option value="none"><mvc:message code="action.identifycust.nopass"/></option>
+                        <c:forEach items="${columnInfo}" var="columnPair">
+                            {{ var selectedSign = ('${columnPair.key}' == passColumnNameToSelect) ? 'selected="selected"' : ''; }}
+                            <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
+                        </c:forEach>
+                    {{ } }}
+                </select>
+            </div>
+        </div>
+    </div>
+</script>

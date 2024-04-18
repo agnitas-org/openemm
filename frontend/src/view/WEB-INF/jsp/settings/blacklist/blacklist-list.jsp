@@ -7,7 +7,7 @@
 
 <%--@elvariable id="blacklists" type="java.util.List"--%>
 <%--@elvariable id="blacklistDto" type="com.agnitas.emm.core.globalblacklist.beans.BlacklistDto"--%>
-<%--@elvariable id="blacklistListForm" type="com.agnitas.emm.core.globalblacklist.forms.BlacklistListForm"--%>
+<%--@elvariable id="blacklistListForm" type="com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter"--%>
 <%--@elvariable id="dateTimeFormat" type="java.text.SimpleDateFormat"--%>
 
 <c:url var="saveActionUrl" value="/recipients/blacklist/save.action"/>
@@ -86,7 +86,7 @@
                 <li>
                     <div class="has-icon">
                         <mvc:message var="searchMessage" code="blacklist.search"/>
-                        <mvc:text path="searchQuery" cssClass="form-control rounded" placeholder="${searchMessage}"/>
+                        <mvc:text path="email" cssClass="form-control rounded" placeholder="${searchMessage}"/>
                         <i class="form-control-icon icon icon-search"></i>
                     </div>
                 </li>

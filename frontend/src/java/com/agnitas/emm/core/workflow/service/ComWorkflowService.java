@@ -55,6 +55,8 @@ public interface ComWorkflowService {
 
 	Workflow getWorkflow(int workflowId, int companyId);
 
+    List<String> getWorkflowNames(List<Integer> ids, int companyId);
+
     /**
      * Get object representation of workflow schema (icons and connections) or {@code null} if referenced workflow doesn't exist.
      *
@@ -281,6 +283,11 @@ public interface ComWorkflowService {
     Admin getPauseAdmin(int workflowId, int companyId);
 
     void savePausedSchemaForUndo(Workflow workflow, int adminId);
+    void savePausedSchemaForUndo(Workflow workflow);
+
+    int getWorkflowSenderId(Workflow workflow);
 
     String getInitialWorkflowSchema();
+
+    boolean adjustStartDateIfNeeded(WorkflowStatus newStatus, List<WorkflowIcon> icons, Admin admin);
 }

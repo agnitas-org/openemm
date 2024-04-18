@@ -81,6 +81,7 @@ public class HttpUtils {
 	public static final String IMAGE_PATH_ERROR_LINK = "/assets/core/images/grid_expire_image.png";
 
 	public static final String CONTENT_TYPE_JSON = "application/json";
+	public static final String CONTENT_TYPE_ZIP = "application/zip";
 	public static final String CONTENT_ENCODING = "UTF-8";
 	public static final String APPLICATION_JSON_UTF8 = CONTENT_TYPE_JSON + ";charset=" + CONTENT_ENCODING;
 

@@ -28,10 +28,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
         }
     };
 
-    this.addDomInitializer("test-run-recipients-select", function () {
-        updateTestRunTile(this.el);
-    });
-
     this.addAction({
         'click': 'configure-delivery-mailing-size-warning'
     }, function() {
@@ -214,26 +210,48 @@ AGN.Lib.Controller.new('mailing-send', function() {
         changeSaveTestRunTargetBtnState(false);
     });
 
-    this.addAction({change: 'admin-target-group'}, function() {
-        updateTestRunTile(this.el);
-    });
 
-    function updateTestRunTile(testRunDropdown) {
-        if (!testRunDropdown) {
-          return;
-        }
-        const isSingleRecipientOption = testRunDropdown.val() == RECIPIENT_TEST_RUN_OPTION;
-        const isTargetIdRunOption = testRunDropdown.val() == TARGET_TEST_RUN_OPTION;
-        const isSendToSelfRunOption = testRunDropdown.val() == SEND_TO_SELF_TEST_RUN_OPTION;
-        const newTargetElementsHidden = !isSingleRecipientOption || !$('#save-target-toggle').prop('checked');
-        $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientOption));
-        $('#adminSendButton').toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
-        $('#testTargetSaveButton').toggleClass('hidden', newTargetElementsHidden);                      
-        $('#test-run-target-name-input').toggleClass('hidden', newTargetElementsHidden);
-        // prevent hidden fields submit
-        $('#adminTargetGroupSelect').prop('disabled', !isTargetIdRunOption);
-        $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
+  var approvalOptions;
+
+  this.addDomInitializer("test-run-recipients", function () {
+    approvalOptions = JSON.parse(this.config ? this.config.approvalOptions : '[]');
+    controlTestRunOptionsDisplaying();
+    $('#get-approval-switch').on('change', function () {
+      controlTestRunOptionsDisplaying();
+    });
+    controlTestRunRecipientsDisplaying();
+    $('#test-run-options').on('change', function () {
+      controlTestRunRecipientsDisplaying();
+    });
+  });
+
+  function controlTestRunOptionsDisplaying() {
+    const filterOptions = $('#get-approval-switch').prop('checked');
+    const $optionsSelect = $("#test-run-options");
+    $optionsSelect.find("option:not([value='" + approvalOptions.join("']):not([value='") + "']")
+      .attr('disabled', filterOptions);
+    if (filterOptions && approvalOptions.indexOf($optionsSelect.val()) === -1) {
+      $optionsSelect.val($optionsSelect.find("option:not(:disabled):first").val()).trigger('change')
     }
+  }
+
+  function controlTestRunRecipientsDisplaying() {
+    const $testRunDropdown = $('#test-run-options');
+    if (!$testRunDropdown.length) {
+      return;
+    }
+    const isSingleRecipientOption = $testRunDropdown.val() == RECIPIENT_TEST_RUN_OPTION;
+    const isTargetIdRunOption = $testRunDropdown.val() == TARGET_TEST_RUN_OPTION;
+    const isSendToSelfRunOption = $testRunDropdown.val() == SEND_TO_SELF_TEST_RUN_OPTION;
+    const newTargetElementsHidden = !isSingleRecipientOption || !$('#save-target-toggle').prop('checked');
+    $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientOption));
+    $('#adminSendButton').toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
+    $('#testTargetSaveButton').toggleClass('hidden', newTargetElementsHidden);
+    $('#test-run-target-name-input').toggleClass('hidden', newTargetElementsHidden);
+    // prevent hidden fields submit
+    $('#adminTargetGroupSelect').prop('disabled', !isTargetIdRunOption);
+    $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
+  }
 
     function changeSaveTestRunTargetBtnState(saved) {
         const $testRunTargetBtn = $('#testTargetSaveButton');

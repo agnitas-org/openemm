@@ -32,6 +32,33 @@ A documentation of the available options can be found under <a href="http://amsu
 
 /*doc
 ---
+title: Datepicker Range
+name: datepicker-range
+parent: directives
+---
+
+If you have a couple of date pickers that represent a date range you usually need to make sure that user cannot break the rule `begin < end`.
+
+To apply that restriction just put both date pickers to some container (e.g. `<div>`) and add `data-date-range` attribute to container element.
+
+The first `.js-datepicker` in hierarchy will be treated as `begin` and the second — as `end`.
+
+```htmlexample
+<div data-date-range>
+    <label for="date-from" class="form-label">Date</label>
+
+    <div class="date-picker-container mb-1">
+        <input id="date-from" type="text" name="fromDate" placeholder="From" class="form-control js-datepicker">
+    </div>
+    <div class="date-picker-container">
+        <input id="date-to" type="text" name="toDate" placeholder="To" class="form-control js-datepicker">
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
 title: Timepicker Directive
 name: timepicker-directive
 parent: directives
@@ -126,22 +153,19 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 ;(function () {
 
   const Helpers = AGN.Lib.Helpers;
+  const DATA_ATTR_PREFIX = 'agn:datepicker-opt';
 
-  AGN.Lib.CoreInitializer.new('pickadate', function ($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
+  AGN.Lib.CoreInitializer.new('pickadate', function ($scope = $(document)) {
     _.each($scope.find('.js-datepicker'), function (input) {
       const $input = $(input);
-      $input.removeClass('hasDatepicker')
+      $input.removeClass('hasDatepicker');
 
       let options = {
         showWeek: true,
         changeMonth: true,
         changeYear: true,
         selectOtherMonths: true,
-        dateFormat: adoptDateFormat(window.adminDateFormat),
+        dateFormat: window.adminDateFormat,
         showButtonPanel: true,
         showOtherMonths: true,
         weekHeader: t('calendar.common.weekNumber'),
@@ -152,6 +176,10 @@ A documentation of the underlying jquery plugin can be found under <a href="http
           customizeSelects(instance.dpDiv, $input);
         },
         beforeShow: function (input, instance) {
+          if ($input.attr('readonly')) {
+            return false;
+          }
+
           instance.dpDiv.removeClass('hidden');
           $input.parent().addClass('is-active');
         },
@@ -161,47 +189,92 @@ A documentation of the underlying jquery plugin can be found under <a href="http
       };
 
       options = _.merge({}, options, Helpers.objFromString($input.data('datepicker-options')));
-      options.initialMinDate = options.minDate;
-      options.initialMaxDate = options.maxDate;
+
+      options.dateFormat = adoptDateFormat(options.dateFormat);
+
+      if (options.formatSubmit) {
+        options.altFormat = adoptDateFormat(options.formatSubmit);
+        options.altField = createAltFormat$($input, options.dateFormat, options.altFormat);
+      }
+
+      $input.data(`${DATA_ATTR_PREFIX}-initialMinDate`, options.minDate);
+      $input.data(`${DATA_ATTR_PREFIX}-initialMaxDate`, options.maxDate);
 
       $input.datepicker(options);
       $input.datepicker('widget').addClass('hidden');
 
+      const $rangeContainer = $input.closest('[data-date-range]');
+      if ($rangeContainer.exists()) {
+        const $datePickers = $rangeContainer.find('.js-datepicker');
+
+        if ($input.is($datePickers.get(0))) {
+          options.minFor = $($datePickers.get(1));
+        } else {
+          options.maxFor = $($datePickers.get(0));
+        }
+      }
+
       if (options.maxFor) {
-        $input.on('change', function () {
+        $input.data(`${DATA_ATTR_PREFIX}-maxFor`, options.maxFor);
+        const updateMaxFor = () => {
           const maximum = $input.datepicker('getDate') || options.minDate;
-          if (maximum) {
-            $(options.maxFor).datepicker('option', 'maxDate', maximum);
-          }
-        })
+          $(options.maxFor).datepicker('option', 'maxDate', maximum);
+        }
+        $input.on('change', updateMaxFor);
+        updateMaxFor();
       }
 
       if (options.minFor) {
-        $input.on('change', function () {
+        $input.data(`${DATA_ATTR_PREFIX}-minFor`, options.minFor);
+        const updateMinFor = () => {
           const minimum = $input.datepicker('getDate') || options.maxDate;
-          if (minimum) {
-            $(options.minFor).datepicker('option', 'minDate', minimum);
-          }
-        })
+          $(options.minFor).datepicker('option', 'minDate', minimum);
+        }
+        $input.on('change', updateMinFor);
+        updateMinFor();
       }
     });
 
     function adoptDateFormat(dateFormat) {
-      return dateFormat.replace('M', 'm')
-        .replace('D', 'd')
+      return dateFormat.replace(/M/g, 'm')
+        .replace(/D/g, 'd')
         .replace('YYYY', 'yyyy')
         .replace('yyyy', 'yy');
+    }
+
+    function createAltFormat$($input, format, altFormat) {
+      const dateInNewFormat = convertDateToAltFormat($input.val(), format, altFormat);
+      const $formatInput = $(`<input type="hidden" name="${$input.attr('name')}" value="${dateInNewFormat}">`);
+      $input.attr('name', '');
+      $formatInput.insertAfter($input);
+
+      return $formatInput;
+    }
+
+    function convertDateToAltFormat(dateStr, fromFormat, toFormat) {
+      const date = $.datepicker.parseDate(fromFormat, dateStr);
+      return $.datepicker.formatDate(toFormat, date);
     }
 
     function addControlButtons($input) {
       const $buttonsContainer = $('.ui-datepicker-buttonpane');
 
-      $buttonsContainer.append(`<button id="clear-datepicker-btn" class="btn btn-outline-primary">${t('defaults.clear')}</button>`);
+      $buttonsContainer.append(`
+        <button id="clear-datepicker-btn" class="btn btn-inverse gap-1">
+            <i class="icon icon-sync"></i>
+            <span class="text">${t('defaults.clear')}</span>
+        </button>
+      `);
       $buttonsContainer.find('#clear-datepicker-btn').on('click', () => handleClear($input));
 
       // if original 'Today' button not exists, then it means that current date can't be selected by restrictions of minDate/maxDate.
       if ($buttonsContainer.find('.ui-datepicker-current').exists()) {
-        $buttonsContainer.append(`<button id="today-datepicker-btn" class="btn btn-outline-primary">${t('defaults.today')}</button>`);
+        $buttonsContainer.append(`
+            <button id="today-datepicker-btn" class="btn btn-inverse gap-1">
+                <i class="icon icon-calendar-alt"></i>
+                <span class="text">${t('defaults.today')}</span>
+            </button>
+        `);
         $buttonsContainer.find('#today-datepicker-btn').on('click', () => handleTodayButtonClick($input));
       }
     }
@@ -223,14 +296,14 @@ A documentation of the underlying jquery plugin can be found under <a href="http
     }
 
     function resetDependentDateLimits($input) {
-      const minFor = $input.datepicker('option', 'minFor');
-      if (minFor) {
-        $(minFor).datepicker('option', 'minDate', $(minFor).datepicker('option', 'initialMinDate'));
+      if ($input.data(`${DATA_ATTR_PREFIX}-minFor`)) {
+        const $minFor = $($input.data(`${DATA_ATTR_PREFIX}-minFor`));
+        $minFor.datepicker('option', 'minDate', $minFor.data(`${DATA_ATTR_PREFIX}-initialMinDate`));
       }
 
-      const maxFor = $input.datepicker('option', 'maxFor');
-      if (maxFor) {
-        $(maxFor).datepicker('option', 'maxDate', $(maxFor).datepicker('option', 'initialMaxDate'));
+      if ($input.data(`${DATA_ATTR_PREFIX}-maxFor`)) {
+        const $maxFor = $($input.data(`${DATA_ATTR_PREFIX}-maxFor`));
+        $maxFor.datepicker('option', 'maxDate', $maxFor.data(`${DATA_ATTR_PREFIX}-initialMaxDate`));
       }
     }
 

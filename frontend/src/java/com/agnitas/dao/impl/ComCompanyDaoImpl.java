@@ -22,11 +22,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
 import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.OnepixelDaoImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -55,13 +58,16 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.company.form.CompanyListForm;
 import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
-
 	private static final Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
 
 	private ConfigService configService;
@@ -70,6 +76,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private CopyMailingService copyMailingService;
 	private BindingHistoryDao bindingHistoryDao;
 	private UserformService userformService;
+	private CampaignService campaignService;
+	private ComBirtReportService birtReportService;
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
@@ -103,30 +111,19 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		this.userformService = userformService;
 	}
 
+	@Required
+	public void setCampaignService(CampaignService campaignService) {
+		this.campaignService = campaignService;
+	}
+
+	@Required
+	public void setBirtReportService(ComBirtReportService birtReportService) {
+		this.birtReportService = birtReportService;
+	}
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 
-	private static final String[] CLICK_STAT_COLORS = {"F4F9FF", "D5E6FF", "E1F7E1", "FEFECC", "FFE4BA", "FFCBC3"};
-	private static final int[] CLICK_STAT_RANGES = {5, 5, 5, 5, 5, 75}; // Sum must be 100
-	
-	// Standard Customer-Table fields
-	public static final String STANDARD_FIELD_CUSTOMER_ID = "customer_id";
-	public static final String STANDARD_FIELD_EMAIL = "email";
-	public static final String STANDARD_FIELD_FIRSTNAME = "firstname";
-	public static final String STANDARD_FIELD_LASTNAME = "lastname";
-	public static final String STANDARD_FIELD_TITLE = "title";
-	public static final String STANDARD_FIELD_GENDER = "gender";
-	public static final String STANDARD_FIELD_MAILTYPE = "mailtype";
-	public static final String STANDARD_FIELD_TIMESTAMP = "timestamp";
-	public static final String STANDARD_FIELD_CREATION_DATE = "creation_date";
-	public static final String STANDARD_FIELD_DATASOURCE_ID = "datasource_id";
-	public static final String STANDARD_FIELD_LASTOPEN_DATE = "lastopen_date";
-	public static final String STANDARD_FIELD_LASTCLICK_DATE = "lastclick_date";
-	public static final String STANDARD_FIELD_LASTSEND_DATE = "lastsend_date";
-	public static final String STANDARD_FIELD_LATEST_DATASOURCE_ID = "latest_datasource_id";
-	public static final String STANDARD_FIELD_DO_NOT_TRACK = "sys_tracking_veto";
-	public static final String STANDARD_FIELD_CLEANED_DATE = "cleaned_date";
-	public static final String STANDARD_FIELD_ENCRYPTED_SENDING = "sys_encrypted_sending";
 
 	private static final String TABLESPACE_CUSTOMER_HISTORY = "customer_history";
 	private static final String TABLESPACE_CUSTOMER_HISTORY_INDEX = "index_customer_history";
@@ -138,35 +135,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private static final String TABLESPACE_INDEX_CUSTOMER = "data_cust_index";
 	
 	/**
-	 * DB field for AGNEMM-1817, AGNEMM-1924 and AGNEMM-1925
-	 */
-	public static final String STANDARD_FIELD_BOUNCELOAD = "bounceload";
-
-	/**
-	 * @deprecated Use RecipientFieldServiceImpl.RecipientStandardField instead
-	 */
-	@Deprecated
-	public static final String[] STANDARD_CUSTOMER_FIELDS = new String[]{
-		STANDARD_FIELD_CUSTOMER_ID,
-		STANDARD_FIELD_EMAIL,
-		STANDARD_FIELD_FIRSTNAME,
-		STANDARD_FIELD_LASTNAME,
-		STANDARD_FIELD_TITLE,
-		STANDARD_FIELD_GENDER,
-		STANDARD_FIELD_MAILTYPE,
-		STANDARD_FIELD_TIMESTAMP,
-		STANDARD_FIELD_CREATION_DATE,
-		STANDARD_FIELD_DATASOURCE_ID,
-		STANDARD_FIELD_LASTOPEN_DATE,
-		STANDARD_FIELD_LASTCLICK_DATE,
-		STANDARD_FIELD_LASTSEND_DATE,
-		STANDARD_FIELD_LATEST_DATASOURCE_ID,
-		STANDARD_FIELD_DO_NOT_TRACK,
-		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_BOUNCELOAD,
-		STANDARD_FIELD_ENCRYPTED_SENDING};
-	
-	/**
 	 * Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
 	 */
 	public static final String[] OLD_SOCIAL_MEDIA_FIELDS = new String[]{
@@ -175,34 +143,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		"google_status",
 		"twitter_status",
 		"xing_status"};
-	
-	public static final String[] GUI_BULK_IMMUTABALE_FIELDS = new String[] {
-		STANDARD_FIELD_CUSTOMER_ID,
-		STANDARD_FIELD_GENDER,
-		STANDARD_FIELD_TITLE,
-		STANDARD_FIELD_FIRSTNAME,
-		STANDARD_FIELD_LASTNAME,
-		STANDARD_FIELD_EMAIL,
-		STANDARD_FIELD_DATASOURCE_ID,
-		STANDARD_FIELD_BOUNCELOAD,
-		STANDARD_FIELD_LASTOPEN_DATE,
-		STANDARD_FIELD_LASTCLICK_DATE,
-		STANDARD_FIELD_LASTSEND_DATE,
-		STANDARD_FIELD_LATEST_DATASOURCE_ID,
-		STANDARD_FIELD_TIMESTAMP,
-		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_CREATION_DATE,
-		STANDARD_FIELD_ENCRYPTED_SENDING};
-	
-	public static final String[] CLEAN_IMMUTABALE_FIELDS = new String[] {
-		STANDARD_FIELD_CUSTOMER_ID,
-		STANDARD_FIELD_EMAIL,
-		STANDARD_FIELD_DATASOURCE_ID,
-		STANDARD_FIELD_CREATION_DATE,
-		STANDARD_FIELD_BOUNCELOAD,
-		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_TIMESTAMP,
-		STANDARD_FIELD_ENCRYPTED_SENDING};
 	
 	@Override
 	public Company getCompany(int companyID) {
@@ -321,6 +261,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				company.setId(newCompanyID);
 				
 				updateDefaultDatasourceIDWithNewCompanyId(defaultDatasourceID, newCompanyID);
+				
+				if (company.getCreatorID() != configService.getIntegerValue(ConfigValue.EmmXPressMasterClient)) {
+					update(logger, "INSERT INTO company_permission_tbl (company_id, permission_name) VALUES(?, ?)", newCompanyID, Permission.CLEANUP_RECIPIENT_DATA.getTokenString());
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Cannot save company data", e);
@@ -388,8 +332,55 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		paginatedList.setSortCriterion(sortCriterion);
 		return paginatedList;
 	}
-	
-	@Override
+
+    @Override
+   	public PaginatedListImpl<CompanyEntry> getCompanyList(CompanyListForm filter, int companyId) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT company_id, shortname, description, status, timestamp FROM company_tbl");
+        List<Object> params = applyOverviewFilter(filter, companyId, sql);
+        return selectPaginatedList(logger, sql.toString(), "company_tbl", filter.getSortOrDefault("company_id"), filter.ascending(),
+                filter.getPage(), filter.getNumberOfRows(), new CompanyEntryRowMapper(), params.toArray());
+   	}
+
+    private List<Object> applyOverviewFilter(CompanyListForm filter, int companyId, StringBuilder sql) {
+        sql.append(" WHERE")
+                .append(companyId != 1 ? " (company_id = ? OR creator_company_id = ?) AND" : "")
+                .append(" status NOT IN (?, ?)");
+        List<Object> params = new ArrayList<>();
+        if (companyId != 1) {
+            params.addAll(List.of(companyId, companyId));
+        }
+        params.addAll(List.of(CompanyStatus.DELETED.getDbValue(), CompanyStatus.DELETION_IN_PROGRESS.getDbValue()));
+
+        if (filter.getId() != null) {
+            sql.append(getPartialSearchFilterWithAnd("company_id", filter.getId(), params));
+        }
+        if (StringUtils.isNotBlank(filter.getName())) {
+            sql.append(getPartialSearchFilterWithAnd("shortname"));
+            params.add(filter.getName());
+        }
+        if (StringUtils.isNotBlank(filter.getDescription())) {
+            sql.append(getPartialSearchFilterWithAnd("description"));
+            params.add(filter.getDescription());
+        }
+        applyOverviewStatusFilter(filter.getStatus(), sql, params);
+        return params;
+    }
+
+    private void applyOverviewStatusFilter(CompanyStatus status, StringBuilder sql, List<Object> params) {
+        if (status == null) {
+            return;
+        }
+        if (status == CompanyStatus.LOCKED) {
+            sql.append(" AND status IN (?, ?)");
+            params.addAll(List.of(CompanyStatus.LOCKED.getDbValue(), CompanyStatus.TODELETE.getDbValue()));
+            return;
+        }
+        sql.append(" AND status = ?");
+        params.add(status.getDbValue());
+    }
+
+    @Override
 	public List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus) {
 		if (allowTransitionStatus) {
 			return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "' ORDER BY LOWER(shortname)", new CompanyEntryRowMapper());
@@ -622,14 +613,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			}
 
 			if (isOracleDB()) {
-				//init colors for heatmap
-				sql = "INSERT INTO click_stat_colors_tbl (id, company_id, range_start, range_end, color) VALUES (click_stat_colors_tbl_seq.NEXTVAL, ?, ?, ?, ?)";
-				int nextRangeStart = 0;
-				for (int i = 0; i < CLICK_STAT_COLORS.length; i++) {
-					update(logger, sql, newCompanyId, nextRangeStart, nextRangeStart + CLICK_STAT_RANGES[i], CLICK_STAT_COLORS[i]);
-					nextRangeStart += CLICK_STAT_RANGES[i];
-				}
-
 				// Copy mailinglist
 				int mailingListToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = 1 AND deleted = 0", 0);
 				if (mailingListToCopyID > 0) {
@@ -643,7 +626,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (customerToCopyID > 0) {
 					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT " + newCustomerID + ", gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = " + customerToCopyID + ")");
 				} else {
-					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(?, 2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", newCustomerID);
+					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(?, 2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", newCustomerID);
 				}
 				if (customerToCopyID > 0) {
 					// Set binding for new customer
@@ -652,13 +635,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 				
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -669,14 +652,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'grid.mediapool.category.editorial', '', 1)";
 				update(logger, sql);
 			} else {
-				//init colors for heatmap
-				sql = "INSERT INTO click_stat_colors_tbl (company_id, range_start, range_end, color) VALUES (?, ?, ?, ?)";
-				int nextRangeStart = 0;
-				for (int i = 0; i < CLICK_STAT_COLORS.length; i++) {
-					update(logger, sql, newCompanyId, nextRangeStart, nextRangeStart + CLICK_STAT_RANGES[i], CLICK_STAT_COLORS[i]);
-					nextRangeStart += CLICK_STAT_RANGES[i];
-				}
-				
 				// Copy mailinglist
 				int mailingListToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = 1 AND deleted = 0", 0);
 				if (mailingListToCopyID > 0) {
@@ -689,7 +664,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (customerToCopyID > 0) {
 					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
 				} else {
-					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES (2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES (2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 				}
 				if (newCustomerID > 0) {
 					// Set binding for new customer
@@ -698,13 +673,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + RecipientStandardField.Bounceload.getColumnName() + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -726,12 +701,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 			// Copy sample form templates (some form actions need the sample mailings)
 			copySampleUserForms(newCompanyId, mailinglistID, rdirDomain);
+			
+			copySampleCampaigns(newCompanyId, 1);
+			copySampleReports(newCompanyId, 1);
+			
 			return true;
 		} catch (Exception e) {
 			logger.error(String.format("initTables: SQL: %s\n%s", sql, e), e);
 			updateCompanyStatus(newCompanyId, CompanyStatus.LOCKED);
 			return false;
 		}
+	}
+
+	private void copySampleCampaigns(int newCompanyId, int fromCompanyId) {
+		campaignService.copySampleCampaigns(newCompanyId, fromCompanyId);
+	}
+
+	private void copySampleReports(int toCompanyId, int fromCompanyId) throws Exception {
+		birtReportService.copySampleReports(toCompanyId, fromCompanyId);
 	}
 
 	private void copySampleUserForms(int newCompanyId, int mailinglistID, String rdirDomain) {
@@ -880,24 +867,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE customer_" + newCompanyId + "_tbl ("
-					+ STANDARD_FIELD_CUSTOMER_ID + " NUMBER, "
-					+ STANDARD_FIELD_EMAIL + " VARCHAR2(100), "
-					+ STANDARD_FIELD_FIRSTNAME + " VARCHAR2(100), "
-					+ STANDARD_FIELD_LASTNAME + " VARCHAR2(100), "
-					+ STANDARD_FIELD_TITLE + " VARCHAR2(100), "
-					+ STANDARD_FIELD_GENDER + " NUMBER(1), "
-					+ STANDARD_FIELD_MAILTYPE + " NUMBER(1), "
-					+ STANDARD_FIELD_TIMESTAMP + " DATE DEFAULT SYSDATE, "
-					+ STANDARD_FIELD_CREATION_DATE + " DATE DEFAULT SYSDATE, "
-					+ STANDARD_FIELD_DATASOURCE_ID + " NUMBER, "
-					+ STANDARD_FIELD_BOUNCELOAD + " NUMBER(1) DEFAULT 0 NOT NULL, "
-					+ STANDARD_FIELD_LASTOPEN_DATE + " DATE, "
-					+ STANDARD_FIELD_LASTCLICK_DATE + " DATE, "
-					+ STANDARD_FIELD_LASTSEND_DATE + " DATE, "
-					+ STANDARD_FIELD_LATEST_DATASOURCE_ID + " NUMBER, "
-					+ STANDARD_FIELD_DO_NOT_TRACK + " NUMBER(1), "
-					+ STANDARD_FIELD_CLEANED_DATE + " DATE, "
-					+ STANDARD_FIELD_ENCRYPTED_SENDING + " NUMBER(1) DEFAULT 1"
+					+ RecipientStandardField.CustomerID.getColumnName() + " NUMBER, "
+					+ RecipientStandardField.Email.getColumnName() + " VARCHAR2(100), "
+					+ RecipientStandardField.Firstname.getColumnName() + " VARCHAR2(100), "
+					+ RecipientStandardField.Lastname.getColumnName() + " VARCHAR2(100), "
+					+ RecipientStandardField.Title.getColumnName() + " VARCHAR2(100), "
+					+ RecipientStandardField.Gender.getColumnName() + " NUMBER(1), "
+					+ RecipientStandardField.Mailtype.getColumnName() + " NUMBER(1), "
+					+ RecipientStandardField.ChangeDate.getColumnName() + " DATE DEFAULT SYSDATE, "
+					+ RecipientStandardField.CreationDate.getColumnName() + " DATE DEFAULT SYSDATE, "
+					+ RecipientStandardField.DatasourceID.getColumnName() + " NUMBER, "
+					+ RecipientStandardField.Bounceload.getColumnName() + " NUMBER(1) DEFAULT 0 NOT NULL, "
+					+ RecipientStandardField.LastOpenDate.getColumnName() + " DATE, "
+					+ RecipientStandardField.LastClickDate.getColumnName() + " DATE, "
+					+ RecipientStandardField.LastSendDate.getColumnName() + " DATE, "
+					+ RecipientStandardField.LatestDatasourceID.getColumnName() + " NUMBER, "
+					+ RecipientStandardField.DoNotTrack.getColumnName() + " NUMBER(1), "
+					+ RecipientStandardField.CleanedDate.getColumnName() + " DATE, "
+					+ RecipientStandardField.EncryptedSending.getColumnName() + " NUMBER(1) DEFAULT 1"
 					+ ")"
 					+ tablespaceClauseCustomer;
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -978,24 +965,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			} else {
 				// Watch out: Mysql does not support check constraints
 				sql = "CREATE TABLE customer_" + newCompanyId + "_tbl ("
-					+ STANDARD_FIELD_CUSTOMER_ID + " INT(11) UNSIGNED PRIMARY KEY AUTO_INCREMENT, "
-					+ STANDARD_FIELD_EMAIL + " VARCHAR(100) NOT NULL, "
-					+ STANDARD_FIELD_FIRSTNAME + " VARCHAR(100), "
-					+ STANDARD_FIELD_LASTNAME + " VARCHAR(100), "
-					+ STANDARD_FIELD_TITLE + " VARCHAR(100), "
-					+ STANDARD_FIELD_GENDER + " INT(1) NOT NULL, "
-					+ STANDARD_FIELD_MAILTYPE + " INT(1) NOT NULL, "
-					+ STANDARD_FIELD_TIMESTAMP + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_CREATION_DATE + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_DATASOURCE_ID + " INT(11), "
-					+ STANDARD_FIELD_BOUNCELOAD + " INT(1) NOT NULL DEFAULT 0, "
-					+ STANDARD_FIELD_LASTOPEN_DATE + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_LASTCLICK_DATE + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_LASTSEND_DATE + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_LATEST_DATASOURCE_ID + " INT(11), "
-					+ STANDARD_FIELD_DO_NOT_TRACK + " INT(1), "
-					+ STANDARD_FIELD_CLEANED_DATE + " TIMESTAMP NULL, "
-					+ STANDARD_FIELD_ENCRYPTED_SENDING + " INT(1) DEFAULT 1"
+					+ RecipientStandardField.CustomerID.getColumnName() + " INT(11) UNSIGNED PRIMARY KEY AUTO_INCREMENT, "
+					+ RecipientStandardField.Email.getColumnName() + " VARCHAR(100) NOT NULL, "
+					+ RecipientStandardField.Firstname.getColumnName() + " VARCHAR(100), "
+					+ RecipientStandardField.Lastname.getColumnName() + " VARCHAR(100), "
+					+ RecipientStandardField.Title.getColumnName() + " VARCHAR(100), "
+					+ RecipientStandardField.Gender.getColumnName() + " INT(1) NOT NULL, "
+					+ RecipientStandardField.Mailtype.getColumnName() + " INT(1) NOT NULL, "
+					+ RecipientStandardField.ChangeDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.CreationDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.DatasourceID.getColumnName() + " INT(11), "
+					+ RecipientStandardField.Bounceload.getColumnName() + " INT(1) NOT NULL DEFAULT 0, "
+					+ RecipientStandardField.LastOpenDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.LastClickDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.LastSendDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.LatestDatasourceID.getColumnName() + " INT(11), "
+					+ RecipientStandardField.DoNotTrack.getColumnName() + " INT(1), "
+					+ RecipientStandardField.CleanedDate.getColumnName() + " TIMESTAMP NULL, "
+					+ RecipientStandardField.EncryptedSending.getColumnName() + " INT(1) DEFAULT 1"
 					+ ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				if (createPreventConstraint) {
@@ -1132,10 +1119,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
     @Override
-   	public List<Integer> getAllActiveCompaniesIds(boolean includeMaterCompany) {
+   	public List<Integer> getAllActiveCompaniesIds(boolean includeMasterCompany) {
    		return select(logger, "SELECT company_id from company_tbl" +
                 " WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
-                + (includeMaterCompany ? "" : " AND company_id > 1"), IntegerRowMapper.INSTANCE);
+                + (includeMasterCompany ? "" : " AND company_id > 1"), IntegerRowMapper.INSTANCE);
    	}
 
 	@Override
@@ -1289,7 +1276,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public int getNumberOfCustomers(int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + RecipientStandardField.Bounceload.getColumnName() + " = 0");
 	}
 
 	@Override
@@ -1333,6 +1320,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				IntegerRowMapper.INSTANCE,
 				configService.getValue(ConfigValue.FullviewFormName));
 	}
+	
 	@Override
 	public void createCompanyPermission(int companyID, Permission permission, String comment) {
 		if (selectInt(logger, "SELECT COUNT(*) FROM permission_tbl WHERE permission_name = ?", permission.getTokenString()) <= 0) {
@@ -1557,5 +1545,35 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 		
 		return Optional.ofNullable(list.get(0));
+	}
+
+    @Override
+   	public List<Integer> getActiveCompanies(CompaniesConstraints constraints) {
+        return select(logger, "SELECT company_id FROM company_tbl WHERE status = ?" +
+                        DbUtilities.asCondition(" AND %s", constraints),
+                IntegerRowMapper.INSTANCE, CompanyStatus.ACTIVE.getDbValue());
+   	}
+
+	@Override
+	public boolean existsTestVipRecipientOnAllMailinglists(int companyID) {
+		int testVipRecipientAmount = selectIntWithDefaultValue(logger,
+			"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE ("
+			+ "(SELECT COUNT(*) from customer_" + companyID + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND user_status = ? AND user_type = ?)"
+			+ " = (SELECT COUNT(*) FROM mailinglist_tbl WHERE company_id = ? AND deleted = 0))", 0, UserStatus.Active.getStatusCode(), RecipientType.TEST_VIP_RECIPIENT.getLetter(), companyID);
+		return testVipRecipientAmount > 0;
+	}
+
+	@Override
+	public String getSpamCheckAddress(int companyID) {
+		String newTestVipEmailAddress = configService.getValue(ConfigValue.InitialTestVipEmailAddress);
+		if (StringUtils.isBlank(newTestVipEmailAddress)) {
+			newTestVipEmailAddress = select(logger, "SELECT email FROM admin_tbl WHERE admin_id = (SELECT stat_admin FROM company_tbl WHERE company_id = ?)", String.class, companyID);
+		}
+		return newTestVipEmailAddress;
+	}
+
+	@Override
+	public void createMissingOpenemmPlusPermissions() {
+		// do nothing
 	}
 }

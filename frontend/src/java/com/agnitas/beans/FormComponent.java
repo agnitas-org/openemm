@@ -55,6 +55,7 @@ public class FormComponent {
 	
 	/** The change date. */
 	protected Date changeDate;
+	private boolean overwriteExisting;
 
     /**
      * The Enum FormComponentType.
@@ -381,5 +382,13 @@ public class FormComponent {
 	 */
 	public void setHeight(int height) {
 		this.height = height;
+	}
+
+	public boolean isOverwriteExisting() {
+		return overwriteExisting;
+	}
+
+	public void setOverwriteExisting(boolean overwriteExisting) {
+		this.overwriteExisting = overwriteExisting;
 	}
 }

@@ -186,7 +186,9 @@
                     expandedClass: 'expanded',
                     closeIcon: 'icon icon-times-circle',
                     target: 'body',
-                    newestOnTop: false
+                    newestOnTop: false,
+                    useTabs: true,
+                    collapse: true
                 };
             }
 
@@ -208,7 +210,9 @@
                   
                   <div class="{{= headerClass }}">
                     <div class="d-flex">
-                     <i class="icon icon-caret-left me-2"></i>
+                     {{ if (collapse) { }}
+                        <i class="icon icon-caret-left me-2"></i>
+                     {{ } }}
                      <i class="icon icon-state-{{= type }} popup-header-icon me-1"></i>
                     </div>
                     <span class="popup-header-title">{{= title }}</span>
@@ -227,16 +231,21 @@
                   options = $.extend(options, map.options);
                 }
 
+                $container = getContainer(options, true);
+
+                if ($container.is('[data-popups-options]')) {
+                  const popupsOptions = AGN.Lib.Helpers.objFromString($container.data('popups-options'));
+                  options = _.extend(options, popupsOptions);
+                }
+
                 // Only add a new tab if popup of this type already presented
                 const $popup = $(`.popup-${options.type}`);
-                if ($popup.is(":visible")) {
+                if (options.useTabs && $popup.is(":visible")) {
                   addNewTab($popup);
                   return $popup; 
                 }
                 
                 toastId++;
-
-                $container = getContainer(options, true);
 
                 var template = _.template(getTemplate())(options),
                     $template = $(template);
@@ -312,13 +321,17 @@
 
                 $leftArrow.click(() => moveCarouselRight());
                 $rightArrow.click(() => moveCarouselLeft());
-                
-                // collapse/expand popup by click on mobile
-                $toastElement.find(`.${options.headerClass}:not(.${options.tabsClass})`).click(() => {
-                  $toastElement.toggleClass(options.expandedClass, isCollapsed($toastElement));
-                  controlTabsDisplay($toastElement);
-                });
-                
+
+                if (options.collapse) {
+                  // collapse/expand popup by click on mobile
+                  $toastElement.find(`.${options.headerClass}:not(.${options.tabsClass})`).click(() => {
+                    $toastElement.toggleClass(options.expandedClass, isCollapsed($toastElement));
+                    controlTabsDisplay($toastElement);
+                  });
+                } else {
+                  $toastElement.addClass(options.expandedClass);
+                }
+
                 addNewTab($toastElement); // popup itself it's a first tab that invisible until second tab added
 
                 return $toastElement;

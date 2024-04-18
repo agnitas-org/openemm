@@ -19,10 +19,14 @@ public class MailingsListProperties {
     private String types;
     private String mediaTypes;
     private boolean isTemplate;
-    private String searchQuery;
-    private boolean searchName;
-    private boolean searchDescription;
-    private boolean searchContent;
+    private String searchQuery; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
+    private boolean searchName; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
+    private boolean searchDescription; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
+    private boolean searchContent; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
+    private boolean isRedesignedUiUsed; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private String searchNameStr;
+    private String searchDescriptionStr;
+    private String searchContentStr;
     private List<String> statuses;
     private List<String> badge;
     private List<Integer> mailingLists;
@@ -267,5 +271,37 @@ public class MailingsListProperties {
 
     public void setUseRecycleBin(boolean useRecycleBin) {
         this.useRecycleBin = useRecycleBin;
+    }
+
+    public String getSearchNameStr() {
+        return searchNameStr;
+    }
+
+    public void setSearchNameStr(String searchNameStr) {
+        this.searchNameStr = searchNameStr;
+    }
+
+    public String getSearchDescriptionStr() {
+        return searchDescriptionStr;
+    }
+
+    public void setSearchDescriptionStr(String searchDescriptionStr) {
+        this.searchDescriptionStr = searchDescriptionStr;
+    }
+
+    public String getSearchContentStr() {
+        return searchContentStr;
+    }
+
+    public void setSearchContentStr(String searchContentStr) {
+        this.searchContentStr = searchContentStr;
+    }
+
+    public boolean isRedesignedUiUsed() {
+        return isRedesignedUiUsed;
+    }
+
+    public void setRedesignedUiUsed(boolean redesignedUiUsed) {
+        isRedesignedUiUsed = redesignedUiUsed;
     }
 }

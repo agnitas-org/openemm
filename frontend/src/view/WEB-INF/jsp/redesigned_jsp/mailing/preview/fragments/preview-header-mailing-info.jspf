@@ -1,0 +1,115 @@
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<%--@elvariable id="components" type="java.util.List<org.agnitas.beans.MailingComponent>"--%>
+<%--@elvariable id="isTagFailureInFromAddress" type="java.lang.Boolean"--%>
+<%--@elvariable id="isTagFailureInSubject" type="java.lang.Boolean"--%>
+<%--@elvariable id="isTagFailureInPreHeader" type="java.lang.Boolean"--%>
+
+<mvc:message var="errorDyntagsMsg" code="error.template.dyntags"/>
+
+<div class="col-12 tile-body__block">
+    <div class="row g-3">
+        <div class="col">
+            <label for="preview-from" class="form-label ${isTagFailureInFromAddress ? 'text-danger' : ''}" title="${isTagFailureInFromAddress ? errorDyntagsMsg : ''}">
+                <mvc:message code="ecs.From"/>
+            </label>
+            <input id="preview-from" type="text" class="form-control" readonly value="${fn:escapeXml(form.senderEmail)}">
+        </div>
+
+        <div class="col">
+            <label for="preview-to" class="form-label"><mvc:message code="To"/></label>
+
+            <c:set var="previewToEmail">
+                <c:choose>
+                    <c:when test="${form.modeType eq TARGET_GROUP_MODE}">
+                        <c:choose>
+                            <c:when test="${form.targetGroupId eq 0}">
+                                <mvc:message code="statistic.all_subscribers"/>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach items="${availableTargetGroups}" var="targetGroup">
+                                    <c:if test="${form.targetGroupId eq targetGroup.id}">
+                                        ${targetGroup.targetName}
+                                    </c:if>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:when>
+                    <c:otherwise>
+                        <c:choose>
+                            <c:when test="${form.modeType eq MANUAL_MODE}">
+                                ${form.customerEmail}
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="recipient" items="${previewRecipients}">
+                                    <c:if test="${form.customerATID eq recipient.id or form.customerID eq recipient.id}">
+                                        ${recipient.firstname} ${recipient.lastname} &lt;${recipient.email}&gt;
+                                    </c:if>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:otherwise>
+                </c:choose>
+            </c:set>
+
+            <input id="preview-to" type="text" class="form-control" readonly value="${previewToEmail}">
+        </div>
+
+        <div class="col">
+            <label for="preview-subject" class="form-label ${isTagFailureInSubject ? 'text-danger' : ''}" title="${isTagFailureInSubject ? errorDyntagsMsg : ''}">
+                <mvc:message code="mailing.Subject"/>
+            </label>
+            <input id="preview-subject" type="text" class="form-control" readonly value="${form.subject}">
+        </div>
+
+        <c:if test="${form.preHeader ne null}">
+            <div class="col">
+                <label for="preview-preheader" class="form-label ${isTagFailureInPreHeader ? 'text-danger' : ''}" title="${isTagFailureInPreHeader ? errorDyntagsMsg : ''}">
+                    <mvc:message code="mailing.preheader"/>
+                </label>
+                <input id="preview-preheader" type="text" class="form-control" readonly value="${form.preHeader}">
+            </div>
+        </c:if>
+
+        <c:set var="componentsBlocks">
+            <c:forEach var="component" items="${components}" varStatus="status">
+                <c:set var="isVisibleComponent" value="${false}"/>
+                <c:choose>
+                    <c:when test="${form.modeType == TARGET_GROUP_MODE}">
+                        <c:set var="isVisibleComponent" value="${component.targetID eq form.targetGroupId}"/>
+                    </c:when>
+                    <c:otherwise>
+                        <emm:CustomerMatchTarget customerID="${form.customerID}" targetID="${component.targetID}">
+                            <c:set var="isVisibleComponent" value="${true}"/>
+                        </emm:CustomerMatchTarget>
+                    </c:otherwise>
+                </c:choose>
+
+                <c:if test="${isVisibleComponent}">
+                    <div class="d-flex align-items-center justify-content-between gap-1">
+                        <c:url var="downloadLink" value="/sc?compID=${component.id}&mailingID=${form.mailingId}&customerID=${form.customerID}&targetGroupID=${form.targetGroupId}"/>
+                        <p>${component.componentName}</p>
+                        <a href="${downloadLink}" data-prevent-load="" class="icon icon-download"></a>
+                    </div>
+                </c:if>
+            </c:forEach>
+        </c:set>
+
+        <c:if test="${not empty componentsBlocks}">
+            <div class="col">
+                <label class="form-label">
+                    <mvc:message code="mailing.Attachments"/>
+                </label>
+
+                <div class="bordered-box bordered-box--readonly bordered-box--input d-flex flex-column gap-2">
+                    ${componentsBlocks}
+                </div>
+            </div>
+        </c:if>
+    </div>
+</div>
+

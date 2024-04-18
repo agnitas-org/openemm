@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="193" height="193" fill="none" viewBox="0 0 193 193">
-  <path fill="#0071B9" d="M10 23h29v160H10z"/>
-  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 17 20)"/>
-  <path fill="#0071B9" d="M46 91h29v92H46z"/>
-  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 53 88)"/>
-  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 89 136)"/>
-  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 125 156)"/>
-  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 161 169)"/>
-  <path fill="#0071B9" d="M82 139h29v44H82zm36 20h29v24h-29zm36 13h29v11h-29z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" fill="none" viewBox="0 0 200 200">
+  <path fill="silver" fill-rule="evenodd" d="M10 1a9 9 0 0 0-9 9v180a9 9 0 0 0 9 9h180a9 9 0 0 0 9-9V10a9 9 0 0 0-9-9H10ZM0 10C0 4.477 4.477 0 10 0h180c5.523 0 10 4.477 10 10v180c0 5.523-4.477 10-10 10H10c-5.523 0-10-4.477-10-10V10Z" clip-rule="evenodd"/>
+  <path fill="#4B4B4B" d="M26 10h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
+  <path fill="#009BFF" d="M37 22H11a1 1 0 0 0-1 1v154a1 1 0 0 0 1 1h26a1 1 0 0 0 1-1V23a1 1 0 0 0-1-1Z"/>
+  <path fill="#4B4B4B" d="M31 182H17a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2ZM64 46h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
+  <path fill="#009BFF" d="M75 58H49a1 1 0 0 0-1 1v118a1 1 0 0 0 1 1h26a1 1 0 0 0 1-1V59a1 1 0 0 0-1-1Z"/>
+  <path fill="#4B4B4B" d="M69 182H55a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm33-99h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
+  <path fill="#009BFF" d="M113 95H87a1 1 0 0 0-1 1v81a1 1 0 0 0 1 1h26a1 1 0 0 0 1-1V96a1 1 0 0 0-1-1Z"/>
+  <path fill="#4B4B4B" d="M107 182H93a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm33-71h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
+  <path fill="#009BFF" d="M151 123h-26a1 1 0 0 0-1 1v53a1 1 0 0 0 1 1h26a1 1 0 0 0 1-1v-53a1 1 0 0 0-1-1Z"/>
+  <path fill="#4B4B4B" d="M145 182h-14a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm33-47h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
+  <path fill="#009BFF" d="M189 147h-26a1 1 0 0 0-1 1v29a1 1 0 0 0 1 1h26a1 1 0 0 0 1-1v-29a1 1 0 0 0-1-1Z"/>
+  <path fill="#4B4B4B" d="M183 182h-14a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
 </svg>

@@ -1,0 +1,25 @@
+
+.input-table {
+  width: 100%;
+
+  tbody {
+    @include flex-column($gap-x-sm);
+  }
+  tr {
+    @include flex-row($gap-x-sm);
+    td {
+      &:not(:last-child) {
+        flex: 1;
+      }
+      &:last-child {
+        width: 30px;
+      }
+    }
+  }
+
+  &.input-table--readonly {
+    tr td:last-child {
+      flex: 1;
+    }
+  }
+}

@@ -10,12 +10,11 @@
 
 package com.agnitas.emm.core.report.enums.fields;
 
-import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.antlr.v4.runtime.misc.Nullable;
 
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 /**
  * @deprecated Use RecipientFieldServiceImpl.RecipientStandardField instead
@@ -26,15 +25,15 @@ public enum RecipientFields implements DatabaseField<String, RecipientFields> {
     /**
      * Common fields for all recipients
      */
-    COLUMN_CUSTOMER_ID(RecipientUtils.COLUMN_CUSTOMER_ID, "Customer Id", null),
-    COLUMN_SALUTATION(RecipientUtils.COLUMN_GENDER, "Salutation", "recipient.Salutation"),
-    COLUMN_TITLE(RecipientUtils.COLUMN_TITLE, "Title", "Title"),
-    COLUMN_FIRST_NAME(RecipientUtils.COLUMN_FIRSTNAME, "Firstname", "Firstname"),
-    COLUMN_LAST_NAME(RecipientUtils.COLUMN_LASTNAME, "lastname", "Lastname"),
-    COLUMN_EMAIL(RecipientUtils.COLUMN_EMAIL, "email", "mailing.MediaType.0"),
-    COLUMN_TRACKING_VETO(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK, "sys_tracking_veto", "recipient.trackingVeto"),
-    COLUMN_MAIL_TYPE(RecipientUtils.COLUMN_MAILTYPE, "mailtype", "Mailtype"),
-    COLUMN_ENCRYPTED_SENDING(ComCompanyDaoImpl.STANDARD_FIELD_ENCRYPTED_SENDING, "sys_encrypted_sending", "recipient.encryptedSending");
+    COLUMN_CUSTOMER_ID(RecipientStandardField.CustomerID.getColumnName(), "Customer Id", null),
+    COLUMN_SALUTATION(RecipientStandardField.Gender.getColumnName(), "Salutation", "recipient.Salutation"),
+    COLUMN_TITLE(RecipientStandardField.Title.getColumnName(), "Title", "Title"),
+    COLUMN_FIRST_NAME(RecipientStandardField.Firstname.getColumnName(), "Firstname", "Firstname"),
+    COLUMN_LAST_NAME(RecipientStandardField.Lastname.getColumnName(), "lastname", "Lastname"),
+    COLUMN_EMAIL(RecipientStandardField.Email.getColumnName(), "email", "mailing.MediaType.0"),
+    COLUMN_TRACKING_VETO(RecipientStandardField.DoNotTrack.getColumnName(), "sys_tracking_veto", "recipient.trackingVeto"),
+    COLUMN_MAIL_TYPE(RecipientStandardField.Mailtype.getColumnName(), "mailtype", "Mailtype"),
+    COLUMN_ENCRYPTED_SENDING(RecipientStandardField.EncryptedSending.getColumnName(), "sys_encrypted_sending", "recipient.encryptedSending");
 
     private String code;
     private String readableName;

@@ -4,6 +4,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
 <c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
@@ -51,7 +52,7 @@
             "mailingType": "${MAILING_TYPE_DATEBASED}",
             "selectName": "mailingId",
             "mailingStatus": "mailings_status",
-            "showCreateEditLinks": "true",
+            "showCreateEditLinks": ${not emm:permissionAllowed('mailing.content.readonly', pageContext.request)},
             "mailingTypesForLoading": ["${MAILING_TYPE_DATEBASED}"],
             "defaultMailingsSort": "active_sort_status asc, shortname",
             "defaultMailingsOrder": "asc"

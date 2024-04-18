@@ -1,12 +1,28 @@
 
-.popover .popover-arrow {
-  display: none;
+.popover {
+  background-color: var(--main-bg-color);
+  color: var(--default-text-color);
+
+  .popover-arrow {
+    display: none;
+  }
+
+  max-height: 100vh;
+  @include hide-scroll;
+
+  &[data-popper-placement="bottom-start"] {
+    border-top-left-radius: 0;
+  }
+
+  &[data-popper-placement="bottom-end"] {
+    border-top-right-radius: 0;
+  }
+}
+
+.popover-body {
+  color: var(--default-text-color);
 }
 
 .popover-header {
   border-bottom: none;
-}
-
-.popover[data-popper-placement="bottom-start"] {
-  border-top-left-radius: 0;
 }

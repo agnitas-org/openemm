@@ -72,7 +72,9 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'recipient.gender.extended' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'recipient.history' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'recipient.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'recipient.tracking.veto' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'report.birt.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'report.birt.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'report.birt.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'role.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'role.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'role.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -184,7 +186,6 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'recipie
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'recipient.gender.extended');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'recipient.history');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'recipient.show');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'recipient.tracking.veto');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.show');

@@ -1,0 +1,21 @@
+#blacklist-overview {
+
+  #creation-tile {
+    grid-area: creation-tile;
+  }
+
+  #filter-tile {
+    grid-area: filter;
+  }
+
+  #table-tile {
+    grid-area: table;
+  }
+
+  grid-template-columns: 3fr 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+          'creation-tile filter'
+          'table  filter';
+
+}

@@ -40,4 +40,11 @@ public final class ImportQuotaDaoImpl extends BaseDaoImpl implements ImportQuota
 		return this.select(LOGGER, sql, ImportSizeRowMapper.INSTANCE, companyID, Date.from(from.toInstant()), Date.from(untilExclusive.toInstant()));
 	}
 
+	@Override
+	public void clearAllImportData(int companyId) {
+		final String sql = "DELETE FROM import_size_tbl WHERE company_ref=?";
+
+		this.update(LOGGER, sql, companyId);
+	}
+
 }

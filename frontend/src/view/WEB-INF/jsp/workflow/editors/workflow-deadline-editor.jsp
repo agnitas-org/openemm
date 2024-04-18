@@ -43,7 +43,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
-                        <mvc:message code="settings.fieldType.DATE"/>
+                        <mvc:message code="Date"/>
                     </label>
                 </div>
                 <div class="col-sm-8">

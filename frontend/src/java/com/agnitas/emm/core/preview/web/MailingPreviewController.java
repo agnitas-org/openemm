@@ -20,14 +20,10 @@ import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.service.PdfService;
-
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.preview.AgnTagException;
 import org.agnitas.preview.ModeType;
@@ -54,8 +50,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -63,6 +61,7 @@ import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.PdfService;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
@@ -75,10 +74,10 @@ public class MailingPreviewController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(MailingPreviewController.class);
 
+    protected final ComRecipientDao recipientDao;
     private final ComMailingDao mailingDao;
     private final MailinglistDao mailinglistDao;
     private final ComMailingBaseService mailingBaseService;
-    private final ComRecipientDao recipientDao;
     private final MailingService mailingService;
     private final MailingWebPreviewService previewService;
     private final GridServiceWrapper gridService;
@@ -122,10 +121,13 @@ public class MailingPreviewController implements XssCheckAware {
 
         previewService.updateActiveMailingPreviewFormat(form, mailingId, companyId);
         List<ComRecipientLiteImpl> recipientList = recipientDao.getMailingAdminAndTestRecipients(mailingId, companyId);
-        addPreviewRecipientsModelAttrs(model, recipientList, admin);
+        addPreviewRecipientsModelAttrs(model, recipientList, form.getPersonalizedTestRunRecipients(), admin);
 
-        if (form.getModeType() == ModeType.RECIPIENT && mailingDao.hasPreviewRecipients(mailingId, companyId)) {
-            choosePreviewCustomerId(companyId, mailingId, form, form.isUseCustomerEmail(), popups, recipientList);
+        if ((form.getModeType() == ModeType.RECIPIENT || form.getModeType() == ModeType.MANUAL) && mailingDao.hasPreviewRecipients(mailingId, companyId)) {
+            boolean useCustomerEmail = admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION)
+                    ? form.getModeType().equals(ModeType.MANUAL)
+                    : form.isUseCustomerEmail();
+            choosePreviewCustomerId(companyId, mailingId, form, useCustomerEmail, popups, recipientList);
         }
 
         model.addAttribute("availableTargetGroups", mailingService.listTargetGroupsOfMailing(companyId, mailingId));
@@ -135,7 +137,7 @@ public class MailingPreviewController implements XssCheckAware {
         return "mailing_preview_select";
     }
 
-    protected void addPreviewRecipientsModelAttrs(Model model, List<ComRecipientLiteImpl> recipientList, Admin admin) {
+    protected void addPreviewRecipientsModelAttrs(Model model, List<ComRecipientLiteImpl> recipientList, List<String> personalizedTestRunRecipients, Admin admin) {
         model.addAttribute("previewRecipients", recipientList);
     }
 
@@ -186,13 +188,9 @@ public class MailingPreviewController implements XssCheckAware {
     @GetMapping(value = "/pdf.action", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public @ResponseBody
     FileSystemResource saveAsPdf(@ModelAttribute PreviewForm form, Admin admin, HttpSession session, HttpServletResponse response) throws IOException {
-        String baseUrl = configService.getValue(ConfigValue.PreviewUrl);
+        final String baseUrl = configService.getPreviewBaseUrl();
 
-        if (StringUtils.isBlank(baseUrl)) {
-            baseUrl = configService.getValue(ConfigValue.SystemUrl);
-        }
-
-        String url = String.format("%s/mailing/preview/view-content.action;jsessionid=%s?mailingId=%d&format=%d&size=%d&modeTypeId=%d&targetGroupId=%d&customerID=%d&noImages=%s",
+        final String url = String.format("%s/mailing/preview/view-content.action;jsessionid=%s?mailingId=%d&format=%d&size=%d&modeTypeId=%d&targetGroupId=%d&customerID=%d&noImages=%s",
                 baseUrl, session.getId(), form.getMailingId(), form.getFormat(), form.getSize(), form.getModeTypeId(), form.getTargetGroupId(), form.getCustomerID(), form.isNoImages());
 
         String mailingName = mailingDao.getMailingName(form.getMailingId(), admin.getCompanyID());
@@ -289,9 +287,9 @@ public class MailingPreviewController implements XssCheckAware {
         if (output.getError() != null) {
         	Mailinglist mailinglist = mailinglistDao.getMailinglist(mailing.getMailinglistID(), mailing.getCompanyID());
         	if (recipientDao.getNumberOfRecipients(mailing.getCompanyID(), mailinglist.getId()) == 0) {
-                popups.alert("ENTW.error.preview.noRecipients", "\"" + mailinglist.getShortname() + "\" (" + mailinglist.getId() + ")");
+                popups.alert("error.preview.recipient.missing", "\"" + mailinglist.getShortname() + "\" (" + mailinglist.getId() + ")");
         	} else if (recipientDao.getNumberOfRecipients(mailing.getCompanyID(), mailinglist.getId(), RecipientType.TEST_RECIPIENT, RecipientType.ADMIN_RECIPIENT, RecipientType.TEST_VIP_RECIPIENT) == 0) {
-                popups.alert("ENTW.error.preview.noTestRecipients", "\"" + mailinglist.getShortname() + "\" (" + mailinglist.getId() + ")");
+                popups.alert("error.preview.recipient.test.missing", "\"" + mailinglist.getShortname() + "\" (" + mailinglist.getId() + ")");
         	}
         }
     }

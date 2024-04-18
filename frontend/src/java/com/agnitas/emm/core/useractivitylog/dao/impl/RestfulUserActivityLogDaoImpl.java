@@ -13,8 +13,10 @@ package com.agnitas.emm.core.useractivitylog.dao.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +40,7 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         }
 
         String sql = "INSERT INTO restful_usage_log_tbl (timestamp, endpoint, description, request_method, company_id, username, host_name) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)";
-        update(LOGGER, sql, endpoint, description, httpMethod, admin.getCompanyID(), admin.getUsername(), host);
+        update(LOGGER, sql, endpoint, description, httpMethod, admin.getCompanyID(), admin.getFullUsername(), host);
     }
 
     @Override
@@ -56,10 +58,77 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
     }
 
     @Override
+    public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntriesRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+        StringBuilder queryBuilder = new StringBuilder();
+        List<Object> params = buildOverviewSelectQuery(queryBuilder, filter, visibleAdmins);
+
+        return selectPaginatedList(LOGGER, queryBuilder.toString(), "restful_usage_log_tbl", filter.getSort(), filter.ascending(),
+                filter.getPage(), filter.getNumberOfRows(), new RestfulUserActionRowMapper(), params.toArray());
+    }
+
+    private List<Object> buildOverviewSelectQuery(StringBuilder query, RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+        query.append("SELECT timestamp, username, endpoint, description, request_method FROM restful_usage_log_tbl");
+        List<Object> params = applyFilter(filter, query);
+
+        //  If set, any of the visible admins must match
+        if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
+            List<String> visibleAdminNameList = new ArrayList<>();
+            for (AdminEntry visibleAdmin : visibleAdmins) {
+                if (visibleAdmin != null) {
+                    visibleAdminNameList.add(visibleAdmin.getUsername());
+                }
+            }
+            if (!visibleAdminNameList.isEmpty()) {
+                query.append(" AND ").append(makeBulkInClauseForString("username", visibleAdminNameList));
+            }
+        }
+
+        return params;
+    }
+
+    private List<Object> applyFilter(RestfulUserActivityLogFilter filter, StringBuilder query) {
+        final List<Object> params = new ArrayList<>();
+
+        query.append(" WHERE company_id = ?");
+        params.add(filter.getCompanyId());
+
+        if (filter.getTimestamp().getFrom() != null) {
+            query.append(" AND timestamp >= ?");
+            params.add(filter.getTimestamp().getFrom());
+        }
+        if (filter.getTimestamp().getTo() != null) {
+            query.append(" AND timestamp < ?");
+            params.add(DateUtilities.addDaysToDate(filter.getTimestamp().getTo(), 1));
+        }
+
+        if (StringUtils.isNotBlank(filter.getUsername())) {
+            query.append(" AND username = ?");
+            params.add(filter.getUsername());
+        }
+
+        if (StringUtils.isNotBlank(filter.getDescription())) {
+            query.append(getPartialSearchFilterWithAnd("description"));
+            params.add(filter.getDescription());
+        }
+
+        if (StringUtils.isNotBlank(filter.getRequestUrl())) {
+            query.append(getPartialSearchFilterWithAnd("endpoint"));
+            params.add(filter.getRequestUrl());
+        }
+
+        if (StringUtils.isNotBlank(filter.getRequestMethod())) {
+            query.append(" AND request_method = ?");
+            params.add(filter.getRequestMethod());
+        }
+
+        return params;
+    }
+
+    @Override
     public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description) throws Exception {
         SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT timestamp, username, endpoint, description, request_method FROM restful_usage_log_tbl");
         sqlPreparedStatementManager.addWhereClause("timestamp >= ?", from);
-        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", to);
+        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", DateUtilities.addDaysToDate(to, 1));
 
         //  If set, any of the visible admins must match
         if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
@@ -88,6 +157,14 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         }
 
         return sqlPreparedStatementManager;
+    }
+
+    @Override
+    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+        StringBuilder query = new StringBuilder();
+        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
+
+        return new SqlPreparedStatementManager(query.toString(), params.toArray());
     }
 
     private static final class RestfulUserActionRowMapper implements RowMapper<RestfulUserActivityAction> {

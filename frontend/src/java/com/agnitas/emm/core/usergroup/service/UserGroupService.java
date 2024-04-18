@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
@@ -24,7 +25,9 @@ import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 public interface UserGroupService {
-    
+
+    PaginatedListImpl<UserGroupDto> overview(UserGroupOverviewFilter filter);
+
     PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(Admin admin, String sort, String sortDirection, int page, int rownumber);
     
     UserGroupDto getUserGroup(Admin admin, int userGroupId);
@@ -52,4 +55,10 @@ public interface UserGroupService {
 	AdminGroup getAdminGroup(int userGroupId, int companyID);
 
     int copyUserGroup(int id, Admin admin) throws Exception;
+
+    List<String> groupsToNames(List<UserGroupDto> groups);
+
+    List<UserGroupDto> validateDeletion(Set<Integer> ids, Admin admin);
+
+    List<UserGroupDto> delete(Set<Integer> bulkIds, Admin admin);
 }

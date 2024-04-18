@@ -1,50 +1,10 @@
-class StatisticsTile extends DraggableTile {
+class StatisticsTile extends BaseMailingStatisticsTile {
 
   constructor() {
     super();
-    this.#addUiHandlers();
-
-    this._chart = null;
-    this._isMobileView = false;
-    this._chartData = {names: [], values: [], mailingId: 0};
   }
 
-  #addUiHandlers() {
-    $(window).on("displayTypeChanged", (e, isMobileView) => {
-      this._isMobileView = isMobileView;
-
-      if (this._chart) {
-        this.updateChart(true);
-      }
-    });
-  }
-
-  displayOnScreen($place) {
-    super.displayOnScreen($place);
-    if (this.#$findCanvas().exists()) {
-      this.updateChart();
-    }
-  }
-
-  async updateChart(forceUpdate = false) {
-    const mailingIdBefore = this._chartData.mailingId;
-    this._chartData.mailingId = $('#mailing-statistics-item').val();
-
-    const mailingChanged = this._chartData.mailingId !== mailingIdBefore
-    if (!mailingChanged && !forceUpdate) {
-      return;
-    }
-
-    if (mailingChanged) {
-      const chartData = await this.#fetchChartData();
-      this._chartData.names = chartData.names;
-      this._chartData.values = chartData.values;
-    }
-
-    this.#drawChart();
-  }
-
-  #fetchChartData() {
+  fetchChartData() {
     const mailingId = this._chartData.mailingId;
     return new Promise(function(resolve, reject) {
       $.ajax({
@@ -74,28 +34,10 @@ class StatisticsTile extends DraggableTile {
     });
   }
 
-  #drawChart() {
-    if (this._chart) {
-      this._chart.destroy();
-    } else {
-      Chart.register(ChartDataLabels); // register plugin of chart js
-    }
-
-    const ctx = this.#$findCanvas()[0].getContext('2d');
-    this._chart = new Chart(ctx, this.#getChartOptions());
-  }
-
-  #$findCanvas() {
-    return this.$el.find('#statistics-chart');
-  }
-
-  #getChartOptions() {
+  getChartOptions() {
     const isMobileView = this._isMobileView;
 
-    const barColor = this.$el.css('--chart-bar-color');
-    const labelColor = this.$el.css('--chart-label-color');
-    const fontSize = parseInt(this.$el.css('--chart-font-size'));
-    const fontFamily = this.$el.css('--chart-font-family');
+    const barColor = this.$el.css('--chart-blue-color');
 
     return {
       type: 'bar',
@@ -104,9 +46,8 @@ class StatisticsTile extends DraggableTile {
         datasets: [{
           data: this._chartData.values,
           backgroundColor: barColor,
-          borderWidth: 0,
-          barPercentage: 1,
-          categoryPercentage: isMobileView ? 0.7 : 0.9
+          categoryPercentage: isMobileView ? 0.7 : 0.9,
+          minBarLength: 2
         }]
       },
       options: {
@@ -117,43 +58,20 @@ class StatisticsTile extends DraggableTile {
             right: isMobileView ? 25 : 0
           }
         },
-        maintainAspectRatio: false, // take all height
         scales: {
           x: {
             display: !isMobileView,
-            border: {
-              display: false,
-            },
-            grid: {
-              display: false // Hide the vertical grid lines
-            },
             ticks: {
               autoSkip: false,
               maxRotation: 90,
-              minRotation: 0,
-              color: labelColor,
-              font: {
-                size: fontSize,
-                family: fontFamily
-              }
+              minRotation: 0
             }
           },
           y: {
             display: isMobileView,
-            border: {
-              display: false,
-            },
-            grid: {
-              display: false // Hide the vertical grid lines
-            },
             ticks: {
-              color: labelColor,
               mirror: true,
-              labelOffset: -37.5,
-              font: {
-                size: fontSize,
-                family: fontFamily
-              }
+              labelOffset: -37.5
             }
           }
         },
@@ -164,17 +82,15 @@ class StatisticsTile extends DraggableTile {
           datalabels: {
             anchor: 'end',
             align: 'end',
-            color: labelColor,
-            offset: isMobileView ? 0 : -5, // make labels closer to the bar
-            font: {
-              size: fontSize,
-              lineHeight: '132%',
-              family: fontFamily
-            }
+            offset: isMobileView ? 0 : -5 // make labels closer to the bar
           }
         }
       }
     };
+  }
+
+  needsRedrawOnMobile() {
+    return true;
   }
 
   get id() {

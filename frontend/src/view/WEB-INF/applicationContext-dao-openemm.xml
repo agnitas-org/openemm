@@ -85,6 +85,8 @@
 		<property name="copyMailingService" ref="CopyMailingService" />
 		<property name="bindingHistoryDao" ref="BindingHistoryDao" />
 		<property name="userformService" ref="userformService"/>
+        <property name="campaignService" ref="CampaignService"/>
+		<property name="birtReportService" ref="BirtReportService"/>
 	</bean>
 	
 <!-- ============================================================================================================================== Mailinglists -->
@@ -111,15 +113,13 @@
 	<bean id="RecipientDao" class="com.agnitas.dao.impl.ComRecipientDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="bindingEntryDao" ref="BindingEntryDao" />
-		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
 		<property name="configService" ref="ConfigService" />
+		<property name="companyDao" ref="CompanyDao" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
+		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
-		<property name="profileFieldDao" ref="ProfileFieldDao" />
 	</bean>
 
 	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.ComBindingEntryDaoImpl">

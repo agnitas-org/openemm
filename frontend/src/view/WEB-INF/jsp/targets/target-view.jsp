@@ -58,6 +58,13 @@
              data-validator-options="skip_empty: false"
              data-action="save-target"
              data-submit-type="${not empty workflowForwardParams ? 'static' : ''}">
+
+    <script id="config:target-group-view" type="application/json">
+        {
+            "errorPositionDetails": ${emm:toJson(errorPositionDetails)}
+        }
+    </script>
+
     <mvc:hidden path="targetId" />
     <mvc:hidden path="viewFormat" />
     <mvc:hidden path="previousViewFormat" value="${targetEditForm.viewFormat}"/>

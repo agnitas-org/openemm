@@ -107,12 +107,14 @@ public class Destroyer implements Closeable {
 	public String destroy() throws Exception {
 		String msg;
 		String path;
+		String destination;
 
 		msg = "Destroy:";
 		path = data.targetPath();
-		msg += " [" + path;
+		destination = data.mailing.outputDirectory("deleted");
+		msg += " [" + path + " -> " + destination;
 		try {
-			msg += " " + doDestroy(path);
+			msg += " " + doDestroy(path, destination);
 			msg += " done";
 		} catch (Exception e) {
 			msg += " failed: " + e.toString();
@@ -127,7 +129,7 @@ public class Destroyer implements Closeable {
 	 * @param path the directory to search for
 	 * @return number of files deleted
 	 */
-	private int doDestroy(String path) throws Exception {
+	private int doDestroy(String path, String destination) throws Exception {
 		File file;
 		File[] files;
 		int n;
@@ -135,8 +137,14 @@ public class Destroyer implements Closeable {
 		file = new File(path);
 		files = file.listFiles(new DestroyFilter(mailingID));
 		for (n = 0; n < files.length; ++n) {
-			if (!files[n].delete()) {
-				data.logging(Log.ERROR, "destroy", "File " + files[n] + " cannot be removed");
+			File current = files[n];
+			File target = new File(destination, current.getName ());
+			
+			if (! current.renameTo (target)) {
+				data.logging(Log.ERROR, "destroy", "File " + current + " cannot be moved to " + target + ", try to remove it");
+				if (!current.delete()) {
+					data.logging(Log.ERROR, "destroy", "File " + current + " cannot be removed");
+				}
 			}
 		}
 		return files.length;

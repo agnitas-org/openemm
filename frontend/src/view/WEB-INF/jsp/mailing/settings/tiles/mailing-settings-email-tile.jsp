@@ -42,6 +42,7 @@
                 <div class="col-sm-8 text-char-counter">
                     <mvc:text path="emailMediatype.subject" id="emailSubject"
                               cssClass="form-control" readonly="${emailSettingsDisabled}"
+                              disabled="${isSettingsReadonly}"
                               data-field-validator="length"
                               data-action="count-text-chars"
                               data-validator-options="required: true, min: 2"/>
@@ -60,6 +61,7 @@
                 <div class="col-sm-8 text-char-counter">
                     <mvc:text path="emailMediatype.preHeader" id="pre-header"
                               cssClass="form-control" readonly="${emailSettingsDisabled}"
+                              disabled="${isSettingsReadonly}"
                               data-action="count-text-chars" />
                     <div data-char-counter-for="pre-header">
                         <span class="small status">&nbsp;</span>
@@ -75,7 +77,7 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:select path="emailMediatype.mailFormat"
-                                id="emailMailFormat" cssClass="form-control" disabled="${emailSettingsDisabled}">
+                                id="emailMailFormat" cssClass="form-control" disabled="${emailSettingsDisabled or isSettingsReadonly}">
                         <mvc:option value="0"><mvc:message code="only_Text"/></mvc:option>
                         <mvc:option value="1"><mvc:message code="Text_HTML"/></mvc:option>
                         <mvc:option value="2"><mvc:message code="Text_HTML_OfflineHTML"/></mvc:option>
@@ -97,6 +99,7 @@
                         <div class="col-sm-8">
                             <mvc:text path="emailMediatype.fromEmail" id="emailSenderMail"
                                       cssClass="form-control" readonly="${emailSettingsDisabled}"
+                                      disabled="${isSettingsReadonly}"
                                       data-field-required=""/>
                         </div>
                     </c:when>
@@ -114,7 +117,7 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="emailMediatype.fromFullname" id="emailSenderName"
-                              cssClass="form-control" readonly="${emailSettingsDisabled}" />
+                              cssClass="form-control" readonly="${emailSettingsDisabled}" disabled="${isSettingsReadonly}"/>
                 </div>
             </div>
 
@@ -126,7 +129,7 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="emailMediatype.replyEmail" id="emailReplyEmail"
-                              cssClass="form-control" readonly="${emailSettingsDisabled}"
+                              cssClass="form-control" readonly="${emailSettingsDisabled}" disabled="${isSettingsReadonly}"
                               data-field-validator="length" data-validator-options="required: true"/>
                 </div>
             </div>
@@ -139,7 +142,7 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="emailMediatype.replyFullname" id="emailReplyName"
-                              cssClass="form-control" readonly="${emailSettingsDisabled}" />
+                              cssClass="form-control" readonly="${emailSettingsDisabled}" disabled="${isSettingsReadonly}"/>
                 </div>
             </div>
         </div>
@@ -157,7 +160,7 @@
                         </div>
                         <div class="col-sm-8">
                             <mvc:text path="emailMediatype.envelopeEmail" id="emailEnvelopeEmail"
-                                       cssClass="form-control" readonly="${emailSettingsDisabled}" />
+                                       cssClass="form-control" readonly="${emailSettingsDisabled}" disabled="${isSettingsReadonly}" />
                         </div>
                     </div>
                 </emm:ShowByPermission>
@@ -174,7 +177,7 @@
                        </label>
                    </div>
                    <div class="col-sm-8">
-                       <mvc:text path="emailMediatype.bccRecipients" id="bccRecipientEmails" cssClass="form-control" />
+                       <mvc:text path="emailMediatype.bccRecipients" id="bccRecipientEmails" cssClass="form-control" disabled="${isSettingsReadonly}"/>
                    </div>
                 </div>
 
@@ -185,7 +188,7 @@
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:select path="emailMediatype.charset" id="emailCharset" cssClass="form-control" disabled="${emailSettingsDisabled}">
+                        <mvc:select path="emailMediatype.charset" id="emailCharset" cssClass="form-control" disabled="${emailSettingsDisabled or isSettingsReadonly}">
                             <%@include file="../fragments/mailing-settings-email-charsets.jspf" %>
                         </mvc:select>
                     </div>

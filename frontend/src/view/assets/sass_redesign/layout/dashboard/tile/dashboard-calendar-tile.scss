@@ -6,7 +6,7 @@
 
   .tile-body {
     display: grid;
-    grid-gap: $gap;
+    grid-gap: $gap-md;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
@@ -17,12 +17,13 @@
 
   #calendar-tile-date-dropdowns {
     display: grid;
-    grid-gap: $gap;
+    grid-gap: $gap-md;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 
   #calendar-table {
     height: clamp(200px, 16vw, 300px);
+    color: var(--default-text-color);
   }
 
   #calendar-tile-day-mailings {

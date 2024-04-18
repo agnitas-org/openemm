@@ -26,6 +26,9 @@ public enum AgnTag {
     IMG_LINK("agnIMGLINK"),
     SWYN("agnSWYN"),
     SEND_DATE("agnSENDDATE"),
+    FORM("agnFORM"),
+    FULLVIEW("agnFULLVIEW"),
+    WEBVIEW("agnWEBVIEW"),
     GRID_PH("gridPH");
 
     private final String name;

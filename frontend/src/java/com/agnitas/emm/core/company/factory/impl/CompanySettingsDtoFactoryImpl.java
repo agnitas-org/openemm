@@ -84,6 +84,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setDefaultTestRunOption(TestRunOption.fromId(Integer.parseInt(ConfigValue.DefaultTestRunOption.getDefaultValue())));
         companySettingsDto.setUserBasedFavoriteTargets(AgnUtils.interpretAsBoolean(ConfigValue.UserBasedFavoriteTargets.getDefaultValue()));
         companySettingsDto.setFilterRecipientsOverviewForActiveRecipients(AgnUtils.interpretAsBoolean(ConfigValue.FilterRecipientsOverviewForActiveRecipients.getDefaultValue()));
+        companySettingsDto.setCleanAdminAndTestRecipientsActivity(AgnUtils.interpretAsBoolean(ConfigValue.CleanAdminAndTestRecipientsActivities.getDefaultValue()));
         companySettingsDto.setNormalizeEmails(!AgnUtils.interpretAsBoolean(ConfigValue.AllowUnnormalizedEmails.getDefaultValue()));
 
         int maxFieldsByLicense = configService.getIntegerValue(ConfigValue.MaxFields);

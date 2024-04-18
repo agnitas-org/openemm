@@ -1,9 +1,7 @@
 (function(){
 
   var Messages = function (messageHead, messageContent, type, onClose, newestOnTop) {
-    let $message,
-      timeout,
-      options = {
+    const options = {
         timeout: {
           'success': 3000,
           'warning': 3000
@@ -14,14 +12,14 @@
       type = 'info';
     }
 
-    timeout = options['timeout'][type || 'info'] || 0;
+    const timeout = options['timeout'][type || 'info'] || 0;
     
     // check if message is already displayed by comparing content and head
     if (findMessagesWithSameContent(messageHead, messageContent).length) {
       return;
     }
 
-    $message = toastr[type](messageHead, messageContent, {timeOut: timeout, extendedTimeOut: timeout, onCloseClick: onClose, newestOnTop: newestOnTop});
+    const $message = toastr[type](messageHead, messageContent, {timeOut: timeout, extendedTimeOut: timeout, onCloseClick: onClose, newestOnTop: newestOnTop});
 
     AGN.Lib.Controller.init($message);
     AGN.runAll($message);
@@ -87,12 +85,40 @@
     });
   }
 
-  Messages.warn = function(msgCode, ...args) {
-    return Messages(t('defaults.warning'), t(msgCode, ...args), 'warning');
+  Messages.success = function(msgCode, ...args) {
+    Messages(t('defaults.success'), t(msgCode, ...args), 'success');
   };
 
   Messages.alert = function(msgCode, ...args) {
-    return Messages(t('Error'), t(msgCode, ...args), 'alert');
+    Messages(t('Error'), t(msgCode, ...args), 'alert');
+  };
+
+  Messages.alertText = function (text) {
+    Messages(t('Error'), text, 'alert');
+  }
+
+  Messages.warn = function(msgCode, ...args) {
+    Messages(t('defaults.warning'), t(msgCode, ...args), 'warning');
+  };
+
+  Messages.warnText = function (text) {
+    Messages(t('defaults.warning'), text, 'warning');
+  }
+
+  Messages.info = function(msgCode, ...args) {
+    Messages(t('defaults.info'), t(msgCode, ...args), 'info');
+  };
+
+  Messages.infoText = function (text) {
+    Messages(t('defaults.info'), text, 'info');
+  }
+
+  Messages.defaultSaved = function() {
+    Messages.success('defaults.saved');
+  };
+
+  Messages.defaultError = function() {
+    Messages.alert('defaults.error');
   };
 
   AGN.Lib.Messages = Messages;

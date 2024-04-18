@@ -60,7 +60,6 @@ public class ConfigValue {
 	public static final ConfigValue BirtPublicKey = new ConfigValue("birt.publickey");
 		
 	public static final ConfigValue BirtErrorPage = new ConfigValue("birt.errorPage", "/webcontent/birt/pages/common/Error.jsp");
-	public static final ConfigValue BirtHostUser = new ConfigValue("birt.host.user", "console");
 
 	public static final ConfigValue IgnoreDeletedI18NMessagesHosts = new ConfigValue("system.ignoreDeletedMessagesHosts");
 	
@@ -103,7 +102,10 @@ public class ConfigValue {
 	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "true");
 	public static final ConfigValue UseLatestAceEditor = new ConfigValue("useLatestAceEditor", "true");
 
-	public static final ConfigValue System_Licence = new ConfigValue("system.licence"); // LicenseID
+	/**
+	 * LicenseID
+	 */
+	public static final ConfigValue System_Licence = new ConfigValue("system.licence");
 	/** License types: SaaS, Inhouse **/
 	public static final ConfigValue System_License_Type = new ConfigValue("licenseType");
 	public static final ConfigValue System_License_Holder = new ConfigValue("licenseHolder");
@@ -113,7 +115,8 @@ public class ConfigValue {
 	public static final ConfigValue System_License_ExpirationDate = new ConfigValue("expirationDate");
 	public static final ConfigValue System_License_MaximumVersion = new ConfigValue("maximumVersion");
 	public static final ConfigValue System_License_LicenseUrl = new ConfigValue("licenseUrl");
-	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies", 1, 0);
+	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies", "1");
+	public static final ConfigValue System_License_MaximumNumberOfCompanies_Graceful = new ConfigValue("maximumNumberOfCompaniesGraceful", "0");
 	
 	/**
      * @deprecated
@@ -126,19 +129,23 @@ public class ConfigValue {
 	public static final ConfigValue System_License_MaximumNumberOfWebserviceUsers = new ConfigValue("maximumNumberOfWebserviceUsers");
 	public static final ConfigValue System_License_MaximumNumberOfRestfulUsers = new ConfigValue("maximumNumberOfRestfulUsers");
 	public static final ConfigValue System_License_MaximumNumberOfSupervisors = new ConfigValue("maximumNumberOfSupervisors");
-	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers", -1, 5000);
+	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers", "-1");
+	public static final ConfigValue System_License_MaximumNumberOfCustomers_Graceful = new ConfigValue("maximumNumberOfCustomersGraceful", "5000");
 	/**
-	 * Maximum limit of company specific profile fields. Standard profile fields (see ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) do not count to this limit.
+	 * Maximum limit of company specific profile fields. Standard profile fields (see RecipientFieldService.RecipientStandardField) do not count to this limit.
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields", 200, 10);
+	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields", "200");
+	public static final ConfigValue System_License_MaximumNumberOfProfileFields_Graceful = new ConfigValue("maximumNumberOfProfileFieldsGraceful", "10");
 	public static final ConfigValue System_License_AllowedPremiumFeatures = new ConfigValue("allowedPremiumFeatures");
-	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables", 50, 5);
+	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables", "50");
+	public static final ConfigValue System_License_MaximumNumberOfReferenceTables_Graceful = new ConfigValue("maximumNumberOfReferenceTablesGraceful", "5");
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
 	
 	/**
 	 * Access Limiting Mailinglists (ALML)
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", 0, 3);
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", "0");
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompanyGraceful", "3");
 	
 	/**
 	 * Access Limiting Mailinglists (ALML)
@@ -148,7 +155,8 @@ public class ConfigValue {
 	/**
 	 * Access Limiting Targetgroups (ALTG)
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", 0, 0);
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", "0");
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany_Graceful = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompanyGraceful", "0");
 
 	/**
 	 * Access Limiting Targetgroups (ALTG)
@@ -165,17 +173,19 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/122.0");
 
-	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
-	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
-	public static final ConfigValue Predelivery_Litmuspassword = new ConfigValue("predelivery.litmuspassword");
-	public static final ConfigValue Predelivery_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
-	public static final ConfigValue Predelivery_Litmus_DisableCertificateChecks = new ConfigValue("predelivery.litmus.disableCertificateChecks", "false");
-	public static final ConfigValue Predelivery_RetentionDays = new ConfigValue("predelivery.retentationDays", "90");
-	public static final ConfigValue Predelivery_PollingTimeoutSeconds = new ConfigValue("predelivery.timeout.polling.seconds", "7200");
-	public static final ConfigValue Predelivery_MaximumParallelTests = new ConfigValue("predelivery.maximum_parallel_tests", "25");
-	public static final ConfigValue Predelivery_MaximumExecutorShutdownSeconds = new ConfigValue("predelivery.maximum_executor_shutdown_seconds", "300");
+	public static final ConfigValue InboxPreview_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
+	public static final ConfigValue InboxPreview_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
+	public static final ConfigValue InboxPreview_Litmuspassword = new ConfigValue("predelivery.litmuspassword");
+	public static final ConfigValue InboxPreview_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
+	public static final ConfigValue InboxPreview_Litmus_DisableCertificateChecks = new ConfigValue("predelivery.litmus.disableCertificateChecks", "false");
+	public static final ConfigValue InboxPreview_RetentionDays = new ConfigValue("predelivery.retentationDays", "90");
+	public static final ConfigValue InboxPreview_PollingTimeoutSeconds = new ConfigValue("predelivery.timeout.polling.seconds", "7200");
+	public static final ConfigValue InboxPreview_MaximumParallelTests = new ConfigValue("predelivery.maximum_parallel_tests", "25");
+	public static final ConfigValue InboxPreview_MaximumExecutorShutdownSeconds = new ConfigValue("predelivery.maximum_executor_shutdown_seconds", "300");
+	
+	public static final ConfigValue SpamCheckAddress = new ConfigValue("SpamCheckAddress"); // Old default: 06chk04@iolo.agnitas.de
 	
 	public static final ConfigValue RdirUndecodableLinkUrl = new ConfigValue("rdir.undecodableLink.url", "/assets/rdir/404/404.html");
 	
@@ -225,7 +235,7 @@ public class ConfigValue {
 	
 	/** Number of days until a granted access for supervisor expires. */
 	public static final ConfigValue SupervisorGrant_Expire = new ConfigValue("system.SupervisorGrant.Expire", "180");
-	public static final ConfigValue Report_Expire = new ConfigValue("system.Report.Expire", "365");
+	public static final ConfigValue Report_Expire = new ConfigValue("system.Report.Expire", "180");
 	public static final ConfigValue ExportReport_Expire = new ConfigValue("system.ExportReport.Expire", "30");
 
 	/** TLS protocol used for outgoing HTTPS connections (like downloading images to DB). */
@@ -255,7 +265,9 @@ public class ConfigValue {
 	/** Enable / disable historization of profile fields. */
 	public static final ConfigValue RecipientProfileFieldHistory = new ConfigValue("recipient.profile_history");
 	
-	public static final ConfigValue AllowHtmlInProfileFields = new ConfigValue("recipient.profileFields.allowHtml", "false");
+	public static final ConfigValue AllowHtmlTagsInReferenceAndProfileFields = new ConfigValue("recipient.profileFields.allowHtml", "false");
+	public static final ConfigValue NoHtmlCheckOnProfileImport = new ConfigValue("NoHtmlCheckOnProfileImport", "false");
+	public static final ConfigValue NoHtmlCheckOnReferenceImport = new ConfigValue("NoHtmlCheckOnReferenceImport", "false");
 
 	/** Temporary flag to show if the trigger has to be rebuild after EMM Update **/
 	public static final ConfigValue RecipientProfileFieldHistoryRebuildOnStartup = new ConfigValue("recipient.profile_history.rebuild_trigger_on_startup");
@@ -388,7 +400,7 @@ public class ConfigValue {
 
 	public static final ConfigValue TablespacenameCustomerIndex = new ConfigValue("tablespace.cust.index");
 
-	/** Value for maximum number of company specific profile fields in a customer table. Standard profile fields (see ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) do not count to this limit. */
+	/** Value for maximum number of company specific profile fields in a customer table. Standard profile fields (see RecipientFieldService.RecipientStandardField) do not count to this limit. */
 	public static final ConfigValue MaxFields = new ConfigValue("maxFields", "50");
 
 	/** Default value for maximum number of recipients for admin test mailing */
@@ -733,6 +745,14 @@ public class ConfigValue {
 		public static final ConfigValue WebserviceCostsCacheRetentionSeconds = new ConfigValue("webservice.costs_cache_retention_seconds", "300");
 	}
 	
+	public static final class Honeypot {
+		public static final ConfigValue EnableIntermediatePage = new ConfigValue("honeypot.intermediatePage.enabled", "false");
+		public static final ConfigValue IntermediatePageConfirmParameterName = new ConfigValue("honeypot.intermediatePage.confirmParameter.name", "hp");
+		public static final ConfigValue IntermediatePageConfirmParameterValue = new ConfigValue("honeypot.intermediatePage.confirmParameter.value", "1");
+		public static final ConfigValue TrackingPeriodDays = new ConfigValue("honeypot.tracking.periodDays", "30");
+		public static final ConfigValue TaggingThreshold = new ConfigValue("honeypot.tagging.threshold", "5");
+	}
+	
 	/**
 	 * Configuration keys related to webhooks.
 	 */
@@ -794,8 +814,7 @@ public class ConfigValue {
 	 * All of these keys will be removed after successful rollout.
 	 */
 	public static final class Development {
-		public static final ConfigValue EnableCheckForEditableMailing = new ConfigValue("development.webservices.enableMailingEditableCheck", "false");		
-		public static final ConfigValue ChangeStatusOnCancelAndCopyMailing = new ConfigValue("development.mailingStop.changeStatusOnCancelAndCopy", "false");
+		// Currently empty. Will be filled in future with new features in rollout.
 	}
 	
 	// Backend configuration values
@@ -1013,16 +1032,6 @@ public class ConfigValue {
 	public static final ConfigValue WorkflowPauseExpirationHours = new ConfigValue("workflow.pause.expire.hours", "2");
 
 	public static final ConfigValue UserBasedFavoriteTargets = new ConfigValue("target.favorite.userBased", "false");
-
-	public static final ConfigValue UseFixedTrackableLinksRead = new ConfigValue("UseFixedTrackableLinksRead", "false");
-
-	public static final ConfigValue UseFixedGetContentElementsForTemplate = new ConfigValue("UseFixedGetContentElementsForTemplate", "false");
-
-	public static final ConfigValue UseFixedGetSaveContentMapBatchParams = new ConfigValue("UseFixedGetSaveContentMapBatchParams", "false");
-
-	public static final ConfigValue UseImprovedProfileImport = new ConfigValue("UseImprovedProfileImport", "false");
-	
-	public static final ConfigValue UseImprovedGenericImport = new ConfigValue("UseImprovedGenericImport", "false");
 	
 	public static final ConfigValue ExecutableTempDirPath = new ConfigValue("system.ExecutableTempDirPath", "/tmp");
 	
@@ -1032,6 +1041,11 @@ public class ConfigValue {
 	public static final ConfigValue TextGeneratorUrl = new ConfigValue("TextGeneratorUrl");
 	public static final ConfigValue TextGeneratorApiKey = new ConfigValue("TextGeneratorApiKey");
 	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel");
+	
+	public static final ConfigValue ImageGeneratorUrl = new ConfigValue("ImageGeneratorUrl");
+	public static final ConfigValue ImageGeneratorApiKey = new ConfigValue("ImageGeneratorApiKey");
+	public static final ConfigValue ImageGeneratorModel = new ConfigValue("ImageGeneratorModel");
+	public static final ConfigValue ImageGeneratorQuotaLimitPerDay = new ConfigValue("ImageGeneratorQuotaLimitPerDay", "10");
 
 	public static final ConfigValue RestfulJwtSecret = new ConfigValue("RestfulJwtSecret");
 	public static final ConfigValue RestfulJwtValidityMinutes = new ConfigValue("RestfulJwtValidityMinutes", "60");
@@ -1041,13 +1055,17 @@ public class ConfigValue {
 	 */
 	public static final ConfigValue MaxUserImportDurationMinutes = new ConfigValue("MaxUserImportDurationMinutes", "60");
 
+	public static final ConfigValue InitialTestVipEmailAddress = new ConfigValue("system.InitialTestVipEmailAddress");
+	
+	public static final ConfigValue EmmXPressMasterClient = new ConfigValue("system.EmmXPressMasterClient");
+
 	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
 
 	public static ConfigValue FilterRecipientsOverviewForActiveRecipients = new ConfigValue("recipients.overview.filterForActive", "false");
+	public static ConfigValue CleanAdminAndTestRecipientsActivities = new ConfigValue("recipients.adminAndTest.cleanActivity", "false");
 
 	private final String name;
 	private final String defaultValue;
-	private Integer gracefulExtension = null;
 
 	ConfigValue(String name) throws RuntimeException {
 		this.name = name;
@@ -1074,20 +1092,6 @@ public class ConfigValue {
 
 		LIST_OF_ALL_CONFIGVALUES.add(this);
 	}
-
-	ConfigValue(String name, int defaultValue, int gracefulExtension) {
-		this.name = name;
-		this.defaultValue = Integer.toString(defaultValue);
-		this.gracefulExtension = gracefulExtension;
-
-		for (ConfigValue existingValue : LIST_OF_ALL_CONFIGVALUES) {
-			if (existingValue.name.equals(name)) {
-				throw new RuntimeException("Duplicate creation of configuration value: " + name);
-			}
-		}
-
-		LIST_OF_ALL_CONFIGVALUES.add(this);
-	}
 	
 	public final String getName() {
 		return this.name;
@@ -1100,10 +1104,6 @@ public class ConfigValue {
 
 	public String getDefaultValue() {
 		return defaultValue;
-	}
-
-	public Integer getGracefulExtension() {
-		return gracefulExtension;
 	}
 
 	public static ConfigValue getConfigValueByName(String name) {

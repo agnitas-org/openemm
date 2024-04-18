@@ -71,6 +71,8 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
     Template = AGN.Lib.Template,
     Page = AGN.Lib.Page;
 
+  const SCROLLBAR_DATA_KEY = 'agn:select-scrollbar';
+
   AGN.Lib.CoreInitializer.new('select', ['template'], function($scope) {
     if (!$scope) {
       $scope = $(document);
@@ -78,14 +80,13 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
 
     _.each($scope.all('select'), function(el) {
       const $el = $(el);
-      const resultTemplateId = $el.data('result-template') || 'select2-result';
 
       if ($el.data('select2')) {
         $el.select2('destroy');
       }
 
       if ($el.hasClass('has-arrows')) {
-        addSelectArrows($el)
+        new SelectWithArrows($el);
       }
 
       let options = {
@@ -96,24 +97,42 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         searchInputPlaceholder: t('tables.searchOoo'),
         dropdownCssClass: ':all:',
         selectionCssClass: ':all:',
-        dropdownParent: '.tiles-container'
+        dropdownParent: $('#main-view').exists() ? '#main-view' : 'body',
+        preventPlaceholderClear: false // custom option
       };
 
-      if ( $el.parents('.modal').exists() ) {
-        options.dropdownParent = '.modal';
+      if ( $el.closest('.modal').exists() ) {
+        options.dropdownParent = $el.closest('.modal');
+      }
+
+      if ( $el.closest('.dropdown-menu').exists() ) {
+        options.dropdownParent = $el.closest('.dropdown-menu');
       }
 
       if ( !$el.hasClass('js-select')) {
         options.minimumResultsForSearch = 0;
       }
 
+      if ( $el.hasClass('dropdown-select') ) {
+        options.placeholder = t('tables.searchOoo');
+        options.preventPlaceholderClear = true;
+
+        // prevents opening of select2 after removing of selected tag
+        $el.on('select2:unselecting', function (e) {
+          $el.on('select2:opening', function (ev) {
+            ev.preventDefault();
+            $el.off('select2:opening');
+          });
+        });
+      }
+
       if ( $el.is('[data-sort]') ) {
         if ($el.data('sort') === 'alphabetic') {
           options.sorter = function (data) {
             data.sort(function(a, b) {
-              if ($(a.element).is('[data-fix-position]')) {
+              if ($(a.element).is('[data-no-sort]')) {
                 return -1;
-              } else if ($(b.element).is('[data-fix-position]')) {
+              } else if ($(b.element).is('[data-no-sort]')) {
                 return 1;
               }
 
@@ -129,54 +148,38 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         options.matcher = multiSelectMatcher;
       }
 
-      // TODO: remove if not necessary
-      // if ( $el.prop('multiple') ) {
-      //   var selectionTemplateId = $el.data('selection-template');
-      //
-      //   options.minimumResultsForSearch = 1;
-      //
-      //   if (selectionTemplateId) {
-      //     var createSelection = Template.prepare(selectionTemplateId);
-      //
-      //     options.formatSelection = function(data) {
-      //       return createSelection({
-      //         element: data.element[0],
-      //         isLocked: data.locked,
-      //         isDisabled: data.disabled,
-      //         text: data.text,
-      //         value: data.id
-      //       });
-      //     };
-      //   } else {
-      //     options.formatSelection = function(state) {
-      //       if (state.element && state.element.length === 1) {
-      //         var url = $(state.element).data('url');
-      //         if (url) {
-      //           return $('<a></a>', {
-      //             href: url,
-      //             text: state.text,
-      //             click: function() { Page.reload(url); }
-      //           });
-      //         }
-      //       }
-      //       return state.text;
-      //     };
-      //   }
-      // }
+      if ( $el.is('[data-result-template]') ) {
+        const resultTemplateId = $el.data('result-template');
 
-      if (resultTemplateId) {
-        const createResult = Template.prepare(resultTemplateId);
+        options.templateResult = function(data) {
+          if (data.loading) {
+            return data.text;
+          }
 
-        options.templateSelection = function(data) {
-          return createResult({
-            element: data.element[0],
+          return Template.dom(resultTemplateId, {
+            element: data.element,
             isDisabled: data.disabled,
             text: data.text,
             title: data.title,
             value: data.id
           });
         };
-      } else if ($el.hasClass('js-option-popovers')) {
+      }
+
+      // if (resultSelectionTemplateId) {
+      const customSelectionTemplate = $el.data('selection-template');
+      const createResult = Template.prepare(customSelectionTemplate || 'select2-result');
+      options.templateSelection = function(data) {
+        const selection = createResult({
+          element: Array.isArray(data.element) ? data.element[0] : data.element,
+          isDisabled: data.disabled,
+          text: data.text,
+          title: data.title,
+          value: data.id
+        });
+        return $(selection);
+      };
+      // } else if ($el.hasClass('js-option-popovers')) {
         // TODO: remove if not necessary
         // options.formatResult = function(data, $label, query, escapeMarkup) {
         //   var text = '<span style="white-space: nowrap;">' + escapeMarkup(data.text) + '</span>';
@@ -199,7 +202,7 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         //   // Hide and remove abandoned popovers (stuck in shown state when trigger element has been removed)
         //   Popover.validate();
         // });
-      }
+      // }
 
       // TODO: remove if not necessary
       // var currentFormatSelection = options.formatSelection;
@@ -226,12 +229,20 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         $el.select2(options);
       }
 
-      // fix of page scrolling prevention when select2 is opened
-      $el.on('select2:open', (e) => {
+      $el.on('select2:open', e => {
+        // fix of page scrolling prevention when select2 is opened
         const evt = "scroll.select2";
         $(e.target).parents().off(evt);
         $(window).off(evt);
+
+        // this is a hack to display scrollbar rails when open dropdown
+        window.setTimeout(() => {
+          const $options = $el.data('select2').$dropdown.find('.select2-results__options');
+          $el.data(SCROLLBAR_DATA_KEY, new AGN.Lib.Scrollbar($options));
+        }, 0);
       });
+
+      $el.on('selec2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
       // focusing by label is now handled in listener/label-events
 
       // TODO: remove if not necessary
@@ -287,45 +298,6 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
     });
   }
 
-  function addSelectArrows($select) {
-    if ($select.prev().is('.btn-select-control') || $select.next().is('.btn-select-control')) {
-      return; // already added
-    }
-
-    const $prevBtn = createArrowButton($select, true);
-    const $nextBtn = createArrowButton($select, false);
-
-    const toggleButtons = () => {
-      const selectedIndex = $select.prop("selectedIndex");
-      $prevBtn.prop("disabled", selectedIndex === 0);
-      $nextBtn.prop("disabled", selectedIndex === $select.find("option").length - 1);
-    };
-
-    function stepOption($arrowBtn, back) {
-      if ($arrowBtn.prop("disabled")) {
-        return;
-      }
-      $select.prop("selectedIndex", $select.prop("selectedIndex") + (back ? -1 : 1)).trigger('change');
-      toggleButtons();
-      AGN.Lib.CoreInitializer.run('select', $select);
-    }
-
-    $select.wrap($('<div>').addClass('select-container'));
-    $select.closest('.select-container').prepend($prevBtn).append($nextBtn);
-    $prevBtn.on("click", function() { stepOption($(this), true); });
-    $nextBtn.on("click", function() { stepOption($(this)); });
-    $select.on('change', function() { toggleButtons(); });
-    toggleButtons();
-  }
-
-  function createArrowButton($select, prev) {
-    return $(`
-       <button class="btn btn-outline-primary btn-icon-sm btn-select-control">
-         <i class="icon icon-caret-${prev ? 'left' : 'right'}"></i>
-       </button>
-     `);
-  }
-
   function multiSelectMatcher(params, data) {
     if (data.selected) {
       return null; // hide already selected options
@@ -337,5 +309,70 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
     const searchText = params.term.toLowerCase();
     const optionText = data.text.toLowerCase();
     return optionText.includes(searchText) ? data : null;
+  }
+
+  class SelectWithArrows {
+
+    constructor($select) {
+      const selectWithArrows = $select.data('selectWithArrows');
+      if (selectWithArrows) {
+        selectWithArrows.toggleArrows();
+        return selectWithArrows; // return the existing object
+      }
+      this.$select = $select;
+      this.init();
+    }
+
+    init() {
+      this.#createPrevBtn();
+      this.#createNextBtn();
+
+      this.$select.wrap($('<div>').addClass('select-container'));
+      this.$select.closest('.select-container').prepend(this.$prevBtn).append(this.$nextBtn);
+      this.$select.on('change', () => this.toggleArrows());
+      this.toggleArrows();
+      this.$select.data('selectWithArrows', this);
+    }
+
+    toggleArrows() {
+      const selectedIndex = this.$select.prop("selectedIndex");
+      this.$prevBtn.prop("disabled", selectedIndex === 0);
+      this.$nextBtn.prop("disabled", selectedIndex === this.$select.find("option").length - 1);
+    }
+
+    #createPrevBtn() {
+      this.$prevBtn = this.#createArrowBtn(true);
+      this.$prevBtn.on("click", () => this.#stepBack());
+    }
+
+    #createNextBtn() {
+      this.$nextBtn = this.#createArrowBtn(false);
+      this.$nextBtn.on("click", () => this.#stepForward());
+    }
+
+    #createArrowBtn(prev) {
+      return $(`
+         <button class="btn btn-outline-primary btn-icon-sm btn-select-control">
+           <i class="icon icon-caret-${prev ? 'left' : 'right'}"></i>
+         </button>
+       `);
+    }
+
+    #stepForward() {
+      this.#step(false);
+    }
+
+    #stepBack() {
+      this.#step(true);
+    }
+
+    #step(back) {
+      const $arrowBtn = back ? this.$prevBtn : this.$nextBtn;
+      if ($arrowBtn.prop("disabled")) {
+        return;
+      }
+      this.$select.prop("selectedIndex", this.$select.prop("selectedIndex") + (back ? -1 : 1)).trigger('change');
+      this.toggleArrows();
+    }
   }
 })();

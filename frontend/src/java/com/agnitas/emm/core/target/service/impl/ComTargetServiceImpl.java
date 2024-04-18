@@ -33,6 +33,7 @@ import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
+import org.agnitas.dao.exception.target.TargetGroupNotCompatibleWithContentBlockException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.UserActivityLog;
@@ -47,16 +48,18 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.commons.dto.IntRange;
+import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
@@ -75,6 +78,7 @@ import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlReferenceItemsExtractor;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
@@ -88,6 +92,7 @@ import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.MailingContentService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.helger.collection.pair.Pair;
@@ -128,6 +133,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private TargetFactory targetFactory;
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
     private EqlValidatorService eqlValidatorService;
+    private MailingContentService mailingContentService;
 
     @Override
 	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin, boolean buildErrorMessages) {
@@ -357,7 +363,17 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public int saveTarget(ComTarget target) throws TargetGroupPersistenceException {
 		try {
 			final SimpleReferenceCollector referencedItemsCollector = new SimpleReferenceCollector();
-			eqlFacade.convertEqlToSql(target.getEQL(), target.getCompanyID(), referencedItemsCollector);
+			final SqlCode sqlCode = eqlFacade.convertEqlToSql(target.getEQL(), target.getCompanyID(), referencedItemsCollector);
+			
+			if(target.getId() != 0 && !TargetUtils.canBeUsedInContentBlocks(sqlCode)) {
+				// Check, if target group is used by content blocks
+
+				final List<ContentBlockAndMailingMetaData> contentBlocks = this.mailingContentService.listContentBlocksUsingTargetGroup(target);
+				if(!contentBlocks.isEmpty()) {
+					throw new TargetGroupNotCompatibleWithContentBlockException(contentBlocks);
+				}
+				
+			}
 			
 			final int targetID = targetDao.saveTarget(target);
 			
@@ -579,6 +595,13 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
+	public List<String> getTargetNames(Collection<Integer> ids, int companyId) {
+		return ids.stream()
+				.map(id -> getTargetName(id, companyId))
+				.collect(Collectors.toList());
+	}
+
+	@Override
 	public String getTargetName(int targetId, int companyId) {
 		return getTargetName(targetId, companyId, false);
 	}
@@ -681,8 +704,30 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options) {
+	public PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexity) {
 		try {
+			int numberOfRecipients = recipientDao.getNumberOfRecipients(options.getCompanyId());
+			if (numberOfRecipients < TargetUtils.MIN_RECIPIENT_COUNT_CONDITION_THRESHOLD
+					&& (TargetComplexityGrade.YELLOW.equals(complexity) || TargetComplexityGrade.RED.equals(complexity))) {
+				return new PaginatedListImpl<>(
+						Collections.emptyList(),
+						0,
+						options.getPageSize(),
+						1,
+						options.getSorting(),
+						options.getDirection()
+				);
+			}
+
+			if (complexity != null) {
+				if (numberOfRecipients < TargetUtils.MIN_RECIPIENT_COUNT_CONDITION_THRESHOLD) {
+					options.setComplexity(new IntRange(null, Integer.MAX_VALUE));
+				} else {
+					options.setComplexity(TargetUtils.getComplexityIndexesRange(complexity));
+				}
+			}
+
+			options.setRecipientCountBasedComplexityAdjustment(TargetUtils.getComplexityAdjustment(numberOfRecipients));
 			return targetDao.getPaginatedTargetLightsBySearchParameters(options);
 		} catch (Exception e) {
 			logger.error(String.format("Getting target light error: %s", e.getMessage()), e);
@@ -1305,6 +1350,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 	@Required
 	public void setEqlValidatorService(EqlValidatorService eqlValidatorService) {
 		this.eqlValidatorService = eqlValidatorService;
+	}
+	
+	@Required
+	public final void setMailingContentService(final MailingContentService service) {
+		this.mailingContentService = Objects.requireNonNull(service, "mailing content service");
 	}
 
 	// endregion

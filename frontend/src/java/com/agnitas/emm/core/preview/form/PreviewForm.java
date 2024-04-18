@@ -32,10 +32,11 @@ public class PreviewForm {
     private String subject;
     private String preHeader;
     private String senderEmail;
+    private String smsAddress;
     private int customerID;
     private int customerATID;
     private String customerEmail;
-    private boolean useCustomerEmail;
+    private boolean useCustomerEmail; // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     private boolean noImages;
     private boolean pure;
     private int targetGroupId;
@@ -100,6 +101,7 @@ public class PreviewForm {
         return modeType != null ? modeType.getCode() : 0;
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public void setModeTypeId(int modeTypeId) {
         setModeType(ModeType.getByCode(modeTypeId));
     }
@@ -294,5 +296,13 @@ public class PreviewForm {
 
     public void setPersonalizedTestRunRecipients(List<String> personalizedTestRunRecipients) {
         this.personalizedTestRunRecipients = personalizedTestRunRecipients;
+    }
+
+    public String getSmsAddress() {
+        return smsAddress;
+    }
+
+    public void setSmsAddress(String smsAddress) {
+        this.smsAddress = smsAddress;
     }
 }

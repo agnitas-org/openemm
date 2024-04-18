@@ -10,27 +10,19 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.imageio.ImageIO;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.components.dto.FormComponentDto;
+import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.emm.core.components.service.ComComponentService;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.ImageUtils;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -41,7 +33,6 @@ import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.impl.ComponentServiceImpl;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.ZipUtilities;
@@ -55,17 +46,25 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.FormComponent;
-import com.agnitas.beans.FormComponent.FormComponentType;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.components.dto.FormComponentDto;
-import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
-import com.agnitas.emm.core.components.service.ComComponentService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.ImageUtils;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class ComComponentServiceImpl extends ComponentServiceImpl implements ComComponentService {
 	
@@ -127,15 +126,23 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
-	public List<FormComponentDto> getFormImageComponents(int companyID, int formId) {
-		List<FormComponent> components = getFormComponentDescriptions(companyID, formId, FormComponentType.IMAGE);
+	public List<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId) {
+		initFilterData(filter, companyID, formId);
+
+		List<FormComponent> components = getFormComponentDescriptions(filter);
 		return conversionService.convert(components, FormComponent.class, FormComponentDto.class);
 	}
 
 	@Override
-	public Map<String, byte[]> getImageComponentsData(int companyId, int formId) {
-		List<FormComponent> components = formComponentDao.getFormComponents(companyId, formId, Collections.singletonList(FormComponentType.IMAGE));
+	public Map<String, byte[]> getImageComponentsData(UserFormImagesOverviewFilter filter, Set<Integer> ids, int companyId, int formId) {
+		initFilterData(filter, companyId, formId);
+		List<FormComponent> components = formComponentDao.getFormComponents(ids, filter);
 		return components.stream().collect(Collectors.toMap(FormComponent::getName, FormComponent::getData));
+	}
+
+	private void initFilterData(UserFormImagesOverviewFilter filter, int companyID, int formId) {
+		filter.setCompanyId(companyID);
+		filter.setFormId(formId);
 	}
 
 	@Override
@@ -163,12 +170,17 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
-	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions) {
-		return saveFormComponents(admin, formId, components, userActions, true);
+	public List<String> getComponentFileNames(Set<Integer> bulkIds, int formId, int companyID) {
+		return formComponentDao.getComponentFileNames(bulkIds, formId, companyID);
 	}
 
 	@Override
-	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting) {
+	public void delete(Set<Integer> bulkIds, int formId, Admin admin) {
+		formComponentDao.delete(bulkIds, formId, admin.getCompanyID());
+	}
+
+	@Override
+	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions) {
 		if (formId == 0) {
 			logger.error("Cannot save or change globally used images (formID = 0)");
 			return new SimpleServiceResult(false, Message.of("Error"));
@@ -182,7 +194,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 			List<String> actionDescriptions = new ArrayList<>();
 			for (FormComponent imageComponent : components) {
 				String name = imageComponent.getName();
-				if (overwriteExisting) {
+				if (imageComponent.isOverwriteExisting()) {
 					formComponentDao.deleteFormComponent(companyId, formId, name, null);
 				} else if (formComponentDao.exists(formId, companyId, name)) {
 					duplicateNames.add(name);
@@ -264,40 +276,53 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting) {
-
 		try {
-			List<FormUploadComponentDto> components = new ArrayList<>();
-			try (InputStream stream = zipFile.getInputStream();
-				 ZipInputStream zipStream = ZipUtilities.openZipInputStream(stream)) {
-
-				ZipEntry entry;
-
-				while ((entry = zipStream.getNextEntry()) != null) {
-					String name = entry.getName();
-					byte[] data = IOUtils.toByteArray(zipStream);
-
-					FormUploadComponentDto componentDto = new FormUploadComponentDto();
-					componentDto.setData(data);
-					componentDto.setFileName(name);
-					componentDto.setDescription("Zip upload");
-					components.add(componentDto);
-				}
+			ServiceResult<List<FormUploadComponentDto>> readResult = readComponentsFromZipFile(zipFile);
+			if (!readResult.isSuccess()) {
+				return new SimpleServiceResult(false, readResult.getErrorMessages());
 			}
+
+			List<FormUploadComponentDto> components = readResult.getResult();
+			components.forEach(c -> c.setOverwriteExisting(overwriteExisting));
 
 			List<Message> errors = validateComponents(components, false);
 			if (errors.isEmpty()) {
 				List<FormComponent> componentList = conversionService.convert(components, FormUploadComponentDto.class, FormComponent.class);
-				return saveFormComponents(admin, formId, componentList, userActions, overwriteExisting);
+				return saveFormComponents(admin, formId, componentList, userActions);
 			}
 
 			return new SimpleServiceResult(false, errors);
-		} catch (IOException e) {
-			return new SimpleServiceResult(false, Message.of("error.unzip"));
 		} catch (Exception e) {
 			logger.error("Error occurred: " + e.getMessage(), e);
 			return new SimpleServiceResult( false, Message.of("Error"));
 		}
+	}
+
+	@Override
+	public ServiceResult<List<FormUploadComponentDto>> readComponentsFromZipFile(MultipartFile zipFile) {
+		List<FormUploadComponentDto> components = new ArrayList<>();
+		try (InputStream stream = zipFile.getInputStream();
+			 ZipInputStream zipStream = ZipUtilities.openZipInputStream(stream)) {
+
+			ZipEntry entry;
+
+			while ((entry = zipStream.getNextEntry()) != null) {
+				String name = entry.getName();
+				byte[] data = IOUtils.toByteArray(zipStream);
+
+				FormUploadComponentDto componentDto = new FormUploadComponentDto();
+				componentDto.setData(data);
+				componentDto.setFileName(name);
+				componentDto.setDescription("Zip upload");
+				components.add(componentDto);
+			}
+		} catch (IOException e) {
+			return ServiceResult.error(Message.of("error.unzip"));
+		}
+
+		return ServiceResult.success(components);
 	}
 
 	private FormComponent makeComponentThumbnail(FormComponent imageComponent) {

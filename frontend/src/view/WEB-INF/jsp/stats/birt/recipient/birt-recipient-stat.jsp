@@ -65,7 +65,9 @@
                 </div>
             </c:if>
 
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
+                       or form.reportName eq 'recipient_optouts.rptdesign'
+                       or form.reportName eq 'recipient_optins.rptdesign'}">
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label"><mvc:message code="mediatype"/></label>
@@ -92,13 +94,13 @@
                     <mvc:option value="recipient_status.rptdesign"><mvc:message code="Status"/></mvc:option>
                     <mvc:option value="recipient_mailtype.rptdesign"><mvc:message code="Mailtype"/></mvc:option>
                     <mvc:option value="remarks"><mvc:message code="recipient.Remark"/></mvc:option>
-                    <emm:ShowByPermission token="statistic.recipient.doi">
-                        <mvc:option data-mailinglist-required="" value="recipient_doi.rptdesign"><mvc:message code="recipient.DOI"/></mvc:option>
-                    </emm:ShowByPermission>
+                    <%@include file="recipient-stat-extended-options.jspf"%>
                 </mvc:select>
             </div>
 
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
+                       or form.reportName eq 'recipient_optouts.rptdesign'
+                       or form.reportName eq 'recipient_optins.rptdesign'}">
                 <ul class="tile-header-nav">
                     <li class="${form.dateSelectMode == LAST_WEEK ? 'active' : ''}">
                         <a href="#" data-form-set="dateSelectMode:LAST_WEEK" data-form-submit>
@@ -143,7 +145,10 @@
 
         <div class="tile-content">
 
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign' or form.reportName eq 'recipient_doi.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
+                       or form.reportName eq 'recipient_doi.rptdesign'
+                       or form.reportName eq 'recipient_optins.rptdesign'
+                       or form.reportName eq 'recipient_optouts.rptdesign'}">
 
                 <c:if test="${form.dateSelectMode == SELECT_PERIOD}">
                     <div class="tile-controls">

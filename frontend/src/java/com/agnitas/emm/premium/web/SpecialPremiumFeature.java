@@ -43,7 +43,7 @@ public enum SpecialPremiumFeature {
      * Delivery Package needs additional config values. Contains OMG and AHV
      */
     DELIVERY_PACKAGE("Delivery Package"),
-	
+    
     /**
      * Automation Delivery Information FeaturePackage needs additional company_info values
      */
@@ -57,8 +57,28 @@ public enum SpecialPremiumFeature {
     /**
      * Frequency Counter FeaturePackage needs additional profile fields
      */
-	FREQUENCY_COUNTER("Frequency Counter Package");
-    
+	FREQUENCY_COUNTER("Frequency Counter Package"),
+	
+    /**
+     * Analytics Package FeaturePackage needs an Test-VIP recipient
+     */
+	ANALYTICS_PACKAGE("Analytics Package"),
+	
+	/**
+	* Delivery Encrypted FeaturePackage
+	*/
+	DELIVERY_ENCRYPTED_PACKAGE("Delivery Encrypted Package"),
+	
+	/**
+	* Webhooks FeaturePackage needs additional company_info value
+	*/
+	WEBHOOKS_PACKAGE("Webhooks Package"),
+	
+	/**
+	* AI FeaturePackage
+	*/
+	AI_PACKAGE("AI Package");
+	
     private final String name;
 
     SpecialPremiumFeature(String name) {

@@ -41,8 +41,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.export.util.ExportUtils;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ColumnInfoService;
 
@@ -54,6 +55,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 	public static final String ALL_BINDING_TYPES = "E";
 
 	private final ComTargetService targetService;
+	private final MailinglistService mailinglistService;
     private final ColumnInfoService columnInfoService;
 
 	private ExportPredef exportProfile;
@@ -100,7 +102,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return admin;
 	}
 
-	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final ColumnInfoService columnInfoService) throws Exception {
+	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final ColumnInfoService columnInfoService, MailinglistService mailinglistService) throws Exception {
 		super();
 		this.exportProfile = exportProfile;
 		this.admin = admin;
@@ -110,6 +112,9 @@ public class RecipientExportWorker extends GenericExportWorker {
 		if (StringUtils.isNotEmpty(exportProfile.getSeparator())) {
 			setDelimiter(exportProfile.getSeparator().toCharArray()[0]);
 		}
+
+		setUseDecodedValues(exportProfile.isUseDecodedValues());
+		setLocale(exportProfile.getLocale());
 		
 		if (StringUtils.isNotEmpty(exportProfile.getDelimiter())) {
 			setStringQuote(exportProfile.getDelimiter().toCharArray()[0]);
@@ -132,6 +137,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 
 		this.targetService = targetService;
         this.columnInfoService = columnInfoService;
+		this.mailinglistService = mailinglistService;
 	}
 
 	@Override
@@ -195,17 +201,27 @@ public class RecipientExportWorker extends GenericExportWorker {
             columnMappings.addAll(ExportUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, admin, columnInfoService));
             
 			for (int selectedMailinglistID : mailingListIds) {
-				customerTableSql.append(", m" + selectedMailinglistID + ".user_status AS Userstate_Mailinglist_" + selectedMailinglistID);
-				columnMappings.add(new ExportColumnMapping("Userstate_Mailinglist_" + selectedMailinglistID, "Userstate_Mailinglist_" + selectedMailinglistID, null, false));
-				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp AS Mailinglist_" + selectedMailinglistID + "_Timestamp");
-				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_Timestamp", "Mailinglist_" + selectedMailinglistID + "_Timestamp", null, false));
-				customerTableSql.append(", CONCAT(m" + selectedMailinglistID + ".user_remark, CASE WHEN (m" + selectedMailinglistID + ".exit_mailing_id IS NULL OR m" + selectedMailinglistID + ".exit_mailing_id = 0) THEN '' ELSE CONCAT(' ExitMailingID: ', m" + selectedMailinglistID + ".exit_mailing_id) END) AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
-				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_UserRemark", "Mailinglist_" + selectedMailinglistID + "_UserRemark", null, false));
+				String mailinglistStr = "Mailinglist_" + selectedMailinglistID;
+				String mailinglistDecodedStr = mailinglistStr;
+				if (exportProfile.isUseDecodedValues()) {
+					mailinglistDecodedStr = mailinglistService.getMailinglistName(selectedMailinglistID, companyID) + "(" + selectedMailinglistID + ")";
+				}
+
+				customerTableSql.append(String.format(", m%d.user_status AS Userstate_%s", selectedMailinglistID, mailinglistStr));
+				if (exportProfile.isUseDecodedValues()) {
+					columnMappings.add(new ExportColumnMapping("Userstate_" + mailinglistStr,  "Userstate_" + mailinglistDecodedStr, null, false));
+				} else {
+					columnMappings.add(new ExportColumnMapping("Userstate_" + mailinglistStr,  "Userstate_" + mailinglistStr , null, false));
+				}
+				customerTableSql.append(String.format(", m%d.timestamp AS %s_Timestamp", selectedMailinglistID, mailinglistStr));
+				columnMappings.add(new ExportColumnMapping(mailinglistStr + "_Timestamp", mailinglistDecodedStr + "_Timestamp", null, false));
+				customerTableSql.append(", CONCAT(m" + selectedMailinglistID + ".user_remark, CASE WHEN (m" + selectedMailinglistID + ".exit_mailing_id IS NULL OR m" + selectedMailinglistID + ".exit_mailing_id = 0) THEN '' ELSE CONCAT(' ExitMailingID: ', m" + selectedMailinglistID + ".exit_mailing_id) END) AS " + mailinglistStr + "_UserRemark");
+				columnMappings.add(new ExportColumnMapping(mailinglistStr + "_UserRemark", mailinglistDecodedStr + "_UserRemark", null, false));
 				if (selectBounces) {
-					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id AS Mailinglist_" + selectedMailinglistID + "_ExitMailID");
-					columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_ExitMailID", "Mailinglist_" + selectedMailinglistID + "_ExitMailID", null, false));
-					customerTableSql.append(", 510 AS Mailinglist_" + selectedMailinglistID + "_Detail");
-					columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_Detail", "Mailinglist_" + selectedMailinglistID + "_Detail", null, false));
+					customerTableSql.append(String.format(", m%d.exit_mailing_id AS %s_ExitMailID", selectedMailinglistID, mailinglistStr));
+					columnMappings.add(new ExportColumnMapping(mailinglistStr + "_ExitMailID", mailinglistDecodedStr + "_ExitMailID", null, false));
+					customerTableSql.append(String.format(", 510 AS %s_Detail", mailinglistStr));
+					columnMappings.add(new ExportColumnMapping(mailinglistStr + "_Detail", mailinglistDecodedStr + "_Detail", null, false));
 				}
 			}
 
@@ -231,7 +247,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 
 			// Add where clauses to basic Select statement
-			customerTableSql.append(" WHERE ").append(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
+			customerTableSql.append(" WHERE ").append(RecipientStandardField.Bounceload.getColumnName() + " = 0");
 			if (exportProfile.getMailinglistID() == NO_MAILINGLIST) {
 				customerTableSql.append(" AND NOT EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE cust.customer_id = bind.customer_id)");
 			} else {
@@ -264,6 +280,20 @@ public class RecipientExportWorker extends GenericExportWorker {
 
 			if (StringUtils.isNotBlank(targetSql) ) {
 				customerTableSql.append(" AND (").append(targetSql).append(")");
+			}
+			
+			if (autoExport != null && autoExport.isConsiderLastRun() && autoExport.getLaststart() != null) {
+				String changedateLimitationWherePart = "cust.creation_date >= ? OR cust.timestamp >= ?";
+				selectParameters.add(autoExport.getLaststart());
+				selectParameters.add(autoExport.getLaststart());
+				
+				for (int selectedMailinglistID : mailingListIds) {
+					changedateLimitationWherePart += " OR m" + selectedMailinglistID + ".creation_date >= ? OR m" + selectedMailinglistID + ".timestamp >= ?";
+					selectParameters.add(autoExport.getLaststart());
+					selectParameters.add(autoExport.getLaststart());
+				}
+				
+				customerTableSql.append(" AND (" + changedateLimitationWherePart + ")");
 			}
 
 			// Add date limits for change date to sql statement

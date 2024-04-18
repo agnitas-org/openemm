@@ -22,6 +22,7 @@
                         <mvc:hidden path="blocksize"/>
                         <mvc:hidden path="checkForDuplicateRecords"/>
                         <mvc:hidden path="skipWithEmptyTextContent"/>
+                        <mvc:hidden path="cleanupTestsBeforeDelivery"/>
 
                         <mvc:hidden path="maxRecipients"/>
 

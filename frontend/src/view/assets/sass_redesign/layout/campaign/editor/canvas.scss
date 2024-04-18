@@ -1,0 +1,50 @@
+
+.editor-content-body {
+  width: 100%;
+  height: 100%;
+}
+
+.editor-content-body-bottom {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100% - 73px); // todo fix
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+#viewPort {
+  position: relative;
+  margin-right: auto;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_VIEW_PORT */
+  overflow: hidden;
+}
+
+#viewPort.js-panning {
+  cursor: move;
+}
+
+#grid-background {
+  background-image: linear-gradient( #bbb, transparent 1px), linear-gradient( 90deg, #bbb, transparent 1px);
+  position: absolute;
+  width: 100%;
+  height: 100%
+}
+
+#canvas, #selection-backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#selection-backdrop {
+  display: none;
+  z-index: 10000;
+}

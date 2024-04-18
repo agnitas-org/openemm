@@ -1,0 +1,10 @@
+
+[data-copyable]:not(.btn) {
+  cursor: pointer;
+
+  &:hover {
+    .icon-copy {
+      color: var(--default-text-color);
+    }
+  }
+}

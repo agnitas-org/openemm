@@ -10,6 +10,7 @@
 
 package org.agnitas.service;
 
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +23,7 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
     private int listId;
     private int targetId;
     private int limitAccessTargetId;
-    private String userType;
+    private List<String> userTypes;
     private int userStatus;
     private boolean userTypeEmpty;
     private boolean singleMode;
@@ -68,8 +69,8 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
     }
 
     @Override
-	public String getUserType() {
-        return userType;
+	public List<String> getUserTypes() {
+        return userTypes;
     }
 
     public String getSearchFieldName() {
@@ -142,8 +143,8 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
             return this;
         }
 
-        public Builder setUserType(String userType) {
-            options.userType = userType;
+        public Builder setUserTypes(List<String> userTypes) {
+            options.userTypes = userTypes;
             return this;
         }
 

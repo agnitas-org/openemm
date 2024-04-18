@@ -156,6 +156,7 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
                 output = preview.makePreview(previewForm.getMailingId(), 0, previewForm.getTargetGroupId(), isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
                 break;
             case RECIPIENT:
+            case MANUAL:
             default:
                 output = preview.makePreview(previewForm.getMailingId(), previewForm.getCustomerID(), false, isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
                 break;

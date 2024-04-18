@@ -41,17 +41,19 @@
                         </ul>
 
                         <emm:ShowByPermission token="mailing.change">
-                                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-                            <ul class="tile-header-actions">
-                                <li>
-                                    <a href="${mailingCreateLink}" class="btn btn-primary btn-regular">
-                                        <i class="icon icon-plus"></i>
-                                        <span class="text">
-                                            <mvc:message code="New"/>
-                                        </span>
-                                    </a>
-                                </li>
-                            </ul>
+                            <emm:HideByPermission token="mailing.content.readonly">
+                                    <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                                <ul class="tile-header-actions">
+                                    <li>
+                                        <a href="${mailingCreateLink}" class="btn btn-primary btn-regular">
+                                            <i class="icon icon-plus"></i>
+                                            <span class="text">
+                                                <mvc:message code="New"/>
+                                            </span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </emm:HideByPermission>
                         </emm:ShowByPermission>
                     </div>
 
@@ -108,9 +110,11 @@
                                             </div>
                                             <div class="btn-group recently-used-mailing-btn-group" data-mailing-id="${mailing.mailingid}">
                                                 <emm:ShowByPermission token="mailing.change">
-                                                    <button class="btn btn-regular" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
-                                                        <i class="icon icon-copy"></i>
-                                                    </button>
+                                                    <emm:HideByPermission token="mailing.content.readonly">
+                                                        <button class="btn btn-regular" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                            <i class="icon icon-copy"></i>
+                                                        </button>
+                                                    </emm:HideByPermission>
                                                 </emm:ShowByPermission>
                                                 <button class="btn btn-regular" data-action="edit-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingEdit"/>">
                                                     <i class="icon icon-pencil"></i>

@@ -1343,7 +1343,20 @@ public class DbUtilities {
 		} else {
 			try {
 				new JdbcTemplate(dataSource).execute("TRUNCATE TABLE " + tablename);
-				new JdbcTemplate(dataSource).execute("DROP TABLE " + tablename);
+				int retryCount = 0;
+				while (true) {
+					try {
+						new JdbcTemplate(dataSource).execute("DROP TABLE " + tablename);
+						break;
+					} catch (Exception e) {
+						retryCount++;
+						if (retryCount > 5) {
+							throw e;
+						} else {
+							Thread.sleep(500);
+						}
+					}
+				}
 				return true;
 			} catch (Exception e) {
 				logger.error("Cannot truncate/drop table: " + tablename, e);

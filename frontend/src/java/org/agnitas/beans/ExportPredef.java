@@ -77,6 +77,8 @@ public class ExportPredef {
 	private String timezone = "Europe/Berlin";
 	private String decimalSeparator = ",";
 
+	private boolean useDecodedValues;
+
 	private Locale locale = new Locale("en", "US");
 
 	public void setId(int id) {
@@ -360,7 +362,15 @@ public class ExportPredef {
 		return AgnUtils.getDateTimeFormatter(getTimezone(), getLocale());
 	}
 
-    @Override
+	public boolean isUseDecodedValues() {
+		return useDecodedValues;
+	}
+
+	public void setUseDecodedValues(boolean useDecodedValues) {
+		this.useDecodedValues = useDecodedValues;
+	}
+
+	@Override
     public String toString() {
         return shortname + " (" + id + ")";
     }

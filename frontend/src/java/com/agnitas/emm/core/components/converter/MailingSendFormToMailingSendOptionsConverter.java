@@ -27,6 +27,7 @@ public class MailingSendFormToMailingSendOptionsConverter implements Converter<M
                 .setReportSendEmail(form.getReportSendEmail())
                 .setCheckForDuplicateRecords(form.isCheckForDuplicateRecords())
                 .setSkipWithEmptyTextContent(form.isSkipWithEmptyTextContent())
+                .setCleanupTestsBeforeDelivery(form.isCleanupTestsBeforeDelivery())
                 .setGenerationOptimization(form.getGenerationOptimization())
                 .setMaxRecipients(Integer.parseInt(form.getMaxRecipients()))
                 .setStepping(form.getStepping())

@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.DomainStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
@@ -66,7 +66,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 		String sql = "SELECT COUNT(DISTINCT cust.customer_id) AS domain_count"
 			+ " FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind"
 			+ " WHERE cust.customer_id = bind.customer_id"
-			+ " AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"
+			+ " AND cust." + RecipientStandardField.Bounceload.getColumnName() + " = 0"
 			+ " AND bind.user_status = " + UserStatus.Active.getStatusCode()
 			+ " " + mailingListSql
 			+ " " + targetSql;
@@ -91,7 +91,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 		String sql = "SELECT COUNT(DISTINCT cust.customer_id) AS domain_count, SUBSTR(email, " + instrEmail + " + 1) AS domain_name"
 				+ " FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind "
 				+ " WHERE cust.customer_id = bind.customer_id"
-				+ " AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"
+				+ " AND cust." + RecipientStandardField.Bounceload.getColumnName() + " = 0"
 				+ " AND bind.user_status = " + UserStatus.Active.getStatusCode()
 				+ " " + mailingListSql
 				+ " " + targetSql

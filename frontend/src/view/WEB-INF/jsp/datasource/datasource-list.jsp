@@ -66,6 +66,11 @@
             <div class="js-data-table-body" data-web-storage="datasource-overview" style="height: 100%;"></div>
         </div>
 
+        <c:forEach var="entry" items="${datasources}">
+            <c:url var="viewLink" value="/recipient/list.action?dataSourceId=${entry['id']}"/>
+            <c:set target="${entry}" property="show" value="${viewLink}"/>
+        </c:forEach>
+
         <script id="datasource-id-overview" type="application/json">
         {
             "columns": [
@@ -73,13 +78,15 @@
                     "field": "id",
                     "headerName": "<mvc:message code='recipient.DatasourceId'/>",
                     "cellStyle": {"user-select": "text"},
-                    "editable": false
+                    "editable": false,
+                    "cellRenderer": "StringCellRenderer"
                 },
                 {
                     "field": "description",
                     "headerName": "<mvc:message code='Description'/>",
                     "cellStyle": {"user-select": "text"},                    
-                    "editable": false
+                    "editable": false,
+                    "cellRenderer": "NotEscapedStringCellRenderer"
                 }
             ],
             "data": ${datasources}

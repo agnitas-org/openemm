@@ -41,6 +41,7 @@ public interface ServerStatusService {
     List<VersionStatus> getLatestDBVersionsAndErrors();
     
     Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception;
+	int calcDiskSpaceFreePercentage();
     
     ServerStatus getServerStatus(ServletContext servletContext, Admin admin);
     

@@ -1,0 +1,56 @@
+
+<div id="extended-delivery-settings-tile" class="tile" data-editable-tile="">
+    <div class="tile-header">
+        <h1 class="tile-title"><mvc:message code="mailing.send.settings.extended" /></h1>
+    </div>
+
+    <div class="tile-body js-scrollable">
+        <div class="row g-3" data-field="toggle-vis">
+            <c:if test="${isNormalMailing or isFollowUpMailing}">
+                <div class="col-12">
+                    <%@ include file="../mailing-send-report.jspf" %>
+                </div>
+            </c:if>
+
+            <c:if test="${not isActionBasedMailing}">
+                <%@ include file="../mailing-send-required-auto-import.jspf" %>
+            </c:if>
+
+            <c:if test="${not isActionBasedMailing}">
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox path="checkForDuplicateRecords" id="checkForDuplicateRecords" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                        <label class="form-label form-check-label text-truncate" for="checkForDuplicateRecords"><mvc:message code="doublechecking.email"/></label>
+                    </div>
+                </div>
+
+                <c:if test="${isMailtrackExtended}">
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <mvc:checkbox path="skipWithEmptyTextContent" id="skipWithEmptyTextContent" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                            <label class="form-label form-check-label text-truncate" for="skipWithEmptyTextContent"><mvc:message code="skipempty.email"/></label>
+                        </div>
+                    </div>
+                </c:if>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox path="cleanupTestsBeforeDelivery" id="cleanupTestsBeforeDelivery" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                        <label class="form-label form-check-label text-truncate" for="cleanupTestsBeforeDelivery"><mvc:message code="mailing.delivery.cleanup"/></label>
+                    </div>
+                </div>
+            </c:if>
+
+            <%@ include file="../mailing-send-prioritization.jspf" %>
+            <%@ include file="../mailing-send-encrypted.jspf" %>
+
+            <c:if test="${isDateBasedMailing}">
+                <%@ include file="../datebased-security-and-notifications.jspf" %>
+            </c:if>
+
+            <c:if test="${isActionBasedMailing or (isFollowUpMailing and form.worldMailingSend)}">
+                <%@ include file="../action-based-security-and-notifications.jspf" %>
+            </c:if>
+        </div>
+    </div>
+</div>

@@ -34,7 +34,7 @@
             <div class="col-sm-8">
                 <mvc:text id="mailingShortname" cssClass="form-control" path="shortname" maxlength="99"
                           data-field-validator="length"
-                          data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}"/>
+                          data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}" disabled="${isSettingsReadonly}"/>
             </div>
         </div>
         <div class="form-group">
@@ -45,7 +45,7 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <mvc:textarea id="mailingDescription" cssClass="form-control v-resizable" path="description" rows="5" cols="32" placeholder="${descriptionMsg}"/>
+                <mvc:textarea id="mailingDescription" cssClass="form-control v-resizable" path="description" rows="5" cols="32" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
             </div>
         </div>
 
@@ -58,7 +58,7 @@
                 </div>
                 <div class="col-sm-8">
                     <div class="input-group">
-                        <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven}"/>
+                        <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven || isSettingsReadonly}"/>
                         <div class="input-group-controls">
                             <input type="text" name="planDate" value="${mailingSettingsForm.planDate}"
                                    id="mailingPlanDate" class="form-control datepicker-input js-datepicker"
@@ -94,7 +94,7 @@
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
-                        <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising"/>
+                        <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising" disabled="${isSettingsReadonly}"/>
                         <div class="toggle-control"></div>
                     </label>
                 </div>

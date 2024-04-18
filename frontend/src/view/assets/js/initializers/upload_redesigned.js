@@ -254,148 +254,109 @@ On `form:abort` event the selection is restored. On `submitted` event the select
 
 Please notice that the `form:loadershow`, `form:loaderhide` and `form:progress` events are only enabled when form element has `data-custom-loader` attribute.
 */
-AGN.Lib.DomInitializer.new('upload', function($e) {
-  const $dropzone = findDropzone();
+AGN.Lib.DomInitializer.new('upload', function ($e) {
+  const Upload = AGN.Lib.Upload;
+
+  const $dropzone = $findDropzone($e);
+  const $extraDropzone = $findDropzone($e, true);
   const $file = ($dropzone.exists() ? $dropzone : $e).find('[data-upload]');
 
   if (!$file.exists() && !$dropzone.exists()) {
     return;
   }
 
-  const Template = AGN.Lib.Template;
-  const Form = AGN.Lib.Form;
-
-  const $progress = findProgressArea();
-  const name = $file.prop('name') || '';
-  const nameIsIndexed = name.includes('[]');
-  const multiple = !$file.exists() || $file.is('[multiple]');
-  let selection = [];
-
-  exposeSelection();
-
-  const makeProgressBar = Template.prepare($progress.data('upload-progress-template') || 'progress');
-
-  $file.prop('name', '');
-
-  const form = Form.get($e);
-
-  if ($dropzone.exists()) {
-    new Dropzone($dropzone, {
-      classDragOver: 'drag-over',
-      onSelectFiles: function(files) {
-        drop(files);
-      }
-    });
-  } else {
-    $file.on('change', function() {
-      drop($file.prop('files'));
-    });
+  let upload = Upload.get($dropzone, $file);
+  if (!upload) {
+    upload = new Upload($dropzone, $file);
   }
 
-  var $form = form.get$();
+  if ($extraDropzone.exists()) {
+    new Upload(
+      $extraDropzone,
+      $extraDropzone.find('[data-upload]'),
+      upload
+    );
+  }
 
-  $form.on('form:loadershow', function() {
-    $progress.html(makeProgressBar({currentProgress: true}));
-    $progress.show();
-  });
+  const inputUploadName = $file.data('upload') || '';
+  const isInputIndexed = inputUploadName.includes('[]');
 
-  $form.on('form:loaderhide', function() {
-    $progress.hide();
-  });
+  const form = AGN.Lib.Form.get($e);
+  const $form = form.get$();
+  if ($form.exists()) {
+    const $progress = findProgressArea();
+    const makeProgressBar = AGN.Lib.Template.prepare($progress.data('upload-progress-template') || 'progress');
 
-  $form.on('form:submit', function() {
-  });
+    exposeSelection($form);
 
-  $form.on('form:abort', function() {
-    if (selection.length) {
+    $form.on('form:loadershow', () => {
+      $progress.html(makeProgressBar({currentProgress: true}));
+      $progress.show();
+    });
+    $form.on('form:loaderhide', () => $progress.hide());
+    $form.on('form:submit', () => {
+    });
+    $form.on('submitted', reset);
+    $form.on('form:abort', () => {
+      if (getSelection().length) {
+        setFormValues();
+      }
+    });
+    $form.on('form:progress', (e, data) => {
+      $progress.html(makeProgressBar({currentProgress: data.progress}));
+    });
+
+    $dropzone.on('upload:reset', reset);
+    $dropzone.on('upload:dropped', () => {
       setFormValues();
+      exposeSelection($form);
+      if ($dropzone.data('upload-dropzone') === 'submit') {
+        $dropzone.hide(); // progress shown instead
+        form.submit();
+      }
+    });
+    $e.on('click', 'a[data-upload-reset], button[data-upload-reset]', reset);
+  }
+
+  function $findDropzone($el, extra = false) {
+    if (extra) {
+      return $el.find('[data-upload-dropzone="extra"]').first();
     }
-  });
 
-  $form.on('form:progress', function(e, data) {
-    $progress.html(makeProgressBar({currentProgress: data.progress}));
-  });
-
-  $form.on('submitted', function() {
-    reset();
-  });
-
-  $e.on('upload:reset', function() {
-    reset();
-    $e.trigger('reset-upload', $form);
-  });
-
-  $e.on('click', 'a[data-upload-reset], button[data-upload-reset]', function() {
-    reset();
-    $e.trigger('reset-upload', $form);
-  });
+    const $dropzone = $($el.data('linked-dropzone'));
+    return $dropzone.length ? $dropzone : $el.find('[data-upload-dropzone]').first();
+  }
 
   function reset() {
-    clearFormValues();
-    selection = [];
-    exposeSelection();
-  }
-
-  function drop(files) {
-    if (!files || files.length <= 0) {
-      return;
-    }
-    var added = false;
-    var file;
-
-    if (multiple) {
-      for (var i = 0; i < files.length; i++) {
-        file = files[i];
-
-        if (onDrop(file, selection.length)) {
-          selection.push(file);
-          added = true;
-        }
-      }
+    if (isInputIndexed) {
+      getSelection().forEach((s, index) => {
+        form.setValueOnce(getIndexedUploadName(index), undefined);
+      });
     } else {
-      file = files[0];
-      // Replace previous selection in a single file mode.
-      if (onDrop(file, 0)) {
-        reset();
-        selection = [file];
-        added = true;
-      }
+      form.setValueOnce(inputUploadName, undefined);
     }
 
-    if (added) {
-      exposeSelection();
-      setFormValues();
-    }
-  }
-
-  function getIndexedName(index) {
-    return name.replace('[]', '[' + index + ']');
+    upload.reset();
+    exposeSelection($form);
+    $dropzone.show(); // may be hidden on progress
   }
 
   function setFormValues() {
-    if (nameIsIndexed) {
-      selection.forEach(function(s, index) {
-        form.setValueOnce(getIndexedName(index + 1), s);
+    const selection = getSelection();
+
+    if (isInputIndexed) {
+      selection.forEach((s, index) => {
+        form.setValueOnce(getIndexedUploadName(index), s);
       });
     } else {
-      form.setValueOnce(name, selection.slice(0));
+      form.setValueOnce(inputUploadName, selection);
     }
+
+    form.get$().trigger('upload:filesSet', [selection]);
   }
 
-  function clearFormValues() {
-    if (nameIsIndexed) {
-      selection.forEach(function(s, index) {
-        form.setValueOnce(getIndexedName(index + 1), undefined);
-      });
-    } else {
-      form.setValueOnce(name, undefined);
-    }
-  }
-
-  function onDrop(file, index) {
-    const event = $.Event('upload:add');
-    $e.trigger(event, {file: file, index: index});
-    return !event.isDefaultPrevented();
+  function getIndexedUploadName(index) {
+    return inputUploadName.replace('[]', `[${index}]`);
   }
 
   function findProgressArea() {
@@ -403,12 +364,11 @@ AGN.Lib.DomInitializer.new('upload', function($e) {
     return $progress.length ? $progress : $e.find('[data-upload-progress]');
   }
 
-  function findDropzone() {
-    const $dropzone = $($e.data('linked-dropzone'));
-    return $dropzone.length ? $dropzone : $e.find('[data-upload-dropzone]').first();
+  function exposeSelection($el) {
+    $e.data('upload-selection', getSelection());
   }
 
-  function exposeSelection() {
-    $e.data('upload-selection', selection.slice(0));
+  function getSelection() {
+    return upload ? upload.getSelection() : [];
   }
 });

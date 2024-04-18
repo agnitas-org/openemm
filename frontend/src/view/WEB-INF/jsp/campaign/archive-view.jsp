@@ -54,30 +54,79 @@
 </mvc:form>
 
 <c:if test="${form.id gt 0}">
-    <div class="tile">
+    <mvc:form cssClass="tile" servletRelativeAction="/mailing/archive/${form.id}/view.action" method="GET" modelAttribute="form">
+
+        <script type="application/json" data-initializer="web-storage-persist">
+            {
+                "archive-mailings-overview": {
+                    "rows-count": ${form.numberOfRows}
+                }
+            }
+        </script>
+
         <div class="tile-header">
             <h2 class="headline"><mvc:message code="Mailings"/></h2>
+
+            <ul class="tile-header-nav"></ul>
+
+            <ul class="tile-header-actions">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="icon icon-eye"></i>
+                        <span class="text"><mvc:message code="button.Show"/></span>
+                        <i class="icon icon-caret-down"></i>
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                        <li>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="20"/>
+                                <span class="label-text">20</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="50"/>
+                                <span class="label-text">50</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="100"/>
+                                <span class="label-text">100</span>
+                            </label>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <p>
+                                <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
+                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
+                                </button>
+                            </p>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </div>
         <div class="tile-content">
             <div class="table-wrapper">
                 <display:table
                         class="table table-bordered table-striped table-hover js-table"
                         id="archive_mailing"
+                        pagesize="${mailingsList.pageSize}"
+                        sort="external"
                         name="mailingsList"
-                        pagesize="${form.numberOfRows}"
                         requestURI="/mailing/archive/${form.id}/view.action"
+                        partialList="true"
+                        size="${mailingsList.fullListSize}"
                         excludedParams="*">
 
                     <display:column headerClass="js-table-sort" titleKey="Mailing" sortable="true"
-                                    property="shortname"/>
+                                    property="shortname" sortProperty="mailing_name"/>
                     <display:column headerClass="js-table-sort" titleKey="default.description" sortable="true"
-                                    property="description"/>
+                                    property="description" sortProperty="mailing_description"/>
                     <display:column headerClass="js-table-sort" titleKey="Mailinglist" sortable="true"
-                                    property="mailinglist.shortname"/>
-
+                                    property="mailinglist.shortname" sortProperty="listname"/>
 
                     <display:column headerClass="js-table-sort" titleKey="mailing.senddate" sortable="true"
-                                    format="{0,date,${localeTablePattern}}" property="senddate"/>
+                                    format="{0,date,${localeTablePattern}}" property="senddate" sortProperty="senddate"/>
 
                     <display:column class="table-actions">
                         <a href="<c:url value="/mailing/${archive_mailing.id}/settings.action"/>" class="hidden js-row-show"></a>
@@ -94,5 +143,5 @@
                 </display:table>
             </div>
         </div>
-    </div>
+    </mvc:form>
 </c:if>

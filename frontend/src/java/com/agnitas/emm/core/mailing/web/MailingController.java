@@ -10,38 +10,63 @@
 
 package com.agnitas.emm.core.mailing.web;
 
-import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.trimToEmpty;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingCreationOption;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.impl.MailingImpl;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
+import com.agnitas.emm.core.mailing.forms.MailingOverviewForm;
+import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
+import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
+import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
+import com.agnitas.emm.core.mailing.forms.validation.MailingSettingsFormValidator;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingSettingsService;
+import com.agnitas.emm.core.mailingcontent.form.FrameContentForm;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.AltgMode;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingAwareImpl;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
+import com.agnitas.messages.Message;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.ComMailingContentChecker;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
@@ -67,15 +92,16 @@ import org.agnitas.util.FileUtils;
 import org.agnitas.util.HtmlUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.MissingEndTagException;
+import org.agnitas.util.MvcUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.UnclosedTagException;
 import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
+import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.WorkflowParameters;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
@@ -89,67 +115,46 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingCreationOption;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.MailingImpl;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.forms.MailingOverviewForm;
-import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
-import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
-import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
-import com.agnitas.emm.core.mailing.forms.validation.MailingSettingsFormValidator;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
-import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.AltgMode;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingAwareImpl;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
-import com.agnitas.messages.Message;
-import com.agnitas.service.AgnDynTagGroupResolverFactory;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingLightService;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.ComMailingContentChecker;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
-import jakarta.mail.internet.InternetAddress;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 public class MailingController implements XssCheckAware {
 
@@ -160,6 +165,8 @@ public class MailingController implements XssCheckAware {
     static {
         EXCLUDED_FROM_UNSAFE_TAG_CHECK_PARAMS.add("emailMediatype.htmlTemplate");
         EXCLUDED_FROM_UNSAFE_TAG_CHECK_PARAMS.add("emailMediatype.textTemplate");
+        EXCLUDED_FROM_UNSAFE_TAG_CHECK_PARAMS.add("textTemplate"); // from content tab
+        EXCLUDED_FROM_UNSAFE_TAG_CHECK_PARAMS.add("htmlTemplate"); // from content tab
     }
     private static final String SETTINGS_VIEW = "mailing_settings_view";
     private static final String UNDO_ERROR_KEY = "error.undo_error";
@@ -167,6 +174,7 @@ public class MailingController implements XssCheckAware {
     private static final String IS_TEMPLATE_ATTR = "isTemplate";
     private static final String MAILING_ID_ATTR = "mailingId";
     private static final String MAILINGLISTS_ATTR = "mailinglists";
+    private static final String REDIRECT_TO_LIST = "redirect:/mailing/list.action";
 
     protected final MailinglistApprovalService mailinglistApprovalService;
     protected final ExtendedConversionService conversionService;
@@ -178,6 +186,7 @@ public class MailingController implements XssCheckAware {
     protected final ConfigService configService;
     protected final AdminService adminService;
     protected final ComWorkflowService workflowService;
+    protected final MailingSettingsService mailingSettingsService;
     private final UserActivityLogService userActivityLogService;
     private final JavaMailService javaMailService;
     private final ComMailingBaseService mailingBaseService;
@@ -192,11 +201,39 @@ public class MailingController implements XssCheckAware {
     private final MailingFactory mailingFactory;
     private final PreviewImageService previewImageService;
     private final MailingExporter mailingExporter;
-    private final MailingPropertiesRules mailingPropertiesRules;
     private final CopyMailingService copyMailingService;
     private final WebStorage webStorage;
+    private final MailingValidator mailingValidator;
 
-    public MailingController(ExtendedConversionService conversionService, ComMailingLightService mailingLightService, MailinglistService mailinglistService, ComTargetService targetService, MailingService mailingService, ConfigService configService, AdminService adminService, UserActivityLogService userActivityLogService, JavaMailService javaMailService, ComMailingBaseService mailingBaseService, DynamicTagDao dynamicTagDao, ComMailingParameterService mailingParameterService, ComWorkflowService workflowService, LinkService linkService, MaildropService maildropService, CopyMailingService copyMailingService, AgnTagService agnTagService, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory, MailingSettingsFormValidator mailingSettingsFormValidator, TAGCheckFactory tagCheckFactory, MailingFactory mailingFactory, MailinglistApprovalService mailinglistApprovalService, PreviewImageService previewImageService, MailingExporter mailingExporter, GridServiceWrapper gridService, MailingPropertiesRules mailingPropertiesRules, WebStorage webStorage) {
+    public MailingController(
+    		ExtendedConversionService conversionService,
+    		ComMailingLightService mailingLightService,
+    		MailinglistService mailinglistService,
+    		ComTargetService targetService,
+    		MailingService mailingService,
+    		ConfigService configService,
+    		AdminService adminService,
+    		UserActivityLogService userActivityLogService,
+    		JavaMailService javaMailService,
+    		ComMailingBaseService mailingBaseService,
+    		DynamicTagDao dynamicTagDao,
+    		ComMailingParameterService mailingParameterService,
+    		ComWorkflowService workflowService,
+    		LinkService linkService,
+    		MaildropService maildropService,
+    		CopyMailingService copyMailingService,
+    		AgnTagService agnTagService,
+    		AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
+    		MailingSettingsFormValidator mailingSettingsFormValidator,
+    		TAGCheckFactory tagCheckFactory,
+    		MailingFactory mailingFactory,
+    		MailinglistApprovalService mailinglistApprovalService,
+    		PreviewImageService previewImageService,
+    		MailingExporter mailingExporter,
+    		GridServiceWrapper gridService,
+    		WebStorage webStorage,
+    		MailingSettingsService mailingSettingsService,
+    		MailingValidator mailingValidator) {
         this.conversionService = conversionService;
         this.mailingLightService = mailingLightService;
         this.mailinglistService = mailinglistService;
@@ -222,13 +259,15 @@ public class MailingController implements XssCheckAware {
         this.previewImageService = previewImageService;
         this.mailingExporter = mailingExporter;
         this.gridService = gridService;
-        this.mailingPropertiesRules = mailingPropertiesRules;
         this.webStorage = webStorage;
+        this.mailingSettingsService = mailingSettingsService;
+        this.mailingValidator = mailingValidator;
     }
 
     @GetMapping("/list.action")
-    public Object list(MailingOverviewForm form, Model model, Admin admin, HttpServletRequest req, Popups popups) {
+    public Object list(MailingOverviewForm form, Model model, Admin admin, HttpServletRequest req, Popups popups, @RequestParam(required = false) boolean restoreSort) {
         updateForwardParameters(req, true);
+        FormUtils.updateSortingState(webStorage, WebStorage.MAILING_OVERVIEW, form, restoreSort);
         syncListStorage(form);
 
         if (!isValidSearch(form, popups)) {
@@ -249,7 +288,7 @@ public class MailingController implements XssCheckAware {
         return new Pollable<>(
                 Pollable.uid(req.getSession().getId(), MAILING_OVERVIEW_KEY, form.toArray()),
                 Pollable.SHORT_TIMEOUT,
-                new ModelAndView("redirect:/mailing/list.action", form.toMap()),
+                new ModelAndView(REDIRECT_TO_LIST, form.toMap()),
                 listWorker);
     }
 
@@ -264,16 +303,25 @@ public class MailingController implements XssCheckAware {
         return !popups.hasAlertPopups();
     }
 
-    private void addOverviewAttrs(MailingOverviewForm form, Model model, Admin admin, ServiceResult<PaginatedListImpl<Map<String, Object>>> result) {
+    protected void addOverviewAttrs(MailingOverviewForm form, Model model, Admin admin, ServiceResult<PaginatedListImpl<Map<String, Object>>> result) {
         model.addAttribute("mailinglist", result.getResult());
         model.addAttribute("adminDateTimeFormat", admin.getDateTimeFormat().toPattern());
         model.addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
         model.addAttribute(MAILINGLISTS_ATTR, mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         addArchivesAttr(model, admin.getCompanyID());
-        if (!form.isForTemplates()) {
+        if (isRedesign(admin)) {
             model.addAttribute("searchEnabled", mailingService.isBasicFullTextSearchSupported());
-            model.addAttribute("contentSearchEnabled", mailingService.isContentFullTextSearchSupported());
+            model.addAttribute("contentSearchEnabled", !form.isForTemplates() && mailingService.isContentFullTextSearchSupported());
+        } else {
+            if (!form.isForTemplates()) {
+                model.addAttribute("searchEnabled", mailingService.isBasicFullTextSearchSupported());
+                model.addAttribute("contentSearchEnabled", mailingService.isContentFullTextSearchSupported());
+            }
         }
+    }
+
+    protected boolean isRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
     }
 
     private void syncListStorage(MailingOverviewForm form) {
@@ -317,6 +365,10 @@ public class MailingController implements XssCheckAware {
         props.setSearchName(form.isSearchInName());
         props.setSearchDescription(form.isSearchInDescription());
         props.setSearchContent(form.isSearchInContent());
+        props.setSearchNameStr(form.getFilterName());
+        props.setRedesignedUiUsed(admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION));
+        props.setSearchDescriptionStr(form.getFilterDescription());
+        props.setSearchContentStr(form.getFilterContent());
         props.setSort(form.getSort());
         props.setDirection(form.getOrder());
         props.setPage(form.getPage());
@@ -329,13 +381,24 @@ public class MailingController implements XssCheckAware {
         props.setChangeDateBegin(tryParseDate(form.getFilterChangeDateBegin(), admin));
         props.setChangeDateEnd(tryParseDate(form.getFilterChangeDateEnd(), admin));
         props.setUseRecycleBin(form.isUseRecycleBin());
-        if (!form.isForTemplates()) {
-            props.setBadge(form.getFilterBadges());
-            props.setStatuses(formFilterStatusesToList(form));
+        if (isRedesign(admin)) {
             props.setMailingLists(form.getFilterMailingLists());
-            props.setArchives(form.getFilterArchives());
-            props.setSendDateBegin(tryParseDate(form.getFilterSendDateBegin(), admin));
-            props.setSendDateEnd(tryParseDate(form.getFilterSendDateEnd(), admin));
+            if (!form.isForTemplates()) {
+                props.setBadge(form.getFilterBadges());
+                props.setStatuses(formFilterStatusesToList(form));
+                props.setArchives(form.getFilterArchives());
+                props.setSendDateBegin(tryParseDate(form.getFilterSendDateBegin(), admin));
+                props.setSendDateEnd(tryParseDate(form.getFilterSendDateEnd(), admin));
+            }
+        } else {
+            if (!form.isForTemplates()) {
+                props.setBadge(form.getFilterBadges());
+                props.setStatuses(formFilterStatusesToList(form));
+                props.setMailingLists(form.getFilterMailingLists());
+                props.setArchives(form.getFilterArchives());
+                props.setSendDateBegin(tryParseDate(form.getFilterSendDateBegin(), admin));
+                props.setSendDateEnd(tryParseDate(form.getFilterSendDateEnd(), admin));
+            }
         }
         return props;
     }
@@ -367,8 +430,9 @@ public class MailingController implements XssCheckAware {
         mailingId = checkForwardItemTargetId(mailingId, req);
 
         Mailing mailing = loadMailing(mailingId, req);
-        MailingSettingsForm form = mailingToForm(mailing, admin);
-
+        MailingSettingsForm form = isRedesign(admin)
+                ? mailingSettingsService.mailingToForm(mailing, admin)
+                : mailingToForm(mailing, admin);
         MailingSettingsOptions options = getOptionsBuilderForView(req, false, false, mailing).build();
         prepareMailingView(mailing, model, form, checkMailingTags, options, req, popups);
 
@@ -388,12 +452,14 @@ public class MailingController implements XssCheckAware {
                 .setCompanyId(admin.getCompanyID())
                 .setIsTemplate(mailing.isIsTemplate())
                 .setWorkflowId(getWorkflowId(req, mailing.getId()))
-                .setWorldSend(mailingPropertiesRules.mailingIsWorldSentOrActive(mailing))
+                .setWorldSend(isMailingSentOrActive(mailing.getId(), admin))
                 .setForCopy(forCopy)
                 .setGridTemplateId(mailing.getId() > 0 ? gridService.getGridTemplateIdByMailingId(mailing.getId()) : 0)
                 .setForFollowUp(forFollowUp);
     }
 
+    
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     protected MailingSettingsForm mailingToForm(Mailing mailing, Admin admin) {
         MailingSettingsForm form = getNewSettingsForm();
         form.setShortname(mailing.getShortname());
@@ -419,6 +485,7 @@ public class MailingController implements XssCheckAware {
         return form;
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     private void setMediatypesToForm(Mailing mailing, MailingSettingsForm form) {
         mailing.getMediatypes().values().forEach(mt -> form.getMediatypes()
                 .put(mt.getMediaType().getMediaCode(), conversionService.convert(mt, MediatypeForm.class)));
@@ -437,12 +504,14 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     protected void setTemplateToMediatypeForm(MailingSettingsForm form, MailingComponent comp, MediaTypes mediatype) {
         if (mediatype == MediaTypes.EMAIL) {
             form.getEmailMediatype().setTextTemplate(comp.getEmmBlock());
         }
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @GetMapping("/{mailingId:\\d+}/confirmDelete.action")
     public String confirmDelete(@PathVariable int mailingId, Admin admin, Popups popups, Model model,
                                 @RequestParam(defaultValue = "") String fromPage) {
@@ -460,10 +529,11 @@ public class MailingController implements XssCheckAware {
     @PostMapping("/{mailingId:\\d+}/restore.action")
     public String restore(@PathVariable int mailingId, Admin admin, Popups popups) {
         mailingService.restoreMailing(mailingId, admin);
-        popups.success("default.changes_saved");
-        return "redirect:/mailing/list.action";
+        popups.success(CHANGES_SAVED_MSG);
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @PostMapping("/{mailingId:\\d+}/delete.action")
     public String delete(@PathVariable int mailingId, Admin admin, Popups popups,
                          @RequestParam(defaultValue = "") String fromPage,
@@ -474,9 +544,10 @@ public class MailingController implements XssCheckAware {
         if ("dashboard".equals(fromPage)) {
             return "redirect:/dashboard.action";
         }
-        return "redirect:/mailing/list.action?forTemplates=" + isTemplate;
+        return "redirect:/mailing/list.action?restoreSort=true&forTemplates=" + isTemplate;
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @GetMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(@RequestParam(defaultValue = "false") boolean forTemplates,
                                     Model model, BulkActionForm form, Admin admin, Popups popups) {
@@ -488,7 +559,8 @@ public class MailingController implements XssCheckAware {
         model.addAttribute("forTemplates", forTemplates);
         return "mailing_bulk_delete";
     }
-    
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @PostMapping("/bulkDelete.action")
     public String bulkDelete(@RequestParam(defaultValue = "false") boolean forTemplates,
                              BulkActionForm form, Admin admin, Popups popups) {
@@ -499,7 +571,7 @@ public class MailingController implements XssCheckAware {
         }
         popups.success(SELECTION_DELETED_MSG);
         result.getResult().forEach(ua -> writeUserActivityLog(admin, ua));
-        return "redirect:/mailing/list.action?forTemplates=" + forTemplates;
+        return "redirect:/mailing/list.action?restoreSort=true&forTemplates=" + forTemplates;
     }
 
     @PostMapping("/bulkRestore.action")
@@ -510,9 +582,71 @@ public class MailingController implements XssCheckAware {
         }
 
         mailingService.bulkRestore(form.getBulkIds(), admin);
-        popups.success("default.changes_saved");
+        popups.success(CHANGES_SAVED_MSG);
 
-        return "redirect:/mailing/list.action";
+        return REDIRECT_TO_LIST + "?restoreSort=true";
+    }
+
+    @GetMapping("/deleteMailings.action")
+    public String confirmDeleteMailings(@RequestParam(required = false) Set<Integer> bulkIds,
+                                        Admin admin, Popups popups, Model model) {
+        return confirmDelete(bulkIds, false, admin, popups, model);
+    }
+
+    @GetMapping("/deleteTemplates.action")
+    public String confirmDeleteTemplates(@RequestParam(required = false) Set<Integer> bulkIds,
+                                         Admin admin, Popups popups, Model model) {
+        return confirmDelete(bulkIds, true, admin, popups, model);
+    }
+
+    private String confirmDelete(Set<Integer> bulkIds, boolean isTemplate, Admin admin, Popups popups, Model model) {
+        ServiceResult<List<Mailing>> result = mailingService.getMailingsForDeletion(bulkIds, admin);
+        popups.addPopups(result);
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+        List<String> names = result.getResult().stream().map(MailingBase::getShortname).collect(Collectors.toList());
+        if (isTemplate) {
+            MvcUtils.addDeleteAttrs(model, names,
+                    "template.delete", "template.delete.question",
+                    "bulkAction.delete.template", "bulkAction.delete.template.question");
+        } else {
+            MvcUtils.addDeleteAttrs(model, names,
+                    "mailing.MailingDelete", "mailing.delete.question",
+                    "bulkAction.delete.mailing", "bulkAction.delete.mailing.question");
+        }
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/deleteMailings.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String deleteMailings(@RequestParam(required = false) Set<Integer> bulkIds, @RequestParam(required = false) String toPage,
+                                 Admin admin, Popups popups) {
+        if (!delete(bulkIds, admin, popups)) {
+            return MESSAGES_VIEW;
+        }
+
+        return StringUtils.isBlank(toPage) ? REDIRECT_TO_LIST + "?restoreSort=true" : "redirect:" + toPage;
+    }
+
+    @RequestMapping(value = "/deleteTemplates.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String deleteTemplates(@RequestParam(required = false) Set<Integer> bulkIds,
+                                  Admin admin, Popups popups) {
+        if (delete(bulkIds, admin, popups)) {
+            return REDIRECT_TO_LIST + "?restoreSort=true&forTemplates=true";
+        }
+
+        return MESSAGES_VIEW;
+    }
+
+    private boolean delete(Set<Integer> bulkIds, Admin admin, Popups popups) {
+        ServiceResult<List<UserAction>> result = mailingService.bulkDelete(bulkIds, admin);
+        if (!result.isSuccess()) {
+            popups.addPopups(result);
+            return false;
+        }
+        popups.success(SELECTION_DELETED_MSG);
+        result.getResult().forEach(ua -> writeUserActivityLog(admin, ua));
+        return true;
     }
 
     @GetMapping("/{mailingId:\\d+}/export.action")
@@ -593,13 +727,15 @@ public class MailingController implements XssCheckAware {
         model.addAttribute("prioritizedMediatypes", getPrioritizedMediatypes(form));
         model.addAttribute("worldMailingSend", !options.isForCopy() && !options.isForFollowUp() && options.isWorldSend());
         addArchivesAttr(model, companyId);
-        model.addAttribute("showDynamicTemplateToggle", isDynamicTemplateCheckboxVisible(options.isTemplate(), mailing.getMailTemplateID(), companyId));
+        model.addAttribute("showDynamicTemplateToggle", isRedesign(admin)
+                ? mailingService.isDynamicTemplateCheckboxVisible(mailing)
+                : isDynamicTemplateCheckboxVisible(options.isTemplate(), mailing.getMailTemplateID(), companyId));
         model.addAttribute("templateShortname", options.isForFollowUp() || options.isForCopy() ? mailing.getShortname()
                 : mailingBaseService.getMailingName(mailing.getMailTemplateID(), companyId));
         model.addAttribute("isCampaignEnableTargetGroups", configService.getBooleanValue(ConfigValue.CampaignEnableTargetGroups, companyId));
         model.addAttribute("undoAvailable", mailingId > 0 && mailingBaseService.checkUndoAvailable(mailingId));
         model.addAttribute("workflowId", options.getWorkflowId());
-        model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, admin.getCompanyID()));
+        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
 
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         addMailinglistsAttrs(form, admin, model, options);
@@ -617,9 +753,19 @@ public class MailingController implements XssCheckAware {
         model.addAttribute("archives", workflowService.getCampaignList(companyId, "lower(shortname)", 1).stream().limit(500).collect(Collectors.toList()));
     }
 
+    private boolean isSettingsReadonly(Admin admin) {
+        return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY);
+    }
+
     private void tryValidateMailingTagsAndComponents(Mailing mailing, HttpServletRequest req, Popups popups) {
         try {
-            validateMailingTagsAndComponents(mailing, req, popups);
+            Admin admin = AgnUtils.getAdmin(req);
+            assert (admin != null);
+            if (isRedesign(admin)) {
+                mailingValidator.validateMailingTagsAndComponents(mailing, admin.getLocale(), popups);
+            } else {
+                validateMailingTagsAndComponents(mailing, req, popups);
+            }
         } catch (AgnTagException e) {
             req.setAttribute("errorReport", e.getReport());
             popups.alert(TEMPLATE_DYNTAGS_ERROR_KEY);
@@ -788,11 +934,14 @@ public class MailingController implements XssCheckAware {
         Map<String, Object> meta = gridService.getMailingGridInfo(admin.getCompanyID(), mailingId);
 
         if (meta == null) {
-            meta = saveMailingGridInfo(gridTemplateId, mailingId, admin);
+            meta = isRedesign(admin)
+                    ? mailingSettingsService.saveMailingGridInfo(gridTemplateId, mailingId, admin)
+                    : saveMailingGridInfo(gridTemplateId, mailingId, admin);
         }
         return meta;
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private Map<String, Object> saveMailingGridInfo(int gridTemplateId, int mailingId, Admin admin) {
         Map<String, Object> data = new HashMap<>();
         data.put("TEMPLATE_ID", gridTemplateId);
@@ -803,6 +952,7 @@ public class MailingController implements XssCheckAware {
         return data;
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     private void setMailingParamsToForm(MailingSettingsForm form, int mailingId, int companyId) {
         List<ComMailingParameter> params = mailingParameterService.getMailingParameters(companyId, mailingId);
         form.setParams(params.stream()
@@ -810,6 +960,7 @@ public class MailingController implements XssCheckAware {
                 .collect(Collectors.toList()));
     }
 
+    // Redesigned in MailingValidatorImpl.java TODO remove when EMMGUI-714 migration finished
     private void validateMailingTagsAndComponents(Mailing mailing, HttpServletRequest request, Popups popups) throws Exception {
         List<String[]> errorReports = new ArrayList<>();
 
@@ -825,6 +976,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java TODO remove when EMMGUI-714 migration finished
     private void validateMailingComponents(Mailing mailing, HttpServletRequest request, Popups popups, List<String[]> errorReports) throws Exception {
         Map<String, MailingComponent> components = mailing.getComponents();
         if (validateDeprecatedTags(mailing.getCompanyID(), components, popups) && mailing.getId() > 0) {
@@ -845,6 +997,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java. TODO remove when EMMGUI-714 migration finished
     private void validateMailingTags(HttpServletRequest request, Popups popups, List<String[]> errorReports, Map<String, List<AgnTagError>> agnTagsValidationErrors) {
         agnTagsValidationErrors.forEach((componentName, validationErrors) -> {
             // noinspection ThrowableResultOfMethodCallIgnored
@@ -862,6 +1015,7 @@ public class MailingController implements XssCheckAware {
         });
     }
 
+    // Redesigned in MailingValidatorImpl.java. TODO remove when EMMGUI-714 migration finished
     /**
      * Creates report about errors in dynamic tags.
      *
@@ -889,6 +1043,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java. TODO remove when EMMGUI-714 migration finished
     private boolean validateDeprecatedTags(final int companyId, final Map<String, MailingComponent> components, Popups popups) {
         boolean valid = true;
         for (MailingComponent component : components.values()) {
@@ -903,6 +1058,8 @@ public class MailingController implements XssCheckAware {
         return valid;
     }
 
+
+    // TODO EMMGUI-714 redesigned in MailingSettingsServiceImpl. Remove when migration finished
     /**
      * Loads chosen mailing template data into form.
      *
@@ -912,7 +1069,7 @@ public class MailingController implements XssCheckAware {
      */
     protected void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, HttpServletRequest req, boolean regularTemplate) {
         MailingComponent tmpComp;
-        Integer workflowId = (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+        Integer workflowId = getWorkflowIdFromReq(req);
         // If we already have a campaign we don't have to override settings inherited from it
         boolean overrideInherited = (workflowId == null || workflowId == 0 || !regularTemplate);
 
@@ -1050,9 +1207,15 @@ public class MailingController implements XssCheckAware {
             }
         }
         
-        removeInvalidTargets(origin, popups);
-
-        MailingSettingsForm form = prepareFormForCopy(origin, req, forFollowUp);
+        MailingSettingsForm form;
+        if (isRedesign(admin)) {
+            mailingSettingsService.removeInvalidTargets(origin, popups);
+            Integer workflowId = getWorkflowIdFromReq(req);
+            form = mailingSettingsService.prepareFormForCopy(origin, admin.getLocale(), workflowId, forFollowUp);
+        } else {
+            removeInvalidTargets(origin, popups);
+            form = prepareFormForCopy(origin, req, forFollowUp);
+        }
         MailingSettingsOptions options = getOptionsBuilderForView(req, !forFollowUp, forFollowUp, origin)
                 .setWorkflowId(0).build();
         form.setParentId(options.getGridTemplateId() > 0 ? options.getGridTemplateId() : mailingId);
@@ -1063,6 +1226,7 @@ public class MailingController implements XssCheckAware {
         return SETTINGS_VIEW;
     }
     
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private final void removeInvalidTargets(final Mailing mailing, final Popups popups) {
     	if(mailing.getTargetGroups() != null) {
 	    	final List<TargetLight> targets = this.targetService.getTargetLights(mailing.getCompanyID(), mailing.getTargetGroups(), true);
@@ -1089,6 +1253,7 @@ public class MailingController implements XssCheckAware {
         return mailingId;
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     protected MailingSettingsForm prepareFormForCopy(Mailing origin, HttpServletRequest req, boolean forFollowUp) {
         MailingSettingsForm form = getNewSettingsForm();
 
@@ -1154,49 +1319,49 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // in case of modification, please check also saveFrameContent()
     @PostMapping("/{mailingId:\\d+}/settings.action")
     public String save(@PathVariable int mailingId, HttpServletRequest req, Admin admin,
                        @RequestParam(defaultValue = "false") boolean isTemplate,
                        @RequestParam(defaultValue = "false") boolean isGrid,
                        @ModelAttribute("mailingSettingsForm") MailingSettingsForm form, Popups popups) {
+        if (isSettingsReadonly(admin)) {
+            throw new UnsupportedOperationException();
+        }
+
         Mailing mailing = tryGetMailingForSave(mailingId, isGrid, form, req, popups);
         if (mailing == null) {
             return MESSAGES_VIEW;
         }
-        populateDisabledSettings(req, isGrid, form, mailing);
+        if (isRedesign(admin)) {
+            mailingSettingsService.populateDisabledSettings(mailing, form, isGrid, admin, WorkflowParametersHelper.find(req));
+        } else {
+            populateDisabledSettings(req, isGrid, form, mailing);
+        }
         MailingSettingsOptions options = getOptionsForSave(mailing, mailingId == 0, isTemplate, form, req);
         if (!mailingSettingsFormValidator.isValidFormBeforeMailingSave(mailing, form, options, admin, popups)) {
             return MESSAGES_VIEW;
         }
         UserAction userAction = getSaveUserAction(mailing, form, admin, options);
         
-        if (mailingService.getMailingStatus(mailing.getCompanyID(), mailing.getId()) == MailingStatus.SENT
-        		&& !admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS)) {
-        	// For sent mailings only the change of shortname, description, archive and archived setting is allowed by default
-        	if (isFormContainsOnlyAlwaysAllowedChanges(mailing, form, options)) {
-        		mailing.setShortname(form.getShortname());
-        		mailing.setDescription(form.getDescription());
-        		mailing.setCampaignID(form.getArchiveId());
-                mailing.setArchived(BooleanUtils.toInteger(form.isArchived()));
-        		mailingService.saveMailingDescriptiveData(mailing);
-        		popups.success(CHANGES_SAVED_MSG);
-        	} else {
-        		popups.alert("error.sent.mailing.change.denied");
-        		return MESSAGES_VIEW;
-        	}
+        if (isRedesign(admin)) {
+            if (!mailingSettingsService.saveSettings(mailing, form, admin, options, popups)) {
+                return MESSAGES_VIEW;
+            }
         } else {
-	        if (!tryPrepareMailingForSave(mailing, form, options, req, popups)
-	                || !trySaveMailing(mailing, form, options, req, popups)) {
-	            return MESSAGES_VIEW;
-	        }
+            if (!tryPrepareMailingForSave(mailing, form, options, req, popups)
+                    || !trySaveMailing(mailing, form, options, req, popups)) {
+                return MESSAGES_VIEW;
+            }
         }
 
-        validateSavedMailing(mailing, popups);
+        validateSavedMailing(mailing, admin, popups);
         writeUserActivityLog(admin, userAction);
         popups.success(CHANGES_SAVED_MSG);
         return redirectToView(mailing.getId());
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     private void populateDisabledSettings(HttpServletRequest req, boolean isGrid, MailingSettingsForm form, Mailing mailing) {
         Admin admin = AgnUtils.getAdmin(req);
         assert admin != null;
@@ -1207,6 +1372,7 @@ public class MailingController implements XssCheckAware {
         populateWorkflowDrivenSettings(form, mailing.getId() == 0 && isGrid ? new MailingImpl() : mailing, req);
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     // When 'mailing.settings.hide' permission is set
     // then general settings should be passed from original mailing
     // But text template and html template should be editable
@@ -1224,8 +1390,9 @@ public class MailingController implements XssCheckAware {
         form.getMediatypes().put(emailMediatypeCode, emailMediatype);
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private void populateActiveMailingSettings(MailingSettingsForm form, Mailing mailing, Admin admin) {
-        if (!mailingPropertiesRules.isMailingContentEditable(mailing, admin)) {
+        if (isMailingSentOrActive(mailing.getId(), admin)) {
             setMediatypesToForm(mailing, form);
             setSplitTargetToForm(form, mailing.getSplitID(), true);
             setDisabledSettingsToForm(form, mailing, admin);
@@ -1245,7 +1412,9 @@ public class MailingController implements XssCheckAware {
                 .setCompanyId(admin.getCompanyID())
                 .setNewSplitId(getTargetListSplitIdForSave(mailing, form))
                 .setMailingParams(mailingParameterService.getMailingParameters(admin.getCompanyID(), mailingId))
-                .setEditable(isMailingEditable(mailingId, admin))
+                .setActiveOrSent(isMailingSentOrActive(mailingId, admin))
+                .setWorkflowParams(WorkflowParametersHelper.find(req))
+                .setSessionId(req.getSession(false).getId())
                 .build();
     }
 
@@ -1271,16 +1440,24 @@ public class MailingController implements XssCheckAware {
         return new UserAction("edit " + type + " settings", changelogs + shortnameEnding);
     }
 
-    private void validateSavedMailing(Mailing mailing, Popups popups) {
-        validateMailingModules(mailing, popups);
+    private void validateSavedMailing(Mailing mailing, Admin admin, Popups popups) {
+        if (isRedesign(admin)) {
+            mailingValidator.validateMailingModules(mailing, popups);
+        } else {
+            validateMailingModules(mailing, popups);
+        }
     }
-
+    
     private boolean trySaveMailing(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, HttpServletRequest req, Popups popups) {
         int mailingId = mailing.getId();
         try {
-            saveMailing(mailing, form, options, req, popups);
+            if (options.isActiveOrSent()) {
+                mailingService.saveMailingDescriptiveData(mailing);
+            } else {
+                saveMailing(mailing, form, options, req, popups);
+                previewImageService.generateMailingPreview(AgnUtils.getAdmin(req), req.getSession(false).getId(), mailingId, true);
+            }
 
-            previewImageService.generateMailingPreview(AgnUtils.getAdmin(req), req.getSession(false).getId(), mailingId, true);
             updateMailingIconInRelatedWorkflowIfNeeded(options.isNew(), options.getWorkflowId(), mailing, req);
         } catch (AgnTagException e) {
             req.setAttribute("errorReport", e.getReport());
@@ -1301,6 +1478,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java TODO remove when EMMGUI-714 migration finished
     /**
      * Validate agn-tags and dyn-tags.
      */
@@ -1314,12 +1492,14 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java TODO remove when EMMGUI-714 migration finished
     private void validateMailingModule(MailingComponent template) throws DynTagException {
         if (template != null) {
             agnTagService.getDynTags(template.getEmmBlock(), agnDynTagGroupResolverFactory.create(template.getCompanyID(), template.getMailingID()));
         }
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     /**
      * Saves current mailing in DB (including mailing components, content blocks, dynamic tags, dynamic tags contents
      * and trackable links)
@@ -1348,6 +1528,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingValidatorImpl.java TODO remove when EMMGUI-714 migration finished
     private void validateMailingBeforeSave(Mailing mailing, HttpServletRequest req, Popups popups) throws Exception {
         validateMailingTagsAndComponents(mailing, req, popups);
         
@@ -1485,6 +1666,7 @@ public class MailingController implements XssCheckAware {
         }
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private List<ComMailingParameter> collectMailingParams(MailingSettingsForm form, Admin admin, MailingSettingsOptions options) {
         List<ComMailingParameter> params = options.getMailingParams();
         // Let's retrieve all the parameters currently stored.
@@ -1500,16 +1682,18 @@ public class MailingController implements XssCheckAware {
         return params;
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     protected boolean isMailingRequiresOriginParams(MailingSettingsForm form, Admin admin, MailingSettingsOptions opts) {
         return !admin.permissionAllowed(Permission.MAILING_PARAMETER_CHANGE);
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private List<ComMailingParameter> retrieveReservedParams(List<ComMailingParameter> params) {
         return params.stream()
                 .filter(p -> isReservedParam(p.getName()))
                 .collect(Collectors.toList());
     }
-
+    
     private boolean tryPrepareMailingForSave(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, HttpServletRequest req, Popups popups) {
         try {
             prepareMailingForSave(mailing, form, options, req, popups);
@@ -1528,12 +1712,20 @@ public class MailingController implements XssCheckAware {
         return !popups.hasAlertPopups();
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     private void prepareMailingForSave(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, HttpServletRequest req, Popups popups) throws Exception {
         Admin admin = AgnUtils.getAdmin(req);
-        assert admin != null;
-        if (options.isEditable()) {
+        if (!options.isActiveOrSent()) {
             setMailingPropertiesFromForm(mailing, form, options, req);
-        } else if (isFormContainsOnlyAlwaysAllowedChanges(mailing, form, options)) {
+
+            mailing.setParameters(collectMailingParams(form, admin, options));
+            List<String> dynNamesForDeletion = new ArrayList<>();
+            mailing.buildDependencies(popups, true, dynNamesForDeletion, getApplicationContext(req), admin);
+            dynamicTagDao.markNamesAsDeleted(mailing.getId(), dynNamesForDeletion);
+            if (form.getEmailMediatype().isActive()) {
+                mailingBaseService.doTextTemplateFilling(mailing, admin, popups);
+            }
+        } else if (isFormContainsOnlyAlwaysAllowedChanges(mailing, form, options, popups)) {
             String shortname = form.getShortname();
             String description = form.getDescription();
             int archiveId = form.getArchiveId();
@@ -1546,17 +1738,10 @@ public class MailingController implements XssCheckAware {
             form.setArchiveId(archiveId);
             form.setArchived(isArchived);
             setMailingPropertiesFromForm(mailing, form, options, req);
-            popups.alert("status_changed");
-        }
-        mailing.setParameters(collectMailingParams(form, admin, options));
-        List<String> dynNamesForDeletion = new ArrayList<>();
-        mailing.buildDependencies(popups, true, dynNamesForDeletion, getApplicationContext(req), admin);
-        dynamicTagDao.markNamesAsDeleted(mailing.getId(), dynNamesForDeletion);
-        if (form.getEmailMediatype().isActive()) {
-            mailingBaseService.doTextTemplateFilling(mailing, admin, popups);
         }
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     protected void setMailingPropertiesFromForm(Mailing mailing, MailingSettingsForm form,
                                                 MailingSettingsOptions options,
                                                 HttpServletRequest req) throws Exception {
@@ -1578,7 +1763,9 @@ public class MailingController implements XssCheckAware {
         setMediatypesToMailing(mailing, options, form, req);
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     protected void setMediatypesToMailing(Mailing mailing, MailingSettingsOptions options, MailingSettingsForm form, HttpServletRequest req) throws Exception {
+        boolean clearance = mailing.getEmailParam().isClearance();
         mailing.setMediatypes(form.getMediatypes().entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 mt -> conversionService.convert(mt.getValue(), Mediatype.class))));
@@ -1587,6 +1774,7 @@ public class MailingController implements XssCheckAware {
         mailingEmailMediatype.setLinefeed(formEmailMediatype.getLinefeed());
         mailingEmailMediatype.setCharset(formEmailMediatype.getCharset());
         mailingEmailMediatype.setOnepixel(formEmailMediatype.getOnepixel());
+        mailingEmailMediatype.setClearance(clearance);
         setMailingFollowupProperties(mailing, form);
         if (mailing.isGridMailing()) {
             mailingEmailMediatype.setStatus(MediaTypeStatus.Active.getCode());
@@ -1620,6 +1808,7 @@ public class MailingController implements XssCheckAware {
         return new MailingSettingsForm();
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     // overridden in extended class
     protected String generateMailingTargetExpression(Mailing mailing, MailingSettingsForm form, Admin admin, MailingSettingsOptions options) {
         // Only change target expressions, that are NOT complex and not managed by workflow manager
@@ -1668,27 +1857,42 @@ public class MailingController implements XssCheckAware {
         return form.getTargetMode() == Mailing.TARGET_MODE_AND; // overridden in extended class
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private void updateMailingIconInRelatedWorkflowIfNeeded(boolean isNewMailing, int workflowId, Mailing mailing, HttpServletRequest req) {
-        if (isNewMailing && workflowDriven(workflowId)) { // is new mailing from campaign
-            Admin admin = AgnUtils.getAdmin(req);
-            assert (admin != null);
-            Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
-
-            List<WorkflowIcon> workflowIcons = workflow.getWorkflowIcons();
-            for (WorkflowIcon workflowIcon : workflowIcons) {
-                if (workflowIcon.getId() == WorkflowParametersHelper.defaultIfEmpty(req, workflowId).getNodeId()
-                        && isAllowedMailingIconTypeForFill(workflowIcon.getType())
-                        && workflowIcon instanceof WorkflowMailingAwareImpl) {
-                    WorkflowMailingAwareImpl mailingIcon = (WorkflowMailingAwareImpl) workflowIcon;
-                    mailingIcon.setMailingId(mailing.getId());
-                    mailingIcon.setIconTitle(mailing.getShortname());
-                    mailingIcon.setFilled(true);
-                }
-            }
-            workflowService.saveWorkflow(admin, workflow, workflowIcons);
+        if (!workflowDriven(workflowId)) {
+            return;
         }
+
+        Admin admin = AgnUtils.getAdmin(req);
+        assert (admin != null);
+        Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
+        Optional<WorkflowMailingAwareImpl> icon;
+        if (isNewMailing) {
+            icon = findMailingIconInRelatedWorkflow(workflow, 0, WorkflowParametersHelper.defaultIfEmpty(req, workflowId).getNodeId());
+        } else {
+            icon = findMailingIconInRelatedWorkflow(workflow, mailing.getId(), null);
+        }
+
+        icon.ifPresent(i -> {
+            i.setMailingId(mailing.getId());
+            i.setIconTitle(mailing.getShortname());
+            i.setFilled(true);
+        });
+
+        workflowService.saveWorkflow(admin, workflow, workflow.getWorkflowIcons());
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
+    private Optional<WorkflowMailingAwareImpl> findMailingIconInRelatedWorkflow(Workflow workflow, int mailingId, Integer nodeId) {
+        return workflow.getWorkflowIcons().stream()
+                .filter(i -> isAllowedMailingIconTypeForFill(i.getType()) && i instanceof WorkflowMailingAwareImpl)
+                .filter(i -> nodeId == null || i.getId() == nodeId)
+                .map(i -> (WorkflowMailingAwareImpl) i)
+                .filter(i -> i.getMailingId() == mailingId)
+                .findFirst();
+    }
+
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     protected boolean isAllowedMailingIconTypeForFill(int type) {
         return type == WorkflowIconType.MAILING.getId();
     }
@@ -1698,7 +1902,8 @@ public class MailingController implements XssCheckAware {
         return EXCLUDED_FROM_UNSAFE_TAG_CHECK_PARAMS.contains(param);
    	}
 
-    private boolean isFormContainsOnlyAlwaysAllowedChanges(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options) {
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
+    private boolean isFormContainsOnlyAlwaysAllowedChanges(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, Popups popups) {
         int gridTemplateId = gridService.getGridTemplateIdByMailingId(options.getMailingId());
         String textTemplateText = form.getEmailMediatype().getTextTemplate();
         String htmlTemplateText = form.getEmailMediatype().getHtmlTemplate();
@@ -1708,30 +1913,21 @@ public class MailingController implements XssCheckAware {
                 && StringUtils.equals(textTemplateText, mailing.getTextTemplate().getEmmBlock())
                 && ((gridTemplateId > 0 || mailing.getEmailParam().getMailFormat() == 0) || StringUtils.equals(htmlTemplateText, mailing.getHtmlTemplate().getEmmBlock()))) {
             return true;
-        } else {
-        	return false;
         }
+
+        MailingStatus mailingStatus = mailingService.getMailingStatus(mailing.getCompanyID(), mailing.getId());
+        popups.alert(mailingStatus == MailingStatus.SENT ? "error.sent.mailing.change.denied" : "status_changed");
+        return false;
     }
 
-    /**
-     * Check whether or not a mailing is editable.
-     * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
-     * that unlocks sent mailing so it could be edited anyway.
-     *
-     * @return whether ({@code true}) or not ({@code false}) mailing editing is permitted.
-     */
-    private boolean isMailingEditable(int mailingId, Admin admin) {
-        if (maildropService.isActiveMailing(mailingId, admin.getCompanyID())) {
-            return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-        } else {
-            return true;
-        }
+    private boolean isMailingSentOrActive(int mailingId, Admin admin) {
+        return maildropService.isActiveMailing(mailingId, admin.getCompanyID());
     }
 
     private boolean isMailingEditable(Mailing mailing, Admin admin, MailingSettingsOptions options) {
         return options.isForCopy()
                 || options.isForFollowUp()
-                || mailingPropertiesRules.isMailingContentEditable(mailing, admin);
+                || !isMailingSentOrActive(mailing.getId(), admin);
     }
 
     protected boolean isTargetModeCheckboxDisabled(MailingSettingsOptions options) {
@@ -1766,6 +1962,7 @@ public class MailingController implements XssCheckAware {
         return "mailing_templates";
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java. TODO remove when EMMGUI-714 migration finished
     protected void populateWorkflowDrivenSettings(MailingSettingsForm form, Mailing mailing, HttpServletRequest req) {
         Admin admin = AgnUtils.getAdmin(req);
         assert (admin != null);
@@ -1787,6 +1984,7 @@ public class MailingController implements XssCheckAware {
         // nothing to do
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private void setDisabledSettingsToForm(MailingSettingsForm form, Mailing mailing, Admin admin) {
         form.setMailinglistId(mailing.getMailinglistID());
         setMailingTargetsToForm(form, mailing);
@@ -1798,6 +1996,7 @@ public class MailingController implements XssCheckAware {
         form.setMailingType(mailing.getMailingType());
     }
 
+    // Redesigned in MailingSettingsServiceImpl.java TODO remove when EMMGUI-714 migration finished
     private MailingType getMailingTypeFromForwardParams(WorkflowParameters params) {
         try {
             String mailingTypeStr = params.getParamsAsMap().get("mailingType");
@@ -1827,18 +2026,31 @@ public class MailingController implements XssCheckAware {
         Mailing mailingToCreate = loadMailing(templateId, req);
         updateForwardParameters(req, true);
         if (mailingToCreate.getId() != 0) {
-            copyTemplateSettingsToMailingForm(mailingToCreate, form, req, isTemplate);
+            if (isRedesign(admin)) {
+                Integer workflowId = getWorkflowIdFromReq(req);
+                mailingSettingsService.copyTemplateSettingsToMailingForm(mailingToCreate, form, workflowId, isTemplate);    
+            } else {
+                copyTemplateSettingsToMailingForm(mailingToCreate, form, req, isTemplate);
+            }
             mailingToCreate.setId(0);
         } else {
             form.getEmailMediatype().setActive(true);
         }
-        populateWorkflowDrivenSettings(form, mailingToCreate, req);
+        if (isRedesign(admin)) {
+            mailingSettingsService.populateWorkflowDrivenSettings(form, mailingToCreate, admin,WorkflowParametersHelper.find(req));
+        } else {
+            populateWorkflowDrivenSettings(form, mailingToCreate, req);
+        }
 
         MailingSettingsOptions options = getOptionsBuilderForView(req, false, false, mailingToCreate).build();
         prepareMailingView(mailingToCreate, model, form, false, options, req, popups);
         model.addAttribute(MAILING_ID_ATTR, 0);
         model.addAttribute(IS_TEMPLATE_ATTR, isTemplate);
         return SETTINGS_VIEW;
+    }
+
+    private static Integer getWorkflowIdFromReq(HttpServletRequest req) {
+        return (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
     }
 
     @GetMapping("/{mailingId:\\d+}/actions.action")
@@ -1849,8 +2061,9 @@ public class MailingController implements XssCheckAware {
         return "mailing_actions";
     }
 
+    // TODO: check usage and remove after EMMGUI-714 will be finished and old design will be removed
     @GetMapping("/create.action")
-    public String create(Admin admin, HttpServletRequest req) {
+    public String create(Admin admin, HttpServletRequest req, Model model) {
         updateForwardParameters(req, true);
         List<MailingCreationOption> allowedOptions = Arrays.stream(MailingCreationOption.values())
                 .filter(option -> admin.permissionAllowed(option.getRequiredPermission()))
@@ -1858,7 +2071,12 @@ public class MailingController implements XssCheckAware {
         if (allowedOptions.size() == 1) {
             return autoSelectOptionNew(allowedOptions.get(0), req);
         }
+        addAttrsForCreationPage(model, admin);
         return "mailing_create_start";
+    }
+
+    protected void addAttrsForCreationPage(Model model, Admin admin) {
+        // empty for OpenEMM
     }
 
     private String autoSelectOptionNew(MailingCreationOption optionToSelect, HttpServletRequest req) {
@@ -1871,6 +2089,18 @@ public class MailingController implements XssCheckAware {
             }
         }
         return keepForward ? "forward:" + redirectionUrl : "redirect:" + redirectionUrl;
+    }
+
+    @PostMapping("/{mailingId:\\d+}/frame.action")
+    public String saveFrameContent(@PathVariable int mailingId, FrameContentForm form, Admin admin,
+                                   HttpSession session, Popups popups) {
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        if (!mailingSettingsService.saveFrameContent(mailing, form, admin, session.getId(), popups)) {
+            return MESSAGES_VIEW;
+        }
+        validateSavedMailing(mailing, admin, popups);
+        popups.success(CHANGES_SAVED_MSG);
+        return "redirect:/mailing/content/" + mailingId + "/view.action";
     }
     
     private void writeUserActivityLog(Admin admin, String action, String description) {

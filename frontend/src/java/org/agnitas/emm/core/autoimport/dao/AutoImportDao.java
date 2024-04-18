@@ -13,10 +13,10 @@ package org.agnitas.emm.core.autoimport.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.service.AutoImportJobStatus;
-import org.agnitas.emm.core.autoimport.service.Filter;
 import org.agnitas.util.Tuple;
 
 public interface AutoImportDao {
@@ -53,7 +53,7 @@ public interface AutoImportDao {
 
 	int resetAutoImportsForCurrentHost();
 	
-	List<AutoImport> getAutoImportsOverviewFiltered(int companyId, List<Filter> filters, boolean restrictContentSourceType, boolean showReferenceTableImports);
+	List<AutoImport> getAutoImportsOverviewFiltered(AutoImportOverviewFilter filter, int companyId, boolean restrictContentSourceType, boolean showReferenceTableImports);
 	
 	int getRunningAutoImportsByHost(String hostname);
 

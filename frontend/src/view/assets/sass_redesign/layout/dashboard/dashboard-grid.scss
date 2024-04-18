@@ -39,35 +39,7 @@
 
     @include mobile {
       grid-column: span 1;
-      @include hide-scroll();
-    }
-  }
-
-  .tile-controls {
-    display: none;
-
-    body.edit-mode & {
-      display: flex;
-      gap: $gap;
-    }
-
-    @include mobile {
-      display: none;
-    }
-
-    .btn {
-      width: 20px;
-      background-color: transparent;
-      padding: 0;
-      border: none;
-      color: $gray-700;
-      i {
-        font-size: $font-size-lg;
-      }
-
-      &:hover {
-        color: lighten(grey, 10%);
-      }
+      @include hide-scroll;
     }
   }
 }
@@ -76,6 +48,6 @@
   display: none;
   
   body.edit-mode & {
-    display: block;
+    display: flex;
   }
 }

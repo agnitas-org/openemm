@@ -35,6 +35,7 @@ public interface ImportProfileService {
     void deleteImportProfileById(int id);
 
     List<ImportProfile> getAvailableImportProfiles(Admin admin);
+    List<ImportProfile> getAvailableImportProfiles(int companyId);
 
     List<Integer> getSelectedMailingListIds(int id, int companyId);
 

@@ -835,6 +835,19 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				}
 			}
 		}
+		
+		if (!profileField.isNullable() && profileField.getDefaultValue() == null) {
+			RecipientFieldDescription existingProfileField = recipientFieldService.getRecipientField(companyID, profileField.getColumnName());
+			if (existingProfileField == null) {
+				if (recipientFieldService.hasRecipients(companyID)) {
+					throw new RestfulClientException("New profilefield may not be set to 'not null', if there are existing recipients: " + profileField.getShortName());
+				}
+			} else if (existingProfileField.isNullable() != profileField.isNullable()) {
+				if (recipientFieldService.hasRecipientsWithNullValue(companyID, profileField.getColumnName())) {
+					throw new RestfulClientException("Existing profilefield may not be changed to 'not null', if there are existing recipients with null values: " + profileField.getShortName());
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -865,7 +878,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			
 			if (currentFieldCount < maxFields) {
 				return true;
-			} else if (currentFieldCount < maxFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+			} else if (currentFieldCount < maxFields + configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID)) {
 				return true;
 			} else {
 				return false;

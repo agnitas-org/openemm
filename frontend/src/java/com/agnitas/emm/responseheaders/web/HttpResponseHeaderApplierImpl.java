@@ -11,7 +11,9 @@
 package com.agnitas.emm.responseheaders.web;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -25,10 +27,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public final class HttpResponseHeaderApplierImpl implements HttpResponseHeaderApplier {
-	
+
+    private static final Map<String, Set<String>> clientCachedResources = Map.of(
+            "contains", Set.of(
+                    "/application.min.css.action",
+                    "/assets/application.redesigned.min.js",
+                    "/translations.js.action",
+                    "/assets/config.js"),
+            "startsWith", Set.of(
+                    "/assets/fonts/"
+            ));
+    
 	private final HttpResponseHeaderService headerService;
 	private final ConfigService configService;
-	
+    
 	public HttpResponseHeaderApplierImpl(final HttpResponseHeaderService headerService, final ConfigService configService) {
 		this.headerService = Objects.requireNonNull(headerService, "httpResponseHeaderService");
 		this.configService = Objects.requireNonNull(configService, "configService");
@@ -72,8 +84,25 @@ public final class HttpResponseHeaderApplierImpl implements HttpResponseHeaderAp
 				.collect(Collectors.toList());
 
 		// Add selected headers to response or replaces existing header
-		for(final HttpHeaderConfig headerConfig : headersToAdd) {
-			response.setHeader(headerConfig.getHeaderName(), headerConfig.getHeaderValue());
-		}
+        headersToAdd.forEach(header -> addHeader(response, header, queryString));
+        if (isClientCachedResource(queryString)) {
+            response.setHeader("cache-control", "max-age=86400, private");
+        }
 	}
+
+    private static void addHeader(HttpServletResponse response, HttpHeaderConfig header, String queryStr) {
+        if (!isCachedHeaderRequired(queryStr, header.getHeaderName())) {
+            response.setHeader(header.getHeaderName(), header.getHeaderValue());
+        }
+    }
+
+    private static boolean isCachedHeaderRequired(String resource, String headerName) {
+        return ("cache-control".equalsIgnoreCase(headerName) || "pragma".equalsIgnoreCase(headerName))
+                && isClientCachedResource(resource);
+    }
+
+    private static boolean isClientCachedResource(String resource) {
+        return clientCachedResources.get("contains").contains(resource)
+                || clientCachedResources.get("startsWith").stream().anyMatch(resource::startsWith);
+    }
 }

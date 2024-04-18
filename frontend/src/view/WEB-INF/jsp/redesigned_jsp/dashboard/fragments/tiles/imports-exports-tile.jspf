@@ -6,13 +6,9 @@
 <script id="dashboard-tile-imports-exports" type="text/x-mustache-template">
     <div class="tile draggable-tile scheduled-items">
         <div class="tile-header">
-            <span class="tile-title">{{- tileName }}</span>
-            <div class="tile-controls">
-                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
-                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
-            </div>
+            <h1 class="tile-title">{{- tileName }}</h1>
         </div>
-        <div class="tile-body grid" style="--bs-columns: 1">
+        <div class="tile-body grid js-scrollable" style="--bs-columns: 1">
             <c:choose>
                 <c:when test="${recipientReports.isEmpty()}">
                     <div class="notification-simple">
@@ -22,9 +18,9 @@
                 </c:when>
                 <c:otherwise>
                     <c:forEach var="report" items="${recipientReports}">
-                        <a class="list-item overflow-hidden" href="<c:url value="/recipientsreport/${report.id}/view.action"/>">
+                        <a class="list-item overflow-hidden" href="<c:url value="/recipientsreport/${report.id}/view.action"/>" ${emm:permissionAllowed('recipientsreport.ui.migration', pageContext.request) ? 'data-confirm' : ''}>
                             <div class="item__info-container">
-                                <span class="type-badge" data-tooltip="<mvc:message code="${report.type.messageKey}" />">
+                                <span class="multi-icon-badge" data-tooltip="<mvc:message code="${report.type.messageKey}" />">
                                     <i class="icon icon-file-${report.hasImportType() ? 'import' : 'export'}"></i>
                                      <c:if test="${report.automatic}">
                                          <i class="icon icon-cogs"></i>
@@ -63,6 +59,6 @@
                 </c:otherwise>
             </c:choose>
         </div>
-        <div><div class="highlight-container"></div></div>
+        {{= overlay }}
     </div>
 </script>

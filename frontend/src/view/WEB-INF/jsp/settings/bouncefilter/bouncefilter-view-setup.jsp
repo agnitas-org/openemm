@@ -5,6 +5,8 @@
 
 <%--@elvariable id="bounceFilterForm" type="com.agnitas.emm.core.bounce.form.BounceFilterForm"--%>
 
+<c:url var="switchDesignUrl" value="/administration/bounce/list.action" scope="request" />
+
 <c:set var="isBounceFilterExist" value="${bounceFilterForm.id > 0}"/>
 
 <c:set var="isTabsMenuShown" 		value="false" 				scope="request" />

@@ -10,15 +10,18 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
+import java.util.List;
+
 public class RecipientSearchParamsDto {
     private int mailingListId;
     private int targetGroupId;
     private int altgId;
     private int userStatus;
-    private String userType;
+    private List<String> userTypes;
     private String firstName;
     private String lastName;
     private String email;
+    private Integer gender;
     private String eql;
 
     public int getMailingListId() {
@@ -53,12 +56,12 @@ public class RecipientSearchParamsDto {
         this.userStatus = userStatus;
     }
 
-    public String getUserType() {
-        return userType;
+    public List<String> getUserTypes() {
+        return userTypes;
     }
 
-    public void setUserType(String userType) {
-        this.userType = userType;
+    public void setUserTypes(List<String> userTypes) {
+        this.userTypes = userTypes;
     }
 
     public String getFirstName() {
@@ -91,5 +94,13 @@ public class RecipientSearchParamsDto {
 
     public void setEql(String eql) {
         this.eql = eql;
+    }
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
     }
 }

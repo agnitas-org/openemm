@@ -42,8 +42,8 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.AdminDaoImpl;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -801,7 +801,7 @@ public class RecipientImpl implements Recipient {
 		 *    a) if set to 0 : Tracking allowed (method returns false)
 		 *    b) if set to <> 0: Tracking not allowed (method returns true)
 		 */
-		final String value = getCustParameters(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
+		final String value = getCustParameters(RecipientStandardField.DoNotTrack.getColumnName());
 
 		final int flagValue = StringUtils.isEmpty(value) ? 0 : Integer.parseInt(value);
 
@@ -818,7 +818,7 @@ public class RecipientImpl implements Recipient {
 		 *    b) if set to <> 0: Tracking not allowed (method returns true)
 		 */
 
-		final Object valueOrNull = profileFields.get(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
+		final Object valueOrNull = profileFields.get(RecipientStandardField.DoNotTrack.getColumnName());
 		final String value = valueOrNull != null ? valueOrNull.toString() : "";
 
 		final int flagValue = StringUtils.isEmpty(value) ? 0 : Integer.parseInt(value);
@@ -828,7 +828,7 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public final void setDoNotTrackMe(final boolean doNotTrack) {
-		this.setCustParameters(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK, doNotTrack ? "1" : "0");
+		this.setCustParameters(RecipientStandardField.DoNotTrack.getColumnName(), doNotTrack ? "1" : "0");
 	}
 
 	/**

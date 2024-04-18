@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 
 public interface DynamicTagDao {
     /**
@@ -99,4 +100,6 @@ public interface DynamicTagDao {
 	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags, final boolean removeUnusedContent) throws Exception;
 
 	void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag);
+
+	List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(int targetId, int companyID);
 }

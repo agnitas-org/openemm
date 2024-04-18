@@ -1,0 +1,60 @@
+
+<c:set var="clearanceThreshold" value="${form.securitySettings.clearanceThreshold gt 0 ? form.securitySettings.clearanceThreshold : ''}"/>
+<c:set var="isNotificationEnabled" value="${not empty form.securitySettings.clearanceEmail}"/>
+
+<div class="col-12">
+    <div class="tile tile--sm" data-field="toggle-vis">
+        <div class="tile-header">
+            <div class="form-check form-switch">
+                <div class="hidden" data-field-vis-default="" data-field-vis-hide="#security-notification-related-block"></div>
+                <input type="checkbox" name="securitySettings.enableNotifications" id="enable-notification" class="form-check-input" role="switch"
+                ${isNotificationEnabled ? "checked=checked" : ""} data-field-vis="" data-field-vis-show="#security-notification-related-block"
+                       data-field-vis-nondisabled ${not canSendOrActivateMailing ? 'disabled' : ''}>
+                <label class="form-label form-check-label text-truncate" for="enable-notification"><mvc:message code="mailing.send.security.notification"/></label>
+            </div>
+        </div>
+
+        <div id="security-notification-related-block" class="tile-body border-top p-3">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox id="enable-status-on-error" cssClass="form-check-input" path="securitySettings.enableNoSendCheckNotifications" value="true" role="switch" disabled="${not canSendOrActivateMailing}"/>
+                        <label class="form-label form-check-label text-truncate fw-normal" for="enable-status-on-error">
+                            <mvc:message code="mailing.SendStatusOnErrorOnly"/>
+                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/SendStatusOnErrorOnly.xml"></a>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label for="clearanceThreshold" class="form-label fw-normal">
+                        <mvc:message code="mailing.autooptimization.threshold"/>
+                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/Threshold.xml"></a>
+                    </label>
+
+                    <input type="text" class="form-control" id="clearanceThreshold" name="securitySettings.clearanceThreshold"
+                           value="${clearanceThreshold}" placeholder="<mvc:message code="mailing.send.threshold"/>" ${not canSendOrActivateMailing ? 'disabled' : ''}>
+                </div>
+
+                <div class="col-12">
+                    <label for="clearanceEmail" class="form-label fw-normal">
+                        <mvc:message code="Recipients"/>
+                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/SendStatusEmail.xml"></a>
+                    </label>
+
+                    <div class="row g-1" data-controller="email-list-controller" data-initializer="email-list-initializer" data-target-field="securitySettings.clearanceEmail">
+                        <%-- Loads by JS --%>
+                        <script type="application/json" id="config:email-list-initializer">
+                            {
+                                "disabled": ${not canSendOrActivateMailing}
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <mvc:hidden path="securitySettings.clearanceEmail"/>
+        </div>
+    </div>
+</div>
+

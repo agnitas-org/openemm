@@ -3,3 +3,8 @@
   font-size: $fntSize;
   line-height: $line-height;
 }
+
+@mixin fa-content($icon) {
+  content: fa-content($icon);
+  font-family: "Font Awesome 5 Free";
+}

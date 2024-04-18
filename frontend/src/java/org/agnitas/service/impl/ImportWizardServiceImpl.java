@@ -17,10 +17,12 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -30,8 +32,6 @@ import com.agnitas.emm.core.commons.dto.FileDto;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardFileStepForm;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
-import com.agnitas.emm.core.upload.service.UploadService;
-import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
@@ -55,33 +55,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Service
 public class ImportWizardServiceImpl implements ImportWizardService {
 
     private static final Logger logger = LogManager.getLogger(ImportWizardServiceImpl.class);
 
     private static final int BLOCK_SIZE = 1000;
 
-    protected BlacklistService blacklistService;
-    private ConfigService configService;
-    private UploadService uploadService;
+    private final BlacklistService blacklistService;
+    private final ConfigService configService;
 
-    @Required
-    public void setBlacklistService(BlacklistService blacklistService) {
+    public ImportWizardServiceImpl(BlacklistService blacklistService, ConfigService configService) {
         this.blacklistService = blacklistService;
-    }
-
-    @Required
-    public void setConfigService(ConfigService configService) {
         this.configService = configService;
-    }
-
-    @Required
-    public void setUploadService(UploadService uploadService) {
-        this.uploadService = uploadService;
     }
 
     @Override
@@ -121,10 +111,8 @@ public class ImportWizardServiceImpl implements ImportWizardService {
         return checkedResult;
     }
 
-    private FileDto getFileDtoByUploadId(int uploadID) {
-        File file = uploadService.getDataForDownload(uploadID);
-        UploadFileDescription uploadDescription = uploadService.getUploadFileDescription(uploadID);
-        return new LocalFileDto(file.getAbsolutePath(), uploadDescription.getFileName());
+    protected FileDto getFileDtoByUploadId(int uploadID) {
+        throw new UnsupportedOperationException("Not supported. See extended scope");
     }
 
     private FileDto getFileDtoByUploadedFile(MultipartFile file, Admin admin) throws IOException {
@@ -376,6 +364,11 @@ public class ImportWizardServiceImpl implements ImportWizardService {
             default:
                 return "";
         }
+    }
+
+    @Override
+    public Map<Integer, String> getCsvUploads(Admin admin) {
+        return Collections.emptyMap(); // overridden in extended class
     }
 
     private void logDebug(String log) {

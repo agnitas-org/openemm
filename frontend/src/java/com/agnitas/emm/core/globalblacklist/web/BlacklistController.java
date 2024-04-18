@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.globalblacklist.web;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -25,6 +26,7 @@ import org.agnitas.web.forms.FormUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -32,7 +34,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,7 +51,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistForm;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistListForm;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistDeleteFormValidator;
 import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistFormValidator;
 import com.agnitas.emm.core.report.generator.TableGenerator;
@@ -84,10 +88,8 @@ public class BlacklistController implements XssCheckAware {
     private final BlacklistDeleteFormValidator deleteFormValidator = new BlacklistDeleteFormValidator();
     private final BlacklistFormValidator blacklistFormValidator = new BlacklistFormValidator();
 
-    public BlacklistController(@Qualifier("BlacklistService") BlacklistService blacklistService,
-                               UserActivityLogService userActivityLogService,
-                               @Qualifier("csvTableGenerator") TableGenerator csvTableGenerator,
-                               WebStorage webStorage) {
+    public BlacklistController(@Qualifier("BlacklistService") BlacklistService blacklistService, UserActivityLogService userActivityLogService,
+                               @Qualifier("csvTableGenerator") TableGenerator csvTableGenerator, WebStorage webStorage) {
 
         this.blacklistService = blacklistService;
         this.userActivityLogService = userActivityLogService;
@@ -95,33 +97,31 @@ public class BlacklistController implements XssCheckAware {
         this.webStorage = webStorage;
     }
 
+    @InitBinder
+    public void initBinder(WebDataBinder binder, Admin admin) {
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
+    }
+
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
     public Pollable<ModelAndView> list(Admin admin, HttpSession session, Model model,
-                                       @ModelAttribute(BLACKLIST_LIST_FORM_KEY) BlacklistListForm listForm) {
+                                       @ModelAttribute(BLACKLIST_LIST_FORM_KEY) BlacklistOverviewFilter filter) {
 
         int companyId = admin.getCompanyID();
-        String sessionId = session.getId();
 
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.BLACKLIST_OVERVIEW, listForm);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.BLACKLIST_OVERVIEW, filter);
 
-        PollingUid pollingUid = PollingUid.builder(sessionId, BLACKLISTS_DTO_KEY)
-                .arguments(listForm.getSort(), listForm.getOrder(), listForm.getPage(), listForm.getNumberOfRows())
+        PollingUid pollingUid = PollingUid.builder(session.getId(), BLACKLISTS_DTO_KEY)
+                .arguments(filter.toArray())
                 .build();
 
         Callable<ModelAndView> worker = () -> {
             model.addAttribute(DATE_TIME_FORMAT_KEY, admin.getDateTimeFormat());
-            model.addAttribute(BLACKLISTS_DTO_KEY,
-                    blacklistService.getAll(companyId,
-                            listForm.getSort(),
-                            listForm.getOrder(),
-                            listForm.getPage(),
-                            listForm.getNumberOfRows(),
-                            listForm.getSearchQuery()));
+            model.addAttribute(BLACKLISTS_DTO_KEY, blacklistService.getAll(filter, companyId));
 
             return new ModelAndView("settings_blacklist_list", model.asMap());
         };
 
-        ModelAndView modelAndView = new ModelAndView("redirect:/recipients/blacklist/list.action", listForm.toMap());
+        ModelAndView modelAndView = new ModelAndView("redirect:/recipients/blacklist/list.action", filter.toMap());
 
         return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
     }

@@ -13,6 +13,7 @@ package org.agnitas.emm.core.autoimport.service;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
@@ -84,7 +85,8 @@ public interface AutoImportService {
 
     void removeExpiredWsJobs();
 
-    List<AutoImport> getAutoImportsOverview(Admin admin, List<String> filters);
+    List<AutoImport> getAutoImportsOverview(AutoImportOverviewFilter filter, Admin admin);
+    List<AutoImport.AutoImportType> getAvailableTypes(Admin admin);
 
     String findName(int autoImportId, int companyId);
 }

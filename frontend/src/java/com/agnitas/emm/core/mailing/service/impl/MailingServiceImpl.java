@@ -10,45 +10,33 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.beans.impl.MediatypeEmailImpl;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ListMailingFilter;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.validation.MailingModelValidator;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToActionMessages;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ComMailingContentService;
-import com.agnitas.service.ComMailingLightService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.OneOf;
-import jakarta.mail.internet.InternetAddress;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+
+import java.beans.PropertyDescriptor;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
@@ -92,32 +80,46 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.beans.PropertyDescriptor;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.beans.impl.MediatypeEmailImpl;
+import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ListMailingFilter;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.validation.MailingModelValidator;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToActionMessages;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.service.MailingContentService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.OneOf;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import jakarta.mail.internet.InternetAddress;
 
 public class MailingServiceImpl implements MailingService, ApplicationContextAware {
 
@@ -126,6 +128,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	protected ComMailingDao mailingDao;
 	protected ConfigService configService;
+    private MailingService selfReference; // self reference for transaction management
 	private JavaMailService javaMailService;
 	private AdminService adminService;
 	private MailinglistDao mailinglistDao;
@@ -137,7 +140,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	private MailingComponentFactory mailingComponentFactory;
 	private MediatypeFactory mediatypeFactory;
 	private ComMailingBaseService mailingBaseService;
-	private ComMailingContentService mailingContentService;
+	private MailingContentService mailingContentService;
 	private MailingModelValidator mailingModelValidator;
 	private ApplicationContext applicationContext;
     private ObjectUsageService objectUsageService;
@@ -924,7 +927,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     @Override
     @Transactional
     public ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> mailingIds, Admin admin) {
-        ServiceResult<List<Mailing>> mailingsResult = getMailingsForDeletion(mailingIds, admin);
+        ServiceResult<List<Mailing>> mailingsResult = selfReference.getMailingsForDeletion(mailingIds, admin);
         if (!mailingsResult.isSuccess()) {
             return ServiceResult.error(mailingsResult.getErrorMessages());
         }
@@ -1008,6 +1011,21 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         }
     }
 
+    @Override
+    public boolean isDynamicTemplateCheckboxVisible(Mailing mailing) {
+        if (mailing.isIsTemplate()) {
+            // For templates checkbox is always show and enabled
+            return true;
+        } else if (mailing.getMailTemplateID() != 0) {
+            // For mailings, checkbox is always shows if and only if referenced mailing-record defines template
+            // Checkbox is only enabled, if such a mailing has ID 0 (new mailing)
+            return checkMailingReferencesTemplate(mailing.getMailTemplateID(), mailing.getCompanyID());
+        } else {
+            // in all other cases, the checkbox is hidden
+            return false;
+        }
+    }
+    
 	@Override
     public boolean hasMediaType(int mailingId, MediaTypes type, int companyId) {
 	    return mailingDao.hasMediaType(companyId, mailingId, type);    
@@ -1064,7 +1082,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     @Override
     @Transactional
     public ServiceResult<List<Mailing>> getMailingsForDeletion(Collection<Integer> mailingIds, Admin admin) {
-        if (mailingIds.isEmpty()) {
+        if (CollectionUtils.isEmpty(mailingIds)) {
             return ServiceResult.error(Message.of(NOTHING_SELECTED_MSG));
         }
         List<ServiceResult<Mailing>> results = mailingIds.stream()
@@ -1075,10 +1093,14 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
-        if (!errors.isEmpty()) {
-            return ServiceResult.error(errors);
-        }
-        return ServiceResult.success(results.stream().map(ServiceResult::getResult).collect(Collectors.toList()));
+        List<Message> warns = results.stream()
+                .map(ServiceResult::getWarningMessages)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        return new ServiceResult<>(
+                results.stream().map(ServiceResult::getResult).collect(Collectors.toList()),
+                errors.isEmpty(), Collections.emptyList(), warns, errors);
     }
 
     private SimpleServiceResult checkIfMailingUsed(int mailingId, Admin admin) {
@@ -1243,7 +1265,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Required
-	public void setMailingContentService(ComMailingContentService mailingContentService) {
+	public void setMailingContentService(MailingContentService mailingContentService) {
 		this.mailingContentService = mailingContentService;
 	}
 
@@ -1276,6 +1298,11 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     @Required
     public void setMediatypesDao(MediatypesDao mediatypesDao) {
         this.mediatypesDao = mediatypesDao;
+    }
+
+    @Required
+    public void setSelfReference(MailingService mailingService) {
+        this.selfReference = mailingService;
     }
 
 	@Override

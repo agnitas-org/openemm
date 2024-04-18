@@ -83,7 +83,7 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   
   function showRemovedMailinglistError() {
     var form = Form.get($('#mailingSettingsForm'));
-    form.showFieldError('mailinglistId', 'Mailing list removed', true);
+    form.showFieldError('mailinglistId', t('fields.mailinglist.errors.removed'), true);
   }
 
   function scrollPage() {
@@ -342,13 +342,7 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
 
     toggle(isDateBasedMailing(mailingType), '#mailing-bcc-recipients');
 
-    var showTargetGroups = true;
-    if (isActionBasedMailing(mailingType)) {
-      showTargetGroups = config.campaignEnableTargetGroups;
-    }
-    if (isDateBasedMailing(mailingType)) {
-      showTargetGroups = !config.workflowDriven;
-    }
+    var showTargetGroups = isActionBasedMailing(mailingType) ? config.campaignEnableTargetGroups : true;
     toggle(showTargetGroups, '#mailingTargets');
   }
 

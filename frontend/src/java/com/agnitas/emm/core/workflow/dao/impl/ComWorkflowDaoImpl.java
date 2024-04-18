@@ -199,7 +199,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     private String getDisabledMailingListsSqlRestriction(Admin admin, List<Object> params) {
-        if (admin.getAdminID() <= 0 || !isDisabledMailingListsSupported()) {
+        if (admin.getAdminID() <= 0 || !configService.isDisabledMailingListsSupported()) {
             return "";
         }
 

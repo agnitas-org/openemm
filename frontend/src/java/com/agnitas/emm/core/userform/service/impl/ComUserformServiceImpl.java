@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -23,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.EmmActionDao;
@@ -125,13 +127,13 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 
         // make certain forms active
         if (CollectionUtils.isNotEmpty(activeFormIds)) {
-            affectedRows += userFormDao.updateActiveness(companyId, activeFormIds, true);
+            affectedRows += updateActiveness(companyId, activeFormIds, true);
             description += "Made active: " + StringUtils.join(activeFormIds, ", ");
         }
 
         // make certain form inactive
         if (CollectionUtils.isNotEmpty(inactiveFormIds)) {
-            affectedRows +=  userFormDao.updateActiveness(companyId, inactiveFormIds, false);
+            affectedRows += updateActiveness(companyId, inactiveFormIds, false);
             description += StringUtils.isNotBlank(description) ? "\n" : "";
             description += "Made inactive: " + StringUtils.join(inactiveFormIds, ", ");
         }
@@ -141,6 +143,11 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         }
 
         return null;
+    }
+
+    @Override
+    public int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive) {
+        return userFormDao.updateActiveness(companyId, formIds, isActive);
     }
 
     @Override
@@ -363,6 +370,13 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         final List<UserForm> userForms = userFormDao.getUserForms(companyId);
 
         return userForms.stream().map(UserForm::getFormName).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getUserFormNames(Set<Integer> bulkIds, int companyID) {
+        return bulkIds.stream()
+                .map(id -> getUserFormName(id, companyID))
+                .collect(Collectors.toList());
     }
 
     @Override

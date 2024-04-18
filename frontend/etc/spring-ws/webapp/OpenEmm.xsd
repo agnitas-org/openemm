@@ -919,6 +919,28 @@
 		<xs:complexType />
 	</xs:element>
 
+	<xs:element name="PauseCampaignRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="campaignID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="PauseCampaignResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<xs:element name="ResumeCampaignRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="campaignID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ResumeCampaignResponse">
+		<xs:complexType />
+	</xs:element>
+
 	<xs:element name="UpdateContentBlockRequest">
 		<xs:complexType>
 			<xs:all>

@@ -1,0 +1,128 @@
+
+<%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
+<%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
+
+<%-- In case of modification recheck this btn on 'Content' and 'Settings' tab --%>
+<script id="modal-editor" type="text/x-mustache-template">
+    {{ var showExpandBtn = (showText && showHtml) || (showText && showSms) || (showHtml && showSms); }}
+    <div class="modal modal-adaptive modal-editor">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="content-form" class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="mailing.frame.edit"/></h1>
+                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-editors-container">
+                        <c:if test="${not isMailingGrid}">
+                            {{ if (showHtml) { }}
+                            <div class="tile" data-hide-by-checkbox="#text-version-editor-checkbox, #sms-version-editor-checkbox" data-field="validator">
+                                <div class="tile-header px-3 py-2 border-bottom text-dark">
+                                    <h1><mvc:message code="mailing.HTML_Version"/></h1>
+                                    <div class="tile-controls">
+                                        <label class="icon-checkbox">
+                                            <input type="checkbox" id="html-version-editor-checkbox">
+                                            <i class="icon icon-expand-arrows-alt" data-icon-off></i>
+                                            <i class="icon icon-compress-arrows-alt" data-icon-on></i>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="tile-body d-flex flex-column p-0">
+                                    <textarea id="htmlTemplateLarge" data-sync="#htmlTemplate"
+                                              class="form-control js-editor"
+                                              ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                              data-show-char-counter="tile-footer"
+                                              data-field-validator="reject-script-element"></textarea>
+                                </div>
+                                <div class="tile-footer text-dark fs-3 bg-transparent border-top d-flex justify-content-between text-nowrap">
+                                    <c:if test="${showDynamicTemplateToggle}">
+                                        <div class="form-check form-switch mt-auto overflow-hidden">
+                                            <mvc:checkbox cssClass="form-check-input" path="useDynamicTemplate" id="dynamic-template-large" data-sync="#dynamic-template" role="switch" disabled="${isSettingsReadonly}"/>
+                                            <label class="form-label form-check-label text-truncate">
+                                                <c:if test="${isTemplate}">
+                                                    <mvc:message code="mailing.dynamic_template.preset"/>
+                                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/TemplateUpdateMailingMsg.xml"></a>
+                                                </c:if>
+                                                <c:if test="${not isTemplate}">
+                                                    <mvc:message code="mailing.dynamic_template"/>
+                                                </c:if>
+                                            </label>
+                                        </div>
+                                    </c:if>
+                                    <c:if test="${not showDynamicTemplateToggle}">
+                                        <mvc:hidden path="useDynamicTemplate" id="dynamic-template-large" data-sync="#dynamic-template"/>
+                                    </c:if>
+                                </div>
+                            </div>
+                            {{ } }}
+                        </c:if>
+
+                        {{ if (showText) { }}
+                        <div class="tile" data-hide-by-checkbox="#html-version-editor-checkbox, #sms-version-editor-checkbox" data-field="validator">
+                            <div class="tile-header px-3 py-2 text-dark border-bottom">
+                                <h1><mvc:message code="Text_Version"/></h1>
+                                {{ if (showExpandBtn) { }}
+                                <div class="tile-controls">
+                                    <label class="icon-checkbox">
+                                        <input type="checkbox" id="text-version-editor-checkbox">
+                                        <i class="icon icon-expand-arrows-alt" data-icon-off></i>
+                                        <i class="icon icon-compress-arrows-alt" data-icon-on></i>
+                                    </label>
+                                </div>
+                                {{ } }}
+                            </div>
+                            <div class="tile-body d-flex flex-column p-0">
+                                <textarea id="textTemplateLarge" data-sync="#textTemplate"
+                                          class="form-control js-editor-text"
+                                          ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                          data-show-char-counter="tile-footer"
+                                          data-field-validator="reject-script-element"></textarea>
+                            </div>
+                        </div>
+                        {{ } }}
+
+                        {{ if (showSms) { }}
+                        <div class="tile" data-hide-by-checkbox="#html-version-editor-checkbox, #text-version-editor-checkbox" data-field="validator">
+                            <div class="tile-header px-3 py-2 border-bottom text-dark">
+                                <h1><mvc:message code="mailing.version.sms"/></h1>
+                                {{ if (showExpandBtn) { }}
+                                <div class="tile-controls">
+                                    <label class="icon-checkbox">
+                                        <input type="checkbox" id="sms-version-editor-checkbox">
+                                        <i class="icon icon-expand-arrows-alt" data-icon-off></i>
+                                        <i class="icon icon-compress-arrows-alt" data-icon-on></i>
+                                    </label>
+                                </div>
+                                {{ } }}
+                            </div>
+                            <div class="tile-body d-flex flex-column p-0">
+                                <textarea id="smsTemplateLarge" data-sync="#smsTemplate"
+                                          class="form-control js-editor-text"
+                                          ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                          data-show-char-counter="tile-footer"
+                                          data-field-validator="reject-script-element"></textarea>
+                            </div>
+                        </div>
+                        {{ } }}
+                    </div>
+                </div>
+                <emm:ShowByPermission token="${isTemplate ? 'template.change' : 'mailing.change'}">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary flex-grow-1"
+                                data-sync-from="#htmlTemplateLarge,#textTemplateLarge,#smsTemplateLarge,#dynamic-template-large"
+                                data-sync-to="#htmlTemplate,#textTemplate,#smsTemplate,#dynamic-template"
+                                data-form-target='#mailingSettingsForm'
+                                data-action="${isSettingsReadonly ? '' : 'save-content'}"
+                                <c:if test="${isSettingsReadonly}">disabled</c:if>
+                                data-controls-group='save'>
+                            <i class="icon icon-save"></i>
+                            <span class="text"><mvc:message code="button.Save"/></span>
+                        </button>
+                    </div>
+                </emm:ShowByPermission>
+            </form>
+        </div>
+    </div>
+</script>

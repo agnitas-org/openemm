@@ -18,12 +18,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.AdminGroupImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,9 +46,10 @@ import com.agnitas.emm.core.Permission;
  */
 public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGroupDao  {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AdminGroupDaoImpl.class);
-    
+	private static final Logger logger = LogManager.getLogger(AdminGroupDaoImpl.class);
+    private static final String ADMIN_GROUP_TBL = "admin_group_tbl";
+    private static final String SHORTNAME_COL = "shortname";
+
     /** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
 
@@ -62,6 +67,14 @@ public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGrou
 	public AdminGroup getAdminGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor) {
 		return selectObjectDefaultNull(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), adminGroupID);
 	}
+
+    @Override
+    public AdminGroup getUserGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor) {
+        return selectObjectDefaultNull(logger, "SELECT ag.admin_group_id, ag.company_id, ag.shortname, ag.description,"
+                        + " (SELECT c.shortname FROM company_tbl c WHERE c.company_id = ag.company_id) AS company_name"
+                        + " FROM admin_group_tbl ag WHERE ag.admin_group_id = ?",
+                new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), adminGroupID);
+    }
 
 	private AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor, Stack<Integer> cycleDetectionGroupIds) {
 		if (cycleDetectionGroupIds == null) {
@@ -92,11 +105,72 @@ public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGrou
     		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ? OR company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?)" + additionalAdminGroupIdsPart + " ORDER BY admin_group_id", new AdminGroupRowMapper(companyId), companyId, companyId);
     	}
 	}
-    
+
+    @Override
+    public PaginatedListImpl<UserGroupDto> getAdminGroupsByCompanyIdInclCreator(UserGroupOverviewFilter filter) {
+        StringBuilder sql =  new StringBuilder("SELECT ag.admin_group_id, ag.company_id," +
+                " CONCAT(CONCAT(CONCAT(c.shortname, ' ('), c.company_id), ')') AS company_descr," +
+                " ag.shortname ag_shortname, ag.description" +
+                " FROM admin_group_tbl ag LEFT JOIN company_tbl c ON ag.company_id = c.company_id");
+        List<Object> params = applyOverviewFilter(filter, sql);
+
+        String sortCol = filter.getSortOrDefault(SHORTNAME_COL);
+        String sortClause = tryGetOverviewSortClause(sortCol, filter.ascending());
+
+        return selectPaginatedListWithSortClause(logger, sql.toString(), sortClause, sortCol,
+                filter.ascending(), filter.getPage(), filter.getNumberOfRows(),
+                new UserGroupOverviewRowMapper(), params.toArray());
+    }
+
+    private String tryGetOverviewSortClause(String sortCol, boolean asc) {
+        try {
+            return getOverviewSortClause(sortCol, asc);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String getOverviewSortClause(String sortCol, boolean asc) throws Exception {
+        DbColumnType columnDataType = DbUtilities.getColumnDataType(getDataSource(), ADMIN_GROUP_TBL, sortCol);
+        boolean lowerSearch = columnDataType != null
+                && columnDataType.getSimpleDataType() == DbColumnType.SimpleDataType.Characters;
+        sortCol = SHORTNAME_COL.equals(sortCol) ? "ag_" + SHORTNAME_COL : sortCol;
+        return (lowerSearch ? "ORDER BY LOWER(" + sortCol + ")" : "ORDER BY " + sortCol) + (asc ? " ASC" : " DESC");
+    }
+
+    private List<Object> applyOverviewFilter(UserGroupOverviewFilter filter, StringBuilder sql) {
+        List<Object> params = new ArrayList<>();
+        if (filter.getCurrentAdminId() == 1) {
+            sql.append(" WHERE 1=1");
+        } else {
+            sql.append(" WHERE (ag.company_id = ? OR ag.company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?))");
+            params.add(filter.getCurrentAdminCompanyId());
+            params.add(filter.getCurrentAdminCompanyId());
+        }
+
+        if (StringUtils.isNotBlank(filter.getGroupName())) {
+            sql.append(getPartialSearchFilterWithAnd("ag.shortname"));
+            params.add(filter.getGroupName());
+        }
+        if (StringUtils.isNotBlank(filter.getDescription())) {
+            sql.append(getPartialSearchFilterWithAnd("ag.description"));
+            params.add(filter.getDescription());
+        }
+        if (filter.getClientId() != null && filter.getClientId() > 0) {
+            sql.append(" AND ag.company_id = ?");
+            params.add(filter.getClientId());
+        }
+        if (StringUtils.isNotBlank(filter.getClientName())) {
+            sql.append(getPartialSearchFilterWithAnd("c.shortname"));
+            params.add(filter.getClientName());
+        }
+        return params;
+    }
+
     @Override
     public PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
     	if (StringUtils.isBlank(sortColumn)) {
-    		sortColumn = "shortname";
+    		sortColumn = SHORTNAME_COL;
         }
 		
 		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
@@ -104,11 +178,11 @@ public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGrou
 		String selectStatement;
     	if (adminId == 1) {
     		selectStatement = "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl";
-    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId));
+    		return selectPaginatedList(logger, selectStatement, ADMIN_GROUP_TBL, sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId));
     	} else {
     		selectStatement = "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl"
     			+ " WHERE (company_id = ? OR company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?))";
-    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId), companyId, companyId);
+    		return selectPaginatedList(logger, selectStatement, ADMIN_GROUP_TBL, sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId), companyId, companyId);
     	}
     }
 	
@@ -213,7 +287,20 @@ public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGrou
 		String sql = "SELECT COUNT(*) FROM admin_group_tbl WHERE (company_id = ? or company_id = 1) AND shortname = ?";
 		return selectInt(logger, sql, companyId, groupname) > 0;
 	}
-    
+
+    private class UserGroupOverviewRowMapper implements RowMapper<UserGroupDto> {
+        @Override
+        public UserGroupDto mapRow(ResultSet resultSet, int row) throws SQLException {
+            UserGroupDto group = new UserGroupDto();
+            group.setUserGroupId(resultSet.getInt("admin_group_id"));
+            group.setShortname(resultSet.getString("ag_shortname"));
+            group.setCompanyId(resultSet.getInt("company_id"));
+            group.setCompanyDescr(resultSet.getString("company_descr"));
+            group.setDescription(resultSet.getString("description"));
+            return group;
+        }
+    }
+
     private class AdminGroupRowMapper implements RowMapper<AdminGroup> {
     	private int companyID;
     	private Stack<Integer> cycleDetectionGroupIds = null;
@@ -238,9 +325,12 @@ public class AdminGroupDaoImpl extends PaginatedBaseDaoImpl implements AdminGrou
 			
 			group.setGroupID((resultSet.getInt("admin_group_id")));
 			group.setCompanyID((resultSet.getInt("company_id")));
-			group.setShortname(resultSet.getString("shortname"));
+			group.setShortname(resultSet.getString(SHORTNAME_COL));
 			group.setDescription(resultSet.getString("description"));
 			group.setGroupPermissions(Permission.fromTokens(getGroupPermissionsTokens(group.getGroupID())));
+            if (DbUtilities.resultsetHasColumn(resultSet, "company_name")) {
+                group.setCompanyName(resultSet.getString("company_name"));
+            }
 			
 			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(companyID);
 			group.setCompanyPermissions(companyPermissions);

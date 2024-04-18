@@ -2,8 +2,7 @@
 
   class PreviewTable {
 
-    static init() {
-      const $toggle = $('[data-preview-table]');
+    static init($toggle) {
       const conf = AGN.Lib.Storage.get(PreviewTable.#getStorageKey($toggle));
 
       if (conf) {
@@ -13,7 +12,7 @@
     }
 
     static toggle($toggle) {
-      PreviewTable.#toggleUI($toggle)
+      PreviewTable.#toggleUI($toggle);
       AGN.Lib.Storage.set(PreviewTable.#getStorageKey($toggle), {
         preview: PreviewTable.#isPreviewEnabled($toggle)
       });

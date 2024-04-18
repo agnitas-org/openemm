@@ -126,56 +126,46 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
     @Override
     public List<TrackableLink> getTrackableLinks(int mailingId, int companyId, boolean includeDeleted) {
-    	if (configService.getBooleanValue(ConfigValue.UseFixedTrackableLinksRead, companyId)) {
-	    	if (companyId <= 0 || mailingId <= 0) {
-				return Collections.emptyList();
-			} else {
-		        //keep SELECT * because "usage" is a reserved word on mariaDB
-				List<TrackableLink> links = select(logger, "SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?" + (includeDeleted ? "" : " AND deleted <= 0"), new TrackableLink_RowMapper(), companyId, mailingId);
-				
-				String sql = "SELECT url_id, param_type, param_key, param_value FROM rdir_url_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = ?) ORDER BY url_id, param_type, param_key, param_value";
-				List<Map<String, Object>> allLinkParamsResult = select(logger, sql, mailingId);
-				Map<Integer, List<LinkProperty>> allLinkParams = new HashMap<>();
-				for (Map<String, Object> linkParamWithUrlID : allLinkParamsResult) {
-					int linkID = ((Number) linkParamWithUrlID.get("url_id")).intValue();
-					
-					PropertyType type;
-					try {
-						type = PropertyType.parseString((String) linkParamWithUrlID.get("param_type"));
-					} catch (Exception e) {
-						throw new RuntimeException("Error when reading link properties param_type", e);
-					}
-					String paramKey = (String) linkParamWithUrlID.get("param_key");
-					String paramValue = (String) linkParamWithUrlID.get("param_value");
-					LinkProperty linkProperty = new LinkProperty(type, paramKey, paramValue);
-					
-					List<LinkProperty> linkProperties = allLinkParams.get(linkID);
-					if (linkProperties == null) {
-						linkProperties = new ArrayList<>();
-					}
-					linkProperties.add(linkProperty);
-					
-					allLinkParams.put(linkID, linkProperties);
-				}
-				
-				for (TrackableLink link : links) {
-					List<LinkProperty> linkProperties = allLinkParams.get(link.getId());
-					if (linkProperties != null) {
-						link.setProperties(linkProperties);
-					}
-				}
-				
-				return links;
-			}
-    	} else {
-    		// Legacy for EMM-7037: To be removed in near future
-	    	if (companyId <= 0 || mailingId <= 0) {
-				return Collections.emptyList();
-			}
+    	if (companyId <= 0 || mailingId <= 0) {
+			return Collections.emptyList();
+		} else {
 	        //keep SELECT * because "usage" is a reserved word on mariaDB
-	        return getTrackableLinks("SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?"
-	                + (includeDeleted ? "" : " AND deleted <= 0"), companyId, mailingId);
-    	}
+			List<TrackableLink> links = select(logger, "SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?" + (includeDeleted ? "" : " AND deleted <= 0"), new TrackableLink_RowMapper(), companyId, mailingId);
+			
+			String sql = "SELECT url_id, param_type, param_key, param_value FROM rdir_url_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = ?) ORDER BY url_id, param_type, param_key, param_value";
+			List<Map<String, Object>> allLinkParamsResult = select(logger, sql, mailingId);
+			Map<Integer, List<LinkProperty>> allLinkParams = new HashMap<>();
+			for (Map<String, Object> linkParamWithUrlID : allLinkParamsResult) {
+				int linkID = ((Number) linkParamWithUrlID.get("url_id")).intValue();
+				
+				PropertyType type;
+				try {
+					type = PropertyType.parseString((String) linkParamWithUrlID.get("param_type"));
+				} catch (Exception e) {
+					throw new RuntimeException("Error when reading link properties param_type", e);
+				}
+				String paramKey = (String) linkParamWithUrlID.get("param_key");
+				String paramValue = (String) linkParamWithUrlID.get("param_value");
+				LinkProperty linkProperty = new LinkProperty(type, paramKey, paramValue);
+				
+				List<LinkProperty> linkProperties = allLinkParams.get(linkID);
+				if (linkProperties == null) {
+					linkProperties = new ArrayList<>();
+				}
+				linkProperties.add(linkProperty);
+				
+				allLinkParams.put(linkID, linkProperties);
+			}
+			
+			for (TrackableLink link : links) {
+				List<LinkProperty> linkProperties = allLinkParams.get(link.getId());
+				if (linkProperties != null) {
+					link.setProperties(linkProperties);
+				}
+			}
+			
+			return links;
+		}
     }
 
     /**
@@ -383,21 +373,12 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void deleteAdminAndTestClicks(int mailingId, int companyId) {
-        String rdirlogTable = "rdirlog_" + companyId + "_tbl";
-
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("DELETE FROM ");
-        queryBuilder.append(rdirlogTable);
-        queryBuilder.append(" WHERE ");
-        queryBuilder.append(rdirlogTable);
-        queryBuilder.append(".mailing_id = ? AND EXISTS (SELECT 1 FROM customer_");
-        queryBuilder.append(companyId);
-        queryBuilder.append("_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND ");
-        queryBuilder.append(rdirlogTable);
-        queryBuilder.append(".customer_id = bind.customer_id AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))");
-
-        update(logger, queryBuilder.toString(), mailingId, mailingId);
+    public void deleteAdminAndTestClicks(int mailingID, int companyID) {
+		String sqlClicks = "DELETE FROM rdirlog_" + companyID + "_tbl"
+			+ " WHERE mailing_id = ?"
+				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
+					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
+		update(logger, sqlClicks, mailingID, mailingID);
     }
 
 	@Override

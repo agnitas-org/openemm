@@ -41,15 +41,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.sql.DataSource;
 
+import com.agnitas.messages.I18nString;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DbUtilities;
+import org.agnitas.util.TarGzUtilities;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -81,7 +84,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	protected boolean done = true;
 	
-	private boolean zipped = false;
+	private FileCompressionType compressionType = null;
     private String zipPassword = null;
     private String zippedFileName = null;
 	
@@ -90,6 +93,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
     protected boolean alwaysQuote = false;
     protected Character stringQuote = '"';
     protected String nullValueText = "";
+	protected boolean useDecodedValues;
+	protected Locale locale;
 	
 	protected DateFormat dateFormat = null;
 	protected DateFormat dateTimeFormat = null;
@@ -171,8 +176,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		this.selectParameters = selectParameters;
 	}
 
-	public void setZipped(boolean zipped) {
-		this.zipped = zipped;
+	public void setCompressionType(FileCompressionType compressionType) {
+		this.compressionType = compressionType;
 	}
 
 	public void setZipPassword(String zipPassword) {
@@ -197,6 +202,14 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	public void setDelimiter(char delimiter) {
 		this.delimiter = delimiter;
+	}
+
+	public void setUseDecodedValues(boolean useDecodedValues) {
+		this.useDecodedValues = useDecodedValues;
+	}
+
+	public void setLocale(Locale locale) {
+		this.locale = locale;
 	}
 
 	public char getDelimiter() {
@@ -329,19 +342,40 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				throw new Exception("Select statement is missing");
 			}
 			
-			if (zipped && StringUtils.isEmpty(zipPassword)) {
-				if (!exportFile.toLowerCase().endsWith(".zip")) {
-					if (!exportFile.toLowerCase().endsWith(".csv")) {
-							exportFile = exportFile + ".csv";
+			if (compressionType == FileCompressionType.ZIP && StringUtils.isEmpty(zipPassword)) {
+				if (!StringUtils.endsWithIgnoreCase(exportFile, ".zip")) {
+					if (!StringUtils.endsWithIgnoreCase(exportFile, "." + "csv")) {
+						exportFile = exportFile + "." + "csv";
 					}
-					
+
 					exportFile = exportFile + ".zip";
 				}
-			} else if (!exportFile.toLowerCase().endsWith(".csv")) {
-				if (exportFile.toLowerCase().endsWith(".zip")) {
-					exportFile = exportFile.substring(0, exportFile.length() - 4);
+			} else if (compressionType == FileCompressionType.TARGZ) {
+				if (!StringUtils.endsWithIgnoreCase(exportFile, ".tar.gz")) {
+					if (!StringUtils.endsWithIgnoreCase(exportFile, "." + "csv")) {
+						exportFile = exportFile + "." + "csv";
+					}
+
+					exportFile = exportFile + ".tar.gz";
 				}
-				exportFile = exportFile + ".csv";
+			} else if (compressionType == FileCompressionType.TGZ) {
+				if (!StringUtils.endsWithIgnoreCase(exportFile, ".tgz")) {
+					if (!StringUtils.endsWithIgnoreCase(exportFile,"." + "csv")) {
+						exportFile = exportFile + "." + "csv";
+					}
+
+					exportFile = exportFile + ".tgz";
+				}
+			} else if (compressionType == FileCompressionType.GZ) {
+				if (!StringUtils.endsWithIgnoreCase(exportFile, ".gz")) {
+					if (!StringUtils.endsWithIgnoreCase(exportFile, "." + "csv")) {
+						exportFile = exportFile + "." + "csv";
+					}
+
+					exportFile = exportFile + ".gz";
+				}
+			} else if (!StringUtils.endsWithIgnoreCase(exportFile, "." + "csv")) {
+				exportFile = exportFile + "." + "csv";
 			}
 
 			if (new File(exportFile).exists()) {
@@ -457,7 +491,11 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 											if (columnName.equalsIgnoreCase(columnMapping.getDbColumn()) || (columnLabel != null && columnLabel.equalsIgnoreCase(columnMapping.getDbColumn()))) {
 												isIncludedInSelect = true;
 												Object value = convertValue(metaData, resultSet, columnIndex);
-												
+
+												if (useDecodedValues && value != null) {
+													value = decodeValue(value, columnMapping.getDbColumn());
+												}
+
 												if (value == null) {
 													values.add(columnMapping.getDefaultValue());
 												} else if (value instanceof String) {
@@ -512,26 +550,55 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		        throw e;
 		    }
 			
-			if (zipped && StringUtils.isNotEmpty(zipPassword) ) {
-				String encryptedZippedFile = exportFile + ".zip";
-
+			if (compressionType == FileCompressionType.ZIP && StringUtils.isNotEmpty(zipPassword)) {
+				String encryptedZippedFile = exportFile + "." + "zip";
+				
 				String entryFileName = zippedFileName;
-				if (StringUtils.isBlank(entryFileName) ) {
-					entryFileName = exportFile;
-				}
-				if (entryFileName.contains(File.separator)) {
-					entryFileName = entryFileName.substring(entryFileName.lastIndexOf(File.separatorChar) + 1);
-				}
-				if (zippedFileName.toLowerCase().endsWith(".zip")) {
-					zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
-				}
-				if (!entryFileName.toLowerCase().endsWith(".csv")) {
-					entryFileName += ".csv";
+				if (StringUtils.isBlank(entryFileName)) {
+					entryFileName = new File(exportFile).getName();
+					if (StringUtils.endsWithIgnoreCase(entryFileName, "." + "zip")) {
+						entryFileName = entryFileName.substring(0, entryFileName.length() - 4);
+					}
+					if (!StringUtils.endsWithIgnoreCase(entryFileName, "." + "csv")) {
+						entryFileName = entryFileName + "." + "csv";
+					}
 				}
 				
 				ZipUtilities.compressToEncryptedZipFile(new File(encryptedZippedFile), new File(exportFile), entryFileName, zipPassword);
 				new File(exportFile).delete();
 				exportFile = encryptedZippedFile;
+			} else if (compressionType == FileCompressionType.TARGZ) {
+				String compressedFile = exportFile + "." + "tar.gz";
+				
+				String entryFileName = zippedFileName;
+				if (StringUtils.isBlank(entryFileName)) {
+					entryFileName = new File(exportFile).getName();
+					if (StringUtils.endsWithIgnoreCase(entryFileName, "." + "tar.gz")) {
+						entryFileName = entryFileName.substring(0, entryFileName.length() - 7);
+					}
+					if (!StringUtils.endsWithIgnoreCase(entryFileName, "." + "csv")) {
+						entryFileName = entryFileName + "." + "csv";
+					}
+				}
+				
+				TarGzUtilities.compress(new File(compressedFile), new File(exportFile), entryFileName);
+				exportFile = compressedFile;
+			} else if (compressionType == FileCompressionType.TGZ) {
+				String compressedFile = exportFile + "." + "tgz";
+				
+				String entryFileName = zippedFileName;
+				if (StringUtils.isBlank(entryFileName)) {
+					entryFileName = new File(exportFile).getName();
+					if (StringUtils.endsWithIgnoreCase(entryFileName, "." + "tgz")) {
+						entryFileName = entryFileName.substring(0, entryFileName.length() - 4);
+					}
+					if (!StringUtils.endsWithIgnoreCase(entryFileName, "." + "csv")) {
+						entryFileName = entryFileName + "." + "csv";
+					}
+				}
+
+				TarGzUtilities.compress(new File(compressedFile), new File(exportFile), entryFileName);
+				exportFile = compressedFile;
 			}
 		    
 		    endTime = new Date();
@@ -549,35 +616,71 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
         return this;
     }
 
+	private Object decodeValue(Object value, String columnName) {
+		if (StringUtils.isBlank(columnName)) {
+			return value;
+		}
+
+		if ("GENDER".equalsIgnoreCase(columnName)) {
+			value = I18nString.getLocaleString("recipient.gender." + value + ".short", locale);
+		} else if ("MAILTYPE".equalsIgnoreCase(columnName)) {
+			value = I18nString.getLocaleString("MailType." + value, locale);
+		} else if (columnName.startsWith("Userstate_Mailinglist_")) {
+			value = I18nString.getLocaleString("recipient.MailingState" + value, locale);
+		}
+
+		return value;
+	}
+
 	private OutputStream getExportOutputStream() throws IOException, FileNotFoundException {
-		if (zipped && StringUtils.isEmpty(zipPassword)) {
-			OutputStream outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
-			try {
-				if (StringUtils.isBlank(zippedFileName) ) {
-					zippedFileName = exportFile;
+		OutputStream outputStream = null;
+		try {
+			if (compressionType == FileCompressionType.ZIP) {
+				if (StringUtils.isEmpty(zipPassword)) {
+					outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
+					
+					String entryFileName = zippedFileName;
+					if (StringUtils.isBlank(entryFileName)) {
+						entryFileName = new File(exportFile).getName();
+						if (StringUtils.endsWithIgnoreCase(entryFileName, "." + "zip")) {
+							entryFileName = entryFileName.substring(0, entryFileName.length() - 4);
+						}
+						if (!StringUtils.endsWithIgnoreCase(entryFileName, "." + "csv")) {
+							entryFileName = entryFileName + "." + "csv";
+						}
+					}
+					
+					final ZipEntry entry = new ZipEntry(entryFileName);
+					entry.setTime(ZonedDateTime.now().toInstant().toEpochMilli());
+					((ZipOutputStream) outputStream).putNextEntry(entry);
+				} else {
+					if (StringUtils.endsWithIgnoreCase(exportFile, "." + "zip")) {
+						exportFile = exportFile.substring(0, exportFile.length() - 4);
+					}
+					outputStream = new FileOutputStream(new File(exportFile));
 				}
-				if (zippedFileName.contains(File.separator)) {
-					zippedFileName = zippedFileName.substring(zippedFileName.lastIndexOf(File.separatorChar) + 1);
+			} else if (compressionType == FileCompressionType.TARGZ) {
+				if (StringUtils.endsWithIgnoreCase(exportFile, "." + "tar.gz")) {
+					exportFile = exportFile.substring(0, exportFile.length() - 7);
 				}
-				if (zippedFileName.toLowerCase().endsWith(".zip")) {
-					zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
+				outputStream = new FileOutputStream(exportFile);
+			} else if (compressionType == FileCompressionType.TGZ) {
+				if (StringUtils.endsWithIgnoreCase(exportFile, "." + "tgz")) {
+					exportFile = exportFile.substring(0, exportFile.length() - 4);
 				}
-				if (!zippedFileName.toLowerCase().endsWith(".csv")) {
-					zippedFileName += ".csv";
-				}
-				ZipEntry entry = new ZipEntry(zippedFileName);
-				entry.setTime(new Date().getTime());
-				((ZipOutputStream) outputStream).putNextEntry(entry);
-				return outputStream;
-			} catch (Exception e) {
-				if (outputStream != null) {
-					outputStream.close();
-					outputStream = null;
-				}
-				throw e;
+				outputStream = new FileOutputStream(exportFile);
+			} else if (compressionType == FileCompressionType.GZ) {
+				outputStream = new GZIPOutputStream(new FileOutputStream(exportFile));
+			} else {
+				outputStream = new FileOutputStream(new File(exportFile));
 			}
-		} else {
-			return new FileOutputStream(new File(exportFile));
+			return outputStream;
+		} catch (Exception e) {
+			if (outputStream != null) {
+				outputStream.close();
+				outputStream = null;
+			}
+			throw e;
 		}
 	}
 	

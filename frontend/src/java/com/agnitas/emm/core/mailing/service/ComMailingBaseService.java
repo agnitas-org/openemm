@@ -18,6 +18,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.web.mvc.Popups;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
@@ -202,7 +203,7 @@ public interface ComMailingBaseService {
      *                  Id of the company that sent the mailings
      * @return  List of MailingBase bean objects
      */
-    List<MailingBase> getMailingsForComparison(Admin admin);
+    PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
     
     Map<Integer, String> getMailingNames(List<Integer> mailingIds, int companyId);
 

@@ -12,8 +12,6 @@ src/view/assets/js/lib/tooltip_redesigned.js TODO: check if comment lines are re
 
 src/view/assets/sass_redesign/modules/tooltips.scss TODO: check if comment lines are redundant and remove them
 
-src/view/assets/js/initializers/calendar-service_redesigned.js TODO: check if comment lines are redundant and remove them
-
 src/view/assets/sass_redesign/modules/notification.scss TODO in case of different notification types reuse @include notification-variant($state, $color); from old styles
 
 replace toastr.custom.js with toastr.custom_redesigned.js
@@ -41,3 +39,31 @@ search for redesign related 'switchDesignUrl' attribute and remove
 _overwrites_redesigned.js TODO check if comment lines are redundant and remove them
 
 mediapool-element-category-select.js TODO check usage and remove while removing the old UI design EMMGUI-714
+
+WEB-INF/jsp/redesigned_jsp/page-template/error.jsp:69 TODO: remove 'classic-error-message' template
+
+assets/js/vendor/jquery-perfect-scrollbar-0.5.7.js TODO: remove if not necessary
+
+check usage of the data-sizing attributes
+
+ck-editor.scss TODO: remove unused code
+
+/assets/core/images/facelift/logos/ TODO check usage of images and remove
+
+trackablelink-extensions_redesigned.js TODO move to initializers
+
+SessionController.java TODO check usage
+
+com.agnitas.emm.core.predelivery.web.ClientType.shortMessageKey TODO check usage
+
+TODO remove CssServlet.java and fix request mapping and com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplierImpl.cachedResources
+
+com/agnitas/messages/DBMessagesResource.java:129 TODO: try to remove default.version after remove of old design. (if possible)
+/assets/core/images/ActivateSpacing.svg TODO: remove
+/assets/core/images/DeactivateSpacing.svg TODO: remove
+
+window.isRedesignedUI TODO: remove usages when old design will be removed.
+
+src/view/assets/core/images/campaignManager TODO: remove unused icons.
+
+TODO: remove redundant images related to old design. for example: assets/core/images/sprite/mediapool-font.svg, etc.

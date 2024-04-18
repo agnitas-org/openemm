@@ -10,14 +10,18 @@
 
 package org.agnitas.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.service.ImportProfileService;
-import org.agnitas.util.ImportUtils;
 import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,14 +30,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class ImportProfileServiceImpl implements ImportProfileService {
 
@@ -63,7 +62,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
             columnsForRemove = getColumnIdsForRemove(columnMappings, profile.getColumnMapping());
         }
 
-        List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+        List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 
         for (ColumnMapping mapping : columnMappings) {
             mapping.setProfileId(profileId);
@@ -118,6 +117,11 @@ public class ImportProfileServiceImpl implements ImportProfileService {
                 .stream()
                 .filter(p -> isManageAllowed(p, admin))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ImportProfile> getAvailableImportProfiles(int companyId) {
+        return importProfileDao.getImportProfilesByCompanyId(companyId);
     }
 
     @Override
@@ -236,7 +240,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
             return false;
         }
 
-        if (COLUMN_CUSTOMER_ID.equalsIgnoreCase(profile.getFirstKeyColumn()) && !isCustomerIdImportAllowed(admin)) {
+        if (RecipientStandardField.CustomerID.getColumnName().equalsIgnoreCase(profile.getFirstKeyColumn()) && !isCustomerIdImportAllowed(admin)) {
             return false;
         }
 

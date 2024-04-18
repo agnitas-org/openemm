@@ -12,8 +12,10 @@ package org.agnitas.util;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -77,8 +79,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
+import javax.imageio.ImageIO;
 
-import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.web.forms.WorkflowParameters;
@@ -98,12 +100,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import com.agnitas.util.Version;
 
 import jakarta.mail.internet.AddressException;
@@ -371,6 +374,16 @@ public class AgnUtils {
 	public static boolean allowed(HttpServletRequest req, Permission... permissions) {
 		Admin admin = getAdmin(req);
 		return admin != null && admin.permissionAllowed(permissions);
+	}
+
+	public static boolean isRedesignedUiUsed(HttpServletRequest req, Permission permission) {
+		Admin admin = getAdmin(req);
+		return admin != null && admin.isRedesignedUiUsed(permission);
+	}
+
+	public static boolean isRedesignedUiUsed(HttpServletRequest req) {
+		Admin admin = getAdmin(req);
+		return admin != null && admin.isRedesignedUiUsed();
 	}
 
 	/**
@@ -732,7 +745,7 @@ public class AgnUtils {
   		List<Integer> yearList = new ArrayList<>();
   		GregorianCalendar calendar = new GregorianCalendar();
   		int currentYear = calendar.get(Calendar.YEAR);
-  		for (int year = currentYear + extraYears; year >= startYear; year--) {
+        for (int year = startYear; year <= currentYear + extraYears; year++) {
   			yearList.add(year);
   		}
   		return yearList;
@@ -1221,6 +1234,11 @@ public class AgnUtils {
 			homeDir = homeDir.substring(0, homeDir.length() - 1);
 		}
 		return homeDir;
+	}
+
+	public static String getUserName() {
+		String username = System.getProperty("user.name");
+		return username;
 	}
 
 	/**
@@ -2611,6 +2629,13 @@ public class AgnUtils {
 				: admin.getDateFormat().toPattern();
 	}
 
+    public static String getDateTimeFormat(HttpServletRequest request) {
+   		Admin admin = getAdmin(request);
+   		return (admin == null)
+   				? DateUtilities.DD_MM_YYYY_HH_MM
+   				: admin.getDateTimeFormat().toPattern();
+   	}
+
 	public static boolean isGerman(Locale locale) {
 		return Locale.GERMAN.getLanguage().equals(locale.getLanguage());
 	}
@@ -3179,9 +3204,9 @@ public class AgnUtils {
         	} else {
 				return value.replace("${ApplicationVersion}", applicationVersion.toString())
 				        .replace("${ApplicationMajorVersion}", Integer.toString(applicationVersion.getMajorVersion()))
-				        .replace("${ApplicationMinorVersion}", Integer.toString(applicationVersion.getMinorVersion()))
-				        .replace("${ApplicationMicroVersion}", Integer.toString(applicationVersion.getMicroVersion()))
-				        .replace("${ApplicationHotfixVersion}", Integer.toString(applicationVersion.getHotfixVersion()));
+				        .replace("${ApplicationMinorVersion}", String.format("%02d", applicationVersion.getMinorVersion()))
+				        .replace("${ApplicationMicroVersion}", String.format("%03d", applicationVersion.getMicroVersion()))
+				        .replace("${ApplicationHotfixVersion}", String.format("%03d", applicationVersion.getHotfixVersion()));
         	}
 		} catch (Exception e) {
 			logger.error("Error in replacing placeholders of value: '" + value + "'");
@@ -3688,5 +3713,12 @@ public class AgnUtils {
 		}
 
 		return (int) ((1 - (1 / ((timeS + 60) / 60))) * 100);
+	}
+
+	public static byte[] convertImageDataToJpg(byte[] imageData) throws IOException {
+		BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+        ByteArrayOutputStream imageDataJpg = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", imageDataJpg);
+        return imageDataJpg.toByteArray();
 	}
 }

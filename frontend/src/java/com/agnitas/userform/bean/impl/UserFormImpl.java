@@ -401,6 +401,13 @@ public class UserFormImpl implements UserForm {
 
 		return evaluateFormResult(params, actionResult, con);
 	}
+	
+	@Override
+	public String evaluateErrorForm(ApplicationContext con, Map<String, Object> params, final EmmActionOperationErrors errors) {
+		params.put("_error", "1");
+		
+		return evaluateFormResult(params, false, con);
+	}
     
 	private void evaluteTemplate(final Map<String, Object> params, final ApplicationContext applicationContext, final String template, final Writer writer) throws Exception {
 		final VelocityWrapperFactory factory = VelocitySpringUtils.getVelocityWrapperFactory(applicationContext);

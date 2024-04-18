@@ -35,6 +35,7 @@ public class FormUploadComponentDtoToFormComponentConverter implements Converter
 
 		component.setName(dto.getFileName());
 		component.setDescription(dto.getDescription());
+		component.setOverwriteExisting(dto.isOverwriteExisting());
 		component.setType(FormComponent.FormComponentType.IMAGE);
 		component.setMimeType(mimeTypeService.getMimetypeForFile(dto.getFileName()));
 

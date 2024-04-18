@@ -4,7 +4,6 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.archive.forms.MailingArchiveForm"--%>
-<%--@elvariable id="originalName" type="java.lang.String"--%>
 <%--@elvariable id="workflowForwardParams" type="java.lang.String"--%>
 
 <c:set var="agnTitleKey" 			value="mailing.archive"   scope="request" />
@@ -13,16 +12,15 @@
 <c:set var="isBreadcrumbsShown" 	value="true" 			  scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 		  scope="request" />
 
+<c:url var="switchDesignUrl" value="/mailing/archive/list.action" scope="request" />
+
 <c:set var="isNewArhive" value="${form.id eq 0 or form.id lt 0}" />
-<c:if test="${not isNewArhive}">
-    <c:set var="archiveName" value="${originalName eq null ? form.shortname : originalName}" />
-</c:if>
 
 <c:choose>
     <c:when test="${not isNewArhive}">
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="campaignID" value="${form.id}"/>
-            <c:set target="${agnNavHrefParams}" property="campaignName" value="${archiveName}"/>
+            <c:set target="${agnNavHrefParams}" property="campaignName" value="${form.shortname}"/>
         </emm:instantiate>
         <c:set var="agnNavigationKey"	value="Archive" 		scope="request" />
         <c:set var="agnSubtitleKey" 	value="mailing.archive"	scope="request" />
@@ -39,7 +37,7 @@
 
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
-                <c:set target="${agnBreadcrumb}" property="text" value="${archiveName}"/>
+                <c:set target="${agnBreadcrumb}" property="text" value="${form.shortname}"/>
             </emm:instantiate>
         </emm:instantiate>
     </c:when>

@@ -1,10 +1,13 @@
-* {
+html {
   --mobile-view-threshold: #{$mobile-view-threshold};
+  font-size: 14px;
 }
 
 body {
   font-family: 'Poppins', sans-serif;
   font-style: normal;
+  background-color: var(--main-bg-color);
+  color: var(--default-text-color);
 }
 
 ul, ol {
@@ -23,21 +26,14 @@ a {
 }
 
 p {
-  margin-bottom: $gap-sm;
+  margin: 0;
 }
 
-.hidden {
-  display: none !important;
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
 }
 
-.mobile-hidden {
-  @include mobile {
-    display: none !important;
-  }
-}
-
-.desktop-hidden {
-  @include desktop {
-    display: none !important;
-  }
+pre {
+  font-size: $font-size-sm;
 }

@@ -1,10 +1,13 @@
 <HelpBalloon>
 	<title><![CDATA[null values]]></title>
-	<content><![CDATA[Le contr&ocirc;le des importations s'effectue &eacute;galement via la liste d&eacute;roulante Valeurs nulles dans le fichier csv. Cela concerne les destinataires d&eacute;j&agrave; enregistr&eacute;s dans votre base de donn&eacute;es. Le responsable E-Marketing consid&egrave;re que deux destinataires sont identiques s'ils ont la m&ecirc;me adresse e-mail.<br>.
-Supposons que Heiner M&#xFC;ller se soit inscrit dans votre base de donn&eacute;es sous le titre Dr... Le fichier csv contient &eacute;galement une entr&eacute;e pour Heiner M&#xFC;ller, mais sans titre. Le champ correspondant est vide. La liste d&eacute;roulante permet de s&eacute;lectionner ce qu'il faut faire dans un tel cas.
-      <ul type="disc">
-         <li>Le r&eacute;glage par d&eacute;faut est de remplacer les valeurs existantes par des valeurs nulles. Cela signifie qu'en important le fichier csv dans votre base de donn&eacute;es, vous perdrez l'entr&eacute;e de champ correspondante. Ceci est g&eacute;n&eacute;ralement utile, car vous souhaitez mettre &agrave; jour votre base de donn&eacute;es en important de nouvelles donn&eacute;es.</li>
-         <li>La deuxi&egrave;me option, Ignorer les valeurs nulles pour les donn&eacute;es existantes, n'est utilis&eacute;e que dans des cas particuliers, par exemple lorsque vous savez exactement que des modifications ont &eacute;t&eacute; apport&eacute;es &agrave; la base de donn&eacute;es qui ne sont pas incluses dans le fichier d'importation.</li>
-      </ul>
-E-Marketing Manager utilise un champ cl&eacute; pour v&eacute;rifier si deux entr&eacute;es sont exactement les m&ecirc;mes. Ce champ est s&eacute;lectionn&eacute; dans la liste d&eacute;roulante de la colonne Cl&eacute; (voir chapitre suivant). Le param&egrave;tre par d&eacute;faut est le champ EMAIL.]]></content>
+	<content><![CDATA[La liste de sélection Valeurs vides dans le fichier d'importation sert également à contrôler l'importation. Il s'agit ici de destinataires qui existent déjà dans la base de données et dont le profil est mis à jour par l'importation.
+<br/>
+Supposons que dans la base de données, le destinataire a saisi Heiner Müller comme titre "Dr. Dans le fichier CSV, l'entrée de Monsieur Müller est également présente, mais sans titre, le champ est vide. La liste de sélection vous permet de décider ce qui se passe dans un tel cas.
+<br/>
+Le paramètre par défaut est <b>Écraser les données existantes avec des valeurs null</b>. Vous supprimez ainsi le contenu du champ concerné lors de l'importation dans la base de données. Ce paramètre est judicieux dans la plupart des cas, car vous souhaitez finalement mettre à jour les entrées dans la base de données des destinataires lors de l'importation et le système principal est généralement votre système CRM/ERP.
+<br/>
+<b>Remarque:</b> ce paramètre ne s'applique pas aux champs qui ne peuvent pas être vides (p. ex. genre, type de courrier) ou pour lesquels une valeur standard est prédéfinie.
+<br/>
+La deuxième option <b>ignorer</b> est destinée à des cas particuliers. Par exemple, si vous savez exactement que des modifications ont été apportées à la base de données EMM et qu'elles ne figurent pas dans le fichier d'importation.
+]]></content>
 </HelpBalloon>

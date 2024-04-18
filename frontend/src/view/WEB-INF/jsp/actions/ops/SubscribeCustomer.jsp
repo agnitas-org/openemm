@@ -1,4 +1,8 @@
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+
 <script id="module-SubscribeCustomer" type="text/x-mustache-template">
+    {{ var disabledAttr = readonly ? 'disabled' : '' }}
+    
     <div class="inline-tile-content" data-module-content="{{- index}}">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="SubscribeCustomer"/>
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
@@ -10,9 +14,9 @@
             <div class="col-sm-8">
                 <label class="toggle">
                     {{ if (doubleCheck) { }}
-                        <input type="checkbox" name="modules[].doubleCheck" id="module_{{- index}}_doubleCheck" checked="ckecked"/>
+                        <input type="checkbox" name="modules[].doubleCheck" id="module_{{- index}}_doubleCheck" checked="ckecked" {{- disabledAttr }}/>
                     {{ } else { }}
-                        <input type="checkbox" name="modules[].doubleCheck" id="module_{{- index}}_doubleCheck" />
+                        <input type="checkbox" name="modules[].doubleCheck" id="module_{{- index}}_doubleCheck" {{- disabledAttr }} />
                     {{ } }}
 
                     <div class="toggle-control"></div>
@@ -27,11 +31,15 @@
             <div class="col-sm-8">
                 {{ var columnNameToSelect = !!keyColumn ? keyColumn.replace('#', '').toLowerCase() : ''; }}
 
-                <select class="form-control js-select" name="modules[].keyColumn" id="module_{{- index}}.keyColumn" size="1">
-                    <c:forEach items="${columnInfo}" var="columnPair">
-                        {{ var selectedSign = ('${columnPair.key}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
-                        <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
-                    </c:forEach>
+                <select class="form-control js-select" name="modules[].keyColumn" id="module_{{- index}}.keyColumn" size="1" {{- disabledAttr }}>
+                    {{ if (readonly) { }}
+                        <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>
+                    {{ } else { }}
+                        <c:forEach items="${columnInfo}" var="columnPair">
+                            {{ var selectedSign = ('${columnPair.key}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
+                            <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
+                        </c:forEach>
+                    {{ } }}
                 </select>
             </div>
         </div>
@@ -43,9 +51,9 @@
             <div class="col-sm-8">
                 <label class="toggle">
                     {{ if (doubleOptIn) { }}
-                        <input type="checkbox" name="modules[].doubleOptIn" id="module_{{- index}}.doubleOptIn" checked="ckecked"/>
+                        <input type="checkbox" name="modules[].doubleOptIn" id="module_{{- index}}.doubleOptIn" checked="ckecked" {{- disabledAttr }}/>
                     {{ } else { }}
-                        <input type="checkbox" name="modules[].doubleOptIn" id="module_{{- index}}.doubleOptIn" />
+                        <input type="checkbox" name="modules[].doubleOptIn" id="module_{{- index}}.doubleOptIn" {{- disabledAttr }} />
                     {{ } }}
 
                     <div class="toggle-control"></div>

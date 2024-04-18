@@ -5,7 +5,7 @@
     padding-top: 0;
     
     .col {
-      padding-top: $gap;
+      padding-top: $gap-md;
     }
     
     .mailing-card {
@@ -13,16 +13,16 @@
       --bs-card-inner-border-radius: 0;
 
       .mailing-preview-card-image {
-        border: 1px solid transparent;
+        border: $border-transparent;
         &:hover {
-          border: 1px solid $c-blue-27;
+          border: 1px solid $primary;
         }
       }
 
       &:hover {
         .card-body {
           .card-title {
-            color: $c-blue-27;
+            color: $primary;
           }
         }
       }
@@ -36,17 +36,16 @@
           display: flex;
           align-items: center;
           gap: $gap-sm;
-          font-size: $font-size-sm;
           line-height: 18px;
-          color: $c-black;
+          color: var(--default-text-color);
         }
         
         .card-text {
           display: flex;
           align-items: center;
-          font-size: 12px;
+          font-size: $font-size-sm;
           padding-left: 2px;
-          color: #6F6F6F;
+          color: var(--text-gray-color);
           gap: 12px;
           line-height: 16px;
           margin-top: 5px;

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
-import com.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -41,8 +40,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.MapUtils;
 
 public class RecipientUtils {
@@ -51,67 +51,18 @@ public class RecipientUtils {
     
     private static final int MAX_DESCRIPTION_LENGTH = 500;
     
-    public static final String COLUMN_CUSTOMER_ID = "customer_id";
-    public static final String COLUMN_FIRSTNAME = "firstname";
-    public static final String COLUMN_LASTNAME = "lastname";
-    public static final String COLUMN_EMAIL = "email";
-    
-    public static final String COLUMN_GENDER = "gender";
-	public static final String COLUMN_TITLE = "title";
-	public static final String COLUMN_MAILTYPE = "mailtype";
-    public static final String COLUMN_DATASOURCE_ID = "datasource_id";
-    public static final String COLUMN_LATEST_DATASOURCE_ID = "latest_datasource_id";
-
-    public static final String COLUMN_FREQUENCY_COUNT_DAY = "freq_count_day";
-    public static final String COLUMN_FREQUENCY_COUNTER_WEEK = "freq_count_week";
-    public static final String COLUMN_FREQUENCY_COUNT_MONTH = "freq_count_month";
-
-    public static final String COLUMN_DO_NOT_TRACK = "sys_tracking_veto";
-	public static final String COLUMN_ENCRYPTED_SENDING = "sys_encrypted_sending";
-
-    public static final String COLUMN_TIMESTAMP = "timestamp";
-    public static final String COLUMN_CREATION_DATE = "creation_date";
-    public static final String COLUMN_CLEANED_DATE = "cleaned_date";
-    public static final String COLUMN_LASTOPEN_DATE = "lastopen_date";
-    public static final String COLUMN_LASTCLICK_DATE = "lastclick_date";
-    public static final String COLUMN_LASTSEND_DATE = "lastsend_date";
-    
     public static int COLUMN_FIRST_ORDER = 1;
     public static int COLUMN_SECOND_ORDER = 2;
     public static int COLUMN_THIRD_ORDER = 3;
     public static int COLUMN_OTHER_ORDER = 4;
     
     public static final int MAX_SELECTED_FIELDS_COUNT = 8;
-
-    public static final List<String> MAIN_COLUMNS = Arrays.asList(
-            COLUMN_CUSTOMER_ID,
-            COLUMN_EMAIL,
-            COLUMN_TITLE,
-            COLUMN_GENDER,
-            COLUMN_MAILTYPE,
-            COLUMN_FIRSTNAME,
-            COLUMN_LASTNAME,
-            COLUMN_TIMESTAMP,
-            COLUMN_CLEANED_DATE,
-
-            COLUMN_LATEST_DATASOURCE_ID,
-            COLUMN_DATASOURCE_ID,
-
-            COLUMN_DO_NOT_TRACK,
-            ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD,
-            COLUMN_ENCRYPTED_SENDING,
-
-            COLUMN_FREQUENCY_COUNT_DAY,
-            COLUMN_FREQUENCY_COUNTER_WEEK,
-            COLUMN_FREQUENCY_COUNT_MONTH
-    );
-
     
     public static String getRecipientDescription(Map<String, Object> data) {
-        final int customerId = NumberUtils.toInt((String) data.get(COLUMN_CUSTOMER_ID), 0);
-        final String firstName = (String) data.get(COLUMN_FIRSTNAME);
-        final String lastName = (String) data.get(COLUMN_LASTNAME);
-        final String email = (String) data.get(COLUMN_EMAIL);
+        final int customerId = NumberUtils.toInt((String) data.get(RecipientStandardField.CustomerID.getColumnName()), 0);
+        final String firstName = (String) data.get(RecipientStandardField.Firstname.getColumnName());
+        final String lastName = (String) data.get(RecipientStandardField.Lastname.getColumnName());
+        final String email = (String) data.get(RecipientStandardField.Email.getColumnName());
         return RecipientUtils.getRecipientDescription(customerId, firstName, lastName, email);
     }
     
@@ -181,23 +132,23 @@ public class RecipientUtils {
     
 	public static int columnOrder(String columnName, boolean isDuplicateList){
         if (isDuplicateList) {
-            if (COLUMN_CUSTOMER_ID.equals(columnName)) {
+            if (RecipientStandardField.CustomerID.getColumnName().equals(columnName)) {
                 return COLUMN_FIRST_ORDER;
             }
-            if (COLUMN_EMAIL.equals(columnName)) {
+            if (RecipientStandardField.Email.getColumnName().equals(columnName)) {
                 return COLUMN_SECOND_ORDER;
             }
-            if (COLUMN_TIMESTAMP.equals(columnName)) {
+            if (RecipientStandardField.ChangeDate.getColumnName().equals(columnName)) {
                 return COLUMN_THIRD_ORDER;
             }
         } else {
-            if (COLUMN_GENDER.equals(columnName)){
+            if (RecipientStandardField.Gender.getColumnName().equals(columnName)){
                 return COLUMN_FIRST_ORDER;
             }
-            if (COLUMN_FIRSTNAME.equals(columnName)){
+            if (RecipientStandardField.Firstname.getColumnName().equals(columnName)){
                 return COLUMN_SECOND_ORDER;
             }
-            if (COLUMN_LASTNAME.equals(columnName)){
+            if (RecipientStandardField.Lastname.getColumnName().equals(columnName)){
                 return COLUMN_THIRD_ORDER;
             }
         }
@@ -334,8 +285,7 @@ public class RecipientUtils {
 
     public static void syncSelectedFields(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, RecipientListBaseForm form) {
         webStorage.access(bundle, storage -> {
-            int columnsCount = form.getSelectedFields().size();
-            if (columnsCount < 1 || columnsCount > MAX_SELECTED_FIELDS_COUNT) {
+            if (form.getNumberOfRows() <= 0 || form.getSelectedFields().size() > MAX_SELECTED_FIELDS_COUNT) {
 				form.setSelectedFields(storage.getSelectedFields());
             } else {
 				storage.setSelectedFields(form.getSelectedFields());

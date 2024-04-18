@@ -6,12 +6,12 @@
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <mvc:form servletRelativeAction="/mailing/send/deactivate.action" modelAttribute="form">
-                <mvc:hidden path="mailingID"/>
+            <mvc:form servletRelativeAction="/mailing/send/deactivate.action">
+                <input type="hidden" name="mailingID" value="${mailingId}">
 
                 <div class="modal-header">
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><mvc:message code="button.Cancel"/></span></button>
-                    <h4 class="modal-title"><mvc:message code="Mailing"/>:&nbsp;${form.shortname}</h4>
+                    <h4 class="modal-title"><mvc:message code="Mailing"/>:&nbsp;${shortname}</h4>
                 </div>
 
                 <div class="modal-body">

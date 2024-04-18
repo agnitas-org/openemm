@@ -43,6 +43,8 @@ AGN.Lib.Controller.new('sidemenu', function() {
         window.setTimeout(function () {
           AGN.Lib.Page.reload($el.data('switch-url'))
         }, 500);
+      }).fail(function () {
+        $el.prop("checked", !$el.prop("checked"));
       });
   });
 

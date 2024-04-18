@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import org.agnitas.backend.AgnTag;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.impl.TagDetailsImpl;
@@ -758,7 +759,15 @@ public class LinkServiceImpl implements LinkService {
 		if (text.contains("[agnFORM")) {
 			logger.error(String.format("scanForLinks: Html-text has an unresolved agnFORM-Tag [%s]", text));
 		}
-		
+
+		for (AgnTag fullviewTag : List.of(AgnTag.FULLVIEW, AgnTag.WEBVIEW)) {
+			if (text.contains("[" + fullviewTag.getName() + "]")) {
+				TagDetails tag = new TagDetailsImpl();
+				tag.setTagName(fullviewTag.getName());
+				text = text.replaceAll("\\[" + fullviewTag.getName() + "\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
+			}
+		}
+
 		return text;
 	}
 

@@ -20,7 +20,7 @@ import com.agnitas.emm.core.stat.service.impl.SummaryStatJobNotExistException;
 
 public interface MailingSummaryStatisticJobService {
 
-	int startSummaryStatisticJob(int mailingId, List<Integer> targetList, Integer recipientsType);
+	int startSummaryStatisticJob(int mailingId, final int companyId, List<Integer> targetList, Integer recipientsType);
 
 	MailingStatJobDescriptor getStatisticJob(int jobId) throws SummaryStatJobNotExistException;
 

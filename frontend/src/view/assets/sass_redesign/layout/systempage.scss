@@ -1,0 +1,37 @@
+.systempage {
+  @include flex-center;
+  background: rgba(75, 75, 75, 0.50);
+
+  .logo-image {
+    margin-top: 4px;
+    max-height: 50px;
+  }
+}
+
+.edition-logo {
+  max-height: 50px;
+}
+
+.emm-logo {
+  .emm-logo__image {
+    float: left;
+    width: 40px;
+    margin-right: 5px;
+  }
+
+  .emm-logo__headline {
+    font-size: 28px;
+    line-height: 1em;
+    font-weight: 700;
+    white-space: nowrap;
+    color: $blue;
+  }
+
+  .emm-logo__version {
+    font-size: 13px;
+    line-height: 1em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: #8d8d8f;
+  }
+}

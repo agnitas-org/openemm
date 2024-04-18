@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FilenameUtils;
@@ -56,6 +57,11 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         TYPE_PERMISSIONS.put(RecipientsReport.RecipientReportType.IMPORT_REPORT, Permission.WIZARD_IMPORT);
         TYPE_PERMISSIONS.put(RecipientsReport.RecipientReportType.EXPORT_REPORT, Permission.WIZARD_EXPORT);
     }
+
+    private static final Map<RecipientsReport.EntityType, Permission> REPORT_TYPE_PERMISSIONS = Map.of(
+            RecipientsReport.EntityType.IMPORT, Permission.WIZARD_IMPORT,
+            RecipientsReport.EntityType.EXPORT, Permission.WIZARD_EXPORT
+    );
 
     private RecipientsReportDao recipientsReportDao;
     private MimeTypeService mimeTypeService;
@@ -141,16 +147,38 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         }
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @Override
     public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         return recipientsReportDao.getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, types);
     }
 
     @Override
+    public PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId){
+        return recipientsReportDao.getReports(filter, companyId);
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    @Override
     @Transactional
     public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         int companyId = admin.getCompanyID();
         PaginatedListImpl<RecipientsReport> returnList = getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
+        DateTimeFormatter formatter = admin.getDateTimeFormatter();
+        ZoneId dbTimezone = ZoneId.systemDefault();
+        for (RecipientsReport item : returnList.getList()) {
+    		ZonedDateTime dbZonedDateTime = ZonedDateTime.ofInstant(item.getReportDate().toInstant(), dbTimezone);
+        	item.setReportDateFormatted(formatter.format(dbZonedDateTime));
+        }
+        return returnList;
+    }
+
+    @Override
+    @Transactional
+    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin){
+        int companyId = admin.getCompanyID();
+        filter.setTypes(getAllowedReportTypes(filter.getTypes(), admin));
+        PaginatedListImpl<RecipientsReport> returnList = getReports(filter, companyId);
         DateTimeFormatter formatter = admin.getDateTimeFormatter();
         ZoneId dbTimezone = ZoneId.systemDefault();
         for (RecipientsReport item : returnList.getList()) {
@@ -267,6 +295,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         recipientsReportDao.createNewSupplementalReport(companyId, report, temporaryDataFile, content);
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     private RecipientsReport.RecipientReportType[] getAllowedReportTypes(final RecipientsReport.RecipientReportType[] reportTypes, final Admin admin) {
         RecipientsReport.RecipientReportType[] result;
         if (reportTypes == null) {
@@ -279,5 +308,16 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
                     .toArray(new RecipientsReport.RecipientReportType[]{});
         }
         return result;
+    }
+
+    private RecipientsReport.EntityType[] getAllowedReportTypes(RecipientsReport.EntityType[] types, final Admin admin) {
+        if (types == null) {
+            return RecipientsReport.EntityType.values();
+        }
+        return Arrays.stream(types)
+                .filter(Objects::nonNull)
+                .filter(type -> admin.permissionAllowed(REPORT_TYPE_PERMISSIONS.get(type)))
+                .collect(Collectors.toList())
+                .toArray(new RecipientsReport.EntityType[]{});
     }
 }

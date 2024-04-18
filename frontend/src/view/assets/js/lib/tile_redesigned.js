@@ -85,8 +85,8 @@ Clicking on a tab of a closed tile will automatically open the tile
 
   const Storage = AGN.Lib.Storage;
 
-  function turnIcon($tile, hidden) {
-    const $icon = $tile.find('.tile-header .tile-title .icon');
+  function rotateIcon($tile, hidden) {
+    const $icon = $tile.find('> .tile-header .tile-title .icon');
     $icon.toggleClass('icon-caret-down', hidden);
     $icon.toggleClass('icon-caret-up', !hidden);
   }
@@ -97,10 +97,10 @@ Clicking on a tab of a closed tile will automatically open the tile
 
   function toggleTile($tile, hidden, updateStorage) {
     $tile.toggleClass(getCollapsedClass($tile), hidden);
-    turnIcon($tile, hidden);
+    rotateIcon($tile, hidden);
 
     if (updateStorage && $tile.attr('id')) {
-      Storage.set(`toggle_tile${$tile.attr('id')}`, {hidden});
+      Storage.set(`toggle_tile#${$tile.attr('id')}`, {hidden});
     }
     if (!hidden) {
       AGN.Lib.CoreInitializer.run('load', $tile.find('.tile-body')); // Load lazy data if any
@@ -112,12 +112,12 @@ Clicking on a tab of a closed tile will automatically open the tile
     if (!defaultState) {
       return;
     }
-    toggleTile($tile, defaultState === 'open', true);
+    toggleTile($tile, defaultState !== 'open', false);
   }
 
   const init = function($tile) {
     const target = $tile.attr('id');
-    const conf = target ? Storage.get('toggle_tile' + target) : undefined;
+    const conf = target ? Storage.get('toggle_tile#' + target) : undefined;
 
     if (!conf) {
       initDefaultState($tile);

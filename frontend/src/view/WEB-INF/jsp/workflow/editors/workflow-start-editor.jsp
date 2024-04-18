@@ -73,7 +73,7 @@
         <div id="startDatePanel">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="startDate" class="control-label"><mvc:message code="settings.fieldType.DATE"/></label>
+                    <label for="startDate" class="control-label"><mvc:message code="Date"/></label>
                 </div>
                 <div class="col-sm-8">
                     <div class="input-group">
@@ -483,7 +483,7 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="remindDate">
-                                <mvc:message code="settings.fieldType.DATE"/>
+                                <mvc:message code="Date"/>
                             </label>
                         </div>
 

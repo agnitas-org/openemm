@@ -35,8 +35,6 @@ public class Const {
 
 		public static final String MESSAGES_VIEW = "messages";
 		public static final String DELETE_VIEW = "delete_modal";
-		public static final String TITLE_ATTR = "title";
-		public static final String DELETION_ATTR = "deletion";
 		public static final String ERROR_MSG = "Error";
 		public static final String CHANGES_SAVED_MSG = "default.changes_saved";
 		public static final String NOTHING_SELECTED_MSG = "error.default.nothing_selected";

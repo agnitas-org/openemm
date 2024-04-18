@@ -14,15 +14,18 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.InputStreamWithOtherItemsToClose;
+import org.agnitas.util.TarGzUtilities;
 import org.agnitas.util.Tuple;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +41,7 @@ public abstract class DataProvider implements Closeable {
 	
 	private File importFile;
 	private char[] zipPassword = null;
-	private InputStreamWithOtherItemsToClose inputStream = null;
+	private InputStream inputStream = null;
 	
 	public DataProvider(File importFile, char[] zipPassword) {
 		this.importFile = importFile;
@@ -123,36 +126,58 @@ public abstract class DataProvider implements Closeable {
 			}
 		}
 	}
-
-	protected InputStreamWithOtherItemsToClose getInputStream() throws Exception {
+	
+	protected InputStream getInputStream() throws Exception {
 		if (!importFile.exists()) {
 			throw new Exception("Import file does not exist: " + importFile.getAbsolutePath());
 		} else if (importFile.isDirectory()) {
 			throw new Exception("Import path is a directory: " + importFile.getAbsolutePath());
 		} else if (importFile.length() == 0) {
 			throw new Exception("Import file is empty: " + importFile.getAbsolutePath());
-		}
-
-		try {
-			if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".zip")) {
-				if (zipPassword != null)  {
-					inputStream = ZipUtilities.openPasswordSecuredZipFile(importFile.getAbsolutePath(), zipPassword);
+		} else {
+			try {
+				if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".zip")) {
+					if (zipPassword != null) {
+						if (ZipUtilities.getZipFileEntries(importFile, zipPassword).size() != 1) {
+							throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+						} else {
+							inputStream = ZipUtilities.openPasswordSecuredZipFile(importFile.getAbsolutePath(), zipPassword);
+						}
+					} else {
+						if (ZipUtilities.getZipFileEntries(importFile).size() != 1) {
+							throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+						} else {
+							inputStream = ZipUtilities.openZipFile(importFile.getAbsolutePath());
+						}
+					}
+				} else if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".tar.gz")) {
+					if (TarGzUtilities.getFilesCount(importFile) != 1) {
+						throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+					} else {
+						inputStream = TarGzUtilities.openCompressedFile(importFile);
+					}
+				} else if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".tgz")) {
+					if (TarGzUtilities.getFilesCount(importFile) != 1) {
+						throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+					} else {
+						inputStream = TarGzUtilities.openCompressedFile(importFile);
+					}
+				} else if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".gz")) {
+					inputStream = new GZIPInputStream(new FileInputStream(importFile));
 				} else {
-					inputStream = ZipUtilities.openZipFile(importFile.getAbsolutePath());
+					inputStream = new InputStreamWithOtherItemsToClose(new FileInputStream(importFile), importFile.getAbsolutePath());
 				}
-			} else {
-				inputStream = new InputStreamWithOtherItemsToClose(new FileInputStream(importFile), importFile.getAbsolutePath());
-			}
-			return inputStream;
-		} catch (final Exception e) {
-			if (inputStream != null) {
-				try {
-					inputStream.close();
-				} catch (@SuppressWarnings("unused") final IOException e1) {
-					// do nothing
+				return inputStream;
+			} catch (final Exception e) {
+				if (inputStream != null) {
+					try {
+						inputStream.close();
+					} catch (@SuppressWarnings("unused") final IOException e1) {
+						// do nothing
+					}
 				}
+				throw e;
 			}
-			throw e;
 		}
 	}
 	

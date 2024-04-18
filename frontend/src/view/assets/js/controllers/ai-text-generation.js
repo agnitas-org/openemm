@@ -72,7 +72,7 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
   function validateSettings(form, $tile) {
     var isValid = true;
     var $numberOfWords = $tile.find("[id^='ai-numberOfWords']");
-    var $keywords = $tile.find("[id^='ai-keywords']");
+    var $contentDescription = $tile.find("[id^='ai-content-description']");
 
     const numberOfWordsErrors = AGN.Lib.Validator.get('number').errors($numberOfWords, {min: 1, required: true});
     if (numberOfWordsErrors.length > 0) {
@@ -85,11 +85,11 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
       form.cleanFieldError($numberOfWords.attr('name'));
     }
 
-    if (!$.trim($keywords.val())) {
+    if (!$.trim($contentDescription.val())) {
       isValid = false;
-      form.showFieldError($keywords.attr('name'), t('fields.required.errors.missing'));
+      form.showFieldError($contentDescription.attr('name'), t('fields.required.errors.missing'));
     } else {
-      form.cleanFieldError($keywords.attr('name'));
+      form.cleanFieldError($contentDescription.attr('name'));
     }
 
     return isValid;
@@ -150,7 +150,7 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
       language: $scope.find('[id^="ai-language"]').val(),
       numberOfWords: $scope.find('[id^="ai-numberOfWords"]').val(),
       tonality: $scope.find('[id^="ai-tonality"]').val(),
-      keywords: $scope.find('[id^="ai-keywords"]').val()
+      contentDescription: $scope.find('[id^="ai-content-description"]').val()
     }
   }
 
@@ -164,7 +164,7 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
       Select.get($modal.find('#ai-language')).selectValue(settings.language);
       $modal.find('#ai-numberOfWords').val(settings.numberOfWords);
       Select.get($modal.find('#ai-tonality')).selectValue(settings.tonality);
-      $modal.find('#ai-keywords').val(settings.keywords);
+      $modal.find('#ai-content-description').val(settings.contentDescription);
     }
   }
 

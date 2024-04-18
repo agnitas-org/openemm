@@ -28,10 +28,10 @@ public class MailingOverviewForm extends PaginationForm {
 
     private boolean numberOfRowsChanged;
     private boolean forTemplates;
-    private boolean searchInName = true;
-    private boolean searchInContent = true;
-    private boolean searchInDescription = true;
-    private String searchQueryText;
+    private boolean searchInName = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchInContent = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchInDescription = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String filterSendDateBegin;
     private String filterSendDateEnd;
     private String filterCreationDateBegin;
@@ -48,6 +48,9 @@ public class MailingOverviewForm extends PaginationForm {
     private List<String> filterBadges;
     private List<Integer> filterMailingLists;
     private List<Integer> filterArchives;
+    private String filterName;
+    private String filterDescription;
+    private String filterContent;
 
     public boolean isNumberOfRowsChanged() {
         return numberOfRowsChanged;
@@ -225,6 +228,30 @@ public class MailingOverviewForm extends PaginationForm {
         this.useRecycleBin = useRecycleBin;
     }
 
+    public String getFilterName() {
+        return filterName;
+    }
+
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
+    }
+
+    public String getFilterDescription() {
+        return filterDescription;
+    }
+
+    public void setFilterDescription(String filterDescription) {
+        this.filterDescription = filterDescription;
+    }
+
+    public String getFilterContent() {
+        return filterContent;
+    }
+
+    public void setFilterContent(String filterContent) {
+        this.filterContent = filterContent;
+    }
+
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> map = super.toMap();
@@ -248,6 +275,9 @@ public class MailingOverviewForm extends PaginationForm {
         map.put("filterMailingLists", filterMailingLists);
         map.put("filterArchives", filterArchives);
         map.put("useRecycleBin", useRecycleBin);
+        map.put("filterName", filterName);
+        map.put("filterDescription", filterDescription);
+        map.put("filterContent", filterContent);
         return map;
     }
 
@@ -272,7 +302,10 @@ public class MailingOverviewForm extends PaginationForm {
                 filterBadges,
                 filterMailingLists,
                 filterArchives,
-                useRecycleBin
+                useRecycleBin,
+                filterName,
+                filterDescription,
+                filterContent
         ).toArray(), super.toArray());
     }
 }

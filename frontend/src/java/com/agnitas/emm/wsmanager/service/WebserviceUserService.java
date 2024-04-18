@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.wsmanager.service;
 
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.beans.Admin;
@@ -61,6 +62,7 @@ public interface WebserviceUserService {
 	 * @throws WebserviceUserServiceException on errors processing the request
 	 */
     PaginatedListImpl<WebserviceUserEntryDto> getPaginatedWSUserList(int companyID, String sort, String direction, int page, int rownums, boolean masterView) throws WebserviceUserServiceException;
+    PaginatedListImpl<WebserviceUserEntryDto> getPaginatedWSUserList(WebserviceUserOverviewFilter filter, Admin admin) throws WebserviceUserServiceException;
 
     /**
 	 * Create or update webservice user.

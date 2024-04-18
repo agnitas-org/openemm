@@ -152,7 +152,7 @@
                                 <ul class="list-floated list-spaced">
                                     <c:forEach var="color" items="${rangeColors}" varStatus="rowCounter">
                                         <li>
-                                            <i class="icon icon-circle" style="color:#${color.color};"></i>
+                                            <i class="icon icon-circle" style="color:${color.color};"></i>
                                             <mvc:message code="Heatmap.max"/>&nbsp;${color.rangeEnd}%
                                         </li>
                                     </c:forEach>

@@ -17,13 +17,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.web.forms.BulkActionForm;
@@ -53,9 +51,11 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
 import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 
 import net.sf.json.JSONArray;
 
@@ -209,8 +209,14 @@ public class MailinglistController implements XssCheckAware {
         if (isMailinglistsDependent(bulkIds, admin.getCompanyID(), model)) {
             return MESSAGES_VIEW;
         }
-
+        if (isRedesign(admin)) {
+            model.addAttribute("items", mailinglistService.getMailinglistNames(bulkIds, admin.getCompanyID()));
+        }
         return "mailinglist_bulk_delete";
+    }
+
+    private boolean isRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed();
     }
 
 	@RequestMapping("/{id:\\d+}/delete.action")

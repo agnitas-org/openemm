@@ -156,10 +156,10 @@
 	}
 	
 	.version--wrapper {
-		background-image: url("/assets/core/images/logonPageOffline/Version.png");
+		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
 		background-position: 100% 70%;
 		background-repeat: no-repeat;
-		background-size: 100%;
+		background-size: cover;
 		background-color: #000;
 		align-items: start;
 		padding-top: 3em;

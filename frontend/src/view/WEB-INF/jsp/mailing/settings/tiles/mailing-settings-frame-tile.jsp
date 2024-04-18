@@ -117,7 +117,7 @@
                                               data-field-validator="reject-script-element"
                                               data-action="count-textarea-chars"
                                               cssClass="form-control js-editor-text"
-                                              readonly="${not MAILING_EDITABLE}"/>
+                                              readonly="${not MAILING_EDITABLE or isSettingsReadonly}"/>
                                 <div class="align-right" data-char-counter-for="textTemplate">
                                     <span class="small status">&nbsp;</span>
                                 </div>
@@ -147,7 +147,7 @@
                                                   cols="${TEXTAREA_WIDTH}"
                                                   data-field-validator="reject-script-element"
                                                   data-action="count-textarea-chars"
-                                                  cssClass="form-control js-editor" readonly="${not MAILING_EDITABLE}"/>
+                                                  cssClass="form-control js-editor" readonly="${not MAILING_EDITABLE or isSettingsReadonly}"/>
                                     <div class="align-right" data-char-counter-for="htmlTemplate">
                                         <span class="small status">&nbsp;</span>
                                     </div>
@@ -159,7 +159,7 @@
                 <c:if test="${showDynamicTemplateToggle}">
                     <div class="form-group checkbox">
                         <label class="toggle">
-                            <mvc:checkbox path="useDynamicTemplate"/>
+                            <mvc:checkbox path="useDynamicTemplate" disabled="${isSettingsReadonly}"/>
                             <div class="toggle-control"></div>
                             <span class="text">
                                 <c:if test="${isTemplate}">
@@ -228,7 +228,7 @@
                         <emm:ShowByPermission token="${permToken}">
                             <button type="button" class="btn btn-primary btn-large" data-sync-from="\#{{= id }}"
                                     data-sync-to="\#{{= target }}" data-dismiss="modal"
-                                    data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'>
+                                    data-form-target='#mailingSettingsForm' ${not isSettingsReadonly ? 'data-form-submit-event' : 'disabled'} data-controls-group='save'>
                                 <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.Save"/></span>
                             </button>

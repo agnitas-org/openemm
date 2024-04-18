@@ -145,12 +145,16 @@
                 </c:otherwise>
             </c:choose>
         </tiles:addAttribute>
-        <emm:ShowByPermission token="mailing.change">
-            <tiles:addAttribute>
-                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group="save">
-                    <span class="text"><mvc:message code="button.Save"/></span>
-                </button>
-            </tiles:addAttribute>
-        </emm:ShowByPermission>
+        <c:set var="saveBtnAttrs" value="disabled"/>
+        <c:if test="${not isSettingsReadonly}">
+            <emm:ShowByPermission token="mailing.change">
+                <c:set var="saveBtnAttrs" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
+            </emm:ShowByPermission>
+        </c:if>
+        <tiles:addAttribute>
+            <button type="button" class="btn btn-large btn-primary pull-right" ${saveBtnAttrs}>
+                <span class="text"><mvc:message code="button.Save"/></span>
+            </button>
+        </tiles:addAttribute>
     </tiles:putListAttribute>
 </tiles:insertTemplate>

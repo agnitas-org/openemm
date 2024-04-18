@@ -74,7 +74,7 @@ public class WorkflowAjaxController implements XssCheckAware {
             return new HashMap<>();
         }
 
-        return autoExportService.getAutoExportsOverview(admin).stream()
+        return autoExportService.getAutoExports(admin).stream()
                 .collect(Collectors.toMap(AutoExport::getAutoExportId, AutoExport::getShortname));
     }
 

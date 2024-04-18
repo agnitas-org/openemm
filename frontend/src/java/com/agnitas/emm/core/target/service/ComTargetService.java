@@ -128,6 +128,8 @@ public interface ComTargetService {
 
 	String getTargetName(int targetId, int companyId);
 
+	List<String> getTargetNames(Collection<Integer> ids, int companyId);
+
     String getTargetName(int targetId, int companyId, boolean includeDeleted);
 
 	boolean checkIfTargetNameAlreadyExists(int companyID, String targetName, int targetID);
@@ -160,7 +162,7 @@ public interface ComTargetService {
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
 
-	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options);
+	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexityGrade);
 
 	/**
 	 * Get all the valid list split targets represented as {@link com.agnitas.beans.ListSplit}.

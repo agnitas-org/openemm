@@ -105,28 +105,39 @@ public class DBMessagesResource {
 
 			// Add html version text to be used near the logo
 			String versionString;
+			String redesignedVersionString;
 			if (configService.getBooleanValue(ConfigValue.IsBetaInstance)) {
 				versionString = "<b><font color=\"#FF0000\">BETA</font></b> ";
+				redesignedVersionString = "<span class=\"text-danger\">BETA</span>";
 			} else if (configService.getBooleanValue(ConfigValue.IsLegacyInstance)) {
 				versionString = "<b><font color=\"#FF0000\">LEGACY</font></b> ";
+				redesignedVersionString = "<span class=\"text-danger\">LEGACY</span>";
 			} else {
 				versionString = "";
+				redesignedVersionString = "";
 			}
 			int minorVersion = applicationVersion.getMinorVersion();
 			if (4 == minorVersion) {
 				versionString += "SPRING ";
+				redesignedVersionString += "SPRING ";
 			} else if (7 == minorVersion) {
 				versionString += "SUMMER ";
+				redesignedVersionString += "SUMMER ";
 			} else if (10 == minorVersion) {
 				versionString += "FALL ";
+				redesignedVersionString += "FALL ";
 			}
 			if (applicationVersion.getMajorVersion() > 0) {
 				versionString += "20" + applicationVersion.getMajorVersion();
+				redesignedVersionString += "20" + applicationVersion.getMajorVersion();
 			} else {
 				versionString += "<b><font color=\"#FF0000\">TEST</font></b>";
+				redesignedVersionString += "<span class=\"text-danger\">TEST</span>";
 			}
+			// TODO: EMMGUI-714: try to remove default.version after remove of old design. (if possible)
 			defaultLanguageMessages.put("default.version", versionString);
-			
+			defaultLanguageMessages.put("default.version.redesigned", redesignedVersionString);
+
 			// Replace all version placeholders in messages
 			// This must be done here and not via db, because the same db is used by different application versions as "beta" etc.
 			for(final Map.Entry<String, Map<String, String>> entry0 : allMessages.entrySet()) {

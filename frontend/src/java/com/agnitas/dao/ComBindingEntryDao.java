@@ -189,4 +189,6 @@ public interface ComBindingEntryDao {
 	int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs);
 
     Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId);
+
+	void cleanAdminAndTestUnsubsriptions(int companyID, int mailingID);
 }

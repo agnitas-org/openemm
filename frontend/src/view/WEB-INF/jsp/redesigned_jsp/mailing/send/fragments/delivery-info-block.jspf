@@ -1,0 +1,66 @@
+<%@ page import="com.agnitas.beans.DeliveryStat" %>
+<c:set var="STATUS_SENT" value="<%= DeliveryStat.STATUS_SENT %>" scope="page" />
+
+<c:set var="infoMsg">
+    <c:choose>
+        <c:when test="${isNormalMailing}">
+            <c:if test="${form.worldMailingSend}">
+                <mvc:message code="${deliveryStat.deliveryStatus eq STATUS_SENT ? 'mailing.send.finished' : 'mailing.send.scheduled'}"/>
+            </c:if>
+        </c:when>
+
+        <c:when test="${isActionBasedMailing}">
+            <c:choose>
+                <c:when test="${form.worldMailingSend}">
+                    <mvc:message code="mailing.send.active.event" /><br>
+                    <c:choose>
+                        <c:when test="${empty bounceFilterNames}">
+                            <mvc:message code="mailing.send.deactivate" />
+                        </c:when>
+                        <c:otherwise>
+                            <mvc:message code="warning.mailing.mailloop.binding" arguments="${bounceFilterNames}"/>
+                        </c:otherwise>
+                    </c:choose>
+                </c:when>
+
+                <c:otherwise>
+                    <mvc:message code="mailing.send.ready" /><br>
+                    <mvc:message code="mailing.send.activate.event" />
+                </c:otherwise>
+            </c:choose>
+        </c:when>
+
+        <c:when test="${isDateBasedMailing}">
+            <c:choose>
+                <c:when test="${form.worldMailingSend}">
+                    <mvc:message code="mailing.send.active.date" /><br>
+                    <mvc:message code="mailing.send.deactivate" />
+                    <mvc:message code="SendingTimeDaily" />:&nbsp;
+                    <fmt:formatDate value="${deliveryStat.scheduledSendTime}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" />
+                </c:when>
+
+                <c:otherwise>
+                    <mvc:message code="mailing.send.ready" /><br>
+                    <mvc:message code="mailing.send.activate.date" />
+                </c:otherwise>
+            </c:choose>
+        </c:when>
+
+        <c:when test="${isFollowUpMailing}">
+            <mvc:message code="${form.worldMailingSend ? 'mailing.send.finished' : 'mailing.send.ready'}" />
+        </c:when>
+
+        <c:when test="${isIntervalMailing}">
+            <c:if test="${not form.worldMailingSend}">
+                <mvc:message code="mailing.send.ready"/>
+                <mvc:message code="mailing.send.activate.event"/>
+            </c:if>
+        </c:when>
+    </c:choose>
+</c:set>
+
+<c:if test="${not empty infoMsg}">
+    <div class="notification-simple notification-simple--lg notification-simple--info">
+        <span>${infoMsg}</span>
+    </div>
+</c:if>

@@ -4,7 +4,7 @@
     padding-top: 0;
     
     .col {
-      padding-top: $gap;
+      padding-top: $gap-md;
     }
     
     .tile-thumbnail {
@@ -18,7 +18,7 @@
         }
         
         .overlay {
-          @include flex-center();
+          @include flex-center;
         }
         
         filter: grayscale(100%);
@@ -48,13 +48,8 @@
         transition: .1s ease;
 
         i {
-          color: white;
+          color: $white;
           font-size: 40px;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          -ms-transform: translate(-50%, -50%);
           text-align: center;
         }
       }
@@ -63,7 +58,7 @@
     .tile-name {
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: $font-size-base;
       padding-top: $gap-sm;
     }
   }

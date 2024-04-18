@@ -12,15 +12,21 @@ AGN.Lib.Validator.new('upload-file/form', {
   },
 
   errors: function (uploadForm, options) {
+    const NAME_TOO_SHORT_MSG_KEY = 'error.workflow.shortName';
+    const REQUIRED_MSG_KEY = 'fields.required.errors.missing';
+
     var validationRules = [{
       field: $('#name'),
-      maxLength: 99
+      minLength: {val: 3, msgKey: NAME_TOO_SHORT_MSG_KEY},
+      maxLength: 99,
     }, {
       field: $('#firstName'),
+      minLength: {val: 3, msgKey: NAME_TOO_SHORT_MSG_KEY},
       maxLength: 99
     }, {
       field: $('#phone'),
-      maxLength: 99
+      minLength: {val: 3, msgKey: REQUIRED_MSG_KEY},
+      maxLength: 99,
     }, {
       field: $('#email'),
       maxLength: 99,
@@ -36,11 +42,17 @@ AGN.Lib.Validator.new('upload-file/form', {
       var value = field.val();
 
       /* checking empty string */
-      if (!value || value.length < 3) {
+      if (!value || value.length < 1) {
         errors.push({
           field: field,
-          msg: t('fields.required.errors.missing')
+          msg: t(REQUIRED_MSG_KEY)
         });
+        return;
+      }
+
+      /* checking min length */
+      if (rule.minLength && value.length < rule.minLength.val) {
+        errors.push({field: field, msg: t(rule.minLength.msgKey)});
         return;
       }
 

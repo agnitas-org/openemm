@@ -1,0 +1,33 @@
+
+$overlay-states: (
+    visible  $danger,
+    hidden   $primary,
+    main     var(--text-dark-gray-color)
+);
+
+@mixin tile-overlay-variant($state, $color) {
+  .tile-overlay--#{$state} {
+    border-color: $color;
+  }
+}
+
+.tile-overlay {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(2px);
+  @include flex-center;
+  border: 2px solid;
+  border-radius: $border-radius;
+  visibility: hidden;
+
+  .btn {
+    box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+  }
+}
+
+@each $conf in $overlay-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include tile-overlay-variant($state, $color);
+}

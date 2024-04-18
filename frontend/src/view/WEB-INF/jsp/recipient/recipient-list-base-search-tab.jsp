@@ -71,9 +71,9 @@
                 </label>
             </div>
             <div class="col-md-12">
-                <mvc:select path="filterUserType" cssClass="form-control js-select"
+                <mvc:select path="filterUserTypes" cssClass="form-control js-select"
                             id="search_recipient_type${advancedSuffix}" size="1"
-                            data-form-change="0">
+                            data-form-change="0" multiple="false">
                     <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
                     <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
                     <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>

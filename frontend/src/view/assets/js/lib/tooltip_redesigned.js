@@ -3,24 +3,15 @@
   const Tooltip = {};
   const Template = AGN.Lib.Template;
   const Helpers = AGN.Lib.Helpers;
+  const Popover = AGN.Lib.Popover;
 
-//   const createTitle = (function() {
-//     const templateWithTitle = Template.prepare('tooltip-message-with-title');
-//     const templateJustContent = Template.prepare('tooltip-message-just-content');
-//
-//     return function(title, text) {
-//       if (title) {
-//         return templateWithTitle({
-//           title: title,
-//           content: text
-//         });
-//       }
-//
-//       return templateJustContent({
-//         content: text
-//       });
-//     };
-//   })();
+  Tooltip.get = function ($e) {
+    const tooltip = bootstrap.Tooltip.getInstance($e);
+    if (tooltip) {
+      return tooltip;
+    }
+    return null;
+  }
 
   const createTemplate = (function() {
     const make = Template.prepare('tooltip-template');
@@ -34,24 +25,14 @@
     };
   })();
 
-  function getTooltipOptions(title, style) {
+  function getTooltipOptions(title, style, trigger) {
     return {
-      title: title,
+      title,
       container: 'body',
-      template: createTemplate(style)
+      template: createTemplate(style),
+      ...(trigger && { trigger }),
     };
   }
-
-  // function getTooltipHelpOptions(title, text, style) {
-  //   return {
-  //     title: 'TEST',
-  //     // title: createTitle(title, text),
-  //     container: 'body',
-  //     html: true,
-  //     placement: 'auto top',
-  //     template: createTemplate(style, 'helper-popup-arrow', 'helper-popup')
-  //   };
-  // }
 
   Tooltip.options = function($e) {
     let options = {};
@@ -65,13 +46,6 @@
       }
       options = getTooltipOptions(title, $e.data('tooltip-style'));
     }
-    // else if ($e.is('[data-tooltip-help]')) {
-    //   options = getTooltipHelpOptions(
-    //     $e.data('tooltip-help'),
-    //     $e.data('tooltip-help-text'),
-    //     $e.data('tooltip-style')
-    //   );
-    // }
 
     return $.extend(
       options,
@@ -95,16 +69,19 @@
     $e.on('remove', function(){
       Tooltip.remove($e);
     })
-    
-    // Create a new Intersection Observer
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          tooltip.hide();
-        }
+
+    if (options.trigger !== 'manual') {
+      // Create a new Intersection Observer
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            tooltip.hide();
+          }
+        });
       });
-    });
-    observer.observe($e[0]);
+      observer.observe($e[0]);
+    }
+    return tooltip;
   };
 
   Tooltip.remove = function($e) {
@@ -123,23 +100,59 @@
 //       $e.bsTooltip('disable');
 //     }
 //   };
-//
-//   Tooltip.setShown = function($e, isShown) {
-//     if (isShown || isShown === undefined) {
-//       $e.bsTooltip('show');
-//     } else {
-//       $e.bsTooltip('hide');
-//     }
-//   };
-//
-//   Tooltip.createTip = function($e, text, style) {
-//     Tooltip.create($e, getTooltipOptions(text, style));
-//   };
-//
-//   Tooltip.createHelpTip = function($e, title, text, style) {
-//     Tooltip.create($e, getTooltipHelpOptions(title, text, style));
-//   };
+
+  Tooltip.setShown = function($e, isShown) {
+    if (isShown || isShown === undefined) {
+      $e.tooltip('show');
+    } else {
+      $e.tooltip('hide');
+    }
+  };
+
+  Tooltip.createTip = function($e, text, style, trigger) {
+    return Tooltip.create($e, getTooltipOptions(text, style, trigger));
+  };
 
   AGN.Lib.Tooltip = Tooltip;
+  
+  class HelpTooltip {
+    static defaultOptions = {
+      trigger: 'hover',
+      html: true,
+      popperConfig: {
+        placement: 'bottom-start'
+      }
+    }
 
+    constructor($el) {
+      this.$el = $el;
+      this.elementData = this.$el.data('tooltip-help');
+      this.$el.one('mouseenter', () => Popover.getOrCreate($el, this.getOptions($el)).show())
+    }
+
+    getOptions($el) {
+      return $.extend(HelpTooltip.defaultOptions, this.getElementSpecificOptions($el));
+    }
+
+    #getXOffset() {
+      const data = this.elementData;
+      const elWidth = this.$el.outerWidth();
+      return data.placement === 'bottom-end' ? -elWidth : elWidth;
+    }
+
+    getElementSpecificOptions() {
+      const data = this.elementData;
+      const offset = [this.#getXOffset(), 0];
+
+      if (!data.content) {  // can be content text or object with popper.js properties
+        return { "content": data, offset };
+      }
+      if (data.placement) {
+        data.popperConfig = { placement: data.placement }
+      }
+      data.offset = offset;
+      return data;
+    }
+  }
+  AGN.Lib.HelpTooltip = HelpTooltip;
 })();

@@ -10,9 +10,11 @@
 
 package com.agnitas.web.perm.exceptions;
 
+import com.agnitas.beans.Admin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -32,8 +34,9 @@ public class AuthorizationExceptionHandler {
 
     @ExceptionHandler(NotAllowedActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public String onNotAllowedActionException(NotAllowedActionException e) {
+    public String onNotAllowedActionException(NotAllowedActionException e, Admin admin, Model model) {
         logger.error("Permission denied: user " + e.getUsername() + " does not have sufficient privileges for " + e.getToken());
+        model.addAttribute("email", admin.getEmail());
         return "permission_denied";
     }
 }

@@ -10,11 +10,12 @@
 
 package com.agnitas.dao;
 
-import java.util.List;
-
-
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * The Interface FormComponentDao.
@@ -57,7 +58,7 @@ public interface FormComponentDao {
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
-	List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
+	List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter);
 
 	/**
 	 * Delete form component.
@@ -71,16 +72,11 @@ public interface FormComponentDao {
 	
 	boolean deleteFormComponentByCompany(int companyID);
 
-	/**
-	 * Gets the form components.
-	 *
-	 * @param companyID the company id
-	 * @param formID the form id
-	 * @return the form components
-	 */
-	List<FormComponent> getFormComponents(int companyID, int formID);
-
-	List<FormComponent> getFormComponents(int companyId, int formId, List<FormComponentType> types);
+	List<FormComponent> getFormComponents(Set<Integer> ids, UserFormImagesOverviewFilter filter);
 
 	boolean saveFormComponent(int companyId, int formId, FormComponent components, FormComponent componentThumbnail) throws Exception;
+
+	List<String> getComponentFileNames(Set<Integer> bulkIds, int formId, int companyID);
+
+	void delete(Set<Integer> bulkIds, int formId, int companyID);
 }

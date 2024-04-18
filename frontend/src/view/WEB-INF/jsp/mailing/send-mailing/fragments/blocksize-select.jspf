@@ -6,8 +6,9 @@
 <emm:ShowByPermission token="mailing.send.admin.options">
     <div class="form-group" id="blocksizeElement">
         <div class="col-sm-12 control-label-left">
-            <label class="control-label" for="blocksize">
-                <mvc:message code="mailing.mailsperhour" />
+            <label class="control-label">
+                <label for="blocksize"><mvc:message code="mailing.mailsperhour" /></label>
+                <button class="icon icon-help" data-help="help_${helplanguage}/mailing/MaxSendPerHour.xml" tabindex="-1" type="button"></button>
             </label>
         </div>
         <div class="col-sm-12">

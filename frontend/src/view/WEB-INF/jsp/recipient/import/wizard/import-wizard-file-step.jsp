@@ -4,24 +4,12 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
-<%--@elvariable id="csvFiles" type="java.util.List<com.agnitas.emm.core.upload.bean.UploadData>"--%>
 
 <mvc:form servletRelativeAction="/recipient/import/wizard/step/file.action" modelAttribute="importWizardSteps" enctype="multipart/form-data" data-form="resource">
     <c:set var="tileContent">
         <div class="tile-content tile-content-forms">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="useCsvUpload">
-                        <mvc:message code="import.wizard.uploadCsvFile"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <label class="toggle">
-                        <mvc:checkbox path="fileStep.useCsvUpload" id="useCsvUpload" />
-                        <div class="toggle-control"></div>
-                    </label>
-                </div>
-            </div>
+            <%@include file="fragments/import-wizard-use-upload-switch.jspf" %>
+            
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
@@ -31,11 +19,7 @@
                 </div>
                 <div class="col-sm-8">
                     <input type="file" name="fileStep.csvFile" class="form-control" id="csvFile" data-hide-by-checkbox="#useCsvUpload"/>
-                    <mvc:select path="fileStep.attachmentCsvFileId" cssClass="form-control js-select" size="1" id="attachment_csv_file_id" data-show-by-checkbox="#useCsvUpload">
-                        <c:forEach var="csvFile" items="${csvFiles}">
-                            <mvc:option value="${csvFile.uploadID}">${csvFile.filename}</mvc:option>
-                        </c:forEach>
-                    </mvc:select>
+                    <%@include file="fragments/import-wizard-uploads-select.jspf" %>
                 </div>
             </div>
             <div class="form-group">

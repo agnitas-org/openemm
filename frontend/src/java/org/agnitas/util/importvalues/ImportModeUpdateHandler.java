@@ -59,20 +59,6 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
-		// Update customer data
-		if (importProfile.getUpdateAllDuplicates()) {
-			// Update all existing customer identified by keycolumns
-			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumn(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
-			status.setUpdated(updatedEntries);
-		} else {
-			// Update the first existing customer only
-			int updatedEntries = importRecipientsDao.updateFirstExistingCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
-			status.setUpdated(updatedEntries);
-		}
-	}
-
-	@Override
 	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Update customer data
 		if (importProfile.getUpdateAllDuplicates()) {

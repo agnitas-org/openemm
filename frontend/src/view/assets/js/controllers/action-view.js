@@ -147,6 +147,7 @@ AGN.Lib.Controller.new('action-view', function() {
         data.trackingPointId = -1;
         break;
     }
+    data.readonly = false;
     return data;
   };
 

@@ -19,6 +19,10 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
         return false;
       }
     });
+
+    if (this.config.errorPositionDetails) {
+      handleEqlErrorDetails(this.config.errorPositionDetails);
+    }
   });
 
   this.addAction({click: 'switch-tab-viewEQL'}, function() {
@@ -54,11 +58,15 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
     if (resp.success) {
       return;
     }
+    handleEqlErrorDetails(resp.data);
+    AGN.Lib.JsonMessages(resp.popups);
+  }
+
+  function handleEqlErrorDetails(details) {
     const eqlEditor = Editor.get($('#eql')).editor;
 
     eqlEditor.focus();
-    eqlEditor.gotoLine(resp.data.line, resp.data.column);
-    AGN.Lib.JsonMessages(resp.popups);
+    eqlEditor.gotoLine(details.line, details.column);
   }
 
   function getNotificationMessage(msg) {

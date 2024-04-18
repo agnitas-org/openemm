@@ -11,12 +11,20 @@
 package com.agnitas.emm.core.birtstatistics.mailing.forms;
 
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
+import org.agnitas.web.forms.BulkActionForm;
+import org.apache.commons.collections4.ListUtils;
 
-public class MailingComparisonForm extends BulkMailingComparisonForm {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class MailingComparisonForm extends BulkActionForm {
     
     private String recipientType = CommonKeys.TYPE_ALL_SUBSCRIBERS;
     
     private String reportFormat = "html";
+
+    private List<Integer> targetIds = new ArrayList<>();
     
     public String getRecipientType() {
         return recipientType;
@@ -32,5 +40,15 @@ public class MailingComparisonForm extends BulkMailingComparisonForm {
     
     public void setReportFormat(String reportFormat) {
         this.reportFormat = reportFormat;
+    }
+
+    public List<Integer> getTargetIds() {
+        return targetIds;
+    }
+
+    public void setTargetIds(List<Integer> targetIds) {
+        targetIds = ListUtils.emptyIfNull(targetIds).stream()
+                .filter(targetId -> targetId != 0).collect(Collectors.toList());
+        this.targetIds = targetIds;
     }
 }

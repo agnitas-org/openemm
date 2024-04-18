@@ -3,6 +3,7 @@
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="MAILING_TYPE_ACTIONBASED" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page"/>
 
@@ -48,7 +49,7 @@
         "mailingType": "${MAILING_TYPE_ACTIONBASED}",
         "selectName": "mailingId",
         "mailingStatus": "mailings_status",
-        "showCreateEditLinks": "true",
+        "showCreateEditLinks": ${not emm:permissionAllowed('mailing.content.readonly', pageContext.request)},
         "mailingTypesForLoading": ["${MAILING_TYPE_ACTIONBASED}"],
         "defaultMailingsSort": "active_sort_status asc, shortname",
         "defaultMailingsOrder": "asc"

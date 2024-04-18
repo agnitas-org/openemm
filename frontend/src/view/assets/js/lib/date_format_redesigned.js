@@ -256,6 +256,20 @@
         }
       
         return weekdays;
+      },
+      formatAdminDateTime: function(long) {
+        if (!long) {
+          return '';
+        }
+        const dateTimeFormat = window.adminDateTimeFormat.replaceAll('d', 'D').replaceAll('y', 'Y');
+        return moment(long).format(dateTimeFormat);
+      },
+      formatAdminDate: function(long) {
+        if (!long) {
+          return '';
+        }
+        const dateTimeFormat = window.adminDateFormat.replaceAll('d', 'D').replaceAll('y', 'Y');
+        return moment(long).format(dateTimeFormat);
       }
     }
 

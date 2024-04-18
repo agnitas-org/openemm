@@ -33,7 +33,9 @@ import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.FulltextSearchQueryException;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.collections4.CollectionUtils;
@@ -59,10 +61,10 @@ import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
 import com.agnitas.dao.impl.mapper.TargetRowMapper;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
+import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
-import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeProperties;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.helger.collection.pair.Pair;
@@ -229,19 +231,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		return saveTarget(target, true);
 	}
 
-	private static boolean isCodeBackendCompatible(final SqlCode sqlCode) {
-		SqlCodeProperties properties = sqlCode.getCodeProperties();
-
-		/*
-		 * Code is backend compatible if,
-		 * - no non-profile-tables are used
-		 * - no reference tables are used
-		 * - and generated SQL does not contain sub-selects
-		 */
-
-		return !properties.isUsingNonCustomerTables() && !properties.isUsingReferenceTables() && !properties.isUsingSubselects();
-	}
-
 	/**
 	 * Saves target group. If {@code hidden} is false, the target group is visible in lists. If value is true,
 	 * target group is hidden in lists. {@code hidden} is ignored, if target group already exists.
@@ -266,7 +255,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			SqlCode sqlCode = eqlFacade.convertEqlToSql(eql, target.getCompanyID());
 
 			// Hide target group, if SQL code is not compatible with backend
-			target.setComponentHide(!isCodeBackendCompatible(sqlCode));
+			target.setComponentHide(!TargetUtils.canBeUsedInContentBlocks(sqlCode));
 
 			target.setTargetSQL(sqlCode.getSql());
 			target.setValid(true);
@@ -699,39 +688,104 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			preparedStatementManager.addWhereClause("(invalid = 0 or invalid is null)");
 		}
 
-		// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
-		if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {
-			preparedStatementManager.addWhereClause("admin_test_delivery = 0");
-		} else if (!options.isWorldDelivery() && options.isAdminTestDelivery()) {
-			preparedStatementManager.addWhereClause("admin_test_delivery = 1");
+		if (options.isRedesignedUiUsed()) {
+			if (options.getDeliveryOption() != null) {
+				preparedStatementManager.addWhereClause("admin_test_delivery = ?", options.getDeliveryOption().getStorageCode());
+			}
+		} else {
+			// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
+			if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {
+				preparedStatementManager.addWhereClause("admin_test_delivery = 0");
+			} else if (!options.isWorldDelivery() && options.isAdminTestDelivery()) {
+				preparedStatementManager.addWhereClause("admin_test_delivery = 1");
+			}
+		}
+
+		if (options.isRedesignedUiUsed()) {
+			if (options.getComplexity() != null) {
+				if (options.getComplexity().getFrom() != null) {
+					preparedStatementManager.addWhereClause(
+							"complexity + ? >= ?",
+							options.getRecipientCountBasedComplexityAdjustment(),
+							options.getComplexity().getFrom()
+					);
+				}
+
+				if (options.getComplexity().getTo() != null) {
+					preparedStatementManager.addWhereClause(
+							"complexity + ? < ?",
+							options.getRecipientCountBasedComplexityAdjustment(),
+							options.getComplexity().getTo()
+					);
+				}
+			}
+			if (options.getCreationDate() != null) {
+				if (options.getCreationDate().getFrom() != null) {
+					preparedStatementManager.addWhereClause("creation_date >= ?", options.getCreationDate().getFrom());
+				}
+				if (options.getCreationDate().getTo() != null) {
+					preparedStatementManager.addWhereClause(
+							"creation_date < ?",
+							DateUtilities.addDaysToDate(options.getCreationDate().getTo(), 1)
+					);
+				}
+			}
+
+			if (options.getChangeDate() != null) {
+				if (options.getChangeDate().getFrom() != null) {
+					preparedStatementManager.addWhereClause("change_date >= ?", options.getChangeDate().getFrom());
+				}
+				if (options.getChangeDate().getTo() != null) {
+					preparedStatementManager.addWhereClause(
+							"change_date < ?",
+							DateUtilities.addDaysToDate(options.getChangeDate().getTo(), 1)
+					);
+				}
+			}
 		}
 
 		// Check supported search modes by available db indices
 		String searchQuery = options.getSearchText();
-		if (StringUtils.isNotEmpty(searchQuery) && isBasicFullTextSearchSupported()) {
+		if (isBasicFullTextSearchSupported()) {
 			List<String> searchClauses = new ArrayList<>();
 			List<java.lang.Object> properties = new ArrayList<>();
 
-			String fullTextSearchClause = searchQuery;
-			if (options.isSearchName() || options.isSearchDescription()) {
-				try {
-					fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
-				} catch (final FulltextSearchQueryException e) {
-					logger.error("Cannot transform full text search query: " + searchQuery);
+			String fullTextSearchNameQuery = options.getSearchName();
+			String fullTextSearchDescriptionQuery = options.getSearchDescription();
+
+			if (!options.isRedesignedUiUsed()) {
+				if (StringUtils.isNotBlank(searchQuery)) {
+					String fullTextSearchClause = searchQuery;
+					if (options.isSearchName() || options.isSearchDescription()) {
+						try {
+							fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
+						} catch (final FulltextSearchQueryException e) {
+							logger.error("Cannot transform full text search query: " + searchQuery);
+						}
+
+						fullTextSearchNameQuery = fullTextSearchClause;
+						fullTextSearchDescriptionQuery = fullTextSearchClause;
+					}
+				} else {
+					options.setSearchName(false);
+					options.setSearchDescription(false);
 				}
+			} else {
+				fullTextSearchNameQuery = generateFullTextSearchQuery(fullTextSearchNameQuery);
+				fullTextSearchDescriptionQuery = generateFullTextSearchQuery(fullTextSearchDescriptionQuery);
 			}
 
-			if (options.isSearchName()) {
+			if ((!options.isRedesignedUiUsed() && options.isSearchName()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchNameQuery))) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_shortname, ?) > 0" : "MATCH(target_shortname) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(fullTextSearchClause);
+				properties.add(fullTextSearchNameQuery);
 			}
 
-			if (options.isSearchDescription()) {
+			if ((!options.isRedesignedUiUsed() && options.isSearchDescription()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchDescriptionQuery))) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_description, ?) > 0" : "MATCH(target_description) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(fullTextSearchClause);
+				properties.add(fullTextSearchDescriptionQuery);
 			}
 
-			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(" OR "));
+			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(options.isRedesignedUiUsed() ? " AND " : " OR "));
 			if (StringUtils.isNotBlank(searchClause)) {
 				preparedStatementManager.addAndClause();
 				preparedStatementManager.appendOpeningParenthesis();
@@ -739,6 +793,16 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				preparedStatementManager.appendClosingParenthesis();
 			}
 		}
+	}
+
+	private String generateFullTextSearchQuery(String searchQuery) throws FulltextSearchInvalidQueryException {
+		try {
+			return fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
+		} catch (final FulltextSearchQueryException e) {
+			logger.error("Cannot transform full text search query: " + searchQuery);
+		}
+
+		return searchQuery;
 	}
 
 	@Override

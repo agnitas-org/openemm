@@ -10,18 +10,6 @@
 
 package com.agnitas.emm.core.recipient.converter;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DO_NOT_TRACK;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_ENCRYPTED_SENDING;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
-
 import java.util.Map;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -30,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
 import com.agnitas.emm.core.recipient.forms.RecipientForm;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 @Component
 public class RecipientFormToSaveRecipientDto implements Converter<RecipientForm, SaveRecipientDto>  {
@@ -40,17 +29,17 @@ public class RecipientFormToSaveRecipientDto implements Converter<RecipientForm,
         SaveRecipientDto dto = new SaveRecipientDto();
         Map<String, String> data = dto.getFieldsToSave();
         dto.setId(form.getId());
-        data.put(COLUMN_CUSTOMER_ID, String.valueOf(form.getId()));
-        data.put(COLUMN_GENDER, String.valueOf(form.getGender().getStorageValue()));
-        data.put(COLUMN_TITLE, form.getTitle());
-        data.put(COLUMN_FIRSTNAME, form.getFirstname());
-        data.put(COLUMN_LASTNAME, form.getLastname());
-        data.put(COLUMN_EMAIL, form.getEmail());
-        data.put(COLUMN_MAILTYPE, String.valueOf(form.getMailtype().getIntValue()));
-        data.put(COLUMN_DO_NOT_TRACK, String.valueOf(BooleanUtils.toInteger(form.isTrackingVeto())));
-        data.put(COLUMN_ENCRYPTED_SENDING, String.valueOf(BooleanUtils.toInteger(form.isEncryptedSend())));
-        data.put(COLUMN_DATASOURCE_ID, String.valueOf(form.getDataSourceId()));
-        data.put(COLUMN_LATEST_DATASOURCE_ID, String.valueOf(form.getLatestDataSourceId()));
+        data.put(RecipientStandardField.CustomerID.getColumnName(), String.valueOf(form.getId()));
+        data.put(RecipientStandardField.Gender.getColumnName(), String.valueOf(form.getGender().getStorageValue()));
+        data.put(RecipientStandardField.Title.getColumnName(), form.getTitle());
+        data.put(RecipientStandardField.Firstname.getColumnName(), form.getFirstname());
+        data.put(RecipientStandardField.Lastname.getColumnName(), form.getLastname());
+        data.put(RecipientStandardField.Email.getColumnName(), form.getEmail());
+        data.put(RecipientStandardField.Mailtype.getColumnName(), String.valueOf(form.getMailtype().getIntValue()));
+        data.put(RecipientStandardField.DoNotTrack.getColumnName(), String.valueOf(BooleanUtils.toInteger(form.isTrackingVeto())));
+        data.put(RecipientStandardField.EncryptedSending.getColumnName(), String.valueOf(BooleanUtils.toInteger(form.isEncryptedSend())));
+        data.put(RecipientStandardField.DatasourceID.getColumnName(), String.valueOf(form.getDataSourceId()));
+        data.put(RecipientStandardField.LatestDatasourceID.getColumnName(), String.valueOf(form.getLatestDataSourceId()));
         form.getAdditionalColumns().forEach(data::put);
         return dto;
     }

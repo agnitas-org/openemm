@@ -8,3 +8,8 @@
   max-width: $width;
   max-height: $height;
 }
+
+@mixin min-size($width, $height: $width) {
+  min-width: $width;
+  min-height: $height;
+}

@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
@@ -54,8 +52,8 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.service.ImportWizardService;
-import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.service.ProfileImportWorkerFactory;
+import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.impl.ImportWizardContentParseException;
 import org.agnitas.util.AgnUtils;
@@ -104,14 +102,15 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.imports.wizard.exception.NotAllowedImportWizardStepException;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps.Step;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.upload.bean.UploadFileExtension;
-import com.agnitas.emm.core.upload.service.UploadService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -131,7 +130,6 @@ public class RecipientImportWizardController implements XssCheckAware {
     private final ComRecipientDao recipientDao;
     private final DatasourceDescriptionDao datasourceDescriptionDao;
     private final ProfileFieldDao profileFieldDao;
-    private final UploadService uploadService;
     private final DataSource dataSource;
     private final ConfigService configService;
     private final MailinglistService mailinglistService;
@@ -143,14 +141,13 @@ public class RecipientImportWizardController implements XssCheckAware {
 
     public RecipientImportWizardController(ComRecipientDao recipientDao,
                                            DatasourceDescriptionDao datasourceDescriptionDao,
-                                           ProfileFieldDao profileFieldDao, UploadService uploadService,
+                                           ProfileFieldDao profileFieldDao,
                                            DataSource dataSource, ConfigService configService,
                                            MailinglistService mailinglistService, RecipientsReportService reportService,
                                            ImportWizardService importWizardService,
                                            ProfileImportWorkerFactory profileImportWorkerFactory,
                                            MailinglistApprovalService mailinglistApprovalService,
                                            UserActivityLogService userActivityLogService) {
-        this.uploadService = uploadService;
         this.recipientDao = recipientDao;
         this.datasourceDescriptionDao = datasourceDescriptionDao;
         this.profileFieldDao = profileFieldDao;
@@ -195,7 +192,7 @@ public class RecipientImportWizardController implements XssCheckAware {
     @GetMapping("/step/file.action")
     public String fileStepView(Model model, Admin admin) {
         model.addAttribute("importWizardSteps", getImportWizardSteps(admin));
-        model.addAttribute("csvFiles", uploadService.getUploadsByExtension(admin, UploadFileExtension.CSV));
+        model.addAttribute("csvFiles", importWizardService.getCsvUploads(admin));
         return "recipient_import_wizard_file_step";
     }
 
@@ -245,7 +242,7 @@ public class RecipientImportWizardController implements XssCheckAware {
 
     private CaseInsensitiveMap<String, CsvColInfo> getAvailableDbColumns(ImportWizardHelper helper, Admin admin) throws Exception {
         CaseInsensitiveMap<String, CsvColInfo> dbColumnsAvailable = recipientDao.readDBColumns(admin.getCompanyID(), admin.getAdminID(), Collections.singletonList(helper.getKeyColumn()));
-        ImportUtils.getHiddenColumns(admin).forEach(dbColumnsAvailable::remove);
+        RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)).forEach(dbColumnsAvailable::remove);
         profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID()).entrySet().stream()
                 .filter(profileFieldEntry -> profileFieldEntry.getValue().getModeEdit() == ProfileFieldMode.NotVisible)
                 .forEach(profileFieldEntry -> dbColumnsAvailable.remove(profileFieldEntry.getKey()));
@@ -281,6 +278,8 @@ public class RecipientImportWizardController implements XssCheckAware {
             int maxRowsAllowedForClassicImport = configService.getIntegerValue(ConfigValue.ClassicImportMaxRows, admin.getCompanyID());
             if (maxRowsAllowedForClassicImport >= 0 && steps.getHelper().getLinesOK() > maxRowsAllowedForClassicImport) {
                 popups.alert("error.import.maxlinesexceeded", steps.getHelper().getLinesOK(), maxRowsAllowedForClassicImport);
+            } else if (steps.getHelper().getLinesOK() == 0) {
+                popups.alert("error.import.invalid.settings");
             }
         } catch (ImportWizardContentParseException e) {
             popups.alert(e.getErrorMessageKey());
@@ -417,7 +416,7 @@ public class RecipientImportWizardController implements XssCheckAware {
     }
 
     private void runImport(Admin admin, ImportWizardSteps steps, ImportWizardHelper helper, String sessionId) throws Exception {
-        ProfileImportWorker worker = getProfileImportWorker(admin, sessionId, steps);
+    	ProfileImportWorker worker = getProfileImportWorker(admin, sessionId, steps);
         worker.call();
 
         if (worker.getError() != null) {

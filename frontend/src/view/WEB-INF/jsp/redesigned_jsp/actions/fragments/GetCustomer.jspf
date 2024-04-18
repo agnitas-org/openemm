@@ -1,0 +1,14 @@
+
+<script id="module-GetCustomer" type="text/x-mustache-template">
+    <div class="tile-body" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="GetCustomer"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+
+        <div class="form-check form-switch">
+            <input type="checkbox" name="modules[].loadAlways" id="module_{{- index}}.loadAlways" class="form-check-input" role="switch" {{ loadAlways ? print('checked="checked"') : ''}}/>
+            <label class="form-label form-check-label" for="module_{{- index}}.loadAlways">
+                <mvc:message code="action.getcustomer.loadalways"/>
+            </label>
+        </div>
+    </div>
+</script>

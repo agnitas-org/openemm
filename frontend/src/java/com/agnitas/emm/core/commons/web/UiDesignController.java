@@ -33,7 +33,7 @@ public class UiDesignController {
 
     @PostMapping("/switch.action")
     public @ResponseBody BooleanResponseDto switchDesign(Admin admin) {
-        if (admin.permissionAllowed(Permission.USE_REDESIGNED_UI)) {
+        if (admin.isRedesignedUiUsed()) {
             adminService.revokePermission(admin, Permission.USE_REDESIGNED_UI);
         } else {
             adminService.grantPermission(admin, Permission.USE_REDESIGNED_UI);

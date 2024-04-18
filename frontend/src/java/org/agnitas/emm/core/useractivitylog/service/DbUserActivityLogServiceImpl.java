@@ -10,16 +10,16 @@
 
 package org.agnitas.emm.core.useractivitylog.service;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.dao.SoapUserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -28,9 +28,13 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.Admin;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
 
 import static java.text.MessageFormat.format;
 
@@ -55,9 +59,58 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 																		  String description, int pageNumber, int pageSize, String sortColumn,
 																		  String sortDirection, List<AdminEntry> visibleAdmins) throws Exception {
 		ZoneId zoneId = AgnUtils.getZoneId(admin);
-		Date from = DateUtilities.toDate(fromDate, zoneId);
-		Date to = DateUtilities.toDate(toDate.plusDays(1), zoneId);
-		return generalUserActivityLogDao.getUserActivityEntries(visibleAdmins, username, action, from, to, description, sortColumn, sortDirection, pageNumber, pageSize);
+		return generalUserActivityLogDao.getUserActivityEntries(
+				visibleAdmins,
+				username,
+				action,
+				DateUtilities.toDate(fromDate, zoneId),
+				DateUtilities.toDate(toDate, zoneId),
+				description,
+				sortColumn,
+				sortDirection,
+				pageNumber,
+				pageSize
+		);
+	}
+
+	@Override
+	public PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilterRedesigned(UserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) throws Exception {
+		adaptFilterDates(filter, admin);
+
+		final List<AdminEntry> visibleAdmins = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
+		return generalUserActivityLogDao.getUserActivityEntries(
+				visibleAdmins,
+				filter.getUsername(),
+				filter.getAction(),
+				filter.getTimestamp().getFrom(),
+				filter.getTimestamp().getTo(),
+				filter.getDescription(),
+				filter.getSort(),
+				filter.getDir(),
+				filter.getPage(),
+				filter.getNumberOfRows()
+		);
+	}
+
+	@Override
+	public PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilterRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) {
+		adaptFilterDates(filter, admin);
+		if (StringUtils.isBlank(filter.getSort())) {
+			filter.setSort("timestamp");
+		}
+
+		final List<AdminEntry> visibleAdmins = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
+		return restfulUserActivityLogDao.getUserActivityEntriesRedesigned(filter, visibleAdmins);
+	}
+
+	private void adaptFilterDates(UserActivityLogFilterBase filter, Admin admin) {
+		final ZoneId zoneId = AgnUtils.getZoneId(admin);
+
+		if (filter.getTimestamp().getFrom() == null && filter.getTimestamp().getTo() == null) {
+			LocalDate date = LocalDate.now(zoneId);
+			filter.getTimestamp().setFrom(DateUtilities.toDate(date, zoneId));
+			filter.getTimestamp().setTo(DateUtilities.toDate(date, zoneId));
+		}
 	}
 
 	@Override
@@ -66,7 +119,7 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 																						  String sortDirection, List<AdminEntry> visibleAdmins) throws Exception {
 		ZoneId zoneId = AgnUtils.getZoneId(admin);
 		Date from = DateUtilities.toDate(fromDate, zoneId);
-		Date to = DateUtilities.toDate(toDate.plusDays(1), zoneId);
+		Date to = DateUtilities.toDate(toDate, zoneId);
 		return restfulUserActivityLogDao.getUserActivityEntries(visibleAdmins, username, from, to, description, sortColumn, sortDirection, pageNumber, pageSize);
 	}
 
@@ -76,15 +129,15 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 																					List<AdminEntry> visibleAdmins) throws Exception {
 		ZoneId zoneId = AgnUtils.getZoneId(admin);
 		Date from = DateUtilities.toDate(fromDate, zoneId);
-		Date to = DateUtilities.toDate(toDate.plusDays(1), zoneId);
+		Date to = DateUtilities.toDate(toDate, zoneId);
 
 		return soapUserActivityLogDao.getUserActivityEntries(visibleAdmins, username, from, to, sortColumn, sortDirection, pageNumber, pageSize);
 	}
 
 	@Override
-	public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin,
-																			   int selectedAction, Date from, Date to, String description,
-																			   UserType userType) throws Exception {
+	public SqlPreparedStatementManager prepareSqlStatementForDownload(List<AdminEntry> visibleAdmins, String selectedAdmin,
+																	  int selectedAction, Date from, Date to, String description,
+																	  UserType userType) throws Exception {
 		if (UserType.REST.equals(userType)) {
 			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to, description);
 		}
@@ -94,6 +147,29 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 		}
 
 		return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, selectedAction, from, to, description);
+	}
+
+	@Override
+	public SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, List<AdminEntry> visibleAdmins, UserType userType, Admin admin) throws Exception {
+		adaptFilterDates(filter, admin);
+
+		if (UserType.REST.equals(userType)) {
+			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((RestfulUserActivityLogFilter) filter), visibleAdmins);
+		}
+
+		if (UserType.SOAP.equals(userType)) {
+			throw new UnsupportedOperationException();
+		}
+
+		UserActivityLogFilter ualFilter = (UserActivityLogFilter) filter;
+		return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(
+				visibleAdmins,
+				ualFilter.getUsername(),
+				ualFilter.getAction(),
+				ualFilter.getTimestamp().getFrom(),
+				ualFilter.getTimestamp().getTo(),
+				ualFilter.getDescription()
+		);
 	}
 
 	@Override

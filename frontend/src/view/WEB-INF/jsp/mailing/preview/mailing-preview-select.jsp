@@ -13,7 +13,6 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.preview.form.PreviewForm"--%>
 <%--@elvariable id="mailingListExist" type="java.lang.Boolean"--%>
 <%--@elvariable id="availableTargetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
-<%--@elvariable id="recipientsAvailableForTestRun" type="java.util.List<com.agnitas.beans.impl.ComRecipientLiteImpl>"--%>
 
 <c:set var="EMAIL_TYPE_CODE" value="<%= MediaTypes.EMAIL.getMediaCode() %>" scope="page"/>
 <c:set var="RECIPIENT_MODE" value="<%= ModeType.RECIPIENT %>"/>
@@ -217,7 +216,7 @@
                                                       data-stored-field="${storedFieldsScope}"
                                                       data-action="change-preview-customer-options"
                                                       data-field-vis="" data-field-vis-hide="#recipient-manual-input"
-                                                      data-field-vis-show="#recipient-select,#personalized-test-run-container"/>
+                                                      data-field-vis-show="#recipient-select"/>
 
                                         <mvc:message code="recipient.TestSubscriber"/>
                                     </label>
@@ -252,7 +251,7 @@
                                                       id="useCustomEmail"
                                                       data-stored-field="${storedFieldsScope}"
                                                       data-action="change-preview-customer-options"
-                                                      data-field-vis="" data-field-vis-hide="#recipient-select,#personalized-test-run-container"
+                                                      data-field-vis="" data-field-vis-hide="#recipient-select"
                                                       data-field-vis-show="#recipient-manual-input"/>
 
                                         <mvc:message code="mailing.preview.input"/>
@@ -262,12 +261,15 @@
                                 <div id="recipient-manual-input" class="col-xs-10 col-sm-9 col-md-9 col-lg-9">
                                     <div class="inline-block" style="width: 100%;">
                                         <div class="input-group-controls">
-                                            <mvc:text path="customerEmail" cssClass="form-control" data-stored-field="${storedFieldsScope}" />
+                                            <mvc:text path="customerEmail" cssClass="form-control" data-action="change-personalized-test-recipients" data-stored-field="${storedFieldsScope}" />
                                         </div>
                                         <div class="input-group-btn">
-                                            <button type="button" id="btnCustomEmailRefresh" class="btn btn-regular" data-action="refresh-preview">
+                                            <button type="button" id="btnCustomEmailRefresh" class="btn btn-regular" data-action="refresh-preview" style="margin-right: 10px">
                                                 <mvc:message code="default.enter.email"/>
                                             </button>
+                                        </div>
+                                        <div class="input-group-btn">
+                                            <%@include file="fragments/preview-add-to-test-run-btn.jspf" %>
                                         </div>
                                     </div>
                                 </div>

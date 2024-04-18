@@ -1,5 +1,6 @@
 AGN.Lib.Controller.new('temp-file', function() {
 
+  const Form = AGN.Lib.Form;
   let modalAlreadyRequested;
 
   this.addAction({'upload:add': 'show-upload-file-form'}, function() {
@@ -7,35 +8,40 @@ AGN.Lib.Controller.new('temp-file', function() {
       return;
     }
     modalAlreadyRequested = true;
-    $
-      .get(AGN.url("/upload/new.action"))
-      .done((resp) => drawUploadModal(resp, this.el.data("upload-selection")));
+
+    $.ajax({
+      url: AGN.url("/upload/new.action"),
+      type: 'GET',
+      async: false,
+      success: resp => {
+        AGN.Lib.Page.render(resp);
+        $('.modal').on('modal:close', clearDropzone);
+
+        $getUploadForm().on('upload:filesSet', (e, files) => {
+          addFilesInfoToModal(files);
+          modalAlreadyRequested = false;
+        });
+      }
+    });
   });
 
-  function drawUploadModal(modalHtml, files) {
-    AGN.Lib.Page.render(modalHtml);
-    addFilesInfoToModal(files.map(file => file.name));
-    modalAlreadyRequested = false;
-    $('.modal').on('modal:close', clearDropzone)
-  }
-
-  function addFilesInfoToModal(fileNames) {
-    const $modalTitle = $('#file-names');
-    if (fileNames.length > 1) {
-      addFilesTableToModal();
+  function addFilesInfoToModal(files) {
+    if (files.length > 1) {
+      addFilesTableToModal(files);
       return;
     }
-    $modalTitle.append(fileNames);
+
+    const $modalTitle = $('#file-names');
+    $modalTitle.append(files[0].name);
   }
 
   function clearDropzone() {
     $('#files').val('');
-    $('#upload-file').trigger('upload:reset');
+    $('#dropzone').trigger('upload:reset');
   }
 
   this.addAction({click: 'save-file'}, function () {
-    const form = AGN.Lib.Form.get(this.el);
-    form.setValue('files', Array.from($('#files')[0].files));
+    const form = Form.get(this.el);
 
     const jqxhr = form.submit();
     if (jqxhr) {
@@ -67,16 +73,23 @@ AGN.Lib.Controller.new('temp-file', function() {
     return files.map(({name, size}) => ({name, size: AGN.Lib.Helpers.formatBytes(size)}));
   }
 
-  function addFilesTableToModal() {
-    const files = Array.from($('#files')[0].files);
+  function addFilesTableToModal(files) {
     // rows + header + table-controls
     const tableHeight = (files.length + 2) * 40;
     const table = new AGN.Lib.Table(
-      $(`<div class="col-12" style="height: ${tableHeight}px; max-height: 220px">`),
+      $(`<div class="js-data-table-body">`),
       getFilesTableColumnDefs(),
       getFilesDataForTable(files),
       {pagination: false}
     );
-    $('#upload-form').find('.row:first').prepend(table.$el);
+
+    const $tableWrapper = $(`<div class="col-12" style="height: ${tableHeight}px; max-height: 220px">`);
+    $tableWrapper.append(table.$el);
+
+    $getUploadForm().find('.row:first').prepend($tableWrapper);
+  }
+
+  function $getUploadForm() {
+    return $('#upload-form');
   }
 });

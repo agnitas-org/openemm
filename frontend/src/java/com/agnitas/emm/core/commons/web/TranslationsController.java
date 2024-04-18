@@ -10,16 +10,33 @@
 
 package com.agnitas.emm.core.commons.web;
 
-import com.agnitas.web.perm.annotations.Anonymous;
+import java.util.Date;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+
+import com.agnitas.web.perm.annotations.Anonymous;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 public class TranslationsController {
 
+    private static final String ETAG = "W/\"" + new Date().getTime() + "\"";
+    
     @Anonymous
     @GetMapping("/translations.js.action")
-    public String load() {
+    public String load(HttpServletResponse response, 
+                       @RequestHeader(value = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch) {
+        if (StringUtils.isNotBlank(ifNoneMatch) && ETAG.equalsIgnoreCase(ifNoneMatch)) {
+            response.setStatus(HttpStatus.NOT_MODIFIED.value());
+            return null;
+       	}
+        response.setHeader("etag", ETAG);
         return "js_translations";
     }
 }

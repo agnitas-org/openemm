@@ -1,13 +1,12 @@
 (function(){
-
-  var Form    = AGN.Lib.Form,
-      Confirm = AGN.Lib.Confirm,
-      Helpers = AGN.Lib.Helpers,
-      Page = AGN.Lib.Page;
+  const Helpers = AGN.Lib.Helpers;
+  const Confirm = AGN.Lib.Confirm;
+  const Form    = AGN.Lib.Form;
+  const Page    = AGN.Lib.Page;
 
   // avoid loading the Single View
   // when inputs or links are clicked
-  $(document).on('click', '.js-table a, .js-table input, .js-table select, .js-table button, .js-table .js-checkable, .js-table .disabled', function(e) {
+  $(document).on('click', '.js-table a, .js-table input, .js-table select, .js-table .select2, .js-table button, .js-table .js-checkable, .js-table .disabled', function(e) {
     e.preventViewLoad = true;
   });
 
@@ -40,6 +39,15 @@
     e.preventDefault();
   });
 
+  // if inside the sortable <th> located checkbox, then we need to stop propagation, cuz FF will open link in new tab
+  $(document).on('click', '.js-table-sort input[type="checkbox"]', function (e) {
+    const $el = $(this);
+    const checked = $el.is(':checked');
+
+    e.preventDefault();
+    window.setTimeout(() => $el.prop('checked', checked).trigger('change'), 0)
+  });
+
   $(document).on('click', '.js-table-paginate', function(e) {
     var $this = $(this),
         href  = $this.attr('href'),
@@ -65,20 +73,7 @@
     }
   });
 
-  $(document).on('click', '.js-row-display', function(e) {
-    if (!AGN.Lib.Helpers.isMobileView()) {
-      const $this = $(this);
-      const href  = $this.is('button') ? $this.data('url') : $this.attr('href');
-
-      if (href) {
-        displayRowData($this, href);
-      }
-    }
-
-    e.preventDefault();
-  });
-
-  function displayRowData($el, href) {
+  function showRemoteModal($el, href) {
     const form  = Form.get($el)
     const jqxhr = $.get(href);
     jqxhr.done(function(resp) {
@@ -134,20 +129,43 @@
       return;
     }
     const $this = $(this);
+
+    if ($this.data('table-modal')) {
+      showLocalModal($this);
+      return;
+    }
+
     const target = $this.data('link');
 
     if (typeof(target) !== 'undefined') {
-      displayRowData($this, target);
+      if ($this.data('load-page')) {
+        window.location.href = target;
+      } else {
+        showRemoteModal($this, target);
+      }
     }
   });
 
+  function showLocalModal($row) {
+    const template = $row.data('table-modal');
+    let opts = $row.data('table-modal-options');
+    opts = typeof opts === 'object' ? opts : Helpers.objFromString(opts);
+
+    AGN.Lib.Modal.fromTemplate(template, opts);
+  }
+
   // Make sure we stop propagation of input click event,
   // otherwise .js-checkable will immediately revert it
-  $(document).on('click', '.js-checkable label, .js-checkable input[type="checkbox"], .js-checkable input[type="radio"]', function(e) {
-    e.stopPropagation();
+  $(document).on('click', '.js-checkable input[type="checkbox"], .js-checkable input[type="radio"]', function (e) {
+    const $el = $(this);
+    const checked = $el.is(':checked');
+
+    e.preventDefault();
+    window.setTimeout(() => $el.prop('checked', checked), 0)
   });
 
   $(document).on('click', '.js-checkable', function(e) {
+    e.preventDefault();
     var $this = $(this),
         $targets,
         $target;

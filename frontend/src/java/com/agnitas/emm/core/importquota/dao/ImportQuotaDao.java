@@ -22,4 +22,6 @@ public interface ImportQuotaDao {
 	
 	List<ImportSize> listImportSized(final int companyID, final ZonedDateTime from, final ZonedDateTime untilExclusive);
 	
+	void clearAllImportData(final int companyId);
+	
 }

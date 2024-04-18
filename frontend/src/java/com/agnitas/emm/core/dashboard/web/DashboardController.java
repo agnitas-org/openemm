@@ -10,16 +10,13 @@
 
 package com.agnitas.emm.core.dashboard.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.calendar.web.CalendarController;
-import com.agnitas.emm.core.dashboard.form.DashboardForm;
-import com.agnitas.emm.core.dashboard.service.DashboardService;
-import com.agnitas.emm.core.news.enums.NewsType;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.XssCheckAware;
-import net.sf.json.JSONObject;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
@@ -36,12 +33,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.calendar.web.CalendarController;
+import com.agnitas.emm.core.dashboard.form.DashboardForm;
+import com.agnitas.emm.core.dashboard.service.DashboardService;
+import com.agnitas.emm.core.news.enums.NewsType;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.XssCheckAware;
+
+import net.sf.json.JSONObject;
 
 public class DashboardController implements XssCheckAware {
 	
@@ -69,7 +70,7 @@ public class DashboardController implements XssCheckAware {
         model.addAttribute("mailinglist", mailingList);
         model.addAttribute("worldmailinglist", worldMailinglist);
         model.addAttribute("newsTypes", NewsType.values());
-        if (admin.permissionAllowed(Permission.USE_REDESIGNED_UI)) {
+        if (admin.isRedesignedUiUsed()) {
             addRedesignAttrs(admin, model);
         }
 
@@ -142,7 +143,7 @@ public class DashboardController implements XssCheckAware {
 
         //other
         model.addAttribute("firstDayOfWeek", Calendar.getInstance(locale).getFirstDayOfWeek() - 1);
-        if (!admin.permissionAllowed(Permission.USE_REDESIGNED_UI)) {
+        if (!admin.isRedesignedUiUsed()) {
             model.addAttribute("monthlist", AgnUtils.getMonthList());
             model.addAttribute("yearlist", AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM));
         }

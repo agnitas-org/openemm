@@ -13,6 +13,8 @@ package org.agnitas.backend;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+
 /**
  * Keeps track of some customer relevant data
  * during mail generation
@@ -152,7 +154,7 @@ public class Custinfo {
 	}
 
 	public boolean getTrackingVeto() {
-		String value = columns.get("sys_tracking_veto");
+		String value = columns.get(RecipientStandardField.DoNotTrack.getColumnName());
 
 		return ((value != null) && (!"".equals(value)) && (!"0".equals(value)));
 	}

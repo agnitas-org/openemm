@@ -46,6 +46,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ServerCommand.Command;
 import org.agnitas.util.ServerCommand.Server;
 import org.agnitas.util.Systemconfig;
@@ -102,7 +103,6 @@ import jakarta.servlet.http.HttpServletRequest;
  * The value 0 means, there will be no buffering.
  */
 public class ConfigService {
-	
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ConfigService.class);
 
@@ -119,6 +119,16 @@ public class ConfigService {
     private static Date applicationVersionInstallationTime = null;
 
 	private static Server applicationType = null;
+	
+	/**
+	 * Cache the existence state of table 'disabled_mailinglist_tbl'
+	 */
+	private Boolean isDisabledMailingListsSupported;
+	
+	/**
+	 * Cache the existence state of table 'dyn_target_tbl' and column 'is_access_limiting'
+	 */
+	private Boolean isAccessLimitingTargetgroupsSupported;
     
     private static ConfigService instance;
     
@@ -719,13 +729,17 @@ public class ConfigService {
 				if (companyDao != null) {
 					// Check maximum number of companies
 					int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
+					int gracefulExtension = 0;
+					if (LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful.toString()) != null) {
+						gracefulExtension = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful.toString()).get(0));
+					}
 					if (maximumNumberOfCompanies >= 0) {
 						int numberOfCompanies = companyDao.getNumberOfCompanies();
 						if (numberOfCompanies > maximumNumberOfCompanies) {
-							if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
-									&& numberOfCompanies <= maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
-								logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
-								licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()));
+							if (gracefulExtension > 0
+									&& numberOfCompanies <= maximumNumberOfCompanies + gracefulExtension) {
+								logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
+								licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, gracefulExtension));
 			    			} else {
 			    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
 			    			}
@@ -825,16 +839,17 @@ public class ConfigService {
 			if (companyID > 0) {
 				// Check maximum number of customers
 				int maximumNumberOfCustomers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyID);
+				int gracefulExtensionCustomers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfCustomers_Graceful, companyID);
 				if (maximumNumberOfCustomers >= 0) {
 					int numberOfCustomers = companyDao.getNumberOfCustomers(companyID);
 					if (numberOfCustomers > maximumNumberOfCustomers) {
-						if (numberOfCustomers > maximumNumberOfCustomers + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension()) {
+						if (numberOfCustomers > maximumNumberOfCustomers + gracefulExtensionCustomers) {
 							throw new LicenseError("Invalid Number of customers of company " + companyID, maximumNumberOfCustomers, numberOfCustomers);
 						} else {
 							String licenseErrorText = "Invalid Number of customers of company " + companyID + "."
 									+ " Current number of customers: " + numberOfCustomers + "."
 									+ " Maximum number of customers: " + maximumNumberOfCustomers + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionCustomers;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -846,6 +861,7 @@ public class ConfigService {
 			
 				// Check maximum number of profile fields
 				int maximumNumberOfProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
+				int gracefulExtensionProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID);
 				if (maximumNumberOfProfileFields >= 0) {
 					int numberOfCompanySpecificProfileFields;
 					try {
@@ -854,13 +870,13 @@ public class ConfigService {
 						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
 					}
 					if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
-					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + gracefulExtensionProfileFields) {
 							throw new LicenseError("Invalid Number of profileFields of company " + companyID, maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
 						} else {
 							String licenseErrorText = "Invalid Number of profileFields of company " + companyID + "."
 									+ " Current number of profileFields: " + numberOfCompanySpecificProfileFields + "."
 									+ " Maximum number of profileFields: " + maximumNumberOfProfileFields + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionProfileFields;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -872,6 +888,7 @@ public class ConfigService {
 			
 				// Check maximum number of reference tables
 				int maximumNumberOfReferenceTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfReferenceTables, companyID);
+				int gracefulExtensionReferenceTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfReferenceTables_Graceful, companyID);
 				if (maximumNumberOfReferenceTables >= 0) {
 					int numberOfReferenceTables;
 					try {
@@ -880,13 +897,13 @@ public class ConfigService {
 						throw new LicenseError("Cannot detect number of reference tables of company " + companyID + ": " + e.getMessage(), e);
 					}
 					if (numberOfReferenceTables > maximumNumberOfReferenceTables) {
-					 	if (numberOfReferenceTables > maximumNumberOfReferenceTables + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension()) {
+					 	if (numberOfReferenceTables > maximumNumberOfReferenceTables + gracefulExtensionReferenceTables) {
 							throw new LicenseError("Invalid Number of reference tables of company " + companyID, maximumNumberOfReferenceTables, numberOfReferenceTables);
 						} else {
 							String licenseErrorText = "Invalid Number of reference tables of company " + companyID + "."
 									+ " Current number of reference tables: " + numberOfReferenceTables + "."
 									+ " Maximum number of reference tables: " + maximumNumberOfReferenceTables + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionReferenceTables;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -899,14 +916,15 @@ public class ConfigService {
 				// Check maximum number of AccessLimitingMailingLists (ALML) per company
 				int numberOfAccessLimitingMailinglistsPerCompany = licenseDao.getNumberOfAccessLimitingMailinglists(companyID);
 				int licenseMaximumOfAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany, companyID);
+				int gracefulExtensionAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful, companyID);
 				if (licenseMaximumOfAccessLimitingMailinglists >= 0 && licenseMaximumOfAccessLimitingMailinglists < numberOfAccessLimitingMailinglistsPerCompany) {
-					if (numberOfAccessLimitingMailinglistsPerCompany > licenseMaximumOfAccessLimitingMailinglists + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension()) {
+					if (numberOfAccessLimitingMailinglistsPerCompany > licenseMaximumOfAccessLimitingMailinglists + gracefulExtensionAccessLimitingMailinglists) {
 						throw new LicenseError("Invalid Number of AccessLimitingMailingLists of company " + companyID + "", licenseMaximumOfAccessLimitingMailinglists, numberOfAccessLimitingMailinglistsPerCompany);
 					} else {
 						String licenseErrorText = "Invalid Number of AccessLimitingMailinglists of company " + companyID + "."
 								+ " Current number of AccessLimitingMailinglists: " + numberOfAccessLimitingMailinglistsPerCompany + "."
 								+ " Maximum number of AccessLimitingMailinglists: " + licenseMaximumOfAccessLimitingMailinglists + "."
-								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension();
+								+ " Allowed by graceful limit extension: " + gracefulExtensionAccessLimitingMailinglists;
 						logger.error(licenseErrorText);
 						if (javaMailService != null) {
 							javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -918,14 +936,15 @@ public class ConfigService {
 				// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
 				int numberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
 				int licenseMaximumOfAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany, companyID);
+				int gracefulExtensionAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany_Graceful, companyID);
 				if (licenseMaximumOfAccessLimitingTargetgroups >= 0 && licenseMaximumOfAccessLimitingTargetgroups < numberOfAccessLimitingTargetgroupsPerCompany) {
-					if (numberOfAccessLimitingTargetgroupsPerCompany > licenseMaximumOfAccessLimitingTargetgroups + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension()) {
+					if (numberOfAccessLimitingTargetgroupsPerCompany > licenseMaximumOfAccessLimitingTargetgroups + gracefulExtensionAccessLimitingTargetgroups) {
 						throw new LicenseError("Invalid Number of AccessLimitingTargetgroups of company " + companyID + "", licenseMaximumOfAccessLimitingTargetgroups, numberOfAccessLimitingTargetgroupsPerCompany);
 					} else {
 						String licenseErrorText = "Invalid Number of AccessLimitingTargetgroups of company " + companyID + "."
 								+ " Current number of AccessLimitingTargetgroups: " + numberOfAccessLimitingTargetgroupsPerCompany + "."
 								+ " Maximum number of AccessLimitingTargetgroups: " + licenseMaximumOfAccessLimitingTargetgroups + "."
-								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension();
+								+ " Allowed by graceful limit extension: " + gracefulExtensionAccessLimitingTargetgroups;
 						logger.error(licenseErrorText);
 						if (javaMailService != null) {
 							javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -1220,43 +1239,75 @@ public class ConfigService {
 	 */
 	public int getIntegerValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
-		
-		return Integer.parseInt(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Integer.parseInt(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public int getIntegerValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
-		
-		return Integer.parseInt(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Integer.parseInt(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public long getLongValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 
 	public long getLongValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public long getLongValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 
 	public float getFloatValue(ConfigValue configurationValueID, int companyID){
 		String value = getValue(configurationValueID, companyID);
-
-		return Float.parseFloat(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Float.parseFloat(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public int getIntegerValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		if (StringUtils.isNotEmpty(value)) {
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
 			return Integer.parseInt(value);
 		} else {
 			return 0;
@@ -1265,7 +1316,9 @@ public class ConfigService {
 
 	public float getFloatValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		if (StringUtils.isNotEmpty(value)) {
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
 			return Float.parseFloat(value);
 		} else {
 			return 0;
@@ -1581,5 +1634,36 @@ public class ConfigService {
 	
 	public boolean isAutoDeeptracking(int companyID) {
 		return companyDao.checkDeeptrackingAutoActivate(companyID);
+	}
+    
+	public boolean isDisabledMailingListsSupported() {
+		if (isDisabledMailingListsSupported == null) {
+			isDisabledMailingListsSupported = DbUtilities.checkIfTableExists(configTableDao.getDataSource(), "disabled_mailinglist_tbl");
+		}
+
+		return isDisabledMailingListsSupported;
+	}
+    
+	public boolean isAccessLimitingTargetgroupsSupported() {
+		if (isAccessLimitingTargetgroupsSupported == null) {
+			try {
+				isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(configTableDao.getDataSource(), "dyn_target_tbl", "is_access_limiting");
+			} catch (Exception e) {
+				e.printStackTrace();
+				isAccessLimitingTargetgroupsSupported = false;
+			}
+		}
+
+		return isAccessLimitingTargetgroupsSupported;
+	}
+	
+	public final String getPreviewBaseUrl() {
+		String url = this.getValue(ConfigValue.PreviewUrl);
+		
+		if(StringUtils.isBlank(url)) {
+			url = this.getValue(ConfigValue.SystemUrl); 
+		}
+		
+		return url;
 	}
 }

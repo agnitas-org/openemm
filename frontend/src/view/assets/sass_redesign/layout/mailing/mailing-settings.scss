@@ -1,0 +1,75 @@
+
+#mailingSettingsForm {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  @include mobile {
+    grid-template-rows: unset;
+    grid-auto-rows: min-content;
+  }
+}
+
+#mediatypes-list {
+  gap: $gap-x-sm;
+
+  .list-group-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    border: $border-default;
+    border-radius: $border-radius;
+    padding: $gap-x-sm $gap-sm;
+
+    .list-group-item-controls {
+      display: flex;
+      align-items: center;
+      gap: $gap-x-sm;
+      color: var(--default-text-color);
+    }
+    
+    &.disabled {
+      background-color: var(--input-disabled-bg-color);
+    }
+  }
+
+  .icon-angle-up:first-of-type, .icon-angle-down:last-of-type {
+    display: none;
+  }
+}
+
+[data-workflow-driven='true'] {
+  & + .select2-container {
+    .select2-selection.form-control {
+      cursor: not-allowed;
+      display: flex;
+      gap: $gap-sm;
+      background-color: var(--input-disabled-bg-color);
+      
+      &[aria-disabled="true"] {
+        background-color: var(--input-disabled-bg-color);
+      }
+    }
+    .select2-search {
+      cursor: not-allowed;
+      display: flex;
+      gap: $gap-x-sm;
+      a {
+        margin-left: 5px;
+      }
+    }
+    .select2-search__field {
+      cursor: not-allowed;
+    }
+  }
+}
+
+#regular-targets-box {
+  @include flex-column($gap-md);
+}
+
+#target-mode-box {
+  display: flex;
+  gap: $gap-x-sm;
+  align-items: center;
+}

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -14,6 +14,7 @@
 <%--@elvariable id="_navigation_navMsg" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_index" type="java.lang.Integer"--%>
 <%--@elvariable id="_navigation_iconClass" type="java.lang.String"--%>
+<%--@elvariable id="_navigation_itemClass" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_submenu" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_hideForToken" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_upsellingRef" type="java.lang.String"--%>
@@ -27,6 +28,7 @@
 <%--@elvariable id="_sub_navigation_navMsg" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_index" type="java.lang.Integer"--%>
 <%--@elvariable id="_sub_navigation_iconClass" type="java.lang.String"--%>
+<%--@elvariable id="_sub_navigation_itemClass" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_submenu" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_hideForToken" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_upsellingRef" type="java.lang.String"--%>
@@ -117,7 +119,7 @@
 
 
             <div class="submenu">
-                <div class="submenu-header"><mvc:message code="${_navigation_navMsg}" /></div>
+                <h1 class="submenu-header"><mvc:message code="${_navigation_navMsg}" /></h1>
                     <%-- Hide sub-items for menu item shown without permission --%>
                 <c:if test="${isSubmenuAvailable and not showUpsellingPage}">
 
@@ -158,7 +160,7 @@
                             </c:if>
 
                             <c:if test="${showSubMenuItem}">
-                                <li>
+                                <li class="${_sub_navigation_itemClass}">
                                     <a href="${subItemPage}" class="submenu-item ${_sub_navigation_isHighlightKey ? 'active' : ''}">
                                         <mvc:message code="${_sub_navigation_navMsg}" />
                                     </a>

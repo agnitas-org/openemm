@@ -32,6 +32,7 @@ public interface ComMailingGridService {
     void saveMailingGridInfo(int mailingID, int companyID, Map<String, Object> mailingGridInfo);
     
     List<ComGridTemplate> getReleasedGridTemplates(final Admin admin, String sort, String direction);
+    boolean hasAvailableGridTemplates(Admin admin);
 
     List<LightweightMailing> getGridMailings(Admin admin);
 

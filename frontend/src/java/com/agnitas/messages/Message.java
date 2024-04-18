@@ -89,4 +89,20 @@ public class Message {
         return code.hashCode();
     }
 
+    @Override
+    public String toString() {
+    	String returnValue =  "" + code + " / " + resolvable + " /";
+    	if (arguments == null) {
+    		returnValue += " null";
+    	} else {
+    		for (Object argument : arguments)  {
+    			if (arguments == null) {
+    	    		returnValue += " null";
+    	    	} else {
+    	    		returnValue += " " + argument;
+    	    	}
+    		}
+    	}
+    	return returnValue;
+    }
 }

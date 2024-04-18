@@ -19,14 +19,12 @@ import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 import com.agnitas.emm.core.components.form.AttachmentType;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.components.service.ComponentValidationService;
 import com.agnitas.emm.core.components.util.ComponentsUtils;
-import com.agnitas.emm.core.upload.bean.DownloadData;
-import com.agnitas.emm.core.upload.dao.ComUploadDao;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
-import com.agnitas.service.ComSftpService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.MimeTypeService;
 import com.agnitas.service.ServiceResult;
@@ -56,7 +54,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,17 +73,14 @@ import static com.agnitas.util.ImageUtils.makeMobileFilenameIfNecessary;
 public class ComMailingComponentsServiceImpl implements	ComMailingComponentsService {
 
 	private static final Logger logger = LogManager.getLogger(ComMailingComponentsServiceImpl.class);
-
-	private static final Set<String> SFTP_PERMITTED_EXTENSIONS = ImageUtils.getValidImageFileExtensions();
+    private static final String NOT_SUPPORTED_LOG_MSG = "Not supported. See extended scope";
 
 	private ComMailingDao mailingDao;
 	private ComMailingComponentDao mailingComponentDao;
 	private MimeTypeService mimeTypeService;
-	private ComUploadDao uploadDao;
 	private ComponentValidationService componentValidationService;
-	private ComSftpService sftpService;
 	private MailingComponentFactory mailingComponentFactory;
-	private ConfigService configService;
+	protected ConfigService configService;
     private ExtendedConversionService conversionService;
 
     @Override
@@ -111,7 +105,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
         if (companyID <= 0 || mailingId <= 0 || CollectionUtils.isEmpty(componentIds)) {
         	return Collections.emptyList();
 		}
-  
+
 		return mailingComponentDao.getMailingComponents(companyID, mailingId, componentIds);
     }
 
@@ -123,7 +117,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 		return mailingComponentDao.getMailingComponents(mailingId, companyId, includeContent);
 	}
-    
+
     @Override
     public MailingComponent getComponent(int componentId, int companyID) {
 		return mailingComponentDao.getMailingComponent(componentId, companyID);
@@ -142,10 +136,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		if (StringUtils.isEmpty(attachment.getName())) {
 			// get file's name in case if name field is not specified by user
 			if (attachment.isUsePdfUpload() && attachment.getUploadId() > 0) {
-				DownloadData downloadData = uploadDao.getDownloadData(attachment.getUploadId());
-				if (downloadData != null) {
-					attachment.setName(downloadData.getFilename());
-				}
+                attachment.setName(getUploadedFilename(attachment.getUploadId()));
 			} else if (attachment.getAttachmentFile() != null) {
 				attachment.setName(attachment.getAttachmentFile().getName());
 			}
@@ -176,8 +167,8 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 				mimeType = "application/pdf";
 
 				try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-					uploadDao.sendDataToStream(uploadId, os);
-					content = os.toByteArray();
+                    sendDataToStream(uploadId, os);
+                    content = os.toByteArray();
 				}
 			} else {
 				content = attachment.getAttachmentFile().getBytes();
@@ -203,11 +194,19 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			return SimpleServiceResult.simpleSuccess(Message.of("default.changes_saved"));
 
 		} catch (Exception e) {
-			logger.error("Uploading attachment failed for mailing ID: " + mailingId, e);
+			logger.error("Uploading attachment failed for mailing ID: {}", mailingId, e);
 
 			return SimpleServiceResult.simpleError(Message.of("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 		}
 	}
+
+    protected void sendDataToStream(int uploadId, ByteArrayOutputStream os) throws Exception {
+        throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
+    }
+
+    protected String getUploadedFilename(int uploadId) {
+        throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
+    }
 
     @Override
 	@Transactional
@@ -234,10 +233,8 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     }
 
     @Override
-    public List<MailingImageDto> getMailingImages(int companyId, int mailingId) {
-        List<MailingComponent> images =  getComponentsByType(companyId, mailingId, Arrays.asList(
-                MailingComponentType.HostedImage,
-                MailingComponentType.Image));
+    public List<MailingImageDto> getMailingImages(int companyId, int mailingId, MailingImagesOverviewFilter filter) {
+        List<MailingComponent> images = mailingComponentDao.getImagesOverview(companyId, mailingId, filter);
         List<MailingImageDto> dtos = conversionService.convert(images, MailingComponent.class, MailingImageDto.class);
         Map<Integer, Integer> sizes = mailingComponentDao.getImageSizes(companyId, mailingId);
         for (MailingImageDto dto : dtos) {
@@ -251,7 +248,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		if (CollectionUtils.isEmpty(types)) {
 			return mailingComponentDao.getMailingComponents(mailingId, companyID);
 		}
-		
+
 		return mailingComponentDao.getMailingComponentsByType(companyID, mailingId, types);
     }
 
@@ -338,14 +335,14 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			return true;
 		}
 	}
-	
+
     @Override
   	public ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions) {
       	if (mailingDao.exist(mailingId, admin.getCompanyID())) {
       		if (images.isEmpty()) {
       			return ServiceResult.success(new ImportStats(0, 0));
   			}
-  
+
             return doImport(admin, mailingId, importer -> {
                 for (UploadMailingImageDto image : images) {
                     importer.importFile(image, userActions);
@@ -358,24 +355,15 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 	@Override
 	public ServiceResult<ImportStatistics> importImagesFromSftp(Admin admin, int mailingId, String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String sftpFilePath, List<UserAction> userActions) {
-		final String dir = FilenameUtils.getPath(sftpFilePath);
-		final String mask = getSftpFileMask(sftpFilePath);
-
-		if (mask == null) {
-			logger.error("importImagesFromSftp(): file not found on SFTP server");
-			return ServiceResult.error(Message.of("mailing.errors.sftpUploadFailed"));
-		}
-
-		return doImport(admin, mailingId, importer -> importer.importSftpDir(sftpServerAndAuthConfigString, sftpPrivateKeyString, dir, mask, userActions));
+		throw new UnsupportedOperationException();
 	}
 
-	private ServiceResult<ImportStatistics> doImport(Admin admin, int mailingId, Consumer<ImageImporter> importerCalls) {
+	protected ServiceResult<ImportStatistics> doImport(Admin admin, int mailingId, Consumer<ImageImporter> importerCalls) {
 		final int maximumUploadImageSize = configService.getIntegerValue(ConfigValue.MaximumUploadImageSize);
 		final int maximumWarningImageSize = configService.getIntegerValue(ConfigValue.MaximumWarningImageSize);
 		final String mailingName = mailingDao.getMailingName(mailingId, admin.getCompanyID());
 
-		ImageImporter importer = new ImageImporter(mailingId, mailingName, maximumUploadImageSize, maximumWarningImageSize);
-
+		ImageImporter importer = createImageImporter(mailingId, mailingName, maximumUploadImageSize, maximumWarningImageSize);
 		importerCalls.accept(importer);
 
 		if (importer.getCountValid() > 0) {
@@ -385,9 +373,16 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		List<Message> warnings = new ArrayList<>();
 		List<Message> errors = new ArrayList<>();
 
+		checkImportResultErrors(importer, admin, warnings, errors);
+
+		ImportStatistics statistics = new ImportStats(importer.getCountOverall(), importer.getCountValid());
+		return new ServiceResult<>(statistics, importer.getCountValid() > 0, Collections.emptyList(), warnings, errors);
+	}
+
+	protected void checkImportResultErrors(ImageImporter importer, Admin admin, List<Message> warnings, List<Message> errors) {
 		List<String> sizeWarningFiles = importer.getSizeWarningFiles();
 		if (!sizeWarningFiles.isEmpty()) {
-			String message = I18nString.getLocaleString("warning.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(maximumWarningImageSize)) +
+			String message = I18nString.getLocaleString("warning.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(importer.getMaximumWarningImageSize())) +
 					filenamesToHtml(sizeWarningFiles);
 
 			warnings.add(Message.exact(message));
@@ -395,7 +390,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 		List<String> sizeErrorFiles = importer.getSizeErrorFiles();
 		if (!sizeErrorFiles.isEmpty()) {
-			String message = I18nString.getLocaleString("error.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(maximumUploadImageSize)) +
+			String message = I18nString.getLocaleString("error.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(importer.getMaximumUploadImageSize())) +
 					filenamesToHtml(sizeErrorFiles);
 
 			errors.add(Message.exact(message));
@@ -412,29 +407,10 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			String message = I18nString.getLocaleString("mailing.Graphics_Component.zipUploadFailed", admin.getLocale()) + filenamesToHtml(invalidArchives);
 			errors.add(Message.exact(message));
 		}
-
-		List<String> invalidSftpServers = importer.getInvalidSftpServers();
-		if (!invalidSftpServers.isEmpty()) {
-			errors.add(Message.of("mailing.errors.sftpUploadFailed"));
-		}
-
-		ImportStatistics statistics = new ImportStats(importer.getCountOverall(), importer.getCountValid());
-		return new ServiceResult<>(statistics, importer.getCountValid() > 0, Collections.emptyList(), warnings, errors);
 	}
 
-	private String getSftpFileMask(String sftpFilePath) {
-		final String basename = FilenameUtils.getBaseName(sftpFilePath);
-		final String extension = FilenameUtils.getExtension(sftpFilePath).toLowerCase();
-
-		if ("*".equals(extension) || ("*".equals(basename) && extension.isEmpty())) {
-			return SFTP_PERMITTED_EXTENSIONS.stream()
-					.map(e -> basename + "." + e)
-					.collect(Collectors.joining("|"));
-		} else if (SFTP_PERMITTED_EXTENSIONS.contains(extension)) {
-			return basename + "." + extension;
-		} else {
-			return null;
-		}
+	protected ImageImporter createImageImporter(int mailingId, String mailingName, int maximumUploadImageSize, int maximumWarningImageSize) {
+		return new ImageImporter(mailingId, mailingName, maximumUploadImageSize, maximumWarningImageSize);
 	}
 
 	private void saveNewComponents(Admin admin, int mailingId, Map<String, MailingComponent> newComponentsMap) {
@@ -489,11 +465,6 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	}
 
 	@Required
-	public void setSftpService(ComSftpService sftpService) {
-		this.sftpService = sftpService;
-	}
-
-	@Required
 	public void setMailingDao(ComMailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
@@ -518,10 +489,15 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		this.componentValidationService = componentValidationService;
 	}
 
-	@Required
-	public void setUploadDao(ComUploadDao uploadDao) {
-		this.uploadDao = uploadDao;
-	}
+    @Override
+    public Map<Integer, String> getUploadsByExtension(Admin admin) {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public boolean validatePdfUploadFields(UploadMailingAttachmentDto attachment, List<Message> errors) {
+        throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
+    }
 
 	private static class ImportStats implements ImportStatistics {
 		private final int found;
@@ -543,9 +519,9 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		}
 	}
 
-	private class ImageImporter {
-		private final int mailingId;
-		private final String mailingName;
+	protected class ImageImporter {
+		protected final int mailingId;
+		protected final String mailingName;
 		private final int maximumWarningImageSize;
 		private final int maximumUploadImageSize;
 
@@ -554,9 +530,8 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		private final List<String> sizeErrorFiles = new ArrayList<>();
 		private final List<String> sizeWarningFiles = new ArrayList<>();
 		private final List<String> invalidArchives = new ArrayList<>();
-		private final List<String> invalidSftpServers = new ArrayList<>();
-    	private int countOverall;
-    	private int countValid;
+    	protected int countOverall;
+    	protected int countValid;
 
     	public ImageImporter(int mailingId, String mailingName, int maximumUploadImageSize, int maximumWarningImageSize) {
     		this.mailingId = mailingId;
@@ -564,7 +539,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     		this.maximumUploadImageSize = maximumUploadImageSize;
     		this.maximumWarningImageSize = maximumWarningImageSize;
 		}
-		
+
         private void importFile(UploadMailingImageDto imageFile, List<UserAction> userActions) {
             MultipartFile file = imageFile.getFile();
             String filename = file.getOriginalFilename();
@@ -578,18 +553,18 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
         private void importArchive(MultipartFile file, List<UserAction> userActions) {
         		String archiveFilename = file.getOriginalFilename();
-    
+
     			try (ZipInputStream zipStream = new ZipInputStream(file.getInputStream())) {
     				int countBefore = countValid;
-    
+
     				for (ZipEntry entry = zipStream.getNextEntry(); entry != null; entry = zipStream.getNextEntry()) {
     					final String path = entry.getName();
     					final String name = FilenameUtils.getName(path);
-    
+
     					if (!entry.isDirectory() && ImageUtils.isValidImageFileExtension(FilenameUtils.getExtension(name))) {
     						logger.info("uploadImagesBulk(): found image file '" + path + "' in ZIP stream");
     						countOverall++;
-    
+
     						if (validateFileSize(archiveFilename + "/" + path, entry.getSize())) {
     							byte[] content = StreamHelper.streamToByteArray(zipStream);
     							if (ImageUtils.isValidImage(content, configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
@@ -599,10 +574,10 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     							}
     						}
     					}
-    
+
     					zipStream.closeEntry();
     				}
-    
+
     				// If at least one image imported from archive.
     				if (countValid > countBefore) {
     					userActions.add(new UserAction("upload archive", String.format("%s(%d), uploaded images from archive", mailingName, mailingId)));
@@ -612,7 +587,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     				invalidArchives.add(archiveFilename);
     			}
     		}
-		
+
         private void importFile(MultipartFile file, String link, String description, String mobileBase, List<UserAction> userActions) {
             countOverall++;
 
@@ -634,38 +609,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
             }
         }
 
-		private void importSftpDir(String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String dir, String mask, List<UserAction> userActions) {
-    		try {
-    			int countBefore = countValid;
-
-				sftpService.retrieveFiles(sftpServerAndAuthConfigString, sftpPrivateKeyString, dir, mask, (path, stream) -> {
-					final String name = FilenameUtils.getName(path);
-					countOverall++;
-					logger.info("importImagesFromSftp(): found file '" + path + "' on SFTP server");
-
-					try {
-						byte[] content = StreamHelper.streamToByteArray(stream);
-						if (validateFileSize(name, content.length) && ImageUtils.isValidImage(content, configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
-							importImage(name, content);
-						}
-					} catch (IOException e) {
-						logger.error("importImagesFromSftp(): error occurred during a file transfer", e);
-					}
-				});
-
-				if (countValid > countBefore) {
-					userActions.add(new UserAction("upload from sftp", String.format("%s(%d), uploaded images from sftp", mailingName, mailingId)));
-				} else {
-					logger.error("importImagesFromSftp(): file(s) not found on SFTP server");
-					invalidSftpServers.add(sftpServerAndAuthConfigString);
-				}
-			} catch (Exception e) {
-				logger.error("importImagesFromSftp(): failed to import SFTP dir", e);
-				invalidSftpServers.add(sftpServerAndAuthConfigString);
-			}
-		}
-
-		private void importImage(String filename, byte[] content) {
+		protected void importImage(String filename, byte[] content) {
     		importImage(filename, mimeTypeService.getMimetypeForFile(filename), content, "", "", "");
 		}
 
@@ -683,7 +627,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			componentsMap.put(component.getComponentName(), component);
 		}
 
-		private boolean validateFileSize(String filename, long size) {
+		protected boolean validateFileSize(String filename, long size) {
 			if (size > maximumUploadImageSize) {
 				sizeErrorFiles.add(filename);
 				return false;
@@ -714,10 +658,6 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			return invalidArchives;
 		}
 
-		public List<String> getInvalidSftpServers() {
-			return invalidSftpServers;
-		}
-
 		public int getCountOverall() {
 			return countOverall;
 		}
@@ -725,8 +665,16 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		public int getCountValid() {
 			return countValid;
 		}
+
+		public int getMaximumWarningImageSize() {
+			return maximumWarningImageSize;
+		}
+
+		public int getMaximumUploadImageSize() {
+			return maximumUploadImageSize;
+		}
 	}
-	
+
     @Required
   	public void setConversionService(ExtendedConversionService conversionService) {
   		this.conversionService = conversionService;
@@ -736,4 +684,9 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     public void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImages) {
         // overridden in extended class
     }
+
+	@Override
+	public List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, Admin admin) {
+		return mailingComponentDao.getImagesNames(mailingId, bulkIds, admin.getCompanyID());
+	}
 }

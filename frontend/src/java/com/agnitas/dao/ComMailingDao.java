@@ -91,8 +91,6 @@ public interface ComMailingDao extends MailingDao {
 
     int saveUndoMailing(int mailingId, int adminId);
 
-    boolean isMailingMarkedDeleted(int mailingID, int companyID);
-
 	/**
 	 * returns the type of a Followup Mailing as String.
 	 * The String can be fount in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER)
@@ -340,4 +338,8 @@ public interface ComMailingDao extends MailingDao {
 	boolean saveMailingDescriptiveData(Mailing mailing);
 
     List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
+
+	List<LightweightMailing> getMailingTemplates(int companyID);
+
+	void deleteMailtrackDataForMailing(int companyID, int mailingID);
 }

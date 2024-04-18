@@ -13,13 +13,13 @@ package org.agnitas.util.importvalues;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -35,10 +35,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
     private static final transient Logger logger = LogManager.getLogger(ImportModeAddAndUpdateHandler.class);
@@ -78,7 +78,7 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 					&& !"customer_id".equalsIgnoreCase(columnEntry.getKey())
 					&& !"gender".equalsIgnoreCase(columnEntry.getKey())
 					&& !"mailtype".equalsIgnoreCase(columnEntry.getKey())
-					&& !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(columnEntry.getKey())) {
+					&& !RecipientStandardField.Bounceload.getColumnName().equalsIgnoreCase(columnEntry.getKey())) {
 				boolean notNullColumnIsSet = false;
 				for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 					if (columnEntry.getKey().equalsIgnoreCase(mapping.getDatabaseColumn()) && (mapping.getFileColumn() != null || mapping.getDefaultValue() != null)) {
@@ -141,20 +141,6 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 		
 		int insertedEntries = importRecipientsDao.insertNewCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
 		status.setInserted(insertedEntries);
-	}
-
-	@Override
-	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
-		// Update customer data
-		if (importProfile.getUpdateAllDuplicates()) {
-			// Update all existing customer identified by keycolumns
-			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumn(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
-			status.setUpdated(updatedEntries);
-		} else {
-			// Update the first existing customer only
-			int updatedEntries = importRecipientsDao.updateFirstExistingCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
-			status.setUpdated(updatedEntries);
-		}
 	}
 
 	@Override

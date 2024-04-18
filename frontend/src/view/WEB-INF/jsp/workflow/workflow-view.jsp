@@ -523,7 +523,7 @@
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-cloud-download"></i>
-                        <span class="text"><mvc:message code="export"/></span>
+                        <span class="text"><mvc:message code="Export"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">

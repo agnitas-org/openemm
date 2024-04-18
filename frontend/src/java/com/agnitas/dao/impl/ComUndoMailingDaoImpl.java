@@ -18,12 +18,10 @@ import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
 import com.agnitas.beans.ComUndoMailing;
 import com.agnitas.beans.impl.ComUndoMailingImpl;
@@ -184,18 +182,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
                 undoId = selectInt(logger, "SELECT undo_id_seq.NEXTVAL FROM DUAL");
         		update(logger, "INSERT INTO undo_mailing_tbl (mailing_id, undo_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?, ?)", mailingID, undoId, undoCreationDate, undoAdminID);
             } else {
-            	// TODO: Table check to be removed after EMM version 24.04
-            	// Also check for other MySQLMaxValueIncrementer uses. There should not be any.
-            	if (DbUtilities.checkIfTableExists(getDataSource(), "undo_id_seq")) {
-	                try {
-	                    undoId = new MySQLMaxValueIncrementer(getDataSource(), "undo_id_seq", "value").nextIntValue();
-	                } catch (@SuppressWarnings("unused") final Exception e) {
-	                    undoId = 1;
-	                }
-	                update(logger, "INSERT INTO undo_mailing_tbl (mailing_id, undo_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?, ?)", mailingID, undoId, undoCreationDate, undoAdminID);
-            	} else {
-            		undoId = insertIntoAutoincrementMysqlTable(logger, "undo_id", "INSERT INTO undo_mailing_tbl (mailing_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?)", mailingID, undoCreationDate, undoAdminID);
-            	}
+            	undoId = insertIntoAutoincrementMysqlTable(logger, "undo_id", "INSERT INTO undo_mailing_tbl (mailing_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?)", mailingID, undoCreationDate, undoAdminID);
             }
             
     		this.undoComponentDao.saveUndoData(mailingID, undoId);

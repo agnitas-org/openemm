@@ -12,8 +12,8 @@ package com.agnitas.web.mvc;
 
 import java.util.Map;
 
-import com.agnitas.exception.DetailedValidationException;
-import com.agnitas.exception.ValidationException;
+import com.agnitas.exception.DetailedRequestErrorException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import com.agnitas.web.dto.DataResponseDto;
@@ -64,16 +64,16 @@ public class ControllerExceptionHandler {
 		return MESSAGES_VIEW;
 	}
 
-	@ExceptionHandler(ValidationException.class)
-    public String onValidationException(ValidationException e, Popups popups) {
+	@ExceptionHandler(RequestErrorException.class)
+    public String onRequestErrorException(RequestErrorException e, Popups popups) {
         e.getErrors().forEach(popups::alert);
-        e.getFieldsErrors().forEach((f, m) -> popups.fieldError(f, m));
+        e.getFieldsErrors().forEach(popups::fieldError);
         return MESSAGES_VIEW;
     }
 
-    @ExceptionHandler(DetailedValidationException.class)
+    @ExceptionHandler(DetailedRequestErrorException.class)
     @ResponseBody
-    public DataResponseDto<Map<String, Object>> onDetailedValidationException(DetailedValidationException e, Popups popups) {
+    public DataResponseDto<Map<String, Object>> onDetailedRequestErrorException(DetailedRequestErrorException e, Popups popups) {
         e.getErrors().forEach(popups::alert);
         e.getFieldsErrors().forEach(popups::fieldError);
         return new DataResponseDto<>(e.getDetails(), popups, false);

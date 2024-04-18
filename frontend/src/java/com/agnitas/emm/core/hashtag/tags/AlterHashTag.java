@@ -19,6 +19,8 @@ import org.agnitas.dao.TagDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComRecipientDao;
@@ -26,7 +28,18 @@ import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
+/**
+ * Should not be longer used.
+ * 
+ * Left here for backward compatibility.
+ * 
+ * @see AgeHashTag
+ */
+@Deprecated
 public class AlterHashTag implements HashTag { // TODO Derive from AbstractColonHashTag instead of implementing HashTag
+	/** The logger. */
+	private static final transient Logger LOGGER = LogManager.getLogger(AlterHashTag.class);
+	
 	private static final Pattern HASHTAG_PARAMETER_PATTERN = Pattern.compile("^\\s*(\\w+)\\s*=\\s*\'([^\']*)\'\\s*(?:,(.*))?$");
 	
 	private TagDao tagDao;

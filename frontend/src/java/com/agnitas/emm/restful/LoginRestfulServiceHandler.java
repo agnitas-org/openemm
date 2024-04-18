@@ -16,6 +16,7 @@ import java.util.Date;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 
@@ -76,28 +77,32 @@ public class LoginRestfulServiceHandler implements RestfulServiceHandler {
 	 * Create a login JWT token
 	 */
 	private JsonObject getJwtToken(HttpServletRequest request, Admin admin) throws Exception {
-		int validityMinutes = configService.getIntegerValue(ConfigValue.RestfulJwtValidityMinutes, admin.getCompanyID());
-		if (validityMinutes <= 0) {
-			throw new RestfulClientException("Login for authentification by JWT authorization token is not supported");
+		if (StringUtils.isNotBlank(HttpUtils.getAuthorizationToken(request))) {
+			throw new RestfulClientException("Creation of new JWT token via JWT authenticated request is denied. Please use username and password to create a new JWT token.");
 		} else {
-			String restfulJwtSharedSecret = configService.getValue(ConfigValue.RestfulJwtSecret, admin.getCompanyID());
-			if (StringUtils.isNotBlank(restfulJwtSharedSecret)) {
-				Date validity = DateUtilities.addMinutesToDate(new Date(), validityMinutes);
-				Builder tokenBuilder = JWT.create()
-			        .withIssuedAt(new Date())
-			        .withExpiresAt(validity)
-			        .withClaim("username", admin.getUsername() + (admin.getSupervisor() != null ? "/" + admin.getSupervisor().getSupervisorName() : ""));
-	
-				restfulUserActivityLogDao.addAdminUseOfFeature(admin, "restful/login", new Date());
-				writeActivityLog(restfulUserActivityLogDao, admin.getFullUsername(), request, admin);
-				
-				JsonObject tokenJsonObject = new JsonObject();
-				tokenJsonObject.add("jwt", tokenBuilder.sign(Algorithm.HMAC512(restfulJwtSharedSecret)));
-				tokenJsonObject.add("validity", validity);
-				
-				return tokenJsonObject;
-			} else {
+			int validityMinutes = configService.getIntegerValue(ConfigValue.RestfulJwtValidityMinutes, admin.getCompanyID());
+			if (validityMinutes <= 0) {
 				throw new RestfulClientException("Login for authentification by JWT authorization token is not supported");
+			} else {
+				String restfulJwtSharedSecret = configService.getValue(ConfigValue.RestfulJwtSecret, admin.getCompanyID());
+				if (StringUtils.isNotBlank(restfulJwtSharedSecret)) {
+					Date validity = DateUtilities.addMinutesToDate(new Date(), validityMinutes);
+					Builder tokenBuilder = JWT.create()
+				        .withIssuedAt(new Date())
+				        .withExpiresAt(validity)
+				        .withClaim("username", admin.getUsername() + (admin.getSupervisor() != null ? "/" + admin.getSupervisor().getSupervisorName() : ""));
+		
+					restfulUserActivityLogDao.addAdminUseOfFeature(admin, "restful/login", new Date());
+					writeActivityLog(restfulUserActivityLogDao, admin.getFullUsername(), request, admin);
+					
+					JsonObject tokenJsonObject = new JsonObject();
+					tokenJsonObject.add("jwt", tokenBuilder.sign(Algorithm.HMAC512(restfulJwtSharedSecret)));
+					tokenJsonObject.add("validity", validity);
+					
+					return tokenJsonObject;
+				} else {
+					throw new RestfulClientException("Login for authentification by JWT authorization token is not supported");
+				}
 			}
 		}
 	}

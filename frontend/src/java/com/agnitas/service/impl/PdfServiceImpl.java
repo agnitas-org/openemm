@@ -148,7 +148,6 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
         return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, windowStatusForWaiting);
     }
 
-    // remove after GWUA-5471 has been successfully tested
     private File generatePDFWithWkHtmlToPdf(String url, String title, Admin admin, String windowStatusForWaiting, String orientation, String footerTitleMessageKey, String customCssStyle) {
         String wkhtmltopdf = configService.getValue(ConfigValue.WkhtmlToPdfToolPath);
     	if (StringUtils.isBlank(wkhtmltopdf)) {

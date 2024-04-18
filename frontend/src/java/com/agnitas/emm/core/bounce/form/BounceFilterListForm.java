@@ -13,5 +13,50 @@ package com.agnitas.emm.core.bounce.form;
 import org.agnitas.web.forms.PaginationForm;
 
 public class BounceFilterListForm extends PaginationForm {
-	// No code needed
+
+    private int companyId;
+    private String name;
+    private String description;
+    private String filterAddress;
+    private String companyDomain;
+
+    public int getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(int companyId) {
+        this.companyId = companyId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getFilterAddress() {
+        return filterAddress;
+    }
+
+    public void setFilterAddress(String filterAddress) {
+        this.filterAddress = filterAddress;
+    }
+
+    public String getCompanyDomain() {
+        return companyDomain;
+    }
+
+    public void setCompanyDomain(String companyDomain) {
+        this.companyDomain = companyDomain;
+    }
 }

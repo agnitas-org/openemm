@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.mailing.dto;
 
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.agnitas.beans.SortingWebStorageEntry;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,12 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.agnitas.beans.RowsCountWebStorageEntry;
-
-public class MailingOverviewWebStorageEntry extends RowsCountWebStorageEntry {
+public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
 
     @JsonProperty("mailing-types")
     private Set<MailingType> mailingTypes = new HashSet<>(Collections.singletonList(MailingType.NORMAL));

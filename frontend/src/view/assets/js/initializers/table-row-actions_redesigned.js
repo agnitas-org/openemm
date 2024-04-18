@@ -2,48 +2,35 @@
   const Popover = AGN.Lib.Popover;
 
   function initializeRowClicks($row) {
-    const $link = $row.find('.js-row-show');
-
+    const $link = $row.find('[data-view-row]');
     if ($link.length !== 1) {
       return
     }
-
     $row.data('link', $link.attr('href'));
+
+    if ($link.data('view-row') === 'page') {    // detail view content is opened with reload
+      $row.data('load-page', 'true');
+      $row.wrap(`<a class="table-row-wrapper" href="${$link.attr('href')}"></a>`);
+    } else if ($link.data('table-modal')) {     // content is loaded as a modal from the mustache template
+      passModalAttrsFromLinkToRow($link, $row);
+    }                                           // content is loaded as a modal from the server. default
     $link.remove();
-
-    _.each($row.prop('cells'), function(cell) {
-      const $cell = $(cell);
-
-      if ($cell.find('a,input,select,textarea,button').length !== 0) {
-        return;
-      }
-
-      $cell.addClass('table-link');
-
-      if ($link.data('modal')) {
-        passModalAttrsFromLinkToCell($link, $cell);
-        return;
-      }
-      if ($cell.contents().length === 0) {
-        $cell.html(`<a class="js-row-display" href="${$link.attr('href')}">&nbsp;</a>`)
-      } else {
-        $cell.contents().wrapAll(`<a class="js-row-display" href="${$link.attr('href')}"></a>`)
-      }
-    });
   }
 
-  function passModalAttrsFromLinkToCell($link, $cell) {
-    const dataModalAttr = 'data-modal';
-    const dataModalSetAttr = 'data-modal-set';
-    $cell
+  function passModalAttrsFromLinkToRow($link, $row) {
+    const dataModalAttr = 'data-table-modal';
+    const dataModalOptionsAttr = 'data-table-modal-options';
+    $row
       .attr(dataModalAttr, $link.attr(dataModalAttr))
-      .attr(dataModalSetAttr, $link.attr(dataModalSetAttr));
+      .attr(dataModalOptionsAttr, $link.attr(dataModalOptionsAttr));
   }
 
   function initializeRowPopovers($row) {
     const $popover = $row.find('.js-row-popover');
 
-    if ($popover.length !== 1) {
+    if ($popover.length !== 1 || $row.closest('table').hasClass('table-preview')) {
+      // destroy existing popovers when switch to 'Preview' mode
+      Popover.remove($row);
       return;
     }
 
@@ -143,8 +130,8 @@
     }
 
     $scope.find('.js-table').each(function() {
-      _.each(this.rows, function(row) {
-        const $row = $(row);
+      $(this).find('tr').each(function () {
+        const $row = $(this);
         initializeRowClicks($row);
         initializeRowPopovers($row);
       });

@@ -14,22 +14,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SortingWebStorageEntry extends RowsCountWebStorageEntry {
 
-    @JsonProperty("column-name")
-    private String columnName;
+    @JsonProperty("sortColumn")
+    private String sortColumn;
 
-    @JsonProperty("ascending-order")
+    @JsonProperty("ascendingOrder")
     private boolean ascendingOrder = true;
 
-    public String getColumnName() {
-        return columnName;
+    public String getSortColumn() {
+        return sortColumn;
     }
 
     public boolean isAscendingOrder() {
         return ascendingOrder;
     }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    public void setSortColumn(String sortColumn) {
+        this.sortColumn = sortColumn;
     }
 
     public void setAscendingOrder(boolean ascendingOrder) {
@@ -39,8 +39,9 @@ public class SortingWebStorageEntry extends RowsCountWebStorageEntry {
     @Override
     public RowsCountWebStorageEntry clone() throws CloneNotSupportedException {
         final SortingWebStorageEntry clone = new SortingWebStorageEntry();
-        clone.setColumnName(getColumnName());
+        clone.setSortColumn(getSortColumn());
         clone.setAscendingOrder(isAscendingOrder());
+        clone.setRowsCount(getRowsCount());
         return clone;
     }
 }

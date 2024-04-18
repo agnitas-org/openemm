@@ -1,15 +1,83 @@
 
 .loader {
   z-index: 1003;
-  color: $c-sidemenu;
-  background-color: $c-white;
-  border: 1px solid $c-sidemenu;
+
+  color: var(--loader-color);
+  background-color: var(--main-bg-color);
+
+  border: 1px solid var(--loader-color);
   border-radius: $border-radius-sm;
 
-  @include desktop {
-    position: fixed;
-    top: 8.5px;
-    left: 50%;
-    transform: translateX(-50%);
+  @include flex-center;
+  gap: $gap-x-sm;
+  padding: $gap-x-sm - 2 8px;
+  width: min-content;
+
+  white-space: nowrap;
+  font-weight: $font-weight-semibold;
+
+  .header & {
+    @include desktop {
+      position: fixed;
+      top: 8.5px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   }
+}
+
+#evaluate-loader-modal {
+  .modal-content {
+    border: 1px solid $primary;
+  }
+  
+  .modal-body {
+    background-color: $primary;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $gap-md;
+    padding: $gap-md;
+    
+    img {
+      max-height: 110px;
+    }
+    
+    p {
+      color: $white;
+      @include font($font-size-lg);
+    }
+  }
+
+  .modal-footer {
+    padding: $gap-md;
+  }
+  
+  #progress-bar {
+    flex-grow: 1;
+    height: 30px;
+    position: relative;
+    background-color: transparent;
+    overflow: hidden;
+    border: 1px solid $primary;
+    border-radius: $border-radius;
+
+    &::after {
+      -webkit-animation: 2s ease-in-out infinite progress-looper;
+      animation: 2s ease-in-out infinite progress-looper;
+      content: "";
+      top: 0;
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      background-color: $primary;
+      width: 75%;
+    }
+  }
+  
+  #progress-text {
+    color: var(--label-color);
+  }
+  
+  @keyframes progress-looper{0%{left:-100%}to{left:100%}}
 }

@@ -8,17 +8,20 @@ AGN.Lib.Controller.new('dashboard', function() {
     new MailingsTile(this),
     new PlanningTile(this),
     new StatisticsTile(this),
+    new ClickersTile(this),
+    new OpenersTile(this),
     new WorkflowsTile(this),
     new ImportExportTile(this),
     new AddOnsTile(this),
     new NewsTile(this),
-    new CalendarTile(this)
+    new CalendarTile(this),
+    new AnalysisTile(this)
   ];
 
   let placeholderTile; // tile with pressed + button to be replaced with chosen one
 
   this.addDomInitializer('dashboard-view', function() {
-    Def.LAYOUT.CURRENT = JSON.parse(this.config.layout) || Def.LAYOUT.DEFAULT;
+    Def.LAYOUT.CURRENT = JSON.parse(this.config.layout) || _.clone(Def.LAYOUT.DEFAULT);
     tiles = tiles.filter(tile=> tile.allowed());
 
     Def.TILES_CONTAINER = $('#dashboard-tiles');
@@ -31,11 +34,12 @@ AGN.Lib.Controller.new('dashboard', function() {
         toggleEditMode(false);
       }
     });
+    toggleEditMode(false);
   });
 
   function infoIfDashboardEmpty() {
     if (!getVisibleTiles().length) {
-      AGN.Lib.Messages(t('defaults.info'), t('dashboard.empty'), 'info');
+      AGN.Lib.Messages.info('dashboard.empty');
     }
   }
 
@@ -60,19 +64,22 @@ AGN.Lib.Controller.new('dashboard', function() {
     if (schema === Def.LAYOUT.DEFAULT.SCHEMA) {
       return schemaToTiles(schema);
     }
+    sortTilesByPosition(schema);
+    return schemaToTiles(schema);
+  }
 
+  function sortTilesByPosition(schema) {
     schema.sort((a, b) => {
       const aRow = a.position.rows[0];
       const aCol = a.position.cols[0];
       const bRow = b.position.rows[0];
       const bCol = b.position.cols[0];
 
-       if (aRow !== bRow) {
-         return aRow - bRow;
-       }
-       return aCol - bCol;
+      if (aRow !== bRow) {
+        return aRow - bRow;
+      }
+      return aCol - bCol;
     });
-    return schemaToTiles(schema);
   }
 
   function getTypeByTileDescription(tileDescr, defaultVal) {
@@ -85,8 +92,8 @@ AGN.Lib.Controller.new('dashboard', function() {
     return defaultVal;
   }
 
-  function schemaToTiles(tilesDesr) {
-    return tilesDesr.map(tileDescr => {
+  function schemaToTiles(schema) {
+    return schema.map(tileDescr => {
       const tile = getTileById(tileDescr.id)
       tile.type = getTypeByTileDescription(tileDescr, tile.type);
       return tile;
@@ -97,7 +104,6 @@ AGN.Lib.Controller.new('dashboard', function() {
     GridUtils.removeAllTiles();
     updateGridColsCount(GridUtils.getColsCount());
     getUserTiles().forEach(tile => tile.displayOnScreen(Def.TILES_CONTAINER));
-    GridUtils.saveTilesLayout();
   }
 
   function updateGridColsCount(colsCount) {
@@ -119,8 +125,6 @@ AGN.Lib.Controller.new('dashboard', function() {
     }
     tileToDelete.replaceWith(new EmptyTile());
     tileToDelete.remove();
-
-    GridUtils.saveTilesLayout();
   });
 
   function createEmptyTileBeforeTallTileBottom(tileToDelete) {
@@ -141,7 +145,7 @@ AGN.Lib.Controller.new('dashboard', function() {
 
   this.addAction({click: 'select-tile'}, function() {
     placeholderTile = getTile(this.el.closest('.draggable-tile'));
-    Modal.createFromTemplate({tiles: getAllowedToAddTiles()}, 'dashboard-tiles-selection-modal')
+    Modal.fromTemplate('dashboard-tiles-selection-modal', {tiles: getAllowedToAddTiles()})
   });
 
   function getAllowedToAddTiles() {
@@ -171,7 +175,6 @@ AGN.Lib.Controller.new('dashboard', function() {
       removeSecondPlaceholderOfWideTile();
     }
     placeholderTile.replaceWith(tileToAdd);
-    GridUtils.saveTilesLayout();
   });
 
   function removeSecondPlaceholderOfTallTile() {
@@ -231,6 +234,11 @@ AGN.Lib.Controller.new('dashboard', function() {
     tile.updateChart();
   });
 
+  this.addAction({click: 'open-mailing-statistics'}, function() {
+    const mailingId = this.el.closest('.draggable-tile').find('[data-statistics-mailing]').val();
+    AGN.Lib.Page.reload(AGN.url(`/statistics/mailing/${mailingId}/view.action`));
+  });
+
   function getTileById(id) {
     return tiles[tiles.findIndex((tile) => tile.id === id)] || new EmptyTile();
   }
@@ -243,27 +251,45 @@ AGN.Lib.Controller.new('dashboard', function() {
     return GridUtils.getTileAtPosition(row, col, tiles);
   }
 
+  function closePopupWithEditLink($popup) {
+    if (!$popup.length) {
+      return;
+    }
+    $(':focus', $popup).blur();
+    toastr.clear($popup);
+  }
+
   this.addAction({click: 'edit-dashboard'}, function() {
     toggleEditMode(true);
-    const $popup = this.el.closest('.popup');
-    if ($popup.length) {
-      $(':focus', $popup).blur();
-      toastr.clear($popup);
-    }
+    const $infoPopup = this.el.closest('.popup');
+    closePopupWithEditLink($infoPopup); // edit mode can be entered using popup link; see infoIfDashboardEmpty();
   });
 
   this.addAction({click: 'stop-editing'}, function() {
     toggleEditMode(false);
     infoIfDashboardEmpty();
+    saveTilesLayout();
   });
+
+  function saveTilesLayout() {
+    GridUtils.setCurrentSchema();
+    $.ajax({
+      type: 'POST',
+      url: AGN.url('/dashboard/layout/save.action'),
+      data: {layout: JSON.stringify(Def.LAYOUT.CURRENT)},
+      async: false,
+    }).done(() => AGN.Lib.Messages.defaultSaved())
+      .fail(() => AGN.Lib.Messages.defaultError());
+  }
 
   function toggleEditMode(on) {
     $('#dashboard-start-edit-btn').closest('li').toggle(!on);
     $('body').toggleClass('edit-mode', !!on);
+    GridUtils.enableDraggable(on);
   }
 
   this.addAction({click: 'select-layout'}, function() {
-    Modal.createFromTemplate({}, 'dashboard-layout-selection-modal');
+    Modal.fromTemplate('dashboard-layout-selection-modal');
   });
 
   function isGridLeftOver(tile, newColsCount) {

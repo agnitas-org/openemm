@@ -2,31 +2,13 @@
 .tile.scheduled-items {
 
   .list-item {
-    @include flex(column, 6px);
+    @include flex-column($gap-sm);
   }
 
   .item__info-container {
-    @include flex(row, 5px);
+    @include flex-row($gap-x-sm);
     justify-content: space-between;
     align-items: center;
-
-    @include font($font-size-base, $font-weight-normal);
-  }
-
-  .type-badge {
-    @include flex-center();
-    gap: 5px;
-
-    height: $mailing-badge-size-small;
-    padding: 4px;
-    border-radius: $border-radius-sm;
-
-    background-color: #3D3D3D;
-    color: $c-white;
-
-    .icon {
-      font-size: $font-size-badge-small;
-    }
   }
 
   .item__name-label {
@@ -34,11 +16,8 @@
   }
 
   .item__schedule-container {
-    @include flex(row, 5px);
+    @include flex-row($gap-x-sm);
     align-items: center;
-
-    @include font($font-size-sm, $font-weight-normal);
-    color: #6F6F6F;
+    color: var(--text-gray-color);
   }
-
 }

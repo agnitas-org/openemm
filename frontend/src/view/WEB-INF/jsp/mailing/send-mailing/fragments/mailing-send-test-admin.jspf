@@ -36,16 +36,18 @@
                         </c:choose>
                     </div>
 
-                    <div id="test-send-controls-group" class="vspace-top-10">
+                    <div id="test-send-controls-group" class="vspace-top-10" data-initializer="test-run-recipients">
+
+                        <%@ include file="get-approval-switch.jspf" %>
+
                         <div class="form-group">
                             <div class="col-sm-4">
                                 <label class="control-label" for="test-run-options">
-                                    <mvc:message code="mailing.send.admin.target.to" />
+                                    <mvc:message code="mailing.testrun" />
                                 </label>        
                             </div>
                             <div class="col-sm-8">
-                                <mvc:select path="testRunOption" id="test-run-options" cssClass="form-control js-select"
-                                            data-action="admin-target-group" data-initializer="test-run-recipients-select">
+                                <mvc:select path="testRunOption" id="test-run-options" cssClass="form-control js-select">
                                     <mvc:option value="${NO_LIMITATION_TEST_RUN_OPTION}"><mvc:message code="${NO_LIMITATION_TEST_RUN_OPTION.messageKey}" /></mvc:option>
                                     <mvc:option value="${RECIPIENT_TEST_RUN_OPTION}"><mvc:message code="${RECIPIENT_TEST_RUN_OPTION.messageKey}" /></mvc:option>
                                     <emm:ShowByPermission token="mailing.send.admin.target">

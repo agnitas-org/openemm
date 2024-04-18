@@ -898,7 +898,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
         $view.animate({scrollTop: $target.offset().top - $view.offset().top + $view.scrollTop()});
       } else {
         $view = $(document);
-        $view.scrollTop($field.offset().top - 25);
+        $view.scrollTop($field.offset().top - 125);
       }
     }
   };

@@ -8,7 +8,7 @@
     </a>
 </div>
 
-<div id="sidebar__nav-block" class="sidebar__block">
+<div id="sidebar__nav-block" class="sidebar__block js-scrollable">
     <ul id="sidebar__nav-list" data-controller="side-menu" data-initializer="side-menu">
         <tiles:insertAttribute name="sidemenu"/>
     </ul>
@@ -21,10 +21,10 @@
         <input class="form-check-input" type="checkbox" role="switch" id="switch-to-classic-design" data-action="switch-to-classic-design" data-switch-url="${switchDesignUrl}" checked>
     </div>
     <div class="sidebar__tooltip">
-        <label id="switch-design-label" for="switch-to-classic-design" class="text-truncate">
+        <label for="switch-to-classic-design" class="text-truncate">
             <mvc:message code="redesign.switch.classic" />
         </label>
-        <span class="beta-badge">BETA</span>
+        <span class="badge badge--beta">BETA</span>
     </div>
 </div>
 
@@ -32,31 +32,34 @@
     <div data-action="display-tooltip">
         <a href="#" class="sidebar__block-item" data-action="open-help">
             <span class="sidebar__item-icon"><i class="icon icon-question-circle"></i></span>
-            <span class="sidebar__icon-label sidebar__tooltip"><mvc:message code="help" /></span>
+            <span class="sidebar__tooltip"><mvc:message code="help" /></span>
         </a>
     </div>
+</div>
 
+<div class="sidebar__block">
     <div data-action="display-tooltip">
         <mvc:form id="logoutForm" servletRelativeAction="/logout.action" cssClass="hidden" />
 
         <a href="#" class="sidebar__block-item" data-action="logout">
             <span class="sidebar__item-icon"><i class="icon icon-sign-out-alt"></i></span>
-            <span class="sidebar__icon-label sidebar__tooltip"><mvc:message code='default.Logout'/></span>
+            <span class="sidebar__tooltip"><mvc:message code='default.Logout'/></span>
         </a>
     </div>
 </div>
 
 <div id="account-data-block" class="sidebar__block">
     <div data-action="display-tooltip">
-        <a href="#" class="sidebar__block-item" data-action="open-account-data">
-            <span id="account-data__initials" class="sidebar__item-icon">
+        <c:set var="selfViewUrl" value="/user/self/view.action" />
+        <a href="<c:url value="${selfViewUrl}" />" data-url="${selfViewUrl}" class="sidebar__block-item" data-action="open-account-data">
+            <h3 id="account-data__initials" class="sidebar__item-icon">
                 <c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}
-            </span>
+            </h3>
 
             <div class="sidebar__tooltip">
-                <span class="account-data__fullname">
+                <h1 class="text-truncate">
                     <c:if test="${not empty firstName}">${firstName} </c:if>${fullName}
-                </span>
+                </h1>
                 <span class="account-data__label">
                     ${userName}<c:if test="${not empty supervisorUsername}">/${supervisorUsername}</c:if>
                 </span>
@@ -65,7 +68,7 @@
                 <c:if test="${versionNumber ne null}">
                     <div class="version-container">
                         <span class="account-data__label">${versionNumber}</span>
-                        <span class="beta-badge">BETA</span>
+                        <span class="badge badge--beta">BETA</span>
                     </div>
                 </c:if>
             </div>

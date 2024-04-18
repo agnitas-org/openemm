@@ -49,7 +49,7 @@
 
                         <ul class="dropdown-menu">
                             <li>
-                                <c:url var="bulkDownload" value="/webform/${formId}/components/bulkDownload.action"/>
+                                <c:url var="bulkDownload" value="/webform/${formId}/components/all/download.action"/>
                                 <a href="${bulkDownload}" data-prevent-load="">
                                     <mvc:message code="mailing.Graphics_Component.bulk.download"/>
                                 </a>

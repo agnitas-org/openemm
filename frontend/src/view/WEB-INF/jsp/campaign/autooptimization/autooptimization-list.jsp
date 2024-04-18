@@ -35,7 +35,7 @@
                 <display:column headerClass="js-table-sort" titleKey="default.description" property="description" />
 
                 <display:column headerClass="squeeze-column">
-                    <emm:ShowByPermission token="campaign.change">
+                    <emm:ShowByPermission token="campaign.autoopt">
                         <c:url var="viewLink" value="/optimization/${optimization.id}/view.action">
                             <c:param name="campaignID" value="${form.campaignID}"/>
                             <c:param name="campaignName" value="${form.campaignName}"/>

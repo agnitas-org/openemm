@@ -1,12 +1,11 @@
 
-.dropdown-toggle {
+.dropdown-toggle, .js-btn-dropdown {
   &::after {
     border: none;
     margin: 0;
     vertical-align: unset;
 
-    content: fa-content($fa-var-caret-down);
-    font-family: "Font Awesome 5 Free";
+    @include fa-content($fa-var-caret-down);
   }
 
   &[aria-expanded="true"]::after {
@@ -15,23 +14,33 @@
 }
 
 .dropdown-menu {
-  padding: $gap-sm;
+  padding: $dropdown-spacer;
   min-width: 250px;
+  background-color: var(--main-bg-color);
+  border-color: $gray-400;
 }
 
 .dropdown__items-container {
-  border: 1px solid $border-color;
+  border: $border-default;
   border-radius: $border-radius;
   overflow: hidden;
 }
 
 .dropdown-item {
-  @include font($font-size-base, $font-weight-normal);
-  padding: $gap-sm;
+  color: var(--default-text-color);
+  padding: $dropdown-spacer;
 
   &:active, &:hover, &.selected {
-    background-color: $c-blue-27;
+    background-color: $primary;
     font-weight: $font-weight-semibold;
-    color: $c-white;
+    color: $white;
+  }
+}
+
+.dropdown.open {
+  .dropdown-menu {
+    display: block;
+    position: absolute;
+    inset: 0px 0px auto auto;
   }
 }

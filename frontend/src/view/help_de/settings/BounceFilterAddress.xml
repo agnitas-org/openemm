@@ -4,5 +4,5 @@
     1. Sie lassen das Feld Filteradresse frei. 
     	In diesem Fall generiert der EMM beim Anlegen der Response-Verarbeitung automatisch eine Filteradresse. 
     2. Sie geben eine Filteradresse durch manuelle Eingabe vor. 
-    	Das manuelle Bef&#xFC;llen der Filteradresse ist nur dann relevant, wenn Sie den Filterserver vom EMM (filter.agnitas.de) als Mailempfangsserver in Ihrem DNS (Domain Name System) eingetragen haben. Bei weiteren Details k&#xF6;nnen Sie sich an den AGNITAS-Support wenden.]]></content>
+    	Das manuelle Bef&#xFC;llen der Filteradresse ist nur dann relevant, wenn Sie den Filterserver vom EMM (filter.agnitas.de) als Mailempfangsserver in Ihrem DNS (Domain Name System) eingetragen haben. F&#xFC;r weitere Details k&#xF6;nnen Sie sich gerne an den AGNITAS-Support wenden.]]></content>
 </HelpBalloon>

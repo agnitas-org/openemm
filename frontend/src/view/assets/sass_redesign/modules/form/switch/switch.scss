@@ -1,0 +1,53 @@
+
+.form-switch {
+  display: flex;
+  align-items: center;
+  gap: $gap-x-sm;
+
+  .form-check-input {
+    margin-top: 0;
+    cursor: pointer;
+    border-color: $light-grey;
+    flex: none; // prevents resize inside flex container
+    @include size(24px, 12px);
+
+    @function switch-toggle-variant($circle-color) {
+      @return url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='4.1' fill='#{$circle-color}'/></svg>"); 
+    }
+
+    background-image: escape-svg(switch-toggle-variant($light-grey));
+    
+    &:focus {
+      background-image: escape-svg(switch-toggle-variant($light-grey));
+      border-color: $light-grey;
+    }
+
+    &:checked {
+      background-image: escape-svg(switch-toggle-variant($form-switch-checked-color));
+      border-color: $primary;
+      background-color: $primary;
+    }
+
+    &:disabled {
+      background-color: var(--slider-disabled-inactive-bg-color);
+      &:checked {
+        background-color: var(--slider-disabled-active-bg-color);
+        border-color: var(--slider-disabled-active-bg-color);
+      }
+
+      &:not(:checked) {
+        background-image: escape-svg(switch-toggle-variant($dark-grey));
+        border-color: $dark-grey;
+      }
+    }
+  }
+
+  .form-check-label {
+    margin-bottom: 0;
+    font-size: $font-size-base;
+  }
+}
+
+.form-check-reverse {
+  flex-direction: row-reverse;
+}

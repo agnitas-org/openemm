@@ -303,7 +303,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
-                        <label for="decisionDate"><mvc:message code="settings.fieldType.DATE"/></label>
+                        <label for="decisionDate"><mvc:message code="Date"/></label>
                         <button class="icon icon-help" data-help="help_${helplanguage}/workflow/decision/Date.xml" tabindex="-1" type="button"></button>
                     </label>
                 </div>

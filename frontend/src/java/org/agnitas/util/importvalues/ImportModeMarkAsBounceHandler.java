@@ -53,11 +53,6 @@ public class ImportModeMarkAsBounceHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
-		// Do nothing
-	}
-
-	@Override
 	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Do nothing
 	}

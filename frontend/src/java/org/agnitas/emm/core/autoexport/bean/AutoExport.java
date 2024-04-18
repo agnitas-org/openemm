@@ -196,7 +196,7 @@ public class AutoExport {
 
 	public String getFileServerWithoutCredentials() {
 		if (StringUtils.isNotBlank(fileServer) && fileServer.contains("@")) {
-			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.indexOf("@") + 1));
+			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.lastIndexOf("@") + 1));
 		} else {
 			return StringEscapeUtils.escapeHtml4(fileServer);
 		}

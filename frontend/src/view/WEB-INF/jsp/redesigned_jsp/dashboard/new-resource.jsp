@@ -1,10 +1,21 @@
 <%@ page contentType="text/html; charset=utf-8"%>
+<%@ page import="com.agnitas.emm.core.imports.web.ImportController" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
+<c:set var="MAILING" value="<%= ImportController.ImportType.MAILING %>" />
+<c:set var="LB_TEMPLATE" value="<%= ImportController.ImportType.LB_TEMPLATE %>" />
+
+<c:set var="isRedesignedMailingImportAllowed" value="false"/>
+<emm:ShowByPermission token="import.ui.migration">
+    <emm:ShowByPermission token="mailing.ui.migration">
+        <c:set var="isRedesignedMailingImportAllowed" value="true"/>
+    </emm:ShowByPermission>
+</emm:ShowByPermission>
+
 <li id="new-resource" class="dropdown">
-    <button class="btn btn-primary rounded-1 dropdown-toggle header__action" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="icon icon-plus"></i>
         <span><mvc:message code="New"/></span>
     </button>
@@ -12,19 +23,33 @@
     <ul class="dropdown-menu">
         <div class="dropdown__items-container">
             <emm:ShowByPermission token="mailing.change">
-                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-                <li>
-                    <a class="dropdown-item" href="${mailingCreateLink}">
-                        <mvc:message code="mailing.create"/>
-                    </a>
-                </li>
+                <emm:HideByPermission token="mailing.content.readonly">
+                    
+                    <%@ include file="fragments/new-resource-emc-mailing-option.jspf" %>
+                    
+                    <emm:ShowByPermission token="mailing.classic">
+                        <li>
+                            <a class="dropdown-item" href='<c:url value="/mailing/templates.action"/>' data-confirm>
+                                <mvc:message code="UserRight.mailing.classic"/>
+                            </a>
+                        </li>
+                    </emm:ShowByPermission>
+                </emm:HideByPermission>
             </emm:ShowByPermission>
             <emm:ShowByPermission token="mailing.import">
-                <c:url var="mailingImportLink" value="/import/mailing.action"/>
                 <li>
-                    <a class="dropdown-item" href="${mailingImportLink}">
-                        <mvc:message code="mailing.import"/>
-                    </a>
+                    <c:choose>
+                        <c:when test="${isRedesignedMailingImportAllowed}">
+                            <a class="dropdown-item" href='<c:url value="/import/file.action?type=${MAILING}"/>' data-confirm>
+                                <mvc:message code="mailing.import"/>
+                            </a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="dropdown-item" href='<c:url value="/import/mailing.action"/>'>
+                                <mvc:message code="mailing.import"/>
+                            </a>
+                        </c:otherwise>
+                    </c:choose>                     
                 </li>
             </emm:ShowByPermission>
     
@@ -37,11 +62,19 @@
                 </li>
             </emm:ShowByPermission>
             <emm:ShowByPermission token="mailing.import">
-                <c:url var="importTemplateLink" value="/import/template.action"/>
                 <li>
-                    <a class="dropdown-item" href="${importTemplateLink}">
-                        <mvc:message code="template.import"/>
-                    </a>
+                    <c:choose>
+                        <c:when test="${isRedesignedMailingImportAllowed}">
+                            <a class="dropdown-item" href="<c:url value="/import/file.action?type=${LB_TEMPLATE}"/>" data-confirm>
+                                <mvc:message code="template.import"/>
+                            </a>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="dropdown-item" href="<c:url value="/import/template.action"/>">
+                                <mvc:message code="template.import"/>
+                            </a>
+                        </c:otherwise>
+                    </c:choose>
                 </li>
             </emm:ShowByPermission>
             <emm:ShowByPermission token="targets.show">

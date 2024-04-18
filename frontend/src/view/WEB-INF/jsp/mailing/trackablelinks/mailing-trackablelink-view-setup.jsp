@@ -5,6 +5,8 @@
 
 <%--<c:set var="workflowForwardParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, trackableLinkForm.workflowId).workflowForwardParams}"/>--%>
 
+<c:url var="switchDesignUrl" value="/mailing/${mailingId}/trackablelink/list.action" scope="request" />
+
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
 <emm:CheckLogon/>
@@ -31,7 +33,7 @@
     <c:param name="keepForward" value="true"/>
 </c:url>
 
-<c:url var="trackableLinksOverviewLink" value="/mailing/${mailingId}/trackablelink/list.action"/>
+<c:url var="trackableLinksOverviewLink" value="/mailing/${mailingId}/trackablelink/list.action?restoreSort=true"/>
 
 <c:set var="agnTitleKey" 			value="mailing.Trackable_Link" 	scope="request" />
 <c:set var="agnSubtitleKey" 		value="mailing.Trackable_Link" 	scope="request" />

@@ -99,8 +99,8 @@ If the trigger for the directives cannot be placed inside the form, e.g. in case
   });
 
   Action.new({'click': '[data-form-bulk]'}, function() {
-    var group = this.el.data('form-bulk'),
-        value = this.el.prop('checked');
+    const group = this.el.data('form-bulk');
+    const value = this.el.prop('checked');
 
     Form.get(this.el).bulkUpdate(group, value);
   });
@@ -142,13 +142,12 @@ If the trigger for the directives cannot be placed inside the form, e.g. in case
       return;
     }
     clearAllInputs($(container));
+    this.el.trigger('apply-filter');
   });
 
   function clearAllInputs($container) {
-    $container.find(":input").val("");
-    $container.find(":checkbox").prop("checked", false);
-    $container.find(":radio").prop("checked", false);
-    $container.find("select").prop("selectedIndex", 0);
+    $container.find(":input, select").val("").trigger('change');
+    $container.find(":checkbox, :radio").prop("checked", false);
     AGN.Lib.CoreInitializer.run('select', $container);
   }
 

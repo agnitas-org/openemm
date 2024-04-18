@@ -21,8 +21,10 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
@@ -31,9 +33,12 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.util.MvcUtils;
 import org.agnitas.util.UserActivityUtil;
 import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.web.RecipientExportReporter;
+import org.agnitas.web.forms.FormUtils;
+import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -45,6 +50,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,6 +70,7 @@ import java.util.stream.Collectors;
 
 import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
@@ -84,8 +91,9 @@ public class ExportController {
     private final UserActivityLogService userActivityLogService;
     private final RecipientExportReporter recipientExportReporter;
     private final MailinglistApprovalService mailinglistApprovalService;
+    private final WebStorage webStorage;
 
-    public ExportController(ColumnInfoService columnInfoService, ComTargetService targetService, ExportPredefService exportService, MailinglistService mailinglistService, UserActivityLogService userActivityLogService, RecipientExportReporter recipientExportReporter, MailinglistApprovalService mailinglistApprovalService) {
+    public ExportController(ColumnInfoService columnInfoService, ComTargetService targetService, ExportPredefService exportService, MailinglistService mailinglistService, UserActivityLogService userActivityLogService, RecipientExportReporter recipientExportReporter, MailinglistApprovalService mailinglistApprovalService, WebStorage webStorage) {
         this.columnInfoService = columnInfoService;
         this.targetService = targetService;
         this.exportService = exportService;
@@ -93,10 +101,12 @@ public class ExportController {
         this.userActivityLogService = userActivityLogService;
         this.recipientExportReporter = recipientExportReporter;
         this.mailinglistApprovalService = mailinglistApprovalService;
+        this.webStorage = webStorage;
     }
 
-    @GetMapping("/list.action")
-    public String list(Model model, Admin admin) {
+    @RequestMapping("/list.action")
+    public String list(@ModelAttribute("form") PaginationForm form, Model model, Admin admin) {
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.EXPORT_PROFILE_OVERVIEW, form);
         model.addAttribute("exports", exportService.getExportProfiles(admin));
         writeUserActivityLog(admin, "exports list", "Data management -> Export");
         return "export_list";
@@ -188,6 +198,7 @@ public class ExportController {
         export.setLocale(form.getLocale());
         export.setTimezone(form.getTimezone());
         export.setDecimalSeparator(form.getDecimalSeparator());
+        export.setUseDecodedValues(form.isUseDecodedValues());
     }
 
     protected void formDateLimitsToExport(ExportForm form, ExportPredef export, Admin admin) {
@@ -350,6 +361,7 @@ public class ExportController {
         form.setLocale(export.getLocale());
         form.setTimezone(export.getTimezone());
         form.setDecimalSeparator(export.getDecimalSeparator());
+        form.setUseDecodedValues(export.isUseDecodedValues());
     }
 
     private void setDateLimitsToForm(ExportPredef export, ExportForm form, Admin admin) {
@@ -380,6 +392,7 @@ public class ExportController {
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String confirmDelete(@PathVariable int id, Model model, Admin admin, Popups popups) {
         ServiceResult<ExportPredef> result = exportService.getExportForDeletion(id, admin.getCompanyID());
         if (!result.isSuccess()) {
@@ -388,6 +401,20 @@ public class ExportController {
         }
         model.addAttribute(SHORTNAME_FIELD, result.getResult().getShortname());
         return "export_delete";
+    }
+
+    @GetMapping("/{id:\\d+}/delete.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDeleteRedesigned(@PathVariable int id, Model model, Admin admin, Popups popups) {
+        ServiceResult<ExportPredef> result = exportService.getExportForDeletion(id, admin.getCompanyID());
+        if (!result.isSuccess()) {
+            popups.addPopups(result);
+            return MESSAGES_VIEW;
+        }
+
+        MvcUtils.addDeleteAttrs(model, result.getResult().getShortname(),
+                "export.ExportDelete", "export.delete.question");
+        return DELETE_VIEW;
     }
 
     @PostMapping("/{id:\\d+}/delete.action")
@@ -418,7 +445,7 @@ public class ExportController {
             writeEvaluationLog(form, admin, worker);
             model.addAttribute("tmpFileName", new File(worker.getExportFile()).getName());
             model.addAttribute("exportedLines", worker.getExportedLines());
-            model.addAttribute("downloadFileName", generateDownloadFileName(worker.getZippedFileName()));
+            model.addAttribute("downloadFileName", new File(worker.getExportFile()).getName());
             return new ModelAndView("export_result", model.asMap());
         };
         updateProgressStatus(model, form);
@@ -453,18 +480,6 @@ public class ExportController {
         } else {
             recipientExportReporter.createAndSaveExportReport(worker, admin, false);
             recipientExportReporter.sendExportReportMail(worker);
-        }
-    }
-
-    // Export via GUI is always zipped, but we need the date in the name of the zipped CSV file
-    // to be used in the name of the download zip file
-    private String generateDownloadFileName(String zipFileName) {
-        if (zipFileName.toLowerCase().endsWith(".csv")) {
-            return zipFileName.substring(0, zipFileName.length() - 4) + ".zip";
-        } else if (zipFileName.toLowerCase().endsWith(".zip")) {
-            return zipFileName;
-        } else {
-            return zipFileName + ".zip";
         }
     }
 
@@ -566,7 +581,7 @@ public class ExportController {
             popups.addPopups(result);
             return redirectToView(id);
         }
-        String downloadFileName = exportService.getExportDownloadZipName(admin);
+        String downloadFileName = result.getResult().getName();
         writeUserActivityLog(admin, "export recipients", downloadFileName);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(downloadFileName))

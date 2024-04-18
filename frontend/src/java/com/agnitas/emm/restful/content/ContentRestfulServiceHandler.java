@@ -31,7 +31,6 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -48,6 +47,7 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+import com.agnitas.service.MailingContentService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;

@@ -76,7 +76,7 @@ public class RecipientModelValidator extends BaseValidator {
     }
     
     private final void assertValidProfilefieldContent(final RecipientModel model) {
-		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, model.getCompanyId());
+		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, model.getCompanyId());
 		final List<String> profileFieldsWithUnallowedHtml = new ArrayList<>();
 		
 		for (final Map.Entry<String, Object> entry : model.getParameters().entrySet()) {

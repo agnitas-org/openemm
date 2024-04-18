@@ -43,6 +43,7 @@ public class ImageUtils {
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
 
 	public static final Set<String> availableImageExtensions = Set.of("png", "gif", "jpg", "jpeg", "svg", "ico");
+	public static final String[] ALLOWED_MIMETYPES = {"image/png", "image/jpg", "image/jpeg", "image/gif", "image/svg+xml", "image/x-icon"};
 
 	public static boolean isValidImageFileExtension(String format) {
 		return availableImageExtensions.contains(format.toLowerCase());

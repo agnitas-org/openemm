@@ -12,6 +12,7 @@ package org.agnitas.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
@@ -44,4 +45,6 @@ public interface ImportWizardService {
     int getLinesOKFromFile(ImportWizardHelper helper) throws Exception;
 
     JSONArray getParsedContentJson(ImportWizardHelper helper, Admin admin);
+
+    Map<Integer, String> getCsvUploads(Admin admin);
 }

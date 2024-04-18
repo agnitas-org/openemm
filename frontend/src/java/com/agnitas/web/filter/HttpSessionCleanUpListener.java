@@ -55,10 +55,13 @@ public class HttpSessionCleanUpListener implements HttpSessionListener {
 		for (String removeMe : keysToRemove) {
 			futureHolder.remove(removeMe);
 		}
-		
-		// Remove all download data and associated files
-		DownloadService downloadService = (DownloadService) applicationContext.getBean("DownloadService");
-		downloadService.removeAllDownloadData(session);
+
+		// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
+		if (applicationContext.containsBean("DownloadService")) {
+			// Remove all download data and associated files
+			DownloadService downloadService = (DownloadService) applicationContext.getBean("DownloadService");
+			downloadService.removeAllDownloadData(session);
+		}
 		
 		// Cleanup grid recycle bin
 		Admin admin = (Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN);

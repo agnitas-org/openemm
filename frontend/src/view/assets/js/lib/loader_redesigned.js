@@ -10,7 +10,7 @@
 
     if (!prevent) {
       requestCount += 1;
-      $('.loader').removeClass('hidden');
+      $('.loader--main').removeClass('hidden');
     } else {
       prevent = false;
     }
@@ -21,7 +21,7 @@
 
     if (requestCount <= 0) {
       hiding = window.setTimeout(function() {
-        $('.loader').addClass('hidden');
+        $('.loader--main').addClass('hidden');
       }, 5);
 
       requestCount = 0;

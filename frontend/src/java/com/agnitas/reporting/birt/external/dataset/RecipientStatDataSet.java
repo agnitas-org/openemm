@@ -10,16 +10,29 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
-import com.agnitas.reporting.birt.external.beans.RecipientDoiRow;
-import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
-import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
-import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -28,24 +41,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
+import com.agnitas.reporting.birt.external.beans.RecipientDoiRow;
+import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
+import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
+import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
 
 public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
@@ -66,7 +69,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		query.append("SELECT bind.user_status AS userstatus, COUNT(DISTINCT cust.customer_id) AS amount")
 				.append(" FROM ").append(getCustomerTableName(companyID)).append(" cust")
 				.append(" LEFT JOIN ").append(getCustomerBindingTableName(companyID)).append(" bind ON (cust.customer_id = bind.customer_id)")
-				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0")
+				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust." + RecipientStandardField.Bounceload.getColumnName() + " = 0")
 				.append(" AND NOT EXISTS (SELECT 1 FROM " + getCustomerBindingTableName(companyID) + " bind2 WHERE cust.customer_id = bind2.customer_id AND bind2.user_status < bind.user_status");
 		if (mailinglistID != null){
 			query.append(" AND bind2.mailinglist_id = ?");
@@ -307,16 +310,16 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		List<RecipientDetailRow> returnList = new ArrayList<>();
 
 		// Add missing items and sort all items
-		Calendar selectedDate = new GregorianCalendar();
-		selectedDate.setTime(startDate);
-		SimpleDateFormat timeFormat;
+		LocalDateTime selectedZonedDateTime = DateUtilities.getLocalDateTimeForDate(startDate);
+		LocalDateTime endZonedDateTime = DateUtilities.getLocalDateTimeForDate(endDate);
+		DateTimeFormatter dateTimeFormatter;
 		if (hourScale) {
-			timeFormat = new SimpleDateFormat("HH");
+			dateTimeFormatter = new DateTimeFormatterBuilder().appendPattern("HH").toFormatter();
 		} else {
-			timeFormat = new SimpleDateFormat("dd.MM.yyyy");
+			dateTimeFormatter = new DateTimeFormatterBuilder().appendPattern("dd.MM.yyyy").toFormatter();
 		}
-		while (selectedDate.getTimeInMillis() < endDate.getTime()) {
-			String timeString = timeFormat.format(selectedDate.getTime());
+		while (selectedZonedDateTime.isBefore(endZonedDateTime)) {
+			String timeString = selectedZonedDateTime.format(dateTimeFormatter);
 			RecipientDetailRow selectedItem = recipientRows.get(timeString);
 			if (selectedItem == null) {
 				selectedItem = new RecipientDetailRow();
@@ -326,9 +329,9 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 			returnList.add(selectedItem);
 
 			if (hourScale) {
-				selectedDate.add(Calendar.HOUR_OF_DAY, 1);
+				selectedZonedDateTime = selectedZonedDateTime.plusHours(1);
 			} else {
-				selectedDate.add(Calendar.DAY_OF_MONTH, 1);
+				selectedZonedDateTime = selectedZonedDateTime.plusDays(1);
 			}
 		}
 

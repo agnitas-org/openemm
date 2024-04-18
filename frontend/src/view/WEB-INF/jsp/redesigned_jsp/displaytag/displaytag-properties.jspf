@@ -1,24 +1,61 @@
 
-<c:set var="numberOfRowsSelect">
-    <mvc:select path="numberOfRows" cssClass="form-control compact" data-form-submit="" data-form-change="" data-select-options="minimumResultsForSearch: -1, width: 'auto', dropdownAutoWidth: true">
-        <c:forEach var="numberOfRows" items="${[20, 50, 100]}">
-            <mvc:option value="${numberOfRows}">
-                ${numberOfRows} <mvc:message code="default.entries" />
-            </mvc:option>
-        </c:forEach>
-    </mvc:select>
-</c:set>
+<c:if test="${not noNumberOfRowsSelect}">
+    <c:set var="numberOfRowsSelect">
+        <mvc:select path="numberOfRows" cssClass="form-control compact" data-form-submit="" data-form-change="" data-select-options="minimumResultsForSearch: -1, width: 'auto', dropdownAutoWidth: true">
+            <c:forEach var="numberOfRows" items="${[20, 50, 100]}">
+                <mvc:option value="${numberOfRows}">
+                    ${numberOfRows} <mvc:message code="default.entries" />
+                </mvc:option>
+            </c:forEach>
+        </mvc:select>
+    </c:set>
+</c:if>
 
 <c:set var="all_items_found">
-    </div><div class="table-controls"><div class="table-controls__entries-wrapper"><span><mvc:message code="default.list.show.max" /></span>${numberOfRowsSelect}<span><mvc:message code="mailing.OutOf" /> {0} {1}</span>
+    </div>
+    <div class="table-controls">
+        <div class="table-controls__entries-wrapper">
+            <c:if test="${not noNumberOfRowsSelect}">
+                <span><mvc:message code="default.list.show.max" /></span>
+                ${numberOfRowsSelect}
+            </c:if>
+            <span><c:if test="${not noNumberOfRowsSelect}"><mvc:message code="mailing.OutOf" /> </c:if>{0} {1}</span>
+</c:set>
+
+<c:set var="some_items_found">
+    </div>
+    <div class="table-controls">
+        <div class="table-controls__entries-wrapper">
+            <span><mvc:message code="default.list.show.max" /></span>
+            <c:choose>
+                <c:when test="${noNumberOfRowsSelect}">
+                    <span>{3}</span>
+                </c:when>
+                <c:otherwise>
+                    ${numberOfRowsSelect}
+                </c:otherwise>
+            </c:choose>
+            <span><mvc:message code="mailing.OutOf" /> {0} {1}</span>
 </c:set>
 
 <c:set var="one_item_found">
-    </div><div class="table-controls"><div class="table-controls__entries-wrapper"><span><mvc:message code="default.list.show.max" /></span>${numberOfRowsSelect}<span><mvc:message code="mailing.OutOf" /> 1 {0}</span>
+    </div>
+    <div class="table-controls">
+        <div class="table-controls__entries-wrapper">
+            <span><mvc:message code="default.list.show.max" /></span>
+            <c:choose>
+                <c:when test="${noNumberOfRowsSelect}">
+                    <span>1</span>
+                </c:when>
+                <c:otherwise>
+                    ${numberOfRowsSelect}
+                </c:otherwise>
+            </c:choose>
+            <span><mvc:message code="mailing.OutOf" /> 1 {0}</span>
 </c:set>
 
 <c:set var="no_items_found">
-    </div><div class="table-controls"><div class="table-controls__entries-wrapper"><span>No {0}</span>
+    </div><div class="table-controls"><div class="table-controls__entries-wrapper"><span><mvc:message code="default.NoEntries" /></span><div class="hidden">${numberOfRowsSelect}</div>
 </c:set>
 
 <c:set var="first">
@@ -104,7 +141,7 @@
 
 <display:setProperty name="paging.banner.placement" value="bottom"/>
 <display:setProperty name="paging.banner.all_items_found" value="${all_items_found}"/>
-<display:setProperty name="paging.banner.some_items_found" value="${all_items_found}"/>
+<display:setProperty name="paging.banner.some_items_found" value="${some_items_found}"/>
 <display:setProperty name="paging.banner.one_item_found" value="${one_item_found}"/>
 <display:setProperty name="paging.banner.no_items_found" value="${no_items_found}"/>
 <display:setProperty name="paging.banner.first" value="${first}"/>

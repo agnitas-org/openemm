@@ -27,17 +27,20 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     private String shortname;
 
-    private String searchQueryText;
+    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchNameChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean searchDescriptionChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private String filterSendDateBegin;
+    private String filterSendDateEnd;
 
-    private boolean searchNameChecked;
-
-    private boolean searchDescriptionChecked;
+    private String filterName;
+    private String filterDescription;
 
     private String[] additionalFields = ArrayUtils.EMPTY_STRING_ARRAY;
 
     private int[] filteredMailingLists = ArrayUtils.EMPTY_INT_ARRAY;
 
-    private int[] filteredTargetGroups = ArrayUtils.EMPTY_INT_ARRAY;
+    private int[] filteredTargetGroups = ArrayUtils.EMPTY_INT_ARRAY; // TODO: remove after EMMGUI-714 will be finished and old design will removed
 
     public boolean isSearchNameChecked() {
         return searchNameChecked;
@@ -137,5 +140,37 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     public void setFilteredTargetGroups(int[] filteredTargetGroups) {
         this.filteredTargetGroups = filteredTargetGroups;
+    }
+
+    public String getFilterName() {
+        return filterName;
+    }
+
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
+    }
+
+    public String getFilterDescription() {
+        return filterDescription;
+    }
+
+    public void setFilterDescription(String filterDescription) {
+        this.filterDescription = filterDescription;
+    }
+
+    public String getFilterSendDateBegin() {
+        return filterSendDateBegin;
+    }
+
+    public void setFilterSendDateBegin(String filterSendDateBegin) {
+        this.filterSendDateBegin = filterSendDateBegin;
+    }
+
+    public String getFilterSendDateEnd() {
+        return filterSendDateEnd;
+    }
+
+    public void setFilterSendDateEnd(String filterSendDateEnd) {
+        this.filterSendDateEnd = filterSendDateEnd;
     }
 }

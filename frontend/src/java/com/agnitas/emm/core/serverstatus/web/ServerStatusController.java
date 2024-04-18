@@ -10,17 +10,37 @@
 
 package com.agnitas.emm.core.serverstatus.web;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComServerMessageDao;
+import com.agnitas.dao.LicenseDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonServiceException;
+import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
+import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
+import com.agnitas.emm.core.serverstatus.forms.JobQueueFormSearchParams;
+import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
+import com.agnitas.emm.core.serverstatus.forms.ServerConfigForm;
+import com.agnitas.emm.core.serverstatus.forms.ServerStatusForm;
+import com.agnitas.emm.core.serverstatus.forms.validation.ServerConfigFormValidator;
+import com.agnitas.emm.core.serverstatus.forms.validation.ServerStatusFormValidator;
+import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
+import com.agnitas.json.JsonArray;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonWriter;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.Version;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.Anonymous;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import net.sf.json.JSONArray;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -37,17 +57,22 @@ import org.agnitas.util.ServerCommand.Server;
 import org.agnitas.util.TarGzUtilities;
 import org.agnitas.util.TextTable;
 import org.agnitas.util.ZipUtilities;
+import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -57,35 +82,15 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComServerMessageDao;
-import com.agnitas.dao.LicenseDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.PermissionType;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.service.LogonServiceException;
-import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
-import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
-import com.agnitas.emm.core.serverstatus.forms.ServerConfigForm;
-import com.agnitas.emm.core.serverstatus.forms.ServerStatusForm;
-import com.agnitas.emm.core.serverstatus.forms.validation.ServerConfigFormValidator;
-import com.agnitas.emm.core.serverstatus.forms.validation.ServerStatusFormValidator;
-import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
-import com.agnitas.json.JsonArray;
-import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonWriter;
-import com.agnitas.messages.Message;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.Version;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.Anonymous;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import net.sf.json.JSONArray;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class ServerStatusController implements XssCheckAware {
 
@@ -126,6 +131,18 @@ public class ServerStatusController implements XssCheckAware {
 		this.serverMessageDao = serverMessageDao;
 		this.configService = configService;
 		this.companyDao = companyDao;
+	}
+
+	@InitBinder
+	public void initBinder(WebDataBinder binder, Admin admin) {
+		if (admin != null) {
+			binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
+		}
+	}
+
+	@ModelAttribute
+	public JobQueueFormSearchParams getSearchParams() {
+		return new JobQueueFormSearchParams();
 	}
 
 	@RequestMapping(value = "/view.action", method = { RequestMethod.GET, RequestMethod.POST })
@@ -290,12 +307,21 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/jobqueue/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String jobQueueView(Admin admin, Model model) {
-		model.addAttribute("activeJobQueueList", jobQueueService.getAllActiveJobs());
+	public String jobQueueView(@ModelAttribute("filter") JobQueueOverviewFilter filter, @ModelAttribute JobQueueFormSearchParams searchParams, Admin admin, Model model) {
+		if (admin.isRedesignedUiUsed()) {
+			FormUtils.syncSearchParams(searchParams, filter, true);
+		}
+		model.addAttribute("activeJobQueueList", jobQueueService.getOverview(filter));
 		model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
 		userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "job queue view"), logger);
 
 		return "server_job_queue_view";
+	}
+
+	@GetMapping("/jobqueue/search.action")
+	public String jobQueueSearch(@ModelAttribute JobQueueOverviewFilter filter, @ModelAttribute JobQueueFormSearchParams searchParams) {
+		FormUtils.syncSearchParams(searchParams, filter, false);
+		return "redirect:/serverstatus/jobqueue/view.action";
 	}
 
 	@Anonymous
@@ -698,7 +724,7 @@ public class ServerStatusController implements XssCheckAware {
 	
 	@Anonymous
 	@RequestMapping(value = "/getSystemStatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public @ResponseBody JSONArray getSystemStatus (HttpServletRequest request, HttpServletResponse response) throws Exception {
+	public @ResponseBody JSONArray getSystemStatus (HttpServletRequest request, HttpServletResponse response) {
 		return serverStatusService.getSystemStatus();
 	}
 
@@ -716,9 +742,18 @@ public class ServerStatusController implements XssCheckAware {
 
 	@Anonymous
 	@RequestMapping(value = "/externalView.action", method = { RequestMethod.GET, RequestMethod.POST })
+	// TODO: EMMGUI-714: remove when old design will be removed
 	public String externalView(HttpServletRequest request, Model model, ServerStatusForm form) {
 		model.addAttribute("serverStatus", serverStatusService.getAnonymousServerStatus(request.getServletContext()));
-		
+		model.addAttribute("appVersion", configService.getValue(ConfigValue.ApplicationVersion));
 		return "server_status_external_view";
+	}
+
+	@Anonymous
+	@GetMapping(value = "/externalViewRedesigned.action")
+	public String externalViewRedesigned(HttpServletRequest request, Model model) {
+		model.addAttribute("serverStatus", serverStatusService.getAnonymousServerStatus(request.getServletContext()));
+		model.addAttribute("appVersion", configService.getValue(ConfigValue.ApplicationVersion));
+		return "server_status_external_view_redesigned";
 	}
 }

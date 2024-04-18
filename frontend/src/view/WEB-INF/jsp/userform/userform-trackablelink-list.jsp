@@ -49,7 +49,7 @@
                             <th><mvc:message code="LinkTracking"/></th>
 
                             <emm:ShowByPermission token="mailing.extend_trackable_links">
-                                <th><mvc:message code="mailing.extend_trackable_link"/></th>
+                                <th><mvc:message code="default.advanced"/></th>
                             </emm:ShowByPermission>
                             <th></th>
                             </thead>

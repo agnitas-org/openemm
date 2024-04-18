@@ -309,8 +309,14 @@ by default using SI
         },
         
         isValidEmail: function(email) {
-          var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+          const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
           return re.test(String(email).toLowerCase());
+        },
+      
+        isUrl: function(url) {
+          // starts with HTTP/HTTPS
+          const re = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
+          return re.test(url);
         },
         
         deepFreeze: function (obj) {
@@ -331,6 +337,65 @@ by default using SI
           mobileViewThreshold = parseInt($('html').css('--mobile-view-threshold'));
         }
         return $(window).width() <= mobileViewThreshold;
+      },
+
+      openHelpModal: function (tab = '', options = {}) {
+        const jqxhr = $.get(AGN.url(`/support/help-center.action?helpKey=${window.helpKey}`));
+        jqxhr.done((resp) => {
+            AGN.Lib.Confirm.create(resp)
+              .done((resp) => Page.render(resp));
+
+            if (tab) {
+              $(`[data-help-tab="${tab}"]`).trigger('help-tab:open', options)
+            }
+        });
+      },
+     getColorLuminance: function (hex) {
+         hex = hex.replace('#', '');
+
+         const r = parseInt(hex.substring(0, 2), 16);
+         const g = parseInt(hex.substring(2, 4), 16);
+         const b = parseInt(hex.substring(4, 6), 16);
+
+         return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+     },
+
+      isFilledTextNode: function (node) {
+        return node.nodeType === 3  // text node
+          && node.nodeValue?.trim()?.length > 0;
+      },
+
+      containsTruncatedElements: function (node) {
+        if ($(node).is('select, .select2')) {
+          return false;
+        }
+        if ($(node.parentElement).is(':truncated')) {
+          return true;
+        }
+        if (node.childNodes && node.childNodes.length > 0) {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            const result = this.containsTruncatedElements(node.childNodes[i]);
+            if (result) {
+              return result;
+            }
+          }
+        }
+        return false;
+      },
+      
+      retrieveTextElement: function (node) {
+        if (this.isFilledTextNode(node)) {
+          return node.parentElement;
+        }
+        if (node.childNodes && node.childNodes.length > 0) {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            const result = this.retrieveTextElement(node.childNodes[i]);
+            if (result) {
+              return result; // Return the first element found
+            }
+          }
+        }
+        return null;
       }
     };
 

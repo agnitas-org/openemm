@@ -25,8 +25,7 @@ import com.agnitas.beans.impl.AdminPreferencesImpl;
 
 public class AdminForm {
 
-	/** The logger. */
-    private static final transient Logger LOGGER = LogManager.getLogger(AdminForm.class);
+    private static final Logger LOGGER = LogManager.getLogger(AdminForm.class);
 
     private String username;
     private String fullname;
@@ -52,6 +51,7 @@ public class AdminForm {
     private AdminPreferences adminPreferences = new AdminPreferencesImpl();
     private int altgId;
     private Set<Integer> altgIds = new HashSet<>();
+    private boolean passwordReminderEnabled;
 
 	public String getUsername() {
         return StringUtils.trimToNull(username);
@@ -247,5 +247,13 @@ public class AdminForm {
 
     public void setEmployeeID(String employeeID) {
         this.employeeID = employeeID;
+    }
+
+    public boolean isPasswordReminderEnabled() {
+        return passwordReminderEnabled;
+    }
+
+    public void setPasswordReminderEnabled(boolean passwordReminderEnabled) {
+        this.passwordReminderEnabled = passwordReminderEnabled;
     }
 }

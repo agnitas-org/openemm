@@ -19,7 +19,7 @@ AGN.Lib.Controller.new('side-menu', function() {
         $el.prop('disabled', true);
         // hack for wait for visual toggle switch.
         window.setTimeout(() => AGN.Lib.Page.reload($el.data('switch-url')), 500);
-      });
+      }).fail(() => $el.prop("checked", !$el.prop("checked")));
     });
   });
 
@@ -36,21 +36,14 @@ AGN.Lib.Controller.new('side-menu', function() {
   }, function() {
     const $tooltip = this.el.find('.sidebar__tooltip');
 
-    handleSidebarItemClick($tooltip, this.event, () => AGN.Lib.Page.reload(AGN.url('/user/self/view.action')));
+    handleSidebarItemClick($tooltip, this.event, () => AGN.Lib.Page.reload(AGN.url(this.el.data('url'))));
   });
 
   this.addAction({
     click: 'open-help'
   }, function() {
     const $tooltip = this.el.find('.sidebar__tooltip');
-
-    handleSidebarItemClick($tooltip, this.event, () => {
-      const jqxhr = $.get(AGN.url('/support/help-center.action'));
-      jqxhr.done((resp) => {
-        AGN.Lib.Confirm.create(resp)
-            .done((resp) => Page.render(resp));
-      });
-    });
+    handleSidebarItemClick($tooltip, this.event, AGN.Lib.Helpers.openHelpModal);
   });
 
   function handleSidebarItemClick($tooltip, event, callback) {

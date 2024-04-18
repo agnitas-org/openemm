@@ -1,7 +1,41 @@
 .tooltip {
-  font-size: 12px;
+  font-size: $font-size-sm;
   line-height: 1.4;
 }
+
+.chart-tooltip {
+  background: var(--main-bg-color);
+  opacity: 1;
+  pointer-events: none;
+  position: absolute;
+  transition: all .1s ease;
+  border: $border-default;
+  @include border-radius;
+  overflow: hidden;
+
+  .tooltip-header {
+    padding: $gap-x-sm $gap-sm;
+    color: var(--text-dark-gray-color);
+    background-color: var(--tile-highlighted-header-bg-color);
+    border-bottom: $border-default;
+    font-weight: 500;
+  }
+
+  .tooltip-body {
+    padding: $gap-x-sm $gap-sm;
+    @include flex-column($gap-sm);
+
+    > div {
+      @include flex-row($gap-x-sm);
+      align-items: center;
+
+      i {
+        font-size: $font-size-lg;
+      }
+    }
+  }
+}
+
 //.tooltip.in {
 //  opacity: 0.9;
 //  filter: alpha(opacity=90);

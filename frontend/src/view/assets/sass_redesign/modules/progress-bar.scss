@@ -17,6 +17,8 @@ A simple progress bar. Current percentage has to applied as inline style (width:
 
 */
 
+@keyframes progress-looper{0%{left:-100%}to{left:100%}}
+
 .progress {
   position:relative;
   border: 1px solid $primary;
@@ -54,5 +56,22 @@ A simple progress bar. Current percentage has to applied as inline style (width:
     mix-blend-mode: screen;
     width: 100%;
     z-index: 4;
+  }
+
+  &.loop{
+    margin: 0.35em 0;
+
+    &::after {
+      -webkit-animation: 2s ease-in-out infinite progress-looper;
+      animation: 2s ease-in-out infinite progress-looper;
+      content: " ";
+      top: 0;
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      display: block;
+      background-color: $primary;
+      width: 75%;
+    }
   }
 }

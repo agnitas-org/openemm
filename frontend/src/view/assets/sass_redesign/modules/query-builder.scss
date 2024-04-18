@@ -1,0 +1,194 @@
+
+.query-builder {
+  dd {
+    margin-left: 0;
+  }
+
+  .form-check {
+    margin: 0;
+  }
+
+  .drag-handle {
+    margin: 0;
+    color: var(--input-icon-color);
+    display: flex;
+    align-items: center;
+  }
+
+  .rules-group-header {
+    display: flex;
+    justify-content: space-between;
+    gap: $gap-sm;
+
+    .drag-handle {
+      margin-right: auto;
+    }
+  }
+
+  .rules-group-container {
+    border: $border-default;
+    border-radius: $border-radius;
+    padding: $gap-md;
+    background: inherit;
+  }
+
+  .group-actions {
+    display: flex;
+    gap: $gap-sm;
+  }
+
+  // adapt vertical container spacing
+  .rule-container, .rule-placeholder, .rules-group-container {
+    margin: $gap-sm 0;
+  }
+
+  .rules-list {
+    // adapt connecting lines to spacing
+    > ::before, > ::after {
+      border-color: $border-color;
+      height: calc(50% + $gap-sm);
+      width: 9px;
+    }
+
+    > ::before {
+      border-width: 0 0 1px 1px;
+    }
+
+    > ::after {
+      border-width: 0 0 0 1px;
+    }
+  }
+
+  .rules-list > :first-child::before {
+    top: -$gap-sm - 1px;
+  }
+
+  // Flex Children
+  .rule-header {
+    order: 99;
+    flex-grow: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: $gap-sm;
+  }
+
+  .rule-actions {
+    order: 1;
+  }
+
+  .error-container {
+    flex-grow: 0;
+    margin: 0;
+    color: $danger;
+  }
+
+  .rule-container {
+    background: transparent;
+    display: flex;
+    gap: $gap-sm;
+    flex: 1 0 auto;
+    flex-flow: row nowrap;
+    justify-content: left;
+    align-items: center;
+
+    border: $border-default;
+    border-radius: $border-radius;
+    padding: $gap-sm;
+
+    &.has-error {
+      background-color: #f9dcdd;
+    }
+
+    .rule-operator-container, .rule-filter-container {
+      flex-grow: 1;
+      margin: 0;
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    .rule-value-container {
+      @include flex-row($gap-sm);
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      margin: 0;
+      padding-left: 0;
+      border: none;
+
+      .form-label {
+        font-weight: $font-weight-semibold;
+      }
+
+      .form-control {
+        @extend .form-control;
+      }
+    }
+
+    .rule-operator-conditions-container:empty {
+      display: none;
+    }
+
+    .input-group {
+      width: auto;
+    }
+  }
+
+  .rule-value-container > .form-control {
+    width: auto;
+    flex-grow: 1;
+  }
+
+  .qb-select-container {
+    min-width: 0;
+    flex: 1;
+  }
+
+  @include mobile {
+    .rule-container {
+      flex-wrap: wrap;
+    }
+
+    .rule-filter-container, .rule-operator-container, .rule-value-container {
+      width: 100%;
+    }
+
+    .rule-value-container {
+      .form-label {
+        width: 100%;
+      }
+
+      .input-group {
+        min-width: 0;
+        flex: 1;
+      }
+    }
+
+    .rule-header {
+      order: 0
+    }
+
+    .drag-handle, .error-container {
+      order: -1;
+    }
+
+    .group-conditions {
+      order: -2;
+    }
+
+    .qb-select-container {
+      width: 100%;
+      flex-basis: auto;
+    }
+
+    .group-actions .btn {
+      @include btn-icon-sm;
+
+      .text {
+        display: none;
+      }
+    }
+  }
+}
+

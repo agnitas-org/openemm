@@ -1,26 +1,45 @@
 //$REPLACEME: red;
 
-$sideBarWidth: 50px;
-$sidebar-icon-size: 30px;
-$headerHeight: $sideBarWidth;
-$tile-header-height: 50px;
-$gap: $spacer;   // 20px
-$gap-sm: $spacer / 2; // 10px
-$gap-x-sm: $gap-sm / 2; // 5px
+$sidebar-width: 40px;
+$sidebar-icon-size: 25px;
+$header-height: $sidebar-width;
+$tile-header-height: 45px;
+
+$gap: 20px;
+$gap-md: 15px;
+$gap-sm: $gap / 2;
+$gap-x-sm: $gap-sm / 2;
+
+$sidebar-spacer: $gap-sm;
+$tiles-spacer: $gap-sm;
+$header-spacer: $gap-sm;
+$tile-body-spacer: $gap-md;
+$dropdown-spacer: $gap-x-sm;
 
 $mobile-view-threshold: 1000px;
 
-$mailing-badge-size-small: 18px;
-$mailing-badge-size: 20px;
+$x-light-grey:              $gray-100;
+$light-grey:                $gray-400;
+$dark-grey:                 $gray-700;
+$grey-blue:                 #2D3A4D;
+$dark-blue:                 #1A3258;
+$main-bg-color-dark:        #282D32;
 
-$calendar-day-diameter: 35px;
+$stat-light-blue: #80C7FF;
+$stat-very-dark-blue: #0A40A9;
+$stat-cyan: #BAF8E1;
+$stat-or-badge-blue: #569AFF;
+$stat-or-badge-dark-blue: #2872E0;
+$stat-or-badge-dark-cyan:   #11A98E;
+$stat-or-badge-dark-grey:   #3D3D3D;
+$stat-or-badge-green:       #4FB102;
+$stat-or-badge-dark-green:  #516C03;
+$stat-or-badge-red:         #880010;
+$stat-or-badge-light-grey:  #C2C2C2;
+$stat-or-badge-black:       #0A0A0A;
 
-$c-success: #69A129;
-$c-warning: #FFC700;
-$c-error:   #A91B1B;
-$c-info:    $primary;
-
-$border-default: 1px solid $gray-400;
+$border-default: 1px solid $light-grey;
+$table-border: $border-default;
 $border-transparent: 1px solid transparent;
 
 ///*
@@ -34,12 +53,8 @@ $border-transparent: 1px solid transparent;
 //
 // Font-Sizes
 // --------------------------------------------------
-
-//  $fs-xtiny   : 10px;
-//  $fs-tiny    : 11px;
-//  $fs-small   : 13px;
-  $font-size-xsm  : 18px;
-  $font-size-badge-small: 10px;
+  $font-size-md: 1.143rem; // 16px
+  $font-size-xl: 1.429rem; // 20px
 
 // --------------------------------------------------
 // [END/Font-Sizes]
@@ -63,13 +78,6 @@ $border-transparent: 1px solid transparent;
 //
 //// btn bgc
 //$c-transparent: rgba(0,0,0,0);
-
-// btn-inverse bgc
-$c-white: #fff;
-$c-sidemenu: #1A3258;
-$c-sidemenu-content: $c-white;
-
-$c-black: #000;
 
 //// menu active
 //$c-black-80: #38404a;
@@ -98,10 +106,9 @@ $c-black: #000;
 //$c-gray-33: #a9aaab;
 
 // mailings list item comment, form badge, dropdown item
-$c-gray-44: #8d8d8f;
+//$c-gray-44: #8d8d8f;
 
 //// btn text
-//$c-gray-55: #707173;
 //
 //$c-gray-60: #666;
 //
@@ -111,22 +118,15 @@ $c-gray-44: #8d8d8f;
 //
 //$c-gray-80: #303030;
 //
-//// mailings list item hover bg, dropdown item hover
-//$c-blue-03: #e5f1f8;
 //
 //// mailing content block target group bg
 //$c-blue-20: #30c0db;
-//
-//$c-blue-21: #30aadb;
 
 // btn-info bgc
-$c-blue-22: #338dc7;
+//$c-blue-22: #338dc7;
 
 // star checkbox
-$c-blue-23: #66aad5;
-
-// btn-primary bgc
-$c-blue-27: $primary;
+//$c-blue-23: #66aad5;
 
 //// btn-secondary bgc
 //$c-blue-56: #004470;
@@ -135,15 +135,12 @@ $c-blue-27: $primary;
 //$c-green-02: #f1f9e6;
 
 // btn-success bgc, toastr success
-$c-green-38: #109e4d;
+//$c-green-38: #109e4d;
 
 //$c-green-68: #0f3306;
 
 // btn-alert badge-alert
-$c-red-02: #fa6861;
-
-// btn-warning badge-warning
-$c-orange: #ffa300;
+//$c-red-02: #fa6861;
 
 //// comments
 //$c-brown-58: #6b6850;
@@ -152,8 +149,6 @@ $c-orange: #ffa300;
 //
 //
 //// mailings preview shades of blue
-//$c-blue-01: #f5f9fc;
-//$c-blue-02: #edf7ff;
 //$c-blue-05: #cce3f1;
 //$c-blue-11: #99c6e3;
 //
@@ -179,93 +174,6 @@ $c-orange: #ffa300;
 //  mobile            $c-inbox-mobile,
 //  spam              $c-inbox-spam
 //);
-//
-
-// mailings
-$c-mailing-new          : #569AFF;
-$c-mailing-active       : #57C700;
-$c-mailing-canceled     : #E12E59;
-$c-mailing-disable      : #7E7E7E;
-$c-mailing-edit         : #2872E0;
-$c-mailing-ready        : #8BF4AF;
-$c-mailing-scheduled    : #0ACD70;
-$c-mailing-sending      : #57C700;
-$c-mailing-sent         : #516C03;
-$c-mailing-norecipients : #7E7E7E;
-$c-mailing-test         : #9B45D0;
-$c-mailing-admin        : #460876;
-$c-mailing-in-generation: #8BF4AF;
-$c-mailing-generation-finished    : #0ACD70;
-
-
-$i-mailing-new          : $fa-var-file;
-$i-mailing-active       : $fa-var-play;
-$i-mailing-canceled     : $fa-var-minus-circle;
-$i-mailing-disable      : $fa-var-ban;
-$i-mailing-edit         : $fa-var-pen; // TODO fix -o
-$i-mailing-ready        : $fa-var-check;
-$i-mailing-scheduled    : $fa-var-history;
-$i-mailing-sending      : $fa-var-paper-plane; // TODO fix -o
-$i-mailing-sent         : $fa-var-paper-plane;
-$i-mailing-norecipients : $fa-var-paper-plane;
-$i-mailing-test         : $fa-var-lightbulb;
-$i-mailing-admin        : $fa-var-lightbulb; //TODO fix -o
-$i-mailing-in-generation : $fa-var-cogs;
-$i-mailing-generation-finished    : $fa-var-cog;
-
-$mailing-states:(
-  new          $c-mailing-new,
-  active       $c-mailing-active,
-  canceled     $c-mailing-canceled,
-  disable      $c-mailing-disable,
-  edit         $c-mailing-edit,
-  ready        $c-mailing-ready,
-  scheduled    $c-mailing-scheduled,
-  sending      $c-mailing-sending,
-  sent         $c-mailing-sent,
-  norecipients $c-mailing-norecipients,
-  test         $c-mailing-test,
-  admin        $c-mailing-admin,
-  in-generation $c-mailing-in-generation,
-  generation-finished    $c-mailing-generation-finished
-);
-
-$mailing-state-icons:(
-  new          $i-mailing-new,
-  active       $i-mailing-active,
-  canceled     $i-mailing-canceled,
-  disable      $i-mailing-disable,
-  edit         $i-mailing-edit,
-  ready        $i-mailing-ready,
-  scheduled    $i-mailing-scheduled,
-  sending      $i-mailing-sending,
-  sent         $i-mailing-sent,
-  norecipients $i-mailing-norecipients,
-  test         $i-mailing-test,
-  admin        $i-mailing-admin,
-  in-generation $i-mailing-in-generation,
-  generation-finished    $i-mailing-generation-finished
-);
-
-$default-states:(
- success #516C03,
- error #880010
-);
-
-$default-state-icons:(
-  success $fa-var-check,
-  error $fa-var-times
-);
-
-$workflow-states:(
-  active #4FB102,
-  complete #516C03
-);
-
-$workflow-state-icons:(
-  active $fa-var-paper-plane,
-  complete $fa-var-check
-);
 
 //$message-states:(
 //
@@ -340,53 +248,15 @@ $workflow-state-icons:(
 //  finished     $i-mailing-sent
 //);
 //
-//// Campaigns (Workflow Manager)
-//$c-campaign-open             : $c-blue-23;
-//$c-campaign-active           : #109e4d;
-//$c-campaign-inactive         : #707173;
-//$c-campaign-completed        : #387c00;
-//$c-campaign-tested           : #7f51b2;
-//$c-campaign-testing          : #109e4d;
-//$c-campaign-paused           : #707173;
-//
-//$i-campaign-open             : $fa-var-check;
-//$i-campaign-active           : $fa-var-paper-plane;
-//$i-campaign-inactive         : $fa-var-ban;
-//$i-campaign-completed        : $fa-var-check;
-//$i-campaign-tested           : $fa-var-flask;
-//$i-campaign-testing          : $fa-var-flask;
-//$i-campaign-paused           : $fa-var-pause-circle;
-//
-//$campaign-states:(
-//  open        $c-campaign-open,
-//  active      $c-campaign-active,
-//  inactive    $c-campaign-inactive,
-//  completed   $c-campaign-completed,
-//  tested      $c-campaign-tested,
-//  testing     $c-campaign-testing,
-//  paused      $c-campaign-paused
-//);
-//
-//$campaign-state-icons:(
-//  open        $i-campaign-open,
-//  active      $i-campaign-active,
-//  inactive    $i-campaign-inactive,
-//  completed   $i-campaign-completed,
-//  tested      $i-campaign-tested,
-//  testing     $i-campaign-testing,
-//  paused      $i-campaign-paused
-//);
-//
 //$linkage-action            : #338599;
 //$linkage-campaignmanager   : #33b0b8;
 //$linkage-site              : #33627d;
 
 $states: (
-  success $c-success,
-  info    $c-info,
-  warning $c-warning,
-  alert   $c-error
-  //danger   $c-state-alert
+  success $success,
+  info    $primary,
+  warning $warning,
+  alert   $danger
 );
 
 //$shadow-soft    : 0 1px 5px 0 rgba(0, 23, 39, 0.3);

@@ -169,6 +169,7 @@ public class Mailing {
 		outputDirectories.put ("meta", spool ("META"));
 		outputDirectories.put ("direct", spool ("DIRECT"));
 		outputDirectories.put ("mail", spool ("mailer"));
+		outputDirectories.put ("deleted", spool ("DELETED"));
 	}
 	
 	public Mailing done() {

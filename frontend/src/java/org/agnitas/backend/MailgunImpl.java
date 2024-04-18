@@ -254,7 +254,7 @@ public class MailgunImpl implements Mailgun {
 		try {
 			data.logging(Log.INFO, "execute", "Start creation of mails");
 
-			boolean needSamples = data.maildropStatus.isWorldMailing() && Bit.isset(data.availableMedias, Media.TYPE_EMAIL);
+			boolean needSamples = Bit.isset(data.availableMedias, Media.TYPE_EMAIL) && (data.maildropStatus.isTestMailing() || data.maildropStatus.isWorldMailing());
 			List<String> clist = data.generationClauses();
 			Set<Long> seen = prepareCollection();
 			boolean multi = data.useMultipleRecords();

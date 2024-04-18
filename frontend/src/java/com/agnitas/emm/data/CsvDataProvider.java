@@ -43,6 +43,7 @@ public class CsvDataProvider extends DataProvider {
 	private boolean removeSurplusEmptyTrailingColumns = false;
 	private boolean noHeaders = false;
 	private boolean trimData = true;
+	private boolean useExtendedCheck;
 
 	private CsvReader csvReader = null;
 	private List<String> columnNames = null;
@@ -53,6 +54,10 @@ public class CsvDataProvider extends DataProvider {
 	private Charset encoding = StandardCharsets.UTF_8;
 
 	public CsvDataProvider(final File importFile, final char[] zipPassword, String encoding, final char separator, final Character stringQuote, final char escapeStringQuote, final boolean allowUnderfilledLines, final boolean removeSurplusEmptyTrailingColumns, final boolean noHeaders, final String nullValueText) {
+		this(importFile, zipPassword, encoding, separator, stringQuote, escapeStringQuote, allowUnderfilledLines, removeSurplusEmptyTrailingColumns, noHeaders, nullValueText, false);
+	}
+
+	public CsvDataProvider(final File importFile, final char[] zipPassword, String encoding, final char separator, final Character stringQuote, final char escapeStringQuote, final boolean allowUnderfilledLines, final boolean removeSurplusEmptyTrailingColumns, final boolean noHeaders, final String nullValueText, boolean useExtendedCheck) {
 		super(importFile, zipPassword);
 		this.encoding = Charset.forName(encoding);
 		this.separator = separator;
@@ -62,6 +67,7 @@ public class CsvDataProvider extends DataProvider {
 		this.removeSurplusEmptyTrailingColumns = removeSurplusEmptyTrailingColumns;
 		this.noHeaders = noHeaders;
 		this.nullValueText = nullValueText;
+		this.useExtendedCheck = useExtendedCheck;
 	}
 
 	@Override
@@ -81,7 +87,7 @@ public class CsvDataProvider extends DataProvider {
 	@Override
 	public Map<String, DbColumnType> scanDataPropertyTypes(final Map<String, Tuple<String, String>> mapping) throws Exception {
 		if (dataTypes == null) {
-			try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote)) {
+			try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote, useExtendedCheck)) {
 				scanCsvReader.setStringQuoteEscapeCharacter(escapeStringQuote);
 				scanCsvReader.setAlwaysTrim(trimData);
 				scanCsvReader.setIgnoreEmptyLines(true);
@@ -113,7 +119,7 @@ public class CsvDataProvider extends DataProvider {
 	@Override
 	public List<String> getAvailableDataPropertyNames() throws Exception {
 		if (columnNames == null) {
-			try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote)) {
+			try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote, useExtendedCheck)) {
 				scanCsvReader.setStringQuoteEscapeCharacter(escapeStringQuote);
 				scanCsvReader.setAlwaysTrim(trimData);
 				scanCsvReader.setIgnoreEmptyLines(true);
@@ -155,7 +161,7 @@ public class CsvDataProvider extends DataProvider {
 	public long getItemsAmountToImport() throws Exception {
 		if (itemsAmount == null) {
 			if (getImportDataAmount() < 1024 * 1024 * 1024) {
-				try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote)) {
+				try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote, useExtendedCheck)) {
 					scanCsvReader.setStringQuoteEscapeCharacter(escapeStringQuote);
 					scanCsvReader.setAlwaysTrim(trimData);
 					scanCsvReader.setIgnoreEmptyLines(true);
@@ -278,7 +284,7 @@ public class CsvDataProvider extends DataProvider {
 		}
 
 		try {
-			csvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote);
+			csvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote, useExtendedCheck);
 			csvReader.setStringQuoteEscapeCharacter(escapeStringQuote);
 			csvReader.setAlwaysTrim(trimData);
 			csvReader.setIgnoreEmptyLines(true);

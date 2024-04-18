@@ -6,6 +6,7 @@ import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
+import com.agnitas.emm.core.supervisor.form.SupervisorOverviewFilter;
 import com.agnitas.emm.util.SortDirection;
 
 /**
@@ -18,7 +19,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     }
     
     @Override
-    public List<Supervisor> listAllSupervisors(SupervisorSortCriterion criterion, SortDirection direction) throws SupervisorException {
+    public List<Supervisor> listAllSupervisors(SupervisorSortCriterion criterion, SortDirection direction, SupervisorOverviewFilter filter) throws SupervisorException {
         return null;
     }
     

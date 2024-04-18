@@ -1,0 +1,34 @@
+//Some connection styles defined in Editor.defaults of editor_redesigned.js 
+
+//#connectRapidButton, // todo
+.node-connect-button {
+  position: absolute;
+  visibility: hidden;
+  width: 16px;
+  height: 16px;
+  background-color: #dadada;
+  border-radius: 3px;
+}
+
+.node-connect-button {
+  top: 0;
+  right: 0;
+  color: $campaign-icon-color;
+}
+
+//#connectRapidButton:hover,
+.node-connect-button:hover {
+  background-color: #cccccc; // todo
+}
+
+//#connectRapidButton img, // todo
+.node-connect-button svg {
+  display: block;
+  position: absolute;
+  @include size(100%, 100%);
+  z-index: 1;
+}
+
+.jtk-connector.jtk-hover {
+  z-index: 11; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_HOVER */
+}
