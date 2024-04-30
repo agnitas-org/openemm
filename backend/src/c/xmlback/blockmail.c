@@ -136,6 +136,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> epoch = 0;
 		b -> rdir_content_links = false;
 		b -> omit_list_informations_for_doi = true;
+		b -> add_honeypot_link = Add_Top;
 		b -> domain = NULL;
 		b -> mailtrack = NULL;
 		
@@ -150,6 +151,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> selector = NULL;
 		b -> convert_to_entities = false;
 		b -> onepixel_url = NULL;
+		b -> honeypot_url = NULL;
 		b -> link_maker = NULL;
 		b -> anon_url = NULL;
 		b -> secret_key = NULL;
@@ -299,6 +301,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			free (b -> selector);
 		if (b -> onepixel_url)
 			xmlBufferFree (b -> onepixel_url);
+		if (b -> honeypot_url)
+			xmlBufferFree (b -> honeypot_url);
 		if (b -> link_maker)
 			buffer_free (b -> link_maker);
 		if (b -> anon_url)
@@ -620,6 +624,9 @@ blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/
 	}
 	if (tmp = company_info_find (b, "omit-list-informations-for-doi")) {
 		b -> omit_list_informations_for_doi = atob (tmp -> val);
+	}
+	if (tmp = company_info_find (b, "add-honeypot-link")) {
+		b -> add_honeypot_link = add_parse (tmp -> val, Add_Top);
 	}
 }/*}}}*/
 void

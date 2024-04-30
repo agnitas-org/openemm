@@ -45,6 +45,9 @@ class OpenEMM (Sanity):
 	
 	def __db_sanity (self, r: Report) -> None:
 		with DB () as db:
+			db.update ('UPDATE company_tbl SET enabled_uid_version = 0 WHERE enabled_uid_version IS NULL OR enabled_uid_version != 0')
+			db.update ('UPDATE mailing_tbl SET creation_date = change_date WHERE company_id = 1 AND creation_date IS NULL AND change_date IS NOT NULL')
+			db.sync ()
 			for (key, value) in [
 				('mask-envelope-from', 'false'),
 				('direct-path', 'true')

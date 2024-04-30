@@ -13,6 +13,7 @@ from	__future__ import annotations
 import	os, re, time, csv
 from	io import StringIO
 from	datetime import datetime
+from	xml.sax import xmlreader
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, IO, Iterator, List, Set, Tuple, Type
 from	typing import overload
@@ -20,7 +21,7 @@ from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import Line, csv_default, csv_named_reader
-from	.parser import unit, ParseTimestamp
+from	.parser import unit, parse_timestamp
 from	.stream import Stream
 from	.template import MessageCatalog, Template
 from	.tools import Plugin, atob, listsplit
@@ -305,9 +306,8 @@ None to use the default "date"."""
 			val = tmpl.fill (ns, lang = self.lang, mc = self.mc)
 		return val
 
-	__date_parser = ParseTimestamp ()
 	def __dateparse (self, s: str) -> datetime:
-		rc = self.__date_parser (s)
+		rc = parse_timestamp (s)
 		if rc is None:
 			raise ValueError (f'unparsable date exprssion {s!r}')
 		return rc
@@ -668,7 +668,7 @@ plugin code to prefill it using its own namespace."""
 			wr.close ('config')
 			wr.end ()
 	
-	def __read_section (self, path: str, name: str, attrs: Dict[str, str]) -> None:
+	def __read_section (self, path: str, name: str, attrs: xmlreader.AttributesImpl) -> None:
 		try:
 			sname: Optional[str] = attrs['name']
 			if sname == '*':
@@ -677,7 +677,7 @@ plugin code to prefill it using its own namespace."""
 			sname = None
 		self._section = sname
 	
-	def __read_entry (self, path: str, name: str, attrs: Dict[str, str], content: Union[None, bool, str]) -> None:
+	def __read_entry (self, path: str, name: str, attrs: xmlreader.AttributesImpl, content: Union[None, bool, str]) -> None:
 		value = content if isinstance (content, str) else ''
 		try:
 			self.sections[self._section][name] = value

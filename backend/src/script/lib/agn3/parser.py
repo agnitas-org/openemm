@@ -19,12 +19,12 @@ from	itertools import takewhile, zip_longest
 from	urllib.parse import quote, unquote
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
 from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
-from	typing import cast
+from	typing import cast, overload
 from	.exceptions import error
 from	.ignore import Ignore
 from	.stream import Stream
 #
-__all__ = ['ParseTimestamp', 'Period', 'Unit', 'unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
+__all__ = ['ParseTimestamp', 'parse_timestamp', 'Period', 'Unit', 'unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
 #
 Parsable = Union[None, int, float, str]
 #
@@ -91,7 +91,7 @@ Otherwise None is returned."""
 					now = time.localtime ()
 					return datetime (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
 				if expr == 'epoch':
-					return datetime (1970, 1, 1)
+					return datetime.fromtimestamp (0)
 			#
 			if isinstance (expr, int) or isinstance (expr, float):
 				return datetime.fromtimestamp (expr)
@@ -110,6 +110,7 @@ Otherwise None is returned."""
 	def dump (self, d: datetime) -> str:
 		"""returns ``d'' (datetime.datetime) as a parsable string representation"""
 		return f'{d.year:04d}-{d.month:02d}-{d.day:02d} {d.hour:02d}:{d.minute:02d}:{d.second:02d}'
+parse_timestamp = ParseTimestamp ()
 
 class Period (ParseTimestamp):
 	"""Represents a period of time"""
@@ -196,7 +197,11 @@ convertion values can be added. Examples:
 		"""Sets a unit value ``mult'' for unit ``key''"""
 		self.eunit[key] = mult
 
-	def __call__ (self, expr: Parsable, default: int = 0, default_multiply: int = 1) -> int:
+	@overload
+	def __call__ (self, expr: Parsable, default: None, default_multiply: int = ...) -> Optional[int]: ...
+	@overload
+	def __call__ (self, expr: Parsable, default: int = ..., default_multiply: int = ...) -> int: ...
+	def __call__ (self, expr: Parsable, default: Optional[int] = 0, default_multiply: int = 1) -> Optional[int]:
 		"""Parses a unit string"""
 		if expr is None:
 			return default
@@ -205,7 +210,7 @@ convertion values can be added. Examples:
 		if isinstance (expr, float):
 			return int (expr)
 		#
-		with Ignore (ValueError):
+		with Ignore (ValueError, KeyError):
 			rc = 0
 			for m in self.__eparse.finditer (expr):
 				(i, u) = m.groups ()
@@ -222,7 +227,6 @@ unit = Unit ()
 class Line (Protocol):
 	def __init__ (self, *args: Any, **kws: Any): ...
 	def __getattr__ (self, name: str) -> Any: ...
-	def __getitem__ (self, item: int) -> Any: ...
 
 class Field (NamedTuple):
 	name: str

@@ -527,7 +527,7 @@ sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver
 			for (n = 0; rec -> bcc[n]; ++n)
 				if (bcc_head = create_bcc_head (rec, blockmail, rec -> bcc[n], n)) {
 					if (rec -> dkim)
-						sign_mail (blockmail, bcc_head);
+						sign_mail_using_dkim (blockmail, bcc_head);
 					sendmail_write_spoolfile (blockmail, s, spool, false, 0, header_create_sendmail_spoolfile_header (bcc_head));
 					header_free (bcc_head);
 				} else
@@ -657,7 +657,7 @@ sendmail_owrite_inject (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receive
 		for (n = 0; rec -> bcc[n]; ++n)
 			if (bcc_head = create_bcc_head (rec, blockmail, rec -> bcc[n], n)) {
 				if (rec -> dkim)
-					sign_mail (blockmail, bcc_head);
+					sign_mail_using_dkim (blockmail, bcc_head);
 				sendmail_inject_mail (blockmail, s, NULL, NULL, bcc_head);
 				header_free (bcc_head);
 			} else

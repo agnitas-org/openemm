@@ -10,12 +10,13 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, logging, errno, time, fcntl
+import	os, logging, time, fcntl
 from	datetime import datetime
 from	functools import partial
 from	typing import Optional
-from	typing import Generator, List, Set
+from	typing import Generator, List, NamedTuple, Set
 from	.definitions import base
+from	.email import manage_procmailrc
 from	.exceptions import error
 from	.io import create_path
 from	.pattern import isnum
@@ -56,6 +57,11 @@ created and all relevant information is stored in an instance of this
 class. One should use this class as an iterator which returns the full
 path to the next mail file to process."""
 		__slots__ = ['path', 'ref', 'files', 'cur']
+		class Store (NamedTuple):
+			path: str
+			position: int
+			length: int
+
 		def __init__ (self, path: str, ref: Mailspool) -> None:
 			self.path = path
 			self.ref = ref
@@ -131,12 +137,14 @@ path to the next mail file to process."""
 			else:
 				logger.debug ('no current file selected')
 				
-		def success (self, sender: Optional[str] = None) -> None:
+		def success (self, sender: Optional[str] = None) -> Optional[Mailspool.Workspace.Store]:
 			"""Mark processing of a file as successful and move it to store"""
+			rc: Optional[Mailspool.Workspace.Store] = None
 			if self.cur is not None:
 				dest = os.path.join (self.ref.store, '{timestamp}-mbox'.format (timestamp = self.__timestamp (True)))
 				try:
 					with open (self.cur, 'rb') as fdi, open (dest, 'ab') as fdo:
+						position = fdo.tell ()
 						if self.ref.store_size and self.ref.store_size < 65536:
 							bufsize = self.ref.store_size
 						else:
@@ -160,11 +168,13 @@ path to the next mail file to process."""
 							logger.debug (f'{self.cur}: removed')
 						except OSError as e:
 							logger.exception (f'{self.cur}: failed ro remove: {e}')
+						rc = Mailspool.Workspace.Store (path = dest, position = position, length = copied)
 				except IOError as e:
 					logger.exception (f'{self.cur}: failed to open: {e}')
 					self.fail ()
 			else:
 				logger.debug ('no current file selected')
+			return rc
 			
 	def __init__ (self,
 		spooldir: str,
@@ -288,20 +298,7 @@ limit hard drive usage in case of high volume mail traffic."""
 the incoming spool directory. If ``content'' is None, a suitable
 content is created, otherwise it must be provided. ``procmailrc'' is
 the path to the target file."""
-		if content is None:
-			content = f'# created by agn3.spool.Mailspool\n:0:\n{self.incoming}/.\n'
-		try:
-			with open (procmailrc, 'r') as fd:
-				ocontent = fd.read ()
-		except IOError as e:
-			if e.args[0] != errno.ENOENT:
-				logger.warning (f'Failed to read "{procmailrc}": {e}')
-			ocontent = ''
-		if ocontent != content:
-			try:
-				with open (procmailrc, 'w') as fd:
-					fd.write (content)
-				os.chmod (procmailrc, 0o600)
-				logger.info (f'Created new/Updated procmailrc file "{procmailrc}".')
-			except (IOError, OSError) as e:
-				logger.exception (f'Failed to install procmailrc file "{procmailrc}": {e}')
+		manage_procmailrc (
+			content = content if content is not None else f'# created by agn3.spool.Mailspool\n:0:\n{self.incoming}/.\n',
+			procmailrc = procmailrc
+		)

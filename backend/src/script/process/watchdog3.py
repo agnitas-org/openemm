@@ -144,6 +144,7 @@ class Main (CLI):
 	
 	def apply_namespaces (self, namespaces: List[str]) -> None:
 		ns: Dict[str, str] = {}
+		value: Optional[str]
 		with EMMConfig () as emmcfg:
 			for entry in namespaces:
 				with Ignore (ValueError):

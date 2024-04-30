@@ -58,7 +58,7 @@ class BavUpdate (Runtime):
 				rq = db.querys ('SELECT mailloop_domain FROM company_tbl WHERE company_id = 1')
 				if rq is not None and self.valid_domain (rq.mailloop_domain):
 					self.filter_domain = rq.mailloop_domain
-		self.mta = MTA ()
+		self.mta = MTA (service = 'bav')
 		self.domains: List[str] = []
 		self.mtdom: Dict[str, int] = {}
 		self.prefixes = ['aml_', 'reply_']

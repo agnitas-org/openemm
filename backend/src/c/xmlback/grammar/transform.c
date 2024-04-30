@@ -225,17 +225,20 @@ transform (buffer_t *buf, const xmlChar *input, int input_length, buffer_t *pars
 					}
 				} else if (isdigit (input[n]) || ((input[n] == '.') && (n + 1 < input_length) && (xmlCharLength (input[n + 1] == 1) && isdigit (input[n + 1])))) {
 					int	state, dcount;
+					bool_t	fraction;
 					
 					if (input[n] == '.') {
 						buffer_setch (scratch, '0');
 						state = 2;
 						dcount = 1;
+						fraction = true;
 					} else {
 						state = 1;
 						if (isdigit (input[n]))
 							dcount = 1;
 						else
 							dcount = 0;
+						fraction = false;
 					}
 					buffer_setb (scratch, input[n]);
 					++n;
@@ -255,11 +258,14 @@ transform (buffer_t *buf, const xmlChar *input, int input_length, buffer_t *pars
 								buffer_appendb (scratch, input[n]);
 								++n;
 								state = 2;
+								fraction = true;
 							} else
 								state = 0;
 						} else
 							state = 0;
 					}
+					if (! fraction)
+						buffer_appends (scratch, ".0");
 					if (! (token = token_alloc (T_NUM, buffer_string (scratch))))
 						priv.errcnt++;
 				} else {

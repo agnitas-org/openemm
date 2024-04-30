@@ -400,6 +400,8 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 						alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
 						if (quiet)
 							alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
+						lua_createtable (il -> lua, 0, 0);
+						lua_setglobal (il -> lua, "argv");
 						if (alua_load (il -> lua, id, run -> code, run -> length)) {
 							if (unittest)
 								rc = do_unittest (il, quiet, benchmark);

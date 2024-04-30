@@ -94,6 +94,8 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> chunks = 1;
 		r -> size = 0;
 		r -> dkim = false;
+		r -> revalidate_mfrom_default = blockmail -> revalidate_mfrom;
+		r -> revalidate_mfrom = r -> revalidate_mfrom_default;
 		if ((! r -> message_id) ||
 		    (! r -> header) ||
 		    (! r -> rvdata) ||
@@ -174,6 +176,7 @@ receiver_clear (receiver_t *r) /*{{{*/
 	r -> chunks = 1;
 	r -> size = 0;
 	r -> dkim = false;
+	r -> revalidate_mfrom = r -> revalidate_mfrom_default;
 }/*}}}*/
 void
 receiver_set_data_l (receiver_t *rec, const char *key, long data) /*{{{*/

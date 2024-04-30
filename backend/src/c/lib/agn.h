@@ -337,8 +337,21 @@ typedef struct cvt	cvt_t;
 /**
  * systemconfig
  */
-typedef struct config	config_t;
+typedef struct systemconfig
+			systemconfig_t;
 
+/*
+ * build.spec
+ */
+typedef struct { /*{{{*/
+	char		*version;
+	const char	*timestamp;
+	const char	*host;
+	const char	*user;
+	/*}}}*/
+}	build_t;
+
+extern char		*buffer_dump (buffer_t *b);
 extern buffer_t		*buffer_alloc (int nsize);
 extern buffer_t		*buffer_copy (const buffer_t *source);
 extern buffer_t		*buffer_realloc (buffer_t *b, int nsize);
@@ -388,9 +401,14 @@ extern void		buffer_poke (buffer_t *b, int pos, byte_t value);
 extern int		buffer_index (const buffer_t *b, const byte_t *content, int clen);
 extern int		buffer_indexsn (const buffer_t *b, const char *s, int slen);
 extern int		buffer_indexs (const buffer_t *b, const char *s);
+extern bool_t		buffer_endswith (const buffer_t *b, const byte_t *needle, int nlen);
+extern bool_t		buffer_endswithsn (const buffer_t *b, const char *s, int slen);
+extern bool_t		buffer_endswiths (const buffer_t *b, const char *s);
+extern bool_t		buffer_endswithch (const buffer_t *b, char ch);
 extern void		buffer_ltrim (buffer_t *b);
 extern void		buffer_rtrim (buffer_t *b);
 extern void		buffer_trim (buffer_t *b);
+extern void		buffer_universal_newline (buffer_t *b, int start);
 
 extern pool_t		*pool_alloc (void);
 extern pool_t		*pool_free (pool_t *p);
@@ -545,10 +563,10 @@ extern char		*strucat (const char *s, ...);
 extern char		*get_fqdn (void);
 extern bool_t		encode_url (const byte_t *input, int ilen, buffer_t *dest);
 extern char		*extract_address (const char *hline);
-extern char		*_extract_address (const char *hline);
 extern const char	*addr_element (const char *chunk, int *matchlength);
 extern void		norm_element (char *chunk);
 extern char		*split_element (char *chunk);
+extern bool_t		match_address (const char *email1, const char *email2);
 extern unsigned long	unhexn (const char *str, int len);
 extern unsigned long	unhex (const char *str);
 extern char		*which (const char *pgm);
@@ -589,10 +607,13 @@ extern cvt_t		*cvt_alloc (void);
 extern cvt_t		*cvt_free (cvt_t *c);
 extern convert_t	*cvt_find (cvt_t *c, const char *charset);
 
-extern config_t		*systemconfig_free (config_t *c);
-extern config_t		*systemconfig_alloc (void);
-extern const char	*systemconfig_find (config_t *c, const char *key);
-extern bool_t		systemconfig_get (config_t *c, int idx, const char **key, const char **value);
+extern systemconfig_t	*systemconfig_free (systemconfig_t *c);
+extern systemconfig_t	*systemconfig_alloc (bool_t use_extra);
+extern const char	*systemconfig_find (systemconfig_t *c, const char *key);
+extern bool_t		systemconfig_get (systemconfig_t *c, int idx, const char **key, const char **value);
+
+extern build_t		*build_alloc (void);
+extern build_t		*build_free (build_t *b);
 
 # ifdef		__OPTIMIZE__
 static inline bool_t

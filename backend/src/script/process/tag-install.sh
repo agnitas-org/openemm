@@ -12,6 +12,23 @@
 #
 . $HOME/scripts/config.sh
 #
+tagnames() {
+	python3 -c 'import sys, os, re
+from contextlib import suppress
+
+tagnames = ["agn" + (os.path.basename (sys.argv[1]).split (".")[0]).upper ()]
+
+with suppress (IOError), open (sys.argv[1]) as fd:
+	pattern = re.compile ("install:(.*);$")
+	for line in fd:
+		if (mtch := pattern.search (line)) is not None:
+			new_tagnames = [f"agn{_f.upper ()}:{_f}" for _f in mtch.group (1).replace (",", " ").split ()]
+			if new_tagnames:
+				tagnames = new_tagnames
+			break
+print (" ".join (f"-t {_t}" for _t in tagnames))
+' "$1"
+}
 installer() {
 	if [ $# -eq 2 ]; then
 		opts="$1"
@@ -32,22 +49,10 @@ installer() {
 		;;
 	esac
 	if [ $irc -eq 0 ]; then
-		tname="agn`basename $script | cut -d. -f1 | tr a-z A-Z`"
-		$cmd -t "$tname" "$script"
+		$cmd `tagnames $script` $script
 		if [ $? -ne 0 ]; then
 			log "ERROR: Failed to install $script"
 			irc=1
-		else
-			if [ "`basename $script`" = "filter.lua" ]; then
-				for func in `awk '/function t_/ { print $2 }' $script | cut -d_ -f2`; do
-					ufunc="`echo $func | tr a-z A-Z`"
-					$cmd -Tt agn${ufunc}:t_$func $fname
-					if [ $? -ne 0 ]; then
-						log "ERROR: Failed to install tag agn$ufunc for $script"
-						irc=1
-					fi
-				done
-			fi
 		fi
 	fi
 	return $irc

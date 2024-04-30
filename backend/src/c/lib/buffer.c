@@ -46,6 +46,51 @@ do_size (buffer_t *b, int nsize) /*{{{*/
 	return b -> valid;
 }/*}}}*/
 
+char *
+buffer_dump (buffer_t *b) /*{{{*/
+{
+	buffer_t	*dump;
+	
+	if (dump = buffer_alloc (buffer_length (b) + 128)) {
+		char		*rc = NULL;
+		bool_t		ok;
+		int		n;
+		const byte_t	*ptr;
+		
+		ok = buffer_appendch (dump, '"');
+		for (n = 0, ptr = b -> buffer; ok && (n < b -> length); ++n) {
+			byte_t	ch = *ptr++;
+			
+			switch (ch) {
+			case '\b':	ok = buffer_appends (dump, "\\b");	break;
+			case '\f':	ok = buffer_appends (dump, "\\f");	break;
+			case '\n':	ok = buffer_appends (dump, "\\n");	break;
+			case '\r':	ok = buffer_appends (dump, "\\r");	break;
+			case '\t':	ok = buffer_appends (dump, "\\t");	break;
+			case '\v':	ok = buffer_appends (dump, "\\v");	break;
+			case '"':
+			case '\\':
+				ok = buffer_appendch (dump, '\\') && buffer_appendb (dump, ch);
+				break;
+			default:
+				if ((ch >= 0x20) && (ch < 127))
+					ok = buffer_appendb (dump, ch);
+				else
+					ok = buffer_format (dump, "\\x%02X", ch);
+				break;
+			}
+		}
+		if (ok && (ok = buffer_appendch (dump, '"')))
+			rc = buffer_stealstring (dump);
+		buffer_free (dump);
+		if (rc && (! ok)) {
+			free (rc);
+			rc = NULL;
+		}
+		return rc;
+	}
+	return NULL;
+}/*}}}*/
 /** Allocate a buffer.
  * All elements are set and a buffer is preallocated, 
  * if <i>nsize</i> is bigger than 0
@@ -705,6 +750,29 @@ buffer_indexs (const buffer_t *b, const char *s) /*{{{*/
 	return buffer_index (b, (const byte_t *) s, strlen (s));
 }/*}}}*/
 
+bool_t
+buffer_endswith (const buffer_t *b, const byte_t *needle, int nlen) /*{{{*/
+{
+	if (b -> valid && (b -> length >= nlen) && (! memcmp (b -> buffer + b -> length - nlen, needle, nlen)))
+		return true;
+	return false;
+}/*}}}*/
+bool_t
+buffer_endswithsn (const buffer_t *b, const char *s, int slen) /*{{{*/
+{
+	return buffer_endswith (b, (const byte_t *) s, slen);
+}/*}}}*/
+bool_t
+buffer_endswiths (const buffer_t *b, const char *s) /*{{{*/
+{
+	return buffer_endswithsn (b, s, strlen (s));
+}/*}}}*/
+bool_t
+buffer_endswithch (const buffer_t *b, char ch) /*{{{*/
+{
+	return buffer_endswithsn (b, & ch, 1);
+}/*}}}*/
+
 /** remove leading/trailing whitespaces
  */
 void
@@ -737,6 +805,25 @@ buffer_trim (buffer_t *b) /*{{{*/
 	buffer_rtrim (b);
 	buffer_ltrim (b);
 }/*}}}*/
+void
+buffer_universal_newline (buffer_t *b, int start) /*{{{*/
+{
+	int	n;
+	byte_t	*src, *dst;
+	
+	for (n = start, src = dst = b -> buffer + start; n < b -> length; ++n)
+		if (*src == '\r') {
+			++src;
+			if ((n + 1 == b -> length) || (*src != '\n'))
+				*dst++ = '\n';
+		} else if (src != dst)
+			*dst++ = *src++;
+		else
+			++src, ++dst;
+	if (src != dst)
+		b -> length -= src - dst;
+}/*}}}*/
+	
 struct pool { /*{{{*/
 	buffer_t	*root;
 	/*}}}*/

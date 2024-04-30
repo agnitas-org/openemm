@@ -66,33 +66,13 @@ adkim_match (adkim_t *a, const char *domain) /*{{{*/
 
 struct sdkim { /*{{{*/
 	DKIM_LIB	*lib;
-	char		*domain;
-	dkim_sigkey_t	key;
+	adkim_t		*default_key;
 	char		*ident;
-	char		*selector;
 	char		*ref;
 	char		*column;
 	int		cindex;
 	/*}}}*/
 };
-static const dkim_sigkey_t
-castkey (const char *key) /*{{{*/
-{
-	return (dkim_sigkey_t) key;
-}/*}}}*/
-static dkim_sigkey_t
-copykey (const char *key) /*{{{*/
-{
-	int		klen = strlen (key);
-	dkim_sigkey_t	rc;
-	
-	if (rc = malloc (klen + 1)) {
-		if (klen > 0)
-			memcpy (rc, key, klen);
-		rc[klen] = '\0';
-	}
-	return rc;
-}/*}}}*/
 static bool_t
 parse_column (sdkim_t *s, const char *column) /*{{{*/
 {
@@ -158,17 +138,16 @@ sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const 
 
 	if (s = (sdkim_t *) malloc (sizeof (sdkim_t))) {
 		s -> lib = NULL;
-		s -> domain = NULL;
-		s -> key = NULL;
+		s -> default_key = NULL;
 		s -> ident = NULL;
-		s -> selector = NULL;
 		s -> ref = NULL;
 		s -> column = NULL;
 		s -> cindex = -1;
-		if ((s -> domain = strdup (domain)) &&
-		    (s -> key = copykey (key)) &&
+		if ((s -> default_key = adkim_alloc ()) &&
+		    (s -> default_key -> domain = strdup (domain)) &&
+		    (s -> default_key -> key = strdup (key)) &&
+		    (s -> default_key -> selector = strdup (selector)) &&
 		    ((! ident) || (s -> ident = strdup (ident))) &&
-		    (s -> selector = strdup (selector)) &&
 		    parse_column (s, column) &&
 		    (s -> lib = dkim_init (NULL, NULL))) {
 			DKIM_STAT	st;
@@ -227,14 +206,10 @@ sdkim_free (sdkim_t *s) /*{{{*/
 	if (s) {
 		if (s -> lib)
 			dkim_close (s -> lib);
-		if (s -> domain)
-			free (s -> domain);
-		if (s -> key)
-			free (s -> key);
+		if (s -> default_key)
+			adkim_free (s -> default_key);
 		if (s -> ident)
 			free (s -> ident);
-		if (s -> selector)
-			free (s -> selector);
 		if (s -> ref)
 			free (s -> ref);
 		if (s -> column)
@@ -298,7 +273,7 @@ ignore_header (head_t *h) /*{{{*/
 			return true;
 	return false;
 }/*}}}*/
-char *
+static char *
 sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char *ident, buffer_t *body) /*{{{*/
 {
 	char		*rc;
@@ -317,15 +292,11 @@ sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char
 	if (! (scratch = buffer_alloc (512)))
 		return rc;
 	s = blockmail -> signdkim;
-	if (adkim) {
-		domain = adkim -> domain;
-		selector = adkim -> selector;
-		key = castkey (adkim -> key);
-	} else {
-		domain = s -> domain;
-		selector = s -> selector;
-		key = s -> key;
-	}
+	if (! adkim)
+		adkim = s -> default_key;
+	domain = adkim -> domain;
+	selector = adkim -> selector;
+	key = (dkim_sigkey_t) adkim -> key;
 	if (! (dkim = dkim_sign (s -> lib,
 				 (const unsigned char *) domain,
 				 NULL,
@@ -421,46 +392,44 @@ sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char
 	buffer_free (scratch);
 	return rc;
 }/*}}}*/
-
 void
-sign_mail (blockmail_t *blockmail, header_t *header) /*{{{*/
+sign_mail_using_dkim (blockmail_t *blockmail, header_t *header) /*{{{*/
 {
-	if (header && header -> head) {
+	if (blockmail -> signdkim && header && header -> head) {
 		head_t		*cur;
 		head_t		*received;
 		char		*dkhd;
 		const char	*from;
 		adkim_t		*adkim;
 		char		*ident;
-		const char	*domain;
+		const char	*use_ident;
+		char		*domain;
+		char		*ptr;
 		int		n;
 
 		received = NULL;
 		adkim = NULL;
 		ident = NULL;
-		for (cur = header -> head; cur && (! adkim); cur = cur -> next)
+		for (cur = header -> head; cur; cur = cur -> next)
 			if (head_match (cur, "received"))
 				received = cur;
-			else if ((blockmail -> adkim_count > 0) &&
-				 (! adkim) && 
-				 (head_match (cur, "from")) &&
-				 (from = head_value (cur)) &&
-				 (ident = extract_address (from))) {
-				if (domain = strchr (ident, '@')) {
-					++domain;
-					for (n = 0; n < blockmail -> adkim_count; ++n)
-						if (adkim_match (blockmail -> adkim[n], domain)) {
-							adkim = blockmail -> adkim[n];
-							break;
-						}
+			else if ((! ident) && head_match (cur, "from") && (from = head_value (cur)))
+				ident = extract_address (from);
+		use_ident = NULL;
+		if (ident && (domain = strchr (ident, '@'))) {
+			++domain;
+			for (ptr = domain; *ptr; ++ptr)
+				*ptr = tolower (*ptr);
+			for (n = 0; n < blockmail -> adkim_count; ++n)
+				if (adkim_match (blockmail -> adkim[n], domain)) {
+					adkim = blockmail -> adkim[n];
+					break;
 				}
-				if (! adkim) {
-					free (ident);
-					ident = NULL;
-				}
-			}
+			if (adkim || adkim_match (blockmail -> signdkim -> default_key, domain))
+				use_ident = ident;
+		}
 		header_remove (header, "dkim-signature");
-		if (dkhd = sdkim_sign (blockmail, header, adkim, ident, blockmail -> body)) {
+		if (dkhd = sdkim_sign (blockmail, header, adkim, use_ident, blockmail -> body)) {
 			header_insert (header, dkhd, received);
 			free (dkhd);
 		}

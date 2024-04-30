@@ -13,7 +13,7 @@ from	typing import Any, Optional
 from	typing import Dict, List
 from	typing import cast
 from	.exceptions import error
-from	.definitions import syscfg
+from	.definitions import dbid_default
 from	.dbconfig import DBConfig
 from	.dbcore import Core
 from	._db import Drivers
@@ -28,15 +28,15 @@ and create an instance for it."""
 	__slots__: List[str] = []
 	dbcfg: Optional[DBConfig] = None
 	@classmethod
-	def request (cls, provided_id: Optional[str] = None) -> Core:
+	def request (cls, provided_dbid: Optional[str] = None) -> Core:
 		"""Creates a new database driver instance
 
 according to ``id'' the matching driver and the access parameter are
 selected from the database configuration."""
-		id = provided_id if provided_id is not None else syscfg.get ('dbid', 'emm')
+		dbid = provided_dbid if provided_dbid is not None else dbid_default
 		if cls.dbcfg is None:
 			cls.dbcfg = DBConfig ()
-		cfg = cls.dbcfg[id]
+		cfg = cls.dbcfg[dbid]
 		dbms = cfg ('dbms')
 		if dbms is not None:
 			dbms = dbms.lower ()

@@ -18,7 +18,7 @@ from	typing import cast
 from	..definitions import base, fqdn, user, version
 from	..exceptions import error
 from	..ignore import Ignore
-from	..parser import ParseTimestamp, Field, Lineparser
+from	..parser import parse_timestamp, Field, Lineparser
 from	..stream import Stream
 #
 __all__ = ['spec', 'require']
@@ -26,11 +26,10 @@ __all__ = ['spec', 'require']
 class Spec:
 	__slots__ = ['spec']
 	build_spec_path: Final[str] = os.path.join (base, 'scripts', 'build.spec')
-	timestamp_parser = ParseTimestamp ()
 	parser = Lineparser (
 		lambda a: a.split (';', 3),
 		'version',
-		Field ('timestamp', lambda t: Spec.timestamp_parser (t)),
+		Field ('timestamp', lambda t: parse_timestamp (t)),
 		'host',
 		'user'
 	)

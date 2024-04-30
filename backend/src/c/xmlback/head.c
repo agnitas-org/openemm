@@ -125,8 +125,13 @@ head_empty (head_t *h) /*{{{*/
 bool_t
 head_add (head_t *h, const byte_t *chunk, int len) /*{{{*/
 {
-	if (buffer_append (h -> h, chunk, len) && head_find_name (h, NULL))
-		return true;
+	int	old_len = buffer_length (h -> h);
+
+	if (buffer_append (h -> h, chunk, len)) {
+		buffer_universal_newline (h -> h, old_len);
+		if (head_find_name (h, NULL))
+			return true;
+	}
 	return false;
 }/*}}}*/
 static bool_t
@@ -269,6 +274,16 @@ header_scratch (header_t *header, int size) /*{{{*/
 	return NULL;
 }/*}}}*/
 bool_t
+header_set_sender (header_t *h, const char *sender) /*{{{*/
+{
+	int	slen = strlen (sender);
+	
+	if (h -> sender || (h -> sender = buffer_alloc (slen + 1))) {
+		return buffer_setsn (h -> sender, sender, slen);
+	}
+	return false;
+}/*}}}*/
+bool_t
 header_set_recipient (header_t *h, const char *recipient, bool_t normalize) /*{{{*/
 {
 	int	rlen = strlen (recipient);
@@ -285,75 +300,109 @@ header_set_charset (header_t *h, cvt_t *cvt, const char *charset) /*{{{*/
 		h -> convert = cvt_find (cvt, charset);
 }/*}}}*/
 static bool_t
-header_parse (header_t *h, buffer_t *source, bool_t full) /*{{{*/
+header_parse_raw (header_t *h, buffer_t *source, bool_t full) /*{{{*/
 {
-	bool_t		rc;
-
-	rc = false;
+	bool_t		rc = true;
+	const byte_t	*head = buffer_content (source);
+	int		hlen = buffer_length (source);
+	head_t		*current = NULL;
+	head_t		*next;
+	const byte_t	*ptr;
+	int		pos, len;
+	
 	if (full)
-		header_clear (h);
-	if (h -> content) {
-		const byte_t	*head = buffer_content (source);
-		int		hlen = buffer_length (source);
-		head_t		*current = NULL;
-		const byte_t	*ptr;
-		int		pos, len;
-		
-		rc = true;
-		pos = 0;
-		if ((! full) && h -> head)
-			for (current = h -> head; current -> next; current = current -> next)
-				;
-		while (rc && (pos < hlen)) {
-			ptr = head + pos;
-			while (pos < hlen && (head[pos] != '\n'))
-				++pos;
-			if (pos < hlen)
-				++pos;
-			len = (head + pos) - ptr;
+		h -> head = head_free_all (h -> head);
+	else if (h -> head)
+		for (current = h -> head; current -> next; current = current -> next)
+			;
+	pos = 0;
+	while (rc && (pos < hlen)) {
+		ptr = head + pos;
+		while (pos < hlen && (head[pos] != '\n'))
+			++pos;
+		if (pos < hlen)
+			++pos;
+		len = (head + pos) - ptr;
+		if (len > 0) {
 			if (isspace (*ptr)) {
 				if ((len > 1) && current)
 					rc = head_add (current, ptr, len);
-			} else if (full && ((*ptr == 'S') || (*ptr == 'R'))) {
-				buffer_t	*dest;
-				
-				if ((*ptr == 'S') && (h -> sender || (h -> sender = buffer_alloc (256))))
-					dest = h -> sender;
-				else if ((*ptr == 'R') && (h -> recipient || (h -> recipient = buffer_alloc (256))))
-					dest = h -> recipient;
+			} else if (next = head_alloc ()) {
+				if (current)
+					current -> next = next;
 				else
-					dest = NULL;
-				if (dest) {
-					++ptr, --len;
-					
-					if ((len > 0) && (*ptr == '\n'))
-						--len;
-					buffer_clear (dest);
-					if ((len > 0) && (*ptr == '<')) {
-						++ptr, --len;
-						while ((len > 0) && (ptr[len] != '>'))
-							--len;
-					}
-					if (len > 0)
-						rc = buffer_append (dest, ptr, len);
-				} else
-					rc = false;
-			} else if (*ptr == 'H') {
-				head_t	*next = head_alloc ();
+					h -> head = next;
+				current = next;
+				rc = head_add (current, ptr, len);
+			} else
+				rc = false;
+		}
+	}
+	return rc;
+}/*}}}*/
+static bool_t
+header_parse (header_t *h, buffer_t *source, bool_t full) /*{{{*/
+{
+	bool_t		rc = true;
+	const byte_t	*head = buffer_content (source);
+	int		hlen = buffer_length (source);
+	head_t		*current = NULL;
+	const byte_t	*ptr;
+	int		pos, len;
+
+	if (full)
+		header_clear (h);
+	else if (h -> head)
+		for (current = h -> head; current -> next; current = current -> next)
+			;
+	pos = 0;
+	while (rc && (pos < hlen)) {
+		ptr = head + pos;
+		while (pos < hlen && (head[pos] != '\n'))
+			++pos;
+		if (pos < hlen)
+			++pos;
+		len = (head + pos) - ptr;
+		if (isspace (*ptr)) {
+			if ((len > 1) && current)
+				rc = head_add (current, ptr, len);
+		} else if (full && ((*ptr == 'S') || (*ptr == 'R'))) {
+			buffer_t	*dest;
 				
-				if (next) {
+			if ((*ptr == 'S') && (h -> sender || (h -> sender = buffer_alloc (256))))
+				dest = h -> sender;
+			else if ((*ptr == 'R') && (h -> recipient || (h -> recipient = buffer_alloc (256))))
+				dest = h -> recipient;
+			else
+				dest = NULL;
+			if (dest) {
+				++ptr, --len;
+					
+				if ((len > 0) && (*ptr == '\n'))
+					--len;
+				buffer_clear (dest);
+				if ((len > 0) && (*ptr == '<')) {
 					++ptr, --len;
-					if (current)
-						current -> next = next;
-					else
-						h -> head = next;
-					current = next;
-					rc = head_add (current, ptr, len);
-				} else
-					rc = false;
-			}
-			if (pos < hlen && (head[pos] == '\r'))
-				++pos;
+					while ((len > 0) && (ptr[len] != '>'))
+						--len;
+				}
+				if (len > 0)
+					rc = buffer_append (dest, ptr, len);
+			} else
+				rc = false;
+		} else if (*ptr == 'H') {
+			head_t	*next = head_alloc ();
+			
+			if (next) {
+				++ptr, --len;
+				if (current)
+					current -> next = next;
+				else
+					h -> head = next;
+				current = next;
+				rc = head_add (current, ptr, len);
+			} else
+				rc = false;
 		}
 	}
 	return rc;
@@ -369,9 +418,17 @@ header_set_content (header_t *h, xmlBufferPtr source) /*{{{*/
 bool_t
 header_append_content (header_t *h, xmlBufferPtr source) /*{{{*/
 {
-	if (header_scratch (h, xmlBufferLength (source) + 128))
-		if (buffer_set (h -> scratch, xmlBufferContent (source), xmlBufferLength (source)))
+	if (header_scratch (h, xmlBufferLength (source) + 128) &&
+	    buffer_set (h -> scratch, xmlBufferContent (source), xmlBufferLength (source)))
 			return header_parse (h, h -> scratch, false);
+	return false;
+}/*}}}*/
+bool_t
+header_replace (header_t *h, xmlBufferPtr source) /*{{{*/
+{
+	if (header_scratch (h, xmlBufferLength (source) + 128) &&
+	    buffer_set (h -> scratch, xmlBufferContent (source), xmlBufferLength (source)))
+		return header_parse_raw (h, h -> scratch, true);
 	return false;
 }/*}}}*/
 bool_t

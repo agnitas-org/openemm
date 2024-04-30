@@ -25,7 +25,7 @@ from	agn3.ignore import Ignore
 from	agn3.io import copen
 from	agn3.lock import Lock
 from	agn3.log import log
-from	agn3.parser import Unit
+from	agn3.parser import unit
 from	agn3.runtime import CLI
 from	agn3.template import Template
 import	agn3.emm.mailing
@@ -117,6 +117,10 @@ class Mailing: #{{{
 	#}}}
 #}}}
 class Recovery (CLI): #{{{
+	__slots__ = [
+		'dryrun', 'max_age', 'startup_delay', 'restrict_to_mailings',
+		'db', 'responsibilities', 'mailings', 'mailing_info', 'report'
+	]
 	@dataclass
 	class MailingInfo:
 		company_id: int
@@ -131,7 +135,6 @@ class Recovery (CLI): #{{{
 		parser.add_argument ('parameter', nargs = '*', help = 'optional list of mailing_ids to restrict recovery to')
 
 	def use_arguments (self, args: argparse.Namespace) -> None:
-		unit = Unit ()
 		self.dryrun = args.dryrun
 		self.max_age = args.age
 		self.startup_delay = unit.parse (args.startup_delay)
@@ -153,6 +156,7 @@ class Recovery (CLI): #{{{
 	def executor (self) -> bool:
 		log.set_loglevel ('debug')
 		try:
+			startup = datetime.now ()
 			if ams and self.startup_delay > 0:
 				with log ('delay'):
 					delay = self.startup_delay
@@ -163,7 +167,7 @@ class Recovery (CLI): #{{{
 			if self.running:
 				with Lock ():
 					with log ('collect'):
-						self.collect_mailings ()
+						self.collect_mailings (startup)
 					with log ('recover'):
 						self.recover_mailings ()
 					with log ('report'):
@@ -208,14 +212,14 @@ class Recovery (CLI): #{{{
 	def __mailing_valid (self, mailing_id: int) -> bool: #{{{
 		return self.__mailing_exists (mailing_id) and not self.__mailing_deleted (mailing_id)
 	#}}}
-	def collect_mailings (self) -> None: #{{{
+	def collect_mailings (self, startup: datetime) -> None: #{{{
 		now = datetime.now ()
 		expire = now - timedelta (days = self.max_age)
 		yesterday = now - timedelta (days = 1)
 		query = (
-			'SELECT status_id, mailing_id, company_id, processed_by '
+			'SELECT status_id, mailing_id, company_id, genchange, processed_by '
 			'FROM maildrop_status_tbl '
-			'WHERE genstatus = 2 AND status_field = \'R\' AND genchange > :expire AND genchange < CURRENT_TIMESTAMP'
+			'WHERE genstatus = 2 AND status_field = \'R\' AND genchange > :expire'
 		)
 		check_query = self.db.qselect (
 			oracle = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (sysdate - 1, \'YYYY-MM-DD\')',
@@ -229,6 +233,7 @@ class Recovery (CLI): #{{{
 		for row in (self.db.streamc (query, {'expire': expire})
 			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
 			.filter (lambda r: self.restrict_to_mailings is None or r.mailing_id in self.restrict_to_mailings)
+			.filter (lambda r: r.genchange < startup)
 			.filter (lambda r: self.__mailing_valid (r.mailing_id))
 		):
 			count = self.db.querys (check_query, {'mid': row.mailing_id})
@@ -246,16 +251,17 @@ class Recovery (CLI): #{{{
 		query = (
 			'SELECT status_id, mailing_id, company_id, status_field, genchange, genstatus, senddate, processed_by '
 			'FROM maildrop_status_tbl '
-			'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field IN (\'A\', \'T\', \'W\')'
+			'WHERE genstatus IN (1, 2) AND genchange > :expire AND status_field IN (\'A\', \'T\', \'W\')'
 		)
 		limit_restart_test_and_admin_mailings = datetime.now () - timedelta (hours = 1)
 		for row in (self.db.streamc (query, {'expire': expire})
 			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
 			.filter (lambda r: self.restrict_to_mailings is None or r.mailing_id in self.restrict_to_mailings)
+			.filter (lambda r: r.genchange < startup)
 			.filter (lambda r: self.__mailing_valid (r.mailing_id))
 		):
 			mailing_name = self.__mailing_name (row.mailing_id)
-			if row.status_field == 'W' or (row.genstatus == 1 and row.genchange is not None and row.genchange > limit_restart_test_and_admin_mailings):
+			if row.status_field == 'W' or (row.genstatus == 1 and row.genchange > limit_restart_test_and_admin_mailings):
 				check = self.__make_range (row.senddate, now)
 				self.mailings.append (Mailing (row.status_id, row.status_field, row.mailing_id, row.company_id, check))
 				logger.info ('Mark mailing %d (%s) for recovery' % (row.mailing_id, mailing_name))

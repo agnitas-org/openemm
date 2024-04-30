@@ -26,7 +26,7 @@ from	.stream import Stream
 from	.template import Placeholder
 #
 __all__ = [
-	'relink', 'which', 'mkpath', 'expand_path', 'normalize_path', 'create_path',
+	'relink', 'which', 'mkpath', 'expand_path', 'normalize_path', 'create_path', 'grant_path',
 	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access',
 	'copen', 'cstreamopen', 'gopen', 'fingerprint', 'expand_command',
 	'csv_dialect', 'csv_default', 'csv_reader', 'csv_named_reader', 'csv_writer',
@@ -137,6 +137,8 @@ returns ``False'' if ``path''' already exists and ``True'' if
 		os.mkdir (path, mode)
 	except OSError as e:
 		if e.errno == errno.EEXIST or e.errno != errno.ENOENT:
+			if os.path.isdir (path):
+				return False
 			raise error (f'failed to create already existing {path}: {e}')
 		elements = path.split (os.path.sep)
 		target = ''
@@ -149,6 +151,27 @@ returns ``False'' if ``path''' already exists and ``True'' if
 					raise error (f'failed to create {path} at {target}: {e}')
 			target += os.path.sep
 	return True
+
+def grant_path (path: str, mode_directory: int = 0o011, mode_file: int = 0o044) -> bool:
+	uid = os.getuid ()
+	remain = os.path.dirname (path)
+	valid = True
+	while remain != os.path.sep and valid:
+		valid = False
+		with Ignore (OSError):
+			st = os.stat (remain)
+			if stat.S_ISDIR (st.st_mode) and st.st_uid == uid:
+				if st.st_mode & mode_directory != mode_directory:
+					os.chmod (remain, st.st_mode | mode_directory)
+				valid = True
+		remain = os.path.dirname (remain)
+	with Ignore (OSError):
+		st = os.stat (path)
+		if stat.S_ISREG (st.st_mode) and st.st_uid == uid:
+			if st.st_mode & mode_file != mode_file:
+				os.chmod (path, st.st_mode | mode_file)
+			return True
+	return False
 
 class ArchiveDirectory:
 	__slots__: List[str] = []
@@ -489,7 +512,7 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 >>> expand_command (cmd, {'test': 3})
 ['this', 'is', 'a', '7']
 """
-	ph = Placeholder ()
+	ph = Placeholder (extended = True)
 	def processor () -> Iterable[str]:
 		for element in command:
 			expanded = ph (element, ns, macros)

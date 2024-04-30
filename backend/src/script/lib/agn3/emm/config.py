@@ -22,6 +22,7 @@ from	..db import DB, TempDB
 from	..definitions import syscfg, licence
 from	..ignore import Ignore
 from	..parser import Parsable, unit
+from	..sentinel import Sentinel, sentinel
 from	..stream import Stream
 from	..systemconfig import Systemconfig
 from	..tools import atob, listsplit, listjoin
@@ -32,7 +33,6 @@ logger = logging.getLogger (__name__)
 #
 class _Config:
 	__slots__ = ['db', 'reread', 'last', 'selection']
-	sentinel = object ()
 	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None) -> None:
 		self.db = db
 		self.reread: Optional[int] = int (unit.parse (reread)) if reread is not None else None
@@ -134,12 +134,10 @@ True
 							self.config[key] = self.selection.pick (value)
 
 	@overload
-	def get (self, class_name: str, name: str, default: str) -> str: ...
+	def get (self, class_name: str, name: str, default: Union[Sentinel, str] = ...) -> str: ...
 	@overload
 	def get (self, class_name: str, name: str, default: None) -> Optional[str]: ...
-	@overload
-	def get (self, class_name: str, name: str, default: Any = ...) -> Any: ...
-	def get (self, class_name: str, name: str, default: Any = _Config.sentinel) -> Any:
+	def get (self, class_name: str, name: str, default: Union[None, Sentinel, str] = sentinel) -> Any:
 		"""retrieve an entry from the config_tbl using
 ``class_name'' for the configuration class and ``name'' for the name of
 the configuration. If ``default'' is not None, this value will be
@@ -150,7 +148,7 @@ raised.
 		with Ignore (KeyError):
 			return self.config[(class_name, name)]
 		#
-		if default is not _Config.sentinel:
+		if default is not sentinel:
 			return default
 		#
 		raise KeyError ((class_name, name))
@@ -363,7 +361,7 @@ class EMMCompany (_Config):
 		name: str,
 		company_id: Optional[int] = None,
 		index: Optional[str] = None,
-		default: Any = _Config.sentinel,
+		default: Any = sentinel,
 		convert: Optional[Callable[[Any], Any]] = None
 	) -> Any:
 		"""Retrieves an entry from the company_info_tbl using
@@ -386,7 +384,7 @@ found value to convert it before returning it."""
 					value = self.company_info[cid][name]
 					return convert (value) if convert is not None else value
 		#
-		if default is not _Config.sentinel:
+		if default is not sentinel:
 			return default
 		#
 		raise KeyError (name)

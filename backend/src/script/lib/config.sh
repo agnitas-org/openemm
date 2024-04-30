@@ -36,24 +36,35 @@ export	SYSTEM_CONFIG='{
 	"mailout-server": "localhost",
 	"mailout-port": "8093",
 	"direct-path-server": "localhost",
-	"direct-path-port": "9403"
+	"direct-path-port": "9403",
+	"python-auto-install-modules": "true"
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 #
-if [ -f "$BASE/scripts/build.spec" ]; then
-	version="`cut '-d;' -f1 $BASE/scripts/build.spec`"
-elif [ -x "$BASE/bin/xmlback" ]; then
-	version="`$BASE/bin/xmlback -V | awk '{ print $3 }'`"
-else
-	version="current"
+pathstrip="$BASE/bin/pathstrip"
+cq="$BASE/bin/config-query"
+for path in $pathstrip $cq; do
+	if [ ! -x "$path" ]; then
+		die "incomplete installation: missing $path"
+	fi
+done
+#
+version="`$cq build.version`"
+if [ ! "$version" ]; then
+	if [ -f "$BASE/scripts/build.spec" ]; then
+		version="`cut '-d;' -f1 $BASE/scripts/build.spec`"
+	elif [ -x "$BASE/bin/xmlback" ]; then
+		version="`$BASE/bin/xmlback -V | awk '{ print $3 }'`"
+	else
+		version="current"
+	fi
 fi
-licence="`$BASE/bin/config-query licence`"
+licence="`$cq licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
-optbase="$BASE/opt"
-softwarebase="$optbase"
-pathstrip="$BASE/bin/pathstrip"
+optbases="$BASE"
+softwarebases="$BASE/opt"
 # .. and for java ..
 LC_ALL=C
 NLS_LANG=american_america.UTF8
@@ -62,7 +73,8 @@ if [ ! "$JBASE" ] ; then
 	JBASE="$BASE/JAVA"
 fi
 if [ ! "$JAVAHOME" ] ; then
-	for java in "$softwarebase/java" "/usr/java" "/opt/java"; do
+	for softwarebase in $softwarebases "/usr" "/opt"; do
+		java="$softwarebase/java"
 		if [ -d $java ] ; then
 			for sdk in $java/*sdk* ; do
 				if [ -d $sdk ] ; then
@@ -72,8 +84,8 @@ if [ ! "$JAVAHOME" ] ; then
 			done
 			if [ ! "$JAVAHOME" ] ; then
 				JAVAHOME=$java
-				break
 			fi
+			break
 		fi
 	done
 fi
@@ -94,17 +106,19 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 		CLASSPATH="$cp"
 	fi
 fi
-# .. and for others ..
-for other in python2 python3 perl redis sqlite ; do
-	path="$softwarebase/$other"
+# .. and for python3 ..
+for softwarebase in $softwarebases; do
+	path="$softwarebase/python3"
 	if [ -d $path/bin ] ; then
 		PATH="$path/bin:$PATH"
+		break
 	fi
 done
 export PATH
 #
 # Logging
 #
+umask 002
 if [ "$LOG_HOME" ] ; then
 	logpath="$LOG_HOME"
 else
@@ -122,7 +136,7 @@ if [ ! -x $sendmail ] ; then
 	sendmail="/usr/lib/sendmail"
 fi
 #
-SENDMAIL_DSN="`$BASE/bin/config-query enable-sendmail-dsn`"
+SENDMAIL_DSN="`$cq enable-sendmail-dsn`"
 if [ "$SENDMAIL_DSN" = "true" ]; then
 	SENDMAIL_DSN_OPT=""
 else
@@ -212,19 +226,16 @@ uid() {
 onErrorSendMail () {
 	__rc=$?
 	if [ $__rc -ne 0 ]; then
-		mailsend -s "[ERROR] `date +%Y%m%d` $0 [on `uname -n`]" -m "$@" config-query alert-mail
+		mailsend -s "[ERROR] `date +%Y%m%d` $0 [on `uname -n`]" -m "$@" `$cq alert-mail`
 	fi
 }
 #
 setupVirtualEnviron() {
 	pyversion="`python3 -c \"import sys; print ('.'.join (str (_v) for _v in sys.version_info))\"`"
-	case "$pyversion" in
-	3*)
-		;;
-	*)
-		die "virtual environment not support for deprectaed python versions"
-		;;
-	esac
+	osversion="`$cq -ec 'return osid'`"
+	if [ "$osversion" ]; then
+		pyversion="${pyversion}-${osversion}"
+	fi
 	venv="$BASE/.venv.$pyversion"
 	if [ "$application" ]; then
 		venv="${venv}-${application}"
@@ -283,7 +294,8 @@ require() {
 		fi
 		moduleinstalled "$__module"
 		if [ $? -ne 0 ]; then
-			error "Module $__module not found, even after installation of $__name"
+			error "Module $__module not found, even after installation of ${__name}, see following output for details:"
+			python3 -c "import $__module" 1>&2
 			return 1
 		else
 			message "Installed module $__module from $__name"
@@ -301,7 +313,7 @@ py3available() {
 	setupVirtualEnviron || return 1
 }
 py3required() {
-	py3available || die "Please install a python3 version 3.8 or later to ${softwarebase}/python3"
+	py3available || die "Please install a python3 version 3.8 or later"
 }
 #
 getproc() {
@@ -477,10 +489,12 @@ export PYTHONPATH
 #
 export VERSION="$version"
 export LICENCE="$licence"
+#
 py3required
-if [ "$BASE" = "$HOME" ]; then
+if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:false`" = "true" ]; then
 	rq="$BASE/scripts/requirements"
 	if [ -d "$rq" ]; then
+		[ -d "$BASE/var/tmp" ] || mkdir -p "$HOME/var/tmp"
 		upgrade() {
 			__log="$BASE/var/tmp/upgrade.log.$$"
 			python3 -m pip --require-virtualenv install "$@" > $__log 2>&1
@@ -494,10 +508,16 @@ if [ "$BASE" = "$HOME" ]; then
 		upgrade --upgrade pip
 		for req in $rq/*; do
 			if [ -f "$req" ]; then
-				upgrade --requirement "$req" || die "Failed to install/upgrade python packages from file \"$req\""
+					messagen "Process `basename $req` .. "
+					upgrade --requirement "$req" || die "Failed to install/upgrade python packages from file \"$req\""
+					message "done."
 				rm -f "$req"
 			fi
 		done
-		rmdir --ignore-fail-on-non-empty "$rq"
+		if [ -d "$rq" ]; then
+			rmdir --ignore-fail-on-non-empty "$rq"
+		fi
 	fi
+else
+	requires msgpack
 fi

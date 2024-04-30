@@ -14,15 +14,15 @@ import	logging, csv
 from	datetime import datetime, timedelta
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Union
-from	typing import Dict, IO, Iterator, List, NamedTuple, Set, Tuple, Type
+from	typing import Dict, IO, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbdriver import DBDriver
-from	.dbcore import T, Row, Core, Cursor
-from	.definitions import program
+from	.dbcore import _T, Row, Core, Cursor
+from	.definitions import epoch, program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import copen, csv_default, csv_writer
-from	.parser import ParseTimestamp, unit
+from	.parser import parse_timestamp, unit
 from	.stream import Stream
 #
 __all__ = ['Row', 'DBIgnore', 'DB', 'TempDB']
@@ -59,7 +59,7 @@ handling."""
 		self._tablespace_cache: Dict[Optional[str], Optional[str]] = {}
 		self._scratch_tables: List[str] = []
 		self._scratch_number = 0
-		self._cache: Optional[DB.Cache] = None
+		self._cache = None
 		self._checkpoints: Optional[Dict[str, DB.Checkpoint]] = None
 		
 	def __del__ (self) -> None:
@@ -71,13 +71,8 @@ handling."""
 
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 		self.close (exc_type is None)
-		self.done ()
 		return None
 
-	def done (self) -> None:
-		"""Finalize the usage of this database interface"""
-		self.close ()
-		
 	def close (self, commit: bool = True) -> None:
 		"""Close the database driver if open, closing (and commiting changes, if ``commit'' is True) all open cursors and checkpoints, remove temp. tables"""
 		if self._checkpoints:
@@ -163,7 +158,7 @@ handling."""
 			return self.db.last_error ()
 		return self._last_error if self._last_error else f'No active database interface ({self.dbid})'
 	
-	def qselect (self, **args: T) -> T:
+	def qselect (self, **args: _T) -> _T:
 		if self.db is not None:
 			return self.db.qselect (**args)
 		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
@@ -191,51 +186,7 @@ handling."""
 	def dbms (self) -> Optional[str]:
 		return self.db.dbms if self.db else None
 
-	CacheKey = Tuple[str, Union[None, List[Any], Dict[str, Any]], bool]
-	CacheValue = List[Row]
-	class Cache:
-		__slots__ = ['filename', 'store']
-		def __init__ (self, filename: Optional[str]) -> None:
-			self.filename = filename
-			self.store: Dict[DB.CacheKey, DB.CacheValue] = {}
-			
-		def __setitem__ (self, key: DB.CacheKey, value: DB.CacheValue) -> None:
-			self.store[key] = value
-			
-		def __getitem__ (self, key: DB.CacheKey) -> DB.CacheValue:
-			return self.store[key]
-				
-		def __delitem__ (self, key: DB.CacheKey) -> None:
-			del self.store[key]
-			
-		def __contains__ (self, key: DB.CacheKey) -> bool:
-			return key in self.store
-			
-		def keys (self) -> Iterator[DB.CacheKey]:
-			return iter (self.store.keys ())
-		
-		def done (self) -> None:
-			pass
-				
-	def cache_disable (self) -> None:
-		"""Disable caching for database queries"""
-		if self._cache:
-			self._cache.done ()
-			self._cache = None
 
-	def cache_enable (self, filename: Optional[str] = None) -> None:
-		"""Enable caching for database queries.
-
-Caching only works if the query() method of this class is used. To
-access the database, the standard cursor is used. For compaitibility a
-queryc() and a querys() method is also available using the cache."""
-		self.cache_disable ()
-		self._cache = DB.Cache (filename)
-		
-	def cache (self) -> Optional[DB.Cache]:
-		"""Return the cache instance"""
-		return self._cache
-		
 	def query (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Iterable[Row]:
 		"""Execute a query try to resolve the query from the cache, if caching is enabled"""
 		if self._cache is not None:
@@ -371,7 +322,7 @@ queryc() and a querys() method is also available using the cache."""
 			if cachable:
 				self._index_cache[cache_index_key] = rc
 		return rc
-		
+	
 	def find_tablespace (self, tablespace: Optional[str], *args: str) -> Optional[str]:
 		"""Oracle only: find a proper tablespace by name, use default tablespace, if ``tablespace'' does not exists"""
 		try:
@@ -401,6 +352,10 @@ queryc() and a querys() method is also available using the cache."""
 			self._tablespace_cache[tablespace] = rc
 			return rc
 	
+	def tablespace (self, tablespace: Optional[str], *args: str) -> str:
+		ts = self.find_tablespace (tablespace, *args) if self.db and self.db.has_tablespaces else None
+		return f' TABLESPACE {ts}' if ts else ''
+		
 	class Column (NamedTuple):
 		name: str
 		datatype: str
@@ -441,12 +396,11 @@ queryc() and a querys() method is also available using the cache."""
 			).map_to (str, lambda r: r.index_name.lower ()).set ()
 			for index in indexes:
 				if index.name.lower () not in available:
-					tablespace = self.find_tablespace (index.tablespace)
 					cursor.execute ('CREATE INDEX {name} ON {table} ({columns}){tablespace}'.format (
 						name = index.name,
 						table = table,
 						columns = index.columns if isinstance (index.columns, str) else ', '.join (index.columns),
-						tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+						tablespace = self.tablespace (index.tablespace)
 					))
 
 	def scratch_request (self,
@@ -487,10 +441,7 @@ existing one."""
 					query = f'CREATE TABLE {table}'
 					if layout:
 						query += f' ({layout})'
-					if self.dbms == 'oracle':
-						tablespace = self.find_tablespace (tablespace)
-						if tablespace:
-							query += f' TABLESPACE {tablespace}'
+					query += self.tablespace (tablespace)
 					if select:
 						query += f' AS SELECT {select}'
 					try:
@@ -503,9 +454,7 @@ existing one."""
 						if indexes is not None:
 							for (index_number, index) in enumerate (indexes, start = 1):
 								iname = 'TS${name}${scratch_unique}${index_number}$IDX'
-								query = f'CREATE INDEX {iname} ON {table} ({index})'
-								if self.dbms == 'oracle' and tablespace:
-									query += f' TABLESPACE {tablespace}'
+								query = f'CREATE INDEX {iname} ON {table} ({index})' + self.tablespace (tablespace)
 								cursor.execute (query)
 						self.setup_table_optimizer (table)
 				self._scratch_tables.append (table)
@@ -631,7 +580,6 @@ files to limit the size of each file."""
 
 	class Checkpoint:
 		__slots__ = ['db', 'name', 'table', 'cursor', 'start', 'end', 'persist', 'finalized']
-		epoch = datetime (1970, 1, 1)
 		def __init__ (self, db: DB, name: str, table: str, cursor: Cursor, start: datetime, end: datetime) -> None:
 			self.db = db
 			self.name = name
@@ -726,18 +674,13 @@ if it had not existed."""
 		self.check_open ()
 		cursor = self.request ()
 		if not self.exists (table):
-			tablespace = self.find_tablespace (tablespace)
-			if tablespace:
-				tablespace_expression = f' TABLESPACE {tablespace}'
-			else:
-				tablespace_expression = ''
 			layout = cursor.qselect (
 				oracle = (
 					f'CREATE TABLE {table} (\n'
 					'	name		varchar2(100)	PRIMARY KEY NOT NULL,\n'
 					'	checkpoint	date		NOT NULL,\n'
 					'       persist         clob\n'
-					f'){tablespace_expression}'
+					')' + self.tablespace (tablespace)
 				), mysql = (
 					f'CREATE TABLE {table} (\n'
 					'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
@@ -763,11 +706,10 @@ if it had not existed."""
 					sqlite = f'ALTER TABLE {table} ADD persist text'
 				))
 		if self.exists (table) and name is not None:
-			timestamp_parser = ParseTimestamp ()
-			start = timestamp_parser (start_expr)
+			start = parse_timestamp (start_expr)
 			if start is None:
-				start = self.Checkpoint.epoch
-			end = timestamp_parser (end_expr)
+				start = epoch
+			end = parse_timestamp (end_expr)
 			if end is None:
 				now = datetime.now ()
 				end = datetime (now.year, now.month, now.day, now.hour, now.minute, now.second)

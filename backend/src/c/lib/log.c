@@ -626,7 +626,7 @@ log_vmout (log_t *l, int level, logmask_t mask, const char *what, const char *fm
 					spos = l -> obuf -> length;
 					if (buffer_vformat (l -> obuf, fmt, par)) {
 						epos = l -> obuf -> length;
-						if (buffer_appendch (l -> obuf, '\n')) {
+						if (buffer_endswithch (l -> obuf, '\n') || buffer_appendch (l -> obuf, '\n')) {
 							st = true;
 							if ((! log_suspend (l, LS_LOGFILE)) && l -> lfp)
 								if ((fwrite (l -> obuf -> buffer, sizeof (byte_t), l -> obuf -> length, l -> lfp) != l -> obuf -> length) ||

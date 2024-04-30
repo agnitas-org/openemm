@@ -12,11 +12,11 @@
 from	__future__ import annotations
 import	sys, re
 from	functools import reduce
-from	collections import Counter, Iterable, Iterator, deque, defaultdict
+from	collections import Counter, deque, defaultdict
 from	itertools import filterfalse, dropwhile, takewhile, islice, chain
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Reversible, Sized, TypeVar, Union
-from	typing import DefaultDict, Deque, Dict, Generic, List, Match, Pattern, Set, Tuple, Type
+from	typing import Any, Callable, Iterable, Optional, Protocol, Reversible, Sized, TypeVar, Union
+from	typing import DefaultDict, Deque, Dict, Generic, Iterator, List, Match, Pattern, Set, Tuple, Type
 from	typing import cast, overload
 import	typing
 from	.exceptions import error
@@ -24,7 +24,10 @@ from	.exceptions import error
 __all__ = ['Stream']
 #
 _T = TypeVar ('_T')
+_T_contra = TypeVar ('_T_contra', contravariant = True)
 _O = TypeVar ('_O')
+class Comparable (Protocol[_T_contra]):
+	def __lt__ (self, other: _T_contra) -> bool: ...
 #
 class Stream (Generic[_T]):
 	"""Stream implementation as inspired by Java 1.8
@@ -265,7 +268,7 @@ useful if the source is modified during a later stage of the stream"""
 
 	def sorted (self, key: Optional[Callable[[_T], Any]] = None, reverse: bool = False) -> Stream[_T]:
 		"""Create a new stream with sorted elements ``key'' and ``reverse'' are passed to sorted()"""
-		return self.new (sorted (cast (Iterable, self.iterator), key = key, reverse = reverse))
+		return self.new (sorted (self.iterator, key = key if key is not None else lambda v: cast (Comparable[_T], v), reverse = reverse))
 		
 	def reversed (self) -> Stream[_T]:
 		"""Create a new stream in reverse order"""
@@ -400,7 +403,7 @@ is added unmapped to the new stream."""
 	
 	def chain (self, t: Type[_O]) -> Stream[_O]:
 		"""Create a new stream flatten the elements of the stream."""
-		return self.new (chain.from_iterable (self.iterator))
+		return self.new (chain.from_iterable (cast (Iterable[Iterable[_O]], self.iterator)))
 	#
 	# Terminals
 	#
@@ -488,8 +491,8 @@ is added unmapped to the new stream."""
 	def sum (self, start: Optional[int] = None) -> int:
 		"""Returns the sum of the stream"""
 		if start is not None:
-			return sum (cast (Iterable, self.iterator), start)
-		return sum (cast (Iterable, self.iterator))
+			return sum (cast (Iterable[int], self.iterator), start)
+		return sum (cast (Iterable[int], self.iterator))
 
 	@overload
 	def min (self, no: _T = ...) -> _T: ...
@@ -498,7 +501,7 @@ is added unmapped to the new stream."""
 	def min (self, no: Any = __sentinel) -> Any:
 		"""Returns the minimum value of the stream"""
 		try:
-			return min (cast (Iterable, self.iterator))
+			return min (cast (Iterable[Comparable[_T]], self.iterator))
 		except ValueError:
 			return self.__checkNo (no, 'min')
 
@@ -509,7 +512,7 @@ is added unmapped to the new stream."""
 	def max (self, no: Any = __sentinel) -> Any:
 		"""Returns the maximum value of the stream"""
 		try:
-			return max (cast (Iterable, self.iterator))
+			return max (cast (Iterable[Comparable[_T]], self.iterator))
 		except ValueError:
 			return self.__checkNo (no, 'max')
 	
@@ -595,7 +598,7 @@ each element. """
 	
 	def dict (self) -> Dict[Any, Any]:
 		"""Returns the stream as a dictionary"""
-		return dict (cast (Iterable, self.iterator))
+		return dict (cast (Iterable[Tuple[Any, Any]], self.iterator))
 	
 	def deque (self) -> Deque[_T]:
 		"""Return the stream as collections.deque"""
@@ -609,7 +612,7 @@ each element. """
 		"""Returns a dict of grouped elements as separated by ``predicate'', optional modify the final dict by ``finisher''."""
 		rc: DefaultDict[Any, List[Any]] = defaultdict (list)
 		if predicate is None:
-			for (key, value) in cast (Iterable, self.iterator):
+			for (key, value) in cast (Iterable[Tuple[Any, Any]], self.iterator):
 				rc[key].append (value)
 		else:
 			for elem in self.iterator:

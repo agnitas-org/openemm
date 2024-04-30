@@ -97,13 +97,17 @@ class UID:
 		return msgpack.dumps (Stream (self.ctx.items ()).sorted (key = lambda kv: kv[0]).dict ())
 	
 	def parse (self, content: bytes) -> None:
-		self.ctx = msgpack.loads (content)
-		self.licence_id = self.ctx.get ('_l', self.licence_id)
-		self.company_id = self.ctx.get ('_c', self.company_id)
-		self.mailing_id = self.ctx.get ('_m', self.mailing_id)
-		self.customer_id = self.ctx.get ('_r', self.customer_id)
-		self.url_id = self.ctx.get ('_u', self.url_id)
-		self.bit_option = self.ctx.get ('_o', self.bit_option)
+		try:
+			self.ctx = msgpack.loads (content)
+		except Exception as e:
+			raise error (f'failed to unpack {content!r}: {e}')
+		else:
+			self.licence_id = self.ctx.get ('_l', self.licence_id)
+			self.company_id = self.ctx.get ('_c', self.company_id)
+			self.mailing_id = self.ctx.get ('_m', self.mailing_id)
+			self.customer_id = self.ctx.get ('_r', self.customer_id)
+			self.url_id = self.ctx.get ('_u', self.url_id)
+			self.bit_option = self.ctx.get ('_o', self.bit_option)
 	
 	@staticmethod
 	def encode (content: bytes) -> str:
@@ -164,7 +168,7 @@ class UIDCache:
 							enabled_uid_version = rq.enabled_uid_version,
 							minimal_uid_version = rq.uid_version
 						)
-					self.companies[company_id] = company
+				self.companies[company_id] = company
 			if company is not None:
 				return company
 			raise error (f'{self.licence_id}: company {company_id} not found or active')
@@ -189,7 +193,7 @@ class UIDCache:
 							company_id = rq.company_id,
 							creation_date = rq.creation_date
 						)
-					self.mailings[mailing_id] = mailing
+				self.mailings[mailing_id] = mailing
 			if mailing is not None:
 				return mailing
 			raise error (f'{self.licence_id}: mailing {mailing_id} not found')
@@ -206,7 +210,7 @@ class UIDCache:
 					try:
 						if db.open ():
 							licence_id = int (EMMConfig (db = db, class_names = ['system']).get ('system', 'licence'))
-							if licence_id <= 0:
+							if licence_id < 0:
 								raise error (f'invalid licence_id {licence_id} found')
 							self.instances[licence_id] = UIDCache.Instance (licence_id, db)
 							seen.add (dbid)
@@ -222,7 +226,7 @@ class UIDCache:
 			instance.close ()
 		
 	def find (self, uid: UID) -> Tuple[UIDCache.Company, UIDCache.Mailing]:
-		if uid.licence_id <= 0:
+		if uid.licence_id < 0:
 			raise error (f'invalid licence_id {uid.licence_id}')
 		try:
 			instance = self.instances[uid.licence_id]

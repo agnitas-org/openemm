@@ -28,6 +28,7 @@ from	agn3.dbm import DBM
 from	agn3.definitions import program, base, licence, syscfg, unique
 from	agn3.email import EMail
 from	agn3.emm.ams import AMSLock
+from	agn3.emm.bounce import Bounce
 from	agn3.emm.columns import Columns
 from	agn3.emm.config import EMMCompany, Responsibility
 from	agn3.emm.types import MediaType, UserStatus, WorkStatus
@@ -604,7 +605,7 @@ class UpdateBounce (Update): #{{{
 				tab[dsn] = [UpdateBounce.Translate.Element (rule_id = rule_id, dsn = dsn, detail = detail, pattern = pattern)]
 
 		def setup (self, db: DB) -> None:
-			for row in db.query ('SELECT rule_id, company_id, dsn, detail, pattern FROM bounce_translate_tbl WHERE active = 1'):
+			for row in db.query (f'SELECT rule_id, company_id, dsn, detail, pattern FROM {Bounce.bounce_translate_table} WHERE active = 1'):
 				self.add (row.rule_id, row.company_id, row.dsn, row.detail, row.pattern)
 
 		def trans (self, company: int, dsn: int, infos: UpdateBounce.Info) -> Tuple[int, int]:
@@ -1464,7 +1465,17 @@ class UpdateAccount (Update): #{{{
 			else:
 				data = self.data_parser (tokens)
 				if data.mediatype in self.known_mediatypes:
-					db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
+					for retry in range (3):
+						if not retry:
+							db.sync ()
+						try:
+							db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
+						except error as e:
+							logger.warning (f'failed to write record {data!r} to mailing_account_tbl: {e}')
+							if retry == 2:
+								raise
+						else:
+							break
 					self.inserted += 1
 					if data.status_field == 'W':
 						self.mailcheck.check_workstatus (db, data.mailing_id)
@@ -1535,7 +1546,6 @@ class UpdateDeliver (Update): #{{{
 					if table not in self.existing_deliver_tables:
 						if not db.exists (table):
 							if db.dbms == 'oracle':
-								tablespace = db.find_tablespace ('DATA_SUCCESS')
 								db.execute (
 									'CREATE TABLE {table} ('
 									'id number primary key,'
@@ -1546,18 +1556,17 @@ class UpdateDeliver (Update): #{{{
 									'){tablespace}'
 									.format (
 										table = table,
-										tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+										tablespace = db.tablespace ('DATA_SUCCESS')
 									)
 								)
 								db.execute (
 									'CREATE SEQUENCE {table}_seq NOCACHE'.format (table = table)
 								)
-								tablespace = db.find_tablespace ('DATA_CUST_INDEX')
 								db.execute (
 									'CREATE INDEX del{company_id}$tscid$idx ON {table} (timestamp, customer_id){tablespace}'.format (
 										company_id = company_id,
 										table = table,
-										tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+										tablespace = db.tablespace ('DATA_CUST_INDEX')
 									)
 								)
 							else:
@@ -1641,8 +1650,6 @@ class UpdateMailtrack (Update): #{{{
 		self.max_count_last_updated = 0
 		with DBIgnore (), DB () as db:
 			if not db.exists (self.mailtrack_process_table):
-				tablespace = db.find_tablespace ('DATA_TEMP')
-				tablespace_expr = (' TABLESPACE %s' % tablespace) if tablespace else ''
 				db.execute (db.qselect (
 					oracle = (
 						'CREATE TABLE {table} (\n'
@@ -1653,7 +1660,10 @@ class UpdateMailtrack (Update): #{{{
 						'	mediatype		number,\n'
 						'	timestamp		date\n'
 						'){tablespace}'
-						.format (table = self.mailtrack_process_table, tablespace = tablespace_expr)
+						.format (
+							table = self.mailtrack_process_table,
+							tablespace = db.tablespace ('DATA_TEMP')
+						)
 					), mysql = (
 						'CREATE TABLE {table} (\n'
 						'	company_id		int(11),\n'
@@ -1675,12 +1685,21 @@ class UpdateMailtrack (Update): #{{{
 					db.execute (db.qselect (
 						oracle = (
 							'CREATE INDEX {prefix}${id}$idx '
-							'ON {table} ({column}){tablespace}'
-							.format (prefix = mailtrack_index_prefix, id = index_id, column = index_column, table = self.mailtrack_process_table, tablespace = tablespace_expr)
+							'ON {table} ({column}){tablespace}'.format (
+								prefix = mailtrack_index_prefix,
+								id = index_id,
+								column = index_column,
+								table = self.mailtrack_process_table,
+								tablespace = db.tablespace ('DATA_TEMP')
+							)
 						), mysql = (
 							'CREATE INDEX {prefix}${id}$idx '
-							'ON {table} ({column})'
-							.format (prefix = mailtrack_index_prefix, id = index_id, column = index_column, table = self.mailtrack_process_table)
+							'ON {table} ({column})'.format (
+								prefix = mailtrack_index_prefix,
+								id = index_id,
+								column = index_column,
+								table = self.mailtrack_process_table
+							)
 						)
 					))
 			else:

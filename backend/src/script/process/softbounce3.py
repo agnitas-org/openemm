@@ -154,8 +154,11 @@ class Softbounce (Runtime):
 		try:
 			return self.config_cache[(company_id, var)]
 		except KeyError:
-			rc = self.config_cache[(company_id, var)] = self.bounce.get_config (company_id, 0, Bounce.name_conversion).get (var, default)
-			return rc
+			rc = self.bounce.get_config (company_id, 0, Bounce.name_conversion).get (var, default)
+			if isinstance (rc, int):
+				self.config_cache[(company_id, var)] = rc
+				return rc
+			raise ValueError (var)
 	#}}}
 	def expire_entries (self) -> None: #{{{
 		logger.info ('Expire entries from softbounce_email_tbl')

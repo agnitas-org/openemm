@@ -79,7 +79,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	mailtypedefinition_t	*mtyp;
 	blockspec_t		*bspec;
 	block_t			*block;
-	block_t			*header;
 	block_t			*preheader;
 	block_t			*clearance;
 	rblock_t		*rbprev;
@@ -102,7 +101,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	 * 1. Stage: check for usful blocks, count attachments and
 	 *           create the content part */
 	links = mtyp -> offline ? links_alloc () : NULL;
-	header = NULL;
 	preheader = NULL;
 	clearance = NULL;
 	for (n = 0; st && (n < mtyp -> blockspec_count); ++n) {
@@ -157,11 +155,8 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 						log_out (blockmail -> lg, LV_ERROR, "Unable to replace tags in block %d for %d", block -> nr, rec -> customer_id);
 					else if (block -> tid == TID_EMail_Head) {
 						if (block -> nr == 0) {
-							header = block;
-						}
-						if (st && header) {
-							header_set_charset (rec -> header, blockmail -> cvt, header -> charset);
-							header_set_content (rec -> header, header -> in);
+							header_set_charset (rec -> header, blockmail -> cvt, block -> charset);
+							header_set_content (rec -> header, block -> in);
 						}
 					} else if ((block -> tid == TID_EMail_HTML_Preheader) || (block -> tid == TID_EMail_HTML_Clearance)) {
 						if (block -> tid == TID_EMail_HTML_Preheader) {
@@ -191,7 +186,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	
 	/*
 	 * 2.1. Stage finalize header */
-	if (st && blockmail -> revalidate_mfrom) {
+	if (st && rec -> revalidate_mfrom) {
 		st = header_revalidate_mfrom (rec -> header, blockmail -> spf);
 		if (! st)
 			log_out (blockmail -> lg, LV_ERROR, "Failed to revalidate mfrom for %d", rec -> customer_id);
@@ -353,7 +348,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	/*
 	 * 6. optional sign mail */
 	if (rec -> dkim)
-		sign_mail (blockmail, rec -> header);
+		sign_mail_using_dkim (blockmail, rec -> header);
 	if (st) {
 		rec -> size = header_size (rec -> header) + 2 + buffer_length (blockmail -> body);
 	}

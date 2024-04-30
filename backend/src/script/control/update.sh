@@ -16,6 +16,9 @@ case "$1" in
 start)
 	active update
 	shift
+	if [ "`config-query ams`" = "true" ]; then
+		requires websockets
+	fi
 	starter $command -bw --termination-delay=5m "$@"
 	;;
 stop)

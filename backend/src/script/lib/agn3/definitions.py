@@ -10,11 +10,19 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	sys, os
+from	datetime import datetime
 from	.exceptions import error
 from	.systemconfig import Systemconfig
 #
-__all__ = ['syscfg', 'licence', 'fqdn', 'host', 'unique', 'base', 'user', 'home', 'program', 'version', 'ams']
+__all__ = [
+	'epoch', 'syscfg', 'licence',
+	'fqdn', 'host', 'unique',
+	'base', 'user', 'home',
+	'program', 'dbid_default',
+	'version', 'ams'
+]
 #
+epoch = datetime.fromtimestamp (0)
 syscfg = Systemconfig ()
 licence = syscfg.iget ('licence', -1)
 if licence == -1:
@@ -44,6 +52,8 @@ if len (sys.argv) > 0 and sys.argv[0]:
 	program = _basename if _extension.lower ().startswith ('.py') else _basename + _extension
 else:
 	program = 'unset'
+#
+dbid_default = syscfg.get ('dbid', 'emm')
 #
 version = os.environ.get ('VERSION', 'unknown')
 ams = False

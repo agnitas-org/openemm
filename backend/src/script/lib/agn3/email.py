@@ -10,11 +10,11 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	sys, os, re, csv, subprocess, base64, logging
+import	sys, os, errno, re, csv, subprocess, base64, logging
 import	socket, mimetypes
 from	collections import defaultdict
 from	datetime import datetime
-from	dataclasses import dataclass
+from	dataclasses import dataclass, field
 import	email
 import	email.policy
 from	email.charset import QP, BASE64, add_charset
@@ -24,20 +24,20 @@ from	email.policy import EmailPolicy, compat32
 from	email.utils import parseaddr
 from	functools import partial
 from	typing import Any, Callable, Optional, Union
-from	typing import DefaultDict, Dict, Generator, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
+from	typing import DefaultDict, Dict, Generator, IO, Iterator, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
 from	typing import cast
 from	.db import DB, TempDB
-from	.definitions import fqdn, user, program, syscfg
+from	.definitions import base, fqdn, user, program, syscfg
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
 from	.io import csv_default
 from	.log import log
-from	.parser import ParseTimestamp
+from	.parser import parse_timestamp
 from	.stream import Stream
 from	.uid import UID, UIDHandler
 #
-__all__ = ['sendmail', 'EMail', 'CSVEMail', 'StatusMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
+__all__ = ['EmailMessage', 'sendmail', 'manage_procmailrc', 'EMail', 'CSVEMail', 'StatusMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
 #
 logger = logging.getLogger (__name__)
 #
@@ -47,6 +47,23 @@ class SentStatus (NamedTuple):
 	command_output: str = ''
 	command_error: str = ''
 	
+def manage_procmailrc (content: str, procmailrc: str = os.path.join (base, '.procmailrc')) -> None:
+	try:
+		with open (procmailrc, 'r') as fd:
+			ocontent = fd.read ()
+	except IOError as e:
+		if e.args[0] != errno.ENOENT:
+			logger.warning (f'{procmailrc}: failed to read: {e}')
+		ocontent = ''
+	if ocontent != content:
+		try:
+			with open (procmailrc, 'w') as fd:
+				fd.write (content)
+				os.fchmod (fd.fileno (), 0o600)
+			logger.info (f'{procmailrc}: written')
+		except (IOError, OSError) as e:
+			logger.exception (f'{procmailrc}: failed to write: {e}')
+
 def sendmail (recipients: List[str], mail: Union[str, bytes], sender: Optional[str] = None) -> SentStatus:
 	"""Send out mail by invoking MTA CLI"""
 	command = syscfg.sendmail (
@@ -118,6 +135,23 @@ class EMail (IDs):
 		except UnicodeEncodeError:
 			return as_string.encode ('UTF-8')
 
+	@staticmethod
+	def scanner (fd: IO[str]) -> Iterator[EmailMessage]:
+		mail: List[str] = []
+		def make () -> EmailMessage:
+			return EMail.from_string (''.join (mail))
+		#
+		for line in fd:
+			if line.startswith ('From '):
+				if mail:
+					yield make ()
+					mail.clear ()
+			elif line.startswith ('>From '):
+				line = line[1:]
+			mail.append (line)
+		if mail:
+			yield make ()
+						
 	@staticmethod
 	def sign (message: str, sender: Optional[str] = None, company_id: Optional[int] = None) -> str:
 		return message
@@ -537,7 +571,6 @@ added."""
 			skip_levels.add ('DEBUG')
 		if start_when is not None:
 			start_when = datetime (start_when.year, start_when.month, start_when.day, start_when.hour, start_when.minute, start_when.second)
-			timestamp_parser = ParseTimestamp ()
 		pid = os.getpid () if my_pid else None
 		try:
 			content: str
@@ -558,7 +591,7 @@ added."""
 					def match_date (ts: str) -> bool:
 						if start_when is None:
 							return True
-						parsed = timestamp_parser (ts)
+						parsed = parse_timestamp (ts)
 						if parsed is not None:
 							return parsed >= start_when
 						return True
@@ -672,8 +705,13 @@ This class can be subclassed and the method parse() can be
 overwritten to implement further logic for resolving the customer."""
 	__slots__ = [
 		'content', 'invalids', 'message', 'uid_handler', 'uid_handler_borrow',
-		'uids', 'nvuids', 'seen', 'unparsed', 'ignore', 'unsubscribe', 'message_status'
+		'uids', 'unparsable', 'parsed', 'ignore', 'unsubscribe', 'message_status'
 	]
+	@dataclass
+	class ClassifiedUID:
+		valid: bool
+		uid: UID
+		counter: int = 1
 	def __init__ (self, content: str, invalids: bool = False, uid_handler: Optional[UIDHandler] = None) -> None:
 		"""Parses EMail found in ``content''"""
 		self.content = content
@@ -685,10 +723,9 @@ overwritten to implement further logic for resolving the customer."""
 		else:
 			self.uid_handler = UIDHandler (enable_cache = True)
 			self.uid_handler_borrow = False
-		self.uids: List[UID] = []
-		self.nvuids: List[UID] = []
-		self.seen: Set[str] = set ()
-		self.unparsed = True
+		self.uids: Dict[str, ParseEMail.ClassifiedUID] = {}
+		self.unparsable: Set[str] = set ()
+		self.parsed = False
 		self.ignore = False
 		self.unsubscribe = False
 		self.message_status: DefaultDict[str, List[Dict[str, Union[str, Header]]]] = defaultdict (list)
@@ -697,147 +734,162 @@ overwritten to implement further logic for resolving the customer."""
 		if not self.uid_handler_borrow:
 			self.uid_handler.done ()
 
+	def __iter__ (self) -> Generator[Tuple[bool, UID], None, None]:
+		for cuid in self.uids.values ():
+			yield (cuid.valid, cuid.uid)
+																		
 	def parsed_uid (self, uid: str, validate: bool = True) -> UID:
 		return self.uid_handler.parse (uid, validate = validate)
 
-	def __iter__ (self) -> Generator[Tuple[bool, UID], None, None]:
-		for (valid, uids) in [(False, self.nvuids), (True, self.uids)]:
-			if uids is not None:
-				for uid in uids:
-					yield (valid, uid)
-
-	def __add_uid (self, uid: str) -> None:
-		if uid not in self.seen:
-			self.seen.add (uid)
+	def _add_uid (self, uidstr: str) -> None:
+		if uidstr not in self.unparsable:
 			try:
-				self.uids.append (self.parsed_uid (uid))
-			except error as e1:
-				if self.invalids:
-					try:
-						self.nvuids.append (self.parsed_uid (uid, False))
-					except error as e2:
-						logger.debug (f'Unparsable UID "{uid}" found: {e1}/{e2}')
+				self.uids[uidstr].counter += 1
+			except KeyError:
+				uid: Optional[UID] = None
+				valid = False
+				try:
+					uid = self.parsed_uid (uidstr)
+					valid = True
+				except error as e1:
+					if self.invalids:
+						try:
+							uid = self.parsed_uid (uidstr, False)
+						except error as e2:
+							logger.debug (f'Unparsable UID "{uidstr}" found: {e1}/{e2}')
+					else:
+						logger.debug (f'Unparsable UID "{uidstr}" found: {e1}')
+				if uid is None:
+					self.unparsable.add (uidstr)
 				else:
-					logger.debug (f'Unparsable UID "{uid}" found: {e1}')
+					self.uids[uidstr] = ParseEMail.ClassifiedUID (valid = valid, uid = uid)
 	
-	pattern_link = re.compile ('https?://[^/]+/[^?]*\\?.*uid=(3D)?([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
-	pattern_subject = re.compile ('unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
+	pattern_link = re.compile ('https?://[^/]+([^ \t\r\n\v"\'>]+)', re.IGNORECASE)
+	pattern_uid = re.compile ('uid=(3D)?([0-9a-z_-]+(\\.[0-9a-z_-]+){2,8})|/([0-9a-z_-]+(\\.[0-9a-z_-]+){2,8})/', re.IGNORECASE)
+	pattern_subject = re.compile ('unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){2,8})', re.IGNORECASE)
 	pattern_list_unsubscribe_separator = re.compile ('<([^>]*)>')
-	pattern_list_unsubscribe = re.compile ('mailto:[^?]+\\?subject=unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
-	def __find (self,
+	pattern_list_unsubscribe = re.compile ('mailto:[^?]+\\?subject=unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){2,8})', re.IGNORECASE)
+	def _find (self,
 		s: Union[None, str, Header],
 		pattern: Pattern[str],
-		position: int,
-		callback: Optional[Callable[[Match[str]], None]] = None
+		callback: Callable[[Match[str]], Union[None, str, List[str]]]
 	) -> None:
 		if s is not None:
 			for m in pattern.finditer (str (s)):
-				if callable (callback):
-					callback (m)
-				self.__add_uid (m.group (position))
-	def __find_link (self, s: Union[None, str, Header]) -> None:
-		self.__find (s, self.pattern_link, 2)
-	def __find_message_id (self, s: Union[None, str, Header]) -> None:
-		def checkIgnore (m: Match[str]) -> None:
-			if mid := ParseMessageID.parse (m):
+				if (uids := callback (m)) is not None:
+					if isinstance (uids, str):
+						self._add_uid (uids)
+					else:
+						for uid in uids:
+							self._add_uid (uid)
+	def _find_link (self, s: Union[None, str, Header]) -> None:
+		def find_uid (m: Match[str]) -> List[str]:
+			rc: List[str] = []
+			for um in self.pattern_uid.finditer (m.group (1)):
+				g = um.groups ()
+				if g[1]:
+					rc.append (g[1])
+				elif g[3]:
+					rc.append (g[3])
+			return rc
+		self._find (s, self.pattern_link, find_uid)
+
+	def _find_message_id (self, s: Union[None, str, Header]) -> None:
+		def check_ignore (m: Match[str]) -> str:
+			if (mid := ParseMessageID.parse (m)) is not None:
 				self.ignore = mid.is_blind_carbon_copy
-		self.__find (s, ParseMessageID.pattern_search, 2, callback = checkIgnore)
-	def __find_subject (self, s: Union[None, str, Header]) -> None:
-		def setUnsubscribe (m: Match[str]) -> None:
+			return m.group (2)
+		self._find (s, ParseMessageID.pattern_search, check_ignore)
+
+	def _find_subject (self, s: Union[None, str, Header]) -> None:
+		def set_unsubscribe (m: Match[str]) -> str:
 			self.unsubscribe = True
-		self.__find (s, self.pattern_subject, 1, callback = setUnsubscribe)
-	def __find_list_unsubscribe (self, s: Union[None, str, Header]) -> None:
+			return m.group (1)
+		self._find (s, self.pattern_subject, set_unsubscribe)
+
+	def _find_list_unsubscribe (self, s: Union[None, str, Header]) -> None:
 		if s is not None:
 			for elem in self.pattern_list_unsubscribe_separator.findall (str (s)):
-				self.__find_link (elem)
-				self.__find (elem, self.pattern_list_unsubscribe, 1)
+				self._find_link (elem)
+				self._find (elem, self.pattern_list_unsubscribe, lambda m: m.group (1))
 			
-	def __parse_header (self, payload: EmailMessage) -> None:
+	def _parse_header (self, payload: EmailMessage) -> None:
 		for header in ['message-id', 'references', 'in-reply-to']:
 			try:
 				value = payload[header]
 				try:
-					self.__find_message_id (value)
+					self._find_message_id (value)
 				except Exception as e:
 					logger.warning (f'{header}: cannot find header due to: {e}')
 			except Exception as e:
 				logger.debug (f'{header}: ignore invalid header: {e}')
-		self.__find_subject (payload['subject'])
-		self.__find_list_unsubscribe (payload['list-unsubscribe'])
+		self._find_subject (payload['subject'])
+		self._find_list_unsubscribe (payload['list-unsubscribe'])
 	
-	def __parse_payload (self, payload: EmailMessage, level: int) -> None:
-		self.__parse_header (payload)
-		p = payload.get_payload (decode = True)
-		if self.parse_payload (payload, p, level):
-			ct = payload.get_content_type ()
-			if p is not None:
-				content: str
-				if isinstance (p, str):
-					content = p
-				elif isinstance (p, bytes):
-					available_charsets = payload.get_charsets ()
-					charsets = [_c for _c in available_charsets if _c] if available_charsets else []
-					if not charsets:
-						charsets = ['UTF-8']
-					for charset in charsets:
-						with Ignore (UnicodeDecodeError, LookupError):
-							content = p.decode (charset)
-							break
+	def _parse_payload (self, message: EmailMessage, level: int) -> None:
+		self._parse_header (message)
+		payload = message.get_payload (decode = True)
+		content: Optional[str] = None
+		if payload is not None:
+			if isinstance (payload, str):
+				content = payload
+			elif isinstance (payload, bytes):
+				available_charsets = message.get_charsets ()
+				charsets = [_c for _c in available_charsets if _c] if available_charsets else []
+				for charset in charsets if charsets else ['UTF-8']:
+					with Ignore (UnicodeDecodeError, LookupError):
+						content = payload.decode (charset)
+						break
+		if self.parse_payload (message, content, level):
+			content_type = message.get_content_type ()
+			if content_type is None or content_type.startswith ('text/'):
+				if content is not None:
+					if content_type == 'text/rfc822-headers':
+						submessage = EMail.from_string (content)
+						self._parse_payload (submessage, level + 1)
 					else:
-						try:
-							content = p.decode (charsets[0], errors = 'backslashreplace')
-						except LookupError:
-							content = p.decode ('UTF-8', errors = 'backslashreplace')
-				else:		
-					content = payload.get_payload ()
-				if ct == 'text/rfc822-headers':
-					submessage = EMail.from_string (content)
-					self.__parse_payload (submessage, level + 1)
-				else:
-					self.__find_link (content)
-			else:
-				store_status = ct.lower ().startswith ('message/') if ct else False
-				for pl in cast (List[Union[str, EmailMessage]], payload.get_payload ()):
-					if isinstance (pl, str):
-						self.__find_link (pl)
+						self._find_link (content)
+			elif message.is_multipart ():
+				store_status =  content_type.startswith ('message/')
+				for submessage in message.get_payload ():
+					if isinstance (submessage, str):
+						self._find_Link (submessage)
 					else:
 						if store_status:
 							try:
-								headers = pl.items ()
+								headers = submessage.items ()
 							except Exception as e:
 								logger.debug (f'failed to parse message block due to "{e}", try removing last line')
 								try:
-									headers = getattr (pl, '_headers')
+									headers = getattr (submessage, '_headers')
 									try:
 										faulty = headers.pop ()
 										logger.debug (f'remove possible faulty last header line "{faulty}"')
-										headers = pl.items ()
+										headers = submessage.items ()
 									except Exception as e:
 										logger.debug (f'failed removing last header and recollect header due to: {e}')
 								except AttributeError:
-									logger.debug (f'no headers (attribute) found in {pl}')
+									logger.debug (f'no headers (attribute) found in {submessage}')
 									headers = []
 							if headers:
-								self.message_status[ct].append (dict (headers))
-						self.__parse_payload (pl, level + 1)
+								self.message_status[content_type].append (dict (headers))
+						self._parse_payload (submessage, level + 1)
 
-	def __parse_message_status (self) -> None:
+	def _parse_message_status (self) -> None:
 		for (content_type, status_list) in self.message_status.items ():
 			for status_entry in status_list:
 				for (header, content) in status_entry.items ():
 					header = header.lower ()
 					if header == 'message-id':
-						self.__find_message_id (content)
+						self._find_message_id (content)
 					elif header == 'list-unsubscribe':
-						self.__find_list_unsubscribe (content)
-
+						self._find_list_unsubscribe (content)
 
 	def parse (self) -> None:
 		self.uids.clear ()
-		self.nvuids.clear ()
-		self.__parse_payload (self.message, 1)
-		self.__parse_message_status ()
-		self.unparsed = False
+		self._parse_payload (self.message, 1)
+		self._parse_message_status ()
+		self.parsed = True
 
 	@dataclass
 	class Origin:
@@ -846,26 +898,29 @@ overwritten to implement further logic for resolving the customer."""
 		mailing_id: int = 0
 		company_id: int = 0
 		licence_id: Optional[int] = None
+		context: Dict[str, Any] = field (default_factory = dict)
 		counter: int = 0
 	def get_origins (self) -> List[ParseEMail.Origin]:
 		"""Returns all found customer, sorted by their validity and frequency"""
-		if self.unparsed:
+		if not self.parsed:
 			self.parse ()
 		m: Dict[Tuple[bool, int, int, int, Optional[int]], ParseEMail.Origin] = {}
-		for (valid, uid) in self:
-			key = (valid, uid.customer_id, uid.mailing_id, uid.company_id, uid.licence_id)
+		for cuid in self.uids.values ():
+			key = (cuid.valid, cuid.uid.customer_id, cuid.uid.mailing_id, cuid.uid.company_id, cuid.uid.licence_id)
 			try:
-				m[key].counter += 1
+				temp = m[key]
+				temp.context.update (cuid.uid.ctx)
+				temp.counter += cuid.counter
 			except KeyError:
-				temp = ParseEMail.Origin (
-					valid = valid,
-					customer_id = uid.customer_id,
-					mailing_id = uid.mailing_id,
-					company_id = uid.company_id,
-					licence_id = uid.licence_id,
-					counter = 1
+				temp = m[key] = ParseEMail.Origin (
+					valid = cuid.valid,
+					customer_id = cuid.uid.customer_id,
+					mailing_id = cuid.uid.mailing_id,
+					company_id = cuid.uid.company_id,
+					licence_id = cuid.uid.licence_id,
+					context = cuid.uid.ctx.copy (),
+					counter = cuid.counter
 				)
-				m[key] = temp
 		return sorted (m.values (), key = lambda a: (a.valid, a.counter))
 	
 	def get_origin (self) -> Optional[ParseEMail.Origin]:

@@ -14,7 +14,7 @@
 #
 #
 #	1.) Configuration section
-java="java"
+java="java -Dlog.print=true"
 if [ "$LOG_HOME" ] ; then
 	java="$java -Dlog.home=$LOG_HOME"
 fi

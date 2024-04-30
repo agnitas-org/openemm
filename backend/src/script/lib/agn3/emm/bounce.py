@@ -18,7 +18,7 @@ from	typing import Any, Final, Optional, Union
 from	typing import DefaultDict, Dict, List, Set, Tuple, Type
 from	.config import EMMCompany
 from	..db import DB, TempDB
-from	..definitions import base
+from	..definitions import epoch, base
 from	..ignore import Ignore
 from	..parameter import Parameter
 from	..parser import Parsable, unit
@@ -41,10 +41,10 @@ class Bounce:
 	bav_rule_legacy_path: Final[str] = os.path.join (base, 'lib', 'bav.rule')
 	bounce_rule_table: Final[str] = 'bounce_rule_tbl'
 	bounce_config_table: Final[str] = 'bounce_config_tbl'
+	bounce_translate_table: Final[str] = 'bounce_translate_tbl'
 	ote_table: Final[str] = 'one_time_provider_tbl'
 	name_conversion: Final[str] = 'conversion'
 	name_company_info_conversion: Final[str] = 'bounce-conversion-parameter'
-	epoch: Final[datetime] = datetime (1970, 1, 1)
 	def __init__ (self, db: Optional[DB] = None, recheck_interval: Parsable = '3m', force_interval: Parsable = '1h') -> None:
 		self.db = db
 		self.rules: Dict[Tuple[int, int], Dict[str, List[str]]] = {}
@@ -52,8 +52,8 @@ class Bounce:
 		self.company_cache: Dict[int, int] = {}
 		self.rules_cache: Dict[Tuple[int, int], Dict[str, List[str]]] = {}
 		self.config_cache: Dict[Tuple[int, int, str], Dict[str, Any]] = {}
-		self.rules_latest = self.epoch
-		self.config_latest = self.epoch
+		self.rules_latest = epoch
+		self.config_latest = epoch
 		self.last_check = 0
 		self.recheck_interval = max (60, unit.parse (recheck_interval))
 		self.last_force = 0
@@ -197,7 +197,7 @@ class Bounce:
 				else:
 					with TempDB (self.db) as db, db.request () as cursor:
 						def check (read: bool, latest: datetime, table: str) -> bool:
-							if read and latest is not self.epoch:
+							if read and latest is not epoch:
 								rq = cursor.querys (
 									f'SELECT count(*) FROM {table} WHERE change_date > :latest',
 									{'latest': latest}

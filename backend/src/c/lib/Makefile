@@ -15,7 +15,7 @@ LIBS	:= -lagn -lparson -llua -lexpat -lssl -lcrypto
 SRCS	= buffer.c var.c log.c node.c map.c csig.c \
 	  tzdiff.c atob.c str.c net.c hash.c path.c \
 	  set.c skip.c lock.c xml.c daemon.c call.c cache.c \
-	  cvt.c unhex.c which.c timeout.c url.c systemconfig.c \
+	  cvt.c unhex.c which.c timeout.c url.c systemconfig.c build.c \
 	  fsdb.c alua.c \
 	  parson.c
 OBJS	= $(SRCS:%.c=%.o)
@@ -25,6 +25,7 @@ all:	parson.h libs $(LIB)
 
 clean:
 	rm -f $(LIB) $(OBJS) parson.c parson.h
+	rm -rf lib include
 	
 $(LIB):	$(OBJS)
 	rm -f $@
@@ -52,8 +53,8 @@ lib/libbsd.a:	libbsd-0.6.0.tar.gz
 	tar xzf libbsd-0.6.0.tar.gz && ( cd libbsd-0.6.0; ./configure --prefix=`dirname \`pwd\`` --disable-shared; make; mv src/.libs/libbsd.a ../lib; rm -rf ../include/bsd; mv include/bsd ../include; cd ..; rm -rf libbsd-0.6.0 )
 lib/libopendkim.a:	opendkim-2.10.3.tar.gz lib/libbsd.a
 	tar xzf opendkim-2.10.3.tar.gz && ( cd opendkim-2.10.3; patch -p1 < ../opendkim-2.10.3.patch; env "CFLAGS=-I`dirname \`pwd\``/include" "LDFLAGS=-L`dirname \`pwd\``/lib" ./configure "--prefix=`dirname \`pwd\``" --disable-shared --disable-filter --without-milter; make; mv libopendkim/.libs/libopendkim.a ../lib; mkdir -p ../include/opendkim; mv libopendkim/dkim.h ../include/opendkim; cd ..; rm -rf opendkim-2.10.3 )
-lib/libmpack.a:	mpack-amalgamation-1.1.tar.gz
-	tar xzf mpack-amalgamation-1.1.tar.gz && ( cd mpack-amalgamation-1.1; gcc -O3 -Isrc/mpack -c -o mpack.o src/mpack/mpack.c; ar rc ../lib/libmpack.a mpack.o; mv src/mpack/mpack.h ../include; cd ..; rm -rf mpack-amalgamation-1.1 )
+lib/libmpack.a:	mpack-amalgamation-1.1.1.tar.gz
+	tar xzf mpack-amalgamation-1.1.1.tar.gz && ( cd mpack-amalgamation-1.1.1; gcc -O3 -Isrc/mpack -c -o mpack.o src/mpack/mpack.c; ar rc ../lib/libmpack.a mpack.o; mv src/mpack/mpack.h ../include; cd ..; rm -rf mpack-amalgamation-1.1.1 )
 lib/libmilter.a:	sendmail-8.17.2.tar.gz
 	tar xaf $< && ( cd sendmail-8.17.2/libmilter; echo QVBQRU5EREVGKGBjb25mRU5WREVGJyxgLURORVRJTkVUNicpCg== | base64 -d > env; sh Build -c -fenv; cd ..; cp -r obj.*/libmilter/libmilter.a ../lib; cp -r include/libmilter ../include; cd ..; rm -rf sendmail-8.17.2 )
 

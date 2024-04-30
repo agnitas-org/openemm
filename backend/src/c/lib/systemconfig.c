@@ -21,7 +21,8 @@
 
 # define	CONFIG_ENV	"SYSTEM_CONFIG"
 # define	PATH_CONFIG_ENV	"SYSTEM_CONFIG_PATH"
-# define	PATH_CONFIG	"/home/openemm/etc/system.cfg"
+# define	PATH_LOCAL	"etc/system.cfg"
+# define	PATH_OSRELEASE	"/etc/os-release"
 
 typedef struct { /*{{{*/
 	char	*key;
@@ -189,7 +190,11 @@ selection_key (selection_t *s, int index, const char *key) /*{{{*/
 	return NULL;
 }/*}}}*/
 
-struct config { /*{{{*/
+struct systemconfig { /*{{{*/
+	bool_t		use_extra;
+	const char	*content_environ;
+	const char	*custom_path;
+	char		*local_path;
 	char		*filename;
 	struct timespec	last_modified;
 	selection_t	*selection;
@@ -201,7 +206,7 @@ struct config { /*{{{*/
 	/*}}}*/
 };
 static bool_t
-config_add (config_t *c, const char *key, const char *value) /*{{{*/
+config_add (systemconfig_t *c, const char *key, const char *value) /*{{{*/
 {
 	entry_t	*e;
 	
@@ -221,7 +226,7 @@ config_add (config_t *c, const char *key, const char *value) /*{{{*/
 	return e ? true : false;
 }/*}}}*/
 static bool_t
-parse_plain (config_t *c, char *buffer) /*{{{*/
+parse_plain (systemconfig_t *c, char *buffer) /*{{{*/
 {
 	bool_t	rc = true;
 	char	*cur, *ptr;
@@ -294,7 +299,7 @@ parse_plain (config_t *c, char *buffer) /*{{{*/
 	return rc;
 }/*}}}*/
 static bool_t
-parse_json (config_t *c, JSON_Value *json) /*{{{*/
+parse_json (systemconfig_t *c, JSON_Value *json) /*{{{*/
 {
 	bool_t	rc = false;
 	
@@ -351,7 +356,7 @@ parse_json (config_t *c, JSON_Value *json) /*{{{*/
 	return rc;
 }/*}}}*/
 static void
-config_reset (config_t *c) /*{{{*/
+config_reset (systemconfig_t *c) /*{{{*/
 {
 	if (c && c -> e) {
 		int	n;
@@ -365,75 +370,189 @@ config_reset (config_t *c) /*{{{*/
 	}
 }/*}}}*/
 static bool_t
-config_parse (config_t *c, char *buffer) /*{{{*/
+config_scratch (systemconfig_t *c, int size) /*{{{*/
+{
+	if (c -> scratch_size < size) {
+		if (c -> scratch = realloc (c -> scratch, size + 1))
+			c -> scratch_size = size;
+		else
+			c -> scratch_size = 0;
+	}
+	return c -> scratch_size >= size;
+}/*}}}*/
+static void
+config_extra (systemconfig_t *c) /*{{{*/
+{
+	build_t	*build = build_alloc ();
+	int	fd;
+			
+	config_add (c, "build.version", build && build -> version ? build -> version : "unknown");
+	config_add (c, "build.timestamp", build && build -> timestamp ? build -> timestamp : "unknown");
+	config_add (c, "build.host", build && build -> host ? build -> host : "unknown");
+	config_add (c, "build.user", build && build -> user ? build -> user : "unknwon");
+	if (build)
+		build_free (build);
+	if ((fd = open (PATH_OSRELEASE, O_RDONLY)) != -1) {
+		struct stat	st;
+		char		*buffer;
+		char		*ptr, *cur;
+		char		*name, *value, *parsed;
+		int		namelength;
+		char		quote;
+				
+		if ((fstat (fd, & st) != -1) && (st.st_size > 0) && (buffer = malloc (st.st_size + 1))) {
+			if (read (fd, buffer, st.st_size) == st.st_size) {
+				buffer[st.st_size] = '\0';
+				
+				for (cur = buffer; cur; cur = ptr) {
+					if (ptr = strchr (cur, '\n'))
+						*ptr++ = '\0';
+					while (isspace (*cur))
+						++cur;
+					if (*cur != '#') {
+						name = cur;
+						while (*cur && (*cur != '=')) {
+							*cur = tolower (*cur);
+							++cur;
+						}
+						if (*cur) {
+							namelength = cur - name;
+							*cur++ = '\0';
+							if (*cur == '"')
+								quote = *cur++;
+							else
+								quote = '\0';
+							value = cur;
+							parsed = cur;
+							while (*cur && (*cur != quote)) {
+								if (*cur == '\\')
+									++cur;
+								if (parsed != cur)
+									*parsed++ = *cur++;
+								else
+									++parsed, ++cur;
+							}
+							*parsed = '\0';
+							if (config_scratch (c, namelength + 5)) {
+								sprintf (c -> scratch, "os.%s", name);
+								config_add (c, c -> scratch, value);
+							}
+						}
+					}
+				}
+			}
+			free (buffer);
+		}
+		close (fd);
+	}
+}/*}}}*/
+static bool_t
+config_parse (systemconfig_t *c, char *buffer) /*{{{*/
 {
 	bool_t		rc = false;
 	
-	if (c && buffer) {
-		JSON_Value      *json;
-		
+	if (c) {
 		config_reset (c);
-		if (json = json_parse_string (buffer)) {
-			rc = parse_json (c, json);
-			json_value_free (json);
-		} else {
-			rc = false;
-		}
-		if (! rc) {
-			rc = parse_plain (c, buffer);
-		}
+		if (buffer) {
+			JSON_Value      *json;
+		
+			if (json = json_parse_string (buffer)) {
+				rc = parse_json (c, json);
+				json_value_free (json);
+			} else {
+				rc = false;
+			}
+			if (! rc) {
+				rc = parse_plain (c, buffer);
+			}
+		} else
+			rc = true;
+		if (rc && c -> use_extra)
+			config_extra (c);
 	}
 	return rc;
 }/*}}}*/
 static bool_t
-config_check (config_t *c) /*{{{*/
+config_check (systemconfig_t *c, bool_t recheck) /*{{{*/
 {
 	bool_t	rc;
 	int	fd;
-	
-	if (! c -> filename) {
-		return true;
-	}
-	rc = false;
-	if ((fd = open (c -> filename, O_RDONLY)) != -1) {
-		struct stat	st;
-		char		*buf;
 
-		if (fstat (fd, & st) != -1) {
-			if ((c -> last_modified.tv_sec != st.st_mtim.tv_sec) || (c -> last_modified.tv_nsec != st.st_mtim.tv_nsec)) {
-				if (S_ISREG (st.st_mode) && (buf = malloc (st.st_size + 1))) {
-					int	count, n;
+	rc = true;
+	if (! c -> content_environ) {
+		if ((! c -> filename) || (access (c -> filename, R_OK) == -1)) {
+			const char	*filename;
+			
+			if (c -> filename) {
+				free (c -> filename);
+				c -> filename = NULL;
+			}
+			if (c -> custom_path)
+				filename = c -> custom_path;
+			else {
+				filename = c -> local_path;
+				if ((! filename) || (access (filename, R_OK) == -1)) {
+# ifdef		PATH_CONFIG
+					filename = PATH_CONFIG;
+					if (access (filename, R_OK) == -1) 
+						if (access (PATH_LEGACY, R_OK) != -1)
+							filename = PATH_LEGACY;
+						else
+# endif		/* PATH_CONFIG */
+							filename = NULL;
+				}
+			}
+			if (filename && (! (c -> filename = strdup (filename))))
+				rc = false;
+			c -> last_modified.tv_sec = c -> last_modified.tv_nsec = 0;
+		}
+		if (rc)
+			if (c -> filename) {
+				rc = false;
+				if ((fd = open (c -> filename, O_RDONLY)) != -1) {
+					struct stat	st;
+					char		*buf;
+
+					if (fstat (fd, & st) != -1) {
+						if ((c -> last_modified.tv_sec != st.st_mtim.tv_sec) || (c -> last_modified.tv_nsec != st.st_mtim.tv_nsec)) {
+							if (S_ISREG (st.st_mode) && (buf = malloc (st.st_size + 1))) {
+								int	count, n;
 				
-					rc = true;
-					for (count = 0; rc && (count < st.st_size); ) {
-						n = read (fd, buf + count, st.st_size - count);
-						if (n > 0) {
-							count += n;
+								rc = true;
+								for (count = 0; rc && (count < st.st_size); ) {
+									n = read (fd, buf + count, st.st_size - count);
+									if (n > 0) {
+										count += n;
+									} else {
+										rc = false;
+									}
+								}
+								if (rc) {
+									buf[st.st_size] = '\0';
+									rc = config_parse (c, buf);
+									c -> last_modified = st.st_mtim;
+								}
+								free (buf);
+							}
 						} else {
-							rc = false;
+							rc = true;
 						}
 					}
-					if (rc) {
-						buf[st.st_size] = '\0';
-						rc = config_parse (c, buf);
-						c -> last_modified = st.st_mtim;
-					}
-					free (buf);
+					close (fd);
 				}
-			} else {
-				rc = true;
-			}
-		}
-		close (fd);
+			} else if (! recheck)
+				rc = config_parse (c, NULL);
 	}
 	return rc;
 }/*}}}*/
-config_t *
-systemconfig_free (config_t *c) /*{{{*/
+systemconfig_t *
+systemconfig_free (systemconfig_t *c) /*{{{*/
 {
 	if (c) {
 		config_reset (c);
 		selection_free (c -> selection);
+		if (c -> local_path)
+			free (c -> local_path);
 		if (c -> filename)
 			free (c -> filename);
 		if (c -> scratch)
@@ -442,16 +561,19 @@ systemconfig_free (config_t *c) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-config_t *
-systemconfig_alloc (void) /*{{{*/
+systemconfig_t *
+systemconfig_alloc (bool_t use_extra) /*{{{*/
 {
-	config_t	*c;
+	systemconfig_t	*c;
 	
-	if (c = (config_t *) malloc (sizeof (config_t))) {
-		bool_t		ok = true;
-		const char	*env = getenv (CONFIG_ENV);
-		char		*buf;
+	if (c = (systemconfig_t *) malloc (sizeof (systemconfig_t))) {
+		bool_t	ok = true;
+		char	*buf;
 		
+		c -> use_extra = use_extra;
+		c -> content_environ = getenv (CONFIG_ENV);
+		c -> custom_path = getenv (PATH_CONFIG_ENV);
+		c -> local_path = mkpath (path_home (), PATH_LOCAL, NULL);
 		c -> filename = NULL;
 		c -> last_modified.tv_sec = 0;
 		c -> last_modified.tv_nsec = 0;
@@ -463,49 +585,26 @@ systemconfig_alloc (void) /*{{{*/
 		c -> scratch_size = 0;
 		if (! c -> selection) {
 			ok = false;
-		} else if (env) {
-			if (buf = strdup (env)) {
+		} else if (c -> content_environ) {
+			if (buf = strdup (c -> content_environ)) {
 				ok = config_parse (c, buf);
 				free (buf);
-			} else {
+			} else
 				ok = false;
-			}
-		} else {
-			const char	*filename;
-			
-			filename = getenv (PATH_CONFIG_ENV);
-			if (! filename) {
-				filename = PATH_CONFIG;
-# ifdef		PATH_LEGACY					
-				if ((access (filename, R_OK) == -1) && (access (PATH_LEGACY, R_OK) != -1)) {
-					filename = PATH_LEGACY;
-				}
-# endif	
-			}
-			if (! (c -> filename = strdup (filename))) {
-				ok = false;
-			} else {
-				ok = config_check (c);
-			}
-		}
+		} else
+			ok = config_check (c, false);
 		if (! ok)
 			c = systemconfig_free (c);
 	}
 	return c;
 }/*}}}*/
 const char *
-systemconfig_find (config_t *c, const char *key) /*{{{*/
+systemconfig_find (systemconfig_t *c, const char *key) /*{{{*/
 {
-	if (c && config_check (c)) {
+	if (c && config_check (c, true)) {
 		int	keylen = strlen (key);
 		
-		if (c -> scratch_size < keylen + 1) {
-			if (c -> scratch = realloc (c -> scratch, keylen + 1))
-				c -> scratch_size = keylen + 1;
-			else
-				c -> scratch_size = 0;
-		}
-		if (c -> scratch_size >= keylen + 1) {
+		if (config_scratch (c, keylen + 1)) {
 			const char	*source;
 			char		*target;
 			char		*default_value;
@@ -546,9 +645,9 @@ systemconfig_find (config_t *c, const char *key) /*{{{*/
 	return NULL;
 }/*}}}*/
 bool_t
-systemconfig_get (config_t *c, int idx, const char **key, const char **value) /*{{{*/
+systemconfig_get (systemconfig_t *c, int idx, const char **key, const char **value) /*{{{*/
 {
-	if (c && config_check (c) && (idx >= 0) && (idx < c -> count)) {
+	if (c && config_check (c, true) && (idx >= 0) && (idx < c -> count)) {
 		if (key)
 			*key = c -> e[idx] -> key;
 		if (value)

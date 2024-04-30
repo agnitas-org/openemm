@@ -16,7 +16,7 @@ from	datetime import datetime
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Protocol, TypeVar, Union
+from	typing import Any, Callable, Optional, Protocol, Sequence, TypeVar, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbapi import DBAPI
@@ -30,17 +30,34 @@ from	.tools import abstract
 #
 __all__ = ['Row', 'Cursor', 'DBType', 'Core']
 #
-T = TypeVar ('T')
+_T = TypeVar ('_T')
 #
 class Row (Protocol):
+	_fields: Tuple[str, ...]
 	def __getattr__ (self, attr: str) -> Any: ...
 	def __getitem__ (self, item: int) -> Any: ...
 	def __iter__ (self) -> Iterator[Any]: ...
+	def _asdict (self) -> Dict[str, Any]: ...
 
 class Paramstyle (Enum):
 	qmark = 0
 	named = 2
 	format = 3
+
+_valid_name = re.compile ('^[a-z][a-z0-9_]*$', re.IGNORECASE)
+def row_maker (rowspec: Sequence[str]) -> Type[Row]:
+	seen: Set[str] = set ()
+	def norm (n: int, c: str) -> str:
+		if _valid_name.match (c) is None or keyword.iskeyword (c) or c in seen:
+			c = f'column_{n}'
+		seen.add (c)
+		return c
+	try:
+		rowtype = cast (Type[Row], namedtuple ('row', [norm (_n, _c) for (_n, _c) in enumerate (rowspec, start = 1)]))
+	except:
+		rowtype = cast (Type[Row], namedtuple ('row', ['column_{_n}'.format (_n = _n) for _n in range (1, len (rowspec) + 1)]))
+	rowtype._fields = tuple (rowspec)
+	return rowtype
 
 class Cursor:
 	"""Metaclass for database cursor
@@ -75,7 +92,7 @@ write the content directly to the database."""
 	def mode (self, mode: str) -> None:
 		raise KeyError (mode)
 		
-	def qselect (self, **args: T) -> T:
+	def qselect (self, **args: _T) -> _T:
 		"""See agn3.db.Core.qselect"""
 		return self.db.qselect (**args)
 
@@ -153,22 +170,10 @@ portable across different databases."""
 			] if normalize else self.curs.description
 		raise error ('no active query')
 
-	__valid_name = re.compile ('^[a-z][a-z0-9_]*$', re.IGNORECASE)
 	def make_row (self, data: List[Any]) -> Row:
 		if self.rowtype is None:
 			d = self.description ()
-			rowspec = ['_{n}'.format (n = _n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d]
-			#
-			seen: Set[str] = set ()
-			def norm (n: int, c: str) -> str:
-				if self.__valid_name.match (c) is None or keyword.iskeyword (c) or c in seen:
-					c = f'column_{n}'
-				seen.add (c)
-				return c
-			try:
-				self.rowtype = cast (Type[Row], namedtuple ('row', [norm (_n, _c) for (_n, _c) in enumerate (rowspec, start = 1)]))
-			except:
-				self.rowtype = cast (Type[Row], namedtuple ('row', ['column_{_n}'.format (_n = _n) for _n in range (1, len (rowspec) + 1)]))
+			self.rowtype = row_maker (['_{n}'.format (n = _n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d])
 		return self.rowtype (*data)
 		
 	def __iter__ (self) -> Iterator[Row]:
@@ -361,7 +366,7 @@ class Core:
 this is the base class for all database specific drivers and should
 inherit this class. """
 	__slots__ = [
-		'dbms', 'driver', 'cursor_class', 'fallbacks', 'connect_options',
+		'dbms', 'driver', 'cursor_class', 'fallbacks', 'connect_options', 'has_tablespaces',
 		'db', 'lasterr', 'logger', 'cursors', 'types', 'matches',
 		'cache_reformat', 'cache_variables', 'paramstyle'
 	]
@@ -404,6 +409,7 @@ but can produce lots of output in prdocutive use."""
 		self.cursor_class = cursor_class
 		self.fallbacks = ['default']
 		self.connect_options: Dict[str, Any] = {}
+		self.has_tablespaces = False
 		self.db: Optional[DBAPI.Driver] = None
 		self.lasterr: Optional[Exception] = None
 		self.logger: Optional[Callable[[str], None]] = None
@@ -499,7 +505,7 @@ this will store the message in lasterr and retrieved using the method
 		self.lasterr = errmsg
 		self.close ()
 
-	def qselect (self, **args: T) -> T:
+	def qselect (self, **args: _T) -> _T:
 		"""Selects a database sepcific query variant
 
 it is not always possible to write database neutral code. So if you

@@ -12,10 +12,11 @@
 from	__future__ import annotations
 import	re, logging
 import	xml.sax
+from	xml.sax import xmlreader
 from	xml.sax.handler import ContentHandler, ErrorHandler
 from	types import TracebackType
 from	typing import Any, Callable, NoReturn, Optional, Union
-from	typing import Dict, IO, List, Type
+from	typing import Dict, IO, List, Tuple, Type
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import copen
@@ -270,8 +271,8 @@ that all of them had been crossed.
 		__slots__ = ['key', 'enter', 'leave', 'active']
 		def __init__ (self,
 			key: Optional[str],
-			enter: Optional[Callable[[str, str, Dict[str, str]], Any]],
-			leave: Optional[Callable[[str, str, Dict[str, str], Optional[str]], Any]]
+			enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
+			leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]]
 		) -> None:
 			self.key = key
 			self.enter = enter
@@ -285,8 +286,8 @@ that all of them had been crossed.
 		__slots__ = ['regexp']
 		def __init__ (self,
 			pattern: str,
-			enter: Optional[Callable[[str, str, Dict[str, str]], Any]],
-			leave: Optional[Callable[[str, str, Dict[str, str], Optional[str]], Any]]
+			enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
+			leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]]
 		) -> None:
 			super ().__init__ (pattern, enter, leave)
 			self.regexp = re.compile (pattern)
@@ -302,7 +303,7 @@ that all of them had been crossed.
 			self.method_cache: Dict[str, Optional[str]] = {}
 
 		__normalizePattern = re.compile ('[^A-Za-z0-9_]')
-		def __call__ (self, path: str, name: str, attrs: Dict[str, Any], content: Union[None, bool, str] = False) -> None:
+		def __call__ (self, path: str, name: str, attrs: xmlreader.AttributesImpl, content: Union[None, bool, str] = False) -> None:
 			try:
 				method = self.method_cache[path]
 			except KeyError:
@@ -315,7 +316,7 @@ that all of them had been crossed.
 	
 	class Level:
 		__slots__ = ['path', 'name', 'attrs', 'content', 'points', 'active']
-		def __init__ (self, path: str, name: str, attrs: Dict[str, Any]) -> None:
+		def __init__ (self, path: str, name: str, attrs: xmlreader.AttributesImpl) -> None:
 			self.path = path
 			self.name = name
 			self.attrs = attrs
@@ -385,8 +386,8 @@ that all of them had been crossed.
 	
 	def add_handler (self,
 		key: Optional[str],
-		enter: Optional[Callable[[str, str, Dict[str, str]], Any]],
-		leave: Optional[Callable[[str, str, Dict[str, str], Optional[str]], Any]],
+		enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
+		leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]],
 		border: Optional[str] = None
 	) -> XMLReader.Point:
 		"""add a handler for a specific XML key"""
@@ -400,8 +401,8 @@ that all of them had been crossed.
 		
 	def add_handler_regex (self,
 		pattern: str,
-		enter: Optional[Callable[[str, str, Dict[str, str]], Any]],
-		leave: Optional[Callable[[str, str, Dict[str, str], Optional[str]], Any]],
+		enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
+		leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]],
 		border: Optional[str] = None
 	) -> XMLReader.PointRe:
 		"""add a handler for a XML key regex"""
@@ -459,7 +460,7 @@ that all of them had been crossed.
 		self.stage = []
 		self.level = None
 	
-	def startElement (self, name: str, attrs: Dict[str, str]) -> None:
+	def startElement (self, name: str, attrs: xmlreader.AttributesImpl) -> None:
 		elem = [_s.name for _s in self.stage] + [name]
 		key = '.'.join (elem)
 		self.level = self.Level (key, name, attrs)
@@ -500,15 +501,15 @@ that all of them had been crossed.
 		if self.level is not None:
 			self.level.add_content (content)
 
-	def setDocumentLocator (self, locator: Type[Any]) -> None:
+	def setDocumentLocator (self, locator: xmlreader.Locator) -> None:
 		pass
-	def startPrefixMapping (self, prefix: str, uri: str) -> None:
+	def startPrefixMapping (self, prefix: Optional[str], uri: str) -> None:
 		pass
 	def endPrefixMapping (self, prefix: str) -> None:
 		pass
-	def startElementNS (self, name: str, qname: str, attrs: Dict[str, str]) -> None:
+	def startElementNS (self, name: Tuple[str, str], qname: str, attrs: xmlreader.AttributesNSImpl) -> None:
 		pass
-	def endElementNS (self, name: str, qname: str) -> None:
+	def endElementNS (self, name: Tuple[str, str], qname: str) -> None:
 		pass
 	def ignorableWhitespace (self, whitespace: str) -> None:
 		pass

@@ -27,14 +27,18 @@ transcode_url_for_content (blockmail_t *blockmail, xmlBufferPtr url, const char 
 	
 	buffer_clear (blockmail -> link_maker);
 	while (size > 0) {
-		ch = *ptr++;
-		--size;
+		ch = *ptr;
 		if (state < 3) {
 			if (ch == '/')
 				++state;
 		} else if (state == 3) {
 			if (isalpha (ch)) {
-				buffer_appendch (blockmail -> link_maker, ch);
+				const xmlChar	*bptr = ptr;
+				int		bsize = size;
+				
+				while ((bsize > 0) && isalpha (*bptr))
+					++bptr, --bsize;
+				buffer_append (blockmail -> link_maker, ptr, bptr - ptr);
 				buffer_appendch (blockmail -> link_maker, '/');
 				buffer_appends (blockmail -> link_maker, uid);
 				buffer_appendch (blockmail -> link_maker, '/');
@@ -44,6 +48,8 @@ transcode_url_for_content (blockmail_t *blockmail, xmlBufferPtr url, const char 
 		} else if ((ch == '?') || (ch == '&'))
 			break;
 		buffer_appendch (blockmail -> link_maker, ch);
+		++ptr;
+		--size;
 	}
 	return rc;
 }/*}}}*/
@@ -91,25 +97,35 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 	} else
 		xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
 }/*}}}*/
-static const char *
-mkonepixellogurl (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
+static bool_t
+mklinkurl (blockmail_t *blockmail, const char *uid_name, const char *uid, const xmlBufferPtr url, const char *link_parameter) /*{{{*/
 {
-	char	*uid;
+	char	separator;
 	
-	if (blockmail -> onepixel_url && (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0))) {
-		if ((! blockmail -> rdir_content_links) || (! transcode_url_for_content (blockmail, blockmail -> onepixel_url, uid))) {
-			buffer_set (blockmail -> link_maker, xmlBufferContent (blockmail -> onepixel_url), xmlBufferLength (blockmail -> onepixel_url));
-			buffer_appends (blockmail -> link_maker, "uid=");
-			buffer_appends (blockmail -> link_maker, uid);
-			if (blockmail -> gui)
-				buffer_appends (blockmail -> link_maker, "&nocount=1");
-		}
-		free (uid);
-		return buffer_length (blockmail -> link_maker) ? buffer_string (blockmail -> link_maker) : NULL;
+	if (url && xmlBufferLength (url) && ((! blockmail -> rdir_content_links) || (! transcode_url_for_content (blockmail, url, uid)))) {
+		buffer_set (blockmail -> link_maker, xmlBufferContent (url), xmlBufferLength (url));
+		buffer_appends (blockmail -> link_maker, uid_name);
+		buffer_appendch (blockmail -> link_maker, '=');
+		buffer_appends (blockmail -> link_maker, uid);
+		separator = '&';
+	} else
+		separator = '?';
+	if (link_parameter && *link_parameter && buffer_length (blockmail -> link_maker)) {
+		buffer_appendch (blockmail -> link_maker, separator);
+		buffer_appends (blockmail -> link_maker, link_parameter);
 	}
-	return NULL;
+	return buffer_length (blockmail -> link_maker) > 0;
 }/*}}}*/
-	
+static bool_t
+mkonepixellogurl (blockmail_t *blockmail, const char *uid) /*{{{*/
+{
+	return mklinkurl (blockmail, "uid", uid, blockmail -> onepixel_url, blockmail -> gui ? "nocount=1" : NULL);
+}/*}}}*/
+static bool_t
+mkhoneypotlinkurl (blockmail_t *blockmail, const char *uid) /*{{{*/
+{
+	return mklinkurl (blockmail, "agnUID", uid, blockmail -> honeypot_url, NULL);
+}/*}}}*/
 static bool_t
 url_is_personal (const xmlChar *url, int len) /*{{{*/
 {
@@ -954,41 +970,51 @@ find_bottom (const xmlChar *cont, int len) /*{{{*/
 static bool_t
 update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, block_t *preheader, block_t *clearance) /*{{{*/
 {
-	const char	*opx;
-	opl_t		opl;
-	bool_t		clr;
+	bool_t	rc;
+	char	*uid;
+	add_t	opl;
+	add_t	hpl;
+	bool_t	clr;
 
-	opx = NULL;
-	if ((! blockmail -> anon) && bspec) {
-		opl = bspec -> opl;
-		if (opl != OPL_None)
-			if (! (opx = mkonepixellogurl (blockmail, rec)))
-				return false;
-		clr = blockmail -> status_field == 'T' && bspec -> clearance && clearance && xmlBufferLength (clearance -> in) > 0;
-	} else {
-		opl = OPL_None;
-		clr = false;
+	rc = true;
+	uid = NULL;
+	opl = Add_None;
+	hpl = Add_None;
+	clr = false;
+	if (! blockmail -> anon) {
+		if (bspec) {
+			if (blockmail -> onepixel_url)
+				opl = bspec -> opl;
+			clr = blockmail -> status_field == 'T' && bspec -> clearance && clearance && xmlBufferLength (clearance -> in) > 0;
+		}
+		if (blockmail -> honeypot_url && (blockmail -> add_honeypot_link != Add_None))
+			hpl = blockmail -> add_honeypot_link;
+		if ((opl != Add_None) || (hpl != Add_None))
+			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0))) {
+				log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create generic agnUID");
+				rc = false;
+			}
 	}
-	if ((opl != OPL_None) || preheader || clr) {
+	if (rc && (opl != Add_None) || preheader || clr || (hpl != Add_None)) {
 		int		state;
 		int		position;
 		int		length;
 		const xmlChar	*content;
 
-		for (state = 0; state < 2; ++state) {
+		for (state = 0; rc && (state < 2); ++state) {
 			position = -1;
 			length = xmlBufferLength (block -> in);
 			content = xmlBufferContent (block -> in);
 			switch (state) {
 			case 0:
-				if ((opl == OPL_Top) || preheader) {
+				if ((opl == Add_Top) || preheader || (hpl == Add_Top)) {
 					position = find_top (content, length);
 					if (position == -1)
 						position = 0;
 				}
 				break;
 			case 1:
-				if ((opl == OPL_Bottom) || clr) {
+				if ((opl == Add_Bottom) || clr || (hpl == Add_Bottom)) {
 					position = find_bottom (content, length);
 					if (position == -1)
 						position = length;
@@ -1002,28 +1028,47 @@ update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_
 				if ((state == 0) && preheader) {
 					xmlBufferAdd (block -> out, xmlBufferContent (preheader -> in), xmlBufferLength (preheader -> in));
 				}
-				if (((state == 0) && (opl == OPL_Top)) ||
-				    ((state == 1) && (opl == OPL_Bottom))) {
-					if (blockmail -> onepix_template) {
-						map_t		*local = string_map_setup ();
-						xmlBufferPtr	temp;
-				
-						string_map_addss (local, "link", opx);
-						if (temp = string_mapn (blockmail -> onepix_template, local, rec -> smap, blockmail -> smap, NULL)) {
-							xmlBufferAdd (block -> out, xmlBufferContent (temp), xmlBufferLength (temp));
-							xmlBufferFree (temp);
-						}
-					} else {
-						const xmlChar	lprefix[] = "<img src=\"";
-						const xmlChar	lpostfix[] = "\" alt=\"\" border=\"0\" height=\"1\" width=\"1\"/>";
-			
-						xmlBufferAdd (block -> out, lprefix, sizeof (lprefix) - 1);
-						xmlBufferCCat (block -> out, opx);
-						xmlBufferAdd (block -> out, lpostfix, sizeof (lpostfix) - 1);
-					}
-				}
 				if ((state == 1) && clr) {
 					xmlBufferAdd (block -> out, xmlBufferContent (clearance -> in), xmlBufferLength (clearance -> in));
+				}
+				if (((state == 0) && (hpl == Add_Top)) ||
+				    ((state == 1) && (hpl == Add_Bottom))) {
+					if (mkhoneypotlinkurl (blockmail, uid)) {
+						const xmlChar	lprefix[] = "<a href=\"";
+						const xmlChar	lpostfix[] = "\"></a>";
+
+						xmlBufferAdd (block -> out, lprefix, sizeof (lprefix) - 1);
+						xmlBufferAdd (block -> out, buffer_content (blockmail -> link_maker), buffer_length (blockmail -> link_maker));
+						xmlBufferAdd (block -> out, lpostfix, sizeof (lpostfix) - 1);
+					} else {
+						log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create honey pot url");
+						rc = false;
+					}
+				}
+				if (((state == 0) && (opl == Add_Top)) ||
+				    ((state == 1) && (opl == Add_Bottom))) {
+					if (mkonepixellogurl (blockmail, uid)) {
+						if (blockmail -> onepix_template) {
+							map_t		*local = string_map_setup ();
+							xmlBufferPtr	temp;
+				
+							string_map_addss (local, "link", buffer_string (blockmail -> link_maker));
+							if (temp = string_mapn (blockmail -> onepix_template, local, rec -> smap, blockmail -> smap, NULL)) {
+								xmlBufferAdd (block -> out, xmlBufferContent (temp), xmlBufferLength (temp));
+								xmlBufferFree (temp);
+							}
+						} else {
+							const xmlChar	lprefix[] = "<img src=\"";
+							const xmlChar	lpostfix[] = "\" alt=\"\" border=\"0\" height=\"1\" width=\"1\"/>";
+
+							xmlBufferAdd (block -> out, lprefix, sizeof (lprefix) - 1);
+							xmlBufferAdd (block -> out, buffer_content (blockmail -> link_maker), buffer_length (blockmail -> link_maker));
+							xmlBufferAdd (block -> out, lpostfix, sizeof (lpostfix) - 1);
+						}
+					} else {
+						log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create one pixel log url");
+						rc = false;
+					}
 				}
 				if (position < length)
 					xmlBufferAdd (block -> out, content + position, length - position);
@@ -1031,7 +1076,9 @@ update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_
 			}
 		}
 	}
-	return true;
+	if (uid)
+		free (uid);
+	return rc;
 }/*}}}*/
 static bool_t
 convert_entities (blockmail_t *blockmail, block_t *block) /*{{{*/

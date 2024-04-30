@@ -9,106 +9,150 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	logging
-from	typing import Optional, Union
-from	typing import Dict, Tuple
-from	..db import DB
-from	..exceptions import error
+from	__future__ import annotations
+from	typing import Generic, Optional, TypeVar
+from	typing import Dict, NamedTuple, Tuple
+from	..db import DB, TempDB
+from	..dbconfig import DBConfig
+from	..definitions import dbid_default
+from	..ignore import Ignore
 #
-__all__ = ['Datasource']
+__all__ = ['Sourcegroup', 'SGKey', 'SGValue', 'Datasource', 'DSKey', 'DSValue']
 #
-logger = logging.getLogger (__name__)
+_K = TypeVar ('_K')
+_V = TypeVar ('_V')
 #
-class Datasource:
-	"""Get or create a datasource id by Name
-
-This class fetches an existing or creates a new datasource_id by
-name."""
-	__slots__ = ['cache']
+class _Cache (Generic[_K, _V]):
+	__slots__ = ['_cache']
+	dbid_default: Optional[str] = None
 	def __init__ (self) -> None:
-		self.cache: Dict[Tuple[str, int], Optional[int]] = {}
+		self._cache: Dict[Tuple[str, _K], _V] = {}
+		
+	def get (self, db: Optional[DB], key: _K) -> _V:
+		ckey = (self._find_dbid (db), key)
+		with Ignore (KeyError):
+			return self._cache[ckey]
+		with TempDB (db) as tdb:
+			self._cache[ckey] = value = self.retrieve (tdb, key)
+		return value
+	
+	def retrieve (self, db: DB, key: _K) -> _V:
+		raise NotImplementedError ()
 
-	def get_id (self, name: str, company_id: int, source_group: Union[int, str], db: Optional[DB] = None) -> Optional[int]:
-		"""get an existing ID or creates a new one
+	def _find_dbid (self, db: Optional[DB]) -> str:
+		if db is not None and db.dbid is not None:
+			return db.dbid
+		if self.__class__.dbid_default is None:
+			self.__class__.dbid_default = DBConfig ().dbid_default
+			if self.__class__.dbid_default is None:
+				self.__class__.dbid_default = dbid_default
+		return self.__class__.dbid_default if self.__class__.dbid_default is not None else dbid_default
 
-Retrieves the datasource-id for a given ``name'' for the company
-``company_id''. If it does not exists, a new one is created using the
-``source_group'' (either numeric or textual representation). The
-optional ``db'' parameter is an open database driver, if this is None,
-a default database driver is created for database access."""
-		key = (name, company_id)
-		try:
-			rc = self.cache[key]
-		except KeyError:
-			rc = None
-			usedb = db if db is not None else DB ()
-			if usedb.isopen ():
-				for state in [0, 1]:
-					for row in usedb.query (
-						'SELECT datasource_id '
-						'FROM datasource_description_tbl '
-						'WHERE company_id = :company_id AND description = :description',
-						{
-							'company_id': company_id,
-							'description': name
-						}
-					):
-						rc = int (row.datasource_id)
-					if rc is None and state == 0:
-						for sourcegroup_field in 'sourcegroup_type', 'description':
-							if isinstance (source_group, int):
-								break
-							rq = usedb.querys (
-								'SELECT sourcegroup_id '
-								'FROM sourcegroup_tbl '
-								f'WHERE {sourcegroup_field} = :source',
-								{'source': source_group}
-							)
-							if rq is not None and rq.sourcegroup_id is not None:
-								source_group = int (rq.sourcegroup_id)
-						if not isinstance (source_group, int):
-							raise error (f'Invalid source_group: {source_group}')
-						#
-						rq = usedb.querys (
-							'SELECT sourcegroup_type, description '
-							'FROM sourcegroup_tbl '
-							'WHERE sourcegroup_id = :source',
-							{'source': source_group}
-						)
-						if rq is None:
-							raise error (f'Unknown source_group: {source_group}')
-						query = usedb.qselect (
-							oracle = (
-								'INSERT INTO datasource_description_tbl ('
-								'            datasource_id, description, company_id, sourcegroup_id, timestamp'
-								') VALUES ('
-								'            datasource_description_tbl_seq.nextval, :description, :company_id, :source_group, sysdate'
-								')'
-							), mysql = (
-								'INSERT INTO datasource_description_tbl ('
-								'            description, company_id, sourcegroup_id, timestamp'
-								') VALUES ('
-								'            :description, :company_id, :source_group, CURRENT_TIMESTAMP'
-								')'
-							)
-						)
-						usedb.update (
-							query,
-							{
-								'description': name,
-								'company_id': company_id,
-								'source_group': source_group
-							},
-							commit = True
-						)
-						logger.info (f'Created new datasource id companyID {company_id} with {name} for {rq.description} ({rq.sourcegroup_type})')
-			else:
-				logger.error ('Failed to open database: {error}'.format (error = usedb.last_error ()))
-			if db is None:
-				usedb.close ()
-			self.cache[key] = rc
-			if rc is not None:
-				logger.info (f'Found datasource {rc} for companyID {company_id} with {name}')
-			else:
-				logger.info (f'Did not found datasource for companyID {company_id} with {name}')
-		return rc
+class SGKey (NamedTuple):
+	typ: str
+class SGValue (NamedTuple):
+	id: int
+	name: str
+class Sourcegroup (_Cache[SGKey, SGValue]):
+	def retrieve (self, db: DB, key: SGKey) -> SGValue:
+		rq = db.querys (
+			'SELECT sourcegroup_id, description '
+			'FROM sourcegroup_tbl '
+			'WHERE sourcegroup_type = :sourcegroup_type',
+			{
+				'sourcegroup_type': key.typ
+			}
+		)
+		if rq is not None:
+			return SGValue (
+				id = rq.sourcegroup_id,
+				name = rq.description
+			)
+			
+		db.update (
+			db.qselect (
+				oracle = (
+					'INSERT INTO sourcegroup_tbl '
+					'       (sourcegroup_id, sourcegroup_type, description, timestamp, creation_date) '
+					'VALUES '
+					'       (sourcegroup_tbl_seq.nextval, :sourcegroup_type, :description, current_timestamp, current_timestamp)'
+				), mysql = (
+					'INSERT INTO sourcegroup_tbl '
+					'       (sourcegroup_type, description, timestamp, creation_date) '
+					'VALUES '
+					'       (:sourcegroup_type, :description, current_timestamp, current_timestamp)'
+				)
+			), {
+				'sourcegroup_type': key.typ,
+				'description': key.typ
+			},
+			commit = True
+		)
+		rq = db.querys (
+			db.qselect (
+				oracle = 'SELECT sourcegroup_tbl_seq.currval FROM DUAL',
+				mysql = 'SELECT last_insert_id()'
+			)
+		)
+		return SGValue (
+			id = 0 if rq is None or rq[0] is None else rq[0],
+			name = key.typ
+		)
+
+class DSKey (NamedTuple):
+	company_id: int
+	name: str
+	sourcegroup: str
+class DSValue (NamedTuple):
+	id: int
+	sourcegroup: SGValue
+	
+class Datasource (_Cache[DSKey, DSValue]):
+	def retrieve (self, db: DB, key: DSKey) -> DSValue:
+		sg = Sourcegroup ().get (db, SGKey (typ = key.sourcegroup))
+		rq = db.querys (
+			'SELECT datasource_id '
+			'FROM datasource_description_tbl '
+			'WHERE company_id = :company_id AND description = :description AND sourcegroup_id = :sourcegroup_id',
+			{
+				'company_id': key.company_id,
+				'description': key.name,
+				'sourcegroup_id': sg.id
+			}
+		)
+		if rq is not None:
+			return DSValue (
+				id = rq.datasource_id,
+				sourcegroup = sg
+			)
+
+		db.update (
+			db.qselect (
+				oracle = (
+					'INSERT INTO datasource_description_tbl '
+					'       (datasource_id, description, company_id, sourcegroup_id, timestamp) '
+					'VALUES '
+					'       (datasource_description_tbl_seq.nextval, :description, :company_id, :sourcegroup_id, current_timestamp)'
+				), mysql = (
+					'INSERT INTO datasource_description_tbl '
+					'       (description, company_id, sourcegroup_id, timestamp) '
+					'VALUES '
+					'       (:description, :company_id, :sourcegroup_id, current_timestamp)'
+				)
+			), {
+				'description': key.name,
+				'company_id': key.company_id,
+				'sourcegroup_id': sg.id
+			},
+			commit = True
+		)
+		rq = db.querys (
+			db.qselect (
+				oracle = 'SELECT datasource_description_tbl_seq.currval FROM DUAL',
+				mysql = 'SELECT last_insert_id()'
+			)
+		)
+		return DSValue (
+			id = 0 if rq is None or rq[0] is None else rq[0],
+			sourcegroup = sg
+		)

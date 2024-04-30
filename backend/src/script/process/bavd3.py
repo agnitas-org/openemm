@@ -20,6 +20,7 @@ from	dataclasses import dataclass, field
 from	datetime import datetime
 from	email.message import EmailMessage
 from	email.utils import parseaddr
+from	string import ascii_letters
 from	urllib.parse import quote
 from	typing import Any, Final, Optional
 from	typing import ClassVar, DefaultDict, Dict, List, NamedTuple, Pattern, Tuple
@@ -28,16 +29,18 @@ from	agn3.db import DB, Row
 from	agn3.definitions import base, licence, fqdn, syscfg
 from	agn3.email import EMail, ParseEMail
 from	agn3.emm.bounce import Bounce
-from	agn3.emm.datasource import Datasource
+from	agn3.emm.config import EMMCompany
+from	agn3.emm.datasource import Datasource, DSKey
 from	agn3.emm.types import MediaType, UserStatus
 from	agn3.exceptions import error, Stop
-from	agn3.ignore import Ignore
+from	agn3.ignore import Ignore, Experimental
 from	agn3.io import which
 from	agn3.log import log_limit, log
 from	agn3.parser import ParseTimestamp, unit, Line, Field, Lineparser, Tokenparser
 from	agn3.runtime import Runtime
 from	agn3.spool import Mailspool
 from	agn3.stream import Stream
+from	agn3.template import Placeholder
 from	agn3.tools import atoi, listsplit, unescape
 from	agn3.uid import UID, UIDHandler
 #
@@ -68,6 +71,83 @@ def invoke (url: str, retries: int = 3, **kws: Any) -> Tuple[bool, requests.Resp
 				raise
 		raise error (f'{url} invocation failed after {retries} retries')
 
+class CustomerInfo:
+	__slots__ = ['db', '_origin',  '_company', '_mailinglist', '_mailing', '_customer']
+	def __init__ (self, db: DB, origin: ParseEMail.Origin) -> None:
+		self.db = db
+		self._origin = origin
+		self._company: Optional[Row] = None
+		self._mailinglist: Optional[Row] = None
+		self._mailing: Optional[Row] = None
+		self._customer: Optional[Row] = None
+	
+	@property
+	def licence_id (self) -> int:
+		return self._origin.licence_id if self._origin.licence_id is not None else licence
+	
+	@property
+	def company_id (self) -> int:
+		return self._origin.company_id
+
+	@property
+	def mailing_id (self) -> int:
+		return self._origin.mailing_id
+
+	@property
+	def customer_id (self) -> int:
+		return self._origin.customer_id
+	
+	@property
+	def company (self) -> Row:
+		self._company = self._query (self._company, 'company_tbl', 'company_id = :company_id', company_id = self.company_id)
+		return self._company
+	
+	@property
+	def mailinglist (self) -> Row:
+		self._mailinglist = self._query (self._mailinglist, 'mailinglist_tbl', 'mailinglist_id = :mailinglist_id', mailinglist_id = self.mailing.mailinglist_id)
+		return self._mailinglist
+	
+	@property
+	def mailing (self) -> Row:
+		self._mailing = self._query (self._mailing, 'mailing_tbl', 'mailing_id = :mailing_id', mailing_id = self.mailing_id)
+		return self._mailing
+	
+	@property
+	def customer (self) -> Row:
+		self._customer = self._query (self._customer, f'customer_{self.company_id}_tbl', 'customer_id = :customer_id', customer_id = self.customer_id)
+		return self._customer
+	
+	def as_namespace (self) -> Dict[str, Any]:
+		ns: Dict[str, Any] = {
+			'licence_id': self.licence_id,
+			'company_id': self.company_id,
+			'mailinglist_id': self.mailing.mailinglist_id,
+			'mailing_id': self.mailing_id,
+			'customer_id': self.customer_id
+		}
+		try:
+			timestamp: int = self._origin.context['_s']
+		except:
+			timestamp = int (time.time ())
+		ns['senddate'] = datetime.fromtimestamp (timestamp)
+		for (name, value) in self._origin.context.items ():
+			ns[f'uid.{name}'] = value
+		for attr in 'company', 'mailinglist', 'mailing', 'customer':
+			with Ignore (ValueError):
+				for (name, value) in getattr (self, attr)._asdict ().items ():
+					ns[f'{attr}.{name}'] = value
+		return ns
+	
+	def _query (self, current: Optional[Row], table: str, clause: str, **kwargs: Any) -> Row:
+		if current is not None:
+			return current
+		with self.db.request () as cursor:
+			query = f'SELECT * FROM {table} WHERE {clause}'
+			rq = cursor.querys (query, kwargs)
+			if rq is not None:
+				return rq
+			raise ValueError (f'no result for {query} using {kwargs}')
+		
 class Report:
 	__slots__ = ['logpath', 'content']
 	def __init__ (self, logpath: Optional[str]) -> None:
@@ -132,7 +212,7 @@ class Autoresponder:
 			return True
 		return False
 	
-	def may_receive (self, db: DB, bounce: Bounce, parameter: Line, cinfo: ParseEMail.Origin, dryrun: bool) -> bool:
+	def may_receive (self, db: DB, bounce: Bounce, parameter: Line, cinfo: CustomerInfo, dryrun: bool) -> bool:
 		may_receive = True
 		limit: int = unit.parse (bounce.get_config (
 			company_id = parameter.company_id,
@@ -184,7 +264,7 @@ class Autoresponder:
 				cursor.sync ()
 		return may_receive
 	
-	def allow (self, db: DB, bounce: Bounce, parameter: Line, cinfo: ParseEMail.Origin, dryrun: bool) -> bool:
+	def allow (self, db: DB, bounce: Bounce, parameter: Line, cinfo: CustomerInfo, dryrun: bool) -> bool:
 		if self.is_in_allowlist (bounce, parameter):
 			return True
 		if not self.may_receive (db, bounce, parameter, cinfo, dryrun):
@@ -195,7 +275,7 @@ class Autoresponder:
 		db: DB,
 		report: Report,
 		bounce: Bounce,
-		cinfo: Optional[ParseEMail.Origin],
+		cinfo: Optional[CustomerInfo],
 		parameter: Line,
 		dryrun: bool
 	) -> None:
@@ -207,16 +287,14 @@ class Autoresponder:
 			mailing_id = parameter.autoresponder_mailing_id
 			company_id = parameter.company_id
 			report['autoresponder-mailing-id'] = mailing_id
+			report['autoresponder-company-id'] = company_id
 			if cinfo is None:
 				report['autoresponder-failure'] = 'unable to detect origin'
 				raise error ('failed to determinate origin of mail')
-			if not cinfo.valid:
-				report['autoresponder-failure'] = 'invalid origin detected'
-				raise error ('uid from foreign instance %s (expected from %s)' % (cinfo.licence_id, licence))
-			customer_id = cinfo.customer_id
-			rdir_domain = None
 			#
 			if db.isopen ():
+				customer_id = cinfo.customer_id
+				rdir_domain: Optional[str] = None
 				rq = db.querys (
 					'SELECT mailinglist_id, company_id, deleted '
 					'FROM mailing_tbl '
@@ -249,17 +327,8 @@ class Autoresponder:
 				else:
 					raise error (f'mailing {mailing_id} is not active')
 				#
-				if cinfo.mailing_id > 0:
-					rq = db.querys (
-						'SELECT mailinglist_id '
-						'FROM mailing_tbl '
-						'WHERE mailing_id = :mailing_id',
-						{
-							'mailing_id': cinfo.mailing_id
-						}
-					)
-					if rq is not None and rq.mailinglist_id:
-						mailinglist_ids.add (rq.mailinglist_id)
+				with Ignore (ValueError):
+					mailinglist_ids.add (cinfo.mailing.mailinglist_id)
 				#
 				for row in db.queryc (
 					'SELECT mailinglist_id, user_type '
@@ -379,7 +448,7 @@ class Scan:
 	reason: Optional[str] = None
 	dsn: Optional[str] = None
 	etext: Optional[str] = None
-	minfo: Optional[ParseEMail.Origin] = None
+	cinfo: Optional[CustomerInfo] = None
 
 class Rule:
 	__slots__ = ['rules', 'sections']
@@ -482,12 +551,12 @@ class Rule:
 		elif isinstance (pl, list):
 			for p in cast (List[EmailMessage], pl):
 				self.__scan (p, scan, sects, True, level + 1)
-				if scan.section and scan.dsn and scan.minfo:
+				if scan.section and scan.dsn and scan.cinfo:
 					break
 	
-	def scan_message (self, cinfo: Optional[ParseEMail.Origin], msg: EmailMessage, use: List[str]) -> Scan:
+	def scan_message (self, cinfo: Optional[CustomerInfo], msg: EmailMessage, use: List[str]) -> Scan:
 		rc = Scan ()
-		rc.minfo = cinfo
+		rc.cinfo = cinfo
 		sects = self.__collect_sections (use)
 		self.__scan (msg, rc, sects, True, 0)
 		if rc.section:
@@ -501,13 +570,14 @@ class Rule:
 				rc.etext = rc.reason
 			else:
 				rc.etext = ''
+		rc.etext = rc.etext.strip ()
 		logger.debug ('Scan results to section={section}, entry={entry}, reason={reason}, dsn={dsn}, error={error}, origin={origin}'.format (
 			section = rc.section.name if rc.section is not None else '-',
 			entry = '{action}: {pattern}'.format (action = rc.entry.action if rc.entry.action else '-', pattern = rc.entry.pattern) if rc.entry is not None else '-',
 			reason = rc.reason if rc.reason is not None else '-',
 			dsn = rc.dsn if rc.dsn is not None else '-',
-			error = rc.etext if rc.etext is not None else '-',
-			origin = rc.minfo if rc.minfo is not None else '-'
+			error = rc.etext,
+			origin = str (rc.cinfo) if rc.cinfo is not None else '-'
 		))
 		return rc
 #
@@ -630,8 +700,8 @@ class BAVConfig:
 
 class BAV:
 	__slots__ = [
-		'bounce',
-		'raw', 'msg', 'dryrun', 'report',
+		'bounce', 'db',
+		'raw', 'msg', 'dryrun', 'limit', 'report',
 		'uid_handler', 'parsed_email', 'cinfo', 'parameter',
 		'header_from', 'rid', 'sender', 'rule', 'reason'
 	]
@@ -645,20 +715,23 @@ class BAV:
 		realname: str
 		address: str
 	
-	def __init__ (self, bavconfig: BAVConfig, bounce: Bounce, raw: str, msg: EmailMessage, dryrun: bool = False) -> None:
+	def __init__ (self, bavconfig: BAVConfig, bounce: Bounce, db: DB, raw: str, msg: EmailMessage, dryrun: bool = False) -> None:
 		self.bounce = bounce
+		self.db = db
 		self.raw = raw
 		self.msg = msg
 		self.dryrun = dryrun
+		self.limit: Optional[int] = None
 		self.report = Report (BAV.reportlog if not dryrun else None)
 		self.uid_handler = UIDHandler (enable_cache = True)
 		self.parsed_email = ParseEMail (raw, uid_handler = self.uid_handler)
-		self.cinfo = self.parsed_email.get_origin ()
-		if self.cinfo is not None and self.cinfo.valid:
-			self.report['customer_id'] = self.cinfo.customer_id
-			self.report['mailing_id'] = self.cinfo.mailing_id
-			self.report['company_id'] = self.cinfo.company_id
-			self.report['licence_id'] = self.cinfo.licence_id if self.cinfo.licence_id is not None else licence
+		self.cinfo: Optional[CustomerInfo] = None
+		if (origin := self.parsed_email.get_origin ()) is not None and origin.valid:
+			self.cinfo = CustomerInfo (db, origin)
+			self.report['customer_id'] = origin.customer_id
+			self.report['mailing_id'] = origin.mailing_id
+			self.report['company_id'] = origin.company_id
+			self.report['licence_id'] = origin.licence_id
 		return_path = None
 		return_path_header = self.msg['return-path']
 		if return_path_header is not None:
@@ -680,7 +753,6 @@ class BAV:
 			self.parameter = bavconfig.parse (parameter)
 			if (
 				self.cinfo is not None and
-				self.cinfo.valid and
 				self.cinfo.company_id > 0 and
 				self.cinfo.company_id != self.parameter.company_id and
 				self.parameter.to
@@ -714,11 +786,80 @@ class BAV:
 		else:
 			self.sender = 'postmaster'
 		self.report['sender'] = self.sender
-		if not msg.get_unixfrom ():
-			msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
+		if not self.msg.get_unixfrom ():
+			self.msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
 		self.rule = Rule (bounce.get_rule (0 if self.cinfo is None else self.cinfo.company_id, atoi (self.rid)))
 		self.reason = ''
+		with Experimental ('EMM-10272'), EMMCompany (db = db) as emmcompany:
+			company_id = self.cinfo.company_id if self.cinfo is not None else None
+			add_header: list[str]
+			ridname: Optional[str]
+			if (headers := emmcompany.get (
+				name = 'bavd:add-headers',
+				company_id = company_id,
+				index = self.rid,
+				default = None
+			)) is not None:
+				add_header = Stream (listsplit (headers)).map (lambda s: f'bavd:add-header-{s}').list ()
+			else:
+				add_header = ['bavd:add-header']
+			for selector in add_header:
+				if (xheader := emmcompany.get (
+					name = selector,
+					company_id = company_id,
+					index = self.rid,
+					default = None
+				)) is not None:
+					if (
+						len (xheader) > 2
+						and
+						(control := xheader[0]) not in ascii_letters
+						and
+						xheader.endswith (control)
+						and
+						xheader.count (control) == 3
+					):
+						(known, anon) = xheader[1:-1].split (control)
+						template = (known if self.cinfo is not None else anon).strip ()
+					else:
+						template = xheader.strip ()
+					if template:
+						ns = self.cinfo.as_namespace () if self.cinfo is not None else {}
+						ns['rid'] = self.rid
+						try:
+							ridname
+						except NameError:
+							ridname = None
+							with Ignore (ValueError):
+								rq = db.querys (
+									'SELECT shortname '
+									'FROM mailloop_tbl '
+									'WHERE rid = :rid',
+									{
+										'rid': int (self.rid)
+									}
+								)
+								if rq is not None:
+									ridname = rq.shortname
+						ns['filter'] = ridname if ridname is not None else self.rid
+						header = Placeholder (lazy = True).replace (template, ns = ns)
+						with Ignore (ValueError):
+							(name, value) = (_p.strip () for _p in header.split (':', 1))
+							if name and value:
+								self.msg[name] = value
+								if self.dryrun:
+									print (f'Would add header "{name}: {value}"')
+			if (limit := emmcompany.get (
+				name = 'bavd:message-limit',
+				company_id = company_id,
+				default = None
+			)) is not None:
+				self.limit = unit.parse (limit, default = None)
 
+	def mailtext (self, msg: EmailMessage, unixfrom: bool) -> str:
+		mailtext = EMail.as_string (msg, unixfrom)
+		return mailtext if self.limit is None or self.limit <= 0 else mailtext[:self.limit]
+		
 	def save_message (self, action: str) -> None:
 		fname = BAV.save_pattern % (action, self.parameter.rid_name if self.parameter.rid_name else self.rid)
 		if self.dryrun:
@@ -726,7 +867,7 @@ class BAV:
 		else:
 			try:
 				with open (fname, 'a') as fd:
-					fd.write (EMail.as_string (self.msg, True) + '\n')
+					fd.write (self.mailtext (self.msg, True) + '\n')
 				logger.debug (f'Saved message to {fname}')
 			except IOError as e:
 				logger.error ('Unable to save mail copy to %s %s' % (fname, e))
@@ -737,10 +878,9 @@ class BAV:
 			print ('Would send mail to "%s"' % Stream (to).join (', '))
 		else:
 			try:
-				mailtext = EMail.as_string (msg, False)
 				cmd = syscfg.sendmail (to)
 				pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
-				(pout, perr) = pp.communicate (mailtext)
+				(pout, perr) = pp.communicate (self.mailtext (msg, False))
 				if pout:
 					logger.debug ('Sendmail to "%s" outputs this for information:\n%s' % (to, pout))
 				if pp.returncode or perr:
@@ -882,8 +1022,14 @@ class BAV:
 						logger.info ('No matching binding found, use cutomer_id %s' % customer_id)
 				else:
 					datasource_description = 'Mailloop #%s' % self.rid
-					dsid = Datasource ()
-					datasource_id = dsid.get_id (datasource_description, company_id, 4)
+					datasource_id = Datasource ().get (
+						db,
+						DSKey (
+							company_id = company_id,
+							name = datasource_description,
+							sourcegroup = 'FO'
+						)
+					).id
 					if db.dbms in ('mysql', 'mariadb'):
 						db.update (
 							'INSERT INTO customer_%d_tbl (email, gender, mailtype, timestamp, creation_date, datasource_id) '
@@ -1039,8 +1185,7 @@ class BAV:
 				del self.msg[BAV.x_agn]
 			if (
 				self.cinfo is not None and
-				self.cinfo.valid and
-				self.cinfo.licence_id is not None and self.cinfo.licence_id == licence and
+				self.cinfo.licence_id == licence and
 				self.cinfo.company_id > 0 and self.cinfo.company_id == self.parameter.company_id and
 				self.cinfo.customer_id > 0
 			):
@@ -1093,25 +1238,25 @@ class BAV:
 			if scan:
 				if scan.entry and scan.entry.action:
 					action = scan.entry.action
-				if scan.minfo:
+				if scan.cinfo:
 					if self.parsed_email.unsubscribe:
 						action = 'unsubscribe'
 						with log ('unsubscribe'):
 							user_remark = 'Opt-out by mandatory CSA link (mailto)'
-							self.unsubscribe (db, scan.minfo.customer_id, scan.minfo.mailing_id, user_remark)
+							self.unsubscribe (db, scan.cinfo.customer_id, scan.cinfo.mailing_id, user_remark)
 					else:
 						if scan.section:
 							if self.dryrun:
-								print ('Would write bouncelog with: %s, %d, %d, %s' % (scan.dsn, scan.minfo.mailing_id, scan.minfo.customer_id, scan.etext.strip () if isinstance (scan.etext, str) else scan.etext))
+								print ('Would write bouncelog with: %s, %d, %d, %s' % (scan.dsn, scan.cinfo.mailing_id, scan.cinfo.customer_id, scan.etext))
 							else:
 								try:
 									with open (BAV.ext_bouncelog, 'a') as fd:
-										fd.write ('%s;%s;%s;0;%s;timestamp=%s\tmailloop=%s\tserver=%s\n' % (scan.dsn, licence, scan.minfo.mailing_id, scan.minfo.customer_id, ParseTimestamp ().dump (datetime.now ()), scan.etext, fqdn))
+										fd.write ('%s;%s;%s;0;%s;timestamp=%s\tmailloop=%s\tserver=%s\n' % (scan.dsn, licence, scan.cinfo.mailing_id, scan.cinfo.customer_id, ParseTimestamp ().dump (datetime.now ()), scan.etext, fqdn))
 								except IOError as e:
 									logger.error ('Unable to write %s %s' % (BAV.ext_bouncelog, e))
 							self.report['bounce-dsn'] = scan.dsn
-							self.report['bounce-mailing-id'] = scan.minfo.mailing_id
-							self.report['bounce-customer-id'] = scan.minfo.customer_id
+							self.report['bounce-mailing-id'] = scan.cinfo.mailing_id
+							self.report['bounce-customer-id'] = scan.cinfo.customer_id
 							if scan.etext:
 								self.report['bounce-error-text'] = scan.etext
 							action = 'bounce'
@@ -1158,7 +1303,7 @@ class BAVD (Runtime):
 				try:
 					with open (fname, errors = 'backslashreplace') as fd:
 						content = fd.read ()
-					bav = BAV (bavconfig, bounce, content, EMail.from_string (content), True)
+					bav = BAV (bavconfig, bounce, db, content, EMail.from_string (content), True)
 					if bav.execute_is_systemmail ():
 						print ('--> Scan and unsubscribe')
 						ok = bav.execute_scan_and_unsubscribe (db)
@@ -1178,7 +1323,6 @@ class BAVD (Runtime):
 		self.delay = 10
 		self.spooldir = os.path.join (base, 'var', 'spool', 'mail')
 		self.worksize = None
-		self.size = 65536
 		self.rulefile: Optional[str] = None
 		self.files: List[str] = []
 	
@@ -1190,7 +1334,6 @@ class BAVD (Runtime):
 		parser.add_argument ('-D', '--delay', action = 'store', type = int, default = self.delay, help = f'Set delay in seconds between scan for new mails (defailt {self.delay})')
 		parser.add_argument ('-S', '--spool-directory', action = 'store', default = self.spooldir, help = f'Set directory for mail processing (default {self.spooldir})', dest = 'spool_directory')
 		parser.add_argument ('-W', '--worksize', action = 'store', type = int, default = self.worksize, help = 'Set size for each single batch to process')
-		parser.add_argument ('-L', '--size-limit', action = 'store', type = int, default = self.size, help = f'Set limit for incoming mails before they are truncated (default {self.size} bytes)', dest = 'size_limit')
 		parser.add_argument ('-R', '--rulefile', action = 'store', help = 'Add temporary content of rule file (three column, semicolumn separated, with "name;section;pattern") for debug processing')
 		
 	def use_arguments (self, args: argparse.Namespace) -> None:
@@ -1198,7 +1341,6 @@ class BAVD (Runtime):
 		self.delay = args.delay
 		self.spooldir = args.spool_directory
 		self.worksize = args.worksize
-		self.size = args.size_limit
 		self.rulefile = args.rulefile
 		self.files = args.parameter
 	
@@ -1211,17 +1353,16 @@ class BAVD (Runtime):
 			self.pid: Optional[int] = None
 			self.active = False
 		
-		def execute (self, size: int) -> None:
+		def execute (self) -> None:
 			bavconfig = BAVConfig ()
-			db = DB ()
-			try:
+			with DB () as db:
 				for path in self.ws:
 					ok = False
 					try:
 						with open (path, errors = 'backslashreplace') as fd:
-							body = fd.read (size)
+							body = fd.read ()
 						msg = EMail.from_string (body)
-						bav = BAV (bavconfig, self.bounce, body, msg)
+						bav = BAV (bavconfig, self.bounce, db, body, msg)
 						if bav.execute_is_systemmail ():
 							with log ('scan'):
 								ok = bav.execute_scan_and_unsubscribe (db)
@@ -1240,14 +1381,12 @@ class BAVD (Runtime):
 					if not self.ref.running:
 						break
 				self.ws.done ()
-			finally:
-				db.close ()
 		
-		def start (self, size: int) -> None:
+		def start (self) -> None:
 			def executor () -> None:
 				with self.ref.title (str (self.ws)):
 					try:
-						self.execute (size)
+						self.execute ()
 					except Exception as e:
 						logger.exception (f'{self.ws}: failed due to {e}')
 			self.pid = self.ref.spawn (executor)
@@ -1299,7 +1438,7 @@ class BAVD (Runtime):
 		bounce = BavBounce ()
 		bounce.set_rulefile (self.rulefile)
 		children: List[BAVD.Child] = []
-		spool = Mailspool (self.spooldir, worksize = self.worksize, scan = False, store_size = self.size)
+		spool = Mailspool (self.spooldir, worksize = self.worksize, scan = False)
 		while self.running:
 			now = time.localtime ()
 			if now.tm_yday != lastCheck:
@@ -1312,7 +1451,7 @@ class BAVD (Runtime):
 					bounce.check ()
 					logger.debug ('New child starting in %s' % ws.path)
 					ch = BAVD.Child (self, bounce, ws)
-					ch.start (self.size)
+					ch.start ()
 					children.append (ch)
 					if len (children) >= self.max_children:
 						break

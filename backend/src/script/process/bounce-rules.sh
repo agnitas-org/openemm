@@ -202,7 +202,7 @@ class Main (CLI):
 		existing: Set[str] = set ()
 		for row in db.queryc (
 			'SELECT rule_id, dsn, detail, pattern, shortname, description '
-			'FROM bounce_translate_tbl '
+			f'FROM {Bounce.bounce_translate_table} '
 			'WHERE company_id = 0 AND active = 1'
 		):
 			existing.add (row.shortname)
@@ -213,7 +213,7 @@ class Main (CLI):
 						print (f'Would update {row} using {rule}')
 					else:
 						db.update (
-							'UPDATE bounce_translate_tbl '
+							f'UPDATE {Bounce.bounce_translate_table} '
 							'SET dsn = :dsn, detail = :detail, pattern = :pattern, description = :description, change_date = CURRENT_TIMESTAMP '
 							'WHERE rule_id = :rule_id',
 							{
@@ -230,7 +230,7 @@ class Main (CLI):
 					print (f'Would disable {row} to mark as inactive')
 				else:
 					db.update (
-						'UPDATE bounce_translate_tbl '
+						f'UPDATE {Bounce.bounce_translate_table} '
 						'SET active = 0, change_date = CURRENT_TIMESTAMP '
 						'WHERE rule_id = :rule_id',
 						{
@@ -245,12 +245,12 @@ class Main (CLI):
 				db.update (
 					db.qselect (
 						oracle = (
-							'INSERT INTO bounce_translate_tbl '
+							f'INSERT INTO {Bounce.bounce_translate_table} '
 							'       (rule_id, company_id, dsn, detail, pattern, active, shortname, description, creation_date, change_date) '
 							'VALUES '
-							'       (bounce_translate_tbl_seq.nextval, 0, :dsn, :detail, :pattern, 1, :shortname, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+							f'       ({Bounce.bounce_translate_table}_seq.nextval, 0, :dsn, :detail, :pattern, 1, :shortname, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
 						), mysql = (
-							'INSERT INTO bounce_translate_tbl '
+							f'INSERT INTO {Bounce.bounce_translate_table} '
 							'       (company_id, dsn, detail, pattern, active, shortname, description, creation_date, change_date) '
 							'VALUES '
 							'       (0, :dsn, :detail, :pattern, 1, :shortname, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
@@ -478,9 +478,13 @@ EMM-8693 500;;500;511;stat="recipient not found"
 EMM-8693 571;;571;511;stat="recipient not found", relay=".uni-bielefeld.de.|.tutanota.de.|.cleanmail.ch.|.uni-kl.de."
 EMM-8708;;500;511;stat="envelope blocked", relay=".mimecast.com."
 EMM-8870;;500;511;stat="Address not present in directory"
-EMM-8724;;500;511;stat="can't verify recipient", relay=".koeln.de.|.tele2.de|.hamburg.de.|.inter.net.|.berlin.de.'"
+EMM-8724;;500;511;stat="can't verify recipient", relay=".koeln.de.|.tele2.de|.hamburg.de.|.inter.net.|.berlin.de."
 EMM-9020;;500;511;stat="Domain not in use", relay=".tuwien.ac.at."
 EMM-10052;;500;511;stat="denied by SecuMail valid-address-filter"
+EMM-10241;;571;511;stat="XGEMAIL_00(08|09|10|11) Command rejected", relay=".sophos.com."
+EMM-10242-1;;5;511;stat="mailbox.*disabled"
+EMM-10242-2;;571;511;stat="Relay access denied", relay=".kasserver.com."
+EMM-10265;;571;511;stat="Mailbox not found", relay=".a1.net."
 ##
 ## BAV-RULES
 ##

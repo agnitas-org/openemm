@@ -39,10 +39,13 @@ class DBAccess (DB):
 	def __init__ (self) -> None:
 		super ().__init__ ()
 		self.lock.acquire ()
+		self.locked = True
 	
-	def done (self) -> None:
-		self.lock.release ()
-		super ().done ()
+	def close (self, commit: bool = False) -> None:
+		super ().close (commit)
+		if self.locked:
+			self.locked = False
+			self.lock.release ()
 
 class Trigger:
 	def __init__ (self, cfg: Config) -> None:

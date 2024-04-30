@@ -11,7 +11,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, time, logging, signal
+import	os, logging, signal
 import	asyncio
 from	asyncinotify import Inotify, Mask
 from	collections import deque
@@ -20,13 +20,12 @@ from	datetime import datetime
 from	functools import partial
 from	io import StringIO
 from	types import TracebackType
-from	typing import Any, Awaitable, Callable, Generic, Literal, Optional, Sequence, TypeVar, Union
+from	typing import Any, Callable, Generic, Iterable, Literal, Optional, Sequence, TypeVar, Union
 from	typing import AsyncIterator, Coroutine, Deque, Dict, List, Set, Tuple, Type
 from	typing import cast, overload
 from	.exceptions import error, Timeout, Stop
 from	.log import log
 from	.ignore import Ignore
-from	.parser import Parsable, unit
 from	.runtime import Runtime
 from	.stream import Stream
 #
@@ -191,12 +190,11 @@ class AIORuntime (Runtime):
 		
 		async def __anext__ (self) -> _T:
 			while self.ref.running:
-				done, pending = await asyncio.wait ([self.ref._stop, self.get ()], return_when = asyncio.FIRST_COMPLETED)
-				Stream (pending).filter (lambda f: f is not self.ref._stop).each (lambda f: f.cancel ())
-				if self.ref._stop in done:
+				try:
+					done, pending = await self.ref._wait ([asyncio.create_task (self.get ())])
+					return await done.pop ()
+				except Stop:
 					break
-				if done:
-					return cast (_T, await done.pop ())
 			raise StopAsyncIteration ()
 
 	class Channels:
@@ -349,11 +347,10 @@ class AIORuntime (Runtime):
 	class Workers:
 		__slots__ = [
 			'base_group', 'limit', 'work_id',
-			'cleanup_interval', 'cleanup_threshold', 'cleanup_last',
-			'tasks', 'queued'
+			"warden", 'tasks', 'queued'
 		]
 		group_id = 0
-		def __init__ (self, group: Optional[str], limit: Optional[int], cleanup_interval: Parsable, cleanup_threshold: int) -> None:
+		def __init__ (self, group: Optional[str], limit: Optional[int]) -> None:
 			self.__class__.group_id += 1
 			self.base_group = '{group}_{group_id}'.format (
 				group = group if group else 'worker',
@@ -361,9 +358,7 @@ class AIORuntime (Runtime):
 			)
 			self.limit = limit
 			self.work_id = 0
-			self.cleanup_interval = unit (cleanup_interval)
-			self.cleanup_threshold = cleanup_threshold
-			self.cleanup_last = 0.0
+			self.warden: Optional[asyncio.Task[None]] = None
 			self.tasks: Set[asyncio.Task[None]] = set ()
 			self.queued: Deque[Coroutine[Any, Any, None]] = deque ()
 		
@@ -371,50 +366,55 @@ class AIORuntime (Runtime):
 			return len (self.tasks) + len (self.queued)
 		
 		async def __aenter__ (self) -> AIORuntime.Workers:
-			self.cleanup_last = time.time ()
 			return self
 		
 		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-			while self.queued:
-				await self._cleanup (None)
-			await self._cleanup (None)
+			if exc_type is None:
+				await self._warden_join ()
+			else:
+				self.cancel ()
 			return None
 		
 		async def launch (self, coro: Coroutine[Any, Any, None]) -> None:
-			timestamp = time.time ()
-			if (
-				(self.limit and len (self.tasks) >= self.limit)
-				or
-				(self.cleanup_interval and self.cleanup_last + self.cleanup_interval < timestamp)
-				or
-				(self.cleanup_threshold and len (self.tasks) >= self.cleanup_threshold)
-			):
-				await self._cleanup (0)
-				self.cleanup_last = timestamp
+			if not self.tasks and not self.queued:
+				await self._warden_join ()
 			if self.limit and len (self.tasks) >= self.limit:
 				self.queued.append (coro)
 			else:
 				self._start (coro)
+			if self.warden is None:
+				self.warden = asyncio.create_task (self._warden (), name = f'{self.base_group}_warden')
 		
 		def cancel (self) -> None:
 			if self.tasks:
 				Stream (self.tasks).each (lambda t: t.cancel ())
 			self.queued.clear ()
-		
-		async def _cleanup (self, timeout: Union[None, int, float]) -> None:
-			if self.tasks:
-				done, pending = await asyncio.wait (self.tasks, timeout = timeout)
-				for task in done:
-					if not task.cancelled ():
-						if (e := task.exception ()) is not None:
-							_log_exception (logger.error, e, task)
-						else:
-							await task
-					self.tasks.remove (task)
-			if self.limit:
-				while len (self.tasks) < self.limit and self.queued:
+			self._warden_cancel ()
+
+		async def _warden (self) -> None:
+			while self.tasks or self.queued:
+				while self.queued and (not self.limit or len (self.tasks) < self.limit):
 					self._start (self.queued.popleft ())
+				if self.tasks:
+					done, pending = await asyncio.wait (self.tasks, return_when = asyncio.FIRST_COMPLETED)
+					for task in done:
+						if not task.cancelled ():
+							if (e := task.exception ()) is not None:
+								_log_exception (logger.error, e, task)
+							else:
+								await task
+						self.tasks.remove (task)
 		
+		async def _warden_join (self) -> None:
+			if self.warden is not None:
+				await self.warden
+				self.warden = None
+
+		def _warden_cancel (self) -> None:
+			if self.warden is not None:
+				self.warden.cancel ()
+				self.warden = None
+
 		def _start (self, coro: Coroutine[Any, Any, None]) -> None:
 			self.work_id += 1
 			self.tasks.add (asyncio.create_task (coro, name = f'{self.base_group}_{self.work_id}'))
@@ -495,15 +495,10 @@ class AIORuntime (Runtime):
 				self._apply_delay.add (task)
 		return self.running
 		
-	async def wait (self, *awaitables: Awaitable[_U], timeout: Union[None, int, float] = None) -> Tuple[Awaitable[_U], _U]:
-		done, pending = await asyncio.wait ([cast (Awaitable[_U], self._stop)] + list (awaitables), timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
-		Stream (pending).filter (lambda f: f is not self._stop).each (lambda f: f.cancel ())
-		if self._stop in done:
-			raise Stop ()
-		if not done:
-			raise Timeout ()
-		awaitable = done.pop ()
-		return (awaitable, await awaitable)
+	async def wait (self, *tasks: asyncio.Task[_U], timeout: Union[None, int, float] = None) -> Tuple[asyncio.Task[_U], _U]:
+		done, pending = await self._wait (tasks, timeout = timeout)
+		task = done.pop ()
+		return (task, await task)
 		
 	def channel (self, name: str, t: Type[_T]) -> AIORuntime.Channel[_T]:
 		return self._channels.get_as (name, t)
@@ -512,10 +507,10 @@ class AIORuntime (Runtime):
 		self._channels.delete (name)
 	
 	async def wait_channel (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> AIORuntime.Channel[_T]:
-		return (await self.wait (self._channels.wait (channels), timeout = timeout))[1]
+		return (await self.wait (asyncio.create_task (self._channels.wait (channels)), timeout = timeout))[1]
 
 	async def select_channel (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> Tuple[AIORuntime.Channel[_T], _T]:
-		return (await self.wait (self._channels.select (channels), timeout = timeout))[1]
+		return (await self.wait (asyncio.create_task (self._channels.select (channels)), timeout = timeout))[1]
 	
 	def task (self, name: str, coro: Coroutine[Any, Any, _T]) -> AIORuntime.Task[_T]:
 		return self._tasks.launch (name, coro)
@@ -525,18 +520,18 @@ class AIORuntime (Runtime):
 	
 	async def wait_task (self, tasks: List[AIORuntime.Task[_U]], timeout: Union[None, int, float] = None) -> Tuple[Optional[AIORuntime.Task[_U]], Optional[_U]]:
 		with Ignore (Timeout):
-			awaitables = [cast (Awaitable[_U], _t.task) for _t in tasks]
-			aw, rc = await self.wait (*awaitables, timeout = timeout)
-			return (tasks[awaitables.index (aw)], rc)
+			aio_tasks = [_t.task for _t in tasks]
+			task, rc = await self.wait (*aio_tasks, timeout = timeout)
+			return (tasks[aio_tasks.index (task)], rc)
 		return (None, None)
 	
 	async def watch (self, timeout: Union[None, int, float] = None, only_exceptions: bool = False) -> Optional[AIORuntime.Task[Any]]:
 		with Ignore (Timeout, Stop):
-			return (await self.wait (self._tasks.watch (only_exceptions = only_exceptions), timeout = timeout))[1]
+			return (await self.wait (asyncio.create_task (self._tasks.watch (only_exceptions = only_exceptions)), timeout = timeout))[1]
 		return None
 	
-	def workers (self, group: Optional[str] = None, limit: Optional[int] = None, *, cleanup_interval: Parsable = None, cleanup_threshold: int = 0) -> AIORuntime.Workers:
-		return AIORuntime.Workers (group, limit, cleanup_interval, cleanup_threshold)
+	def workers (self, group: Optional[str] = None, limit: Optional[int] = None) -> AIORuntime.Workers:
+		return AIORuntime.Workers (group, limit)
 
 	@dataclass
 	class Process:
@@ -583,69 +578,59 @@ class AIORuntime (Runtime):
 			else:
 				return (returncode, '' if not out else out.decode (output_charset), '' if not err else err.decode (output_charset))
 
-	async def process (self, name: str, *args: str) -> AIORuntime.Process:
-		process = AIORuntime.Process (name, args, self._loop.create_future ())
+	async def process (self, name: str, command: Sequence[str]) -> AIORuntime.Process:
+		process = AIORuntime.Process (name, command, self._loop.create_future ())
 		coro = process.launch ()
 		self._tasks.add (name, AIORuntime.Task (name, coro, asyncio.create_task (coro, name = name)))
 		await process.launched ()
 		return process
 	
-	async def scan (self, path: str, rescan: Parsable = None, predicate: Optional[Callable[[str], bool]] = None) -> AsyncIterator[str]:
+	async def scan (self, path: str, prescan: bool = True, predicate: Optional[Callable[[str], bool]] = None) -> AsyncIterator[str]:
 		with Inotify () as inotify:
-			inotify.add_watch (path, Mask.CREATE | Mask.CLOSE_WRITE | Mask.MOVED_TO | Mask.MOVED_FROM | Mask.DELETE)
-			rescan_in = unit (rescan)
-			rescan_last = 0
+			inotify.add_watch (path, Mask.CLOSE_WRITE | Mask.MOVED_TO | Mask.MOVED_FROM | Mask.DELETE)
 			ready: Deque[str] = deque ()
-			available: Dict[str, bool] = {}
-			timeout: Optional[int]
+			scanned: Optional[Set[str]] = None
+			#
+			if prescan:
+				files: List[Tuple[str, float]] = []
+				for filename in os.listdir (path):
+					try:
+						st = os.stat (os.path.join (path, filename))
+						mtime = st.st_mtime
+					except OSError:
+						mtime = 0.0
+					files.append ((filename, mtime))
+				for (filename, _) in sorted (files, key = lambda kv: kv[1]):
+					ready.append (filename)
+					logger.debug (f'scan[{path}]: added "{filename}" from prescan')
+				if ready:
+					scanned = set (ready)
+			#
 			while self.running:
 				while self.running and ready:
 					filename = ready.popleft ()
 					if predicate is None or predicate (filename):
 						yield filename
-				if not rescan_last or rescan_in:
-					now = int (time.time ())
-					if not rescan_last or rescan_last + rescan_in < now:
-						rescan_last = now
-						new_files: List[Tuple[str, float]] = []
-						old_files = set (available.keys ())
-						for filename in os.listdir (path):
-							if filename not in available:
-								try:
-									st = os.stat (os.path.join (path, filename))
-									mtime = st.st_mtime
-								except OSError:
-									mtime = 0.0
-								new_files.append ((filename, mtime))
-							else:
-								old_files.discard (filename)
-						for filename in old_files:
-							del available[filename]
-						for (filename, _) in sorted (new_files, key = lambda kv: kv[1]):
-							available[filename] = True
-							ready.append (filename)
-						continue
-				#
-				if rescan_in:
-					timeout = max (0, int (time.time ()) - rescan_last + rescan_in)
-				else:
-					timeout = None
-				done, pending = await asyncio.wait ([self._stop, inotify.get ()], timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
-				Stream (pending).filter (lambda f: f is not self._stop).each (lambda f: f.cancel ())
-				if self._stop in done:
-					break
-				if done:
+						logger.debug (f'scan[{path}]: yielded "{filename}"')
+					else:
+						logger.debug (f'scan[{path}]: dropped "{filename}"')
+				with Ignore (Stop):
+					done, pending = await self._wait ([asyncio.create_task (inotify.get ())])
 					event = await done.pop ()
 					if event is not None and event.name is not None:
 						filename = str (event.name)
 						if event.mask & (Mask.CLOSE_WRITE | Mask.MOVED_TO):
-							if not available.get (filename):
-								available[filename] = True
+							if scanned is None or filename not in scanned:
 								ready.append (filename)
-						elif event.mask & Mask.CREATE:
-							available[filename] = False
+								logger.debug (f'scan[{path}]: added "{filename}" from event')
 						elif event.mask & (Mask.MOVED_FROM | Mask.DELETE):
-							available.pop (filename, None)
+							with Ignore (ValueError):
+								ready.remove (filename)
+								logger.debug (f'scan[{path}]: drop removed file "{filename}"')
+							if scanned is not None:
+								scanned.discard (filename)
+								if not scanned:
+									scanned = None
 			await self.aioyield ()
 
 	async def finished (self) -> None:
@@ -654,4 +639,18 @@ class AIORuntime (Runtime):
 	def stop (self) -> None:
 		if not self._stop.done ():
 			self._stop.set_result (None)
-	
+
+	async def _wait (self,
+		tasks: Iterable[asyncio.Task[_U]],
+		*,
+		timeout: None | int | float = None,
+		return_when: Literal['FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED'] = asyncio.FIRST_COMPLETED
+	) -> tuple[set[asyncio.Task[_U]], set[asyncio.Task[_U]]]:
+		done, pending = await asyncio.wait (list (tasks) + [cast ('asyncio.Task[_U]', self._stop)], timeout = timeout, return_when = return_when)
+		Stream (pending).filter (lambda t: t is not self._stop).each (lambda t: t.cancel ())
+		with Ignore (KeyError):
+			done.remove (cast ('asyncio.Task[_U]', self._stop))
+			raise Stop ()
+		if not done:
+			raise Timeout ()
+		return done, pending

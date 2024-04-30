@@ -16,7 +16,7 @@ from	fnmatch import fnmatchcase
 from	typing import Any, Callable, Final, Optional
 from	typing import Dict, List, Pattern, Type
 from	.ignore import Ignore
-from	.parser import ParseTimestamp
+from	.parser import parse_timestamp
 from	.tools import atob
 #
 __all__ = ['Search']
@@ -26,7 +26,7 @@ logger = logging.getLogger (__name__)
 class OP:
 	__slots__ = ['source', 'str_source', 'value']
 	internal_conversion: Dict[Type[Any], Callable[[str], Any]] = {
-		datetime: ParseTimestamp ()
+		datetime: parse_timestamp
 	}
 	def __init__ (self, source: Any, value: str, ignorecase: bool) -> None:
 		self.source = source
@@ -138,7 +138,7 @@ or:
 It's up to the developer to break up the searchable data into useful
 fields.
 """
-	__slots__ = ['expression', 'ns', 'code']
+	__slots__ = ['expression', 'ns', 'source', 'code']
 	pattern: Final[Pattern[str]] = re.compile ('^([a-z_-]+)(!?[:=]|=[<=>]?|[<>]=?)', re.IGNORECASE)
 	def __init__ (self, expression: str, default: str = '*', ignorecase: bool = False) -> None:
 		self.expression = expression
@@ -186,7 +186,8 @@ fields.
 				))
 				autoop = 'and'
 		self.ns[op] = OP
-		self.code = compile (' '.join (statement), expression, 'eval')
+		self.source = ' '.join (statement)
+		self.code = compile (self.source, expression, 'eval')
 	
 	def __call__ (self, source: Dict[str, Any]) -> bool:
 		return bool (eval (self.code, self.ns, {'source': source}))

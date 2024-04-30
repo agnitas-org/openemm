@@ -98,7 +98,7 @@ kept, as they may be added from outside this process."""
 			raise error (f'Failed to read crontab with {pp.returncode}: {err}')
 		out = out.strip ()
 		#
-		ph = Placeholder (lazy = True)
+		ph = Placeholder (lazy = True, extended = True)
 		ph['user'] = pw.pw_name
 		ph['home'] = pw.pw_dir
 		parsed = [Entry.parse (ph (_l)) for _l in crontab]

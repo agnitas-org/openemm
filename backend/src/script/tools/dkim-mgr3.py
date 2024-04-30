@@ -13,6 +13,7 @@
 import	argparse
 import	sys, os, time
 import	DNS
+import	subprocess
 from	datetime import datetime
 from	typing import Any, Optional
 from	typing import Dict, List
@@ -163,10 +164,11 @@ class DKIM (CLI):
 					fdt.write ('-----END PUBLIC KEY-----\n')
 			except IOError as e:
 				raise error (f'Failed to setup files: {e}')
-			n = silent_call ('openssl', 'dgst', '-sha256', '-sign', private_file, '-out', sign_file, data_file)
+			cipher = self._find_cipher ()
+			n = silent_call ('openssl', 'dgst', cipher, '-sign', private_file, '-out', sign_file, data_file)
 			if n:
 				raise error ('Failed to sign data, openssl returns with %d' % n)
-			n = silent_call ('openssl', 'dgst', '-sha256', '-verify', public_file, '-signature', sign_file, data_file)
+			n = silent_call ('openssl', 'dgst', cipher, '-verify', public_file, '-signature', sign_file, data_file)
 			if n:
 				raise error ('Failed to verify data, openssl returns with %d' % n)
 			rc = True
@@ -297,6 +299,14 @@ class DKIM (CLI):
 				print (f'<selector>._domainkey.<domain> TXT\t"v=DKIM1; p={key}"')
 			return True
 		return False
+
+	def _find_cipher (self) -> str:
+		cipher = '-sha512'
+		pp = subprocess.Popen (['openssl', 'dgst', '-list'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
+		(out, err) = pp.communicate (None)
+		if pp.returncode == 0:
+			cipher = Stream (out.split ()).regexp ('^-sha[0-9]+$').sorted ().last (no = cipher)
+		return cipher
 #
 if __name__ == '__main__':
 	DKIM.main ()

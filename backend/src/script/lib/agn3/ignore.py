@@ -10,15 +10,19 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging
+import	logging, time
+import	asyncio
 from	types import TracebackType
-from	typing import Any, Optional, Callable
-from	typing import Type
+from	typing import Any, Callable, Optional, TypeVar, Union
+from	typing import Coroutine, Type
+from	typing import cast, overload
 from	.stream import Stream
 #
-__all__ = ['Ignore', 'ignore', 'Experimental']
+__all__ = ['Ignore', 'ignore', 'Experimental', 'Retry']
 #
 logger = logging.getLogger (__name__)
+#
+_T = TypeVar ('_T')
 #
 class Ignore:
 	"""Context to ignore selected exceptions as a replacement for
@@ -104,3 +108,71 @@ create an instance."""
 			logexception = True
 		)
 		self.name = name
+
+class Retry:
+	"""Decorator to retry on exception
+	
+This decorator can either be applied to conventional or async
+functions. It automatically retries the function, if an exception has
+occured, either for all exceptions or a given list of exception
+(including their subclasses). Keyword arguments control the behaviour:
+
+- retries: number of retries (int, default 1)
+- delay: optional delay between retries (None | int | float, default None)
+- log: optional callback for logging in between failures which are otherwise ignored silently (None | funciton(exception, str), default None)
+
+for example:
+
+@Retry (retries = 3, delay = 2.0, log = lambda e, n: logger.warning (f'{n}: retry schedulued after exception: {e}'))
+def function (...): ...
+
+"""
+	__slots__ = ['args', 'kwargs']
+	default_retries: int = 1
+	default_delay: Union[None, int, float] = None
+	default_log: Optional[Callable[[BaseException, str], None]] = None
+	def __init__ (self, *args: Type[BaseException], **kwargs: Any) -> None:
+		self.args = args
+		self.kwargs = kwargs
+
+	@overload
+	def __call__ (self, method: Callable[..., _T]) -> Callable[..., _T]: ...
+	@overload
+	def __call__ (self, method: Coroutine[Any, Any, _T]) -> Callable[..., Coroutine[Any, Any, _T]]: ...
+	def __call__ (self, method: Union[Callable[..., _T], Coroutine[Any, Any, _T]]) -> Callable[..., Union[_T, Coroutine[Any, Any, _T]]]:
+		retries = max (1, int (self.kwargs.get ('retries', self.default_retries)))
+		delay: Union[None, int, float] = self.kwargs.get ('delay', self.default_delay)
+		log: Optional[Callable[[BaseException, str], None]] = self.kwargs.get ('log', self.__class__.default_log)
+		exceptions = self.args
+		try:
+			name = method.__name__
+		except AttributeError:
+			name = str (method)
+		if asyncio.iscoroutinefunction (method):
+			async def aiowrapper (*args: Any, **kwargs: Any) -> _T:
+				for retry in range (retries):
+					try:
+						return await cast (Coroutine[Any, Any, _T], method (*args, **kwargs))
+					except BaseException as e:
+						if retry + 1 == retries or (exceptions and type (e) not in exceptions and not [_e for _e in exceptions if issubclass (type (e), _e)]):
+							raise
+						if log is not None:
+							log (e, name)
+					if retry + 1 < retries and delay is not None and delay > 0.0:
+						await asyncio.sleep (delay)
+				raise
+			return aiowrapper
+		else:
+			def wrapper (*args: Any, **kwargs: Any) -> _T:
+				for retry in range (retries):
+					try:
+						return cast (Callable[..., _T], method) (*args, **kwargs)
+					except BaseException as e:
+						if retry + 1 == retries or (exceptions and type (e) not in exceptions and not [_e for _e in exceptions if issubclass (type (e), _e)]):
+							raise
+						if log is not None:
+							log (e, name)
+					if retry + 1 < retries and delay is not None and delay > 0.0:
+						time.sleep (delay)
+				raise
+			return wrapper

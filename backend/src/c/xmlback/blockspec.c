@@ -24,7 +24,7 @@ blockspec_alloc (void) /*{{{*/
 		b -> linelength = 0;
 		b -> linesep = NULL;
 		b -> seplength = 0;
-		b -> opl = OPL_None;
+		b -> opl = Add_None;
 		b -> clearance = false;
 		if (! b -> prefix)
 			b = blockspec_free (b);

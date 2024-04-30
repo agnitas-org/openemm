@@ -24,6 +24,7 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.io import create_path
 from	.parser import Parsable, unit
+from	.sentinel import Sentinel, sentinel
 #
 __all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
 #
@@ -135,10 +136,10 @@ class _Log:
 	def __call__ (self, new_id: str) -> LogID:
 		return LogID (self, new_id)
 	
-	def __make_filename (self, ts: Optional[datetime], epoch: Union[None, int, float], name: str) -> str:
+	def __make_filename (self, ts: Optional[datetime], timestamp: Union[None, int, float], name: str) -> str:
 		if ts is None:
-			if epoch is not None:
-				dt = datetime.fromtimestamp (epoch)
+			if timestamp is not None:
+				dt = datetime.fromtimestamp (timestamp)
 			else:
 				dt = datetime.now ()
 		else:
@@ -154,16 +155,15 @@ class _Log:
 			del self.custom_ids[threading.get_ident ()]
 	custom_id = property (_get_custom_id, _set_custom_id, _del_custom_id)
 
-	_sentinel = object ()
 	@overload
-	def get_loglevel (self, default: str) -> str: ...
+	def get_loglevel (self, default: Union[Sentinel, str]) -> str: ...
 	@overload
 	def get_loglevel (self, default: None) -> Optional[str]: ...
-	def get_loglevel (self, default: Any = _sentinel) -> Any:
+	def get_loglevel (self, default: Union[None, Sentinel, str] = sentinel) -> Any:
 		try:
 			return _Log.lognames[self.loglevel]
 		except KeyError:
-			if default is _Log._sentinel:
+			if default is sentinel:
 				raise
 		return default
 		
@@ -190,7 +190,7 @@ class _Log:
 			self.outstream = sys.stderr
 			self.verbosity = verbosity
 
-	def filename (self, name: Optional[str] = None, epoch: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
+	def filename (self, name: Optional[str] = None, timestamp: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
 		"""Build a logfile in the defined conventions
 
 a logfilename is created from the global logpath as the target
@@ -198,19 +198,19 @@ directory and is created using a timestamp
 (YYYYMMDD-<hostname>-<name>.log
 
 as timestamp the current time is used, but may be either set using an
-own version in ts or by setting the epoch (seconds since 1.1.1970)
+own version in ts or by setting the timestamp (seconds since 1.1.1970)
 """
-		return self.__make_filename (ts, epoch, '{host}-{name}'.format (
+		return self.__make_filename (ts, timestamp, '{host}-{name}'.format (
 			host = self.host,
 			name = name if name is not None else self.name
 		))
 
-	def data_filename (self, name: str, epoch: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
+	def data_filename (self, name: str, timestamp: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
 		"""Build a logfile for storing data.
 
 see ``logfilename'', in this case the name is required and no host
 name is part of the final filename"""
-		return self.__make_filename (ts, epoch, name)
+		return self.__make_filename (ts, timestamp, name)
 
 	def append (self, s: Union[str, Tuple[str, ...], List[str]]) -> None:
 		"""Writes data to a logfile
@@ -269,7 +269,7 @@ can be used to avoid writing logfiles for interactive applications."""
 		elif record.levelno >= self.loglevel or (record.levelno >= self.outlevel and self.outstream is not None):
 			now = datetime.now ()
 			prefix = f'[{now.day:02d}.{now.month:02d}.{now.year:04d}  {now.hour:02d}:{now.minute:02d}:{now.second:02d}] {record.process} {record.levelname}/{lid}'
-			messages = [record.getMessage () + '\n']
+			messages = [f'{_r}\n' for _r in record.getMessage ().split ('\n')]
 			if record.exc_info is not None and type (record.exc_info) is tuple and len (record.exc_info) == 3:
 				tb = format_exception (*record.exc_info)
 				if tb:

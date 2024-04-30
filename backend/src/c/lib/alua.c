@@ -789,7 +789,39 @@ alua_atob (lua_State *lua) /*{{{*/
 		rc = atob (value);
 	else
 		rc = false;
-	lua_pushboolean (lua, rc ? 1 : 0);
+	lua_pushboolean (lua, rc);
+	return 1;
+}/*}}}*/
+static int
+alua_startswith (lua_State *lua) /*{{{*/
+{
+	bool_t		rc = false;
+	const char	*haystack, *needle;
+	size_t		hlen, nlen;
+	
+	if ((lua_gettop (lua) > 1) &&
+	    (haystack = lua_tolstring (lua, -2, & hlen)) &&
+	    (needle = lua_tolstring (lua, -1, & nlen))) {
+		if (hlen >= nlen && (! strncmp (haystack, needle, nlen)))
+			rc = true;
+	}
+	lua_pushboolean (lua, rc);
+	return 1;
+}/*}}}*/
+static int
+alua_endswith (lua_State *lua) /*{{{*/
+{
+	bool_t		rc = false;
+	const char	*haystack, *needle;
+	size_t		hlen, nlen;
+	
+	if ((lua_gettop (lua) > 1) &&
+	    (haystack = lua_tolstring (lua, -2, & hlen)) &&
+	    (needle = lua_tolstring (lua, -1, & nlen))) {
+		if (hlen >= nlen && (! strncmp (haystack + hlen - nlen, needle, nlen)))
+			rc = true;
+	}
+	lua_pushboolean (lua, rc);
 	return 1;
 }/*}}}*/
 static int
@@ -826,48 +858,53 @@ alua_loadfile (lua_State *lua) /*{{{*/
 static struct { /*{{{*/
 	const char	*libname;
 	lua_CFunction	libfunc;
-	bool_t		sandbox;
+	int		trusts;
 	/*}}}*/
 }	alua_libtab[] = { /*{{{*/
-	{	"",			luaopen_base,		true		},
-	{	LUA_STRLIBNAME,		luaopen_string,		true		},
+	{	"",			luaopen_base,		TRUST_ALL	},
+	{	LUA_STRLIBNAME,		luaopen_string,		TRUST_ALL	},
 # ifdef		LUA_UTF8LIBNAME
-	{	LUA_UTF8LIBNAME,	luaopen_utf8,		true		},
+	{	LUA_UTF8LIBNAME,	luaopen_utf8,		TRUST_ALL	},
 # endif		/* LUA_UTF8LIBNAME */
-	{	LUA_TABLIBNAME,		luaopen_table,		true		},
-	{	LUA_MATHLIBNAME,	luaopen_math,		true		},
-	{	LUA_COLIBNAME,		luaopen_coroutine,	true		}
+	{	LUA_TABLIBNAME,		luaopen_table,		TRUST_ALL	},
+	{	LUA_MATHLIBNAME,	luaopen_math,		TRUST_ALL	},
+	{	LUA_COLIBNAME,		luaopen_coroutine,	TRUST_ALL	},
+	{	LUA_IOLIBNAME,		luaopen_io,		Worthy		},
+	{	LUA_OSLIBNAME,		luaopen_os,		Worthy		},
+	{	LUA_LOADLIBNAME,	luaopen_package,	Worthy		}
 	/*}}}*/
 };
 static struct { /*{{{*/
 	const char	*modname;
 	const char	*funcname;
 	lua_CFunction	func;
-	bool_t		sandbox;
+	int		trusts;
 	/*}}}*/
 }	alua_functab[] = { /*{{{*/
-	{	NULL,			"atob",		alua_atob,	true	},
-	{	NULL,			"type",		alua_type,	true	},
-	{	NULL,			"dofile",	alua_dofile,	true	},
-	{	NULL,			"loadfile",	alua_loadfile,	true	}
+	{	NULL,			"atob",		alua_atob,		TRUST_ALL		},
+	{	NULL,			"type",		alua_type,		TRUST_ALL		},
+	{	NULL,			"dofile",	alua_dofile,		TRUST_RESTRICT		},
+	{	NULL,			"loadfile",	alua_loadfile,		TRUST_RESTRICT		},
+	{	LUA_STRLIBNAME,		"startswith",	alua_startswith,	TRUST_ALL		},
+	{	NULL,			"endswith",	alua_endswith,		TRUST_ALL		}
 	/*}}}*/
 };
 # define	FTSIZE		(sizeof (alua_functab) / sizeof (alua_functab[0]))
 
 void
-alua_setup_libraries (lua_State *lua, bool_t sandbox) /*{{{*/
+alua_setup_libraries (lua_State *lua, trust_t trust) /*{{{*/
 {
 	int		n;
 	const char	*modname;
 	
 	for (n = 0; n < sizeof (alua_libtab) / sizeof (alua_libtab[0]); ++n) {
-		if ((! sandbox) || alua_libtab[n].sandbox) {
+		if (alua_libtab[n].trusts & trust) {
 			luaL_requiref (lua, alua_libtab[n].libname, alua_libtab[n].libfunc, 1);
 			lua_pop (lua, 1);
 		}
 	}
 	alua_date_setup (lua);
-	if (! sandbox)
+	if (trust & (Regular | Worthy))
 		alua_env_setup (lua);
 	alua_null_setup (lua);
 	modname = NULL;
@@ -888,7 +925,7 @@ alua_setup_libraries (lua_State *lua, bool_t sandbox) /*{{{*/
 				}
 			}
 		}
-		if ((n < FTSIZE) && ((! sandbox) || alua_functab[n].sandbox)) {
+		if ((n < FTSIZE) && (alua_functab[n].trusts & trust)) {
 			lua_pushcfunction (lua, alua_functab[n].func);
 			if (modname)
 				lua_setfield (lua, -2, alua_functab[n].funcname);
@@ -933,13 +970,13 @@ alua_panic (lua_State *lua) /*{{{*/
 	return 0;
 }/*}}}*/
 lua_State *
-alua_alloc (bool_t sandbox) /*{{{*/
+alua_alloc (trust_t trust) /*{{{*/
 {
 	lua_State	*lua;
 	
 	if (lua = lua_newstate (alua_allocator, NULL)) {
 		lua_atpanic (lua, alua_panic);
-		alua_setup_libraries (lua, sandbox);
+		alua_setup_libraries (lua, trust);
 	}
 	return lua;
 }/*}}}*/
@@ -971,7 +1008,7 @@ alua_reader (lua_State *lua, void *rdp, size_t *size) /*{{{*/
 	return rd -> code;
 }/*}}}*/
 bool_t
-alua_load (lua_State *lua, const char *name, const void *code, size_t clen) /*{{{*/
+alua_nload (lua_State *lua, const char *name, const void *code, size_t clen, int nargs, int nresults) /*{{{*/
 {
 	reader_t	rd;
 	int		rc;
@@ -980,9 +1017,14 @@ alua_load (lua_State *lua, const char *name, const void *code, size_t clen) /*{{
 	rd.clen = clen;
 	rd.sent = 0;
 	if ((rc = lua_load (lua, alua_reader, & rd, name, NULL)) == LUA_OK) {
-		rc = lua_pcall (lua, 0, 0, 0);
+		rc = lua_pcall (lua, nargs, nresults, 0);
 	}
 	return rc == LUA_OK;
+}/*}}}*/
+bool_t
+alua_load (lua_State *lua, const char *name, const void *code, size_t clen) /*{{{*/
+{
+	return alua_nload (lua, name, code, clen, 0, 0);
 }/*}}}*/
 typedef struct { /*{{{*/
 	lua_State	*lua;

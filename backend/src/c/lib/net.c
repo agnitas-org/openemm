@@ -126,72 +126,6 @@ extract_address (const char *hline) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-char *
-_extract_address (const char *hline) /*{{{*/
-{
-	const char	*ptr;
-	const char	*start = NULL;
-	int		length = -1;
-	char		*rc;
-	
-	if (ptr = strchr (hline, '<')) {
-		start = ptr + 1;
-		if (ptr = strchr (start, '>')) {
-			length = ptr - start;
-		} else {
-			start = NULL;
-		}
-	}
-	if (! start) {
-		bool_t		escape;
-		int		comment;
-		const char	*cstart;
-		
-		for (ptr = hline, escape = false, cstart = hline, comment = 0; *ptr && (! start); ++ptr) {
-			if (escape)
-				escape = false;
-			else if (*ptr == '\\')
-				escape = true;
-			else if (*ptr == '(') {
-				if (comment == 0)
-					start = find_address (cstart, ptr - cstart, & length);
-				++comment;
-			} else if (*ptr == ')') {
-				if (comment > 0)
-					if (--comment == 0)
-						cstart = ptr + 1;
-			}
-		}
-		if ((! start) && (cstart < ptr))
-			start = find_address (cstart, ptr - cstart, & length);
-	}
-	if (! start)
-		start = find_address (hline, strlen (hline), & length);
-	if (start && (length != -1)) {
-		/*
-		 * be "smart" and remove leading and trailing quotes,
-		 * if existing and also leading and trailing <..> if 
-		 * encoded in xml entities, so &lt; and &gt;
-		 */
-		if ((length >= 2) && (start[0] == '"') && (start[length - 1] == '"')) {
-			++start;
-			length -= 2;
-		}
-		if ((length >= 8) &&
-		    (start[0] == '&') && (start[1] == 'l') && (start[2] == 't') && (start[3] == ';') &&
-		    (start[length - 4] == '&') && (start[length - 3] == 'g') && (start[length - 2] == 't') && (start[length - 1] == ';')) {
-			start += 4;
-			length -= 8;
-		}
-		if (rc = malloc (length + 1)) {
-			if (length)
-				memcpy (rc, start, length);
-			rc[length] = '\0';
-			return rc;
-		}
-	}
-	return NULL;
-}/*}}}*/
 const char *
 addr_element (const char *chunk, int *matchlength) /*{{{*/
 {
@@ -343,4 +277,35 @@ split_element (char *chunk) /*{{{*/
 	if (chunk[n])
 		chunk[n++] = '\0';
 	return chunk + n;
+}/*}}}*/
+bool_t
+match_address (const char *email1, const char *email2) /*{{{*/
+{
+	int		len1, len2;
+	const char	*domain1, *domain2;
+	int		llen1, llen2;
+	
+	len1 = strlen (email1);
+	len2 = strlen (email2);
+	
+	if (len1 != len2)	
+		return false;	/* differ in length */
+	domain1 = strchr (email1, '@');
+	domain2 = strchr (email2, '@');
+	if ((domain1 && (! domain2)) || ((! domain1) && domain2))
+		return false;	/* only one email with domain */
+	if (domain1 && domain2) {
+		llen1 = domain1 - email1;
+		llen2 = domain2 - email2;
+		if (llen1 != llen2)
+			return false;	/* local part differs in length */
+		if (strcasecmp (domain1, domain2))
+			return false;	/* domains not equal */
+	} else {
+		llen1 = len1;
+		llen2 = len2;
+	}
+	if ((llen1 > 0) && strncmp (email1, email2, llen1))
+		return false;	/* local part not equal */
+	return true;
 }/*}}}*/

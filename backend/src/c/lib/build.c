@@ -8,53 +8,73 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-# ifndef	__ALUA_H
-# define	__ALUA_H		1
-# include	<time.h>
-# include	<lua.h>
-# include	<lualib.h>
-# include	<lauxlib.h>
+# include	<stdlib.h>
+# include	<unistd.h>
+# include	<fcntl.h>
+# include	<sys/types.h>
+# include	<sys/stat.h>
 # include	"agn.h"
 
-# define	LUA_AGNLIBNAME		"agn"
-# define	LUA_SYSCFGLIBNAME	"syscfg"
-# define	LUA_DATELIBNAME		"date"
+# define	VERSION_DEFAULT		"unknown"
 
-# define	LUA_ENVIRON		"env"
-# define	LUA_NULL		"null"
+build_t *
+build_alloc (void) /*{{{*/
+{
+	build_t	*b;
+	char	*path;
+	
+	if (b = (build_t *) malloc (sizeof (build_t))) {
+		b -> version = NULL;
+		if (path = mkpath (path_home (), "scripts", "build.spec", NULL)) {
+			int		fd;
+			struct stat	st;
+			int		n;
+			char		*ptr;
+			
+			if ((fd = open (path, O_RDONLY)) != -1) {
+				if ((fstat (fd, & st) != -1) && (st.st_size > 0) && (b -> version = malloc (st.st_size + 1))) {
+					if ((n = read (fd, b -> version, st.st_size)) == st.st_size) {
+						while ((n > 0) && strchr (" \t\r\n\v", (b -> version[n - 1])))
+							--n;
+						b -> version[n] = '\0';
+						b -> timestamp = b -> host = b -> user = b -> version + n;
+						if (ptr = strchr (b -> version, ';')) {
+							*ptr++ = '\0';
+							b -> timestamp = ptr;
+							if (ptr = strchr (ptr, ';')) {
+								*ptr++ = '\0';
+								b -> host = ptr;
+								if (ptr = strchr (ptr, ';')) {
+									*ptr++ = '\0';
+									b -> user = ptr;
+								}
+							}
+						}
+					} else {
+						free (b -> version);
+						b -> version = NULL;
+					}
+				}
+				close (fd);
+			}
+			free (path);
+		}
+		if (! b -> version) {
+			b -> timestamp = b -> host = b -> user = b -> version = strdup (VERSION_DEFAULT);
+			if (! b -> version)
+				b = build_free (b);
+		}
+	}
+	return b;
+}/*}}}*/
+build_t *
+build_free (build_t *b) /*{{{*/
+{
+	if (b) {
+		if (b -> version)
+			free (b -> version);
+		free (b);
+	}
+	return NULL;
+}/*}}}*/
 
-typedef enum {
-	Sandbox = (1 << 0),
-	Regular = (1 << 1),
-	Worthy = (1 << 2)
-}	trust_t;
-
-# define	TRUST_ALL		(Sandbox | Regular | Worthy)
-# define	TRUST_RESTRICT		(Sandbox | Regular)
-
-typedef struct { /*{{{*/
-	unsigned long	uid;
-	struct tm	tt;
-	/*}}}*/
-}	alua_date_t;
-typedef struct { /*{{{*/
-	unsigned long	uid;
-	/*}}}*/
-}	alua_null_t;
-
-extern bool_t		alua_date_parse (const char *str, struct tm *tt);
-extern alua_date_t	*alua_pushdate (lua_State *lua, struct tm *tt);
-extern alua_date_t	*alua_todate (lua_State *lua, int idx);
-extern int		alua_isdate (lua_State *lua, int idx);
-
-extern int		alua_isnull (lua_State *lua, int idx);
-extern void		alua_pushnull (lua_State *lua);
-
-extern void		alua_setup_libraries (lua_State *lua, trust_t trust);
-extern void		alua_setup_function (lua_State *lua, const char *modname, const char *funcname, lua_CFunction func, void *closure);
-extern lua_State	*alua_alloc (trust_t trust);
-extern lua_State	*alua_free (lua_State *lua);
-extern bool_t		alua_nload (lua_State *lua, const char *name, const void *code, size_t clen, int nargs, int nresults);
-extern bool_t		alua_load (lua_State *lua, const char *name, const void *code, size_t clen);
-extern int		alua_pcall (lua_State *lua, int nargs, int nresults, int msgh, int timeout);
-# endif		/* __ALUA_H */

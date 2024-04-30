@@ -430,17 +430,17 @@ static struct { /*{{{*/
 	bool_t		sandbox;
 	/*}}}*/
 }	iflua_functab[] = { /*{{{*/
-	{	LUA_STRLIBNAME,		"xlower",	iflua_xlower,		true		},
-	{	LUA_STRLIBNAME,		"xupper",	iflua_xupper,		true		},
-	{	LUA_STRLIBNAME,		"xcapitalize",	iflua_xcapitalize,	true		},
-	{	LUA_STRLIBNAME,		"like",		iflua_like,		true		},
-	{	LUA_MULTILIBNAME,	"get",		iflua_multi_get,	true		},
-	{	LUA_MULTILIBNAME,	"pos",		iflua_multi_pos,	true		},
-	{	LUA_MULTILIBNAME,	"count",	iflua_multi_count,	true		},
-	{	LUA_AGNLIBNAME,		"loglevel",	iflua_loglevel,		false		},
-	{	LUA_AGNLIBNAME,		"log",		iflua_log,		false		},
-	{	LUA_AGNLIBNAME,		"makeuid",	iflua_makeuid,		false		},
-	{	LUA_AGNLIBNAME,		"strmap",	iflua_strmap,		true		}
+	{	LUA_STRLIBNAME,		"xlower",		iflua_xlower,			true		},
+	{	LUA_STRLIBNAME,		"xupper",		iflua_xupper,			true		},
+	{	LUA_STRLIBNAME,		"xcapitalize",		iflua_xcapitalize,		true		},
+	{	LUA_STRLIBNAME,		"like",			iflua_like,			true		},
+	{	LUA_MULTILIBNAME,	"get",			iflua_multi_get,		true		},
+	{	LUA_MULTILIBNAME,	"pos",			iflua_multi_pos,		true		},
+	{	LUA_MULTILIBNAME,	"count",		iflua_multi_count,		true		},
+	{	LUA_AGNLIBNAME,		"loglevel",		iflua_loglevel,			false		},
+	{	LUA_AGNLIBNAME,		"log",			iflua_log,			false		},
+	{	LUA_AGNLIBNAME,		"makeuid",		iflua_makeuid,			false		},
+	{	LUA_AGNLIBNAME,		"strmap",		iflua_strmap,			true		}
 	/*}}}*/
 };
 
@@ -635,7 +635,7 @@ iflua_alloc (blockmail_t *blockmail, bool_t sandbox) /*{{{*/
 		il -> last_base_block = NULL;
 		il -> local = NULL;
 		il -> source = NULL;
-		if (il -> lua = alua_alloc (sandbox)) {
+		if (il -> lua = alua_alloc (sandbox ? Sandbox : Regular)) {
 			iflua_setup_functions (il);
 			iflua_setup_context (il);
 			iflua_setup_customer (il);

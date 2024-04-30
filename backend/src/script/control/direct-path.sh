@@ -18,7 +18,8 @@ case "$1" in
 start)
 	active direct-path
 	shift
-	starter $command -b "$@"
+	requires asyncinotify
+	starter $command -bw "$@"
 	;;
 stop)
 	softterm $command

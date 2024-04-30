@@ -1,4 +1,3 @@
-#!/bin/sh
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
@@ -10,8 +9,41 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-. $HOME/scripts/config.sh
-active sanity
+from	__future__ import annotations
+import	os, pickle
+from	contextlib import suppress
+from	types import TracebackType
+from	typing import Generic, Optional, TypeVar
+from	typing import Type
 #
-cd $HOME
-exec $HOME/scripts/sanity3.py "$@"
+__all__ = ['Persist']
+#
+_T = TypeVar ('_T')
+#
+class Persist (Generic[_T]):
+	__slots__ = ['path', 'data']
+	def __init__ (self, path: str, initial: _T) -> None:
+		self.path = path
+		self.data = initial
+	
+	def __enter__ (self) -> _T:
+		self.load ()
+		return self.data
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		self.save (exc_type is not None)
+		return None
+
+	def load (self) -> None:
+		with suppress (FileNotFoundError), open (self.path, 'rb') as fd:
+			self.data = pickle.load (fd)
+	
+	def save (self, backup: bool = False) -> None:
+		if backup and os.path.isfile (self.path):
+			with suppress (OSError):
+				os.rename (self.path, f'${self.path}~')
+		if bool (self.data):
+			with open (self.path, 'wb') as fd:
+				pickle.dump (self.data, fd)
+		elif os.path.isfile (self.path):
+			os.unlink (self.path)

@@ -11,27 +11,34 @@
 #
 from	__future__ import annotations
 import	os, re
-from	typing import Any, Optional
+from	typing import Any, Final, Optional
 from	typing import Dict, Iterator
-from	.definitions import syscfg
+from	.definitions import base, syscfg, dbid_default
 #
 class DBConfig:
 	"""Database configuration handler
 
 reads and stores configuration from a configuration file"""
-	__slots__ = ['path', 'data', 'default_id']
-	default_config_path = os.environ.get ('DBCFG_PATH', '/opt/agnitas.com/etc/dbcfg')
+	__slots__ = ['path', 'data', 'dbid_default']
+	config_environ: Final[str] = 'DBCFG_PATH'
+	default_config_path: Final[str] = '/opt/agnitas.com/etc/dbcfg'
 	def __init__ (self, path: Optional[str] = None) -> None:
-		self.path = path if path is not None else self.default_config_path
+		self.path = self._findpath (path)
 		self.data: Dict[str, DBConfig.DBRecord] = {}
-		dbid = syscfg.get ('dbid')
-		if dbid is not None:
-			self.default_id = dbid
-		else:
-			self.default_id = 'emm'
+		self.dbid_default = dbid_default
 		self.read ()
 		if len (self.data) == 1:
-			self.default_id = list (self.data.keys ())[0]
+			self.dbid_default = list (self.data.keys ())[0]
+	
+	def _findpath (self, path: Optional[str]) -> str:
+		if path is not None:
+			return path
+		if (path := os.environ.get (self.config_environ)) is not None:
+			return path
+		path = os.path.join (base, 'etc', 'dbcfg')
+		if os.path.isfile (path):
+			return path
+		return self.default_config_path
 
 	class DBRecord:
 		"""A Record for one database configuration line"""
@@ -75,7 +82,7 @@ reads and stores configuration from a configuration file"""
 		if not os.path.isfile (self.path):
 			dbcfg = syscfg.get ('dbcfg')
 			if dbcfg is not None:
-				self.data[syscfg.get ('dbid', 'emm')] = DBConfig.DBRecord (self.default_id, dbcfg)
+				self.data[self.dbid_default] = DBConfig.DBRecord (self.dbid_default, dbcfg)
 				return
 		#
 		with open (self.path, 'r') as fd:
@@ -90,7 +97,7 @@ reads and stores configuration from a configuration file"""
 				self.data[id] = DBConfig.DBRecord (id, param)
 
 	def __getitem__ (self, id: Optional[str]) -> DBConfig.DBRecord:
-		return self.data[id if id is not None else self.default_id]
+		return self.data[id if id is not None else self.dbid_default]
 
 	def __iter__ (self) -> Iterator[str]:
 		return iter (self.data)

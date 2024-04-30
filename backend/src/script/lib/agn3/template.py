@@ -522,6 +522,7 @@ user definied macros or evaluating an expression
 
 >>> ph = Placeholder ()
 >>> ph_lazy = Placeholder (lazy = True)
+>>> ph_ext = Placeholder (extended = True)
 >>> ns = {'test': 'Test'}
 >>> ph ('Das ist ein $test')
 Traceback (most recent call last):
@@ -533,17 +534,18 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 'Das ist ein $test'
 >>> ph_lazy ('Das ist ein $test', ns)
 'Das ist ein Test'
->>> ph['a'] = 3
->>> ph ('Das ist a plus 4: $(a + 4)')
+>>> ph_ext['a'] = 3
+>>> ph_ext ('Das ist a plus 4: $(a + 4)')
 'Das ist a plus 4: 7'
->>> ph ('Das ist $a plus 4: $(a + 4)')
+>>> ph_ext ('Das ist $a plus 4: $(a + 4)')
 'Das ist 3 plus 4: 7'
 >>> ph ('Zu finden im Ticket $jira(LTS-690)', macros = {'jira': lambda s: f'https://jira.agnitas.de/browse/{s}'})
 'Zu finden im Ticket https://jira.agnitas.de/browse/LTS-690'
 """
-	__slots__ = ['lazy', 'ns']
-	def __init__ (self, lazy: bool = False) -> None:
+	__slots__ = ['lazy', 'extended', 'ns']
+	def __init__ (self, lazy: bool = False, extended: bool = False) -> None:
 		self.lazy = lazy
+		self.extended = extended
 		self.ns: Dict[str, Any] = {}
 	
 	def __setitem__ (self, option: str, value: Any) -> None:
@@ -581,24 +583,31 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 				return '$'
 			#
 			if s.startswith ('$(') and s.endswith (')'):
-				return str (eval (s[2:-1], ns if ns else myns, self.ns))
+				if self.extended:
+					return str (eval (s[2:-1], ns if ns else myns, self.ns))
+				option = s[2:-1]
+			elif s.startswith ('${') and s.endswith ('}'):
+				option = s[2:-1]
 			else:
-				if s.startswith ('${') and s.endswith ('}'):
-					option = s[2:-1]
-				else:
-					option = s[1:]
-				try:
-					if option.endswith (')'):
-						(macro, arg) = option[:-1].split ('(', 1)
-						if macros is not None:
-							return macros[macro] (arg)
-						else:
-							raise KeyError (macro)
+				option = s[1:]
+			try:
+				if option.endswith (')'):
+					(macro, arg) = option[:-1].split ('(', 1)
+					if macros is not None:
+						return macros[macro] (arg)
 					else:
+						raise KeyError (macro)
+				else:
+					try:
+						(option_part, format_part) = option.split (':', 1)
+						return ('{option:' + format_part + '}').format (option = myns[option_part])
+					except ValueError:
 						return str (myns[option])
-				except (ValueError, KeyError) as e:
-					if not self.lazy:
-						raise error (f'{option}: not found/parsable: {e}')
-					return s
+			except (ValueError, KeyError) as e:
+				if not self.lazy:
+					raise error (f'{option}: not found/parsable: {e}')
+				return s
 		#
 		return self.parser.sub (replacer, template)
+	
+	replace = __call__

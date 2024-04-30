@@ -314,10 +314,11 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 		free (sorted);
 	if ((level == 0) && (dyncount > 0) && (dynused == 0)) {
 		/* have hit one empty text block */
-		if (rec -> media && rec -> media -> empty) {
-			blockmail -> active = false;
-			blockmail -> reason = REASON_EMPTY_DOCUMENT;
-		}
+		if (rec -> media && rec -> media -> empty)
+			if ((block -> tid != TID_EMail_HTML_Preheader) && (block -> tid != TID_EMail_HTML_Clearance)) {
+				blockmail -> active = false;
+				blockmail -> reason = REASON_EMPTY_DOCUMENT;
+			}
 	}
 	return st;
 }/*}}}*/

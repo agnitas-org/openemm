@@ -169,9 +169,16 @@ main (int argc, char **argv) /*{{{*/
 	while ((n = getopt (argc, argv, "VDpqE:ru:UaAs:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
-# ifdef		EMM_VERSION			
-			printf ("Build version: %s\n", EMM_VERSION);
-# endif		/* EMM_VERSION */
+			{
+				systemconfig_t	*syscfg;
+				const char	*version;
+
+				if (syscfg = systemconfig_alloc (true)) {
+					if (version = systemconfig_find (syscfg, "build.version"))
+						printf ("Build version: %s\n", version);
+					systemconfig_free (syscfg);
+				}
+			}
 			return 0;
 		case 'p':
 			xmlPedanticParserDefault (1);

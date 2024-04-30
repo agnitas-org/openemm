@@ -11,182 +11,176 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, multiprocessing
+import	logging, argparse
 import	os, time, shutil
+import	asyncio
 from	dataclasses import dataclass
-from	typing import Any
-from	typing import Dict
-from	agn3.worker import Worker
+from	typing import Callable, Final, Optional
+from	typing import Dict, List
+from	agn3.aioruntime import AIORuntime
+from	agn3.config import Config
 from	agn3.definitions import base, syscfg
+from	agn3.emm.metafile import METAFile
 from	agn3.exceptions import error
-from	agn3.io import ArchiveDirectory
+from	agn3.io import create_path, ArchiveDirectory
 from	agn3.mta import MTA
 from	agn3.rpc import XMLRPC
-from	agn3.runtime import Runtime
-from	agn3.stream import Stream
 #
 logger = logging.getLogger (__name__)
 #
-class Processor:
-	__slots__ = ['incoming', 'archive', 'recover', 'queues', 'cur', 'mta']
-	def __init__ (self) -> None:
-		self.incoming = syscfg.get ('direct-path-incoming', os.path.join (base, 'DIRECT'))
-		self.archive = syscfg.get ('direct-path-archive', os.path.join (base, 'ARCHIVE'))
-		self.recover = syscfg.get ('direct-path-recover', os.path.join (base, 'RECOVER'))
-		self.queues = syscfg.lget ('direct-path-queues', default = Stream (os.listdir (base))
-			.filter (lambda f: bool (f.startswith ('QUEUE')))
-			.map (lambda f: os.path.join (base, f))
-			.filter (lambda p: os.path.isdir (p) and not os.path.isfile (os.path.join (p, '.ignore')))
-			.list ()
+@dataclass
+class XMLPack:
+	data: Optional[str] = None
+	stamp: Optional[str] = None
+	final: Optional[str] = None
+
+class DPath (AIORuntime):
+	__slots__ = ['worker', 'mta', 'queue']
+	incoming_directory: Final[str] = syscfg.get ('direct-path-incoming', os.path.join (base, 'DIRECT') if not syscfg.service ('console', 'rdir') else os.path.join (base, 'var', 'spool', 'DIRECT'))
+	archive_directory: Final[str] = syscfg.get ('direct-path-archive', os.path.join (base, 'ARCHIVE'))
+	recover_directory: Final[str] = syscfg.get ('direct-path-recover', os.path.join (base, 'RECOVER'))
+	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
+		parser.add_argument (
+			'--worker', action = 'store', type = int, default = 4,
+			help = 'set maximum number of parallel workers'
 		)
-		if len (self.queues) == 0:
-			raise error ('No queues for spooling found')
-		self.queues.sort ()
-		self.cur = multiprocessing.Value ('i', 0)
-		self.mta = MTA ()
-	
-	def __next_queue (self) -> str:
-		cval = self.cur.value
-		if cval < 0 or cval >= len (self.queues):
-			cval = 0
-		rc: str = self.queues[cval]
-		cval += 1
-		if cval == len (self.queues):
-			cval = 0
-		self.cur.value = cval
-		return rc
-	
-	def done (self) -> None:
-		pass
-
-	def doit (self, basename: str) -> None:
-		(src, stamp, final) = [os.path.join (self.incoming, '%s.%s' % (basename, _e)) for _e in ('xml.gz', 'stamp', 'final')]
-		if os.path.isfile (src):
-			target = self.recover
-			ok = True
-			for path in stamp, final:
-				if os.path.isfile (path):
-					try:
-						os.unlink (path)
-					except OSError as e:
-						logger.error ('Failed to remove %s: %s' % (path, str (e)))
-						ok = False
-				else:
-					logger.error ('Failed to find file %s' % path)
-					ok = False
-			if ok:
-				queue = self.__next_queue ()
-				if self.mta (src, target_directory = queue, flush_count = '2'):
-					logger.info ('Unpacked %s in %s' % (src, queue))
-					if self.archive != os.devnull:
-						try:
-							target = ArchiveDirectory.make (self.archive)
-						except error as e:
-							logger.error ('Failed to setup archive directory %s: %s' % (self.archive, e))
-							target = self.archive
-					else:
-						target = self.archive
-				else:
-					logger.error ('Failed to unpack %s in %s' % (src, queue))
-					target = self.recover
-			else:
-				logger.error ('Do not process %s as control file(s) is/are missing' % src)
-			if target != os.devnull:
-				dst = os.path.join (target, os.path.basename (src))
-				try:
-					shutil.move (src, dst)
-				except (shutil.Error, IOError, OSError) as e:
-					logger.error ('Failed to move %s to %s: %s' % (src, dst, str (e)))
-					try:
-						os.unlink (src)
-						logger.info (f'Removed file {src} as moving to destination {dst} failed')
-					except OSError as e:
-						logger.error ('Failed to remove file %s: %s' % (src, str (e)))
-			else:
-				try:
-					os.unlink (src)
-					logger.info (f'Removed file {src} as target is {target}')
-				except OSError as e:
-					logger.error (f'Failed to remove file {src} for target {target}: {e}')
-		else:
-			logger.debug ('Skip requested file %s which is already processed' % src)
-			for path in stamp, final:
-				if os.path.isfile (path):
-					try:
-						os.unlink (path)
-					except OSError as e:
-						logger.error ('Failed to remove stale file %s: %s' % (path, str (e)))
-	
-	def process (self, basename: str) -> None:
-		basename = os.path.basename (basename)
-		logger.info ('Requested %s to process' % basename)
-		self.doit (basename)
-
-	def scan (self) -> None:
-		files = sorted (os.listdir (self.incoming))
-		for fname in [_f for _f in files if _f.endswith ('.final')]:
-			basename = fname.split ('.')[0]
-			if '%s.xml.gz' % basename in files and '%s.stamp' % basename in files:
-				logger.info ('Found %s to process' % fname)
-				self.doit (basename)
-
-class DirectPath (Worker):
-	def __unpack (self, filename: str) -> bool:
-		if filename:
-			self.enqueue (filename)
-		return True
-
-	@dataclass
-	class ControllerCTX:
-		last: int = 0
-	def controller_setup (self) -> Any:
-		defaults: Dict[str, Any] = {
-			'xmlrpc.host': 'localhost',
-			'xmlrpc.port':  syscfg.iget ('direct-path-port', 9400),
-			'xmlrpc.allow_none': True
-		}
-		for (var, value) in defaults.items ():
-			if var not in self.cfg:
-				self.cfg[var] = value
-		return DirectPath.ControllerCTX ()
-
-	def controller_register (self, ctx: Any, serv: XMLRPC) -> None:
-		serv.add_method (self.__unpack, name = 'unpack')
-	
-	def controller_step (self, ctx: Any) -> None:
-		now = time.time ()
-		if ctx.last + 60 < now:
-			self.enqueue (None, oob = True)
-			ctx.last = now
-
-	def executor_config (self, what: str, default: Any) -> Any:
-		if what == 'handle-multiple-requests':
-			return True
-		return super ().executor_config (what, default)
-
-	@dataclass
-	class ExecutorCTX:
-		process: Processor
-	def executor_setup (self) -> DirectPath.ExecutorCTX:
-		return DirectPath.ExecutorCTX (process = Processor ())
-
-	def executor_teardown (self, ctx: DirectPath.ExecutorCTX) -> None: 
-		ctx.process.done ()
 		
-	def executor_request_handle (self, ctx: DirectPath.ExecutorCTX, rq: Any) -> None:
-		if len (rq) > 1 or rq[0] is None:
-			ctx.process.scan ()
-		else:
-			ctx.process.process (rq[0])
+	def use_arguments (self, args: argparse.Namespace) -> None:
+		self.worker: int = args.worker
 
-class Main (Runtime):
-	def supports (self, option: str) -> bool:
-		return option != 'dryrun'
-
-	def executor (self) -> bool:
-		dpath = DirectPath ('direct-path')
-		dpath.start ()
+	def setup (self) -> None:
+		for path in self.incoming_directory, self.archive_directory, self.recover_directory:
+			create_path (path)
+				
+	def executors (self) -> Optional[List[Callable[[], bool]]]:
+		return [
+			self.swallow,
+			self.executor
+		]
+	
+	def swallow (self) -> bool:
+		config = Config ()
+		config['xmlrpc.host'] = 'localhost'
+		config['xmlrpc.port'] = syscfg.get ('direct-path-port', '9400')
+		config['xmlrpc.allow_none'] = 'true'
+		server = XMLRPC (config)
+		server.add_method (lambda f: True, name = 'unpack')
+		server.run ()
 		return True
-#
+	
+	async def controller (self) -> None:
+		self.mta = MTA ()
+		self.queue = self.channel ('incoming', XMLPack)
+		unpacker = self.task ('unpacker', self.unpacker ())
+		collect: Dict[str, XMLPack] = {}
+		seen: Dict[str, float] = {}
+		async for filename in self.scan (self.incoming_directory):
+			path = os.path.join (self.incoming_directory, filename)
+			meta = METAFile (path)
+			if not meta.valid:
+				logger.warning (f'{path}: invalid metafile, move to {self.recover_directory}')
+				self.move (path, self.recover_directory)
+			else:
+				try:
+					xmlpack = collect[meta.basename]
+				except KeyError:
+					xmlpack = collect[meta.basename] = XMLPack ()
+				if meta.extension.startswith ('xml'):
+					xmlpack.data = path
+				elif meta.extension == 'stamp':
+					xmlpack.stamp = path
+				elif meta.extension == 'final':
+					xmlpack.final = path
+				if xmlpack.data and xmlpack.stamp and xmlpack.final:
+					now = time.time ()
+					xmlpack = collect.pop (meta.basename)
+					if meta.basename in seen and seen[meta.basename] + 90 >= now:
+						logger.warning (f'{xmlpack.data}: already seen in last 90 seconds, skip')
+					else:
+						logger.debug (f'{xmlpack.data}: full pack forwarded for unpacking')
+						await self.queue.put (xmlpack)
+					for basename in [_i[0] for _i in seen.items () if _i[1] + 90 < now]:
+						del seen[basename]
+					seen[meta.basename] = now
+		await unpacker.join ()
+
+	async def unpacker (self) -> None:
+		async with self.workers ('unpack', limit = self.worker) as workers:
+			async for xmlpack in self.queue:
+				await workers.launch (self.unpack (xmlpack))
+	
+	async def unpack (self, xmlpack: XMLPack) -> None:
+		await asyncio.shield (self.shielded_unpack (xmlpack))
+	
+	async def shielded_unpack (self, xmlpack: XMLPack) -> None:
+		if xmlpack.data is not None:
+			target = self.recover_directory
+			try:
+				command = self.mta.make (xmlpack.data)
+				process = await self.process (f'xmlback {xmlpack.data}', command)
+				(returncode, out, err) = await process.communicate_text (errors = 'backslashreplace')
+				if returncode == 0:
+					if self.archive_directory != os.devnull:
+						try:
+							target = ArchiveDirectory.make (self.archive_directory)
+						except error as e:
+							logger.error (f'{self.archive_directory}: failed to setup archive directory: {e}')
+							target = self.archive_directory
+					else:
+						target = os.devnull
+					logger.info (f'{xmlpack.data}: successfully unpacked, move to {target}')
+				else:
+					logger.error (f'{xmlpack.data}: failed to unpack, command {command} return {returncode}')
+					if out:
+						logger.error (f'\tStdout: {out}')
+					if err:
+						logger.error (f'\tStderr: {err}')
+			finally:
+				self.move (xmlpack.data, target)
+				self.remove (xmlpack.stamp)
+				self.remove (xmlpack.final)
+				if target == self.recover_directory:
+					sync = os.path.join (os.path.dirname (xmlpack.data), '{basename}.SYNC'.format (basename = os.path.basename (xmlpack.data).split ('.', 1)[0]))
+					if os.path.isfile (sync):
+						self.move (sync, target)
+					
+	def remove (self, path: Optional[str]) -> None:
+		if path is not None:
+			try:
+				os.unlink (path)
+				logger.debug (f'{path}: removed')
+			except OSError as e:
+				if os.path.isfile (path):
+					logger.error (f'{path}: failed to remove: {e}')
+					self.move (path, self.recover_directory)
+
+	def move (self, source: Optional[str], target: str) -> None:
+		if source is not None:
+			if target != os.devnull:
+				try:
+					shutil.move (source, target)
+					logger.debug (f'moved "{source}" to "{target}"')
+				except Exception as e:
+					logger.error (f'failed to move "{source}" to "{target}": {e}')
+					if os.path.isfile (source):
+						basename = os.path.basename (source)
+						dirname = os.path.dirname (source)
+						if not basename.startswith ('.'):
+							new_target = os.path.join (dirname, f'.{basename}')
+							if not os.path.isfile (new_target):
+								try:
+									shutil.move (source, new_target)
+									logger.debug (f'moved "{source}" to "{new_target}"')
+								except Exception as e:
+									logger.error (f'failed to move "{source}" to "{new_target}": {e}')
+						if os.path.isfile (source):
+							os.rename (source, os.path.join (dirname, '.{basename}-{ts:.2f}'.format (basename = basename, ts = time.time ())))
+			else:
+				try:
+					os.unlink (source)
+					logger.debug ('removed "{source}" due to target is "{target}"')
+				except OSError as e:
+					logger.error (f'failed to remove "{source}" for target "{target}": {e}')
+
 if __name__ == '__main__':
-	Main.main ()
+	DPath.main ()

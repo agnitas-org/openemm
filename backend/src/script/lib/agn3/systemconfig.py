@@ -12,10 +12,12 @@
 from	__future__ import annotations
 import	os, json, platform, pwd, re, base64
 from	typing import Any, Callable, Final, Optional, TypeVar, Union
-from	typing import Dict, KeysView, List, Set, Tuple
+from	typing import Dict, ItemsView, KeysView, List, Set, ValuesView, Tuple
 from	typing import overload
 from	.exceptions import error
 from	.ignore import Ignore
+from	.parser import unit
+from	.sentinel import sentinel
 from	.stream import Stream
 from	.template import Placeholder
 from	.tools import atob, listsplit
@@ -51,7 +53,7 @@ next lines. Close this block by using a closing curly bracket.
 Multiline values are folded to a single line value.
 
 >>> s = Systemconfig ()
->>> s.cfg = {'test1': 'global', f'test1-{s._user}': 'global-user', f'test2[{s._user}@]': 'local-user', f'test3[{s._fqdn}]': 'local-fqdn'}
+>>> s._cfg = {'test1': 'global', f'test1-{s._user}': 'global-user', f'test2[{s._user}@]': 'local-user', f'test3[{s._fqdn}]': 'local-fqdn'}
 >>> s['test1']
 'global'
 >>> s.user_get ('test1')
@@ -69,8 +71,10 @@ True
 >>> 'test4' in s
 False
 """
-	__slots__ = ['path', 'last_modified', 'content', 'cfg']
-	_default_path: Final[str] = os.environ.get ('SYSTEM_CONFIG_PATH', '/opt/agnitas.com/etc/system.cfg')
+	__slots__ = ['_path', '_custom_path', '_last_modified', '_content', '_content_environ', '_cfg', '_services']
+	_config_environ: Final[str] = 'SYSTEM_CONFIG'
+	_config_environ_path: Final[str] = 'SYSTEM_CONFIG_PATH'
+	_default_path: Final[str] = '/opt/agnitas.com/etc/system.cfg'
 	_default_legacy_path: Final[str] = os.path.join (os.path.dirname (_default_path), 'licence.cfg')
 	(_fqdn, _host, _user, _home) = _determinate_essentials ()
 	class Selection:
@@ -181,52 +185,84 @@ True
 			return hostname in self.selections_set
 	
 	_selection = Selection (_user, _fqdn, _host)
-	__sentinel: Final[object] = object ()
 	def __init__ (self) -> None:
 		"""path to configuration file or None to use default
 
 Setup the Systemconfig object and read the content of the system confg
 file, if it is available. """
-		self.path: Optional[str] = None
-		self.last_modified = 0.0
-		self.content = os.environ.get ('SYSTEM_CONFIG')
-		self.cfg: Dict[str, str] = {}
-		if self.content is None:
-			path = self._default_path
-			if not os.path.isfile (path) and os.path.isfile (self._default_legacy_path):
-				path = self._default_legacy_path
-			self.path = path
+		self._path: Optional[str] = None
+		self._custom_path = os.environ.get (self._config_environ_path)
+		self._last_modified = 0.0
+		self._content_environ = os.environ.get (self._config_environ)
+		self._cfg: Dict[str, str] = {}
+		self._services: Set[str] = set ()
+		if self._content_environ is None:
 			self._check ()
 		else:
+			self._content = self._content_environ
 			self._parse ()
 			
 	def _check (self) -> None:
-		if self.path is not None:
-			with Ignore (OSError, IOError):
-				st = os.stat (self.path)
-				if st.st_mtime != self.last_modified:
-					self.last_modified = st.st_mtime
-					with open (self.path) as fd:
-						self.content = fd.read ()
-					self._parse ()
+		if self._content_environ is None:
+			if self._path is None or not os.path.isfile (self._path):
+				if self._custom_path is not None:
+					if os.path.isfile (self._custom_path):
+						self._path = self._custom_path
+					else:
+						self._path = None
+				else:
+					self._path = os.path.join (self._home, 'etc', 'system.cfg')
+					if not os.path.isfile (self._path):
+						self._path = self._default_path
+						if not os.path.isfile (self._path):
+							if os.path.isfile (self._default_legacy_path):
+								self._path = self._default_legacy_path
+							else:
+								self._path = None
+				self._last_modified = 0
+			if self._path is not None:
+				try:
+					st = os.stat (self._path)
+					if st.st_mtime != self._last_modified:
+						self._last_modified = st.st_mtime
+						with open (self._path) as fd:
+							self._content = fd.read ()
+						self._parse ()
+				except (OSError, IOError):
+					self._clear ()
+			else:
+				self._clear ()
 
 	pattern_selective = re.compile ('^([^[]+)\\[([^]]+)\\]$')
 	def _parse (self) -> None:
-		self.cfg.clear ()
-		if self.content is not None:
+		self._clear ()
+		if self._content is not None:
 			try:
-				self.cfg = json.loads (self.content)
-				if not isinstance (self.cfg, dict):
-					raise ValueError ('expect json object, not {typ}'.format (typ = type (self.cfg)))
+				self._cfg = json.loads (self._content)
+				if not isinstance (self._cfg, dict):
+					raise ValueError ('expect json object, not {typ}'.format (typ = type (self._cfg)))
+				mismatch: List[str] = []
+				for (key, value) in self._cfg.items ():
+					if not isinstance (key, str):
+						mismatch.append ('{key}: {typ} ({value!r})'.format (
+							key = key,
+							typ = type (value),
+							value = value
+						))
+				if mismatch:
+					raise TypeError ('syscfg: type mismatch, expect str for all values:\n{mismatch}\nfor content:\n{content}'.format (
+						mismatch = Stream (mismatch).join ('\n\t'),
+						content = self._content
+					))
 			except ValueError:
 				cont: Optional[str] = None
 				cur: List[str] = []
-				for line in self.content.split ('\n'):
+				for line in self._content.split ('\n'):
 					if line.endswith ('\r'):
 						line = line.rstrip ('\r')
 					if cont is not None:
 						if line.rstrip () == '}':
-							self.cfg[cont] = '\n'.join (cur)
+							self._cfg[cont] = '\n'.join (cur)
 							cont = None
 						else:
 							cur.append (line)
@@ -237,9 +273,9 @@ file, if it is available. """
 								cont = var
 								cur.clear ()
 							else:
-								self.cfg[var] = val
+								self._cfg[var] = val
 			update: Dict[str, str] = {}
-			for (option, value) in self.cfg.items ():
+			for (option, value) in self._cfg.items ():
 				mtch = self.pattern_selective.match (option)
 				if mtch is not None:
 					(base_option, indexlist) = mtch.groups ()
@@ -247,15 +283,19 @@ file, if it is available. """
 					if len (indexes) > 1:
 						for index in indexes:
 							simple_option = f'{base_option}[{index}]'
-							if simple_option not in self.cfg:
+							if simple_option not in self._cfg:
 								update[simple_option] = value
-			self.cfg.update (update)
+			self._cfg.update (update)
+
+	def _clear (self) -> None:
+		self._cfg.clear ()
+		self._services.clear ()
 
 	def __str__ (self) -> str:
 		self._check ()
 		return '{name}:\n\t{content}'.format (
 			name = self.__class__.__name__,
-			content = Stream (self.cfg.items ())
+			content = Stream (self._cfg.items ())
 				.switch (lambda kv: kv[1] is None, lambda kv: str (kv[0]), lambda kv: '{var}={val!r}'.format (var = kv[0], val = kv[1]))
 				.sorted ()
 				.join ('\n\t')
@@ -264,13 +304,13 @@ file, if it is available. """
 	def __getitem__ (self, var: str) -> str:
 		"""Get configuration value"""
 		self._check ()
-		return self._selection.pick_pattern (self.cfg, var)
+		return self._selection.pick_pattern (self._cfg, var)
 
 	def __contains__ (self, var: str) -> bool:
 		"""Checks for existance of configuration variable"""
 		self._check ()
 		try:
-			self._selection.pick_pattern (self.cfg, var)
+			self._selection.pick_pattern (self._cfg, var)
 		except KeyError:
 			return False
 		else:
@@ -279,8 +319,16 @@ file, if it is available. """
 	def keys (self) -> KeysView[str]:
 		"""Returns all available configuration variables"""
 		self._check ()
-		return self.cfg.keys ()
+		return self._cfg.keys ()
+	
+	def values (self) -> ValuesView[str]:
+		self._check ()
+		return self._cfg.values ()
 
+	def items (self) -> ItemsView[str, str]:
+		self._check ()
+		return self._cfg.items ()
+	
 	@overload
 	def get (self, var: str, default: None = ...) -> Optional[str]: ...
 	@overload
@@ -302,6 +350,14 @@ file, if it is available. """
 			return int (self[var])
 		except KeyError:
 			return default
+	
+	def eget (self, var: str, default: Union[int, str] = 0) -> int:
+		"""Get configuration value as int parsed from unit with fallback"""
+		default_value = unit.parse (default, 0) if isinstance (default, str) else default
+		try:
+			return unit.parse (self[var], default_value)
+		except KeyError:
+			return default_value
 
 	@overload
 	def fget (self, var: str, default: None = ...) -> Optional[float]: ...
@@ -341,8 +397,8 @@ file, if it is available. """
 	@overload
 	def __user (self, var: str, default: _R, retriever: Callable[..., _R]) -> _R: ...
 	def __user (self, var: str, default: Optional[_R], retriever: Callable[..., _R]) -> Optional[_R]:
-		rc = retriever (f'{var}-{Systemconfig._user}', Systemconfig.__sentinel) if Systemconfig._user is not None else Systemconfig.__sentinel
-		return rc if rc is not Systemconfig.__sentinel else retriever (var, default)
+		rc = retriever (f'{var}-{Systemconfig._user}', sentinel) if Systemconfig._user is not None else sentinel
+		return rc if rc is not sentinel else retriever (var, default)
 
 	@overload
 	def user_get (self, var: str, default: None = ...) -> Optional[str]: ...
@@ -357,6 +413,10 @@ file, if it is available. """
 	def user_iget (self, var: str, default: int) -> int: ...
 	def user_iget (self, var: str, default: Optional[int] = None) -> Optional[int]:
 		return self.__user (var, default, self.iget)
+	
+	def user_eget (self, var: str, default: Union[int, str] = 0) -> int:
+		return self.__user (var, unit (default, 0), self.eget)
+
 	@overload
 	def user_fget (self, var: str, default: None = ...) -> Optional[float]: ...
 	@overload
@@ -390,7 +450,7 @@ file, if it is available. """
 			return rc
 		return self.has (var, default = default)
 
-	__ph = Placeholder (True)
+	__ph = Placeholder (lazy = True, extended = True)
 	def as_config (self,
 		value: str,
 		*,
@@ -441,7 +501,7 @@ file, if it is available. """
 	def dump (self) -> None:
 		"""Display current configuration content"""
 		self._check ()
-		for (var, val) in self.cfg.items ():
+		for (var, val) in self._cfg.items ():
 			print (f'{var}={val}')
 
 	_sendmail_options = [
@@ -467,3 +527,14 @@ file, if it is available. """
 
 	def selection (self, user: str = _user, fqdn: str = _fqdn, host: str = _host) -> Systemconfig.Selection:
 		return Systemconfig.Selection (user, fqdn, host)
+
+	def service (self, *service: str) -> bool:
+		return bool (self.services.intersection (service))
+		
+	@property
+	def services (self) -> Set[str]:
+		self._check ()
+		if not self._services:
+			self._services.update (['openemm'])
+		return self._services
+		

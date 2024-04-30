@@ -280,10 +280,10 @@ typedef struct postfix { /*{{{*/
 	/*}}}*/
 }	postfix_t;
 typedef enum {
-	OPL_None = 0,
-	OPL_Top = 1,
-	OPL_Bottom = 2
-}	opl_t;
+	Add_None,
+	Add_Top,
+	Add_Bottom
+}	add_t;
 struct blockspec { /*{{{*/
 	int		nr;		/* the block to use		*/
 	block_t		*block;		/* reference to block		*/
@@ -293,7 +293,7 @@ struct blockspec { /*{{{*/
 	int		linelength;	/* if >0, enforce linebreaks	*/
 	xmlChar		*linesep;	/* the line separator		*/
 	int		seplength;	/* the length of the line sep.	*/
-	opl_t		opl;		/* insert onepixel URLs		*/
+	add_t		opl;		/* insert onepixel URLs		*/
 	bool_t		clearance;	/* add clearance fragment	*/
 	/*}}}*/
 };
@@ -475,6 +475,7 @@ struct blockmail { /*{{{*/
 	time_t		epoch;
 	bool_t		rdir_content_links;
 	bool_t		omit_list_informations_for_doi;
+	add_t		add_honeypot_link;
 	/* general part */
 	xmlBufferPtr	auto_url;
 	bool_t		auto_url_is_dynamic;
@@ -485,6 +486,7 @@ struct blockmail { /*{{{*/
 	char		*selector;
 	bool_t		convert_to_entities;
 	xmlBufferPtr	onepixel_url;
+	xmlBufferPtr	honeypot_url;
 	buffer_t	*link_maker;
 	xmlBufferPtr	anon_url;
 	xmlBufferPtr	secret_key;
@@ -649,6 +651,9 @@ struct receiver { /*{{{*/
 	int		chunks;		/* # of chunks of message	*/
 	long		size;		/* raw message size		*/
 	bool_t		dkim;		/* sign this mail with DKIM	*/
+	/* revalidate envelope for this recipient			*/
+	bool_t		revalidate_mfrom_default;
+	bool_t		revalidate_mfrom;
 	/*}}}*/
 };
 
@@ -670,6 +675,7 @@ struct output { /*{{{*/
 };
 
 extern bool_t		parse_file (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base);
+extern add_t		add_parse (const char *where, add_t if_true);
 extern bool_t		create_output (blockmail_t *blockmail, receiver_t *rec);
 extern bool_t		replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block, 
 				      int level, bool_t code_urls,
@@ -885,10 +891,12 @@ extern header_t		*header_copy (header_t *source);
 extern header_t		*header_free (header_t *h);
 extern void		header_clear (header_t *h);
 extern buffer_t		*header_scratch (header_t *header, int size);
+extern bool_t		header_set_sender (header_t *h, const char *sender);
 extern bool_t		header_set_recipient (header_t *h, const char *recipient, bool_t normalize);
 extern void		header_set_charset (header_t *h, cvt_t *cvt, const char *charset);
 extern bool_t		header_set_content (header_t *h, xmlBufferPtr source);
 extern bool_t		header_append_content (header_t *h, xmlBufferPtr source);
+extern bool_t		header_replace (header_t *h, xmlBufferPtr source);
 extern bool_t		header_insert (header_t *h, const char *line, head_t *after);
 extern void		header_remove (header_t *h, const char *name);
 extern bool_t		header_revalidate_mfrom (header_t *h, void *spf);
@@ -904,8 +912,7 @@ extern sdkim_t		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const 
 				      const char *selector, const char *column, bool_t enable_report, bool_t enable_debug);
 extern sdkim_t		*sdkim_free (sdkim_t *s);
 extern bool_t		sdkim_should_sign (sdkim_t *s, receiver_t *rec);
-extern char		*sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char *ident, buffer_t *body);
-extern void		sign_mail (blockmail_t *blockmail, header_t *header);
+extern void		sign_mail_using_dkim (blockmail_t *blockmail, header_t *header);
 
 extern void		*spf_alloc (void);
 extern void		*spf_free (void *sp);

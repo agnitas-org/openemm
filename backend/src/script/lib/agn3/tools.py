@@ -16,7 +16,7 @@ import	traceback
 from	enum import Enum
 from	types import TracebackType
 from	typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, Union
-from	typing import Dict, Generator, List, Set, Type
+from	typing import Dict, Generator, List, Set, Tuple, Type
 from	.exceptions import error
 from	.stream import Stream
 from	.template import Template
@@ -46,7 +46,7 @@ def abstract () -> NoReturn:
 #
 class defer (Generic[_T]):
 	__slots__ = ['instance', 'deferrer']
-	def __init__ (self, instance: _T, deferrer: Optional[Callable[[_T], None]] = None) -> None:
+	def __init__ (self, instance: _T, deferrer: Callable[[_T, Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]]], None]) -> None:
 		self.instance = instance
 		self.deferrer = deferrer
 
@@ -55,7 +55,7 @@ class defer (Generic[_T]):
 
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 		if self.deferrer is not None:
-			self.deferrer (self.instance)
+			self.deferrer (self.instance, (exc_type, exc_value, traceback))
 		return None
 #
 def atoi (s: Any, base: int = 10, default: Union[int, float, str] = 0) -> int:

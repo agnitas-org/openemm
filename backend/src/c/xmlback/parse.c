@@ -388,6 +388,8 @@ parse_general (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				}
 			} else if (! xmlstrcmp (node -> name, "onepixel_url"))
 				st = extract_content (& blockmail -> onepixel_url, doc, node);
+			else if (! xmlstrcmp (node -> name, "honeypot_url"))
+				st = extract_content (& blockmail -> honeypot_url, doc, node);
 			else if (! xmlstrcmp (node -> name, "anon_url"))
 				st = extract_content (& blockmail -> anon_url, doc, node);
 			else if (! xmlstrcmp (node -> name, "uid_version"))
@@ -851,12 +853,7 @@ parse_type (blockmail_t *blockmail, mailtypedefinition_t *mtyp, xmlDocPtr doc, x
 							if (extract_numeric_property (blockmail, & val, node, "linelength"))
 								bspec -> linelength = (int) val;
 							if (ptr = extract_property (blockmail, node, "onepixlog")) {
-								if (! strcmp (ptr, "top"))
-									bspec -> opl = OPL_Top;
-								else if (! strcmp (ptr, "bottom"))
-									bspec -> opl = OPL_Bottom;
-								else
-									bspec -> opl = OPL_None;
+								bspec -> opl = add_parse (ptr, Add_Top);
 								free (ptr);
 							}
 							if (ptr = extract_property (blockmail, node, "clearance")) {
@@ -1552,4 +1549,17 @@ parse_file (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 			}
 		}
 	return st;
+}/*}}}*/
+add_t
+add_parse (const char *where, add_t if_true) /*{{{*/
+{
+	if (where) {
+		if (! strcasecmp (where, "top"))
+			return Add_Top;
+		if (! strcasecmp (where, "bottom"))
+			return Add_Bottom;
+		if (atob (where))
+			return if_true;
+	}
+	return Add_None;
 }/*}}}*/

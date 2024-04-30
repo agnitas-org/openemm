@@ -42,14 +42,15 @@ lib:
 scripts mode=0755:
 	src/script/tools/activator3.py
 	src/script/tools/dkim-mgr3.py
-	src/script/lib/*.*
+	src/script/lib/config.sh
 	src/script/process/*.py
 	src/script/data/mailstatus3.tmpl	mode=0644
 	src/script/data/recovery3.tmpl		mode=0644
 	src/script/tools/script-tag3.py
 	src/script/tools/service3.py
 	src/script/tools/service3.cfg		mode=0644
-
+	src/script/lib/cq.rc			mode=0644
+	
 scripts/agn3:
 	src/script/lib/agn3/*.*
 
@@ -106,15 +107,8 @@ class Builder:
 		self.call ('make', '-C', path, 'all')
 	
 	def find_version (self) -> None:
-		xmlback = os.path.join ('src', 'c', 'xmlback', 'xmlback')
-		pp = subprocess.Popen ([xmlback, '-V'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-		(out, err) = pp.communicate (None)
-		if pp.returncode != 0:
-			self.fail ('determinate version using %s results in %d (%s, %s)' % (xmlback, pp.returncode, out, err))
-		version_parts = out.strip ().split ()
-		if len (version_parts) == 0 or version_parts[-1] == '':
-			self.fail ('failed to parse version response "%s" of %s' % (out, xmlback))
-		self.version = version_parts[-1]
+		with open ('version') as fd:
+			self.version = fd.read ().strip ()
 		self.directory = 'V%s' % self.version
 
 	def find_target (self) -> None:

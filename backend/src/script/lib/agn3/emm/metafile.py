@@ -88,8 +88,8 @@ filename."""
 			if self.single:
 				self.mailid = self.basename
 
-	def __make_timestamp (self, epoch: Union[int, float]) -> str:
-		tt = datetime.fromtimestamp (epoch)
+	def __make_timestamp (self, ts: Union[int, float]) -> str:
+		tt = datetime.fromtimestamp (ts)
 		return f'{tt.year:04d}{tt.month:02d}{tt.day:02d}{tt.hour:02d}{tt.minute:02d}{tt.second:02d}'
 
 	def __parse_timestamp (self, ts: str) -> str:
@@ -103,17 +103,17 @@ filename."""
 		self.error.append (s)
 		self.valid = False
 
-	def is_ready (self, epoch: Union[None, int, float, str] = None) -> bool:
+	def is_ready (self, timestamp: Union[None, int, float, str] = None) -> bool:
 		"""Checks if file is ready for sending
 
 according to the coded timestamp of the filename, this method checks,
 if the file is ready for sending."""
-		if epoch is None:
+		if timestamp is None:
 			ts = self.__make_timestamp (time.time ())
-		elif isinstance (epoch, str):
-			ts = epoch
+		elif isinstance (timestamp, str):
+			ts = timestamp
 		else:
-			ts = self.__make_timestamp (float (epoch))
+			ts = self.__make_timestamp (float (timestamp))
 		return self.valid and self.timestamp <= ts
 
 	def get_error (self) -> str:

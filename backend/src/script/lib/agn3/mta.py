@@ -12,12 +12,13 @@
 from	__future__ import annotations
 import	os, subprocess, logging
 from	typing import Optional
-from	typing import Dict, Iterator, List
+from	typing import Dict, Iterator, List, Tuple
 from	.definitions import base, syscfg
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import which, create_path
 from	.log import log
+from	.stream import Stream
 from	.tools import call, listsplit
 #
 __all__ = [
@@ -32,10 +33,11 @@ class MTA:
 This class is used to handle different MTAs on a central base. It also
 supports calling xmlback to generate the final mail depending on the
 used MTA."""
-	__slots__ = ['xmlback', 'mta', 'conf']
-	def __init__ (self, xmlback: Optional[str] = None) -> None:
+	__slots__ = ['xmlback', 'service', 'mta', 'conf']
+	def __init__ (self, xmlback: Optional[str] = None, service: Optional[str] = None) -> None:
 		"""``xmlback'' is an alternate path to the executable to call"""
 		self.xmlback = xmlback if xmlback is not None else os.path.join (base, 'bin', 'xmlback')
+		self.service = service
 		self.mta = 'postfix'
 		self.conf: Dict[str, str] = {}
 		if self.mta == 'postfix':
@@ -74,7 +76,7 @@ used MTA."""
 			logger.error (f'{filespec} not written due to missing postmap command')
 	
 	class File:
-		__slots__ = ['mta', 'path', 'map', 'map_path', 'content']
+		__slots__ = ['mta', 'name', 'path', 'map', 'map_path', 'content', 'normalized']
 		extension_mapping = {
 			'btree':	'db',
 			'cdb':		'cdb',
@@ -82,7 +84,8 @@ used MTA."""
 			'hash':		'db',
 			'sdbm':		'dir',		# like "dbm" the "pag" file is not handled here
 		}
-		def __init__ (self, mta: MTA, path: str, map: Optional[str] = None) -> None:
+		def __init__ (self, mta: MTA, name: str, path: str, map: Optional[str] = None) -> None:
+			self.name = name
 			self.mta = mta
 			self.path = path
 			self.map = map
@@ -105,6 +108,7 @@ used MTA."""
 					self.mta.postfix_make (self.map, self.path)
 			with open (self.path) as fd:
 				self.content = fd.read ()
+			self.normalized = self._normalize (self.content)
 
 		def __iter__ (self) -> Iterator[str]:
 			for line in self.content.split ('\n'):
@@ -112,15 +116,23 @@ used MTA."""
 					yield line
 
 		def write (self, content: str) -> None:
-			if content != self.content:
+			normalized = self._normalize (content)
+			if self.normalized != normalized:
+				if content and not content.endswith ('\n'):
+					content += '\n'
 				with open (self.path, 'w') as fd:
 					fd.write (content)
 				self.content = content
+				self.normalized = normalized
 				if self.map is not None:
 					self.mta.postfix_make (self.map, self.path)
+		
+		def _normalize (self, content: str) -> str:
+			return Stream (content.split ('\n')).filter (lambda l: bool (l) and not l.startswith ('#')).sorted ().join ('\0')
 					
 	def postfix_local_file (self, key: str) -> Optional[MTA.File]:
 		with Ignore (KeyError):
+			fallback: Optional[Tuple[str, Optional[str]]] = None
 			for element in self.getlist (key):
 				map: Optional[str]
 				path: str
@@ -129,7 +141,12 @@ used MTA."""
 				except ValueError:
 					(map, path) = (None, element)
 				if path.startswith (base + os.path.sep):
-					return MTA.File (self, path, map)
+					if self.service is None and path.endswith (f'-{self.service}'):
+						return MTA.File (self, key, path, map)
+					if fallback is None:
+						fallback = (path, map)
+			if fallback is not None:
+				return MTA.File (self, key, fallback[0], fallback[1])
 		return None
 
 	def __getitem__ (self, key: str) -> str:

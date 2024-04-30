@@ -19,7 +19,7 @@ start)
 	starter $HOME/bin/watchdog.sh -bo- -- $HOME/bin/bav -L INFO -l "$@"
 	;;
 stop)
-	softterm "$HOME/scripts/watchdog.py -bo- -- $HOME/bin/bav" "$HOME/scripts/watchdog3.py -bo- -- $HOME/bin/bav"
+	softterm "$HOME/scripts/watchdog3.py -bo- -- $HOME/bin/bav"
 	;;
 status)
 	patternstatus 2 "$HOME/bin/bav -L"

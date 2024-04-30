@@ -30,7 +30,9 @@ from	agn3.exceptions import error
 from	agn3.flow import Transaction
 from	agn3.log import log
 from	agn3.runtime import CLI
-from	agn3.tools import Plugin
+from	agn3.sanity import Sanity
+from	agn3.stream import Stream
+from	agn3.tools import Plugin, listsplit
 #
 logger = logging.getLogger (__name__)
 #
@@ -114,12 +116,15 @@ class Process:
 			self.do_stop ()
 		
 class Service:
-	__slots__ = ['cfg', 'id', 'ec', 'plugins', 'command', 'selective']
+	__slots__ = ['cfg', 'id', 'ec', 'plugins', 'ns', 'command', 'selective']
 	def __init__ (self, cfg: Config, id: str, parameter: List[str]) -> None:
 		self.cfg = cfg
 		self.id = id
 		self.ec = 0
 		self.plugins: Dict[str, PluginService] = {}
+		self.ns: Dict[str, Any] = {
+			'service_active': lambda s: s in syscfg.services
+		}
 		if len (parameter) == 0:
 			self.command = Process.known_commands[0]
 			self.selective = None
@@ -150,7 +155,7 @@ class Service:
 		try:
 			plugin = self.plugins[name]
 		except KeyError:
-			plugin = self.cfg.tpget ('plugin', plugin = PluginService, name = name)
+			plugin = self.cfg.tpget ('plugin', plugin = PluginService, name = name, ns = self.ns)
 			self.plugins[name] = plugin
 		rc = default
 		if plugin:
@@ -166,6 +171,22 @@ class Service:
 		if (syscfg_key := self.cfg.get ('syscfg')) is not None:
 			if not syscfg.bget (syscfg_key, default = False):
 				return False
+		if (svc := self.cfg.get ('active')) is not None:
+			negonly = True
+			hit = False
+			for element in listsplit (svc):
+				if element.startswith ('!'):
+					neg = True
+					element = element[1:].strip ()
+				else:
+					neg = False
+					negonly = False
+				if element.lower () in syscfg.services:
+					if neg:
+						return False
+					hit = True
+			if not negonly and not hit:
+				return False
 		try:
 			if not Activator ().check ([name]):
 				self.out ('%s: marked as inactive' % name)
@@ -178,17 +199,14 @@ class Service:
 
 	def sanity_check (self) -> bool:
 		rc = True
-		if self.command in ('start', 'restart'):
-			check_id = self.cfg.tget ('sanity-id', self.id)
+		if self.command in ('start', 'restart') and self.active ('sanity', True):
 			try:
-				from	sanity3 import Sanities
-		
-				if self.active ('sanity', True):
-					Sanities.checks[check_id] ()
+				import	sanity3
+
+				for (name, check) in Stream (sanity3.__dict__.items ()).filter (lambda kv: isinstance (kv[1], type) and issubclass (kv[1], Sanity) and kv[0] != 'Sanity'):
+					check ()
 			except ImportError:
 				logger.debug (f'No sanity3 module for {user} available, no sanity check performed')
-			except KeyError:
-				logger.error (f'{check_id}: no sanity check found')
 			except error as e:
 				logger.error (f'Sanity check failed: {e}')
 				self.fail (str (e))

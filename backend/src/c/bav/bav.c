@@ -410,10 +410,10 @@ static bool_t
 find_locals (void) /*{{{*/
 {
 	bool_t		rc;
-	config_t	*cfg;
+	systemconfig_t	*cfg;
 	
 	rc = true;
-	if (cfg = systemconfig_alloc ()) {
+	if (cfg = systemconfig_alloc (false)) {
 		const char	*value;
 		char		*copy;
 		

@@ -16,7 +16,7 @@ from	typing import Dict, List, NamedTuple
 from	typing import cast
 from	..db import DB
 from	..exceptions import error
-from	..parser import ParseTimestamp
+from	..parser import parse_timestamp
 #
 __all__ = ['Timestamp']
 #
@@ -38,7 +38,6 @@ the persistance and offers some handy methods."""
 		clause: str
 		cascade: List[Dict[str, Any]]
 		
-	parse_timestamp = ParseTimestamp ()
 	def __init__ (self,
 		name: str,
 		*,
@@ -91,7 +90,7 @@ the persistance and offers some handy methods."""
 				if rq is not None:
 					ts = rq.cur
 			if ts is None:
-				ts = self.parse_timestamp (self.initial_timestamp)
+				ts = parse_timestamp (self.initial_timestamp)
 			if ts is None:
 				ts = datetime (1980, 1, 1)
 			if self.db.update ('INSERT INTO timestamp_tbl (timestamp_id, name, description, cur) VALUES (:tid, :name, :descr, :ts)', {'tid': tid, 'name': self.name, 'descr': self.description, 'ts': ts}) != 1:
@@ -129,7 +128,7 @@ current timestamp is used. ``db'' is an optional parameter to use an
 existing database driver, otherwise an own driver is created fro the
 default database id."""
 		self.__setup (db)
-		timestamp = self.parse_timestamp.parse (timestamp, datetime.now ())
+		timestamp = parse_timestamp (timestamp, datetime.now ())
 		parm = self.parm.copy ()
 		parm['ts'] = timestamp
 		if cast (DB, self.db).update ('UPDATE timestamp_tbl SET temp = :ts WHERE name = :name', parm) != 1:
