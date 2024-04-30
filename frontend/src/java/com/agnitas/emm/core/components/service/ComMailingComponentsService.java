@@ -15,8 +15,6 @@ import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
-import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
-import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
@@ -68,7 +66,7 @@ public interface ComMailingComponentsService {
 
 	List<MailingComponent> getComponents(int companyId, int mailingId, boolean includeContent);
 
-    List<MailingImageDto> getMailingImages(int companyId, int mailingId, MailingImagesOverviewFilter filter);
+    List<MailingImageDto> getMailingImages(int companyId, int mailingId);
 
     ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
     
@@ -102,13 +100,6 @@ public interface ComMailingComponentsService {
 	 * @return an instance of {@link ServiceResult}.
 	 */
 	ServiceResult<ImportStatistics> importImagesFromSftp(Admin admin, int mailingId, String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String sftpFilePath, List<UserAction> userActions);
-
-    Map<Integer, String> getUploadsByExtension(Admin admin);
-
-    boolean validatePdfUploadFields(UploadMailingAttachmentDto attachment, List<Message> errors);
-
+	
     void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImagesNames);
-
-	List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, Admin admin);
-
 }

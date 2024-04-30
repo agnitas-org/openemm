@@ -15,7 +15,6 @@ import jakarta.activation.MimeType;
 /**
  * Data structure for download informations.
  */
-// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
 public class FileData {
 	
 	/** Name of temporary file. */

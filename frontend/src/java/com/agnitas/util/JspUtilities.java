@@ -12,7 +12,6 @@ package com.agnitas.util;
 
 import java.util.Collection;
 
-import com.agnitas.emm.core.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 
@@ -45,16 +44,6 @@ public class JspUtilities {
         }
 
         return String.valueOf(admin.getAdminID());
-    }
-
-    public static String getCompanyId(HttpServletRequest request){
-        Admin admin = AgnUtils.getAdmin(request);
-
-        if (admin == null) {
-            return null;
-        }
-
-        return String.valueOf(admin.getCompanyID());
     }
 
     public static String asJsTableColumnType(DbColumnType type) {
@@ -115,9 +104,5 @@ public class JspUtilities {
         }
 
         return "/" + url;
-    }
-
-    public static boolean permissionAllowed(String token, HttpServletRequest req) throws Exception {
-        return AgnUtils.allowed(req, Permission.getPermissionsByToken(token));
     }
 }

@@ -1,9 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.DateMode" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="LAST_WEEK" value="<%= DateMode.LAST_WEEK.toString() %>"/>
 <c:set var="SELECT_MONTH" value="<%= DateMode.SELECT_MONTH.toString() %>"/>
@@ -18,9 +18,7 @@
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 
-<mvc:form servletRelativeAction="/statistics/recipient/view.action" method="post" data-form="" modelAttribute="form"
-          data-controller="recipient-statistics-view">
-
+<mvc:form servletRelativeAction="/statistics/recipient/view.action" method="post" data-form="" modelAttribute="form">
     <mvc:hidden path="dateSelectMode"/>
     <div class="tile">
         <div class="tile-header">
@@ -43,31 +41,24 @@
                     <label class="control-label"><mvc:message code="Mailinglist"/></label>
                 </div>
                 <div class="col-sm-8">
-                    <mvc:select id="mailinglist-select" path="mailingListId" cssClass="form-control js-select">
-                        <c:if test="${form.reportName ne 'recipient_doi.rptdesign'}">
-                            <mvc:option value="0"><mvc:message code="statistic.All_Mailinglists"/></mvc:option>
-                        </c:if>
+                    <mvc:select path="mailingListId" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="statistic.All_Mailinglists"/></mvc:option>
                         <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname"/>
                     </mvc:select>
                 </div>
             </div>
-            <c:if test="${form.reportName ne 'recipient_doi.rptdesign'}">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label"><mvc:message code="Target"/></label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:select path="targetId" cssClass="form-control js-select">
-                            <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
-                            <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
-                        </mvc:select>
-                    </div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label"><mvc:message code="Target"/></label>
                 </div>
-            </c:if>
-
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
-                       or form.reportName eq 'recipient_optouts.rptdesign'
-                       or form.reportName eq 'recipient_optins.rptdesign'}">
+                <div class="col-sm-8">
+                    <mvc:select path="targetId" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
+                        <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
+                    </mvc:select>
+                </div>
+            </div>
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label"><mvc:message code="mediatype"/></label>
@@ -89,18 +80,14 @@
                 <mvc:message code="report.mailing.statistics.select"/>
             </label>
             <div class="col-md-3 pull-left" style="margin: 0 20px 0 0;">
-                <mvc:select path="reportName" cssClass="form-control" id="selectReportName" data-action="type-change">
+                <mvc:select path="reportName" data-form-submit="" cssClass="form-control" id="selectReportName">
                     <mvc:option value="recipient_progress.rptdesign"><mvc:message code="statistics.progress"/></mvc:option>
                     <mvc:option value="recipient_status.rptdesign"><mvc:message code="Status"/></mvc:option>
                     <mvc:option value="recipient_mailtype.rptdesign"><mvc:message code="Mailtype"/></mvc:option>
-                    <mvc:option value="remarks"><mvc:message code="recipient.Remark"/></mvc:option>
-                    <%@include file="recipient-stat-extended-options.jspf"%>
                 </mvc:select>
             </div>
 
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
-                       or form.reportName eq 'recipient_optouts.rptdesign'
-                       or form.reportName eq 'recipient_optins.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
                 <ul class="tile-header-nav">
                     <li class="${form.dateSelectMode == LAST_WEEK ? 'active' : ''}">
                         <a href="#" data-form-set="dateSelectMode:LAST_WEEK" data-form-submit>
@@ -129,11 +116,7 @@
                     <ul class="dropdown-menu">
                         <li class="dropdown-header"><mvc:message code="statistics.exportFormat"/></li>
                         <li>
-                            <c:set var="csvUrl" value="${birtStatisticUrlWithoutFormat}&__format=csv"/>
-                            <c:if test="${form.reportName eq 'remarks'}">
-                                <c:url var="csvUrl" value="/statistics/recipient/remarks-csv.action?mailingListId=${form.mailingListId}&targetId=${form.targetId}"/>
-                            </c:if>
-                            <a href="${csvUrl}" tabindex="-1" data-prevent-load="">
+                            <a href="${birtStatisticUrlWithoutFormat}&__format=csv" tabindex="-1" data-prevent-load="">
                                 <i class="icon icon-file-excel-o"></i> <mvc:message code='export.message.csv'/>
                             </a>
                         </li>
@@ -145,10 +128,7 @@
 
         <div class="tile-content">
 
-            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'
-                       or form.reportName eq 'recipient_doi.rptdesign'
-                       or form.reportName eq 'recipient_optins.rptdesign'
-                       or form.reportName eq 'recipient_optouts.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
 
                 <c:if test="${form.dateSelectMode == SELECT_PERIOD}">
                     <div class="tile-controls">
@@ -246,16 +226,9 @@
 
             </c:if>
 
-            <c:choose>
-                <c:when test="${form.reportName eq 'remarks'}">
-                    <%@include file="remarks-stat.jspf"%>
-                </c:when>
-                <c:otherwise>
-                    <iframe src="${birtStatisticUrlWithoutFormat}&__format=html" border="0" scrolling="auto" style="width: 100%; height: 500px" frameborder="0">
-                        Your Browser does not support IFRAMEs, please update!
-                    </iframe>
-                </c:otherwise>
-            </c:choose>
+            <iframe src="${birtStatisticUrlWithoutFormat}&__format=html" border="0" scrolling="auto" style="width: 100%; height: 500px" frameborder="0">
+                Your Browser does not support IFRAMEs, please update!
+            </iframe>
         </div>
     </div>
 </mvc:form>

@@ -21,7 +21,5 @@ public enum SupervisorSortCriterion {
 	SUPERVISOR_NAME,
 	
 	/** Sort by state. */
-	ACTIVE_STATE,
-
-	DEPARTMENT
+	ACTIVE_STATE
 }

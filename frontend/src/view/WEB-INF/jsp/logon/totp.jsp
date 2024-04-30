@@ -1,12 +1,16 @@
-<%@ page language="java" pageEncoding="UTF-8" errorPage="/error.action"%>
+<%@ page language="java" pageEncoding="UTF-8" errorPage="/error.do"%>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn"%>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles"%>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
-<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags"%>
+<%@ taglib prefix="sec"
+	uri="http://www.springframework.org/security/tags"%>
 
 <%--@elvariable id="supportMailAddress" type="java.lang.String"--%>
 <%--@elvariable id="adminMailAddress" type="java.lang.String"--%>
@@ -35,7 +39,7 @@
 
 <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
-<tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
+<tiles:insert page="/WEB-INF/jsp/assets.jsp" />
 </head>
 <body>
 <div style="padding: 4vw;">
@@ -57,9 +61,15 @@
 								<div class="col-sm-8 col-md-12 col-lg-8">
 									<div class="form-group">
 										<mvc:text path="totp" cssClass="form-control" maxlength="6" placeholder="123456" />
+										
+										<logic:messagesPresent property="authenticationCode">
+											<html:messages id="msg" property="authenticationCode">
+												<span class="icon icon-state-alert form-control-feedback"></span>
+												<div class="form-control-feedback-message">${msg}</div>
+											</html:messages>
+										</logic:messagesPresent>
 									</div>
 								</div>
-								
 								<div class="col-sm-4 col-md-12 col-lg-4">
 									<div class="form-group">
 										<button type="submit" class="btn btn-primary btn-regular full-width whitespace_normal">
@@ -67,29 +77,18 @@
 										</button>
 									</div>
 								</div>
-
-			                    <c:if test="${TOTP_TRUST_DEVICE_ENABLED}">
-									<div class="col-sm-4 col-md-12 col-lg-4">
-										<div class="form-group">
-	                        					<label class="toggle">
-												<mvc:checkbox path="trustDevice" id="trustDevice" value="true"/>
-	                        						<div class="toggle-control"></div>
-	                        					</label>
-	               				            <label class="control-label checkbox-control-label" for="trustedDevice"><mvc:message code="logon.hostauth.trustDevice"/></label>
-										</div>
-									</div>
-								</c:if>
-								
 								<div class="form-group">
 									<div class="col-md-12">
 										<div id="notifications-container" style="position: initial; width: auto;">
 											<script type="text/javascript" data-message="">
-												<emm:messages var="msg" type="error">
-													AGN.Lib.Messages('<mvc:message code="Error"/>', '${emm:escapeJs(msg)}', 'alert');
-												</emm:messages>
-												<emm:messages var="msg" type="warning">
-													AGN.Lib.Messages('<mvc:message code="warning"/>', '${emm:escapeJs(msg)}', 'warning');
-												</emm:messages>
+												<html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
+												AGN.Lib.Messages('<mvc:message code="Error"/>',
+														'${emm:escapeJs(msg)}', 'alert');
+												</html:messages>
+												<html:messages id="msg" property="de.agnitas.GLOBAL_WARNING">
+												AGN.Lib.Messages('<mvc:message code="warning"/>',
+														'${emm:escapeJs(msg)}', 'warning');
+												</html:messages>
 											</script>
 										</div>
 									</div>

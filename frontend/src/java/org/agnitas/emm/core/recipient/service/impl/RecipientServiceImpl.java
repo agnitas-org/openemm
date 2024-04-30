@@ -12,6 +12,13 @@ package org.agnitas.emm.core.recipient.service.impl;
 
 import static com.agnitas.emm.core.binding.service.BindingUtils.getRecipientTypeTitleByLetter;
 import static com.agnitas.emm.core.target.TargetExpressionUtils.SIMPLE_TARGET_EXPRESSION;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TIMESTAMP;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -67,12 +74,15 @@ import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.validation.RecipientModelValidator;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+
 import org.agnitas.service.ImportException;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientQueryBuilder;
 import org.agnitas.service.RecipientSqlOptions;
+import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.service.UserMessageException;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
@@ -105,7 +115,6 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.binding.service.BindingUtils;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -127,13 +136,11 @@ import com.agnitas.emm.core.recipient.service.DuplicatedRecipientsExportWorker;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.emm.core.recipient.service.RecipientWorkerFactory;
 import com.agnitas.emm.core.report.enums.fields.RecipientMutableFields;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.ValidationException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
@@ -150,10 +157,10 @@ public class RecipientServiceImpl implements RecipientService {
 	private static final Logger logger = LogManager.getLogger(RecipientServiceImpl.class);
 	
 	public static final List<String> DEFAULT_COLUMNS = Arrays.asList(
-			RecipientStandardField.CustomerID.getColumnName(),
-			RecipientStandardField.Email.getColumnName(),
-			RecipientStandardField.Firstname.getColumnName(),
-			RecipientStandardField.Lastname.getColumnName()
+			COLUMN_CUSTOMER_ID,
+			COLUMN_EMAIL,
+			COLUMN_FIRSTNAME,
+			COLUMN_LASTNAME
 	);
     private static final String INVALID_DATE_FIELD_EROR_CODE = "error.value.notADateForField";
 
@@ -161,6 +168,7 @@ public class RecipientServiceImpl implements RecipientService {
 	protected ComTargetService targetService;
 	protected ConfigService configService;
 	protected ColumnInfoService columnInfoService;
+	protected TargetEqlQueryBuilder targetEqlQueryBuilder;
 	protected RecipientQueryBuilder recipientQueryBuilder;
 	protected AdminService adminService;
 	protected ComBindingEntryDao bindingEntryDao;
@@ -187,6 +195,11 @@ public class RecipientServiceImpl implements RecipientService {
 	@Required
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
+	}
+
+	@Required
+	public void setTargetEqlQueryBuilder(TargetEqlQueryBuilder targetEqlQueryBuilder) {
+		this.targetEqlQueryBuilder = targetEqlQueryBuilder;
 	}
 
 	@Required
@@ -244,7 +257,7 @@ public class RecipientServiceImpl implements RecipientService {
 	@Transactional
 	public void checkColumnsAvailable(RecipientModel model) throws ProfileFieldNotExistException {
 		try {
-			CaseInsensitiveMap<String, RecipientFieldDescription> availableProfileFields = recipientDao.getAvailableProfileFields(model.getCompanyId());
+			CaseInsensitiveMap<String, ProfileField> availableProfileFields = recipientDao.getAvailableProfileFields(model.getCompanyId());
 			for (String columnName : model.getColumns()) {
 				if (!availableProfileFields.containsKey(columnName)) {
 					throw new ProfileFieldNotExistException(columnName);
@@ -636,6 +649,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientDao.updateInDbWithException(aCust, false);        // Don't set unspecified profile fields to null
 	}
 
+
 	@Override
 	public final void updateRecipientWithEmailChangeConfiguration(final Recipient recipient, final int mailingID, final String profileFieldForConfirmationCode) throws Exception {
 		final Map<String, Object> currentData = this.recipientDao.getCustomerDataFromDb(recipient.getCompanyID(), recipient.getCustomerID());
@@ -746,7 +760,7 @@ public class RecipientServiceImpl implements RecipientService {
 	public List<ProfileField> getRecipientBulkFields(int companyID, int adminID) {
 		List<ProfileField> profileFields = Collections.emptyList();
 		try {
-			Set<String> immutableField = RecipientStandardField.getBulkImmutableRecipientStandardFieldColumnNames();
+			Set<String> immutableField = new CaseInsensitiveSet(Arrays.asList(ComCompanyDaoImpl.GUI_BULK_IMMUTABALE_FIELDS));
 			List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyID, adminID);
 			if (allFields != null) {
 				profileFields = allFields.stream()
@@ -809,9 +823,8 @@ public class RecipientServiceImpl implements RecipientService {
 				.setListId(searchParams.getMailingListId())
 				.setTargetId(searchParams.getTargetGroupId())
 				.setUserStatus(searchParams.getUserStatus())
-				.setUserTypes(searchParams.getUserTypes())
+				.setUserType(searchParams.getUserType())
 				.setSearchFirstName(searchParams.getFirstName())
-				.setGender(searchParams.getGender())
 				.setSearchLastName(searchParams.getLastName())
 				.setSearchEmail(searchParams.getEmail())
 				.setTargetEQL(searchParams.getEql());
@@ -831,7 +844,7 @@ public class RecipientServiceImpl implements RecipientService {
 				.setCaseSensitive(caseSensitive)
 				.setSort(sort)
 				.setDirection(order)
-				.setUserTypes(List.of(BindingEntry.UserType.World.getTypeCode()))
+				.setUserType(BindingEntry.UserType.World.getTypeCode())
 				.setUserTypeEmpty(true);
         setRecipientDuplicateSqlOptionsBuilderExtendedParams(admin, builder);
 
@@ -853,7 +866,7 @@ public class RecipientServiceImpl implements RecipientService {
         try {
             sqlStatementManagerForDataSelect = new SqlPreparedStatementManager("SELECT * FROM customer_" + companyID + "_tbl cust");
             
-            sqlStatementManagerForDataSelect.addWhereClause(RecipientStandardField.Bounceload.getColumnName() + " = 0");
+            sqlStatementManagerForDataSelect.addWhereClause(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 
             boolean respectHideSign = configService.getBooleanValue(ConfigValue.RespectHideDataSign, companyID);
             if (respectHideSign) {
@@ -875,7 +888,7 @@ public class RecipientServiceImpl implements RecipientService {
                 }
             }
 
-            if (options.getListId() != 0 || options.getUserStatus() != 0 || CollectionUtils.isNotEmpty(options.getUserTypes())) {
+            if (options.getListId() != 0 || options.getUserStatus() != 0 || StringUtils.isNotBlank(options.getUserType())) {
             	SqlPreparedStatementManager sqlCheckBinding = new SqlPreparedStatementManager("SELECT 1 FROM customer_" + companyID + "_binding_tbl bind");
                 sqlCheckBinding.addWhereClause("bind.customer_id = cust.customer_id");
 
@@ -893,13 +906,11 @@ public class RecipientServiceImpl implements RecipientService {
 						sqlCheckBinding.addWhereClause("bind.user_status = ?", options.getUserStatus());
 					}
 
-					if (CollectionUtils.isNotEmpty(options.getUserTypes())) {
+					if (StringUtils.isNotBlank(options.getUserType())) {
 						// Check for valid UserType code
-						for (String userType : options.getUserTypes()) {
-							BindingEntry.UserType.getUserTypeByString(userType);
-						}
+						BindingEntry.UserType.getUserTypeByString(options.getUserType());
 
-						sqlCheckBinding.addWhereClause("bind.user_type IN (" + AgnUtils.csvQMark(options.getUserTypes().size()) + ")", options.getUserTypes().toArray());
+						sqlCheckBinding.addWhereClause("bind.user_type = ?", options.getUserType());
 					}
 
 					sqlStatementManagerForDataSelect.addWhereClause("EXISTS (" + sqlCheckBinding.getPreparedSqlString() + ")", sqlCheckBinding.getPreparedSqlParameters());
@@ -927,7 +938,7 @@ public class RecipientServiceImpl implements RecipientService {
 		Map<String, ProfileField> dbColumns = getRecipientColumnInfos(admin).stream().collect(Collectors.toMap(ProfileField::getColumn, Function.identity()));
 		for (Map<String, Object> parameters : paginatedList.getList()) {
 			RecipientDto recipientDto = new RecipientDto();
-			recipientDto.setId(((Number) parameters.get(RecipientStandardField.CustomerID.getColumnName())).intValue());
+			recipientDto.setId(((Number) parameters.get(COLUMN_CUSTOMER_ID)).intValue());
 			recipientDto.setParameters(parameters);
 			recipientDto.setDbColumns(dbColumns);
 
@@ -959,7 +970,7 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	public File getDuplicateAnalysisCsv(Admin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception {
-		sort = StringUtils.defaultIfEmpty(sort, RecipientStandardField.Email.getColumnName());
+		sort = StringUtils.defaultIfEmpty(sort, COLUMN_EMAIL);
 		String tempFileName = String.format("duplicate-recipients-%s.csv", UUID.randomUUID());
         File duplicateRecipientsExportTempDirectory = AgnUtils.createDirectory(AgnUtils.getTempDir() + File.separator + "DuplicateRecipientExport");
         File exportTempFile = new File(duplicateRecipientsExportTempDirectory, tempFileName);
@@ -986,10 +997,10 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public RecipientLightDto getRecipientLightDto(int companyId, int recipientId) {
 		CaseInsensitiveMap<String, Object> dataFromDb = recipientDao.getCustomerDataFromDb(companyId, recipientId, DEFAULT_COLUMNS);
-		int customerId = NumberUtils.toInt((String) dataFromDb.get(RecipientStandardField.CustomerID.getColumnName()), 0);
-		String firstName = (String) dataFromDb.get(RecipientStandardField.Firstname.getColumnName());
-		String lastName = (String) dataFromDb.get(RecipientStandardField.Lastname.getColumnName());
-		String email = (String) dataFromDb.get(RecipientStandardField.Email.getColumnName());
+		int customerId = NumberUtils.toInt((String) dataFromDb.get(COLUMN_CUSTOMER_ID), 0);
+		String firstName = (String) dataFromDb.get(COLUMN_FIRSTNAME);
+		String lastName = (String) dataFromDb.get(COLUMN_LASTNAME);
+		String email = (String) dataFromDb.get(COLUMN_EMAIL);
 		return new RecipientLightDto(customerId, firstName, lastName, email);
 	}
 
@@ -1030,7 +1041,7 @@ public class RecipientServiceImpl implements RecipientService {
 	public List<RecipientLightDto> getDuplicateRecipients(Admin admin, String fieldName, int recipientId) throws Exception {
 		RecipientDuplicateSqlOptions options = RecipientDuplicateSqlOptions.builder()
 				.setCheckParenthesisBalance(true)
-				.setUserTypes(List.of(BindingEntry.UserType.World.getTypeCode()))
+				.setUserType(BindingEntry.UserType.World.getTypeCode())
 				.setUserTypeEmpty(true)
 				.setRecipientId(recipientId)
 				.setSearchFieldName(fieldName)
@@ -1050,7 +1061,7 @@ public class RecipientServiceImpl implements RecipientService {
 		}
 
 		FieldsSaveResults result = new FieldsSaveResults();
-		Set<String> immutableField = RecipientStandardField.getBulkImmutableRecipientStandardFieldColumnNames();
+		Set<String> immutableField = new CaseInsensitiveSet(Arrays.asList(ComCompanyDaoImpl.GUI_BULK_IMMUTABALE_FIELDS));
 		Collection<String> immutableFieldsToChange = CollectionUtils.retainAll(fieldChanges.keySet(), immutableField);
 		if (CollectionUtils.isNotEmpty(immutableFieldsToChange)) {
 			return new ServiceResult<>(result, false,
@@ -1064,7 +1075,7 @@ public class RecipientServiceImpl implements RecipientService {
 		Map<String, Object> valuesForUpdate = new HashMap<>();
 		for (RecipientFieldDto fieldChange : fieldChanges.values()) {
 			ServiceResult<Object> validationResult =
-					profileFieldValidationService.validateNewProfileFieldValue(admin, fieldChange.getShortname(), fieldChange.getType(), fieldChange.getNewValue(), fieldChange.isClear());
+					profileFieldValidationService.validateNewProfileFieldValue(admin, fieldChange);
 			if (validationResult.isSuccess()) {
 				valuesForUpdate.put(fieldChange.getShortname(), validationResult.getResult());
 			} else {
@@ -1197,7 +1208,7 @@ public class RecipientServiceImpl implements RecipientService {
 			entry.element("mailingId", history.getMailingId());
 			entry.element("mailingName", history.getShortName());
 			entry.element("subject", history.getSubject());
-			entry.element("deliveryDate", getContactHistoryDeliveryDate(history, recipientId, companyId));
+			entry.element("deliveryDate", DateUtilities.toLong(history.getDeliveryDate()));
 			entry.element("openings", history.getNumberOfOpenings());
 			entry.element("clicks", history.getNumberOfClicks());
 			entry.element("numberOfDeliveries", history.getSendCount());
@@ -1208,18 +1219,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return data;
     }
 
-    private Object getContactHistoryDeliveryDate(ComRecipientMailing mailing, int recipientId, int companyId) {
-        if (mailing.getDeliveryDate() != null) {
-            return DateUtilities.toLong(mailing.getDeliveryDate());
-        }
-        int bounce = recipientDao.getBounceDetail(mailing.getMailingId(), recipientId, companyId);
-        if (bounce <= 0) {
-            return "";
-        }
-        return bounce < 510 ? "soft-bounce" : "hard-bounce";
-    }
-
-    @Override
+	@Override
 	public void updateDataSource(Recipient recipient) {
 		recipientDao.updateDataSource(recipient);
 	}
@@ -1706,12 +1706,12 @@ public class RecipientServiceImpl implements RecipientService {
 			String column = type.getColumn();
 			String value = recipientRows.get(column);
 
-			if (column.equals(RecipientStandardField.DatasourceID.getColumnName())) {
-				rowValues.put(RecipientStandardField.DatasourceID.getColumnName(), dataSourceId);
-			} else if (column.equals(RecipientStandardField.LatestDatasourceID.getColumnName())) {
-				rowValues.put(RecipientStandardField.LatestDatasourceID.getColumnName(), dataSourceId);
-            } else if (column.equals(RecipientStandardField.ChangeDate.getColumnName())) {
-                rowValues.put(RecipientStandardField.ChangeDate.getColumnName(), null);
+			if (column.equals(COLUMN_DATASOURCE_ID)) {
+				rowValues.put(COLUMN_DATASOURCE_ID, dataSourceId);
+			} else if (column.equals(COLUMN_LATEST_DATASOURCE_ID)) {
+				rowValues.put(COLUMN_LATEST_DATASOURCE_ID, dataSourceId);
+            } else if (column.equals(COLUMN_TIMESTAMP)) {
+                rowValues.put(COLUMN_TIMESTAMP, null);
 			} else if (type.getModeEdit() != ProfileFieldMode.Editable && replacedBySavedData) {
 				//if not new and saved data map is not empty add to rowValues saved data from db
 				rowValues.put(column, savedData.get(column));
@@ -1884,7 +1884,7 @@ public class RecipientServiceImpl implements RecipientService {
 			bindingEntryDao.updateBindings(companyId, updateBindings);
 
 			return new ServiceResult<>(bindingActions, true);
-		} catch (RequestErrorException ve) {
+		} catch (ValidationException ve) {
 			return ServiceResult.error(new ArrayList<>(ve.getErrors()));
 		} catch (Exception e) {
 			logger.error("Saving bindings failed: ", e);
@@ -1894,13 +1894,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	protected void changeBindingUserTypeIfNeeded(RecipientBindingDto binding, BindingEntry existingBinding, Admin admin) {
-		// in case when binding was deactivated then select with user type became disabled.
-		// for this case we should prevent change of user type
-		if (!binding.isActiveStatus() && existingBinding != null) {
-			if (admin.isRedesignedUiUsed(Permission.RECIPIENTS_UI_MIGRATION)) {
-				binding.setUserType(existingBinding.getUserType());
-			}
-		}
+		// empty
 	}
 
     private void updateBinding(BindingEntry bindingToUpdate, RecipientBindingDto bindingDto, int recipientId,
@@ -1963,24 +1957,6 @@ public class RecipientServiceImpl implements RecipientService {
     }
 
 	@Override
-	public List<String> fetchRecipientNames(Set<Integer> bulkIds, int companyID) {
-		return recipientDao.fetchRecipientNames(bulkIds, companyID);
-	}
-
-	@Override
-    public JSONArray getClicksJson(int recipientId, int mailingId, int companyId) {
-        JSONArray jsonArray = new JSONArray();
-        recipientDao.getRecipientClicksHistory(recipientId, mailingId, companyId).forEach(rowMap -> {
-            JSONObject elem = new JSONObject();
-            elem.element("full_url", rowMap.get("full_url"));
-            elem.element("count", rowMap.get("count"));
-            elem.element("last_time", ((Date) rowMap.get("last_time")).getTime());
-            jsonArray.add(elem);
-        });
-        return jsonArray;
-    }
-
-    @Override
 	public int getRecipientIdByAddress(Admin admin, int recipientId, String email) {
 		return recipientDao.getRecipientIdByAddress(StringUtils.trimToEmpty(email), recipientId, admin.getCompanyID());
 	}
@@ -2296,17 +2272,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientDao.getMinimumCustomerId(companyID);
 	}
 
-    @Override
-    public String getEmail(int recipientId, int companyId) {
-        return recipientDao.getEmail(companyId, recipientId);
-    }
-    
 	public void addExtendedSearchOptions(Admin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) throws Exception {
 		// Do nothing
-	}
-
-	@Override
-	public boolean recipientExists(int companyID, int customerID) {
-		return recipientDao.exist(customerID, companyID);
 	}
 }

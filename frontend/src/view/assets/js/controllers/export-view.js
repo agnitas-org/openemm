@@ -53,11 +53,6 @@ AGN.Lib.Controller.new('export-view', function () {
       appendRowToColumnMappingTable(mapping.dbColumn, mapping.defaultValue);
     });
     appendRowToColumnMappingTable('', '');
-
-    if (!AGN.Lib.Form.get($('#exportForm')).editable) {
-      $columnMappingsTable.find(':input, button').prop('disabled', true);
-      $columnMappingsTable.find('a').attr('disabled', 'disabled');
-    }
   }
 
   function getColumnName($row) {

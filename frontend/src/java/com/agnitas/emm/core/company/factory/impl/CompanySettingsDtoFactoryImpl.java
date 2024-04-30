@@ -48,7 +48,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setPasswordExpireDays(PasswordExpireSettings.DEFAULT.getExpireDays());
         companySettingsDto.setRecipientAnonymization(RecipientAnonymizationSettings.DEFAULT.getRecipientAnonymization());
         companySettingsDto.setHostauthCookieExpireDays(HostAuthenticationCookieExpirationSettings.DEFAULT.getExpireDays());
-        companySettingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient));
+        companySettingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient));
         companySettingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));
         companySettingsDto.setSendPasswordChangedNotification(AgnUtils.interpretAsBoolean(ConfigValue.SendPasswordChangedNotification.getDefaultValue()));
         companySettingsDto.setSendEncryptedMailings(AgnUtils.interpretAsBoolean(ConfigValue.SendEncryptedMailings.getDefaultValue()));
@@ -83,9 +83,6 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setDefaultBlockSize(Integer.parseInt(ConfigValue.DefaultBlocksizeValue.getDefaultValue()));
         companySettingsDto.setDefaultTestRunOption(TestRunOption.fromId(Integer.parseInt(ConfigValue.DefaultTestRunOption.getDefaultValue())));
         companySettingsDto.setUserBasedFavoriteTargets(AgnUtils.interpretAsBoolean(ConfigValue.UserBasedFavoriteTargets.getDefaultValue()));
-        companySettingsDto.setFilterRecipientsOverviewForActiveRecipients(AgnUtils.interpretAsBoolean(ConfigValue.FilterRecipientsOverviewForActiveRecipients.getDefaultValue()));
-        companySettingsDto.setCleanAdminAndTestRecipientsActivity(AgnUtils.interpretAsBoolean(ConfigValue.CleanAdminAndTestRecipientsActivities.getDefaultValue()));
-        companySettingsDto.setNormalizeEmails(!AgnUtils.interpretAsBoolean(ConfigValue.AllowUnnormalizedEmails.getDefaultValue()));
 
         int maxFieldsByLicense = configService.getIntegerValue(ConfigValue.MaxFields);
         int maxFieldsByDefault = Integer.parseInt(ConfigValue.MaxFields.getDefaultValue());

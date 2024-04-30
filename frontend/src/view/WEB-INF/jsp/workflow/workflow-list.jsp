@@ -1,8 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do"%>
 <%@ page import="com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop.WorkflowEndType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>

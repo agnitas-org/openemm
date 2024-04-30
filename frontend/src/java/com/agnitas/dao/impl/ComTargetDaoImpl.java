@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -33,9 +34,7 @@ import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
-import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.FulltextSearchQueryException;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,7 +52,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -61,10 +59,10 @@ import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
 import com.agnitas.dao.impl.mapper.TargetRowMapper;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
-import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeProperties;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.helger.collection.pair.Pair;
@@ -130,7 +128,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		if (!includeDeleted) {
 			sql += " AND deleted <> 1";
 		}
-		return selectWithDefaultValue(logger, sql, String.class, null, companyId, targetId);
+		return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("target_shortname"), companyId, targetId);
 	}
 
 	@Override
@@ -231,6 +229,19 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		return saveTarget(target, true);
 	}
 
+	private static boolean isCodeBackendCompatible(final SqlCode sqlCode) {
+		SqlCodeProperties properties = sqlCode.getCodeProperties();
+
+		/*
+		 * Code is backend compatible if,
+		 * - no non-profile-tables are used
+		 * - no reference tables are used
+		 * - and generated SQL does not contain sub-selects
+		 */
+
+		return !properties.isUsingNonCustomerTables() && !properties.isUsingReferenceTables() && !properties.isUsingSubselects();
+	}
+
 	/**
 	 * Saves target group. If {@code hidden} is false, the target group is visible in lists. If value is true,
 	 * target group is hidden in lists. {@code hidden} is ignored, if target group already exists.
@@ -255,7 +266,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			SqlCode sqlCode = eqlFacade.convertEqlToSql(eql, target.getCompanyID());
 
 			// Hide target group, if SQL code is not compatible with backend
-			target.setComponentHide(!TargetUtils.canBeUsedInContentBlocks(sqlCode));
+			target.setComponentHide(!isCodeBackendCompatible(sqlCode));
 
 			target.setTargetSQL(sqlCode.getSql());
 			target.setValid(true);
@@ -688,104 +699,39 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			preparedStatementManager.addWhereClause("(invalid = 0 or invalid is null)");
 		}
 
-		if (options.isRedesignedUiUsed()) {
-			if (options.getDeliveryOption() != null) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = ?", options.getDeliveryOption().getStorageCode());
-			}
-		} else {
-			// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
-			if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = 0");
-			} else if (!options.isWorldDelivery() && options.isAdminTestDelivery()) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = 1");
-			}
-		}
-
-		if (options.isRedesignedUiUsed()) {
-			if (options.getComplexity() != null) {
-				if (options.getComplexity().getFrom() != null) {
-					preparedStatementManager.addWhereClause(
-							"complexity + ? >= ?",
-							options.getRecipientCountBasedComplexityAdjustment(),
-							options.getComplexity().getFrom()
-					);
-				}
-
-				if (options.getComplexity().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"complexity + ? < ?",
-							options.getRecipientCountBasedComplexityAdjustment(),
-							options.getComplexity().getTo()
-					);
-				}
-			}
-			if (options.getCreationDate() != null) {
-				if (options.getCreationDate().getFrom() != null) {
-					preparedStatementManager.addWhereClause("creation_date >= ?", options.getCreationDate().getFrom());
-				}
-				if (options.getCreationDate().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"creation_date < ?",
-							DateUtilities.addDaysToDate(options.getCreationDate().getTo(), 1)
-					);
-				}
-			}
-
-			if (options.getChangeDate() != null) {
-				if (options.getChangeDate().getFrom() != null) {
-					preparedStatementManager.addWhereClause("change_date >= ?", options.getChangeDate().getFrom());
-				}
-				if (options.getChangeDate().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"change_date < ?",
-							DateUtilities.addDaysToDate(options.getChangeDate().getTo(), 1)
-					);
-				}
-			}
+		// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
+		if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {
+			preparedStatementManager.addWhereClause("admin_test_delivery = 0");
+		} else if (!options.isWorldDelivery() && options.isAdminTestDelivery()) {
+			preparedStatementManager.addWhereClause("admin_test_delivery = 1");
 		}
 
 		// Check supported search modes by available db indices
 		String searchQuery = options.getSearchText();
-		if (isBasicFullTextSearchSupported()) {
+		if (StringUtils.isNotEmpty(searchQuery) && isBasicFullTextSearchSupported()) {
 			List<String> searchClauses = new ArrayList<>();
 			List<java.lang.Object> properties = new ArrayList<>();
 
-			String fullTextSearchNameQuery = options.getSearchName();
-			String fullTextSearchDescriptionQuery = options.getSearchDescription();
-
-			if (!options.isRedesignedUiUsed()) {
-				if (StringUtils.isNotBlank(searchQuery)) {
-					String fullTextSearchClause = searchQuery;
-					if (options.isSearchName() || options.isSearchDescription()) {
-						try {
-							fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
-						} catch (final FulltextSearchQueryException e) {
-							logger.error("Cannot transform full text search query: " + searchQuery);
-						}
-
-						fullTextSearchNameQuery = fullTextSearchClause;
-						fullTextSearchDescriptionQuery = fullTextSearchClause;
-					}
-				} else {
-					options.setSearchName(false);
-					options.setSearchDescription(false);
+			String fullTextSearchClause = searchQuery;
+			if (options.isSearchName() || options.isSearchDescription()) {
+				try {
+					fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
+				} catch (final FulltextSearchQueryException e) {
+					logger.error("Cannot transform full text search query: " + searchQuery);
 				}
-			} else {
-				fullTextSearchNameQuery = generateFullTextSearchQuery(fullTextSearchNameQuery);
-				fullTextSearchDescriptionQuery = generateFullTextSearchQuery(fullTextSearchDescriptionQuery);
 			}
 
-			if ((!options.isRedesignedUiUsed() && options.isSearchName()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchNameQuery))) {
+			if (options.isSearchName()) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_shortname, ?) > 0" : "MATCH(target_shortname) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(fullTextSearchNameQuery);
+				properties.add(fullTextSearchClause);
 			}
 
-			if ((!options.isRedesignedUiUsed() && options.isSearchDescription()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchDescriptionQuery))) {
+			if (options.isSearchDescription()) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_description, ?) > 0" : "MATCH(target_description) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(fullTextSearchDescriptionQuery);
+				properties.add(fullTextSearchClause);
 			}
 
-			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(options.isRedesignedUiUsed() ? " AND " : " OR "));
+			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(" OR "));
 			if (StringUtils.isNotBlank(searchClause)) {
 				preparedStatementManager.addAndClause();
 				preparedStatementManager.appendOpeningParenthesis();
@@ -793,16 +739,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				preparedStatementManager.appendClosingParenthesis();
 			}
 		}
-	}
-
-	private String generateFullTextSearchQuery(String searchQuery) throws FulltextSearchInvalidQueryException {
-		try {
-			return fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
-		} catch (final FulltextSearchQueryException e) {
-			logger.error("Cannot transform full text search query: " + searchQuery);
-		}
-
-		return searchQuery;
 	}
 
 	@Override
@@ -919,7 +855,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 	@Override
 	public List<TargetLight> getTestAndAdminTargetLights(int companyId) {
-		return getTestAndAdminTargetLights(0, companyId);
+		return getTargetLights(companyId, false, false, true);
 	}
 
 	@Override
@@ -1004,6 +940,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
+	public boolean isOracle() {
+		return super.isOracleDB();
+	}
+
+	@Override
 	public final List<ComTarget> listRawTargetGroups(int companyId, String... eqlRawFragments) {
 		final String sqlGetAll = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
 				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, favorite, " +
@@ -1076,7 +1017,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
 																				Set<TargetGroupDependentType> allowedTypes, int pageNumber,
 																				int pageSize, String sortColumn, String order) {
-		final boolean isOracle = isOracleDB();
+		final boolean isOracle = isOracle();
 		final boolean isFilterDisabled = CollectionUtils.isEmpty(allowedTypes);
 		final boolean sortAscending = AgnUtils.sortingDirectionToBoolean(order, true);
 
@@ -1304,7 +1245,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
     public boolean isLinkUsedInTarget(TrackableLink link) {
         return selectInt(logger, "SELECT 1 FROM dyn_target_tbl " +
                 "WHERE eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%' " +
-                "AND deleted <= 0 AND hidden = 0 " + (isOracleDB() ? "AND rownum < 2" : "LIMIT 1")) == 1;
+                "AND deleted <= 0 AND hidden = 0 " + (isOracle() ? "AND rownum < 2" : "LIMIT 1")) == 1;
     }
 
     @Override

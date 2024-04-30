@@ -11,20 +11,5 @@
 package com.agnitas.emm.core.import_profile.bean;
 
 public enum ImportDataType {
-    CSV,
-    JSON,
-    Excel,
-    ODS;
-    
-    public static ImportDataType getImportDataTypeForName(String name) {
-		for (ImportDataType type : values()) {
-			if (type.name().equalsIgnoreCase(name)) {
-				return type;
-			}
-		}
-		if ("XLS".equalsIgnoreCase(name)) {
-			return Excel;
-		}
-		return null;
-	}
+    CSV, JSON
 }

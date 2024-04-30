@@ -14,7 +14,7 @@ import java.io.Writer;
 import java.util.Map;
 
 import org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheck;
-import org.agnitas.emm.core.velocity.event.MessageEventHandlerImpl;
+import org.agnitas.emm.core.velocity.event.StrutsActionMessageEventHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,7 +91,7 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	@Override
 	public VelocityResult evaluate( Map<String, Object> params, String template, Writer writer, String logTag) {
         VelocityContext context = new VelocityContext(params);
-        MessageEventHandlerImpl velocityEH = new MessageEventHandlerImpl(context);
+        StrutsActionMessageEventHandler velocityEH = new StrutsActionMessageEventHandler(context);
         
         String nonNullTemplate = StringUtils.defaultString( template);
         

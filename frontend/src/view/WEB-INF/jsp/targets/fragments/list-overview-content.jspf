@@ -118,12 +118,14 @@
             <a href="<c:url value='/target/${target.id}/view.action'/>" class="hidden js-row-show"
                title="<mvc:message code='target.Edit'/>"></a>
             <emm:ShowByPermission token="targets.delete">
-                <mvc:message var="targetDeleteMessage" code="target.Delete"/>
-                <c:url var="deletionLink" value="/target/${target.id}/confirm/delete.action"/>
-
-                <a href="${deletionLink}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${targetDeleteMessage}">
+                <c:set var="targetDeleteMessage" scope="page">
+                    <mvc:message code="target.Delete"/>
+                </c:set>
+                <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
+                             data-tooltip="${targetDeleteMessage}"
+                        page="/target/${target.id}/confirm/delete.action">
                     <i class="icon icon-trash-o"></i>
-                </a>
+                </agn:agnLink>
             </emm:ShowByPermission>
         </display:column>
     </display:table>

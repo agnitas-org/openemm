@@ -11,7 +11,7 @@
     </div>
     <div class="col-sm-8">
         <div class="table-responsive">
-            <table id="extensions" class="table table-bordered table-striped ${isSettingsReadonly ? 'disabled' : ''}">
+            <table id="extensions" class="table table-bordered table-striped">
                 <thead>
                 <th><mvc:message code="Name"/></th>
                 <th><mvc:message code="Value"/></th>
@@ -30,7 +30,7 @@
             <div class="btn-group">
                 <div class="row">
                     <div class="col-sm-12 col-md-4">
-                        <a href="#" class="btn btn-regular btn-block ${isSettingsReadonly ? 'disabled' : ''}" ${isSettingsReadonly ? '' : 'data-add-default-extensions'}>
+                        <a href="#" data-add-default-extensions class="btn btn-regular btn-block">
                             <i class="icon icon-plus"></i>
                             <span class="text"><mvc:message code="AddDefaultProperties"/></span>
                         </a>

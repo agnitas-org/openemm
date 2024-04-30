@@ -13,7 +13,6 @@ package org.agnitas.emm.core.autoimport.service;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
@@ -47,7 +46,7 @@ public interface AutoImportService {
 
     List<AutoImportLight> listAutoImports(int companyId);
 
-    List<AutoImportLight> getListOfAutoImportsForWorkflow(int workflowId, int companyId);
+    List<AutoImport> getAutoImportsOverview(int companyId);
 
     List<AutoImport> getAutoImportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
@@ -71,7 +70,7 @@ public interface AutoImportService {
 
     void announceEnd(AutoImport autoImport) throws Exception;
 
-    void writeResultData(final AutoImport autoImport, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
+    void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
 
     void saveAutoImport(AutoImport autoImport) throws Exception;
 
@@ -85,8 +84,9 @@ public interface AutoImportService {
 
     void removeExpiredWsJobs();
 
-    List<AutoImport> getAutoImportsOverview(AutoImportOverviewFilter filter, Admin admin);
-    List<AutoImport.AutoImportType> getAvailableTypes(Admin admin);
+    // TODO: check usage and removed after migration. GWUA-5174
+    List<AutoImport> getAutoImportsOverview(Admin admin, String[] filters);
+    List<AutoImport> getAutoImportsOverview(Admin admin, List<String> filters);
 
     String findName(int autoImportId, int companyId);
 }

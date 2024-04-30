@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -35,6 +35,11 @@
         <c:set var="agnHighlightKey" value="target.NewTarget" scope="request" />
     </c:otherwise>
 </c:choose>
+
+<c:set var="submitType" value="data-form-submit" />
+<c:if test="${not empty workflowForwardParams}">
+    <c:set var="submitType" value="data-form-submit-static" />
+</c:if>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap"
     scope="request">
@@ -224,7 +229,7 @@
             <emm:instantiate var="element" type="java.util.LinkedHashMap">
                 <c:set target="${itemActionsSettings}" property="3" value="${element}" />
                 <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse" />
-                <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#targetViewForm' data-form-submit-event" />
+                <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#targetViewForm' ${submitType}" />
                 <c:set target="${element}" property="iconBefore" value="icon-save" />
                 <c:set target="${element}" property="name">
                     <mvc:message code="button.Save" />

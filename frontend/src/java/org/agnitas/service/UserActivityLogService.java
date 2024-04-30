@@ -14,6 +14,10 @@ import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
+
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -21,12 +25,6 @@ import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
-import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
-import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
-import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
 
 public interface UserActivityLogService {
 
@@ -35,15 +33,12 @@ public interface UserActivityLogService {
 	}
 
 	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
-	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilterRedesigned(UserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) throws Exception;
 
 	PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
-	PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilterRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin);
 
 	PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
 
-	SqlPreparedStatementManager prepareSqlStatementForDownload(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, UserType userType) throws Exception;
-	SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, List<AdminEntry> visibleAdmins, UserType userType, Admin admin) throws Exception;
+	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, UserType userType) throws Exception;
 
 	/**
 	 * Write user activity log for given {@link Admin}.

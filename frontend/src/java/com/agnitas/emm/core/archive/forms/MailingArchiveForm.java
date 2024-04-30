@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.archive.forms;
 
-import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.PaginationForm;
 
 public class MailingArchiveForm extends PaginationForm {
@@ -41,10 +40,5 @@ public class MailingArchiveForm extends PaginationForm {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    @Override
-    public boolean ascending() {
-        return AgnUtils.sortingDirectionToBoolean(getOrder(), false);
     }
 }

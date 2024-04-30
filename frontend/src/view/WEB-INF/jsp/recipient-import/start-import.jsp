@@ -1,9 +1,10 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
+<%--@elvariable id="csvFiles" type="java.util.List<com.agnitas.emm.core.upload.bean.UploadData>"--%>
 <%--@elvariable id="importProfiles" type="java.util.List<org.agnitas.beans.ImportProfile>"--%>
 
 <mvc:form id="import-form" servletRelativeAction="/recipient/import/preview.action" modelAttribute="form"
@@ -54,7 +55,19 @@
                     </c:choose>
                 </div>
 
-                <%@ include file="fragments/start-import-uploaded-files.jspf" %>
+                <div class="form-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="useCsvUpload" name="useCsvUpload" data-toggle-usability="#attachment_csv_file_id, #uploadFile" />
+                        <div class="toggle-control"></div>
+                        <span class="text">
+                               <mvc:message code="import.wizard.uploadCsvFile"/>
+                           </span>
+                    </label>
+
+                    <mvc:select path="attachmentCsvFileID" cssClass="form-control" id="attachment_csv_file_id" disabled="true" data-show-by-checkbox="#useCsvUpload">
+                        <mvc:options items="${csvFiles}" itemLabel="filename" itemValue="uploadID" />
+                    </mvc:select>
+                </div>
 
                 <div class="form-group">
                     <div class="col-sm-2">

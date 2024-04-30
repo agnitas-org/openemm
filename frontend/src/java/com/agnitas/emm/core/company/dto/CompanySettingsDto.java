@@ -11,17 +11,15 @@
 package com.agnitas.emm.core.company.dto;
 
 import com.agnitas.emm.core.components.entity.TestRunOption;
-import com.agnitas.post.PostalField;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CompanySettingsDto {
 
     private String technicalContacts;
     private boolean hasMailTracking;
+    private int recipientExpireDays;
     private int statisticsExpireDays;
     private boolean hasActivatedAccessAuthorization;
     private boolean hasExtendedSalutation;
@@ -63,9 +61,6 @@ public class CompanySettingsDto {
 	private boolean allowEmailWithWhitespace;
 	private boolean allowEmptyEmail;
 	private boolean userBasedFavoriteTargets;
-	private boolean filterRecipientsOverviewForActiveRecipients;
-	private boolean autoDeeptracking;
-	private boolean cleanAdminAndTestRecipientsActivity;
 	private int expireStatistics;
 	private int expireSuccess;
 	private int expireRecipient;
@@ -78,11 +73,8 @@ public class CompanySettingsDto {
     private int defaultCompanyLinkTrackingMode;
     private int defaultBlockSize;
     private String listHelpUrl;
-    private boolean htmlContentAllowed;
 
 	private TestRunOption defaultTestRunOption;
-	private boolean useDefaultAddressFieldsForPost;
-	private Map<PostalField, String> postalFieldsMappings = new HashMap<>();
 
 	public String getListHelpUrl() {
 		return listHelpUrl;
@@ -98,6 +90,14 @@ public class CompanySettingsDto {
 
     public void setHasMailTracking(boolean mailTracking) {
         this.hasMailTracking = mailTracking;
+    }
+
+    public int getRecipientExpireDays() {
+        return recipientExpireDays;
+    }
+
+    public void setRecipientExpireDays(int recipientExpireDays) {
+        this.recipientExpireDays = recipientExpireDays;
     }
 
     public int getStatisticsExpireDays() {
@@ -512,30 +512,6 @@ public class CompanySettingsDto {
         this.userBasedFavoriteTargets = userBasedFavoriteTargets;
     }
 
-	public boolean isFilterRecipientsOverviewForActiveRecipients() {
-		return filterRecipientsOverviewForActiveRecipients;
-	}
-
-	public void setFilterRecipientsOverviewForActiveRecipients(boolean filterRecipientsOverviewForActiveRecipients) {
-		this.filterRecipientsOverviewForActiveRecipients = filterRecipientsOverviewForActiveRecipients;
-	}
-
-	public boolean isCleanAdminAndTestRecipientsActivity() {
-		return cleanAdminAndTestRecipientsActivity;
-	}
-
-	public void setCleanAdminAndTestRecipientsActivity(boolean cleanAdminAndTestRecipientsActivity) {
-		this.cleanAdminAndTestRecipientsActivity = cleanAdminAndTestRecipientsActivity;
-	}
-
-	public boolean isAutoDeeptracking(){
-		return autoDeeptracking;
-	}
-	
-	public void setAutoDeeptracking(boolean autoDeeptracking){
-		this.autoDeeptracking = autoDeeptracking;
-	}
-
 	public boolean isRegenerateTargetSqlOnce() {
 		return regenerateTargetSqlOnce;
 	}
@@ -550,29 +526,5 @@ public class CompanySettingsDto {
 
 	public void setDefaultTestRunOption(TestRunOption defaultTestRunOption) {
 		this.defaultTestRunOption = defaultTestRunOption;
-	}
-
-	public boolean isHtmlContentAllowed() {
-		return htmlContentAllowed;
-	}
-
-	public void setHtmlContentAllowed(boolean htmlContentAllowed) {
-		this.htmlContentAllowed = htmlContentAllowed;
-	}
-
-	public boolean isUseDefaultAddressFieldsForPost() {
-		return useDefaultAddressFieldsForPost;
-	}
-
-	public void setUseDefaultAddressFieldsForPost(boolean useDefaultAddressFieldsForPost) {
-		this.useDefaultAddressFieldsForPost = useDefaultAddressFieldsForPost;
-	}
-
-	public Map<PostalField, String> getPostalFieldsMappings() {
-		return postalFieldsMappings;
-	}
-
-	public void setPostalFieldsMappings(Map<PostalField, String> postalFieldsMappings) {
-		this.postalFieldsMappings = postalFieldsMappings;
 	}
 }

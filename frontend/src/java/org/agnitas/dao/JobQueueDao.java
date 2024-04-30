@@ -10,12 +10,11 @@
 
 package org.agnitas.dao;
 
-import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
-import org.agnitas.service.JobDto;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.agnitas.service.JobDto;
 
 public interface JobQueueDao {
 	List<JobDto> readUpcomingJobsForExecution();
@@ -39,9 +38,8 @@ public interface JobQueueDao {
 	
 	List<JobDto> selectErroneousJobs();
 	
-	List<JobDto> getOverview(JobQueueOverviewFilter filter);
 	List<JobDto> getAllActiveJobs();
-
+	
 	List<JobDto> getHangingJobs(Date timeLimit);
 	
 	void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname);
@@ -59,6 +57,4 @@ public interface JobQueueDao {
 	void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue);
 
 	List<Map<String, Object>> getLastJobResults(int job_id);
-
-	List<JobDto> selectCriticalErroneousJobs();
 }

@@ -112,23 +112,6 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
         Page.render(jqxhr.responseText);
       }
     } else if(jqxhr.status == 403) {
-      if (jqxhr.responseText) {
-        if (/<\s*\/\s*body\s*>/i.test(jqxhr.responseText)) {
-          var parser = new DOMParser();
-          var csrfBody = parser.parseFromString(jqxhr.responseText, 'text/html').querySelector('#csrf-error-page');
-
-          if ($(csrfBody).length) {
-            var csrfErrorMessage = Template.text('csrf-error', {
-              headline: t('messages.permission.denied.title'),
-              content: t('messages.error.csrf'),
-              reload: t('messages.error.reload')
-            });
-
-            $('body').append(csrfErrorMessage);
-            return;
-          }
-        }
-      }
       errorMessage = Template.text('permission-denied', {
           title: t('messages.permission.denied.title'),
           text: t('messages.permission.denied.text'),
@@ -143,12 +126,9 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
         try {
           var $resp = $(jqxhr.responseText);
           var $errorMessage = $resp.filter('#error-message');
-          var $errorPage = $resp.filter('#error-page');
           var $scriptMessages = $resp.all('[data-message]');
 
-          if ($errorPage.exists()) {
-            // error page from redesigned ui. classic error should be shown
-          } else if ($errorMessage.exists()) {
+          if ($errorMessage.exists()) {
             if($errorMessage.is('script[type="text/x-mustache-template"]')) {
               $('body').append(_.template($errorMessage.html()));
             } else {

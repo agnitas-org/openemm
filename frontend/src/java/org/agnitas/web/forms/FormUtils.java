@@ -10,17 +10,22 @@
 
 package org.agnitas.web.forms;
 
-import com.agnitas.service.WebStorage;
+import org.agnitas.beans.RowsCountAndSortingWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.agnitas.beans.SortingWebStorageEntry;
+import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
-import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.displaytag.pagination.PaginatedList;
 
 public class FormUtils {
-
-    private FormUtils() {
-        // utility class
+    public static <T extends RowsCountWebStorageEntry> void syncNumberOfRows(WebStorage webStorage, WebStorageBundle<T> bundle, StrutsFormBase form) {
+        webStorage.access(bundle, entry -> {
+            if (form.getNumberOfRows() > 0) {
+                entry.setRowsCount(form.getNumberOfRows());
+            } else {
+                form.setNumberOfRows(entry.getRowsCount());
+            }
+        });
     }
 
     public static <T extends RowsCountWebStorageEntry> void syncNumberOfRows(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form) {
@@ -33,15 +38,15 @@ public class FormUtils {
         });
     }
 
-    public static <T extends SortingWebStorageEntry> void updateSortingState(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form, boolean restore) {
+    public static <T extends RowsCountAndSortingWebStorageEntry> void syncSortingParams(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form) {
         webStorage.access(bundle, entry -> {
-            if (restore) {
-                form.setSort(entry.getSortColumn());
+            if (!StringUtils.isBlank(form.getSort())) {
+                entry.setColumnName(form.getSort());
+                entry.setAscendingOrder("asc".equalsIgnoreCase(form.getDir()) || "ascending".equalsIgnoreCase(form.getDir()));
+            } else {
+                form.setSort(entry.getColumnName());
                 form.setDir(entry.isAscendingOrder() ? "asc" : "desc");
             }
-
-            entry.setSortColumn(form.getSort());
-            entry.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getDir()));
         });
     }
 

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +48,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail"
 			+ " FROM mailing_account_tbl a";
 		
-			if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
+			if (adminId > 0 && isDisabledMailingListsSupported()) {
 				query += " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id";
 				query += " AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?)";
 				params.add(adminId);
@@ -139,7 +138,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
 		
-		if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
+		if (adminId > 0 && isDisabledMailingListsSupported()) {
 			queryBuilder.append(" AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
 			queryParameters.add(adminId);
 		}
@@ -234,7 +233,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
 		
-		if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
+		if (adminId > 0 && isDisabledMailingListsSupported()) {
 			queryBuilder.append(" AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
 			queryParameters.add(adminId);
 		}

@@ -64,7 +64,6 @@ public interface RecipientService {
 
 	boolean updateSubscriber(RecipientModel model, String username) throws Exception;
 
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	List<RecipientLightDto> getDuplicateRecipients(Admin admin, String fieldName, int recipientId) throws Exception;
 
 	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(Admin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
@@ -177,12 +176,4 @@ public interface RecipientService {
 	int countSubscribers(final int companyID);
 
 	boolean isColumnsIndexed(List<String> columns, int companyId);
-
-	List<String> fetchRecipientNames(Set<Integer> bulkIds, int companyID);
-
-    JSONArray getClicksJson(int recipientId, int mailingId, int companyId);
-
-    String getEmail(int recipientId, int companyId);
-
-	boolean recipientExists(int companyID, int customerID);
 }

@@ -10,9 +10,15 @@
 
 package org.agnitas.util;
 
+import org.apache.struts.action.ActionMessages;
+
 public class GuiConstants {
+	public static final String ACTIONMESSAGE_CONTAINER_MESSAGE = ActionMessages.GLOBAL_MESSAGE;
+	public static final String ACTIONMESSAGE_CONTAINER_WARNING = "de.agnitas.GLOBAL_WARNING";
+	public static final String ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT = "de.agnitas.GLOBAL_WARNING_PERMANENT";
 
 	// Constants to be set to affectedMailingsMessageType and affectedReportsMessageType (see messages-transitional.jsp)
 	public static final String MESSAGE_TYPE_ALERT = "ALERT";
 	public static final String MESSAGE_TYPE_WARNING = "WARNING";
+	public static final String MESSAGE_TYPE_WARNING_PERMANENT = "WARNING_PERMANENT";
 }

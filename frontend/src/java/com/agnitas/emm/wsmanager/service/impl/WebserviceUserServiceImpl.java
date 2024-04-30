@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -106,22 +105,6 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public PaginatedListImpl<WebserviceUserEntryDto> getPaginatedWSUserList(WebserviceUserOverviewFilter filter, Admin admin) throws WebserviceUserServiceException {
-		try {
-			if (!admin.permissionAllowed(Permission.MASTER_SHOW)) {
-				filter.setCompanyId(admin.getCompanyID());
-			}
-
-			PaginatedListImpl<WebserviceUserListItem> listFromDb = webserviceUserDao.getWebserviceUserList(filter);
-			return conversionService.convertPaginatedList(listFromDb, WebserviceUserListItem.class, WebserviceUserEntryDto.class);
-		} catch(WebserviceUserDaoException e) {
-			logger.error("Error accessing webservice user list", e);
-
-			throw new WebserviceUserServiceException("Error accessing webservice user list", e);
-		}
-	}
-
-	@Override
 	@Transactional
 	public void createWebserviceUser(WebserviceUserDto user) throws WebserviceUserException, WebserviceUserServiceException {
 		String username = user.getUserName();
@@ -129,16 +112,16 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			logger.info("Webservice user '" + username + "' already exists");
 			throw new WebserviceUserAlreadyExistsException(username);
 		}
-
+		
 		int dataSourceId = 0;
 		try {
 			WebserviceUserCredential convertedUser = conversionService.convert(user, WebserviceUserCredential.class);
 
 			int companyId = convertedUser.getCompanyID();
 			String dsDescription = String.format(USER_DESCRIPTION_PATTERN, username);
-
+			
 			dataSourceId = datasourceService.createDataSource(companyId, SourceGroupType.SoapWebservices, dsDescription, DATA_SOURCE_URI);
-
+			
 			((WebserviceUserCredentialImpl)convertedUser).setDefaultDatasourceID(dataSourceId);
 
 			final int bulkSizeLimit = this.configService.getWebserviceBulkSizeLimit(user.getCompanyId());
@@ -149,7 +132,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			saveGrantedPermissionsAndGroups(convertedUser);
 		} catch (Exception e) {
 			logger.error("Error creating new webservice user: " + username, e);
-
+			
 			if(dataSourceId > 0) {
 				datasourceService.rolloutCreationDataSource(dataSourceId, username, user.getCompanyId());
 			}

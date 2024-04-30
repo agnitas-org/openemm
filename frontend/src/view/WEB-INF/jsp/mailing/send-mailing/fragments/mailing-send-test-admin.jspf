@@ -36,18 +36,16 @@
                         </c:choose>
                     </div>
 
-                    <div id="test-send-controls-group" class="vspace-top-10" data-initializer="test-run-recipients">
-
-                        <%@ include file="get-approval-switch.jspf" %>
-
+                    <div id="test-send-controls-group" class="vspace-top-10">
                         <div class="form-group">
                             <div class="col-sm-4">
                                 <label class="control-label" for="test-run-options">
-                                    <mvc:message code="mailing.testrun" />
+                                    <mvc:message code="mailing.send.admin.target.to" />
                                 </label>        
                             </div>
                             <div class="col-sm-8">
-                                <mvc:select path="testRunOption" id="test-run-options" cssClass="form-control js-select">
+                                <mvc:select path="testRunOption" id="test-run-options" cssClass="form-control js-select"
+                                            data-action="admin-target-group" data-initializer="test-run-recipients-select">
                                     <mvc:option value="${NO_LIMITATION_TEST_RUN_OPTION}"><mvc:message code="${NO_LIMITATION_TEST_RUN_OPTION.messageKey}" /></mvc:option>
                                     <mvc:option value="${RECIPIENT_TEST_RUN_OPTION}"><mvc:message code="${RECIPIENT_TEST_RUN_OPTION.messageKey}" /></mvc:option>
                                     <emm:ShowByPermission token="mailing.send.admin.target">
@@ -174,7 +172,7 @@
                                 </a>
                                 <a href="#" id="adminSendButton" class="btn btn-regular btn-primary"
                                    data-action="start-delivery"
-                                   data-url="<c:url value="/mailing/send/${form.mailingID}/send-admin.action"/>"
+                                   data-action-value="/send-admin.action"
                                    data-tooltip="<mvc:message code="mailing.send.admin"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="adminMail" /></span>
@@ -182,7 +180,7 @@
 
                                 <a href="#" class="btn btn-regular btn-primary"
                                    data-action="start-delivery"
-                                   data-url="<c:url value="/mailing/send/${form.mailingID}/send-test.action"/>"
+                                   data-action-value="/send-test.action"
                                    data-tooltip="<mvc:message code="mailing.send.admin.test"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="testMail" /></span>

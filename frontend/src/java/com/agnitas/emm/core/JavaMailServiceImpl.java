@@ -10,25 +10,10 @@
 
 package com.agnitas.emm.core;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.impl.DkimKeyEntry;
-import com.agnitas.dao.ComDkimDao;
-import com.agnitas.emm.dkim.DkimSignedMessage;
-import com.agnitas.util.CryptographicUtilities;
 
 import jakarta.activation.DataHandler;
 import jakarta.mail.Address;
@@ -43,18 +28,22 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
 import jakarta.mail.util.ByteArrayDataSource;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.impl.DkimKeyEntry;
+import com.agnitas.dao.ComDkimDao;
+import com.agnitas.emm.dkim.DkimSignedMessage;
+import com.agnitas.util.CryptographicUtilities;
+
 public class JavaMailServiceImpl implements JavaMailService {
 	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(JavaMailServiceImpl.class);
-	
-	private LocalDateTime latestExceptionMailSendDate = null;
-	private int exceptionMailFloodingLimitInMinutes = 1;
-	
-	/**
-	 *  Thread-safe marker. Will be set to true, when entering method to send exception mail and will be reset 
-	 *  to false before leaving.
-	 */
-	private final ThreadLocal<Boolean> sendingExceptionMail = ThreadLocal.withInitial(() -> Boolean.FALSE);
 	
 	private ConfigService configService;
 	private ComDkimDao dkimDao;
@@ -109,57 +98,39 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 */
 	@Override
 	public boolean sendExceptionMail(int dkimCompanyID, String errorText, Throwable e) {
-		synchronized(this.sendingExceptionMail) {
-			if (latestExceptionMailSendDate == null || Duration.between(latestExceptionMailSendDate, LocalDateTime.now()).getSeconds() < (60 * exceptionMailFloodingLimitInMinutes)) {
-				latestExceptionMailSendDate = LocalDateTime.now();
-				if(this.sendingExceptionMail.get()) {
-					logger.error("We seems to entered a cycle of exceptions when sending exception mail. Aborting here.", e);
-					return false;
+		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
+		if (toAddress != null) {
+			if (StringUtils.isNotBlank(toAddress)) {
+				StringBuilder messageBuilder = new StringBuilder();
+				if (errorText != null) {
+					messageBuilder.append(errorText).append("\n");
+				}
+				messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
+
+				String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
+		
+				if (logger.isInfoEnabled()) {
+					logger.info("Sending error message:\n" + messageBuilder.toString());
 				}
 	
-				this.sendingExceptionMail.set(Boolean.TRUE);
-			
 				try {
-					String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
-					if (toAddress != null) {
-						if (StringUtils.isNotBlank(toAddress)) {
-							StringBuilder messageBuilder = new StringBuilder();
-							if (errorText != null) {
-								messageBuilder.append(errorText).append("\n");
-							}
-							messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
-			
-							String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
+					final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
 					
-							if (logger.isInfoEnabled()) {
-								logger.info("Sending error message:\n" + messageBuilder.toString());
-							}
-				
-							try {
-								final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
-								
-								if (!result) {
-									logger.error("Could not send exception mail - unreported exception is:", e);
-								}
-								
-								return result;
-							} catch (Exception me) {
-								logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
-								return false;
-							}
-						} else {
-							return true;
-						}
-					} else {
-						logger.error("Error sending email with exception (ConfigService not initialized): " + e.getMessage(), e);
-						return false;
+					if (!result) {
+						logger.error("Could not send exception mail - unreported exception is:", e);
 					}
-				} finally {
-					this.sendingExceptionMail.set(Boolean.FALSE);
+					
+					return result;
+				} catch (Exception me) {
+					logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
+					return false;
 				}
 			} else {
-				return false;
+				return true;
 			}
+		} else {
+			logger.error("Error sending email with exception (ConfigService not initialized): " + e.getMessage(), e);
+			return false;
 		}
 	}
 	@Override

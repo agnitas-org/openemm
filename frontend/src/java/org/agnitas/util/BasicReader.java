@@ -10,7 +10,6 @@
 
 package org.agnitas.util;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class BasicReader implements Closeable {
 		if (inputStream == null) {
 			throw new Exception("Invalid empty inputStream");
 		}
-		this.inputStream = new BufferedInputStream(inputStream);
+		this.inputStream = inputStream;
 		encoding = encodingCharset == null ? Charset.forName(DEFAULT_ENCODING) : encodingCharset;
 	}
 

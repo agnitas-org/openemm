@@ -10,20 +10,14 @@
 
 package com.agnitas.emm.core.salutation.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.salutation.form.SalutationForm;
-import com.agnitas.emm.core.salutation.service.SalutationService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
+import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
+
+import java.util.concurrent.Callable;
+
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.TitleImpl;
-import org.agnitas.util.MvcUtils;
+import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -38,10 +32,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.concurrent.Callable;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.salutation.form.SalutationForm;
+import com.agnitas.emm.core.salutation.service.SalutationService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
 
-import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/salutation/")
@@ -162,7 +161,6 @@ public class SalutationController implements XssCheckAware {
     }
 
     @GetMapping("/{salutationId:\\d+}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public String confirmDelete(@PathVariable int salutationId, Admin admin, Model model, Popups popups) {
         Title title = salutationService.get(salutationId, admin.getCompanyID());
         if (title == null || (title.getCompanyID() < 1 && admin.getCompanyID() != 1)) {
@@ -172,20 +170,6 @@ public class SalutationController implements XssCheckAware {
         model.addAttribute("id", salutationId);
         model.addAttribute("shortname", title.getDescription());
         return "salutation_delete";
-    }
-
-    @GetMapping(value = "/{salutationId:\\d+}/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@PathVariable int salutationId, Admin admin, Model model, Popups popups) {
-        Title title = salutationService.get(salutationId, admin.getCompanyID());
-        if (title == null || (title.getCompanyID() < 1 && admin.getCompanyID() != 1)) {
-            popups.alert(PERMISSION_ERROR_MSG_KEY);
-            return MESSAGES_VIEW;
-        }
-
-        MvcUtils.addDeleteAttrs(model, title.getDescription(),
-                "salutation.delete", "salutation.delete.question");
-        return DELETE_VIEW;
     }
 
     @PostMapping("{salutationId:\\d+}/delete.action")

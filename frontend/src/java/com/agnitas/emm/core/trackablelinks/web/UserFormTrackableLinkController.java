@@ -76,8 +76,9 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 			List<LinkProperty> commonExtensions = trackableLinkService.getFormTrackableLinkCommonExtensions(admin, formId);
 			form.setCommonExtensions(conversionService.convert(commonExtensions, LinkProperty.class, ExtensionProperty.class));
 
-            addDefaultExtensionsModelAttr(model, companyId);
-            loadUserFormData(companyId, formId, model);
+			List<LinkProperty> defaultExtensions = linkService.getDefaultExtensions(companyId);
+			model.addAttribute("defaultExtensions", conversionService.convert(defaultExtensions, LinkProperty.class, ExtensionProperty.class));
+			loadUserFormData(companyId, formId, model);
 
 			return "userform_trackablelink_list";
 		} catch (Exception e) {
@@ -88,12 +89,7 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		return "messages";
 	}
 
-    private void addDefaultExtensionsModelAttr(Model model, int companyId) {
-        List<LinkProperty> defaultExtensions = linkService.getDefaultExtensions(companyId);
-        model.addAttribute("defaultExtensions", conversionService.convert(defaultExtensions, LinkProperty.class, ExtensionProperty.class));
-    }
-
-    private void loadUserFormData(int companyId, @PathVariable int formId, Model model) {
+	private void loadUserFormData(int companyId, @PathVariable int formId, Model model) {
 		model.addAttribute("userFormId", formId);
 		model.addAttribute("userFormName", userformService.getUserFormName(formId, companyId));
 	}
@@ -164,7 +160,6 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 
 		model.addAttribute("form", conversionService.convert(link, FormTrackableLinkForm.class));
 		loadUserFormData(admin.getCompanyID(), formId, model);
-        addDefaultExtensionsModelAttr(model, admin.getCompanyID());
 
 		return "userform_trackablelink_view";
 	}

@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title><![CDATA[Publicit&#xE9;]]></title>
-	<content><![CDATA[Si un destinataire a mis un drapeau de tracking veto, l'action ne sera pas ex&#xE9;cut&#xE9;e pour ce destinataire.]]></content>
+	<title><![CDATA[Advertising]]></title>
+	<content><![CDATA[If a recipient has tracking veto flag set, the action is not executed for this recipient. ]]></content>
 </HelpBalloon>

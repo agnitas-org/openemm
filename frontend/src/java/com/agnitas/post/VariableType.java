@@ -92,7 +92,7 @@ public enum VariableType {
 
 	public static VariableType getByKey(java.lang.String variableTypeString) throws Exception {
 		for (VariableType variableType : VariableType.values()) {
-			if (variableType.getKey().replace("_", "").equalsIgnoreCase(variableTypeString)) {
+			if (variableType.getKey().equalsIgnoreCase(variableTypeString)) {
 				return variableType;
 			}
 		}

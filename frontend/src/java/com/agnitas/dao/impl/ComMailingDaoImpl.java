@@ -60,7 +60,6 @@ import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
@@ -81,9 +80,11 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRdirMailingData;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
@@ -105,12 +106,9 @@ import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.emm.core.commons.database.DatabaseInformation;
 import com.agnitas.emm.core.commons.database.DatabaseInformationException;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.MailingDataException;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
@@ -135,7 +133,7 @@ import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailingDao {
 
     private static final Logger logger = LogManager.getLogger(ComMailingDaoImpl.class);
-
+    
     private static Boolean FULLTEXTSEARCHSUPPORTED_CACHE = null;
     private static Boolean BASICFULLTEXTSEARCHSUPPORTED_CACHE = null;
 
@@ -331,7 +329,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 }
             }
 
-            if (adminId > 0 && configService.isDisabledMailingListsSupported()) {
+            if (adminId > 0 && isDisabledMailingListsSupported()) {
                 sql += " AND a.mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY;
                 parameters.add(adminId);
             }
@@ -341,7 +339,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             sql = "SELECT " + getMailingSqlSelectFields("") + " FROM mailing_tbl WHERE company_id = ? ";
             parameters.add(companyID);
 
-            if (adminId > 0 && configService.isDisabledMailingListsSupported()) {
+            if (adminId > 0 && isDisabledMailingListsSupported()) {
                 sql += " AND mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY;
                 parameters.add(adminId);
             }
@@ -373,18 +371,18 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     	if (filter == null) {
     		return getMailings(companyId, template);
     	}
-
+    	
     	final List<Object> paramsList = new ArrayList<>();
-
-
+    	
+    	
     	final StringBuffer sql = new StringBuffer("SELECT * FROM mailing_tbl m WHERE m.company_id = ? AND m.is_template = ? AND m.deleted=0");
     	paramsList.add(companyId);
     	paramsList.add(template ? 1 : 0);
-
+    	
     	for (final MailingPropertyCondition c : filter.listMailingPropertyConditions()) {
     		if (c instanceof MailingStatusCondition) {
     			final MailingStatusCondition cond = (MailingStatusCondition) c;
-
+    			
     			if(!((MailingStatusCondition) c).getStatusList().isEmpty()) {
 	    			sql.append(" AND m.work_status IN (");
 
@@ -392,10 +390,10 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 	    			for(final MailingStatus status : cond.getStatusList()) {
 	    				sql.append(first ? "?" : ",?");
 	    				first = false;
-
+	    				
 	    				paramsList.add(status.getDbKey());
 	    			}
-
+	    			
 	    			sql.append(")");
     			}
     		} else {
@@ -407,11 +405,11 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     	if (filter.containsSendDateConditions()) {
     		sql.append(" AND EXISTS (SELECT 1 FROM maildrop_status_tbl mds WHERE mds.mailing_id = m.mailing_id AND mds.status_field NOT IN ('A', 'T')");
-
+    		
     		for(final SendDateCondition c : filter.listSendDateConditions()) {
     			final Date timestamp = Date.from(c.getTimestamp().toInstant());
     			final boolean inclusive = c.isInclusive();
-
+    			
     			if(c instanceof SentBeforeCondition) {
     				sql.append(" AND ").append(inclusive ? "mds.senddate <= ?" : "mds.senddate < ?");
     				paramsList.add(timestamp);
@@ -424,7 +422,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     				throw new RuntimeException(msg);
     			}
     		}
-
+    		
     		sql.append(")");
     	}
 
@@ -456,7 +454,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     }
 
     private String getDisabledMailinglistRestriction(int adminId, List<Object> queryParams, String tableAlias) {
-        if (adminId > 0 && configService.isDisabledMailingListsSupported()) {
+        if (adminId > 0 && isDisabledMailingListsSupported()) {
             queryParams.add(adminId);
             return " AND " + (tableAlias == null ? "" : tableAlias + ".") + "mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY;
         } else {
@@ -467,15 +465,15 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     protected String getTargetRestrictions(Admin admin, List<Object> queryParams) {
         return getTargetRestrictions(admin, queryParams, null);
     }
-
+    
     protected String getTargetRestrictions(Admin admin, List<Object> queryParams, String tableAlias) {
         return StringUtils.EMPTY;
     }
-
+    
     protected String getAdditionalSqlRestrictions(Admin admin, List<Object> queryParams) {
         return getDisabledMailinglistRestriction(admin.getAdminID(), queryParams, null);
     }
-
+    
     protected String getAdditionalSqlRestrictions(Admin admin, List<Object> queryParams, String tableAlias) {
         return getDisabledMailinglistRestriction(admin.getAdminID(), queryParams, tableAlias);
     }
@@ -681,20 +679,15 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     @Override
     public Mailing getMailing(final int mailingID, final int companyID) {
-        return getMailing(mailingID, companyID, true, false);
-    }
-
-    @Override
-    public Mailing getMailing(int mailingId, int companyId, boolean includeDependencies) {
-        return getMailing(mailingId, companyId, includeDependencies, false);
+        return getMailing(mailingID, companyID, false);
     }
 
     @Override
     public Mailing getMailingWithDeletedDynTags(final int mailingID, final int companyID) {
-        return getMailing(mailingID, companyID, true, true);
+        return getMailing(mailingID, companyID, true);
     }
 
-	private Mailing getMailing(final int mailingID, final int companyID, final boolean includeDependencies, final boolean includeDeletedDynTags) {
+	private Mailing getMailing(final int mailingID, final int companyID, final boolean includeDeletedDynTags) {
 		if (companyID <= 0 || mailingID <= 0) {
 			throw new MailingNotExistException(companyID, mailingID);
 		} else {
@@ -713,7 +706,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
 				if (mailing == null) {
 					throw new MailingNotExistException(companyID, mailingID);
-				} else if (includeDependencies) {
+				} else {
 					mailing.setMediatypes(mediatypesDao.loadMediatypes(mailingID, companyID));
 
 					final Map<String, DynamicTag> dynamicTagMap = new LinkedHashMap<>();
@@ -734,13 +727,14 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 						mailingComponentMap.put(mailingComponent.getComponentName(), mailingComponent);
 					}
 					mailing.setComponents(mailingComponentMap);
-					mailing.setTrackableLinks(trackableLinkDao.getTrackableLinksMap(mailingID, companyID, false));
+					mailing.setTrackableLinks(getTrackableLinksMap(companyID, mailingID));
 
 					final List<MaildropEntry> maildropEntryList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyID, mailingID);
 					mailing.setMaildropStatus(new HashSet<>(maildropEntryList));
+
+					return mailing;
 				}
-                return mailing;
-            } catch (final MailingNotExistException e) {
+			} catch (final MailingNotExistException e) {
 				throw e;
 			} catch (final Exception e) {
 				logger.error("Error loading mailing ID " + mailingID, e);
@@ -774,7 +768,21 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     @Override
     public int saveUndoMailing(final int mailingId, final int adminId) {
-        return undoMailingDao.saveUndoData(mailingId, new Date(), adminId);
+        int undoId = 0;
+        if (mailingId > 0 && adminId > 0) {
+            if (isOracleDB()) {
+                undoId = selectInt(logger, "SELECT undo_id_seq.nextval FROM DUAL");
+            } else {
+                try {
+                    undoId = new MySQLMaxValueIncrementer(getDataSource(), "undo_id_seq", "value").nextIntValue();
+                } catch (final NullPointerException e) {
+                    undoId = 1;
+                }
+            }
+            final Date undoCreationDate = select(logger, "SELECT CURRENT_TIMESTAMP FROM DUAL", Date.class);
+            undoMailingDao.saveUndoData(mailingId, undoId, undoCreationDate, adminId);
+        }
+        return undoId;
     }
 
     @Override
@@ -904,86 +912,136 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     }
 
     @Override
-    public boolean updateStatus(final int companyID, final int mailingID, final MailingStatus mailingStatus, Date sendDate) {
-    	if (mailingStatus == MailingStatus.NEW) {
-    		// never reset a mailing to status new
+    public boolean updateStatus(Mailing mailing, MailingStatus mailingStatus) {
+        if (mailing == null) {
             return false;
-        } else {
-	    	MailingStatus currentMailingWorkStatus = getStatus(companyID, mailingID);
-	    	MailingStatus newMailingStatus = null;
-	    	Date newSendDate = null;
-	    	switch (currentMailingWorkStatus) {
-				case ACTIVE:
-					if (mailingStatus == MailingStatus.SENDING || mailingStatus == MailingStatus.CANCELED || mailingStatus == MailingStatus.DISABLE) {
-						newMailingStatus = mailingStatus;
-						newSendDate = sendDate;
-						break;
-		            } else {
-		            	return false;
-		            }
-				case SCHEDULED:
-					if (mailingStatus == MailingStatus.SENDING || mailingStatus == MailingStatus.CANCELED || mailingStatus == MailingStatus.DISABLE) {
-						newMailingStatus = mailingStatus;
-						newSendDate = sendDate;
-						break;
-		            } else {
-		            	return false;
-		            }
-				case SENDING:
-					if (mailingStatus == MailingStatus.SENT || mailingStatus == MailingStatus.NORECIPIENTS) {
-						newMailingStatus = mailingStatus;
-						newSendDate = sendDate;
-						break;
-		            } else {
-		            	return false;
-		            }
-				case SENT:
-					// never overwrite status sent
-					return false;
-				case NORECIPIENTS:
-					// never overwrite status norecipients
-					return false;
-
-				// Following cases all take the same action
-				case ADMIN:
-				case CANCELED:
-				case CANCELED_AND_COPIED:
-				case DISABLE:
-				case EDIT:
-				case GENERATION_FINISHED:
-				case IN_GENERATION:
-				case NEW:
-				case READY:
-				case TEST:
-					newMailingStatus = mailingStatus;
-					newSendDate = sendDate;
-					break;
-				default:
-					throw new RuntimeException("Unknown mailing status");
-	    	}
-
-	    	try {
-	        	if (newSendDate == null) {
-	        		int touchedMailings = update(logger, "UPDATE mailing_tbl SET work_status = ? WHERE mailing_id = ?", newMailingStatus.getDbKey(), mailingID);
-	        		return touchedMailings >= 1;
-	        	} else {
-	        		int touchedMailings = update(logger, "UPDATE mailing_tbl SET work_status = ?, send_date = ? WHERE mailing_id = ?", newMailingStatus.getDbKey(), newSendDate, mailingID);
-	        		return touchedMailings >= 1;
-	        	}
-	        } catch (final Exception e) {
-	            logger.error("Error updating work status for mailing " + mailingID, e);
-	            return false;
-	        }
         }
+
+        return updateStatus(mailing.getId(), mailingStatus, mailing.getSenddate());
+    }
+
+    /**
+     * Keep the send date unchanged
+     */
+    @Override
+    public boolean updateStatus(final int mailingID, final MailingStatus mailingStatus) {
+        //status scheduled could only be overwritten by sending or canceled
+        //status active could only be overwritten by disable
+        if (isStatus(mailingID, "scheduled", "active")) {
+            if (mailingStatus == MailingStatus.SENDING || mailingStatus == MailingStatus.CANCELED || mailingStatus == MailingStatus.DISABLE) {
+                updateStatusInDB(mailingID, mailingStatus);
+                return true;
+            }
+
+            return false;
+        }
+
+        //status sending could only be overwritten by "sent" ("norecipients" -> "sent" without recipients)
+        if (isStatus(mailingID, "sending")) {
+            if (mailingStatus == MailingStatus.SENT || mailingStatus == MailingStatus.NORECIPIENTS) {
+                updateStatusInDB(mailingID, mailingStatus);
+                return true;
+            }
+
+            return false;
+        }
+
+        //never overwrite status sent
+        if (isStatus(mailingID, "sent", "norecipients")) {
+            return false;
+        }
+
+        //never reset a mailing to status new
+        if (mailingStatus == MailingStatus.NEW) {
+            return false;
+        }
+
+        updateStatusInDB(mailingID, mailingStatus);
+        return true;
     }
 
     @Override
-    public MailingStatus getStatus(final int companyID, final int mailingID) {
-        String statusString = selectObjectDefaultNull(logger, "SELECT work_status FROM mailing_tbl WHERE company_id = ? and mailing_id = ?", StringRowMapper.INSTANCE, companyID, mailingID);
-        if (StringUtils.isBlank(statusString)) {
-        	return MailingStatus.NEW;
+    public boolean updateStatus(final int mailingID, final MailingStatus mailingStatus, Date sendDate) {
+        //status scheduled could only be overwritten by sending or canceled
+        //status active could only be overwritten by disable
+        if (isStatus(mailingID, "scheduled", "active")) {
+            if (mailingStatus == MailingStatus.SENDING || mailingStatus == MailingStatus.CANCELED || mailingStatus == MailingStatus.DISABLE) {
+                updateStatusInDB(mailingID, mailingStatus, sendDate);
+                return true;
+            }
+
+            return false;
+        }
+
+        //status sending could only be overwritten by "sent" ("norecipients" -> "sent" without recipients)
+        if (isStatus(mailingID, "sending")) {
+            if (mailingStatus == MailingStatus.SENT || mailingStatus == MailingStatus.NORECIPIENTS) {
+                updateStatusInDB(mailingID, mailingStatus);
+                return true;
+            }
+
+            return false;
+        }
+
+        //never overwrite status sent
+        if (isStatus(mailingID, "sent", "norecipients")) {
+            return false;
+        }
+
+        //never reset a mailing to status new
+        if (mailingStatus == MailingStatus.NEW) {
+            return false;
+        }
+
+        updateStatusInDB(mailingID, mailingStatus, sendDate);
+        return true;
+    }
+
+    @Override
+    public String getWorkStatus(final int companyID, final int mailingID) {
+    	return selectWithDefaultValue(logger, "SELECT work_status FROM mailing_tbl WHERE company_id = ? and mailing_id = ?", String.class, MailingStatus.NEW.getDbKey(), companyID, mailingID);
+    }
+
+    /**
+     * Keep the send date unchanged
+     */
+    @DaoUpdateReturnValueCheck
+    private void updateStatusInDB(final int mailingID, final MailingStatus mailingStatus) {
+        try {
+            update(logger, "UPDATE mailing_tbl SET work_status = ? WHERE mailing_id = ?", mailingStatus.getDbKey(), mailingID);
+        } catch (final Exception e) {
+            logger.error("Error updating work status for mailing " + mailingID, e);
+        }
+    }
+
+    @DaoUpdateReturnValueCheck
+    private void updateStatusInDB(final int mailingID, final MailingStatus mailingStatus, Date sendDate) {
+        try {
+            update(logger, "UPDATE mailing_tbl SET work_status = ?, send_date = ? WHERE mailing_id = ?", mailingStatus.getDbKey(), sendDate, mailingID);
+        } catch (final Exception e) {
+            logger.error("Error updating work status for mailing " + mailingID, e);
+        }
+    }
+
+    protected boolean isStatus(final int mailingID, final String... statuses) {
+        if (statuses == null || statuses.length == 0) {
+            return false;
+        }
+        if (statuses.length == 1) {
+            try {
+                return selectInt(logger, "SELECT COUNT(mailing_id) FROM mailing_tbl WHERE mailing_id = ? AND work_status = ?", mailingID, "mailing.status." + statuses[0]) > 0;
+            } catch (final Exception e) {
+                logger.error("Error checking work status for mailing " + mailingID, e);
+                return false;
+            }
         } else {
-        	return MailingStatus.fromDbKey(statusString);
+            try {
+                return selectInt(logger, "SELECT COUNT(mailing_id) FROM mailing_tbl WHERE mailing_id = ? AND work_status IN "
+                        + DbUtilities.joinForIN(statuses, status -> "mailing.status." + status), mailingID) > 0;
+            } catch (final Exception e) {
+                logger.error("Error checking work status for mailing " + mailingID, e);
+                return false;
+            }
         }
     }
 
@@ -1174,59 +1232,31 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     private String generateMailingsSelectQuery(MailingsListProperties props, List<Object> selectParameters, Admin admin) throws FulltextSearchInvalidQueryException {
         int adminId = admin.getAdminID();
         int companyID = admin.getCompanyID();
-        boolean isRedesignedUiUsed = props.isRedesignedUiUsed();
-
         // Check supported search modes by available db indices
-        if (!isRedesignedUiUsed) {
-            String searchQuery = props.getSearchQuery();
-            if (StringUtils.isNotEmpty(searchQuery)) {
-                if ((props.isSearchName() || props.isSearchDescription()) && !isBasicFullTextSearchSupported()) {
-                    props.setSearchName(false);
-                    props.setSearchDescription(false);
-                }
-
-                // Full text index search only works for patterns of size 3+ characters
-                if (!isContentFullTextSearchSupported() || searchQuery.length() < 3) {
-                    props.setSearchContent(false);
-                }
-            } else {
+        String searchQuery = props.getSearchQuery();
+        if (StringUtils.isNotEmpty(searchQuery)) {
+            if ((props.isSearchName() || props.isSearchDescription()) && !isBasicFullTextSearchSupported()) {
                 props.setSearchName(false);
                 props.setSearchDescription(false);
-                props.setSearchContent(false);
-            }
-        } else {
-            if ((StringUtils.isNotBlank(props.getSearchNameStr()) || StringUtils.isNotBlank(props.getSearchDescriptionStr())) && !isBasicFullTextSearchSupported()) {
-                props.setSearchNameStr("");
-                props.setSearchDescriptionStr("");
             }
 
             // Full text index search only works for patterns of size 3+ characters
-            if (!isContentFullTextSearchSupported() || StringUtils.length(props.getSearchContentStr()) < 3) {
-                props.setSearchContentStr("");
+            if (!isContentFullTextSearchSupported() || searchQuery.length() < 3) {
+                props.setSearchContent(false);
             }
+        } else {
+            props.setSearchName(false);
+            props.setSearchDescription(false);
+            props.setSearchContent(false);
         }
 
-        String nameFullTextSearchClause = props.getSearchNameStr();
-        String descriptionFullTextSearchClause = props.getSearchDescriptionStr();
-        String contentFullTextSearchClause = props.getSearchContentStr();
-
-        if (!isRedesignedUiUsed) {
-            String fullTextSearchClause = props.getSearchQuery();
-            if (props.isSearchName() || props.isSearchDescription() || props.isSearchContent()) {
-                try {
-                    fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(props.getSearchQuery());
-                } catch (final FulltextSearchQueryException e) {
-                    logger.error("Cannot transform full text search query: " + props.getSearchQuery());
-                }
+        String fullTextSearchClause = props.getSearchQuery();
+        if (props.isSearchName() || props.isSearchDescription() || props.isSearchContent()) {
+            try {
+                fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(props.getSearchQuery());
+            } catch (final FulltextSearchQueryException e) {
+                logger.error("Cannot transform full text search query: " + props.getSearchQuery());
             }
-
-            nameFullTextSearchClause = fullTextSearchClause;
-            descriptionFullTextSearchClause = fullTextSearchClause;
-            contentFullTextSearchClause = fullTextSearchClause;
-        } else {
-            nameFullTextSearchClause = generateFullTextSearchQuery(nameFullTextSearchClause);
-            descriptionFullTextSearchClause = generateFullTextSearchQuery(descriptionFullTextSearchClause);
-            contentFullTextSearchClause = generateFullTextSearchQuery(contentFullTextSearchClause);
         }
 
         final StringBuilder selectSql = new StringBuilder("SELECT")
@@ -1244,18 +1274,18 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 .append(", a.is_grid")
                 .append(", a.content_type")
                 .append(", a.workflow_id")
-                .append(", a.is_post AS isOnlyPostType")
+                .append(joinPostTypeColumns(admin.getCompanyID(), "a"))
                 .append(getAdditionalColumnsName(props.getAdditionalColumns()))
                 .append(" FROM mailing_tbl a")
                 .append(joinAdditionalColumns(props.getAdditionalColumns()))
                 .append(" LEFT JOIN mailinglist_tbl m ON a.mailinglist_id = m.mailinglist_id AND a.company_id = m.company_id AND m.deleted <> 1");
 
-        if ((!isRedesignedUiUsed && props.isSearchContent()) || (isRedesignedUiUsed && StringUtils.isNotBlank(contentFullTextSearchClause))) {
+        if (props.isSearchContent()) {
             // Subquery to search within static text and html blocks
             selectSql.append(" LEFT JOIN (SELECT mailing_id, MAX(")
                     .append(isOracleDB() ? "CONTAINS(emmblock, ?)" : "MATCH(emmblock) AGAINST(? IN BOOLEAN MODE)")
                     .append(") AS relevance");
-            selectParameters.add(contentFullTextSearchClause);
+            selectParameters.add(fullTextSearchClause);
 
             selectSql.append(" FROM component_tbl")
                     .append(" WHERE company_id = ? AND mtype IN ('text/plain', 'text/html')");
@@ -1268,7 +1298,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             selectSql.append(" LEFT JOIN (SELECT cont.mailing_id, MAX(")
                     .append(isOracleDB() ? "CONTAINS(cont.dyn_content, ?)" : "MATCH(cont.dyn_content) AGAINST(? IN BOOLEAN MODE)")
                     .append(") AS relevance");
-            selectParameters.add(contentFullTextSearchClause);
+            selectParameters.add(fullTextSearchClause);
 
             selectSql.append(" FROM dyn_name_tbl nm JOIN dyn_content_tbl cont ON nm.dyn_name_id = cont.dyn_name_id")
                     .append(" WHERE cont.company_id = ?");
@@ -1289,13 +1319,9 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             selectParameters.add(BooleanUtils.toInteger(props.getGrid()));
         }
 
-        if (props.isUseRecycleBin()) {
-            selectSql.append(" AND a.deleted = 1");
-        } else {
-            selectSql.append(" AND a.deleted = 0");
-        }
+        selectSql.append(" AND a.deleted = 0");
 
-        if (adminId > 0 && configService.isDisabledMailingListsSupported()) {
+        if (adminId > 0 && isDisabledMailingListsSupported()) {
             selectSql.append(" AND m.mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY);
             selectParameters.add(adminId);
         }
@@ -1319,11 +1345,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         selectSql.append(getTargetRestrictions(admin, selectParameters, "a"));
 
         if (!props.isTemplate()) {
-            if (StringUtils.isNotBlank(props.getTypes())) {
-                selectSql.append(" AND a.mailing_type IN (").append(props.getTypes()).append(")");
-            } else if (!props.isUseRecycleBin()) {
-                selectSql.append(" AND a.mailing_type IN (100)");
-            }
+            selectSql.append(" AND a.mailing_type IN (").append(props.getTypes()).append(")");
         }
 
         if (StringUtils.isNotBlank(props.getMediaTypes())) {
@@ -1340,7 +1362,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (isNotEmpty(props.getMailingLists())) {
             selectSql.append(" AND a.mailinglist_id IN (").append(StringUtils.join(props.getMailingLists(), ", ")).append(")");
         }
-
+        
         if (isNotEmpty(props.getArchives())) {
             selectSql.append(" AND a.campaign_id IN (").append(StringUtils.join(props.getArchives(), ", ")).append(")");
         }
@@ -1351,10 +1373,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
         if (props.getCreationDateBegin() != null || props.getCreationDateEnd() != null) {
             selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.creation_date", props.getCreationDateBegin(), props.getCreationDateEnd(), isOracleDB()));
-        }
-
-        if (props.getPlanDateBegin() != null || props.getPlanDateEnd() != null) {
-            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.plan_date", props.getPlanDateBegin(), props.getPlanDateEnd(), isOracleDB()));
         }
 
         if (props.getChangeDateBegin() != null || props.getChangeDateEnd() != null) {
@@ -1375,37 +1393,27 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         }
 
         final List<String> searchClauses = new ArrayList<>();
-        if ((!isRedesignedUiUsed && props.isSearchName()) || (isRedesignedUiUsed && StringUtils.isNotBlank(nameFullTextSearchClause))) {
+        if (props.isSearchName()) {
             searchClauses.add(isOracleDB() ? "CONTAINS(a.shortname, ?) > 0" : "MATCH(a.shortname) AGAINST(? IN BOOLEAN MODE) > 0");
-            selectParameters.add(nameFullTextSearchClause);
+            selectParameters.add(fullTextSearchClause);
         }
 
-        if ((!isRedesignedUiUsed && props.isSearchDescription()) || (isRedesignedUiUsed && StringUtils.isNotBlank(descriptionFullTextSearchClause))) {
+        if (props.isSearchDescription()) {
             searchClauses.add(isOracleDB() ? "CONTAINS(a.description, ?) > 0" : "MATCH(a.description) AGAINST(? IN BOOLEAN MODE) > 0");
-            selectParameters.add(descriptionFullTextSearchClause);
+            selectParameters.add(fullTextSearchClause);
         }
 
-        if ((!isRedesignedUiUsed && props.isSearchContent()) || (isRedesignedUiUsed && StringUtils.isNotBlank(contentFullTextSearchClause))) {
-            searchClauses.add("(comp.relevance > 0 OR cont.relevance > 0) ");
+        if (props.isSearchContent()) {
+            searchClauses.add("comp.relevance > 0 OR cont.relevance > 0 ");
         }
 
-        final String searchSqlPart = StringUtils.join(searchClauses, !isRedesignedUiUsed ? " OR " : " AND ");
+        final String searchSqlPart = StringUtils.join(searchClauses, " OR ");
 
         if (StringUtils.isNotEmpty(searchSqlPart)) {
             selectSql.append(" AND (").append(searchSqlPart).append(")");
         }
 
         return selectSql.toString();
-    }
-
-    private String generateFullTextSearchQuery(String searchQuery) throws FulltextSearchInvalidQueryException {
-        try {
-            return fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
-        } catch (final FulltextSearchQueryException e) {
-            logger.error("Cannot transform full text search query: " + searchQuery);
-        }
-
-        return searchQuery;
     }
 
     /**
@@ -1433,6 +1441,18 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 item.put(componentIdPropertyName, componentId);
             }
         }
+    }
+
+    /**
+     * Method generates SQL to obtain isOnlyPostType value
+     *
+     * @param tableName is used for extended version to get proper mailing_id field ref
+     * @return sql string for select query
+     * <p>
+     * Method is overwritten in ComMailingDaoImplExtended
+     */
+    protected String joinPostTypeColumns(int companyID, String tableName) {
+        return ", 0 AS isOnlyPostType";
     }
 
     private String generateSendDateSortClause(String direction, String sortColumn) {
@@ -1491,8 +1511,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 queryPart.append(", a.delivered AS recipientscount ");
             } else if (column == MailingAdditionalColumn.ARCHIVE) {
                 queryPart.append(", arch.shortname AS archive ");
-            } else if (column == MailingAdditionalColumn.PLAN_DATE) {
-                queryPart.append(", a.plan_date AS plan_date ");
             }
         }
         return queryPart.toString();
@@ -1510,13 +1528,12 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     public boolean usedInRunningWorkflow(final int mailingId, final int companyId) {
         final String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl w " +
                 "JOIN workflow_dependency_tbl dep ON dep.company_id = w.company_id AND dep.workflow_id = w.workflow_id " +
-                "WHERE w.company_id = ? AND w.status IN (?, ?, ?) AND dep.type IN (?, ?) AND dep.entity_id = ?";
+                "WHERE w.company_id = ? AND w.status IN (?, ?) AND dep.type IN (?, ?) AND dep.entity_id = ?";
 
         final Object[] sqlParameters = new Object[]{
                 companyId,
                 WorkflowStatus.STATUS_ACTIVE.getId(),
                 WorkflowStatus.STATUS_TESTING.getId(),
-                WorkflowStatus.STATUS_PAUSED.getId(),
                 WorkflowDependencyType.MAILING_DELIVERY.getId(),
                 WorkflowDependencyType.MAILING_REFERENCE.getId(),
                 mailingId
@@ -1542,8 +1559,9 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     }
 
     @Override
-    public PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
-        String sqlStatement = "SELECT a.mailing_id, a.shortname, a.description, MIN(c.mintime) senddate, a.is_post AS isOnlyPostType"
+    public List<MailingBase> getMailingsForComparation(Admin admin) {
+        String sqlStatement = "SELECT a.mailing_id, a.shortname, a.description, MIN(c.mintime) senddate"
+                + joinPostTypeColumns(admin.getCompanyID(), "a")
                 + " FROM mailing_tbl a"
                 + " LEFT JOIN mailing_account_sum_tbl c ON (a.mailing_id = c.mailing_id)"
                 + " WHERE a.company_id = ? AND a.deleted = 0 AND c.status_field = ?"
@@ -1558,45 +1576,22 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         sqlParameters.add(admin.getCompanyID());
 
         sqlStatement += getAdditionalSqlRestrictions(admin, sqlParameters, "a");
+        sqlStatement += " GROUP BY a.mailing_id, a.shortname, a.description ORDER BY mailing_id DESC";
 
-        if (admin.isRedesignedUiUsed()) {
-            sqlStatement += applyOverviewFilter(filter, sqlParameters);
+        final List<Map<String, Object>> tmpList = select(logger, sqlStatement, sqlParameters.toArray());
+
+        final List<MailingBase> result = new ArrayList<>();
+        for (final Map<String, Object> row : tmpList) {
+            final MailingBase newBean = new MailingBaseImpl();
+            newBean.setId(((Number) row.get("mailing_id")).intValue());
+            newBean.setShortname((String) row.get("shortname"));
+            newBean.setDescription((String) row.get("description"));
+            newBean.setSenddate((Date) row.get("senddate"));
+            newBean.setOnlyPostType(BooleanUtils.toBoolean(((Number) row.get("isOnlyPostType")).intValue()));
+            result.add(newBean);
         }
 
-        sqlStatement += " GROUP BY a.mailing_id, a.shortname, a.description, a.is_post";
-
-        if (admin.isRedesignedUiUsed() && filter.getSendDate().isPresent()) {
-            sqlStatement += " HAVING " + getSendDateFilters(filter.getSendDate(), sqlParameters);
-        }
-
-        String sortTable = "senddate".equals(filter.getSort()) ? "" : "mailing_tbl";
-        return selectPaginatedList(logger, sqlStatement, sortTable, filter.getSortOrDefault("mailing_id"), filter.ascending(), filter.getPage(), filter.getNumberOfRows(), new ComparisonMailingRowMapper(), sqlParameters.toArray());
-    }
-
-    private String applyOverviewFilter(MailingComparisonFilter filter, List<Object> params) {
-        StringBuilder filterSql = new StringBuilder();
-        if (StringUtils.isNotBlank(filter.getMailing())) {
-            filterSql.append(getPartialSearchFilterWithAnd("a.shortname"));
-            params.add(filter.getMailing());
-        }
-        if (StringUtils.isNotBlank(filter.getDescription())) {
-            filterSql.append(getPartialSearchFilterWithAnd("a.description"));
-            params.add(filter.getDescription());
-        }
-        return filterSql.toString();
-    }
-
-    private static String getSendDateFilters(DateRange sendDate, List<Object> params) {
-        List<String> sendDateFilters = new ArrayList<>(2);
-        if (sendDate.getFrom() != null) {
-            sendDateFilters.add("MIN(c.mintime) >= ?");
-            params.add(sendDate.getFrom());
-        }
-        if (sendDate.getTo() != null) {
-            sendDateFilters.add("MIN(c.mintime) < ?");
-            params.add(DateUtilities.addDaysToDate(sendDate.getTo(), 1));
-        }
-        return StringUtils.join(sendDateFilters, " AND ");
+        return result;
     }
 
     @Override
@@ -1665,6 +1660,16 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     }
 
     @Override
+    public boolean isMailingMarkedDeleted(final int mailingID, final int companyID) {
+        try {
+            final int returnValue = selectIntWithDefaultValue(logger, "SELECT deleted FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", 1, companyID, mailingID);
+            return returnValue == 1;
+        } catch (final Exception e) {
+            return true;
+        }
+    }
+
+    @Override
     public int getCompanyIdForMailingId(final int mailingId) {
         return selectIntWithDefaultValue(logger, "SELECT company_id FROM mailing_tbl WHERE mailing_id = ?", -1, mailingId);
     }
@@ -1713,7 +1718,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     	if (mailingID == 0) {
             return null;
     	}
-
+    	
         String params = null;
         String followUpFor = null;
         // first check, if we have a followup mailing.
@@ -1759,10 +1764,11 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         String sqlStatement;
         if (isOracle) {
             sqlStatement = "SELECT * FROM (" +
-                    "SELECT m.work_status, m.mailing_id AS mid, m.shortname, m.description, acc.mintime AS senddate, ml.shortname AS mailinglist, m.change_date, m.workflow_id, m.is_post AS isOnlyPostType" +
+                    "SELECT m.work_status, m.mailing_id AS mid, m.shortname, m.description, acc.mintime AS senddate, ml.shortname AS mailinglist, m.change_date, m.workflow_id " +
+                    joinPostTypeColumns(admin.getCompanyID(), "m") +
                     " FROM (" +
                     "  SELECT * FROM (" +
-                    "    SELECT company_id, mailing_id, shortname, description, work_status, change_date, mailinglist_id, workflow_id, is_post FROM mailing_tbl" +
+                    "    SELECT company_id, mailing_id, shortname, description, work_status, change_date, mailinglist_id, workflow_id FROM mailing_tbl" +
                     "    WHERE company_id = ? AND deleted = 0 AND is_template = 0" +
                     additionalRestriction +
                     "    ORDER BY COALESCE(change_date, TO_DATE('01.01.1900', 'dd.mm.yyyy')) DESC, mailing_id DESC" +
@@ -1776,9 +1782,10 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                     + orderBy;
         } else {
             sqlStatement = "SELECT * FROM (" +
-                    "SELECT m.work_status, m.mailing_id AS mid, m.shortname, m.description, acc.mintime AS senddate, ml.shortname AS mailinglist, m.change_date, m.workflow_id, m.is_post AS isOnlyPostType" +
+                    "SELECT m.work_status, m.mailing_id AS mid, m.shortname, m.description, acc.mintime AS senddate, ml.shortname AS mailinglist, m.change_date, m.workflow_id" +
+                    joinPostTypeColumns(admin.getCompanyID(), "m") +
                     " FROM (" +
-                    "  SELECT company_id, mailing_id, shortname, description, work_status, change_date, mailinglist_id, workflow_id, is_post FROM mailing_tbl" +
+                    "  SELECT company_id, mailing_id, shortname, description, work_status, change_date, mailinglist_id, workflow_id FROM mailing_tbl" +
                     "  WHERE company_id = ? AND deleted = 0 AND is_template = 0 " +
                     additionalRestriction +
                     "  ORDER BY COALESCE(change_date, DATE_FORMAT('01.01.1900','%d.%m.%Y')) DESC, mailing_id DESC" +
@@ -2045,26 +2052,14 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         }
 
         final StringBuilder query = new StringBuilder();
-
-        if (isOracleDB()) {
-            query.append("SELECT * FROM (")
-                    .append("  SELECT res.mailing_id, res.shortname, res.senddate, res.change_date, res.isOnlyPostType FROM (")
-                    .append("    SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date, a.is_post AS isOnlyPostType")
-                    .append("       FROM mailing_account_tbl c ")
-                    .append("       LEFT JOIN mailing_tbl a ON a.mailing_id = c.mailing_id")
-                    .append("       WHERE c.company_id = ? AND c.status_field = '").append(statusField).append("' AND a.mailing_type = 0 %s) res ")
-                    .append("    GROUP BY res.mailing_id, res.shortname, res.senddate, res.change_date, res.isOnlyPostType")
-                    .append("    ORDER BY senddate DESC)");
-        } else {
-            query.append("SELECT * FROM ")
-                    .append("   (SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date, a.is_post AS isOnlyPostType")
-                    .append("       FROM mailing_account_tbl c ")
-                    .append("       LEFT JOIN mailing_tbl a ON a.mailing_id = c.mailing_id")
-                    .append("       WHERE c.company_id = ? AND c.status_field = '").append(statusField).append("' AND a.mailing_type = 0 %s ")
-                    .append("       GROUP BY a.shortname, a.mailing_id, a.send_date, a.change_date")
-                    .append("       ORDER BY a.send_date DESC) res");
-        }
-
+        query.append("SELECT * FROM ")
+                .append("   (SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date ")
+                .append(joinPostTypeColumns(companyId, "c"))
+                .append("       FROM mailing_account_tbl c ")
+                .append("       LEFT JOIN mailing_tbl a ON a.mailing_id = c.mailing_id")
+                .append("       WHERE c.company_id = ? AND c.status_field = '").append(statusField).append("' AND a.mailing_type = 0 %s ")
+                .append("       GROUP BY a.shortname, a.mailing_id, a.send_date, a.change_date")
+                .append("       ORDER BY a.send_date DESC) res");
         final List<Object> parameters = new ArrayList<>();
         parameters.add(companyId);
 
@@ -2073,15 +2068,11 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (StringUtils.isNotEmpty(filter)) {
             filter += " AND a.deleted = 0";
         }
-
+        
         filter += getTargetRestrictionsForReports(companyId, targetId, adminAltgIds, parameters, "a");
 
         if (Objects.nonNull(from) && Objects.nonNull(to)) {
-            if (isOracleDB()) {
-                query.append("   WHERE senddate BETWEEN ? AND ? ");
-            } else {
-                query.append("   WHERE res.senddate BETWEEN ? AND ? ");
-            }
+            query.append("   WHERE res.senddate BETWEEN ? AND ? ");
 
             parameters.add(from);
             parameters.add(to);
@@ -2124,7 +2115,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (isOracleDB()) {
             query.append("SELECT * FROM ")
                     .append("   (SELECT res.mailing_id, res.shortname, res.senddate, res.change_date, res.isOnlyPostType FROM ")
-                    .append("   (SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date, a.is_post AS isOnlyPostType")
+                    .append("   (SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date ")
+                    .append(joinPostTypeColumns(companyId, "c"))
                     .append("       FROM mailing_account_tbl c")
                     .append("       INNER JOIN mailing_tbl a ON a.mailing_id = c.mailing_id")
                     .append("       WHERE c.company_id = ? AND c.status_field = '").append(statusField).append("' %s ) res")
@@ -2132,7 +2124,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                     .append("       ORDER BY senddate DESC, ").append(orderKey).append(" ASC)")
                     .append(" WHERE ROWNUM <= ?");
         } else {
-            query.append("SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date, a.is_post AS isOnlyPostType")
+            query.append("SELECT a.shortname, a.mailing_id, a.send_date AS senddate, a.change_date ")
+                    .append(joinPostTypeColumns(companyId, "c"))
                     .append("       FROM mailing_account_tbl c")
                     .append("       INNER JOIN mailing_tbl a ON a.mailing_id = c.mailing_id")
                     .append("       WHERE c.company_id = ? AND c.status_field = '").append(statusField).append("' %s ")
@@ -2153,7 +2146,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (StringUtils.isNotEmpty(filter)) {
             filter += " AND a.deleted = 0";
         }
-
+        
         filter += getTargetRestrictionsForReports(companyId, targetId, adminAltgIds, parameters, "a");
 
         final String filteredQuery = String.format(query.toString(), filter);
@@ -2247,28 +2240,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     }
 
     @Override
-    public List<Map<String, Object>> getSentAndScheduledRedesigned(Admin admin, Date startDate, Date endDate) {
-        List<Object> params = new ArrayList<>(List.of(
-                admin.getCompanyID(),
-                MaildropStatus.WORLD.getCodeString(),
-                MediaTypes.EMAIL.getMediaCode(),
-                startDate, endDate));
-        String sql = "SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, mailing.shortname," +
-                "   MIN(maildrop.senddate) senddate, mailinglist.shortname mailinglist_name" +
-                " FROM mailing_tbl mailing" +
-                "   LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
-                "   LEFT JOIN mailinglist_tbl mailinglist ON mailing.mailinglist_id = mailinglist.mailinglist_id" +
-                "   LEFT JOIN mailing_mt_tbl mediatype ON maildrop.mailing_id = mediatype.mailing_id" +
-                " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND mailing.is_template = 0" +
-                "   AND maildrop.status_field = ? AND mediatype.mediatype = ?" +
-                "   AND maildrop.senddate >= ? AND maildrop.senddate <= ? " +
-                getAdditionalSqlRestrictions(admin, params, "mailing") +
-                " GROUP BY mailing.mailing_id, mailing.shortname, mailing.work_status, mailinglist.shortname ";
-        return select(logger, addSortingToQuery(sql, "MIN(maildrop.senddate)", "desc"), params.toArray());
-    }
-
-    // TODO replace with getSentAndScheduledRedesigned while removing the old UI design EMMGUI-714
-    @Override
     public List<Map<String, Object>> getSentAndScheduled(Admin admin, final Date startDate, final Date endDate) {
         List<Object> params = new ArrayList<>();
         params.add(admin.getCompanyID());
@@ -2277,7 +2248,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
         String query = "SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, MAX(cmp.component_id) preview_component,"
 			+ " MIN(maildrop.senddate) senddate, mailing.shortname shortname, mediatype.param subject,"
-			+ " COALESCE(SUM(account.no_of_mailings), 0) mailssent, MAX(maildrop.genstatus) genstatus, maildrop.status_field statusField, mailing.is_post AS isOnlyPostType"
+			+ " COALESCE(SUM(account.no_of_mailings), 0) mailssent, MAX(maildrop.genstatus) genstatus, maildrop.status_field statusField"
+			+ joinPostTypeColumns(admin.getCompanyID(), "mailing")
 			+ " FROM mailing_tbl mailing LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id"
 			+ " LEFT JOIN mailing_mt_tbl mediatype ON maildrop.mailing_id = mediatype.mailing_id"
 			+ " LEFT JOIN mailing_account_tbl account ON (maildrop.mailing_id = account.mailing_id AND account.status_field = maildrop.status_field)"
@@ -2285,10 +2257,10 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 			+ " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND mailing.is_template = 0 AND maildrop.status_field IN ('" + MaildropStatus.WORLD.getCode() + "') AND mediatype.mediatype = " + MediaTypes.EMAIL.getMediaCode()
 			+ " AND maildrop.senddate > ? AND maildrop.senddate < ?"
 			+ getAdditionalSqlRestrictions(admin, params, "mailing")
-			+ " GROUP BY mailing.mailing_id, mailing.shortname, mediatype.param, mailing.work_status, maildrop.status_field, mailing.is_post";
+			+ " GROUP BY mailing.mailing_id, mailing.shortname, mediatype.param, mailing.work_status, maildrop.status_field";
         query = addSortingToQuery(query, "MIN(maildrop.senddate)", "desc");
         final List<Map<String, Object>> mailingList = select(logger, query, params.toArray());
-
+        
         for (final Map<String, Object> mailing : mailingList) {
             final String param = mailing.get("subject").toString();
             if (param != null) {
@@ -2297,31 +2269,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             }
         }
         return mailingList;
-    }
-
-    @Override
-    public List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate) {
-        List<Object> params = new ArrayList<>(List.of(
-                admin.getCompanyID(),
-                String.valueOf(MaildropStatus.WORLD.getCode()),
-                String.valueOf(MaildropStatus.ON_DEMAND.getCode()),
-                startDate,
-                endDate
-        ));
-
-        String query = "SELECT mailing.mailing_id mailing_id, mailing.work_status workstatus,"
-                + " MIN(maildrop.senddate) send_date, mailing.shortname shortname, mailinglist.shortname mailinglist_name"
-                + " FROM mailing_tbl mailing LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id"
-                + " LEFT JOIN mailing_mt_tbl mediatype ON maildrop.mailing_id = mediatype.mailing_id"
-                + " LEFT JOIN mailinglist_tbl mailinglist ON mailing.mailinglist_id = mailinglist.mailinglist_id"
-                + " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND mailing.is_template = 0 AND maildrop.status_field IN (?, ?) AND mediatype.mediatype = 0"
-                + (isOracleDB() ? " AND maildrop.senddate > CAST(? AS DATE) AND maildrop.senddate < CAST(? AS DATE)" : " AND maildrop.senddate > ? AND maildrop.senddate < ?")
-                + (isOracleDB() ? " AND maildrop.senddate > SYSDATE" : " AND maildrop.senddate > NOW()")
-                + getAdditionalSqlRestrictions(admin, params, "mailing")
-                + " GROUP BY mailing.mailing_id, mailing.shortname, mailing.work_status, maildrop.senddate, mailinglist.shortname";
-        query = addSortingToQuery(query, "MIN(maildrop.senddate)", "desc");
-
-        return select(logger, query, new ScheduledMailingRowMapper(), params.toArray());
     }
 
     @Override
@@ -2346,8 +2293,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                         "    mailing.shortname shortname," +
                         "    mediatype.param subject, " +
                         "    -1 genstatus, " +
-                        "    MAX(maildrop.gendate) lastMailDropDate," +
-                        "    mailing.is_post AS isOnlyPostType" +
+                        "    MAX(maildrop.gendate) lastMailDropDate " +
+                        joinPostTypeColumns(admin.getCompanyID(), "mailing") +
                         " FROM mailing_tbl mailing" +
                         "    LEFT JOIN mailing_mt_tbl mediatype ON mailing.mailing_id = mediatype.mailing_id" +
                         "    LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
@@ -2364,7 +2311,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                         "        not exists (SELECT * FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id AND mds.status_field = 'W') " +
                         "        ) " +
                         "    ) " +
-                        "GROUP BY mailing.mailing_id, mailing.shortname, mediatype.param, mailing.work_status, mailing.plan_date, mediatype.param, mailing.is_post)" + (isOracleDB() ? "" : "subsel ");
+                        "GROUP BY mailing.mailing_id, mailing.shortname, mediatype.param, mailing.work_status, mailing.plan_date, mediatype.param )" + (isOracleDB() ? "" : "subsel ");
         query = addUnsentMailingSort(query, "mailingid", "desc");
         final List<Map<String, Object>> mailingList =
                 select(logger, query, params.toArray());
@@ -2376,31 +2323,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             }
         }
         return mailingList;
-    }
-
-    @Override
-    public List<Map<String, Object>> getPlannedMailingsRedesigned(Admin admin, Date startDate, Date endDate) {
-        List<Object> params = new ArrayList<>(List.of(
-                startDate, endDate,
-                admin.getCompanyID(),
-                MediaTypes.EMAIL.getMediaCode()));
-        String sql =
-                " SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, mailing.plan_date senddate," +
-                "  mailing.shortname, mailinglist.shortname mailinglist_name" +
-                " FROM mailing_tbl mailing" +
-                "    LEFT JOIN mailing_mt_tbl mediatype ON mailing.mailing_id = mediatype.mailing_id" +
-                "    LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
-                "    LEFT JOIN mailinglist_tbl mailinglist ON mailing.mailinglist_id = mailinglist.mailinglist_id " +
-                " WHERE mailing.plan_date >= ? AND mailing.plan_date <= ?" +
-                "   AND mailing.company_id = ? AND mailing.deleted = 0 AND mediatype.mediatype = ?" +
-                getAdditionalSqlRestrictions(admin, params, "mailing") +
-                "  AND (maildrop.senddate IS NULL OR " +
-                "      (maildrop.senddate IS NOT NULL AND maildrop.status_field IN ('A', 'T') AND " +
-                "      maildrop.genchange = (SELECT max(mds.genchange) FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id) AND " +
-                "      not exists (SELECT * FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id AND mds.status_field = 'W')) " +
-                "  )" +
-                " GROUP BY mailing.mailing_id, mailing.shortname, mailinglist.shortname, mailing.work_status, mailing.plan_date "; 
-        return select(logger, addUnsentMailingSort(sql, "mailingid", "desc"), params.toArray());
     }
 
     @Override
@@ -2572,35 +2494,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         }
     }
 
-    protected static class ScheduledMailingRowMapper implements RowMapper<ScheduledMailing> {
-        @Override
-        public ScheduledMailing mapRow(final ResultSet resultSet, final int i) throws SQLException {
-            ScheduledMailing mailing = new ScheduledMailing();
-
-            mailing.setId(resultSet.getInt("mailing_id"));
-            mailing.setShortname(resultSet.getString("shortname"));
-            mailing.setWorkstatus(resultSet.getString("workstatus"));
-            mailing.setMailinglistName(resultSet.getString("mailinglist_name"));
-            mailing.setMaildropSendDate(resultSet.getTimestamp("send_date"));
-
-            return mailing;
-        }
-    }
-
-    private class ComparisonMailingRowMapper implements RowMapper<MailingBase> {
-        @Override
-        public MailingBase mapRow(final ResultSet resultSet, final int i) throws SQLException {
-            final MailingBase newBean = new MailingBaseImpl();
-            newBean.setId(resultSet.getInt("mailing_id"));
-            newBean.setShortname(resultSet.getString("shortname"));
-            newBean.setDescription(resultSet.getString("description"));
-            newBean.setSenddate(resultSet.getTimestamp("senddate"));
-            newBean.setOnlyPostType(BooleanUtils.toBoolean(resultSet.getInt("isOnlyPostType")));
-
-            return newBean;
-        }
-    }
-
     /**
      * This Rowmapper reads all values from mailing_tbl also the class MailingBase cannot hold them all.
      * This is for keeping former code especially in JSPs working, which might use this values by reflection.
@@ -2694,7 +2587,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
     @Override
     public Map<String, Object> getMailingWithWorkStatus(final int mailingId, final int companyId) {
         final StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT a.company_id, a.mailing_id, a.shortname, a.description, a.work_status, a.mailing_type, b.senddate, a.change_date, a.is_post AS isOnlyPostType");
+        queryBuilder.append("SELECT a.company_id, a.mailing_id, a.shortname, a.description, a.work_status, a.mailing_type, b.senddate, a.change_date ")
+                .append(joinPostTypeColumns(companyId, "a"));
         if (isOracleDB()) {
             queryBuilder.append(", a.workflow_id AS usedInWorkflows ");
 
@@ -2724,34 +2618,38 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void cleanTestDataInSuccessTbl(final int mailingID, final int companyID) {
+    public void cleanTestDataInSuccessTbl(final int mailingId, final int companyId) {
         // delete from success_<companyId>_tbl
-        final boolean individualSuccessTableExists = DbUtilities.checkIfTableExists(getDataSource(), getSuccessTableName(companyID));
+        final boolean individualSuccessTableExists = DbUtilities.checkIfTableExists(getDataSource(), getSuccessTableName(companyId));
         if (individualSuccessTableExists) {
-        	String sqlBounce = "DELETE FROM success_" + companyID + "_tbl"
-				+ " WHERE mailing_id = ?"
-					+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
-						+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
-			update(logger, sqlBounce, mailingID, mailingID);
+            String deleteAlias = "";
+            if (!isOracleDB()) {
+                deleteAlias = "sc";
+            }
+            final String query = "DELETE " + deleteAlias + " FROM " + getSuccessTableName(companyId) + " sc"
+                    + " WHERE sc.mailing_id = ?"
+                    + " AND EXISTS (SELECT 1 FROM " + getBindingTableName(companyId) + " bind"
+                    + " WHERE bind.customer_id = sc.customer_id"
+                    + " AND bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "')"
+                    + " AND bind.mailinglist_id IN (SELECT m.mailinglist_id FROM mailing_tbl m WHERE m.mailing_id = ? AND m.company_id = ?))";
+            update(logger, query, mailingId, mailingId, companyId);
         }
     }
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void cleanTestDataInMailtrackTbl(final int mailingID, final int companyID) {
-    	String sql = "DELETE FROM mailtrack_" + companyID + "_tbl"
-			+ " WHERE mailing_id = ?"
-				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
-					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
-		update(logger, sql, mailingID, mailingID);
+    public void cleanTestDataInMailtrackTbl(final int mailingId, final int companyId) {
+        final String query = "DELETE" + (isOracleDB() ? "" : " mtrack") + " FROM " + getMailtrackTableName(companyId) + " mtrack"
+                + " WHERE EXISTS (SELECT 1 FROM maildrop_status_tbl mds"
+                + " WHERE mds.status_id = mtrack.maildrop_status_id"
+                + " AND mds.mailing_id = ?)"
+                + " AND EXISTS (SELECT 1 FROM " + getBindingTableName(companyId) + " bind"
+                + " WHERE bind.customer_id = mtrack.customer_id"
+                + " AND bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "')"
+                + " AND bind.mailinglist_id IN (SELECT m.mailinglist_id FROM mailing_tbl m WHERE m.mailing_id = ? AND m.company_id = ?))";
+        update(logger, query, mailingId, mailingId, companyId);
     }
-
-    @Override
-    @DaoUpdateReturnValueCheck
-    public void deleteMailtrackDataForMailing(final int companyID, final int mailingID) {
-		update(logger, "DELETE FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
-    }
-
+    
     protected String addSortingToQuery(final String query, final String sortField, final String sortDirection) {
         String sorting = getSortingClause(sortField, sortDirection);
 
@@ -3089,7 +2987,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         final String sql = "SELECT m.company_id, m.mailing_id, m.shortname, m.content_type, m.description, m.deleted, "
                 + " m.mailtemplate_id, m.mailinglist_id, m.mailing_type, m.campaign_id, m.archived, m.target_expression, "
                 + " m.split_id, m.creation_date, m.test_lock, m.is_template, m.needs_target, m.openaction_id, m.clickaction_id, "
-                + " m.statmail_recp, m.statmail_onerroronly, m.clearance_threshold, m.clearance_email, m.dynamic_template, m.plan_date, m.is_post AS isOnlyPostType"
+                + " m.statmail_recp, m.statmail_onerroronly, m.clearance_threshold, m.clearance_email, m.dynamic_template, m.plan_date "
+                + joinPostTypeColumns(companyID, "m")
                 + " FROM mailing_tbl m"
                 + " WHERE m.company_id = ? AND m.is_template = 1 AND m.deleted = 0"
                 + " ORDER BY m.shortname";
@@ -3099,22 +2998,22 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     @Override
     public List<MailingBase> getMailingTemplatesWithPreview(Admin admin, String sort, String direction) {
-		String selectPart = "SELECT m.mailing_id, m.shortname, COALESCE(cmp.component_id, 0) AS preview_component, m.description, m.creation_date, m.is_post AS isOnlyPostType";
+		String selectPart = "SELECT m.mailing_id, m.shortname, COALESCE(cmp.component_id, 0) AS preview_component, m.description, m.creation_date " + joinPostTypeColumns(admin.getCompanyID(), "m");
 		String fromPart = " FROM mailing_tbl m" + " LEFT JOIN component_tbl cmp ON m.mailing_id = cmp.mailing_id AND cmp.comptype = " + MailingComponentType.ThumbnailImage.getCode();
 		String wherePart = " WHERE m.company_id = ? AND m.is_template = 1 AND m.deleted = 0";
-
+		
         final List<Object> params = new ArrayList<>();
         params.add(admin.getCompanyID());
-
-		if (configService.isDisabledMailingListsSupported()) {
+        
+		if (isDisabledMailingListsSupported()) {
 			wherePart += " AND m.mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY;
 	        params.add(admin.getAdminID());
 		}
 		String orderPart = " ORDER BY ";
-
+		
 
         wherePart += getTargetRestrictions(admin, params, "m");
-
+        
         if (StringUtils.isBlank(sort)) {
             orderPart += getSortingExpression("m.mailing_id", direction);
         } else {
@@ -3127,7 +3026,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 
     @Override
     public List<MailingBase> getMailingsByStatusE(final int companyID) {
-        final List<Map<String, Object>> result = select(logger, "SELECT mail.mailing_id, mail.shortname, mail.is_post AS isOnlyPostType"
+        final List<Map<String, Object>> result = select(logger, "SELECT mail.mailing_id, mail.shortname "
+                + joinPostTypeColumns(companyID, "mail")
                 + " FROM mailing_tbl mail, maildrop_status_tbl mds WHERE mail.mailing_id = mds.mailing_id AND mail.company_id = ? AND mail.deleted = 0 AND mail.mailing_type = 1 AND mds.status_field = 'E'", companyID);
         final List<MailingBase> returnList = new ArrayList<>();
         for (final Map<String, Object> row : result) {
@@ -3536,10 +3436,6 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 newBean.put("recipientsCount", resultSet.getInt("recipientscount"));
             }
 
-            if (DbUtilities.resultsetHasColumn(resultSet, "plan_date")) {
-                newBean.put("planDate", resultSet.getTimestamp("plan_date"));
-            }
-
             if (hasActions(mailingID, companyID)) {
                 newBean.put("hasActions", true);
             }
@@ -3620,7 +3516,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (mailing.getSplitID() < 0) {
             throw new IllegalArgumentException("SplitId should not be negative!");
         }
-
+        
         mailing.setTargetExpression(checkTargetExpressionForALTG(companyId, mailing.getTargetExpression()));
 
         if (isOracleDB()) {
@@ -3690,9 +3586,9 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         if (mailing.getSplitID() < 0) {
             throw new IllegalArgumentException("SplitId should not be negative!");
         }
-
+        
         mailing.setTargetExpression(checkTargetExpressionForALTG(companyId, mailing.getTargetExpression()));
-
+        
         final Object[] params = new Object[]{
                 mailing.getCampaignID(),
                 mailing.getShortname(),
@@ -3784,6 +3680,17 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         }
     }
 
+    private Map<String, ComTrackableLink> getTrackableLinksMap(final int companyId, final int mailingId) {
+        final List<ComTrackableLink> trackableLinks = trackableLinkDao.getTrackableLinks(companyId, mailingId);
+        final Map<String, ComTrackableLink> map = new HashMap<>(trackableLinks.size());
+
+        for (final ComTrackableLink trackableLink : trackableLinks) {
+            map.put(trackableLink.getFullUrl(), trackableLink);
+        }
+
+        return map;
+    }
+
     @Override
     public boolean deleteMailingsByCompanyIDReally(int companyID) {
         // Do nothing in OpenEMM
@@ -3806,31 +3713,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         return selectInt(logger, "SELECT COUNT(clearance) FROM rulebased_sent_tbl WHERE mailing_id = ? AND clearance = 0", mailingId) > 0;
     }
 
-    @Override
-    public boolean isDateBasedMailingWasSentToday(int mailingId) {
-        String query;
-        if (isOracleDB()) {
-            query = "SELECT COUNT(*) FROM rulebased_sent_tbl WHERE mailing_id = ? AND TRUNC(lastsent) = TRUNC(SYSDATE)";
-        } else {
-            query = "SELECT COUNT(*) FROM rulebased_sent_tbl WHERE mailing_id = ? AND DATE(lastsent) = CURDATE()";
-        }
-
-        return selectInt(logger, query, mailingId) > 0;
-    }
-
-    @Override
-    public void allowDateBasedMailingResending(int mailingId) {
-        String query;
-        if (isOracleDB()) {
-            query = "DELETE FROM rulebased_sent_tbl WHERE mailing_id = ? AND TRUNC(lastsent) = TRUNC(SYSDATE)";
-        } else {
-            query = "DELETE FROM rulebased_sent_tbl WHERE mailing_id = ? AND DATE(lastsent) = CURDATE()";
-        }
-
-        update(logger, query, mailingId);
-    }
-
-    @Override
+	@Override
 	public void removeApproval(int mailingID, int companyID) {
 		final String sql = "UPDATE mailing_tbl SET test_lock=? WHERE mailing_id=? AND company_id=?";
 		update(logger, sql, 1, mailingID, companyID);
@@ -3841,21 +3724,8 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         String query = "SELECT test_lock FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
         return selectIntWithDefaultValue(logger, query, 1, mailingId, companyId) == 0;
     }
-
-    @Override
-    public void restoreMailing(int mailingId, int companyId) {
-        String query = "UPDATE mailing_tbl SET deleted = 0 WHERE mailing_id = ? AND company_id = ? AND deleted = 1";
-        update(logger, query, mailingId, companyId);
-    }
-
-    @Override
-    public void restoreMailings(Collection<Integer> mailingIds, int companyID) {
-        String query = "UPDATE mailing_tbl SET deleted = 0 WHERE company_id = ? AND deleted = 1 AND "
-                + makeBulkInClauseForInteger("mailing_id", mailingIds);
-        update(logger, query, companyID);
-    }
-
-    /**
+	
+	/**
 	 * Only used for testing purposes
 	 */
 	public void resetFulltextsearchSupportedCache() {
@@ -3872,7 +3742,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 		if (targetExpression != null) {
 			TargetLightsOptions options = TargetLightsOptions.builder().setCompanyId(companyID).setAltgMode(AltgMode.ALTG_ONLY).build();
 			List<Integer> altgTargetIDs = targetDao.getTargetLightsBySearchParameters(options).stream().map(TargetLight::getId).collect(Collectors.toList());
-
+			
 			targetExpression = targetExpression.trim();
 			int bracketLevel = 0;
 			boolean withinFirstTopLevelBrackets = true;
@@ -3884,7 +3754,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 				} else {
 					trailingExpressionPart.append(targetExpression.charAt(i));
 				}
-
+					
 				if ('(' == targetExpression.charAt(i)) {
 					bracketLevel++;
 				} else if (')' == targetExpression.charAt(i)) {
@@ -3894,7 +3764,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 					}
 				}
 			}
-
+			
 			if (trailingExpressionPart.length() > 0) {
 				String trailingExpressionPartString = trailingExpressionPart.toString();
 				for (Integer altgTargetID : altgTargetIDs) {
@@ -3930,18 +3800,12 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public void deleteOutdatedMailingData(int companyID, int mailingID) {
+	public void deleteOutdatedMailingData(int mailingID) {
 		update(logger, "DELETE FROM mailing_mt_tbl WHERE mailing_id = ?", mailingID);
 		update(logger, "DELETE FROM serverprio_tbl WHERE mailing_id = ?", mailingID);
 		update(logger, "DELETE FROM mailing_info_tbl WHERE mailing_id= ?", mailingID);
 		update(logger, "DELETE FROM mailing_grid_tbl WHERE mailing_id = ?", mailingID);
 		update(logger, "DELETE FROM mailing_import_lock_tbl WHERE mailing_id = ?", mailingID);
-		//update(logger, "DELETE FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
-		update(logger, "DELETE FROM mailing_backend_log_tbl WHERE mailing_id = ? ", mailingID);
-		update(logger, "DELETE FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
-		update(logger, "DELETE FROM test_recipients_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE mailing_id = ?)", mailingID);
-		update(logger, "DELETE FROM mailing_import_lock_tbl WHERE mailing_id = ?", mailingID);
-		update(logger, "DELETE FROM maildrop_status_tbl WHERE mailing_id = ?", mailingID);
 	}
 
 	@Override
@@ -3950,28 +3814,12 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 	}
 
 	/**
-	 * Only store changed shortname, description, archive_id and archived.
+	 * Only store changed shortname, description an archiveid.
 	 * Those are the values that are allowed for change even after a mailing was delievered
 	 */
 	@Override
 	public boolean saveMailingDescriptiveData(Mailing mailing) {
-		return update(logger, "UPDATE mailing_tbl SET shortname = ?, description = ?, campaign_id = ?, archived = ? WHERE company_id = ? AND mailing_id = ?",
-			mailing.getShortname(), mailing.getDescription(), mailing.getCampaignID(), mailing.getArchived(), mailing.getCompanyID(), mailing.getId()) > 0;
+		return update(logger, "UPDATE mailing_tbl SET shortname = ?, description = ?, campaign_id = ? WHERE company_id = ? AND mailing_id = ?",
+			mailing.getShortname(), mailing.getDescription(), mailing.getCampaignID(), mailing.getCompanyID(), mailing.getId()) > 0;
 	}
-
-    @Override
-    public List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID) {
-        String query = "SELECT DISTINCT m.company_id, m.mailing_id, m.shortname, m.description, m.mailing_type, m.work_status, m.content_type " +
-                "FROM mailing_tbl m LEFT JOIN rdir_url_tbl ru ON ru.mailing_id = m.mailing_id AND ru.deleted = 0 " +
-                "WHERE m.deleted = 0 AND m.company_id = ? AND (m.openaction_id = ? OR m.clickaction_id = ? OR ru.action_id = ?)";
-
-        return select(logger, query, LightweightMailingRowMapper.INSTANCE, companyID, actionId, actionId, actionId);
-    }
-
-	@Override
-	public List<LightweightMailing> getMailingTemplates(int companyID) {
-        String selectMailingTemplates = "SELECT company_id, mailing_id, shortname, description, mailing_type, work_status, content_type FROM mailing_tbl"
-        	+ " WHERE company_id = ? AND deleted = 0 AND is_template = 1";
-        return select(logger, selectMailingTemplates, LightweightMailingRowMapper.INSTANCE, companyID);
-    }
 }

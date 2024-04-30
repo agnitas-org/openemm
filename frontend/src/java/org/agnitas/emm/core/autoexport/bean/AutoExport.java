@@ -100,6 +100,7 @@ public class AutoExport {
     private int autoExportId;
 	private AutoExportType type = AutoExportType.Recipient;
     private int companyId;
+    private int adminId;
     private int exportProfileId;
 	private int exportCsvDescriptionID;
 	private int exportReferenceTableID;
@@ -166,6 +167,14 @@ public class AutoExport {
         this.companyId = companyId;
     }
 
+    public int getAdminId() {
+        return adminId;
+    }
+
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
+    }
+
     public int getExportProfileId() {
         return exportProfileId;
     }
@@ -196,7 +205,7 @@ public class AutoExport {
 
 	public String getFileServerWithoutCredentials() {
 		if (StringUtils.isNotBlank(fileServer) && fileServer.contains("@")) {
-			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.lastIndexOf("@") + 1));
+			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.indexOf("@") + 1));
 		} else {
 			return StringEscapeUtils.escapeHtml4(fileServer);
 		}

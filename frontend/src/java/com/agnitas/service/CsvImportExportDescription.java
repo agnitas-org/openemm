@@ -337,7 +337,7 @@ public class CsvImportExportDescription {
 				readerForAnalyse.setAlwaysTrim(true);
 				importDataColumns = readerForAnalyse.readNextCsvLine();
 			} catch (Exception e) {
-				throw new ImportError(ImportErrorKey.cannotReadImportFileWithReason, e.getMessage());
+				throw new ImportError(ImportErrorKey.cannotReadImportFile, e);
 			}
 		}
 		

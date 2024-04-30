@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp --%>
 <%@ page import="org.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jsp --%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp--%>
@@ -75,7 +75,7 @@
                     <div class="col-sm-4">
                         <label class="control-label" for="shortname">
                             <mvc:message var="nameMsg" code="default.Name"/>
-                            ${nameMsg}*
+                            ${nameMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">

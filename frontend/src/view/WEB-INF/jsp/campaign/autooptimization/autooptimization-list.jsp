@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -35,7 +35,7 @@
                 <display:column headerClass="js-table-sort" titleKey="default.description" property="description" />
 
                 <display:column headerClass="squeeze-column">
-                    <emm:ShowByPermission token="campaign.autoopt">
+                    <emm:ShowByPermission token="campaign.change">
                         <c:url var="viewLink" value="/optimization/${optimization.id}/view.action">
                             <c:param name="campaignID" value="${form.campaignID}"/>
                             <c:param name="campaignName" value="${form.campaignName}"/>

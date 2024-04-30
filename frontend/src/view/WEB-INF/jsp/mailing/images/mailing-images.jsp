@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.MailingComponentType" %>
 <%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>

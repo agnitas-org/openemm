@@ -13,7 +13,6 @@ package com.agnitas.emm.core.mailing.service;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
@@ -22,7 +21,7 @@ public interface ComMailingParameterService {
 
 	List<ComMailingParameter> getMailingParameters(int companyId, int mailingId);
 
-	List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId, DateRange changeDate);
+	List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId);
 
 	ComMailingParameter getParameter(int mailingInfoID, final Admin admin);
 

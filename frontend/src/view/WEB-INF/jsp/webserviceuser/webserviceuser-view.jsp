@@ -1,5 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="logic"   uri="http://struts.apache.org/tags-logic" %>
+<%@ taglib prefix="html"    uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="c"		uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="webserviceUserForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserForm"--%>
@@ -42,6 +45,16 @@
                     <mvc:text path="email" id="email" cssClass="form-control" size="52" maxlength="99"/>
                 </div>
             </div>
+            <logic:messagesPresent property="email">
+                <div class="form-group">
+                    <div class="col-sm-4">&nbsp;</div>
+                    <div class="col-sm-8">
+                        <html:messages id="msg" message="false" property="email">
+                            <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br />
+                        </html:messages>
+                    </div>
+                </div>
+            </logic:messagesPresent>
 
             <div class="form-group">
                 <div class="col-sm-4">
@@ -151,7 +164,7 @@
 							<div class="tile-header">
 		                        <a href="#" class="headline" data-toggle-tile="#userrights_category_${index.index}">
 		                            <i class="icon tile-toggle icon-angle-up"></i>
-									<mvc:message code="webservice.permissionCategory.${category}"/>
+									<bean:message key="webservice.permissionCategory.${category}"/>
 								</a>
 
                                 <ul class="tile-header-actions">
@@ -186,7 +199,7 @@
 										<li class="list-group-item">
 											<label class="checkbox-inline">
 												<mvc:checkbox path="endpointPermission[${permission.endpointName}]" value="true" />
-												<mvc:message code="webservice.permission.${permission.endpointName}" arguments="${[permission.endpointName]}" />
+												<bean:message key="webservice.permission.${permission.endpointName}" arg0="${permission.endpointName}" />
 											</label>
 										</li>
 									</c:forEach>				

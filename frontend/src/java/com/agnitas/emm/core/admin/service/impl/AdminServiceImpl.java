@@ -26,13 +26,11 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.impl.AdminEntryImpl;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.Tuple;
 import org.agnitas.util.preferences.PreferenceItem;
@@ -64,8 +62,6 @@ import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.admin.service.PermissionFilter;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.permission.service.PermissionService;
@@ -93,7 +89,7 @@ public class AdminServiceImpl implements AdminService {
 	protected EmmLayoutBaseDao emmLayoutBaseDao;
 	protected PermissionService permissionService;
 	private AdminPasswordChangedNotifier passwordChangedNotifier;
-
+	
 	@Required
 	public void setAdminDao(AdminDao adminDao) {
 		this.adminDao = adminDao;
@@ -236,7 +232,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public boolean deleteAdmin(final int adminID, final int companyID) {
+	public final boolean deleteAdmin(final int adminID, final int companyID) {
 		final boolean result = adminDao.delete(adminID, companyID);
 
 		if (!result) {
@@ -337,7 +333,7 @@ public class AdminServiceImpl implements AdminService {
 		return AdminSavingResult.success(savingAdmin, isPasswordChanged);
 	}
 
-    @Override
+	@Override
 	public Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID) {
 		tokens = CollectionUtils.emptyIfNull(tokens);
 		Admin editorAdmin = adminDao.getAdmin(editorAdminID, companyID);
@@ -423,21 +419,6 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public void grantPermission(Admin admin, Permission permission) {
-		// if permission was granted from another session, then just grant it to user object
-		if (!adminDao.isPermissionGranted(admin.getAdminID(), permission)) {
-			adminDao.grantPermission(admin.getAdminID(), permission);
-		}
-		admin.getAdminPermissions().add(permission);
-	}
-
-	@Override
-	public void revokePermission(Admin admin, Permission permission) {
-		adminDao.revokePermission(admin.getAdminID(), permission);
-		admin.getAdminPermissions().remove(permission);
-	}
-
-	@Override
 	public Admin getAdmin(int adminID, int companyID){
 		return adminDao.getAdmin(adminID, companyID);
 	}
@@ -468,14 +449,11 @@ public class AdminServiceImpl implements AdminService {
 			Integer filterAdminGroupId,
 			Integer filterMailinglistId,
 			String filterLanguage,
-			DateRange creationDate,
-			DateRange lastLoginDate,
-			String username,
 			String sort,
 			String direction,
 			int pageNumber,
 			int pageSize){
-		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, creationDate, lastLoginDate, username, sort, direction, pageNumber, pageSize, false);
+		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, sort, direction, pageNumber, pageSize, false);
 	}
 	
 	@Override
@@ -490,30 +468,6 @@ public class AdminServiceImpl implements AdminService {
 			admins.addAll(adminDao.getAllWsAdminsByCompanyId(admin.getCompanyID()));
 		}
 		return admins;
-	}
-
-	@Override
-	public List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin, UserActivityLogService.UserType type) {
-		boolean masterLogShowAllowed = admin.permissionAllowed(Permission.MASTERLOG_SHOW);
-		boolean adminLogShowAllowed = admin.permissionAllowed(Permission.ADMINLOG_SHOW);
-
-		if (!masterLogShowAllowed && !adminLogShowAllowed) {
-			return List.of(new AdminEntryImpl(admin));
-		}
-
-		if (UserActivityLogService.UserType.SOAP.equals(type)) {
-			return masterLogShowAllowed
-					? adminDao.getAllWsAdmins()
-					: adminDao.getAllWsAdminsByCompanyId(admin.getCompanyID());
-		}
-
-		boolean isRestful = UserActivityLogService.UserType.REST.equals(type);
-
-		if (masterLogShowAllowed) {
-			return adminDao.getAllAdmins(isRestful);
-		}
-
-		return adminDao.getAllAdminsByCompanyId(isRestful, admin.getCompanyID());
 	}
 
 	@Override
@@ -713,21 +667,9 @@ public class AdminServiceImpl implements AdminService {
 		target.setGender(sourceForm.getGender());
 		target.setTitle(sourceForm.getTitle());
 		target.setAdminPhone(sourceForm.getAdminPhone());
-        target.setPasswordReminderState(getPasswordReminderStateToSave(target, sourceForm));
 
 		mapExtendedFields(target, sourceForm, editorAdmin);
 	}
-
-    private static PasswordReminderState getPasswordReminderStateToSave(Admin target, AdminForm form) {
-        if (!form.isPasswordReminderEnabled()) {
-            return PasswordReminderState.NOT_REQUIRED;
-        }
-        PasswordReminderState passwordReminderState = target.getPasswordReminderState();
-        if (passwordReminderState == null || passwordReminderState == PasswordReminderState.NOT_REQUIRED) {
-            return PasswordReminderState.REQUIRED;
-        }
-        return passwordReminderState;
-    }
 
 	@Override
 	public int getAccessLimitTargetId(Admin admin) {
@@ -758,16 +700,6 @@ public class AdminServiceImpl implements AdminService {
 	public int getSecurityCodeMailingId(String language) {
 		return adminDao.getSecurityCodeMailingId(language);
 	}
-
-	@Override
-	public int getOpenEmmDemoAccountWaitingMailingID(String language) {
-		return adminDao.getOpenEmmDemoAccountWaitingMailingID(language);
-	}
-
-	@Override
-	public int getOpenEmmDemoAccountDataMailingID(String language) {
-		return adminDao.getOpenEmmDemoAccountDataMailingID(language);
-	}
 	
 	@Override
 	public PaginatedListImpl<AdminEntry> getRestfulUserList(
@@ -780,19 +712,21 @@ public class AdminServiceImpl implements AdminService {
 			Integer filterAdminGroupId,
 			Integer filterMailinglistId,
 			String filterLanguage,
-			DateRange creationDate,
-			DateRange lastLoginDate,
-			String username,
 			String sort,
 			String direction,
 			int pageNumber,
 			int pageSize){
-		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, creationDate, lastLoginDate, username, sort, direction, pageNumber, pageSize, true);
+		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, sort, direction, pageNumber, pageSize, true);
 	}
 
 	@Override
 	public List<Admin> getAdmins(int companyID, boolean restful) {
 		return adminDao.getAdmins(companyID, restful);
+	}
+
+	@Override
+	public boolean isDisabledMailingListsSupported() {
+		return adminDao.isDisabledMailingListsSupported();
 	}
 
 	@Override
@@ -819,40 +753,4 @@ public class AdminServiceImpl implements AdminService {
 	public List<Map<String, Object>> getAdminsLight(int companyID, boolean restful) {
 		return adminDao.getAdminsLight(companyID, restful);
 	}
-
-	@Override
-	public void saveDashboardLayout(String layout, Admin admin) {
-		adminDao.saveDashboardLayout(layout, admin.getAdminID());
-	}
-
-	@Override
-	public String getDashboardLayout(Admin admin) {
-		return adminDao.getDashboardLayout(admin.getAdminID());
-	}
-
-    @Override
-    public List<Admin> getAdminsToWarnAboutPasswordExpiration(CompaniesConstraints constraints) {
-        return companyDao.getActiveCompanies(constraints).stream()
-                .map(this::getAdminsToWarnAboutPasswordExpiration)
-                .flatMap(Collection::stream)
-                .filter(Objects::nonNull).collect(Collectors.toList());
-    }
-
-    private List<Admin> getAdminsToWarnAboutPasswordExpiration(int companyId) {
-        return getAdmins(companyId, false).stream()
-                .filter(admin -> admin.getPasswordReminderState() == PasswordReminderState.REQUIRED)
-                .filter(admin -> StringUtils.isNotBlank(admin.getEmail()))
-                .filter(admin -> PasswordState.EXPIRING == getPasswordState(admin))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public int getPasswordExpirationMailingId(String language) {
-        return adminDao.getPasswordExpirationMailingId(language);
-    }
-
-    @Override
-    public void setPasswordReminderState(int adminId, PasswordReminderState state) {
-        adminDao.setPasswordReminderState(adminId, state);
-    }
 }

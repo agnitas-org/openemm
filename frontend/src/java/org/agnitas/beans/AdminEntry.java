@@ -47,9 +47,5 @@ public interface AdminEntry {
 	boolean isPasswordExpired();
 
 	void setPasswordExpired(boolean passwordExpired);
-
-	void setCompanyName(String companyName);
-
-	String getCompanyName();
 	
 }

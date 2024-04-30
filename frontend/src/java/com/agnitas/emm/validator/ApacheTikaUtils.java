@@ -38,10 +38,6 @@ public class ApacheTikaUtils {
         return isContentTypeStartsWith(data, "video/");
     }
 
-    public static boolean isValidAudio(byte[] data) {
-        return isContentTypeStartsWith(data, "audio/");
-    }
-
     public static boolean isValidPdf(byte[] data) {
         return isExpectedContentType(data, "application/pdf");
     }
@@ -78,14 +74,7 @@ public class ApacheTikaUtils {
 
     public static String getFileExtension(InputStream stream, boolean includeDot) {
         String contentType = getContentType(stream);
-        return getFileExtension(contentType, includeDot);
-    }
 
-    public static String getFileExtension(byte[] data, boolean includeDot) {
-        return getFileExtension(getContentType(data), includeDot);
-    }
-
-    private static String getFileExtension(String contentType, boolean includeDot) {
         TikaConfig config = TikaConfig.getDefaultConfig();
         try {
             String extension = config.getMimeRepository()
@@ -106,7 +95,7 @@ public class ApacheTikaUtils {
 
     public static String getContentType(InputStream stream) {
         try {
-            return new Tika().detect(stream);
+            return getContentType(IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
             return "";

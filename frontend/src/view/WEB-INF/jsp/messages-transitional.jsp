@@ -1,3 +1,6 @@
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
@@ -87,7 +90,7 @@
 <c:if test="${affectedMailingsCount > 0 or affectedMailingsLightweightCount > 0}">
     <c:set var="affectedMailingsTable">
         <c:if test="${not empty affectedMailingsMessageKey}">
-            <mvc:message code="${affectedMailingsMessageKey}"/>
+            <bean:message key="${affectedMailingsMessageKey}"/>
         </c:if>
 
         <c:choose>
@@ -95,7 +98,7 @@
                 <display:table name="affectedMailings" id="affectedMailing" class="errorTable" length="${affectedMailingsCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                        <c:url var="mailingLink" value="/mailing/${affectedMailing.id}/settings.action" />
+                        <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.id}/settings.action"/></c:set>
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">
                                 <a href="${mailingLink}" title="<c:out value="${mailingName}" escapeXml="true"/>" style="color: red;">
@@ -112,14 +115,14 @@
                 </display:table>
 
                 <c:if test="${affectedMailingsCount < fn:length(affectedMailings)}">
-                    <mvc:message code="error.showNumberOfLeft" arguments="${fn:length(affectedMailings) - affectedMailingsCount}"/>
+                    <bean:message key="error.showNumberOfLeft" arg0="${fn:length(affectedMailings) - affectedMailingsCount}"/>
                 </c:if>
             </c:when>
             <c:when test="${affectedMailingsLightweightCount > 0}">
                 <display:table name="affectedMailingsLightweight" id="affectedMailing" class="errorTable" length="${affectedMailingsLightweightCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                        <c:url var="mailingLink" value="/mailing/${affectedMailing.mailingID}/settings.action" />
+                        <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.mailingID}/settings.action"/></c:set>
 
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">
@@ -137,7 +140,7 @@
                 </display:table>
 
                 <c:if test="${affectedMailingsLightweightCount < fn:length(affectedMailingsLightweight)}">
-                    <mvc:message code="error.showNumberOfLeft" arguments="${fn:length(affectedMailingsLightweight) - affectedMailingsLightweightCount}"/>
+                    <bean:message key="error.showNumberOfLeft" arg0="${fn:length(affectedMailingsLightweight) - affectedMailingsLightweightCount}"/>
                 </c:if>
             </c:when>
         </c:choose>
@@ -147,7 +150,7 @@
 <c:if test="${affectedReportsCount > 0}">
     <c:set var="affectedReportsTable">
         <c:if test="${not empty affectedReportsMessageKey}">
-            <mvc:message code="${affectedReportsMessageKey}"/>
+            <bean:message key="${affectedReportsMessageKey}"/>
         </c:if>
 
         <display:table name="affectedReports" id="affectedReport" class="errorTable" length="${affectedReportsCount}">
@@ -171,7 +174,7 @@
         </display:table>
 
         <c:if test="${affectedReportsCount < fn:length(affectedReports)}">
-            <mvc:message code="error.showNumberOfLeft" arguments="${fn:length(affectedReports) - affectedReportsCount}"/>
+            <bean:message key="error.showNumberOfLeft" arg0="${fn:length(affectedReports) - affectedReportsCount}"/>
         </c:if>
     </c:set>
 </c:if>
@@ -179,7 +182,7 @@
 <c:if test="${affectedDependentWorkflowsCount > 0}">
     <c:set var="affectedDependentWorkflowsTable">
         <c:if test="${not empty affectedDependentWorkflowsMessageKey}">
-            <mvc:message code="${affectedDependentWorkflowsMessageKey}" arguments=""/> <%--hardcode. Will change it, when change 'error.profiledb.dependency.workflow'--%>
+            <bean:message key="${affectedDependentWorkflowsMessageKey}" arg0=""/> <%--hardcode. Will change it, when change 'error.profiledb.dependency.workflow'--%>
         </c:if>
 
         <display:table name="affectedDependentWorkflows" id="affectedDependentWorkflow" class="errorTable" length="${affectedDependentWorkflowsCount}">
@@ -191,34 +194,26 @@
         </display:table>
 
         <c:if test="${affectedDependentWorkflowsCount < fn:length(affectedDependentWorkflows)}">
-            <mvc:message code="error.showNumberOfLeft" arguments="${fn:length(affectedDependentWorkflows) - affectedDependentWorkflowsCount}"/>
+            <bean:message key="error.showNumberOfLeft" arg0="${fn:length(affectedDependentWorkflows) - affectedDependentWorkflowsCount}"/>
         </c:if>
     </c:set>
 </c:if>
 
-<emm:messagesPresent type="success">
+<logic:messagesPresent property="org.apache.struts.action.GLOBAL_MESSAGE" message="true">
     <script type="text/javascript" data-message="">
-        <emm:messages var="msg" type="success">
-            AGN.Lib.Messages('<mvc:message code="default.Success"/>', '${emm:escapeJs(msg)}', 'success');
-        </emm:messages>
+        <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="true">
+            AGN.Lib.Messages('<bean:message key="default.Success"/>', '${emm:escapeJs(msg)}', 'success');
+        </html:messages>
     </script>
-</emm:messagesPresent>
-
-<emm:messagesPresent type="info">
-    <script type="text/javascript" data-message="">
-        <emm:messages var="msg" type="info">
-            AGN.Lib.Messages('<mvc:message code="Info"/>', '${emm:escapeJs(msg)}', 'info');
-        </emm:messages>
-    </script>
-</emm:messagesPresent>
+</logic:messagesPresent>
 
 
 <c:set var="showWarningMessages" value="false"/>
 <c:set var="warningMessagesHtmlCode">
-    <emm:messagesPresent type="warning">
+    <logic:messagesPresent property="de.agnitas.GLOBAL_WARNING" message="true">
         <c:set var="showWarningMessages" value="true"/>
-        <emm:messages var="msg" type="warning">${msg}<br/></emm:messages>
-    </emm:messagesPresent>
+        <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING" message="true">${msg}<br/></html:messages>
+    </logic:messagesPresent>
 
     <c:if test="${not empty affectedMailingsTable and fn:toLowerCase(affectedMailingsMessageType) eq 'warning'}">
         <c:set var="showWarningMessages" value="true"/>
@@ -236,14 +231,49 @@
     </c:if>
 </c:set>
 
+
+<c:set var="showPermanentWarningMessages" value="false"/>
+<c:set var="permanentWarningMessagesHtmlCode">
+    <c:if test="${not empty affectedMailingsTable and fn:toLowerCase(affectedMailingsMessageType) eq 'warning_permanent'}">
+        <c:set var="showPermanentWarningMessages" value="true"/>
+        ${affectedMailingsTable}
+    </c:if>
+
+    <c:if test="${not empty affectedReportsTable and fn:toLowerCase(affectedReportsMessageType) eq 'warning_permanent'}">
+        <c:set var="showPermanentWarningMessages" value="true"/>
+        ${affectedReportsTable}
+    </c:if>
+
+    <c:if test="${not empty affectedDependentWorkflowsTable and fn:toLowerCase(affectedDependentWorkflowsMessageType) eq 'warning_permanent'}">
+        <c:set var="showWarningMessages" value="true"/>
+        ${affectedDependentWorkflowsTable}
+    </c:if>
+</c:set>
+
+
 <c:set var="showErrorMessages" value="false"/>
 <c:set var="errorMessagesHtmlCode">
-    <emm:messagesPresent type="error">
-        <c:set var="showErrorMessages" value="true"/>
-        <emm:messages var="msg" type="error">${msg}<br/></emm:messages>
-    </emm:messagesPresent>
+    <c:choose>
+        <c:when test="${not empty formFieldErrorDontShow && formFieldErrorDontShow}">
+            <logic:messagesPresent property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
+                <c:set var="showErrorMessages" value="true"/>
+                <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">${msg}<br/></html:messages>
+            </logic:messagesPresent>
+        </c:when>
+        <c:otherwise>
+            <logic:messagesPresent message="false">
+                <c:set var="showErrorMessages" value="true"/>
+                <html:messages id="msg" message="false">${msg}<br/></html:messages>
+            </logic:messagesPresent>
+        </c:otherwise>
+    </c:choose>
 
-    <c:if test="${errorReport ne null and errorReport.size() gt 0}">
+    <logic:notEmpty name="customErrorMessage">
+        <c:set var="showErrorMessages" value="true"/>
+        ${customErrorMessage}
+    </logic:notEmpty>
+
+    <logic:notEmpty name="errorReport">
         <%-- Isn't shown if there's no error messages --%>
         <display:table name='errorReport' id='errorMessageReportRow' class='errorTable' >
             <display:column  headerClass='head_name' class='name'  sortable='false' titleKey='mailing.tag'>
@@ -257,7 +287,7 @@
                 </c:choose>
             </display:column>
         </display:table>
-    </c:if>
+    </logic:notEmpty>
 
     <c:if test="${not empty affectedMailingsTable and fn:toLowerCase(affectedMailingsMessageType) eq 'alert'}">
         <c:set var="showErrorMessages" value="true"/>
@@ -283,7 +313,7 @@
     </c:if>
 </c:set>
 
-<c:if test="${showWarningMessages}">
+<logic:equal name="showWarningMessages" value="true">
     <script type="text/html" id="messages-warnings-${SUFFIX}" data-message="">
         ${warningMessagesHtmlCode}
     </script>
@@ -296,14 +326,34 @@
                 messageHtmlCode = messageResource.html();
                 messageResource.remove();
                 if (messageHtmlCode) {
-                    AGN.Lib.Messages('<mvc:message code="warning"/>', messageHtmlCode, 'warning');
+                    AGN.Lib.Messages('<bean:message key="warning"/>', messageHtmlCode, 'warning');
                 }
             }
         })();
     </script>
-</c:if>
+</logic:equal>
 
-<c:if test="${showErrorMessages}">
+<logic:equal name="showPermanentWarningMessages" value="true">
+    <script type="text/html" id="messages-warnings-permanent-${SUFFIX}" data-message="">
+        ${permanentWarningMessagesHtmlCode}
+    </script>
+
+    <script type="text/javascript" data-message="">
+      (function(){
+        var messageResource = $('script#messages-warnings-permanent-${SUFFIX}[data-message=""]');
+        var messageHtmlCode = '';
+        if (messageResource) {
+          messageHtmlCode = messageResource.html();
+          messageResource.remove();
+          if (messageHtmlCode) {
+            AGN.Lib.Messages('<bean:message key="warning"/>', messageHtmlCode, 'warning_permanent');
+          }
+        }
+      })();
+    </script>
+</logic:equal>
+
+<logic:equal name="showErrorMessages" value="true">
     <script type="text/html" id="messages-errors-${SUFFIX}" data-message="">
         ${errorMessagesHtmlCode}
     </script>
@@ -316,17 +366,25 @@
           messageHtmlCode = messageResource.html();
           messageResource.remove();
           if (messageHtmlCode) {
-            AGN.Lib.Messages('<mvc:message code="Error"/>', messageHtmlCode, 'alert');
+            AGN.Lib.Messages('<bean:message key="Error"/>', messageHtmlCode, 'alert');
           }
         }
       })();
     </script>
+</logic:equal>
+
+<c:if test="${POPUPS_FIELDS_ERRORS ne null}">
+    <c:forEach var="fieldError" items="${POPUPS_FIELDS_ERRORS}">
+        <script type="text/html" data-message="${fieldError.fieldName}">
+                <mvc:message code="${fieldError.message.code}" arguments="${fieldError.argumentsStr}"/>
+        </script>
+    </c:forEach>
 </c:if>
 
-<emm:messagesPresent type="error" formField="true">
-    <emm:fieldMessages var="msg" type="error" fieldNameVar="fieldName">
-        <script type="text/html" data-message="${fieldName}">
-            ${msg}
-        </script>
-    </emm:fieldMessages>
-</emm:messagesPresent>
+<logic:messagesPresent property="de.agnitas.GLOBAL_WARNING_PERMANENT" message="true">
+    <script type="text/javascript" data-message>
+        <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING_PERMANENT" message="true" >
+            AGN.Lib.Messages('<bean:message key="warning" />', '${emm:escapeJs(msg)}', 'warning_permanent');
+        </html:messages>
+    </script>
+</logic:messagesPresent>

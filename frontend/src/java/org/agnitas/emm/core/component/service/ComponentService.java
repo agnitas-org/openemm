@@ -14,7 +14,6 @@ import java.util.List;
 
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
-import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import org.agnitas.beans.MailingComponent;
 
 public interface ComponentService {
@@ -55,6 +54,14 @@ public interface ComponentService {
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
-	List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter);
+	List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
 
+	/**
+	 * Gets the form components.
+	 *
+	 * @param companyID the company id
+	 * @param formID the form id
+	 * @return the form components
+	 */
+	List<FormComponent> getFormComponents(int companyID, int formID);
 }

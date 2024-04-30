@@ -10,17 +10,24 @@
 
 package org.agnitas.ecs.backend.dao.impl;
 
-import com.agnitas.emm.ecs.EcsModeType;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.ecs.backend.beans.ClickStatInfo;
-import org.agnitas.ecs.backend.beans.impl.ClickStatInfoImpl;
-import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.ecs.backend.beans.ClickStatColor;
+import org.agnitas.ecs.backend.beans.ClickStatInfo;
+import org.agnitas.ecs.backend.beans.impl.ClickStatColorImpl;
+import org.agnitas.ecs.backend.beans.impl.ClickStatInfoImpl;
+import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.emm.ecs.EcsModeType;
 
 /**
  * Implementation of {@link org.agnitas.ecs.backend.dao.EmbeddedClickStatDao}
@@ -28,9 +35,15 @@ import java.util.Map;
  * Selects the data for the heatmap.
  */
 public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedClickStatDao {
-
-	private static final Logger logger = LogManager.getLogger(EmbeddedClickStatDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(EmbeddedClickStatDaoImpl.class);
 	
+	@Override
+	public List<ClickStatColor> getClickStatColors(int companyId) {
+		String sqlStatement = "SELECT * FROM click_stat_colors_tbl WHERE company_id = ? ORDER BY range_end";
+        return select(logger, sqlStatement, new ClickStatColor_RowMapper(), companyId);
+	}
+
 	@Override
 	public ClickStatInfo getClickStatInfo(int companyId, int mailingId, int mode, int deviceClass) throws Exception {
         try {
@@ -101,5 +114,18 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 			return sql;
 		}
 		return "";
+	}
+	
+    protected class ClickStatColor_RowMapper implements RowMapper<ClickStatColor> {
+		@Override
+		public ClickStatColor mapRow(ResultSet resultSet, int row) throws SQLException {
+			ClickStatColor colorBean = new ClickStatColorImpl();
+			colorBean.setId((int) resultSet.getLong("id"));
+			colorBean.setCompanyId((int) resultSet.getLong("company_id"));
+			colorBean.setColor(resultSet.getString("color"));
+			colorBean.setRangeStart(resultSet.getBigDecimal("range_start").doubleValue());
+			colorBean.setRangeEnd(resultSet.getBigDecimal("range_end").doubleValue());
+			return colorBean;
+		}
 	}
 }

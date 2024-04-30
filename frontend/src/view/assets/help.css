@@ -8348,18 +8348,6 @@ Assigned to tile images in a tiled background
 /**
  * Browser colors for inbox preview
  */
-.table tbody > tr.disabled {
-  text-decoration: none;
-  background-color: #ebebe4; }
-  .table tbody > tr.disabled td {
-    cursor: default; }
-  .table tbody > tr.disabled .form-control {
-    pointer-events: none;
-    background-color: transparent; }
-
-body.dark-theme .table tbody > tr.disabled {
-  background-color: #4a4949; }
-
 /*! normalize.css v3.0.1 | MIT License | git.io/normalize */
 /**
  * 1. Set default font family to sans-serif.

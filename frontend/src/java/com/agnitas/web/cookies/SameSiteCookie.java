@@ -14,19 +14,10 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 
-
 /**
  * Very simple class to define cookies supporting the
  * SameSite attribute.
  */
-
-/* 
- * With Tomcat 10.1 this class becomes deprecated because the required API methods
- * to set the SameSite policy becomes available with that version.
- * 
- * Tomcat 10.0 and prior have no method to set SameSite or arbitrary attributes.
- */
-@Deprecated
 public final class SameSiteCookie {
 	/** Name of the cookie. */
 	private final String name;

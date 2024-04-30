@@ -16,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 import com.agnitas.beans.FormComponent;
-import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.dao.MailingComponentDao;
@@ -227,8 +226,13 @@ public class ComponentServiceImpl implements ComponentService {
 	}
 
 	@Override
-	public List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter) {
-		return formComponentDao.getFormComponentDescriptions(filter);
+	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponent.FormComponentType componentType) {
+		return formComponentDao.getFormComponentDescriptions(companyID, formID, componentType);
+	}
+
+	@Override
+	public List<FormComponent> getFormComponents(int companyID, int formID) {
+		return formComponentDao.getFormComponents(companyID, formID);
 	}
 
 	protected void deleteComponentImpl(ComponentModel model) {

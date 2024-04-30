@@ -24,5 +24,5 @@ public interface ByteArrayEncoder {
 	 * 
 	 * @throws EncodingException on errors during encoding
 	 */
-    byte[] encode(final byte[] data) throws EncodingException;
+	public byte[] encode(final byte[] data) throws EncodingException;
 }

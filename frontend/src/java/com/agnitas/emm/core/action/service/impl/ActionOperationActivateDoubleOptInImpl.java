@@ -29,7 +29,6 @@ import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptIn
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperation {
@@ -66,18 +65,10 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 		HttpServletRequest request = (HttpServletRequest) requestParameters.get("_request");
 
 		if (requestParameters.get("customerID") == null) {
-			errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
-			
-			logger.warn("ActivateDoubleOptIn: Missing 'customerID' parameter");
-			
 			return false;
 		} else {
 			int customerID = (Integer) requestParameters.get("customerID");
 			if (customerID == 0) {
-				errors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
-				
-				logger.warn("ActivateDoubleOptIn: Customer ID is 0");
-				
 				return false;
 			} else {
 				if (activateDoiOperation.isForAllLists()) {
@@ -89,54 +80,25 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 							try {
 								mailingID = (Integer) requestParameters.get("mailingID");
 							} catch (Exception e) {
-								errors.addErrorCode(ErrorCode.INVALID_MAILING_ID);
-								
-								logger.warn("ActivateDoubleOptIn: Invalid mailingID");
+								logger.error("Invalid mailingID for DoubleOptInActiovation");
 							}
 							returnValue |= changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 						}
 					}
-					
-					if(!returnValue) {
-						if(logger.isInfoEnabled()) {
-							logger.info(String.format("ActivateDoubleOptIn: No binding status changed (company %d, customer %d)", companyID, customerID));
-						}
-					}
-					
 					return returnValue;
 				} else {
 					if (requestParameters.get("mailingID") == null) {
-						errors.addErrorCode(ErrorCode.MISSING_MAILING_ID);
-						
-						logger.warn("ActivateDoubleOptIn: Missing mailing ID");
-						
 						return false;
 					} else {
 						int mailingID = (Integer) requestParameters.get("mailingID");
 						int mailinglistID = mailingDao.getMailinglistId(mailingID, companyID);
 						if (mailinglistID <= 0) {
-							logger.warn("ActivateDoubleOptIn: Mailinglist ID is 0");
-							
-							errors.addErrorCode(ErrorCode.INVALID_MAILINGLIST_ID);
-							
 							return false;
 						} else {
-							final BindingEntry bindingEntry = bindingEntryDao.get(customerID, companyID, mailinglistID, activateDoiOperation.getMediaType().getMediaCode());
+							BindingEntry bindingEntry = bindingEntryDao.get(customerID, companyID, mailinglistID, activateDoiOperation.getMediaType().getMediaCode());
 							if (bindingEntry != null) {
-								final boolean result = changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
-
-								if(!result) {
-									if(logger.isInfoEnabled()) {
-										logger.info(String.format("ActivateDoubleOptIn: Binding entry not changed (company %d, customer %d, mailinglist %d, media: %d)", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode()));
-									}
-								}
-								
-								return result;
+								return changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 							} else {
-								if(logger.isInfoEnabled()) {
-									logger.info(String.format("ActivateDoubleOptIn: No binding entry found (company %d, customer %d, mailinglist %d, media: %d)", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode()));
-								}
-								
 								return false;
 							}
 						}

@@ -40,7 +40,6 @@ public class ExportForm {
     private DateFormat dateTimeFormat = DateFormat.ddMMyyyyHHmmss;
     private String timezone = "Europe/Berlin";
     private String decimalSeparator = ",";
-    private boolean useDecodedValues;
     private Locale locale = new Locale("en", "US");
     private String timestampStart;
     private String timestampEnd;
@@ -353,14 +352,6 @@ public class ExportForm {
         this.customColumns = customColumns;
     }
 
-    public boolean isUseDecodedValues() {
-        return useDecodedValues;
-    }
-
-    public void setUseDecodedValues(boolean useDecodedValues) {
-        this.useDecodedValues = useDecodedValues;
-    }
-
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("shortname", shortname);
@@ -378,7 +369,6 @@ public class ExportForm {
         map.put("dateTimeFormat", dateTimeFormat);
         map.put("timezone", timezone);
         map.put("decimalSeparator", decimalSeparator);
-        map.put("useDecodedValues", useDecodedValues);
         map.put("locale", locale);
         map.put("timestampStart", timestampStart);
         map.put("timestampEnd", timestampEnd);
@@ -416,7 +406,6 @@ public class ExportForm {
                 dateTimeFormat,
                 timezone,
                 decimalSeparator,
-                useDecodedValues,
                 locale,
                 timestampStart,
                 timestampEnd,

@@ -16,11 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DbColumnType;
-import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
@@ -38,19 +34,6 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	@Override
 	public List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception {
 		return getCachedRecipientFieldsData(companyID);
-	}
-
-	@Override
-	public List<RecipientFieldDescription> getRecipientFields(int companyID, String fieldName, String dbFieldName, String description, DbColumnType.SimpleDataType type, ProfileFieldMode mode) throws Exception {
-		List<RecipientFieldDescription> fields = getRecipientFields(companyID);
-
-		return fields.stream()
-				.filter(f -> StringUtils.isBlank(fieldName) || f.getShortName().toLowerCase().contains(fieldName.toLowerCase()))
-				.filter(f -> StringUtils.isBlank(dbFieldName) || f.getColumnName().toLowerCase().contains(dbFieldName.toLowerCase()))
-				.filter(f -> StringUtils.isBlank(description) || (f.getDescription() != null && f.getDescription().toLowerCase().contains(description.toLowerCase())))
-				.filter(f -> type == null || type.equals(f.getSimpleDataType()))
-				.filter(f -> mode == null || mode.equals(f.getDefaultPermission()))
-				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -149,59 +132,5 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 
 	public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
 		this.recipientProfileHistoryService = recipientProfileHistoryService;
-	}
-
-	@Override
-	public boolean hasRecipients(int companyID) {
-		return recipientFieldDao.hasRecipients(companyID);
-	}
-
-	@Override
-	public boolean hasRecipientsWithNullValue(int companyID, String columnName) {
-		return recipientFieldDao.hasRecipientsWithNullValue(companyID, columnName);
-	}
-
-	@Override
-	public boolean mayAddNewRecipientField(int companyID) throws Exception {
-		if (companyID <= 0) {
-    		return false;
-    	} else {
-    		int maxFields;
-    		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
-    		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
-    		if (companyMaxFields >= 0 && (companyMaxFields < systemMaxFields || systemMaxFields < 0)) {
-    			maxFields = companyMaxFields;
-    		} else {
-    			maxFields = systemMaxFields;
-    		}
-
-    		List<RecipientFieldDescription> recipientFields = getRecipientFields(companyID);
-    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
-			int currentFieldCount = companySpecificFields.size();
-			
-			if (currentFieldCount < maxFields) {
-				return true;
-			} else if (currentFieldCount < maxFields + configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful)) {
-				return true;
-			} else {
-				return false;
-			}
-    	}
-	}
-	
-	@Override
-	public final int countCustomerEntries(final int companyID) {
-		return recipientFieldDao.countCustomerEntries(companyID);
-	}
-
-	@Override
-	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) throws Exception {
-		if (getRecipientField(companyID, fieldname) != null) {
-			// Field already exists, so a new default value will only take effect on newly inserted entries, which should not take too much time
-			return true;
-		} else {
-			// Field does not exist yet, so a default value which is not empty must be copied in every existing entry, which can take a lot of time
-			return StringUtils.isEmpty(fieldDefault) || recipientFieldDao.countCustomerEntries(companyID) <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
-		}
 	}
 }

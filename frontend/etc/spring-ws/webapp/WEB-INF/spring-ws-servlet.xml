@@ -29,20 +29,20 @@
 	</bean>
 
 	<bean id="validationHandler" class="org.agnitas.emm.springws.handlers.ValidationHandler"/>
-	
-	<bean id="xsdSchema" class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
-		<property name="xsds">
-			<list>
-				<value>OpenEmm.xsd</value>
-				<value>Emm.xsd</value>
-			</list>
-		</property>
-	</bean>
 
 	<bean id="emmservices" class="org.agnitas.emm.springws.WsDefinitionWrapper">
 		<constructor-arg name="configService" ref="ConfigService" />
 
-		<property name="schemaCollection" ref="xsdSchema" />
+		<property name="schemaCollection">
+			<bean class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
+				<property name="xsds">
+					<list>
+						<value>OpenEmm.xsd</value>
+						<value>Emm.xsd</value>
+					</list>
+				</property>
+			</bean>
+		</property>
 		<property name="portTypeName" value="emm"/>
 		<property name="targetNamespace" value="http://agnitas.com/ws/definitions"/>
 	</bean>
@@ -61,7 +61,7 @@
                 <ref bean="updateTargetGroupEndpoint"/>
                 <ref bean="copyMailingEndpoint"/>
 				<ref bean="addTargetGroupEndpoint"/>
-				
+				<ref bean="getFullviewUrlEndpoint" />
             </set>
         </property>
 		<property name="order" value="1"/>
@@ -125,10 +125,10 @@
 	<sws:interceptors>
 		<bean class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
 
-		<ref bean="schemaValidatingInterceptor" />	
 		<ref bean="wsSecurityInterceptor"/>
 		<ref bean="permissionInterceptor" />
 		<ref bean="throttlingInterceptor"/>
+		
 		
 	</sws:interceptors>
 

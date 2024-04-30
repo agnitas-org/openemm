@@ -1,4 +1,3 @@
-/* TODO: EMMGUI-714: remove when old design will be removed*/
 .editor-content-body {
     width: 100%;
     height: 100%;
@@ -712,6 +711,11 @@ footer#footnotes-container {
 .toolbarButton[data-type="deadline"],
 .dialog-title-image[data-type="deadline"] {
     background-image: url(../../images/campaignManager/icon_deadline_s.png);
+}
+
+.toolbarButton[data-type="report"],
+.dialog-title-image[data-type="report"] {
+    background-image: url(../../images/campaignManager/icon_report_s.png);
 }
 
 .toolbarButton[data-type="recipient"],

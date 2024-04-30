@@ -13,7 +13,6 @@ package org.agnitas.emm.core.blacklist.service;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -48,7 +47,7 @@ public interface BlacklistService {
 
     boolean update(int companyId, String email, String reason);
 
-    PaginatedListImpl<BlacklistDto> getAll(BlacklistOverviewFilter filter, int companyId);
+    PaginatedListImpl<BlacklistDto> getAll(int companyId, String sort, String direction, int page, int rowNumber, String likePattern);
 
     List<BlacklistDto> getAll(int companyId) throws Exception;
 

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -7,6 +7,7 @@
 
 <c:url var="exportListUrl" value="/export/list.action"/>
 
+<c:set var="agnNavigationKey" 		value="subscriber_export" 	scope="request" />
 <c:set var="agnTitleKey" 			value="export" 				scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 		scope="request" />
 <c:set var="sidemenu_sub_active" 	value="export" 				scope="request" />

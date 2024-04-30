@@ -14,24 +14,22 @@ package org.agnitas.util.importvalues;
  * Values for charset property of import profile
  */
 public enum Charset {
-
-	ISO_8859_1("ISO-8859-1", 0, "mailing.iso-8859-1"),
-	UTF_8("UTF-8", 1, "mailing.utf-8"),
-	CHINESE_SIMPLIFIED("GB2312", 2, "mailing.gb2312"),
-	ISO_8859_15("ISO-8859-15", 3, "mailing.iso-8859-15"),
-	ISO_8859_2("ISO-8859-2", 4, "mailing.iso-8859-2"),
-	ISO_2022_JP("ISO-2022-JP", 5, "mailing.iso-2022-jp");
+	ISO_8859_1("ISO-8859-1", 0),
+	UTF_8("UTF-8", 1),
+	CHINESE_SIMPLIFIED("GB2312", 2),
+	ISO_8859_15("ISO-8859-15", 3),
+	ISO_8859_2("ISO-8859-2", 4),
+	ISO_2022_JP("ISO-2022-JP", 5);
 
 	/**
 	 * value that is used during import
 	 */
-	private final String charsetName;
+	private String charsetName;
 
 	/**
 	 * ID used for db storage
 	 */
-	private final int id;
-	private final String messageKey;
+	private int id;
 
 	public String getCharsetName() {
 		return charsetName;
@@ -41,14 +39,9 @@ public enum Charset {
 		return id;
 	}
 
-	public String getMessageKey() {
-		return messageKey;
-	}
-
-	Charset(String charsetName, int id, String messageKey) {
+	Charset(String charsetName, int id) {
 		this.charsetName = charsetName;
 		this.id = id;
-		this.messageKey = messageKey;
 	}
 
 	public static Charset getCharsetById(int id) throws Exception {

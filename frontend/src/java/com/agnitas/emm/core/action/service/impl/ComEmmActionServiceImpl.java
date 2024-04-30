@@ -15,33 +15,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.collections4.CollectionUtils;
+
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.action.bean.EmmActionDependency;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.service.ColumnInfoService;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 
 public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements ComEmmActionService {
@@ -50,22 +40,10 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
 	private static final transient Logger LOGGER = LogManager.getLogger(ComEmmActionServiceImpl.class);
 	
 	private final ColumnInfoService columnInfoService;
-    private ComUserformService userformService;
-    private MailingService mailingService;
 	
 	public ComEmmActionServiceImpl(final ColumnInfoService columnInfoService) {
 		this.columnInfoService = Objects.requireNonNull(columnInfoService);
-    }
-
-    @Required
-    public void setUserformService(ComUserformService userformService) {
-        this.userformService = userformService;
-    }
-
-    @Required
-    public void setMailingService(MailingService mailingService) {
-        this.mailingService = mailingService;
-    }
+	}
 
     @Override
     public void bulkDelete(Set<Integer> actionIds, int companyId) {
@@ -142,81 +120,40 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
         return emmActionDao.getEmmNotFormActions(companyId, includeInactive);
     }
 
-    @Override
-    public boolean containsReadonlyOperations(int actionId, Admin admin) {
-        if (actionId <= 0) {
-            return false;
-        }
-        return getEmmAction(actionId, admin.getCompanyID())
-                .getActionOperations().stream()
-                .anyMatch(o -> isReadonlyOperation(o, admin));
-    }
-	
-    @Override
-    public boolean isReadonlyOperation(AbstractActionOperationParameters operation, Admin admin) {
-        switch (operation.getOperationType()) {
-            case UPDATE_CUSTOMER:
-                return operation instanceof ActionOperationUpdateCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationUpdateCustomerParameters)operation).getColumnName(), admin);
-            case SUBSCRIBE_CUSTOMER:
-                return operation instanceof ActionOperationSubscribeCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationSubscribeCustomerParameters)operation).getKeyColumn(), admin);
-            case IDENTIFY_CUSTOMER:
-                return operation instanceof ActionOperationIdentifyCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationIdentifyCustomerParameters)operation).getKeyColumn(), admin);
-            default:
-                return false;
-        }
-   	}
+	@Override
+	public boolean canUserSaveAction(Admin admin, int actionId) {
+		if(actionId == 0) {	// New actions can always be saved
+			return true;
+		}
+		
+		final EmmAction action = getEmmAction(actionId, admin.getCompanyID());
+		
+		return canUserSaveAction(admin, action);
+	}
 
-    private boolean isReadonlyOperationRecipientField(String column, Admin admin) {
-        try {
-            ProfileField field = columnInfoService.getColumnInfo(admin.getCompanyID(), column, admin.getAdminID());
-            return isReadonlyOperationRecipientField(field);
-        } catch (Exception e) {
-            LOGGER.warn(
-                    "Error reading meta data for profile field '{}' (company ID {}, admin ID {})",
-                    column, admin.getCompanyID(), admin.getAdminID(), e);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean isReadonlyOperationRecipientField(ProfileField field) {
-        return field.getModeEdit() == ProfileFieldMode.ReadOnly || field.getModeEdit() == ProfileFieldMode.NotVisible;
-    }
-
-    @Override
-    public List<String> getActionsNames(Set<Integer> bulkIds, int companyID) {
-        return bulkIds.stream()
-                .map(id -> getEmmActionName(id, companyID))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public JSONArray getDependencies(int actionId, int companyId) {
-        List<EmmActionDependency> forms = userformService.getUserFormNamesByActionID(companyId, actionId)
-                .stream()
-                .map(t -> new EmmActionDependency(t.getFirst(), EmmActionDependency.Type.FORM, t.getSecond()))
-                .collect(Collectors.toList());
-
-        List<EmmActionDependency> mailings = mailingService.getMailingsUsingEmmAction(actionId, companyId)
-                .stream()
-                .map(m -> new EmmActionDependency(m.getMailingID(), EmmActionDependency.Type.MAILING, m.getShortname()))
-                .collect(Collectors.toList());
-
-        JSONArray jsonArray = new JSONArray();
-        for (EmmActionDependency dependency : CollectionUtils.union(forms, mailings)) {
-            JSONObject entry = new JSONObject();
-            entry.element("id", dependency.getId());
-            entry.element("name", dependency.getName());
-            entry.element("type", dependency.getType());
-            jsonArray.add(entry);
-        }
-
-        return jsonArray;
-    }
+	@Override
+	public boolean canUserSaveAction(Admin admin, EmmAction action) {
+		if(action == null) {
+			return true;
+		}
+		
+		for(final AbstractActionOperationParameters params : action.getActionOperations()) {
+			if(params instanceof ActionOperationUpdateCustomerParameters) {
+				final ActionOperationUpdateCustomerParameters actionParameters = (ActionOperationUpdateCustomerParameters) params;
+				
+				try {
+					final ProfileField field = this.columnInfoService.getColumnInfo(admin.getCompanyID(), actionParameters.getColumnName(), admin.getAdminID());
+					
+					if(field == null || field.getModeEdit() == ProfileFieldMode.ReadOnly || field.getModeEdit() == ProfileFieldMode.NotVisible) {
+						return false;
+					}
+				} catch(final Exception e) {
+					LOGGER.warn(String.format("Error reading meta data for profile field '%s' (company ID %d, admin ID %d)", actionParameters.getColumnName(), admin.getCompanyID(), admin.getAdminID()), e);
+				}
+			}
+		}
+		
+		return true;
+	}
+    
 }

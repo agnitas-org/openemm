@@ -20,7 +20,6 @@ public class EmailMediatypeForm extends MediatypeForm {
     private int linefeed = 72;
     private int mailFormat = 2;
     private String subject;
-    private String preHeader;
     private String fromEmail;
     private String fromFullname;
     private String replyEmail;
@@ -130,13 +129,5 @@ public class EmailMediatypeForm extends MediatypeForm {
 
     public void setBccRecipients(String bccRecipients) {
         this.bccRecipients = bccRecipients;
-    }
-
-    public String getPreHeader() {
-        return preHeader;
-    }
-
-    public void setPreHeader(String preHeader) {
-        this.preHeader = preHeader;
     }
 }

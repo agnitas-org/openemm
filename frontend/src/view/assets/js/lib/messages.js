@@ -71,6 +71,14 @@
       if (messages.alert) {
         displayMessages(t("defaults.error"), messages.alert, 'alert');
       }
+
+      if (messages.fields) {
+        $.each(messages.fields, function(name, errors) {
+          if (errors) {
+            displayMessages(t("defaults.error"), errors, 'alert');
+          }
+        });
+      }
     }
   };
 

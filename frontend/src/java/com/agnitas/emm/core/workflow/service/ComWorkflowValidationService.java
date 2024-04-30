@@ -38,25 +38,18 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.emm.core.components.service.MailingSendService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
-import com.agnitas.messages.I18nString;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -241,15 +234,13 @@ public class ComWorkflowValidationService {
     // Allowed statuses for base mailings (for follow-up)
     private static final Set<String> FOLLOWED_MAILING_STATUSES = new HashSet<>();
 
-    private TrackableLinkService trackableLinkService;
+    private ComTrackableLinkService trackableLinkService;
     private ComWorkflowService workflowService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
     private ComMailingDao mailingDao;
     private MaildropStatusDao maildropStatusDao;
     private ProfileFieldDao profileFieldDao;
-    private MailingSendService mailingSendService;
-    private MailingService mailingService;
     private ComTargetDao targetDao;
 
     static {
@@ -270,7 +261,7 @@ public class ComWorkflowValidationService {
             errorCodes.add("error.workflow.connection.notAllowed");
         }
         if (isInvalidAutoOptimizationTime(icons)) {
-            errorCodes.add("error.workflow.autoopt.time.short");
+            errorCodes.add("GWUA.error.workflow.autoopt.invalidTime");
         }
         return errorCodes.stream().map(Message::of).collect(Collectors.toList());
     }
@@ -422,7 +413,7 @@ public class ComWorkflowValidationService {
     }
 
     private void validateClickedLink(int companyId, List<Message> messages, int linkId) {
-        TrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
+        ComTrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
         if (link == null) {
             messages.add(Message.of("error.workflow.link.removed"));
         }
@@ -563,27 +554,6 @@ public class ComWorkflowValidationService {
                 .map(id -> maildropStatusDao.listMaildropStatus(id, companyId))
                 .flatMap(Collection::stream)
                 .anyMatch(this::hasForbiddenStatus);
-    }
-
-    public List<Message> validateMailingDataAndComponents(List<WorkflowIcon> workflowIcons, Admin admin) {
-        Locale locale = admin.getLocale();
-        return workflowIcons.stream()
-                .filter(WorkflowUtils::isMailingIcon)
-                .map(WorkflowUtils::getMailingId)
-                .filter(id -> id > 0)
-                .map(id -> mailingService.getMailing(admin.getCompanyID(), id))
-                .flatMap(mailing -> collectMailingDataAndComponentErrors(mailing, locale)).collect(Collectors.toList());
-    }
-
-    private Stream<Message> collectMailingDataAndComponentErrors(Mailing mailing, Locale locale) {
-        return mailingSendService.isRequiredDataAndComponentsExists(mailing)
-                .getErrorMessages().stream()
-                .map(error -> getErrorMsgWithMailingName(error, locale, mailing.getShortname()));
-    }
-
-    private static Message getErrorMsgWithMailingName(Message error, Locale locale, String mailingName) {
-        return Message.exact(I18nString.getLocaleString("referencingObject.MAILING", locale, mailingName) + ":<br>"
-                + I18nString.getLocaleString(error.getCode(), locale, error.getArguments()));
     }
 
     private boolean hasForbiddenStatus(MaildropEntry entry) {
@@ -806,19 +776,19 @@ public class ComWorkflowValidationService {
         return false;
     }
 
-    public boolean isStartDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
+    public boolean isNotStartDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
         for (WorkflowIcon icon : workflowIcons) {
             if (icon.getType() == WorkflowIconType.START.getId()) {
                 WorkflowStart start = (WorkflowStart) icon;
                 if (checkHasDateInThePast(start, timezone)) {
-                    return true;
+                    return false;
                 }
                 if (WorkflowUtils.is(start, WorkflowStartEventType.EVENT_DATE)) {
                     start.setMinute(0);
                 }
             }
         }
-        return false;
+        return true;
     }
 
     public boolean isNotStopDateInPast(List<WorkflowIcon> workflowIcons, TimeZone timezone) {
@@ -1358,6 +1328,36 @@ public class ComWorkflowValidationService {
         return false;
     }
 
+    private void buildSeenStartsNodes(List<Integer> seenStartsNodes, WorkflowNode node) {
+        List<WorkflowNode> prevNodes = node.getPrevNodes();
+        int prevNodesSize = prevNodes.size();
+        for (int i = 0; i < prevNodesSize; i++) {
+            WorkflowNode prevNode = prevNodes.get(i);
+            WorkflowIcon prevNodeIcon = prevNode.getNodeIcon();
+            if (prevNodeIcon.getType() == WorkflowIconType.START.getId()) {
+                if (!seenStartsNodes.contains(prevNodeIcon.getId())) {
+                    seenStartsNodes.add(prevNodeIcon.getId());
+                }
+            }
+            node.deletePrevNode(prevNode);
+            prevNode.deleteNextNode(node);
+            i--;
+            buildSeenStartsNodes(seenStartsNodes, prevNode);
+            prevNodesSize = prevNodes.size();
+        }
+
+        List<WorkflowNode> nextNodes = node.getNextNodes();
+        int nextNodesSize = nextNodes.size();
+        for (int i = 0; i < nextNodesSize; i++) {
+            WorkflowNode nextNode = nextNodes.get(i);
+            node.deleteNextNode(nextNode);
+            nextNode.deletePrevNode(node);
+            i--;
+            buildSeenStartsNodes(seenStartsNodes, nextNode);
+            nextNodesSize = nextNodes.size();
+        }
+    }
+
     public boolean isFixedDeadlineUsageCorrect(List<WorkflowIcon> workflowIcons) {
         boolean usedFixedDeadline = false;
         boolean usedActionBasedOrDateBasedMailing = false;
@@ -1816,28 +1816,6 @@ public class ComWorkflowValidationService {
         throw new WorkflowStructureException("Unexpected icon type : " + WorkflowIconType.fromId(type));
     }
 
-    public boolean containNotAllowedPauseChanges(List<WorkflowIcon> oldIcons, List<WorkflowIcon> newIcons) {
-        if (oldIcons.size() != newIcons.size()) {
-            return true;
-        }
-        for (int i = 0; i < oldIcons.size(); i++) {
-            WorkflowIcon oldIcon = oldIcons.get(i);
-            WorkflowIcon newIcon = newIcons.get(i);
-            if (!oldIcon.getConnections().equals(newIcon.getConnections())) {
-                return true;
-            }
-            if (!oldIcon.equals(newIcon) && !isMailingOrStopIconWithNotChangedType(oldIcon, newIcon)) {
-                return true; // Only mailing and stop icons can be changed in a paused campaign
-            }
-        }
-        return false;
-    }
-
-    private boolean isMailingOrStopIconWithNotChangedType(WorkflowIcon oldIcon, WorkflowIcon newIcon) {
-        return (WorkflowUtils.isMailingIcon(oldIcon) && WorkflowUtils.isMailingIcon(newIcon))
-                || (WorkflowUtils.isStopIcon(oldIcon) && WorkflowUtils.isStopIcon(newIcon));
-    }
-
     @Required
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
@@ -1867,22 +1845,12 @@ public class ComWorkflowValidationService {
     }
 
     @Required
-    public void setMailingSendService(MailingSendService mailingSendService) {
-        this.mailingSendService = mailingSendService;
-    }
-
-    @Required
-    public void setMailingService(MailingService mailingService) {
-        this.mailingService = mailingService;
-    }
-
-    @Required
     public void setTargetDao(ComTargetDao targetDao) {
         this.targetDao = targetDao;
     }
     
     @Required
-    public void setTrackableLinkService(TrackableLinkService trackableLinkService) {
+    public void setTrackableLinkService(ComTrackableLinkService trackableLinkService) {
         this.trackableLinkService = trackableLinkService;
     }
 }

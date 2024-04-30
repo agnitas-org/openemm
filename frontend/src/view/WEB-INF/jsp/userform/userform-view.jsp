@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -25,8 +25,7 @@
 
     <script id="config:userform-view" type="application/json">
         {
-            "actionURLPattern": "${actionEditUrlPattern}",
-            "formId": ${form.formId}
+            "actionURLPattern": "${actionEditUrlPattern}"
         }
     </script>
 
@@ -56,7 +55,7 @@
                             <span class="text">
                                 <mvc:message code="default.status.active"/>
                             </span>
-                            <mvc:checkbox id="is-active-switch" path="active"/>
+                            <mvc:checkbox path="active"/>
                             <div class="toggle-control"></div>
                         </label>
                     </li>
@@ -115,7 +114,6 @@
                                 <div class="input-group-btn">
                                   <a href="${userFormFullURLPatternNoUid}"
                                   	 id="formTestLink"
-                                     data-action="${not form.active ? 'activate-and-test' : ''}"
                                      data-tooltip="<mvc:message code='userform.test'/>"
                                      class="btn btn-regular btn-primary" target="_blank">
                                       <i class="icon icon-arrow-right"></i>
@@ -619,34 +617,4 @@
             </div>
         </div>
     </div>
-</script>
-
-<script id="userform-activate-and-test" type="text/x-mustache-template">
-     <div class="modal">
-       <div class="modal-dialog">
-         <div class="modal-content">
-             <div class="modal-header">
-               <button type="button" class="close-icon close" data-dismiss="modal">
-                 <i aria-hidden="true" class="icon icon-times-circle"></i>
-               </button>
-               <h4 class="modal-title"><mvc:message code="userform.activate" /></h4>
-             </div>
-             <div class="modal-body">
-                 <mvc:message code="userform.test.activate.question" />
-             </div>
-             <div class="modal-footer">
-                   <div class="btn-group">
-                     <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
-                       <i class="icon icon-times"></i>
-                       <span class="text"><mvc:message code="default.No"/></span>
-                     </button>
-                     <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
-                       <i class="icon icon-check"></i>
-                       <span class="text"><mvc:message code="default.Yes"/></span>
-                     </button>
-                   </div>
-             </div>
-         </div>
-       </div>
-     </div>
 </script>

@@ -10,32 +10,21 @@
 
 package com.agnitas.emm.core.birtstatistics.recipient.web;
 
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import java.io.ByteArrayInputStream;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 
-import com.agnitas.emm.core.report.services.RecipientReportService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.FormDate;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -63,21 +52,18 @@ public class RecipientStatController implements XssCheckAware {
 
     private final BirtStatisticsService birtStatisticsService;
     private final ComTargetService targetService;
-    private final RecipientReportService recipientReportService;
     private final MediaTypesService mediaTypesService;
     private final ConversionService conversionService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final UserActivityLogService userActivityLogService;
     private final ConfigService configService;
-
     
     public RecipientStatController(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
-                                   RecipientReportService recipientReportService, @Qualifier("MediaTypesService") MediaTypesService mediaTypesService, ConversionService conversionService,
+                                   @Qualifier("MediaTypesService") MediaTypesService mediaTypesService, ConversionService conversionService,
                                    MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                                    ConfigService configService) {
         this.birtStatisticsService = birtStatisticsService;
         this.targetService = targetService;
-        this.recipientReportService = recipientReportService;
         this.mediaTypesService = mediaTypesService;
         this.conversionService = conversionService;
         this.mailinglistApprovalService = mailinglistApprovalService;
@@ -90,18 +76,18 @@ public class RecipientStatController implements XssCheckAware {
         if (!validateDates(admin, form.getStartDate(), form.getEndDate(), popups)) {
             return "messages";
         }
-
+    
         SimpleDateFormat datePickerFormat = admin.getDateFormat();
         setDefaultDateValuesIfEmpty(form, datePickerFormat);
-
+    
         String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-
+        
         // Admins date format is missing in FormDate, so add it
         form.getStartDate().setFormatter(admin.getDateFormatter());
         form.getEndDate().setFormatter(admin.getDateFormatter());
-
+        
         RecipientStatisticDto statisticDto = convertToDto(form, admin);
-
+        
 		int maxPeriodDays = configService.getIntegerValue(ConfigValue.MaximumRecipientDetailPeriodDays, admin.getCompanyID());
     	long selectedDays = statisticDto.getLocaleStartDate().until(statisticDto.getLocalEndDate(), ChronoUnit.DAYS);
     	if (selectedDays > maxPeriodDays) {
@@ -112,21 +98,17 @@ public class RecipientStatController implements XssCheckAware {
     	}
 
         model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, sessionId, statisticDto));
-
+        
         model.addAttribute("localeDatePattern", datePickerFormat.toPattern());
-
+        
         model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
         model.addAttribute("mediatypes", mediaTypesService.getAllowedMediaTypes(admin));
-
+        
         model.addAttribute("yearlist", AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
-        if (StringUtils.equals(form.getReportName(), "remarks")) {
-            Map<String, Integer> remarks = recipientReportService.getRecipientRemarksStat(form.getMailingListId(), form.getTargetId(), admin.getCompanyID());
-            model.addAttribute("summedRemarks", recipientReportService.getFilteredRemarksJson(remarks, true));
-            model.addAttribute("notSummedRemarks", recipientReportService.getFilteredRemarksJson(remarks, false));
-        }
-        writeUAL(admin, "recipient statistics", "active submenu - recipient overview");
+        
+        userActivityLogService.writeUserActivityLog(admin, "recipient statistics", "active submenu - recipient overview", logger);
 
         return "stats_birt_recipient_stat";
     }
@@ -197,32 +179,5 @@ public class RecipientStatController implements XssCheckAware {
             return false;
         }
         return true;
-    }
-
-    @RequestMapping("/remarks-csv.action")
-    public Object remarksCsv(Admin admin, int mailingListId, int targetId, Popups popups) throws Exception {
-        byte[] csv = recipientReportService.getRecipientRemarksCSV(admin, mailingListId, targetId);
-        if (ArrayUtils.isEmpty(csv)) {
-            popups.alert("error.export.file_not_ready");
-            return MESSAGES_VIEW;
-        }
-
-        writeUAL(admin, "export recipient remarks csv", getRemarksCsvUALDescription(mailingListId, targetId));
-        String fileName = "recipient_remarks.csv";
-        return ResponseEntity.ok()
-                .contentLength(csv.length)
-                .contentType(MediaType.parseMediaType("application/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileName))
-                .body(new InputStreamResource(new ByteArrayInputStream(csv)));
-    }
-
-    private String getRemarksCsvUALDescription(int mailinglistId, int targetId) {
-        String mailinglist = mailinglistId <= 0 ? "All" : String.valueOf(mailinglistId);
-        String target = targetId <= 0 ? "All" : String.valueOf(targetId);
-        return String.format("mailinglistId = %s, target id = %s", mailinglist, target);
-    }
-
-    private void writeUAL(Admin admin, String action, String description) {
-        UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
     }
 }

@@ -14,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.Date;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -105,7 +104,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
 	@Override
 	public int getHighestAccessLimitingMailinglistsPerCompany() {
-		if (ConfigService.getInstance().isDisabledMailingListsSupported()) {
+		if (isDisabledMailingListsSupported()) {
 			return selectIntWithDefaultValue(logger, "SELECT MAX(amount) FROM (SELECT company_id, COUNT(DISTINCT mailinglist_id) as amount FROM disabled_mailinglist_tbl GROUP BY company_id) subsel", 0);
 		} else {
 			return 0;
@@ -114,7 +113,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
 	@Override
 	public int getHighestAccessLimitingTargetgroupsPerCompany() {
-		if (ConfigService.getInstance().isAccessLimitingTargetgroupsSupported()) {
+		if (isAccessLimitingTargetgroupsSupported()) {
 			return selectIntWithDefaultValue(logger, "SELECT MAX(amount) FROM (SELECT company_id, COUNT(*) as amount FROM dyn_target_tbl WHERE is_access_limiting = 1 GROUP BY company_id) subsel", 0);
 		} else {
 			return 0;
@@ -123,7 +122,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
 	@Override
 	public int getNumberOfAccessLimitingMailinglists(int companyID) {
-		if (ConfigService.getInstance().isDisabledMailingListsSupported()) {
+		if (isDisabledMailingListsSupported()) {
 			return selectIntWithDefaultValue(logger, "SELECT COUNT(DISTINCT mailinglist_id) FROM disabled_mailinglist_tbl WHERE company_id = ?", 0, companyID);
 		} else {
 			return 0;
@@ -132,7 +131,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
 	@Override
 	public int getNumberOfAccessLimitingTargetgroups(int companyID) {
-		if (ConfigService.getInstance().isAccessLimitingTargetgroupsSupported()) {
+		if (isAccessLimitingTargetgroupsSupported()) {
 			return selectIntWithDefaultValue(logger, "SELECT COUNT(*) FROM disabled_mailinglist_tbl WHERE dyn_target_tbl WHERE is_access_limiting = 1 AND company_id = ?", 0, companyID);
 		} else {
 			return 0;

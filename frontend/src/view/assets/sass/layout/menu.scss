@@ -280,42 +280,6 @@ body.wide-sidebar.dark-theme .l-menu .submenu .subitems {
   }
 }
 
-#design-switch-block {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
-
-  #switch-to-new-design-label {
-    display: none;
-    font-weight: 400;
-    margin-bottom: 0;
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .beta-badge {
-    display: none;
-    color: white;
-    background-color: #A91B1B;
-    border-radius: 5px;
-    padding: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 11px;
-  }
-}
-
-body.wide-sidebar {
-  #design-switch-block {
-    #switch-to-new-design-label, .beta-badge {
-      display: initial;
-    }
-  }
-}
-
 body.dark-theme #session-time-layout {
   background-color: $c-dt-session-timer-background;
   color: $c-dt-navigation-text;

@@ -166,10 +166,6 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
 	
 	            case "agnFORM":
 	                return resolveAgnForm();
-
-                case "agnFULLVIEW":
-                case "agnWEBVIEW":
-                    return getRedirectDomain() + "/fullview.action?agnUID=##AGNUID##";
 	                
 				default:
 					return resolveCustomAgnTag(tag);

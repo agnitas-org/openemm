@@ -1,8 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.ecs.EcsModeType" %>
 <%@ page import="com.agnitas.emm.core.mobile.bean.DeviceClass" %>
 
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -109,19 +109,19 @@
             </ul>
         </li>
     </c:set>
-    <tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
         <c:if test="${isMailingGrid}">
-            <tiles:putAttribute name="header" type="string">
+            <tiles:put name="header" type="string">
                 <ul class="tile-header-nav">
                     <!-- Tabs BEGIN -->
-                    <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                    <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                     <!-- Tabs END -->
                 </ul>
                 <ul class="tile-header-actions">${formHeaderActions}</ul>
-            </tiles:putAttribute>
+            </tiles:put>
         </c:if>
 
-        <tiles:putAttribute name="content" type="string">
+        <tiles:put name="content" type="string">
             <c:set var="formContent">
                 <div class="mailing-preview-header">
                     <div class="form-group">
@@ -152,7 +152,7 @@
                                 <ul class="list-floated list-spaced">
                                     <c:forEach var="color" items="${rangeColors}" varStatus="rowCounter">
                                         <li>
-                                            <i class="icon icon-circle" style="color:${color.color};"></i>
+                                            <i class="icon icon-circle" style="color:#${color.color};"></i>
                                             <mvc:message code="Heatmap.max"/>&nbsp;${color.rangeEnd}%
                                         </li>
                                     </c:forEach>
@@ -204,7 +204,7 @@
                 </c:otherwise>
             </c:choose>
 
-        </tiles:putAttribute>
-    </tiles:insertTemplate>
+        </tiles:put>
+    </tiles:insert>
 
 </mvc:form>

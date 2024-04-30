@@ -1,0 +1,10 @@
+<HelpBalloon>
+	<title>Mail-Format</title>
+	<content><![CDATA[<SPAN LANG="en-US">Text,
+HTML and</SPAN></FONT><SPAN LANG="en-GB"> </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-US">Offline-HTML</SPAN></FONT><SPAN LANG="en-GB">
+are the possible options. In HTML format, images and specific
+formatting may be added to the mailing.  In OfflineHTML format,
+images are actually integrated into the e-mail, while in the normal
+HTML version images are downloaded from the server once the e-mail is
+opened.]]></content>
+</HelpBalloon>

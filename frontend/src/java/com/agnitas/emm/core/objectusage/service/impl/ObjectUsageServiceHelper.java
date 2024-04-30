@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.workflow.beans.Workflow;
-import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 
 import com.agnitas.beans.TargetLight;
@@ -53,18 +52,6 @@ final class ObjectUsageServiceHelper {
 	public static List<ObjectUsage> mailingsToObjectUsage(final List<LightweightMailing> mailings) {
 		return mailings.stream()
 				.map(mailing -> new ObjectUsage(ObjectUserType.MAILING, mailing.getMailingID(), mailing.getShortname()))
-				.collect(Collectors.toList());
-	}
-
-	public static List<ObjectUsage> mailingsDtoToObjectUsage(final List<LightweightMailing> mailings) {
-		return mailings.stream()
-				.map(mailing -> new ObjectUsage(ObjectUserType.MAILING, mailing.getMailingID(),mailing.getShortname()))
-				.collect(Collectors.toList());
-	}
-
-	public static List<ObjectUsage> mailinglistsToObjectUsage(final List<Mailinglist> mailinglists) {
-		return mailinglists.stream()
-				.map(ml -> new ObjectUsage(ObjectUserType.MAILINGLIST, ml.getId(), ml.getShortname()))
 				.collect(Collectors.toList());
 	}
 

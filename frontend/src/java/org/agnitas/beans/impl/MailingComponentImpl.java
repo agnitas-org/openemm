@@ -232,7 +232,7 @@ public class MailingComponentImpl implements MailingComponent {
 				}
 			}
 		} catch(final Throwable e) {
-			logger.debug(String.format("Error loading content from url '%s'. MailingID: %d", encodedURI, mailingID), e);
+			logger.error(String.format("Error loading content from url '%s'", encodedURI), e);
 		}
 		
 		return false;

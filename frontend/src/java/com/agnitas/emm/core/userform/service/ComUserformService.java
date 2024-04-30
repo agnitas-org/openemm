@@ -11,12 +11,10 @@
 package com.agnitas.emm.core.userform.service;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
@@ -36,8 +34,6 @@ public interface ComUserformService extends UserformService {
     List<UserForm> getUserForms(int companyId);
 
     UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness);
-
-	int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive);
 
 	UserFormDto getUserForm(int companyId, int formId);
 
@@ -62,8 +58,6 @@ public interface ComUserformService extends UserformService {
     JSONArray getUserFormsJson(Admin admin);
 
     List<String> getUserFormNames(int companyId);
-
-    List<String> getUserFormNames(Set<Integer> bulkIds, int companyID);
 
 	Map<String, String> getMediapoolImages(Admin admin);
 

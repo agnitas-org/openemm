@@ -239,16 +239,15 @@ public class Blocklist {
 	 * @param mailingID the mailingID
 	 * @param customerID the customerID to mark as blocklisted
 	 */
-	public void writeBounce (long mailingID, long customerID, Media media) {
+	public void writeBounce (long mailingID, long customerID) {
 		if (bouncelog != null) {
-			String	entry = "5.9.9;0;" + mailingID + ";" + media.type + ";" + customerID + ";admin=auto opt-out due to blocklist\tstatus=blocklist\n";
+			String	entry = "5.9.9;0;" + mailingID + ";0;" + customerID + ";admin=auto opt-out due to blocklist\tstatus=blocklist\n";
 			try (FileOutputStream file = new FileOutputStream (bouncelog, true)) {
 				file.write (entry.getBytes ("UTF-8"));
 			} catch (Exception e) {
-				if (! (e instanceof java.io.FileNotFoundException))
-					if (log != null) {
-						log.out (Log.ERROR, "blocklist", "Failed to write \"" + entry + "\" to " + bouncelog + ": " + e.toString ());
-					}
+				if (log != null) {
+					log.out (Log.ERROR, "blocklist", "Failed to write \"" + entry + "\" to " + bouncelog + ": " + e.toString ());
+				}
 			}
 		}
 	}

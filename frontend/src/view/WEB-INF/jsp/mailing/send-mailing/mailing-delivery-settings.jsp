@@ -1,11 +1,11 @@
 <%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page import="org.agnitas.dao.FollowUpType" %>
 <%@ page import="com.agnitas.emm.core.components.service.MailingBlockSizeService" %>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -16,6 +16,7 @@
 <%--@elvariable id="adminDateFormat" type="java.text.SimpleDateFormat"--%>
 <%--@elvariable id="targetGroupNames" type="java.util.List<java.lang.String>"--%>
 <%--@elvariable id="isMailtrackExtended" type="java.lang.Boolean"--%>
+<%--@elvariable id="isForceSteppingBlocksizeEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="autoImports" type="java.util.List<org.agnitas.emm.core.autoimport.bean.AutoImportLight>"--%>
 
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
@@ -57,18 +58,18 @@
     <mvc:hidden path="offlineHtmlEmailsCount" />
     <mvc:hidden path="stepping" value="${DEFAULT_STEPPING}" />
 
-    <tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
         <c:if test="${form.isMailingGrid}">
-            <tiles:putAttribute name="header" type="string">
+            <tiles:put name="header" type="string">
                 <ul class="tile-header-nav">
                     <!-- Tabs BEGIN -->
-                    <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false" />
+                    <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false" />
                     <!-- Tabs END -->
                 </ul>
-            </tiles:putAttribute>
+            </tiles:put>
         </c:if>
 
-        <tiles:putAttribute name="content" type="string">
+        <tiles:put name="content" type="string">
             <c:if test="${not form.isMailingGrid}">
                 <div class="tile-header" style="padding-bottom: 15px; height: auto;">
                     <h2 class="headline">
@@ -377,14 +378,6 @@
                                                         </div>
                                                     </li>
                                                 </c:if>
-                                                <li class="list-group-item" style="border: none;">
-                                                    <div class="checkbox">
-                                                        <label>
-                                                            <mvc:checkbox path="cleanupTestsBeforeDelivery" />
-                                                            <mvc:message code="mailing.delivery.cleanup" />
-                                                        </label>
-                                                    </div>
-                                                </li>
                                             </ul>
                                         </div>
                                     </div>
@@ -427,7 +420,31 @@
                                     </emm:ShowByPermission>
 
                                     <%@ include file="fragments/mailing-delivery-settings-optimized-mailing-generation-open.jspf"%>
-                                    <%@ include file="fragments/blocksize-select.jspf"%>
+
+                                    <emm:ShowByPermission token="mailing.send.admin.options">
+                                        <div class="form-group" id="blocksizeElement">
+                                            <div class="col-sm-12 control-label-left">
+                                                <label class="control-label" for="blocksize">
+                                                    <mvc:message code="mailing.mailsperhour" />
+                                                </label>
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <mvc:select path="blocksize" cssClass="form-control" id="blocksize" disabled="${isForceSteppingBlocksizeEnabled}">
+                                                    <mvc:option value="0">
+                                                        <mvc:message code="mailing.unlimited" />
+                                                    </mvc:option>
+                                                    <mvc:option value="500000">500.000</mvc:option>
+                                                    <mvc:option value="250000">250.000</mvc:option>
+                                                    <mvc:option value="100000">100.000</mvc:option>
+                                                    <mvc:option value="50000">50.000</mvc:option>
+                                                    <mvc:option value="25000">25.000</mvc:option>
+                                                    <mvc:option value="10000">10.000</mvc:option>
+                                                    <mvc:option value="5000">5.000</mvc:option>
+                                                    <mvc:option value="1000">1.000</mvc:option>
+                                                </mvc:select>
+                                            </div>
+                                        </div>
+                                    </emm:ShowByPermission>
                                 </div>
                             </div>
                         </div>
@@ -456,6 +473,6 @@
 
                 </div>
             </div>
-        </tiles:putAttribute>
-    </tiles:insertTemplate>
+        </tiles:put>
+    </tiles:insert>
 </mvc:form>

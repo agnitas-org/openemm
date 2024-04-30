@@ -12,15 +12,16 @@ package org.agnitas.service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.ComImportWizardForm;
 import net.sf.json.JSONArray;
 import org.agnitas.service.impl.ImportWizardContentParseException;
 import org.agnitas.util.CsvColInfo;
+import org.apache.struts.upload.FormFile;
 
 public interface ImportWizardService {
 
@@ -30,7 +31,9 @@ public interface ImportWizardService {
      * Tries to read csv file Reads database column structure reads first line
      * splits line into tokens
      */
-    ServiceResult<List<CsvColInfo>> parseFirstLine(ImportWizardHelper helper) throws IOException;
+    void parseFirstLine(ImportWizardHelper helper) throws ImportWizardContentParseException;
+
+    ServiceResult<List<CsvColInfo>> parseFirstLineNew(ImportWizardHelper helper) throws IOException;
 
     /**
      * check in the columnMapping for the key column, and eventually for gender
@@ -40,11 +43,18 @@ public interface ImportWizardService {
      */
     void parseContent(ImportWizardHelper helper) throws ImportWizardContentParseException;
 
-    SimpleServiceResult checkAndReadCsvFile(ImportWizardSteps steps, Admin admin) throws IOException;
+    void parseContentNew(ImportWizardHelper helper) throws ImportWizardContentParseException;
 
+    //TODO check usage and remove after GWUA-5173 has been successfully tested
+    void doParse(ImportWizardHelper helper) throws ImportWizardContentParseException;
+
+    FormFile getFormFileByUploadId(int uploadID, String mime) throws Exception;
+    
+    SimpleServiceResult checkAndReadCsvFile(int companyId, ComImportWizardForm form);
+
+    SimpleServiceResult checkAndReadCsvFile(ImportWizardSteps steps, Admin admin) throws IOException;
+    
     int getLinesOKFromFile(ImportWizardHelper helper) throws Exception;
 
     JSONArray getParsedContentJson(ImportWizardHelper helper, Admin admin);
-
-    Map<Integer, String> getCsvUploads(Admin admin);
 }

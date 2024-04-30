@@ -19,7 +19,4 @@ public interface RecipientFieldDao {
 	void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception;
 	void deleteRecipientField(int companyID, String recipientFieldName) throws Exception;
 	boolean isReservedKeyWord(String fieldname);
-	boolean hasRecipients(int companyID);
-	boolean hasRecipientsWithNullValue(int companyID, String columnName);
-	int countCustomerEntries(int companyID);
 }

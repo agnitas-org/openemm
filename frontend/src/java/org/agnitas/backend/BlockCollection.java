@@ -20,18 +20,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.agnitas.backend.dao.ComponentDAO;
 import org.agnitas.backend.exceptions.EMMTagException;
 import org.agnitas.beans.MailingComponentType;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Holds all Blocks of a Mailing
@@ -100,6 +98,10 @@ public class BlockCollection {
 	 */
 	private boolean enableMultipleHeader = false;
 	/**
+	 * omit list-unsubscribe/list-help header in case of DOI mailing
+	 */
+	private boolean omitListInformationOnDOI = false;
+	/**
 	 * a map containing all representation to be accessable for replacement during processing
 	 */
 	private Map<String, String> headerReplace = null;
@@ -117,6 +119,7 @@ public class BlockCollection {
 		maskEnvelopeFrom = Str.atob(data.company.info("mask-envelope-from", data.mailing.id()), true);
 		enableTemplating = Str.atob(data.company.info("enable-textblock-templating", data.mailing.id ()), false);
 		enableMultipleHeader = Str.atob(data.company.info("enable-multiple-header", data.mailing.id ()), false);
+		omitListInformationOnDOI = Str.atob(data.company.info("omit-list-informations-for-doi", data.mailing.id ()), false);
 
 		setupAdminTestmailingMarks(data.mailing.id());
 		setupAllBlocks(customText);
@@ -571,58 +574,79 @@ public class BlockCollection {
 		return "";
 	}
 	
-	private String headAdditional() {
-		String rc = "";
-		Map<String, String> extra = new HashMap<>();
-		String env = envelopeFrom();
-		String method;
-			
-		extra.put("envelope-from", env);
-		if ((method = data.company.infoSubstituted("list-unsubscribe", data.mailing.id(), extra)) == null) {
-			String link = null;
-			if (data.rdirDomain != null) {
-				String rdirContextLink = data.company.info("rdir.UseRdirContextLinks");
-
-				if ((rdirContextLink != null) && Str.atob(rdirContextLink, false)) {
-					link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
-				} else {
-					link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
-				}
+	private boolean addListUnsubscribeHeader () {
+		if (omitListInformationOnDOI) {
+			if (data.defaultUserStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+				return false;
 			}
-			method = link != null ? link + ", " : "";
-			if (data.mailloopDomain != null) {
-				method += data.substituteString ("<mailto:fbl@%(mailloop-domain)?subject=unsubscribe:[agnUID]>", extra);
-			} else if (env != null) {
-				method += "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
-			}
-		} else {
-			method = method.trim();
-			if (method.equals("-")) {
-				method = null;
-			}
-		}
-		if ((method != null) && (method.length() > 0)) {
-			String	listHelpURL = null;
-			
-			if ("transaction".equals (data.mailing.contentType ())) {
-				listHelpURL = data.company.info ("list-help-url");
-				if (listHelpURL != null) {
-					if ((! "-".equals (listHelpURL)) && (! listHelpURL.startsWith ("https://"))) {
-						data.logging (Log.INFO, "list-help", "Invalid list help url \"" + listHelpURL + "\" found, not starting with \"https://\"");
-						listHelpURL = null;
+			if (data.maildropStatus.isCampaignMailing() &&
+			    (data.campaignUserStatus != null) &&
+			    (data.campaignUserStatus.length > 0)) {
+				for (long userStatus : data.campaignUserStatus) {
+					if (userStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+						return false;
 					}
 				}
 			}
-			if (listHelpURL != null) {
-				if (! "-".equals (listHelpURL)) {
-					rc = "HList-Help: <" + listHelpURL + ">\n";
+		}
+		return true;
+	}
+	
+	private String headAdditional() {
+		String rc = "";
+		Map<String, String> extra = new HashMap<>();
+
+		if (addListUnsubscribeHeader ()) {
+			String env = envelopeFrom();
+			String method;
+			
+			extra.put("envelope-from", env);
+			if ((method = data.company.infoSubstituted("list-unsubscribe", data.mailing.id(), extra)) == null) {
+				String link = null;
+				if (data.rdirDomain != null) {
+					String rdirContextLink = data.company.info("rdir.UseRdirContextLinks");
+
+					if ((rdirContextLink != null) && Str.atob(rdirContextLink, false)) {
+						link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
+					} else {
+						link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
+					}
+				}
+				method = link != null ? link + ", " : "";
+				if (data.mailloopDomain != null) {
+					method += data.substituteString ("<mailto:fbl@%(mailloop-domain)?subject=unsubscribe:[agnUID]>", extra);
+				} else if (env != null) {
+					method += "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
 				}
 			} else {
-				rc = "HList-Unsubscribe: " + method + "\n";
-				String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
+				method = method.trim();
+				if (method.equals("-")) {
+					method = null;
+				}
+			}
+			if ((method != null) && (method.length() > 0)) {
+				String	listHelpURL = null;
+			
+				if ("transaction".equals (data.mailing.contentType ())) {
+					listHelpURL = data.company.info ("list-help-url");
+					if (listHelpURL != null) {
+						if ((! "-".equals (listHelpURL)) && (! listHelpURL.startsWith ("https://"))) {
+							data.logging (Log.INFO, "list-help", "Invalid list help url \"" + listHelpURL + "\" found, not starting with \"https://\"");
+							listHelpURL = null;
+						}
+					}
+				}
+				if (listHelpURL != null) {
+					if (! "-".equals (listHelpURL)) {
+						rc = "HList-Help: <" + listHelpURL + ">\n";
+					}
+				} else {
+					rc = "HList-Unsubscribe: " + method + "\n";
+					String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
 	
-				if (!"-".equals(listUnsubscribePost)) {
-					rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+					if (!"-".equals(listUnsubscribePost)) {
+						rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+					}
 				}
 			}
 		}
@@ -673,9 +697,6 @@ public class BlockCollection {
 			head += headReplyTo ();
 			head += "HTo: " + addTo () + "<[agnEMAIL code=\"punycode\"]>\n" +
 				"HSubject: " + addSubject () + data.mailing.subject () + "\n";
-			if (data.maildropStatus.isPreviewMailing() && data.mailing.getPreHeader() != null) {
-				head += "HPre-Header: " + data.mailing.getPreHeader() + "\n";
-			}
 			head += headAdditional ();
 			head += "HX-Mailer: " + data.mailing.makeMailer () + "\n" +
 				"HMIME-Version: 1.0\n";
@@ -683,59 +704,6 @@ public class BlockCollection {
 			head = "- unset -\n";
 		}
 		rc.content = head;
-		return rc;
-	}
-	
-	static private Pattern	preHeaderTagPattern = Pattern.compile ("\\[agnPREHEADER[^]]*\\]");
-	protected BlockData createBlockPreHeader () {
-		String	preHeader = data.mailing.getPreHeader ();
-		
-		if (! StringUtils.isBlank (preHeader)) {
-			BlockData	rc = new BlockData ();
-			Matcher		mt;
-
-			rc.content = data.company.info ("preheader-template", data.mailing.id ());
-			if (StringUtils.isBlank (rc.content)) {
-				rc.content = 
-					"<!-- Visually Hidden Preheader Text : BEGIN -->\n" +
-					"<div style=\"max-height:0; overflow:hidden; mso-hide:all;\" aria-hidden=\"true\">\n" +
-					"[agnPREHEADER/]\n" +
-					"</div>\n" +
-					"\n" +
-					"<!-- Visually Hidden Preheader Text : END -->\n" +
-					"<!-- Create white space after the desired preview text so email clients do not pull other distracting text into the inbox preview. Extend as necessary. -->\n" +
-					"<!-- Preview Text Spacing Hack : BEGIN -->\n" +
-					"\t<div style=\"display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;\">\n" +
-					"\t&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;\n" +
-					"    </div>\n" +
-					"<!-- Preview Text Spacing Hack : END -->";
-			}
-			if ((mt = preHeaderTagPattern.matcher (rc.content)) != null) {
-				rc.content = mt.replaceAll (preHeader);
-			}
-			rc.cid = Const.Component.NAME_PREHEADER;
-			rc.isParseable = true;
-			rc.isText = true;
-			rc.type = BlockData.HTML_PREHEADER;
-			rc.media = Media.TYPE_EMAIL;
-			rc.comptype = 0;
-			return rc;
-		}
-		return null;
-	}
-	protected BlockData createBlockClearance () {
-		BlockData	rc = new BlockData ();
-		
-		rc.content = data.company.info ("clearance-template", data.mailing.id ());
-		if (StringUtils.isBlank (rc.content)) {
-			rc.content = "<br><hr><br><a href=\"[agnCLEARANCE/]\">Mailversand freigeben</a>";
-		}
-		rc.cid = Const.Component.NAME_CLEARANCE;
-		rc.isParseable = true;
-		rc.isText = true;
-		rc.type = BlockData.HTML_CLEARANCE;
-		rc.media = Media.TYPE_EMAIL;
-		rc.comptype = 0;
 		return rc;
 	}
 
@@ -801,38 +769,18 @@ public class BlockCollection {
 
 		List<BlockData> components = retrieveComponents(comptypes);
 		List<BlockData> collect;
-		boolean		hasPreHeader = false;
-		boolean		hasClearance = false;
 
 		collect = new ArrayList<>();
 		collect.add(createBlockZero());
+		totalNumber = 1;
 		for (BlockData block : components) {
 			collect.add(block);
+			++totalNumber;
 			if (block.isPDF) {
 				++pdfCount;
 			}
 			if (block.isFont) {
 				++fontCount;
-			}
-			if (block.type == BlockData.HTML_PREHEADER) {
-				hasPreHeader = true;
-			}
-			if (block.type == BlockData.HTML_CLEARANCE) {
-				hasClearance = true;
-			}
-		}
-		if (! hasPreHeader) {
-			BlockData	preHeader = createBlockPreHeader ();
-			
-			if (preHeader != null) {
-				collect.add(preHeader);
-			}
-		}
-		if ((! hasClearance) && data.requiresClearance && data.maildropStatus.isTestMailing ()) {
-			BlockData	clearance = createBlockClearance ();
-			
-			if (clearance != null) {
-				collect.add (clearance);
 			}
 		}
 		cleanupBlockCollection(collect);

@@ -21,7 +21,7 @@ public interface MediaTypesService {
     
     List<MediaTypes> getAllowedMediaTypes(Admin admin);
     
-    Mediatype getActiveMediaType(int companyId, int mailingId);
+    MediaTypes getActiveMediaType(int companyId, int mailingId);
 
     boolean saveEncryptedState(int mailingId, int companyId, boolean isEncryptedSend);
 

@@ -31,24 +31,22 @@ public interface BindingEntry extends Serializable {
 
 	enum UserType {
 		/** deprecated, do not use **/
-		ALL("E", "All", false, "default.All"),
+		ALL("E", "All", false),
 		
-    	Admin("A", "Administrator", false, "recipient.Administrator"),
-    	TestUser("T", "Test recipient", false, "recipient.TestSubscriber"),
-    	TestVIP("t", "Test VIP", true, "recipient.TestVIP"),
-    	World("W", "Normal recipient", false, "recipient.NormalSubscriber"),
-    	WorldVIP("w", "Normal VIP recipient", true, "recipient.NormalVIP");
+    	Admin("A", "Administrator", false),
+    	TestUser("T", "Test recipient", false),
+    	TestVIP("t", "Test VIP", true),
+    	World("W", "Normal recipient", false),
+    	WorldVIP("w", "Normal VIP recipient", true);
     	
     	private String typeCode;
 		private String readableName;
 		private boolean isVip;
-		private String messageKey;
 
-    	UserType(String typeCode, String readableName, boolean isVip, String messageKey) {
+    	UserType(String typeCode, String readableName, boolean isVip) {
     		this.typeCode = typeCode;
 			this.readableName = readableName;
 			this.isVip = isVip;
-			this.messageKey = messageKey;
     	}
     	
     	public String getTypeCode() {
@@ -61,10 +59,6 @@ public interface BindingEntry extends Serializable {
 
 		public boolean isVip() {
 			return isVip;
-		}
-
-		public String getMessageKey() {
-			return messageKey;
 		}
 
 		public static UserType getUserTypeByString(String typeCode) throws Exception {

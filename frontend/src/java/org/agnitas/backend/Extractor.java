@@ -24,7 +24,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 public class Extractor implements ResultSetExtractor<Object> {
-	private final int reservedColumns = 4;
 	private Map<String, EMMTag> tagNames = null;
 	private MediaMap mmap;
 	private Data data;
@@ -72,7 +71,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			meta = rset.getMetaData();
 			metacount = meta.getColumnCount();
 			rmap = new Column[metacount];
-			usecount = reservedColumns;
+			usecount = 3;
 			for (EMMTag current_tag : tagNames.values()) {
 				if ((!current_tag.globalValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					++usecount;
@@ -140,11 +139,11 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 		}
 
-		int count = reservedColumns;
+		int count = 3;
 
 		for (EMMTag tmpTag : tagNames.values()) {
 			if ((!tmpTag.globalValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
-				if ((rmap[count] != null) && (!rmap[count].isnull())) {
+				if ((rmap[count] != null) && (!rmap[count].getIsnull())) {
 					tmpTag.setTagValue(rmap[count].get());
 				} else {
 					tmpTag.setTagValue(null);
@@ -165,8 +164,8 @@ public class Extractor implements ResultSetExtractor<Object> {
 			skip = false;
 			lastCid = cid;
 
-			String userType = rmap[2] != null ? rmap[2].get() : null;
-			String mailtype = rmap[3] != null ? rmap[3].get() : null;
+			String userType = rmap[1] != null ? rmap[1].get() : null;
+			String mailtype = rmap[2] != null ? rmap[2].get() : null;
 			int mtype;
 
 			if ((userType == null) || userType.isEmpty()) {
@@ -209,7 +208,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 
 						if (bl != null) {
 							data.logging(Log.WARNING, "mailout", "Found " + what + ": " + check + " (" + cid + ") in " + bl.where() + " blocklist, ignored");
-							blist.writeBounce (data.mailing.id (), cid, m);
+							blist.writeBounce(data.mailing.id(), cid);
 							isBlocklisted = true;
 						}
 					}
@@ -221,7 +220,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 				}
 			}
 
-			MediaMap.MMEntry	mediatypes = getMediaTypes (cid);
+			String mediatypes = getMediaTypes(cid);
 			if (mediatypes == null) {
 				skip = true;
 				return;
@@ -246,29 +245,19 @@ public class Extractor implements ResultSetExtractor<Object> {
 			if (needSamples) {
 				Set <String>	seen = new HashSet <> ();
 				
-				for (int state = 0; state < 3; ++state) {
-					String	source = null;
-					boolean	single = false;
+				for (int state = 0; state < 2; ++state) {
+					String	source;
 					
 					switch (state) {
-					case 0:
-					case 1:
-						if (data.maildropStatus.isWorldMailing ()) {
-							if (state == 0) {
-								source = data.sampleEmails ();
-							} else {
-								source = data.deliveryCheckEmails ();
-							}
-						}
-						break;
-					case 2:
-						if (data.maildropStatus.isTestMailing ()) {
-							source = data.preDeliveryCheckEmails ();
-							single = true;
-						}
-						break;
 					default:
-						throw new RuntimeException("Unexpected state");
+						source = null;
+						break;
+					case 0:
+						source = data.sampleEmails ();
+						break;
+					case 1:
+						source = data.deliveryCheckEmails ();
+						break;
 					}
 					if (source != null) {
 						List<String> v = StringOps.splitString(source);
@@ -283,13 +272,11 @@ public class Extractor implements ResultSetExtractor<Object> {
 									emailTags.get(n).setTagValue(email);
 								}
 								for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
-									if ((! single) || (n == MailType.HTML.getIntValue ())) {
-										try {
-											mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), "1", tagNames);
-											mailer.writeContent(cinfo, 0, tagNames, rmap);
-										} catch (Exception e) {
-											data.logging(Log.ERROR, "mailout", "Failed to write sample mail \"" + email + "\" in state " + state + ": " + e.toString(), e);
-										}
+									try {
+										mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), tagNames);
+										mailer.writeContent(cinfo, 0, tagNames, rmap);
+									} catch (Exception e) {
+										data.logging(Log.ERROR, "mailout", "Failed to write sample mail: " + e.toString(), e);
 									}
 								}
 							}
@@ -304,7 +291,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 
 			try {
-				mailer.writeMail(cinfo, 0, mtype, cid, mediatypes.name, mediatypes.status, tagNames);
+				mailer.writeMail(cinfo, 0, mtype, cid, mediatypes, tagNames);
 				mailer.writeContent(cinfo, cid, tagNames, rmap);
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "mailout", "Failed to write mail: " + e.toString(), e);
@@ -338,7 +325,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 	 * @param customerID the customerID to get types for
 	 * @return mediatypes
 	 */
-	private MediaMap.MMEntry getMediaTypes (long cid) {
+	private String getMediaTypes(long cid) {
 		if (data.maildropStatus.isPreviewMailing()) {
 			return mmap.getActive();
 		}

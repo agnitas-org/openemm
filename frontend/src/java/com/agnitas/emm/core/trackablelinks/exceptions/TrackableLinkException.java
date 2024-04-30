@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.trackablelinks.exceptions;
 
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
 // TODO: Auto-generated Javadoc
 /**
  * Base class for any exception that can be thrown when
- * working with {@link TrackableLinkService}.
+ * working with {@link ComTrackableLinkService}.
  */
 public class TrackableLinkException extends Exception {
 

@@ -12,11 +12,7 @@ package com.agnitas.emm.core.hashtag;
 
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.agnitas.emm.core.hashtag.exception.EmptyRequiredParameterHashTagException;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
-import com.agnitas.emm.core.hashtag.exception.MissingRequiredParameterHashTagException;
 import com.agnitas.emm.core.hashtag.keyvaluelist.KeyValueListParser;
 import com.agnitas.emm.core.hashtag.keyvaluelist.KeyValueListParserException;
 
@@ -32,48 +28,6 @@ public abstract class AbstractColonHashTagWithParameters extends AbstractColonHa
 			throw new HashTagException("Malformed parameter list: " + appendix, e);
 		}
 	}
-
-	/**
-	 * Returns the value of the required parameter.
-	 * 
-	 * @param name parameter name
-	 * @param parameters parameters map
-	 * 
-	 * @return value of parameter
-	 * 
-	 * @throws MissingRequiredParameterHashTagException if parameter is not defined
-	 */
-	protected static final String getRequiredParameter(final String name, final Map<String, String> parameters) throws MissingRequiredParameterHashTagException {
-		final String value = parameters.get(name);
-		
-		if(value == null) {
-			throw new MissingRequiredParameterHashTagException(name);
-		}
-
-		return value;
-	}
-	
-	/**
-	 * Returns the value of the non-empty required parameter.
-	 * 
-	 * @param name parameter name
-	 * @param parameters parameters map
-	 * 
-	 * @return value of parameter
-	 * 
-	 * @throws MissingRequiredParameterHashTagException if parameter is not defined
-	 * @throws EmptyRequiredParameterHashTagException if parameter value is empty
-	 */
-	protected static final String getRequiredNonEmptyParameter(final String name, final Map<String, String> parameters) throws MissingRequiredParameterHashTagException, EmptyRequiredParameterHashTagException {
-		final String value = getRequiredParameter(name, parameters);
-		
-		if (StringUtils.isEmpty(value)) {
-			throw new EmptyRequiredParameterHashTagException(name);
-		}
-
-		return value;
-	}
-
 	
 	public abstract String handleWithParametersInternal(final HashTagContext context, final String tagName, final Map<String, String> parameters) throws HashTagException;
 

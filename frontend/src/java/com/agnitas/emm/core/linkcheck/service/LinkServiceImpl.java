@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import org.agnitas.backend.AgnTag;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.impl.TagDetailsImpl;
@@ -46,10 +45,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -73,7 +72,7 @@ public class LinkServiceImpl implements LinkService {
 	private static final Logger logger = LogManager.getLogger(LinkServiceImpl.class);
 
 	private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("^\\{\\d+\\}$");
-	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#\\n]+)##");
+	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#]+)##");
 	private static final Pattern AGNTAG_PATTERN = Pattern.compile("\\[agn[^\\]]+]");
 	private static final Pattern GRIDTAG_PATTERN = Pattern.compile("\\[gridPH[^\\]]+]");
 	private static final Pattern DOCTYPE_PATTERN = Pattern.compile("<!DOCTYPE [^>]*>", Pattern.CASE_INSENSITIVE);
@@ -200,7 +199,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 
 	@Override
-	public String personalizeLink(final TrackableLink link, final String agnUidString, final int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encryptedStaticValueMap) {
+	public String personalizeLink(final ComTrackableLink link, final String agnUidString, final int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encryptedStaticValueMap) {
 		final String fullUrlWithHashTags = link.getFullUrl();
 		final Map<String, Object> staticValueMap = link.isStaticValue() ? decryptStaticValueMap(link.getCompanyID(), customerID, encryptedStaticValueMap) : Collections.emptyMap();
 
@@ -242,7 +241,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	private String replaceHashTags(final TrackableLink link, final String agnUidString, final int customerID, final String referenceTableRecordSelector, final String textWithHashTags, final Map<String, Object> staticValueMap) {
+	private String replaceHashTags(final ComTrackableLink link, final String agnUidString, final int customerID, final String referenceTableRecordSelector, final String textWithHashTags, final Map<String, Object> staticValueMap) {
 		Matcher matcher = HASHTAG_PATTERN.matcher(textWithHashTags);
 		StringBuffer returnLinkString = new StringBuffer(textWithHashTags.length());
 		
@@ -409,7 +408,7 @@ public class LinkServiceImpl implements LinkService {
 		final String text = aMatch.find() ? textWithDoc.substring(aMatch.end()) : textWithDoc;
 		final String textWithReplacedHashTags = getTextWithReplacedAgnTags(text, "x");
 
-		final List<TrackableLink> foundTrackableLinks = new ArrayList<>();
+		final List<ComTrackableLink> foundTrackableLinks = new ArrayList<>();
 		final List<String> foundImages = new ArrayList<>();
 		final List<String> foundNotTrackableLinks = new ArrayList<>();
 		final List<ErroneousLink> foundErroneousLinks = new ArrayList<>();
@@ -476,7 +475,7 @@ public class LinkServiceImpl implements LinkService {
 		} else if (linkCheckContainsAgnTagOrGridPhTag(context)) {
 			context.getFoundNotTrackableLinks().add(context.getLinkUrl());
 		} else if (linkCheckIsHttpOrHttpsSchema(context)) {
-			final TrackableLink link = new TrackableLinkImpl();
+			final ComTrackableLink link = new ComTrackableLinkImpl();
 			link.setFullUrl(context.getLinkUrl());
 			link.setActionID(getActionIdForLink(context));
 			link.setAltText(getTitleForLink(context));
@@ -759,15 +758,7 @@ public class LinkServiceImpl implements LinkService {
 		if (text.contains("[agnFORM")) {
 			logger.error(String.format("scanForLinks: Html-text has an unresolved agnFORM-Tag [%s]", text));
 		}
-
-		for (AgnTag fullviewTag : List.of(AgnTag.FULLVIEW, AgnTag.WEBVIEW)) {
-			if (text.contains("[" + fullviewTag.getName() + "]")) {
-				TagDetails tag = new TagDetailsImpl();
-				tag.setTagName(fullviewTag.getName());
-				text = text.replaceAll("\\[" + fullviewTag.getName() + "\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
-			}
-		}
-
+		
 		return text;
 	}
 
@@ -925,9 +916,11 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	@Override
-	public Integer getLineNumberOfFirstRdirLink(final String rdirDomain, String text) {
+	public Integer getLineNumberOfFirstRdirLink(final int companyID, String text) {
+		final Company company = this.companyDao.getCompany(companyID);
+		
 		final int indexOfRdirLink = text.indexOf(RDIRLINK_SEARCH_STRING);
-		final int indexOfRdirLinkNewFormat = text.indexOf(rdirDomain + "/r/");
+		final int indexOfRdirLinkNewFormat = text.indexOf(company.getRdirDomain() + "/r/");
 		
 		if (indexOfRdirLink < 0) {
 			if (indexOfRdirLinkNewFormat < 0) {
@@ -1028,14 +1021,14 @@ public class LinkServiceImpl implements LinkService {
 	
 	@Override
     public void assertChangedOrDeletedLinksNotDepended(
-            Collection<TrackableLink> oldLinks,
-            Collection<TrackableLink> newLinks) throws DependentTrackableLinkException {
+            Collection<ComTrackableLink> oldLinks,
+            Collection<ComTrackableLink> newLinks) throws DependentTrackableLinkException {
 	    
         List<Integer> newLinksIds = newLinks.stream()
                 .map(BaseTrackableLink::getId)
                 .collect(Collectors.toList());
         
-        List<TrackableLink> changedOrDeletedLinks = oldLinks.stream()
+        List<ComTrackableLink> changedOrDeletedLinks = oldLinks.stream()
                 .filter(link -> !newLinksIds.contains(link.getId()))
                 .collect(Collectors.toList());
         List<String> usedInActiveWorkflowLinks = changedOrDeletedLinks.stream().filter(link
@@ -1050,10 +1043,4 @@ public class LinkServiceImpl implements LinkService {
             throw new DependentTrackableLinkException(usedInActiveWorkflowLinks, usedInTargetLinks);
         }
     }
-
-	@Override
-	public String getRdirDomain(int companyID) {
-		final Company company = companyDao.getCompany(companyID);
-		return company.getRdirDomain();
-	}
 }

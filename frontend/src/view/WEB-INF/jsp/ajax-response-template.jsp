@@ -1,9 +1,9 @@
-<%@ page errorPage="/error.action" %>
+<%@ page errorPage="/error.do" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 
-<tiles:insertAttribute name="page-setup"/>
+<tiles:insert attribute="page-setup"/>
 
-<tiles:insertAttribute name="body"/>
+<tiles:insert attribute="body"/>
 
-<tiles:insertAttribute name="messages"/>
+<tiles:insert attribute="messages"/>

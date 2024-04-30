@@ -1,14 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 
-<%--@elvariable id="listForm" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 <%--@elvariable id="fieldsMap" type="java.util.Map<java.lang.String, java.lang.String>"--%>
 <%--@elvariable id="deactivatePagination" type="java.lang.Boolean"--%>
 <%--@elvariable id="recipientList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
@@ -27,7 +28,7 @@
 <mvc:form servletRelativeAction="/recipient/list.action"
           cssClass="form-vertical"
           id="recipientForm"
-          modelAttribute="listForm"
+          modelAttribute="form"
           data-form="resource"
           data-action="search-recipient"
           data-controller="recipient-list"
@@ -41,8 +42,8 @@
         <script type="application/json" data-initializer="web-storage-persist">
             {
                 "recipient-overview": {
-                    "rows-count": ${listForm.numberOfRows},
-                    "fields": ${emm:toJson(listForm.selectedFields)}
+                    "rows-count": ${form.numberOfRows},
+                    "fields": ${emm:toJson(form.selectedFields)}
                 }
             }
         </script>
@@ -50,7 +51,7 @@
         <div class="tile" data-initializer="recipient-list">
             <script id="config:recipient-list" type="application/json">
                 {
-                    "initialRules": ${emm:toJson(listForm.searchQueryBuilderRules)}
+                    "initialRules": ${emm:toJson(form.searchQueryBuilderRules)}
                 }
             </script>
             <div class="tile-header">
@@ -138,8 +139,8 @@
                                             <c:set var="column" value="${field.key}"/>
                                             <c:set var="fieldName" value="${field.value}"/>
 
-                                            <c:set var="isDefaultField" value="${listForm.isDefaultColumn(column)}"/>
-                                            <c:set var="fieldSelected" value="${listForm.isSelectedColumn(column)}"/>
+                                            <c:set var="isDefaultField" value="${form.isDefaultColumn(column)}"/>
+                                            <c:set var="fieldSelected" value="${form.isSelectedColumn(column)}"/>
 
                                             <c:if test="${isDefaultField}">
                                                 <option title="${column}" value="${column}" disabled>${fieldName}</option>
@@ -183,7 +184,7 @@
                                            sort="external"
                                            requestURI="/recipient/list.action?loadRecipients=true"
                                            partialList="true"
-                                           size="${listForm.numberOfRows}"
+                                           size="${form.numberOfRows}"
                                            excludedParams="*">
                                 <c:if test="${recipientList.fullListSize > countOfRecipients}">
                                     <display:caption>

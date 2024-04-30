@@ -310,27 +310,15 @@ public abstract class JobWorker implements Runnable {
 	 * @param parameterName name of worker parameter
 	 * 
 	 * @return parsed list or <code>null</code>
-	 * @throws Exception 
 	 */
-	public final List<Integer> parameterAsIntegerListOrNull(final String parameterName) throws Exception {
+	public final List<Integer> parameterAsIntegerListOrNull(final String parameterName) {
 		final String listAsString = job.getParameters().get(parameterName);
-			
-		if (StringUtils.isNotBlank(listAsString)) {
-			try {
-				return AgnUtils.splitAndTrimList(listAsString).stream().filter(x -> StringUtils.isNotBlank(x)).map(x -> StringUtils.trim(x)).map(Integer::parseInt).collect(Collectors.toList());
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new Exception("Invalid content for list of integer parameter '" + parameterName + "': " + listAsString);
-			}
+		
+		if(StringUtils.isNoneBlank(listAsString)) {
+			return AgnUtils.splitAndTrimList(listAsString).stream().map(Integer::parseInt).collect(Collectors.toList());
 		} else {
 			return null;
 		}
 	}
 
-	public List<Integer> getIncludedCompanyIdsListParameter() throws Exception {
-		return parameterAsIntegerListOrNull("includedCompanyIds");
-	}
-
-	public List<Integer> getExcludedCompanyIdsListParameter() throws Exception {
-		return parameterAsIntegerListOrNull("excludedCompanyIds");
-	}
 }

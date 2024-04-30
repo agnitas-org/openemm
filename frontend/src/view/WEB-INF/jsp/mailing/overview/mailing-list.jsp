@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="org.agnitas.dao.MailingStatus" %>
@@ -155,8 +155,7 @@
                         "rows-count": ${mailingOverviewForm.numberOfRows},
                         "fields": ${emm:toJson(mailingOverviewForm.selectedFields)},
                         "mailing-types": ${emm:toJson(mailingOverviewForm.mailingTypes)},
-                        "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)},
-                        "use-recycle-bin": ${emm:toJson(mailingOverviewForm.useRecycleBin)}
+                        "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)}
                     }
                 }
             </script>
@@ -186,32 +185,23 @@
 
                         <ul class="dropdown-menu">
                             <li>
-                                <c:choose>
-                                    <c:when test="${mailingOverviewForm.useRecycleBin}">
-                                        <a href="#" data-action="bulk-restore">
-                                            <mvc:message code="bulk.mailing.restore"/>
-                                        </a>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <c:url var="bulkDeleteUrl" value="/mailing/confirmBulkDelete.action">
-                                            <c:param name="forTemplates" value="${forTemplates}"/>
-                                        </c:url>
-                                        <a href="#" data-form-url="${bulkDeleteUrl}" data-form-confirm>
-                                            <c:choose>
-                                                <c:when test="${forTemplates}">
-                                                    <emm:ShowByPermission token="template.delete">
-                                                        <mvc:message code="bulkAction.delete.template"/>
-                                                    </emm:ShowByPermission>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <emm:ShowByPermission token="mailing.delete">
-                                                        <mvc:message code="bulkAction.delete.mailing"/>
-                                                    </emm:ShowByPermission>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </a>
-                                    </c:otherwise>
-                                </c:choose>
+                                <c:url var="bulkDeleteUrl" value="/mailing/confirmBulkDelete.action">
+                                    <c:param name="forTemplates" value="${forTemplates}"/>
+                                </c:url>
+                                <a href="#" data-form-url="${bulkDeleteUrl}" data-form-confirm>
+                                    <c:choose>
+                                        <c:when test="${forTemplates}">
+                                            <emm:ShowByPermission token="template.delete">
+                                                    <mvc:message code="bulkAction.delete.template"/>
+                                            </emm:ShowByPermission>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <emm:ShowByPermission token="mailing.delete">
+                                                    <mvc:message code="bulkAction.delete.mailing"/>
+                                            </emm:ShowByPermission>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </a>                                 
                             </li>
                         </ul>
                     </li>
@@ -246,15 +236,12 @@
                             </li>
                             <%@include file="./fragments/filter-type-followup-checkbox.jspf" %>
                             <%@include file="./fragments/filter-type-interval-checkbox.jspf" %>
-                            <li>
-                                <label class="label">
-                                    <mvc:checkbox path="useRecycleBin" cssClass="js-form-change"/>
-                                    <mvc:message code="mailing.deleted" />
-                                </label>
-                            </li>
                             <li class="divider"></li>
 
-                            <%@include file="./fragments/mediatypes-filters.jspf" %>
+                            <li class="dropdown-header"><mvc:message code="mediatype.mediatypes"/></li>
+							<%@include file="./fragments/mediatypes-filters.jspf" %>
+							
+                            <li class="divider"></li>
                         </c:if>
 
                         <li class="dropdown-header"><mvc:message code="listSize"/></li>
@@ -523,33 +510,6 @@
                         <li><p>${applyBtn}</p></li>
                     </ul>
                 </div>
-
-                <!-- dropdown for plan date -->
-                <div class="dropdown filter" data-field="date-filter" data-filter-target=".js-filter-plan-date">
-                        ${filterBtn}
-                    <ul class="dropdown-menu">
-                        <li>
-                            <p>
-                                <label class="label"><mvc:message code="operator.between"/></label>
-                                <mvc:text path="filterPlanDateBegin" data-filter-date-min="" cssClass="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'"/>
-                            </p>
-                        </li>
-                        <li>
-                            <p>
-                                <label class="label"><mvc:message code="default.and"/></label>
-                                <mvc:text path="filterPlanDateEnd" data-filter-date-max="" cssClass="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'"/>
-                            </p>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#" class="js-dropdown-open" data-form-persist="filterPlanDateBegin: '', filterPlanDateEnd: ''">
-                                <mvc:message code="filter.reset"/>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li><p>${applyBtn}</p></li>
-                    </ul>
-                </div>
                 
                 <!-- dropdown for change date -->
                 <div class="dropdown filter" data-field="date-filter" data-filter-target=".js-filter-change-date">
@@ -614,7 +574,7 @@
 
             <div class="table-wrapper table-overflow-visible">
                 <display:table
-                    class="table table-bordered table-striped ${mailingOverviewForm.useRecycleBin ? '' : 'table-hover'} js-table"
+                    class="table table-bordered table-striped table-hover js-table"
                     id="mailing"
                     name="mailinglist"
                     pagesize="${mailinglist.pageSize}"
@@ -630,20 +590,18 @@
                     <!-- Displays the invitation text and a button to create a new mailing, if the mailing list is empty. -->
                     <emm:ShowByPermission token="mailing.change">
                     <c:if test="${not forTemplates}">
-                        <emm:HideByPermission token="mailing.content.readonly">
-                            <display:setProperty name="basic.msg.empty_list_row">
-                                <tr class="empty">
-                                    <td colspan="{0}">
-                                        <mvc:message code="mailing.create.first"/>
-                                            <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-                                        <a href="${mailingCreateLink}" class="btn btn-inverse btn-regular">
-                                            <i class="icon icon-plus"></i>
-                                            <span class="text"><mvc:message code="mailing.New_Mailing"/></span>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </display:setProperty>
-                        </emm:HideByPermission>
+                        <display:setProperty name="basic.msg.empty_list_row">
+                            <tr class="empty">
+                                <td colspan="{0}">
+                                    <mvc:message code="mailing.create.first"/>
+                                        <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                                    <a href="${mailingCreateLink}" class="btn btn-inverse btn-regular">
+                                        <i class="icon icon-plus"></i>
+                                        <span class="text"><mvc:message code="mailing.New_Mailing"/></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        </display:setProperty>
                     </c:if>
                     </emm:ShowByPermission>
                     
@@ -655,19 +613,12 @@
 
                     <c:if test="${not forTemplates}">
                         <display:column titleKey="Status" sortable="true" sortProperty="work_status" headerClass="js-table-sort js-filter-status" class="align-center">
-                            <c:choose>
-                                <c:when test="${mailingOverviewForm.useRecycleBin}">
-                                    <i class="icon icon-trash-o" data-tooltip="<mvc:message code="target.Deleted" />"></i>
-                                </c:when>
-                                <c:otherwise>
-                                    <c:if test="${not empty mailing.workstatus}">
-                                        <c:set var="workstatus">
-                                            <mvc:message code="${mailing.workstatus}"/>
-                                        </c:set>
-                                        <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${workstatus}"></span>
-                                    </c:if>
-                                </c:otherwise>
-                            </c:choose>
+                            <c:if test="${not empty mailing.workstatus}">
+                                <c:set var="workstatus">
+                                    <mvc:message code="${mailing.workstatus}"/>
+                                </c:set>
+                                <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${workstatus}"></span>
+                            </c:if>
                         </display:column>
                         <display:column class="table-actions" headerClass="js-table-sort js-filter-badge">
                             <%--icon for GRID--%>
@@ -757,10 +708,6 @@
                                                 <span class="multiline-auto">${mailing.mailingid}</span>
                                             </display:column>
                                         </c:when>
-                                        <c:when test="${field == 'PLAN_DATE'}">
-                                            <display:column titleKey="${field.messageKey}" format="{0,date,${adminDateTimeFormat}}"
-                                                            property="planDate" sortable="true" sortProperty="plan_date" headerClass="js-table-sort js-filter-plan-date" />
-                                        </c:when>
                                     </c:choose>
                                 </c:if>
                             </c:forEach>
@@ -799,30 +746,21 @@
                             </a>
                         </c:if>
 
-                        <c:choose>
-                            <c:when test="${mailingOverviewForm.useRecycleBin}">
-                                <a href="<c:url value="/mailing/${mailing.mailingid}/restore.action"/>" class="btn btn-regular btn-info" data-action="restore" data-tooltip="<mvc:message code="default.restore" />">
-                                    <i class="icon icon-repeat"></i>
-                                </a>
-                            </c:when>
-                            <c:otherwise>
-                                <emm:ShowByPermission token="${forTemplates ? 'template.delete' : 'mailing.delete'}">
-                                    <c:set var="deleteTooltipMsgCode" value="${forTemplates ? 'template.delete' : 'mailing.MailingDelete'}"/>
-                                    <a href="<c:url value="/mailing/${mailing.mailingid}/confirmDelete.action"/>" class="btn btn-regular btn-alert js-row-delete" data-tooltip="<mvc:message code="${deleteTooltipMsgCode}"/>">
-                                        <i class="icon icon-trash-o"></i>
-                                    </a>
-                                </emm:ShowByPermission>
-                                <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
-                                <c:if test="${mailing.workstatus eq 'mailing.status.sent' or mailing.workstatus eq 'mailing.status.norecipients'}">
-                                    <emm:ShowByPermission token="stats.mailing">
-                                        <c:url var="mailingViewLink" value="/statistics/mailing/${mailing.mailingid}/view.action">
-                                            <c:param name="init" value="true"/>
-                                        </c:url>
-                                    </emm:ShowByPermission>
-                                </c:if>
-                                <a href="${mailingViewLink}" class="hidden js-row-show"></a>
-                            </c:otherwise>
-                        </c:choose>
+                        <emm:ShowByPermission token="${forTemplates ? 'template.delete' : 'mailing.delete'}">
+                            <c:set var="deleteTooltipMsgCode" value="${forTemplates ? 'template.delete' : 'mailing.MailingDelete'}"/>
+                            <a href="<c:url value="/mailing/${mailing.mailingid}/confirmDelete.action"/>" class="btn btn-regular btn-alert js-row-delete" data-tooltip="<mvc:message code="${deleteTooltipMsgCode}"/>">
+                                <i class="icon icon-trash-o"></i>
+                            </a>
+                        </emm:ShowByPermission>
+                        <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                        <c:if test="${mailing.workstatus eq 'mailing.status.sent' or mailing.workstatus eq 'mailing.status.norecipients'}">
+                            <emm:ShowByPermission token="stats.mailing">
+                                <c:url var="mailingViewLink" value="/statistics/mailing/${mailing.mailingid}/view.action">
+                                    <c:param name="init" value="true"/>
+                                </c:url>
+                            </emm:ShowByPermission>
+                        </c:if>
+                        <a href="${mailingViewLink}" class="hidden js-row-show"></a>
                     </display:column>
                 </display:table>
             </div>
@@ -949,7 +887,7 @@
                         <strong><mvc:message code="mailing.showing"/></strong>
                         {{- filters.join(', ') }}
                     </div>
-                    <button class="btn btn-regular" data-form-persist="mailingTypes: '${MAILING_TYPE_NORMAL}', mediaTypes: '${MEDIA_TYPE_EMAIL}', filterStatuses: '', filterBadges: '', filterMailingLists: '', filterSendDateBegin: '', filterSendDateEnd: '', filterCreationDateBegin: '', filterCreationDateEnd: '', filterPlanDateBegin: '', filterPlanDateEnd: '', filterChangeDateBegin: '', filterChangeDateEnd: '', filterArchives: '', useRecycleBin: false">
+                    <button class="btn btn-regular" data-form-persist="mailingTypes: '${MAILING_TYPE_NORMAL}', mediaTypes: '${MEDIA_TYPE_EMAIL}', filterStatuses: '', filterBadges: '', filterMailingLists: '', filterSendDateBegin: '', filterSendDateEnd: '', filterCreationDateBegin: '', filterCreationDateEnd: '', filterChangeDateBegin: '', filterChangeDateEnd: '', filterArchives: ''">
                         <mvc:message code="filter.reset"/>
                     </button>
                 </script>

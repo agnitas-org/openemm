@@ -18,11 +18,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.impl.CompanyStatus;
@@ -42,10 +41,12 @@ import com.agnitas.emm.core.recipient.dao.impl.HistoryUpdateType;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowActionMailingDeferral;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStep;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepInstance;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowActionMailingDeferralImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepInstanceImpl;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
@@ -54,14 +55,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkflowReactionDao {
 
-    private static final Logger logger = LogManager.getLogger(ComWorkflowReactionDaoImpl.class);
+    /**
+     * The logger.
+     */
+    private static final transient Logger logger = LogManager.getLogger(ComWorkflowReactionDaoImpl.class);
 
     /**
      * Service handling profile field history.
      */
     private RecipientProfileHistoryService recipientProfileHistoryService;
-
-    private ComWorkflowReactionDao selfRef; // for @Transactional invocations within the class
 
     @Override
     public boolean exists(int reactionId, int companyId) {
@@ -72,7 +74,11 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     @Override
     public ComWorkflowReaction getReaction(int reactionId, int companyId) {
         String sqlGetReaction = "SELECT * FROM workflow_reaction_tbl WHERE reaction_id = ? AND company_id = ?";
-        return selectObjectDefaultNull(logger, sqlGetReaction, new ReactionRowMapper(), reactionId, companyId);
+        ComWorkflowReaction reaction = selectObjectDefaultNull(logger, sqlGetReaction, new ReactionRowMapper(), reactionId, companyId);
+        if (reaction != null) {
+            retrieveMailingsToSend(reaction);
+        }
+        return reaction;
     }
 
     @Override
@@ -82,7 +88,9 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
                 "WHERE r.start_date <= CURRENT_TIMESTAMP AND r.active = 1 " +
                 DbUtilities.asCondition("AND %s ", constraints, "r.company_id") +
                 "ORDER BY reaction_id";
-        return select(logger, sqlGetReactionsToCheck, new ReactionRowMapper());
+        List<ComWorkflowReaction> reactions = select(logger, sqlGetReactionsToCheck, new ReactionRowMapper());
+        reactions.forEach(this::retrieveMailingsToSend);
+        return reactions;
     }
 
     @Override
@@ -96,6 +104,25 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             "WHERE s.step_date <= CURRENT_TIMESTAMP AND s.done = 0 " + DbUtilities.asCondition("AND %s ", constraints, "s.company_id") +
             "ORDER BY s.company_id, s.reaction_id, s.case_id, s.step_date, s.step_id";
         return select(logger, sqlGetStepsToMake, new StepRowMapper(), WorkflowStatus.STATUS_ACTIVE.getId(), WorkflowStatus.STATUS_TESTING.getId());
+    }
+
+    /**
+     * For legacy mode only.
+     */
+    @Deprecated
+    private void retrieveMailingsToSend(ComWorkflowReaction reaction) {
+        if (reaction.isLegacyMode()) {
+            reaction.setMailingsToSend(getMailingsToSend(reaction.getReactionId(), reaction.getCompanyId()));
+        }
+    }
+
+    /**
+     * For legacy mode only.
+     */
+    @Deprecated
+    private List<Integer> getMailingsToSend(int reactionId, int companyId) {
+        String sqlGetMailingsToSend = "SELECT send_mailing_id FROM workflow_reaction_mailing_tbl WHERE company_id = ? AND reaction_id = ?";
+        return select(logger, sqlGetMailingsToSend, IntegerRowMapper.INSTANCE, companyId, reactionId);
     }
 
     private void restoreReactionId(ComWorkflowReaction reaction) {
@@ -118,9 +145,14 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             "trigger_mailing_id = ?, " +
             "trigger_link_id = ?, " +
             "profile_column = ?, " +
-            "rules_sql = ? " +
+            "rules_sql = ?, " +
+            "is_legacy_mode = 0 " +
             "WHERE company_id = ? " +
             "AND workflow_id = ?";
+
+        if (reaction.isLegacyMode()) {
+            throw new IllegalArgumentException("The legacy mode must be disabled as soon as a reaction is updated");
+        }
 
         parameters.add(reaction.isActive() ? 1 : 0);
         parameters.add(reaction.getStartDate());
@@ -149,6 +181,10 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     protected void createReaction(ComWorkflowReaction reaction) {
         int newId;
 
+        if (reaction.isLegacyMode()) {
+            throw new IllegalArgumentException("The legacy mode must not be used for new reactions");
+        }
+
         List<Object> params = new ArrayList<>();
         params.add(reaction.getWorkflowId());
         params.add(reaction.getCompanyId());
@@ -167,11 +203,11 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             newId = selectInt(logger, "SELECT workflow_reaction_tbl_seq.NEXTVAL FROM dual");
             params.add(0, newId);
             update(logger, "INSERT INTO workflow_reaction_tbl (reaction_id, workflow_id, company_id, mailinglist_id, trigger_mailing_id, " +
-                "trigger_link_id, active, once, start_date, admin_timezone, reaction_type, profile_column, rules_sql) VALUES " +
-                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params.toArray());
+                "trigger_link_id, active, once, start_date, admin_timezone, reaction_type, profile_column, rules_sql, is_legacy_mode) VALUES " +
+                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)", params.toArray());
         } else {
             String insertStatement = "INSERT INTO workflow_reaction_tbl (workflow_id, company_id, mailinglist_id, trigger_mailing_id, trigger_link_id, " +
-                "active, once, start_date, admin_timezone, reaction_type, profile_column, rules_sql) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "active, once, start_date, admin_timezone, reaction_type, profile_column, rules_sql, is_legacy_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
             newId = insertIntoAutoincrementMysqlTable(logger, "reaction_id", insertStatement, params.toArray());
         }
 
@@ -188,7 +224,6 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         return timezone.getID();
     }
 
-    @Transactional
     @Override
     @DaoUpdateReturnValueCheck
     public void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, int companyId) {
@@ -231,50 +266,19 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deactivateWorkflowReactions(int workflowId, int companyId, boolean keepReactionLog) {
+    public void deactivateWorkflowReactions(int workflowId, int companyId) {
         int reactionId = getReactionId(workflowId, companyId);
         if (reactionId > 0) {
-            selfRef.deactivateReaction(reactionId, companyId, keepReactionLog);
+            deactivateReaction(reactionId, companyId);
         }
     }
 
     @Override
-    public void updateStepsDeclarations(List<WorkflowReactionStepDeclaration> steps, int reactionId, int companyId) {
-        List<Object[]> params = steps.stream().map(step -> new Object[]{
-                step.getMailingId(),
-                step.getTargetId(),
-                companyId,
-                reactionId,
-                step.getStepId(),
-                step.getPreviousStepId()
-        }).collect(Collectors.toList());
-
-        batchupdate(logger, "UPDATE workflow_reaction_decl_tbl SET mailing_id = ?, target_id = ? " +
-                "WHERE company_id = ? AND reaction_id = ? AND step_id = ? AND previous_step_id = ?", params);
-    }
-
-    @Override
     @DaoUpdateReturnValueCheck
-    public void activateWorkflowReactions(int workflowId, int companyId) {
-        int reactionId = getReactionId(workflowId, companyId);
-        if (reactionId > 0) {
-            activateReaction(reactionId, companyId);
-        }
-    }
-
-    @Override
-    public void activateReaction(int reactionId, int companyId) {
-        update(logger, "UPDATE workflow_reaction_tbl SET active = 1 WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
-    }
-
-    @Transactional
-    @Override
-    @DaoUpdateReturnValueCheck
-    public void deactivateReaction(int reactionId, int companyId, boolean keepReactionLog) {
+    public void deactivateReaction(int reactionId, int companyId) {
         update(logger, "UPDATE workflow_reaction_tbl SET active = 0 WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
-        if (!keepReactionLog) {
-            clearReactionLog(reactionId, companyId, true);
-        }
+        clearReactionLog(reactionId, companyId, true);
+        clearReactionLegacyLog(reactionId, companyId);
     }
 
     protected void deleteReactionStepDeclarations(int reactionId, int companyId) {
@@ -303,29 +307,45 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         update(logger, sqlClearRecipients, companyId, reactionId);
     }
 
+    /**
+     * For legacy mode only.
+     */
+    @Deprecated
+    private void clearReactionLegacyLog(int reactionId, int companyId) {
+        String sqlClearLog = "DELETE FROM workflow_reaction_log_tbl WHERE company_id = ? AND reaction_id = ?";
+        update(logger, sqlClearLog, companyId, reactionId);
+        String sqlClearMailingsToSend = "DELETE FROM workflow_reaction_mailing_tbl WHERE company_id = ? AND reaction_id = ?";
+        update(logger, sqlClearMailingsToSend, companyId, reactionId);
+        String sqlClearDeferrals = "DELETE FROM workflow_def_mailing_tbl WHERE company_id = ? AND reaction_id = ?";
+        update(logger, sqlClearDeferrals, companyId, reactionId);
+    }
+
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteWorkflowReactions(int workflowId, int companyId) {
         int reactionId = getReactionId(workflowId, companyId);
         if (reactionId > 0) {
-            selfRef.deleteReaction(reactionId, companyId);
+            deleteReaction(reactionId, companyId);
         }
     }
 
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteReactions(int companyId) {
+        update(logger, "DELETE FROM workflow_reaction_mailing_tbl WHERE company_id = ?", companyId);
+        update(logger, "DELETE FROM workflow_reaction_log_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_out_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_step_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_decl_tbl WHERE company_id = ?", companyId);
+        update(logger, "DELETE FROM workflow_def_mailing_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_tbl WHERE company_id = ?", companyId);
     }
 
-    @Transactional
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteReaction(int reactionId, int companyId) {
         clearReactionLog(reactionId, companyId, false);
+        clearReactionLegacyLog(reactionId, companyId);
         deleteReactionStepDeclarations(reactionId, companyId);
         update(logger, "DELETE FROM workflow_reaction_tbl WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
     }
@@ -349,16 +369,30 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         if (excludeLoggedReactions) {
             sqlParameters.add(reaction.getReactionId());
 
-            if (reaction.isOnce()) {
-                sqlGetRecipients += " AND rlog.timestamp > ? AND NOT EXISTS (" +
-                        "SELECT 1 FROM workflow_reaction_out_tbl rout " +
-                        "WHERE rlog.customer_id = rout.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
-                        ")";
+            if (reaction.isLegacyMode()) {
+                if (reaction.isOnce()) {
+                    sqlGetRecipients += " AND rlog.timestamp > ? AND NOT EXISTS (" +
+                            "SELECT 1 FROM workflow_reaction_log_tbl tlog " +
+                            "WHERE rlog.customer_id = tlog.customer_id AND tlog.reaction_id = ?" +
+                            ")";
+                } else {
+                    sqlGetRecipients += " AND rlog.timestamp > (" +
+                            "SELECT COALESCE(MAX(tlog.reaction_date), ?) FROM workflow_reaction_log_tbl tlog " +
+                            "WHERE rlog.customer_id = tlog.customer_id AND tlog.reaction_id = ?" +
+                            ")";
+                }
             } else {
-                sqlGetRecipients += " AND rlog.timestamp > (" +
-                        "SELECT COALESCE(MAX(rout.step_date), ?) FROM workflow_reaction_out_tbl rout " +
-                        "WHERE rlog.customer_id = rout.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
-                        ")";
+                if (reaction.isOnce()) {
+                    sqlGetRecipients += " AND rlog.timestamp > ? AND NOT EXISTS (" +
+                            "SELECT 1 FROM workflow_reaction_out_tbl rout " +
+                            "WHERE rlog.customer_id = rout.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
+                            ")";
+                } else {
+                    sqlGetRecipients += " AND rlog.timestamp > (" +
+                            "SELECT COALESCE(MAX(rout.step_date), ?) FROM workflow_reaction_out_tbl rout " +
+                            "WHERE rlog.customer_id = rout.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
+                            ")";
+                }
             }
         } else {
             sqlGetRecipients += " AND rlog.timestamp > ?";
@@ -387,16 +421,30 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         if (excludeLoggedReactions) {
             sqlParameters.add(reaction.getReactionId());
 
-            if (reaction.isOnce()) {
-                sqlGetRecipients += " AND NOT EXISTS (" +
-                        "SELECT 1 FROM workflow_reaction_out_tbl rout " +
-                        "WHERE rout.customer_id = plog.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
-                        ")";
+            if (reaction.isLegacyMode()) {
+                if (reaction.isOnce()) {
+                    sqlGetRecipients += " AND NOT EXISTS (" +
+                            "SELECT 1 FROM workflow_reaction_log_tbl rlog " +
+                            "WHERE rlog.customer_id = plog.customer_id AND rlog.reaction_id = ?" +
+                            ")";
+                } else {
+                    sqlGetRecipients += " AND plog.open_count > (" +
+                            "SELECT COUNT(*) FROM workflow_reaction_log_tbl rlog " +
+                            "WHERE rlog.reaction_id = ? AND rlog.customer_id = plog.customer_id" +
+                            ")";
+                }
             } else {
-                sqlGetRecipients += " AND plog.open_count > (" +
-                        "SELECT COUNT(*) FROM workflow_reaction_out_tbl rout " +
-                        "WHERE rout.customer_id = plog.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
-                        ")";
+                if (reaction.isOnce()) {
+                    sqlGetRecipients += " AND NOT EXISTS (" +
+                            "SELECT 1 FROM workflow_reaction_out_tbl rout " +
+                            "WHERE rout.customer_id = plog.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
+                            ")";
+                } else {
+                    sqlGetRecipients += " AND plog.open_count > (" +
+                            "SELECT COUNT(*) FROM workflow_reaction_out_tbl rout " +
+                            "WHERE rout.customer_id = plog.customer_id AND rout.reaction_id = ? AND rout.step_id = 0" +
+                            ")";
+                }
             }
         }
 
@@ -442,17 +490,25 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
                 sqlParameters.add(reaction.getReactionId());
 
                 sqlBuilder.append(" AND NOT EXISTS (");
-                sqlBuilder.append("SELECT rout.customer_id FROM workflow_reaction_out_tbl rout ");
-
-                if (reaction.isOnce()) {
-                    sqlBuilder.append("WHERE rout.reaction_id = ? AND rout.step_id = 0 AND rout.customer_id = cust.customer_id");
+                if (reaction.isLegacyMode()) {
+                    sqlBuilder.append("SELECT rlog.customer_id FROM workflow_reaction_log_tbl rlog WHERE rlog.reaction_id = ? ");
+                    if (reaction.isOnce()) {
+                        sqlBuilder.append("AND rlog.customer_id = cust.customer_id");
+                    } else {
+                        sqlBuilder.append("AND rlog.customer_id = hst.customer_id AND rlog.reaction_date > hst.change_date");
+                    }
                 } else {
-                    // Exclude customer from "reacted" set if
-                    // - either a reaction is registered for that profile change (reaction's timestamp is after profile change's timestamp),
-                    // - or some valuable (having incoming recipients) step instance(s) for that customer is(are) in the future (or marked as undone).
-                    sqlBuilder.append("LEFT JOIN workflow_reaction_step_tbl stp ON stp.reaction_id = rout.reaction_id AND stp.case_id = rout.case_id ");
-                    sqlBuilder.append("WHERE rout.reaction_id = ? AND rout.customer_id = hst.customer_id ");
-                    sqlBuilder.append("AND (rout.step_id = 0 AND rout.step_date > hst.change_date OR rout.step_id = stp.previous_step_id AND (stp.done = 0 OR stp.step_date > hst.change_date))");
+                    sqlBuilder.append("SELECT rout.customer_id FROM workflow_reaction_out_tbl rout ");
+                    if (reaction.isOnce()) {
+                        sqlBuilder.append("WHERE rout.reaction_id = ? AND rout.step_id = 0 AND rout.customer_id = cust.customer_id");
+                    } else {
+                        // Exclude customer from "reacted" set if
+                        // - either a reaction is registered for that profile change (reaction's timestamp is after profile change's timestamp),
+                        // - or some valuable (having incoming recipients) step instance(s) for that customer is(are) in the future (or marked as undone).
+                        sqlBuilder.append("LEFT JOIN workflow_reaction_step_tbl stp ON stp.reaction_id = rout.reaction_id AND stp.case_id = rout.case_id ");
+                        sqlBuilder.append("WHERE rout.reaction_id = ? AND rout.customer_id = hst.customer_id ");
+                        sqlBuilder.append("AND (rout.step_id = 0 AND rout.step_date > hst.change_date OR rout.step_id = stp.previous_step_id AND (stp.done = 0 OR stp.step_date > hst.change_date))");
+                    }
                 }
                 sqlBuilder.append(")");
             }
@@ -519,13 +575,21 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             sqlParameters.add(reaction.getReactionId());
 
 			sqlGetRecipientsBuilder.append(" AND NOT EXISTS (");
-            sqlGetRecipientsBuilder.append("SELECT rout.customer_id FROM workflow_reaction_out_tbl rout ")
-                    .append("WHERE rout.reaction_id = ? AND rout.customer_id = bind.customer_id");
+			if (reaction.isLegacyMode()) {
+                sqlGetRecipientsBuilder.append("SELECT rlog.customer_id FROM workflow_reaction_log_tbl rlog ")
+                        .append("WHERE rlog.reaction_id = ? AND rlog.customer_id = bind.customer_id");
 
-            if (!reaction.isOnce() || reaction.getReactionType() == WorkflowReactionType.OPT_IN) {
-                sqlGetRecipientsBuilder.append(" AND rout.step_date > COALESCE(hst.timestamp_change, bind.creation_date)");
+                if (!reaction.isOnce() || reaction.getReactionType() == WorkflowReactionType.OPT_IN) {
+                    sqlGetRecipientsBuilder.append(" AND rlog.reaction_date > COALESCE(hst.timestamp_change, bind.creation_date)");
+                }
+            } else {
+                sqlGetRecipientsBuilder.append("SELECT rout.customer_id FROM workflow_reaction_out_tbl rout ")
+                        .append("WHERE rout.reaction_id = ? AND rout.customer_id = bind.customer_id");
+
+                if (!reaction.isOnce() || reaction.getReactionType() == WorkflowReactionType.OPT_IN) {
+                    sqlGetRecipientsBuilder.append(" AND rout.step_date > COALESCE(hst.timestamp_change, bind.creation_date)");
+                }
             }
-
 			sqlGetRecipientsBuilder.append(")");
         }
 
@@ -559,24 +623,27 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             return;
         }
 
-        Date reactionDate = new Date();
-        int newCaseId = getMaxCaseId(reaction) + 1;
+        if (reaction.isLegacyMode()) {
+            triggerLegacyMode(reaction, recipients);
+        } else {
+            Date reactionDate = new Date();
+            int newCaseId = getMaxCaseId(reaction) + 1;
 
-        createNewCase(reaction, newCaseId, reactionDate);
-        setTriggerStepRecipients(newCaseId, reaction.getReactionId(), reaction.getCompanyId(), recipients, reactionDate);
+            createNewCase(reaction, newCaseId, reactionDate);
+            setTriggerStepRecipients(newCaseId, reaction.getReactionId(), reaction.getCompanyId(), recipients, reactionDate);
+        }
     }
 
     @Override
     public void setStepDone(WorkflowReactionStepInstance step) {
-        selfRef.setStepDone(step, 0, false, null);
+        setStepDone(step, 0, false, null);
     }
 
     @Override
     public void setStepDone(WorkflowReactionStepInstance step, String sqlTargetExpression) {
-        selfRef.setStepDone(step, 0, false, sqlTargetExpression);
+        setStepDone(step, 0, false, sqlTargetExpression);
     }
 
-    @Transactional
     @Override
     public void setStepDone(WorkflowReactionStepInstance step, int mailingListId, boolean requireActiveBinding, String sqlTargetExpression) {
         String sqlMarkAsDone = "UPDATE workflow_reaction_step_tbl SET done = 1 " +
@@ -706,6 +773,58 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         return selectInt(logger, sqlGetMaxCaseId, reaction.getCompanyId(), reaction.getReactionId());
     }
 
+    private void triggerLegacyMode(ComWorkflowReaction reaction, List<Integer> reactedRecipients) {
+        final String sqlInsertReactedRecipients = "INSERT INTO workflow_reaction_log_tbl " +
+                "(reaction_id, company_id, customer_id, reaction_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+        final String sqlUpdateReactedRecipients = "UPDATE workflow_reaction_log_tbl SET reaction_date = CURRENT_TIMESTAMP " +
+                "WHERE reaction_id = ? AND company_id = ? AND customer_id = ?";
+
+        for (Integer recipientId : reactedRecipients) {
+            if (update(logger, sqlUpdateReactedRecipients, reaction.getReactionId(), reaction.getCompanyId(), recipientId) <= 0) {
+                update(logger, sqlInsertReactedRecipients, reaction.getReactionId(), reaction.getCompanyId(), recipientId);
+            }
+        }
+    }
+
+    @Override
+    @DaoUpdateReturnValueCheck
+    public void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, int companyId) {
+        ArrayList<Object[]> params = new ArrayList<>();
+        for (Integer customerId : customersId) {
+            if (isOracleDB()) {
+                int newId = selectInt(logger, "SELECT workflow_def_mailing_tbl_seq.NEXTVAL FROM dual");
+                params.add(new Object[]{newId, companyId, reactionId, customerId, mailingId, sendDate, 0});
+            } else {
+                params.add(new Object[]{companyId, reactionId, customerId, mailingId, sendDate, 0});
+            }
+        }
+        String idPart = isOracleDB() ? "id, " : "";
+        String lastParam = isOracleDB() ? ", ? " : "";
+        String query = "INSERT INTO workflow_def_mailing_tbl (" + idPart + "company_id, reaction_id, customer_id, " +
+                "mailing_id, send_date, sent) VALUES (?, ?, ?, ?, ?, ?" + lastParam + ")";
+        batchupdate(logger, query, params);
+    }
+
+    @Override
+    public List<WorkflowActionMailingDeferral> getDeferredActionMailings(CompaniesConstraints constraints) {
+        String sqlGetDeferrals = "SELECT * FROM workflow_def_mailing_tbl " +
+            "WHERE sent = 0 AND send_date < CURRENT_TIMESTAMP" +
+            DbUtilities.asCondition(" AND %s", constraints);
+        return select(logger, sqlGetDeferrals, new ActionMailingDeferralMapper());
+    }
+
+    @Override
+    @DaoUpdateReturnValueCheck
+    public void markDeferredActionMailingsAsSent(List<Integer> deferralsIds) {
+        if (CollectionUtils.isNotEmpty(deferralsIds)) {
+            List<Object[]> args = new ArrayList<>(deferralsIds.size());
+            for (int id : deferralsIds) {
+                args.add(new Object[]{id});
+            }
+            batchupdate(logger, "UPDATE workflow_def_mailing_tbl SET sent = 1 WHERE id = ?", args);
+        }
+    }
+
     @Override
     public int getReactionId(int workflowId, int companyId) {
         String sqlGetReactionId = "SELECT reaction_id FROM workflow_reaction_tbl WHERE workflow_id = ? AND company_id = ?";
@@ -713,19 +832,16 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     }
     
     @Override
-    public boolean isLinkUsedInActiveWorkflow(TrackableLink link) {
+    public boolean isLinkUsedInActiveWorkflow(ComTrackableLink link) {
         String query = "SELECT " + (isOracleDB() ? "1 FROM DUAL WHERE" : "") +
                 " EXISTS (SELECT 1 FROM dyn_target_tbl t, workflow_reaction_tbl wr" +
                 "    WHERE (t.target_id IN (" +
                 "        SELECT wd.entity_id FROM workflow_tbl w JOIN workflow_dependency_tbl wd ON w.workflow_id = wd.workflow_id" +
-                "        WHERE w.status IN (?, ?, ?) AND wd.type = ?)" +
+                "        WHERE w.status = ? AND wd.type = ?)" +
                 "    AND eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%')) " +
                 "OR EXISTS (SELECT 1 FROM workflow_reaction_tbl WHERE trigger_link_id = ? AND active = 1)";
         
-        return selectInt(logger, query,
-                WorkflowStatus.STATUS_ACTIVE.getId(),
-                WorkflowStatus.STATUS_TESTING.getId(),
-                WorkflowStatus.STATUS_PAUSED.getId(),
+        return selectInt(logger, query, Workflow.WorkflowStatus.STATUS_ACTIVE.getId(),
                 WorkflowDependencyType.TARGET_GROUP_CONDITION.getId(), link.getId()) == 1;
     }
 
@@ -734,9 +850,19 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         this.recipientProfileHistoryService = service;
     }
 
-    @Required
-    public final void setSelfRef(final ComWorkflowReactionDao dao) {
-    	this.selfRef = Objects.requireNonNull(dao, "Self reference is null");
+    private static class ActionMailingDeferralMapper implements RowMapper<WorkflowActionMailingDeferral> {
+        @Override
+        public WorkflowActionMailingDeferral mapRow(ResultSet rs, int index) throws SQLException {
+            WorkflowActionMailingDeferral deferral = new WorkflowActionMailingDeferralImpl();
+            deferral.setId(rs.getInt("id"));
+            deferral.setCompanyId(rs.getInt("company_id"));
+            deferral.setReactionId(rs.getInt("reaction_id"));
+            deferral.setMailingId(rs.getInt("mailing_id"));
+            deferral.setCustomerId(rs.getInt("customer_id"));
+            deferral.setSendDate(rs.getTimestamp("send_date"));
+            deferral.setSent(rs.getInt("sent") == 1);
+            return deferral;
+        }
     }
 
     private static class ReactionRowMapper implements RowMapper<ComWorkflowReaction> {
@@ -756,6 +882,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             reaction.setReactionType(WorkflowReactionType.fromId(resultSet.getInt("reaction_type")));
             reaction.setProfileColumn(resultSet.getString("profile_column"));
             reaction.setRulesSQL(resultSet.getString("rules_sql"));
+            reaction.setLegacyMode(resultSet.getInt("is_legacy_mode") == 1);
             return reaction;
         }
     }

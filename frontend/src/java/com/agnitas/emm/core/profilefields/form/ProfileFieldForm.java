@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.profilefields.form;
 
-import com.agnitas.beans.ProfileFieldMode;
-import org.agnitas.util.DbColumnType;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 
@@ -31,11 +29,8 @@ public class ProfileFieldForm extends PaginationForm {
     private String fieldDefault = StringUtils.EMPTY;
     private boolean fieldNull = true;
     private String shortname = StringUtils.EMPTY;
-    private String filterFieldName;
-    private String filterDbFieldName;
-    private String filterDescription;
-    private DbColumnType.SimpleDataType filterType;
-    private ProfileFieldMode filterMode;
+    private String dependentWorkflows; // TODO check usage after ProfileFieldsControllerOld.java has been removed
+    private String dependentWorkflowName; // TODO delete after ProfileFieldsControllerOld.java has been removed
 
     public boolean isFieldVisible() {
         return fieldVisible;
@@ -157,43 +152,19 @@ public class ProfileFieldForm extends PaginationForm {
         this.shortname = shortname;
     }
 
-    public String getFilterFieldName() {
-        return filterFieldName;
+    public String getDependentWorkflows() {
+        return dependentWorkflows;
     }
 
-    public void setFilterFieldName(String filterFieldName) {
-        this.filterFieldName = filterFieldName;
+    public void setDependentWorkflows(String dependentWorkflows) {
+        this.dependentWorkflows = dependentWorkflows;
     }
 
-    public String getFilterDbFieldName() {
-        return filterDbFieldName;
+    public String getDependentWorkflowName() {
+        return dependentWorkflowName;
     }
 
-    public void setFilterDbFieldName(String filterDbFieldName) {
-        this.filterDbFieldName = filterDbFieldName;
-    }
-
-    public DbColumnType.SimpleDataType getFilterType() {
-        return filterType;
-    }
-
-    public void setFilterType(DbColumnType.SimpleDataType filterType) {
-        this.filterType = filterType;
-    }
-
-    public ProfileFieldMode getFilterMode() {
-        return filterMode;
-    }
-
-    public void setFilterMode(ProfileFieldMode filterMode) {
-        this.filterMode = filterMode;
-    }
-
-    public String getFilterDescription() {
-        return filterDescription;
-    }
-
-    public void setFilterDescription(String filterDescription) {
-        this.filterDescription = filterDescription;
+    public void setDependentWorkflowName(String dependentWorkflowName) {
+        this.dependentWorkflowName = dependentWorkflowName;
     }
 }

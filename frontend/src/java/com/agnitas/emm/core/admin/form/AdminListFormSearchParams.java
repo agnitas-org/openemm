@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.admin.form;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.web.forms.FormSearchParams;
 
 public class AdminListFormSearchParams implements FormSearchParams<AdminListForm>{
@@ -21,9 +20,6 @@ public class AdminListFormSearchParams implements FormSearchParams<AdminListForm
     private Integer mailinglistId;
     private Integer adminGroupId;
     private String language;
-    private String username;
-    private DateRange creationDate = new DateRange();
-    private DateRange lastLoginDate = new DateRange();
 
     @Override
     public void storeParams(AdminListForm form) {
@@ -34,9 +30,6 @@ public class AdminListFormSearchParams implements FormSearchParams<AdminListForm
         this.mailinglistId = form.getFilterMailinglistId();
         this.adminGroupId = form.getFilterAdminGroupId();
         this.language = form.getFilterLanguage();
-        this.username = form.getFilterUsername();
-        this.creationDate = form.getFilterCreationDate();
-        this.lastLoginDate = form.getFilterLastLoginDate();
     }
 
     @Override
@@ -48,9 +41,6 @@ public class AdminListFormSearchParams implements FormSearchParams<AdminListForm
         form.setFilterMailinglistId(this.mailinglistId);
         form.setFilterAdminGroupId(this.adminGroupId);
         form.setFilterLanguage(this.language);
-        form.setFilterUsername(this.username);
-        form.setFilterCreationDate(this.creationDate);
-        form.setFilterLastLoginDate(this.lastLoginDate);
     }
 
     @Override
@@ -62,8 +52,5 @@ public class AdminListFormSearchParams implements FormSearchParams<AdminListForm
         mailinglistId = null;
         adminGroupId = null;
         language = null;
-        username = null;
-        creationDate = new DateRange();
-        lastLoginDate = new DateRange();
     }
 }

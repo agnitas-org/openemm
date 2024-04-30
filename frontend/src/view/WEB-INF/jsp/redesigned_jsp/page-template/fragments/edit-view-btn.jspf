@@ -1,8 +1,0 @@
-<c:if test="${not empty agnEditViewKey}">
-    <li>
-        <button class="btn" type="button" data-edit-view="${agnEditViewKey}">
-            <i class="icon icon-edit"></i>
-            <span class="text"><mvc:message code="default.view.edit" /></span>
-        </button>
-    </li>
-</c:if>

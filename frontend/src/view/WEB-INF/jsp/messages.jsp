@@ -17,39 +17,42 @@ errors.add( ActionErrors.GLOBAL_MESSAGE, ...)
 Using any other keys only makes sense with an additional <html:message property="..." /> tag at the form element where you
 want to show your message / error message!
 --%>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<emm:messagesPresent type="success">
+<logic:messagesPresent property="org.apache.struts.action.GLOBAL_MESSAGE" message="true">
     <script type="text/javascript" data-message>
-        <emm:messages var="msg" type="success" >
-            AGN.Lib.Messages('<mvc:message code="default.Success" />', '${emm:escapeJs(msg)}', 'success');
-        </emm:messages>
+        <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="true" >
+            AGN.Lib.Messages('<bean:message key="default.Success" />', '${emm:escapeJs(msg)}', 'success');
+        </html:messages>
     </script>
-</emm:messagesPresent>
+</logic:messagesPresent>
 
-<emm:messagesPresent type="info">
-    <script type="text/javascript" data-message="">
-        <emm:messages var="msg" type="info">
-            AGN.Lib.Messages('<mvc:message code="Info"/>', '${emm:escapeJs(msg)}', 'info');
-        </emm:messages>
-    </script>
-</emm:messagesPresent>
-
-<emm:messagesPresent type="warning">
+<logic:messagesPresent property="de.agnitas.GLOBAL_WARNING" message="true">
     <script type="text/javascript" data-message>
-        <emm:messages var="msg" type="warning" >
-            AGN.Lib.Messages('<mvc:message code="warning" />', '${emm:escapeJs(msg)}', 'warning');
-        </emm:messages>
+        <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING" message="true" >
+            AGN.Lib.Messages('<bean:message key="warning" />', '${emm:escapeJs(msg)}', 'warning');
+        </html:messages>
     </script>
-</emm:messagesPresent>
+</logic:messagesPresent>
 
-<emm:messagesPresent type="error">
+<logic:messagesPresent property="de.agnitas.GLOBAL_WARNING_PERMANENT" message="true">
     <script type="text/javascript" data-message>
-        <emm:messages var="msg" type="error">
+        <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING_PERMANENT" message="true" >
+            AGN.Lib.Messages('<bean:message key="warning" />', '${emm:escapeJs(msg)}', 'warning_permanent');
+        </html:messages>
+    </script>
+</logic:messagesPresent>
+
+<logic:messagesPresent message="false">
+    <script type="text/javascript" data-message>
+        <html:messages id="msg" message="false">
             <c:set var="myText">
                 ${msg}<br>
                 <c:if test='${not empty errorReport }'>
@@ -67,16 +70,16 @@ want to show your message / error message!
                     </display:table>
                 </c:if>
             </c:set>
-
-            AGN.Lib.Messages('<mvc:message code="Error" />', '${fn:replace(myText, "'", "\\'")}${fn:replace(errorTable, newLineChar, "")}', 'alert');
-        </emm:messages>
+            <%--AGN.Lib.Messages('<bean:message key="Error" />', '${myText}', 'alert');--%>
+            AGN.Lib.Messages('<bean:message key="Error" />', '${fn:replace(myText, "'", "\\'")}${fn:replace(errorTable, newLineChar, "")}', 'alert');
+        </html:messages>
     </script>
-</emm:messagesPresent>
+</logic:messagesPresent>
 
-<emm:messagesPresent type="error" formField="true">
-    <emm:fieldMessages var="msg" type="error" fieldNameVar="fieldName">
-        <script type="text/html" data-message="${fieldName}">
-            ${msg}
+<c:if test="${POPUPS_FIELDS_ERRORS ne null}">
+    <c:forEach var="fieldError" items="${POPUPS_FIELDS_ERRORS}">
+        <script type="text/html" data-message="${fieldError.fieldName}">
+                <mvc:message code="${fieldError.message.code}" arguments="${fieldError.argumentsStr}"/>
         </script>
-    </emm:fieldMessages>
-</emm:messagesPresent>
+    </c:forEach>
+</c:if>

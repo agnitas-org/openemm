@@ -112,8 +112,6 @@ reportContext.setPersistentGlobalVariable("openers_total_show",  BirtReporUtils.
 reportContext.setPersistentGlobalVariable("clickers_total_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value, params["figures"].value) ? "true" : "false");
 reportContext.setPersistentGlobalVariable("hardbounces_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HARDBOUNCES.value, params["figures"].value) ? "true" : "false");
 reportContext.setPersistentGlobalVariable("signed_off_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SIGNED_OFF.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("anonymous_openings_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("anonymous_clicks_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
 
 reportContext.setPersistentGlobalVariable("openers_measured_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value, params["figures"].value) ? "true" : "false");
 reportContext.setPersistentGlobalVariable("openers_invisible_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value, params["figures"].value) ? "true" : "false");
@@ -1409,72 +1407,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                         </structure>
                     </list-property>
                 </structure>
-                <structure>
-                    <property name="name">openers_anonymous_name_</property>
-                    <property name="dataType">string</property>
-                    <property name="aggregateFunction">MAX</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX) {row["category"]} else {""}</expression>
-                        </structure>
-                    </list-property>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">openers_anonymous_value</property>
-                    <expression name="expression" type="javascript">if (row["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX) {row["value"]} else {0}</expression>
-                    <property name="dataType">float</property>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">openeres_anonymous_value_</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>group_rowIndex_mailingId</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">MAX</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">row["openers_anonymous_value"]</expression>
-                        </structure>
-                    </list-property>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">clicker_anonymous_name_</property>
-                    <property name="dataType">string</property>
-                    <property name="aggregateFunction">MAX</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX) {row["category"]} else {""}</expression>
-                        </structure>
-                    </list-property>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">clicker_anonymous_value</property>
-                    <expression name="expression" type="javascript">if (row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX) {row["value"]} else {0}</expression>
-                    <property name="dataType">float</property>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">clicker_anonymous_value_</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>group_rowIndex_mailingId</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">MAX</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">row["clicker_anonymous_value"]</expression>
-                        </structure>
-                    </list-property>
-                    <property name="allowExport">true</property>
-                </structure>
             </list-property>
             <method name="onPrepare"><![CDATA[titleCount1 = 0;]]></method>
             <property name="repeatHeader">true</property>
@@ -1500,10 +1432,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                         <value>CommonKeys.HARD_BOUNCES_INDEX</value>
                         <value>CommonKeys.REVENUE_INDEX</value>
                         <value>CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX</value>
-                        <value>CommonKeys.OPENINGS_ANONYMOUS_INDEX</value>
-                        <value>CommonKeys.CLICKS_ANONYMOUS_INDEX</value>
                     </simple-property-list>
-                    <property name="updateAggregation">true</property>
                 </structure>
             </list-property>
             <column id="5614"/>
@@ -1535,14 +1464,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                     </structure>
                 </list-property>
             </column>
-            <column id="7894">
-                <list-property name="visibility">
-                    <structure>
-                        <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("anonymous_openings_show") == "false"</expression>
-                    </structure>
-                </list-property>
-            </column>
             <column id="5622">
                 <list-property name="visibility">
                     <structure>
@@ -1556,14 +1477,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                     <structure>
                         <property name="format">all</property>
                         <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("clickers_total_show") == "false"</expression>
-                    </structure>
-                </list-property>
-            </column>
-            <column id="7907">
-                <list-property name="visibility">
-                    <structure>
-                        <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("anonymous_clicks_show") == "false"</expression>
                     </structure>
                 </list-property>
             </column>
@@ -1603,7 +1516,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             </structure>
                         </list-property>
                         <cell id="6171">
-                            <property name="colSpan">17</property>
+                            <property name="colSpan">15</property>
                             <property name="rowSpan">1</property>
                             <property name="fontSize">medium</property>
                             <text-data id="5547">
@@ -1636,7 +1549,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             </data>
                         </cell>
                         <cell id="6059">
-                            <property name="colSpan">14</property>
+                            <property name="colSpan">12</property>
                             <property name="rowSpan">1</property>
                         </cell>
                     </row>
@@ -1659,13 +1572,13 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             </data>
                         </cell>
                         <cell id="6047">
-                            <property name="colSpan">14</property>
+                            <property name="colSpan">12</property>
                             <property name="rowSpan">1</property>
                         </cell>
                     </row>
                     <row id="7558">
                         <cell id="7559">
-                            <property name="colSpan">17</property>
+                            <property name="colSpan">15</property>
                             <property name="rowSpan">1</property>
                         </cell>
                     </row>
@@ -1765,13 +1678,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">openers_total_rate_name_</property>
                             </data>
                         </cell>
-                        <cell id="7889">
-                            <data id="7895">
-                                <property name="fontFamily">"Arial"</property>
-                                <property name="fontSize">medium</property>
-                                <property name="resultSetColumn">openers_anonymous_name_</property>
-                            </data>
-                        </cell>
                         <cell id="5724">
                             <property name="colSpan">1</property>
                             <property name="rowSpan">1</property>
@@ -1786,13 +1692,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontFamily">"Arial"</property>
                                 <property name="fontSize">medium</property>
                                 <property name="resultSetColumn">clicker_rate_name_</property>
-                            </data>
-                        </cell>
-                        <cell id="7902">
-                            <data id="7908">
-                                <property name="fontFamily">"Arial"</property>
-                                <property name="fontSize">medium</property>
-                                <property name="resultSetColumn">clicker_anonymous_name_</property>
                             </data>
                         </cell>
                         <cell id="5886">
@@ -1868,13 +1767,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">openers_total_rate_name_</property>
                             </data>
                         </cell>
-                        <cell id="7890">
-                            <data id="7896">
-                                <property name="fontFamily">"Arial"</property>
-                                <property name="fontSize">medium</property>
-                                <property name="resultSetColumn">openers_anonymous_name_</property>
-                            </data>
-                        </cell>
                         <cell id="7784">
                             <data id="7793">
                                 <property name="fontFamily">"Arial"</property>
@@ -1889,7 +1781,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">clicker_rate_name_</property>
                             </data>
                         </cell>
-                        <cell id="7903"/>
                         <cell id="7786">
                             <property name="widows">2</property>
                             <data id="7795">
@@ -2004,7 +1895,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">delivered_emails_value_</property>
@@ -2026,7 +1917,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             <data id="7871">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">delivered_emails_delivered_value_</property>
@@ -2050,7 +1941,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_total_value_</property>
@@ -2068,13 +1959,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">openers_total_rate_</property>
                             </data>
                         </cell>
-                        <cell id="7891">
-                            <data id="7897">
-                                <property name="fontFamily">"Arial"</property>
-                                <property name="fontSize">medium</property>
-                                <property name="resultSetColumn">openeres_anonymous_value_</property>
-                            </data>
-                        </cell>
                         <cell id="5590">
                             <property name="colSpan">1</property>
                             <property name="rowSpan">1</property>
@@ -2083,7 +1967,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">clicker_value_</property>
@@ -2101,20 +1985,13 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">clicker_rate_</property>
                             </data>
                         </cell>
-                        <cell id="7904">
-                            <data id="7909">
-                                <property name="fontFamily">"Arial"</property>
-                                <property name="fontSize">medium</property>
-                                <property name="resultSetColumn">clicker_anonymous_value_</property>
-                            </data>
-                        </cell>
                         <cell id="5887">
                             <data id="5928">
                                 <property name="fontFamily">"Arial"</property>
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">hardbounces_value_</property>
@@ -2126,7 +2003,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">signedoff_value_</property>
@@ -2202,7 +2079,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_total_value_</property>
@@ -2220,14 +2097,13 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">openers_total_rate_</property>
                             </data>
                         </cell>
-                        <cell id="7892"/>
                         <cell id="7771">
                             <data id="7802">
                                 <property name="fontFamily">"Arial"</property>
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">clicker_value_</property>
@@ -2245,14 +2121,13 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="resultSetColumn">clicker_rate_</property>
                             </data>
                         </cell>
-                        <cell id="7905"/>
                         <cell id="7773">
                             <data id="7804">
                                 <property name="fontFamily">"Arial"</property>
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">hardbounces_value_</property>
@@ -2264,7 +2139,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">signedoff_value_</property>
@@ -2276,7 +2151,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
             <footer>
                 <row id="7556">
                     <cell id="7557">
-                        <property name="colSpan">17</property>
+                        <property name="colSpan">15</property>
                         <property name="rowSpan">1</property>
                     </cell>
                 </row>
@@ -2966,7 +2841,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_total_value_</property>
@@ -2990,7 +2865,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_measured_value_</property>
@@ -3014,7 +2889,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_invisible_value_</property>
@@ -3865,7 +3740,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5398">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="whiteSpace">nowrap</property>
@@ -3889,7 +3764,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5402">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="whiteSpace">nowrap</property>
@@ -3913,7 +3788,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5406">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_mobil_value_</property>
@@ -3935,7 +3810,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5410">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="whiteSpace">nowrap</property>
@@ -3959,7 +3834,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5985">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">openers_smarttv_value_</property>
@@ -3981,7 +3856,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                             <data id="5414">
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="whiteSpace">nowrap</property>
@@ -4869,7 +4744,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_trans_value_</property>
@@ -4893,7 +4768,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_pc_value_</property>
@@ -4917,7 +4792,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_mobil_value_</property>
@@ -4941,7 +4816,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_tablet_value_</property>
@@ -4965,7 +4840,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_smarttv_value_</property>
@@ -4989,7 +4864,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontSize">medium</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">click_multiple_value_</property>
@@ -5612,7 +5487,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontFamily">"Arial"</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="textAlign">right</property>
                                 <property name="resultSetColumn">delivered_emails_value_</property>
@@ -5624,7 +5499,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontFamily">"Arial"</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="resultSetColumn">type_html_value_</property>
                             </data>
@@ -5646,7 +5521,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontFamily">"Arial"</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="resultSetColumn">type_text_value_</property>
                             </data>
@@ -5668,7 +5543,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="fontFamily">"Arial"</property>
                                 <structure name="numberFormat">
                                     <property name="category">Custom</property>
-                                    <property name="pattern">######.###</property>
+                                    <property name="pattern">###,###.###</property>
                                 </structure>
                                 <property name="resultSetColumn">type_offline_value_</property>
                             </data>
@@ -5689,4 +5564,350 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
             </group>
         </table>
     </body>
+    <list-property name="images">
+        <structure>
+            <property name="name">keine_daten.png</property>
+            <property name="type">image/png</property>
+            <property name="data">
+                iVBORw0KGgoAAAANSUhEUgAAAHwAAAB3CAIAAABOu7MqAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAYpUlE
+                QVR4Xu1d629cx3U/cx+75O7ysUstXxZFUjKZWhYVkqLsWi9aNm1BgeOkUY2mkJHaafK1XxjEf4MDCwja
+                fimgpGpQokAMx2hkVHBNS6ECMXZCrWhSkkXKFF+ilkuu+F7uvXtf/XDuDO8uyb37Jgvw94FY3p25O/c3
+                Z845c87MXGIYBlDIsryyshKLxWRZlmUZ9pAdRFF0Op1FRUUej6e4uJhdJ0i6YRjhcDgcDm9/hz1khfLy
+                8srKSp7nAUk3DGNiYkKSJLuKe8gKoig2NDQIgsABQDgc3mO8AFAUJRQKAQAnSdKeVikYVlZWVldXudXV
+                VbuSe8glVlZWuD0vpcCIxWJcNBq1K7aHXEKSJE5VVbtie8gxOLsCe8g99kjfAeyRvgPYI30HsEf6DmCP
+                9B3AHuk7gD3SdwB7pO8ABLsCOwxrYssWhBC7IrsCu5R0K9cst7V98S3o3s0dsLtIxzQWWCg2KNhFURQB
+                wOFwAAAhJBaLEUIURQEAjjO1pZXxXcj+zpPOCMUPuq7rus641nW9rKysvLy8uLhYFMWioqIkt4rFYrFY
+                LBKJyLK8vr6uKAohBEm3/t1x7CTpTJx1CmRZ0zSPx7Nv377S0lIASE60FQ6Hw+FweDwedmVubg4AFhcX
+                sQNgd/BO7t+/b1cm92BCDZRxTdM0TRNFcd++fX6/P3WiU8Tc3Byjnon/TqHQpBsWqKqKf1VVLS0traur
+                czgc1vUhOUcsFltaWkL20QDsCPsFJZ0JuKqq+FdV1YqKigMHDuSV682Yn58PhUI7xXvhdLpVZSuKgowf
+                P368wHQj/H5/WVnZ8vIyKv0C85530q0+iaZpqqrGYjFFUerr66uqqnaEcYTD4fD7/TzPz8/Pq6paSEWf
+                d9IBAOnWdV1RFHSoX3zxxR2k2wqfz+fz+ebn5wsp8nkknTna6JngulS/33/w4MFdwjgDinwwGISC8J4v
+                0pFudE5QwKPRaH19fVNTk13VnYHP53M6nY8fPy6AqskL6VYZVxRFlmVJkp577rn9+/fbVd0aEYpQKDQ7
+                O0sIWVtbA2owNE0zDKO6urq6utrj8VRVVZWUlNjdcgu43e7Gxsbx8XG8Yf54z73LiIyjzVRVVZIkSZJO
+                nz6dmUq5d+/exMTE+vo6AJjrjCkXrGvBMqdl9qO1tbWmpqampibJzbfD+Pg4rsHKE+85Jh1ZYDZTkqRo
+                NHrmzBm3221XNQ5TU1P37t2TZZnneY7jOI7jeT5hMknnWOaQQlXGLDZeLC4ufvbZZ5uamtKV/ZGREVVV
+                WQQtt8gx6cxs4l6OaDTa0dGxb98+u3ob+Prrr6enpxVF4Xme53lBEAghVtIBgJCNvQysm5F01t9sqCHa
+                2trSoj4Wi6GeyYew54x09vzoiUej0Wg0euTIkbq6OruqJsLh8ODgoCzLoiiKoigIAnLNcRyxAOiox18E
+                y7RLp1MBhGIBDoK2trZjx47ZtINibW1tcnLSOrZyhdyQzka6oijoGkYikZKSklOnTtlVNTE6OhoMBjVN
+                EwSB53lRFBNUipVuK4xNQN7xryzLGO+VJAmpr6qqevnll1MU+UgkMjExkXPec+a9GNQ7xCf0eDxtbW12
+                lQAA1tfX//znPyuKgtEuq0rBv6zklk9OqKoB2gEcxwmCoKqqdawYVB2trq6y8rZwu901NTXBYHA3ko5a
+                BWdA0WhUluWTJ0+mYjxnZmYePXoEAC6XSxRFJAj/YoHtBNwKpm2wAziO03WdEMIGCg5BVVVLS0tff/31
+                FMUc4fP5lpeXo9FoDnnPAekG1aco47Ist7S0pML42NgYTr5dLheTSny2LRNvycGox88cx6FJR+eHEFJS
+                UtLZ2WlNcaQIv98/OTmJn1NvTxJk6xIZ8ZOgWCxWVlaWirsSDAanp6d1XS8qKkKzyQSTRVwzeMKEWqx5
+                LpcrM8YBwOPx1NbWpq6UbJEV6UzGUZWjCT18+LDtsy0tLU1PT+PGVkEQ0GwykcyMbgZmTlEU0FqcOHHC
+                tlVJ4PV6XS5XrnjPAekaDdjKspyKmEej0YcPHzIZF0WRULOZJd0QPx/GJnEcd/z48VTUXXJUVlbize0K
+                2iNb0vHxULfIsvzCCy/YVYK7d+/quu5wOJjBzAndsEnGJUnKFeMA4Ha7y8vL7UqlhMxJt+oW1OYHDhyw
+                HcJfffUVMo6Wk8l48lqpwKBTM5wPo7+ROuM9PT22uzvLy8tzIuyZeS8T1y/3PgKo73z7r6s1zAQpinL4
+                8OFkleZ6f/H+tRDUdb7d2Ug9ccjKH5i4cbl3bNPV0ufPnWkUCSEdHR22jA/3dA8dvSR+/dv19fW+vr43
+                3ngjSWGPx+NyuTD6lkWzs5B0AABdR/9XUZSKigpbMZcBADhC1Tdk1/TtsHLv009uftNoL+NzvR90XwnA
+                47/8XlEUURSDweDt27eTVoGysrLkBVJBJpK+McB0jYU4jhw5krzWtPyt839fzvO8uClemCUaX3n39H5N
+                13VJkqSJ/k8GnsDKgw//FPlZV0qKxdB1XKRnGMbs7Gzywj6f78mTJ5CduGRIOn7QNVVRlNjSw68GJr/4
+                Yvz8ez/vqgQAmOv94P1rQSxTc/69n3VVAsDCeN+1/76zBI2v/PhsI5n8w68+HwM41PWW9/aHA4sAAODt
+                eOtCKxOk5cGP6BcJ32wA22HQvpckidQc+6cu7Z97Q8Frnw13XWwBAIDhnu4rAVrHbNBGG+e//uM8VH3r
+                pYMuw5i82999/XpcQcsN2t95r+pT+mTeY29daMtM7DNRL8yQGLqqKDP3ByajAO3vmIwP93QzxgEgeO39
+                D3rnwuGwpukoG1YZH+tlxAIsDnx4YwI/Tty4bPkCFgc+/GhwGeLB+t7QTV8FLWf9sfYaAIBgaA4ggXEA
+                CF57v2cYAKYi1ptxgtO5NnlnbG7jNBBsubVQ4IrlyRZvs9ami0wkHaiI6bo2OzQUBvCf/rEpVHO9nwYA
+                oP2dS3hhuKf7SuDaZ3+qbDnAYwfHj0oqw6ZNHBufONvQsDx4ewwADnX95GwDgPnlQGCiFf8FMH0VQwcA
+                AF2Ro1GJ4zjTcrqragAoOcND1vZgDwSGftvQ0PxqF7nee3cZDrz0VnuVEp2/+8cFAPAeOPLM+ZMnm5tl
+                bDkbLgAbwv/Jv3bfGKethbSRNunomZmkPx64OwdQXPvDrnrz61AoCAAQuNJtla7A+PhzjRUm3VZteOiY
+                qTUaGg/BGPVEFhcXAQDGei9bfZONR6T+uNkMTZG291VaLl66dBHiVR7Mg1HvdDp4AgBARIfDQTQ5ug4A
+                sDh1d/Hf7t6l1QNDwxdbKOvt50x103rkr26MP6CylzbSJh0s6sU0O9Ent8Y9DS0AAHOhDcViBSFp6LHl
+                pYUk31pmQCbpBOL98fhGJKoXAABDdDoFQTWHHuF4no+up3EEi0NI43E2Iz3S8YF1ndLuaWypWR5+uBC4
+                0nP00hbDEHHv3j1N08iqqdIhRWxlPQ0aeNB1XZYVPEvC1xTvHZqjraaqEmC4BxlH/XLrt7/83ZfTUOb1
+                CoIoCjjkkHSBIwAA7vqW56uM9fVTp04lWS3icvLbfZUK0u4xNF9Iur9uv1hSfcYPAIFPe+cAoPJoaw0A
+                BK99NgwAAMM93d3dv/719WmOS93FKms85AWAxYHABAAATNy4fPny5cs3xqmMY0pIkhS8pei0MD7X+8GV
+                AADUnH+thQl9zfnXWqC/v39mZhoAgAi8IDBrvrSywnGct76+FAAik0+WOI7jHt76uLu7u7u7Zxi2gKdI
+                xA+ZzU7Tk3SErqMBA0PXdN3x6g9fffgvn5suWmXXufZrVwJxSr28rZWq/NRQ1nrs0EDvWJxS9x5rrY+P
+                qxACPoCZTQYEAKDm/I+6KgGgEm1q8Nr73dc2vl1aWiGkgnjLvQCLsBj4+DeB8m9/943n6oa+nIano188
+                3bjNaxvDN3dIT9IT1Ith6IZheBq+c64dAAJXeoYBoOXipXfaN6r4Xvi7v2n1EkIIl7KoAzSc/UnXoY1/
+                vccufP9o6aa4SpO4Vd2a8+9dYsqt5eJ759nSl/rOtzsbAQCWlpcJADQe6/CaXxGO4+pe/Nv22rj7WHRk
+                LpFeYhojXJjpj0Qia2trPM9fuHAhSZWxsTHkiMt0DQn2NEvwpxvJ6u/vZ2FkFrIHixNl0MidJEnr6+uR
+                SGR1dVWSpHPnziVZqxQKhebn5zN7rjQqGJugaZqtUovFYskLJAf7IYtWSZtxp9NpXcoB8W4ru0IIwbQ4
+                Fo5E4qZPCbANNCVB2jqdyYWu64ZhJP9tWZZVVc04eGvE+SoyxsdTiR0ibt26ZRiG0+nE5BRrw+bGMN6t
+                uZTkkV5baUuCtEmHDc1uTzqTrAzAZHwjrpJatBbR399vGAbTKlvKOAOhywgIXU2WsaCkgvTUC8Qznk1v
+                J0cBtMpmYLHNSj/nSE/SN7OcjWrbDgXTKpuR+tB0Op12RbZFeqQzGBS2Ka50UUitYgUrlmJ5WZaNTNew
+                Z0h6fmBmARtf/ocTz+RTq5ghTRbFNHX6pvslAzu5NQPqdxHpzETohlZgrWJFuuxngAxJZ0KUXL1gGiwV
+                GBa7bMTkgmkVBPtxSyuguro6SRUli8MGMiQdQQiZHvy8+/PPrTNmltrCsGOZNvIfv+mnSSBr5BAHubej
+                wzcwMAbgbfv+t1l8fPbOJwMzcPXq1YTJ+FaJN+jv//DLj754DFDf+d2KoasBM/kXl06zJP8OdXVBApYG
+                f/fRbbONJc2d3640DMNwu6d6un+RmKXLRXAgDZcRqIAzAIDoKgWA4OAQzWuZcb32o2bi6JcbjAPA4sCH
+                l+OTXIsDA2MAAOUN+z1mJmhm4OrADP2eZtdgm8TbrVu3dN3ASOtkH2Uc4tJp1nQrwFhv/LqNiRuXGeMA
+                sDrad2c6AgAej3koRFyWjrYnm9O405B0Zm04CkIIKStvmV4ZDg4OzXV1VQLMDQ0GWXSOBrMPvvKPZxsJ
+                IfjwY703GqkFw29/dGq/qqqKPK7hlaqu935+vpJle8zszZaJt89n6jsOFjnMEe49duEHreUAk3/41Uby
+                DyYCyLhpOOO7wEwNHnzl3c5qWZaksf7ffTk7OS3VW9bwUOk2ez0wNHyxpSiL8EYapCOYmFPey2qfheFv
+                TNZNzluPVgIT+pZXXm7Auixki2SgMmk8UKdp6B2a8fH28+dx/FZak51bJ94M0enkeTOAebC9tRyAEBKX
+                /DMTUYe6zjYAwEYrEGZq8NH1f38EGwivKhsqhGXpWo62Q8Aca9nElDIk3WqslIqDNd88Cg4OzXUdtXJO
+                MzgiGAaY1sbr9QIswsLSMjVY5aUlzFchGB/fDlsl3nheEESRZ7aMbDZrJq0WmK0A2D41WFJ1ECBuKYAV
+                K+FwiaZlEF9EpEE6soxuKW/BmuFurYFgMBSKk3OAKlNQyyorjfl5QggjwFtWahhPDQAAQ43JkoG+yrOP
+                f/+XbX/eknhrXO3XH3/58ZePodznFQTG8xaMg7WjAdCwbtEN7d9743kxGo1Go7gt+M3TVUlI12IxSGf6
+                moC0+4qJOVPrkYh+tLUGIDD0WShoGYyoHQACH//PFF4w9SccbKhnuXxDk9kMKNnEmiXe9q3267o+P/sY
+                YEPZJakIZeU+AEv2j7YCvzRTg4HBKUPXdXXmdl9fX1/f+JZZOgYpEsmMbkQakg7UlhIaimN7J6a9z7ZD
+                MBAIMLcFAABaLr7THrgSgOH/+rXlIRpf6dyvqhpdtQKEHD9u74+zxNv/fmS5uri0TIgPkme7G9o7vGMD
+                i4lLOhBlrW2NA9fHYbLvPyfptapXv5c8S6fEYtmQnrakAwCqF47jWLw/GBSOYorOyjkAtFy8ZEmXAXiP
+                /eDHp/djZjmGvsr+FnvGAQBaLr7+fCn9p+HsO2cPAgAsLi/bSTpAWeuFt1hiDg51WTOBAPUvv9tpyeGW
+                fqvz599pgGRQtCysKECa6TqgG+kwbba6uhqJRHD3/09/+tPkFUdGRhRF0enuXkmSACCDuIogCEJuVloD
+                ABiGwfZsrK2tRSKR06dP+/3+JFVGRkbW19cdDoe9ZtsGaUs6/hKqFybphBDbRcZ+vx/znBms2L916xZj
+                nE30IReMsxgySpLP50vOOG5/yNhvQWRSGZ8Zn59tjMMTapLA5/MVFRUxxjOIq+D+DWKBXdVkMCh0ulFN
+                VdWOjo7ktcLhsJr1QQ1pV8ZHZQ4MMs7z/Ozs7OjoaPK6tbW16e4DSjVamxEMS+A+Fou1trba5mSePn2a
+                fa+nTTpQr1GgwJ3OPM/bkl5aWtrU1JQ643nSKgidHtiBjCuKYrsvcGVlJXsxh4xJR96ZekHeZ2dncZdC
+                Euzfvz9FxvOkVRBMm8foG29fe+01WzF/9OgRm51k04xMSEfgz4sUKOy25jRF5Fur6Jbtr7FY7KWXXrIV
+                hfn5eYWeW5olMrkFkzh0YHD4477Q2dnZ7HnPq1Yx6M5Hhe59PXz4sK1iAYCZmZkECcgYmZAO8YYUeUc9
+                IwhClqQXQKvgjkD0oxoaGurr7Ze3Dg8Po5jnpDEZkg7UnPI8L4qiw+GwKpmbN2/a1d4ahdEqGj3tqqGh
+                obm52a4eLC8vRyIRQRByolsgS9KZsCPvqBDQjbG1qJuRV62i63qC5Wxvb0+FcQAYHR21TgOzb096Aa8E
+                WIXd6XRqmuZ0OjFOHggESkpKUj/OhuXycbjkSsZZulmnh1jjiTQnT55M8cjCoaEhFIVcMQ7ZSDpQYUdz
+                irw7nU60qKFQqK+vz+4GG0BXUrCc+gI5Ypw5Kmg5n3nmmRMnTqTI+IMHD3KrWBBpB7wSwBQlPlIkEolG
+                o3gco6qqlZWVb775pt09NoCLvoEaarvi2wLn92CZAcViMZfL1dzcnCLdABAMBh89eoQGRhRFQmFXzx5Z
+                qRegGgaoWGmaxgIaABAKhW7evHnmzBmbu1BUVVV5vV481tywrJxK8VGZMrHaTBSII0eOpHVwCB4DhLrO
+                6kTZ1UsJ2ZIOlBGe51Ep6xRIwcjICACkzjsea44nyi8sLKiqSuLXvLEnt15E6JtesuH1euvq6tJ9w0Y0
+                Gn3w4AEAoKrMLeOQE9KBEiEIgq7r+IS65bU5IyMjbrc79VMogVLv9/sjkcj6+vrCwoKiKEBTV6xYwmfW
+                3y6Xq6KiorS0NF26AWBhYQEFRaQHcuaQbkRuSOc4DvnFkYjPz6SDEBIIBCKRSOryzuB2u91uN8a4McmA
+                H1gB/F1RFN1uNy6ry4BohidPnkxOThqGYT0GKLdiDrkiHeKVjCiKBj0lEdkHgJGRkZWVlc7OztT9yAR4
+                PB6MSVVVVdmVzQTffPNNKBQCAJzr5YlxyNJlTAC2T6DJDafT6XK5iouLcU4vimIoFLp69WrOl7TnBEND
+                Q3j4IjaeRRPt6mWCbF3GBBjUUVNVFd0GPJAUAx14HI+mae3t7Wmp+Lzi6dOnw8PDuuWEyNw6iJuRM/WC
+                IHTHFCp3AHPNPFM+hBBVVQcHB4PBYDaqJlcYHR2dnZ01aIgt33QjcizpCOa36JaQniRJLO6BM3IU+ebm
+                5h2hfnp6enR0VFXVhDM5SY7WGSRBXkgHyzwF/WWWLojFYkzPoKpxuVxNTU2F1DbhcPjOnTtIN9oecdPJ
+                4Xb3yAr5Ih0s+t06F8dogUKPicVxgGXa2tryLfX379+fmppSVRVjomgzWcAnt3HNJMgj6Qg2NVXp++oY
+                9exAR9Q2hmGoqlpbW1tdXZ1bwQ+FQuFweGpqKhaLMbqZJy6KIlDXC/LPOBSAdIgXeSb1yDtb/qBS6PRd
+                C01NTW63u7m52TZfvCUikQi+FTAcDsuyjK8qxSQXT5dJ5SNVkgoKQTrCoFEwja6o0mjEVaEnauJFLIDd
+                AwC6rldXV9fW1iL7brcbVZC1M9bW1tbW1vBs0Lm5uVAoJEkSRgdZbgs/YE7R6obnzx/fDgUlHeIdG2Zj
+                GfsqfX0L+1aPf/Uxuw9QwbTOGzm6rZ/JskCXh7B/rQYTLFqlkMixn54E7CENy8YllD49/g2luiUqa1gO
+                ONHjDyQgFjBXD+cHTHswlhOcE1JYfZKAwpHOQCyL3PGxNU3DkBnGKXW6qJPBoEdAAB0rxCKnhO5QsIKn
+                b6Vi/UHoyGDN2L6N+cUOkA6WB8YO4HkeAAzD4Gi0MoFrpliYmLPqjErGLCEEb8gYZ7+4swLOsDOkIxgF
+                jErO8m4cRrGV6wTSIb7/rLBehF1AtBU7STqDlRH8vFmoWQdsWTeB04SLu4px2CWkMzDGmYQyllMkbnP/
+                7UKYiR67YgVFcuLS7YZdCC6b5NaOIEFr/7+DIAhc6utA9pATFBcX75FeaBQVFXGlpaW26+H3kCs4nc6K
+                igoOAGpra3E2sYe8ghBSW1tLmOsiy3IwGMS3We8hH3A6nTU1NajM4/zFxcXF1dVVDHNvX30PaYAQ4nK5
+                cMUZ87j+D8WWoIWXpG4hAAAAAElFTkSuQmCC
+</property>
+        </structure>
+        <structure>
+            <property name="name">no_data_available.png</property>
+            <property name="type">image/png</property>
+            <property name="data">
+                iVBORw0KGgoAAAANSUhEUgAAAHwAAAB3CAIAAABOu7MqAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAXxklE
+                QVR4Xu2d+28c13XHz7yWj10uSYtcvsmlRErWg7FI2k4TW5YtqXWiAEVTw2gMIajk6D9QgPzcAP3BQIT+
+                mPygpG4Ko2iDxEjqQihKSIpkwVEt0jRpKSbFJZeSKJJacmcf3J2dd384O5d3H5yZffBRgJ8fqNXuvbs7
+                3zlz5txz7r3LmKYJFrIsJxIJRVFkWZZlGfapDEEQampqamtrfT5fXV0deZ5B0U3TXFtbW1tb2/od9qmI
+                pqamQCDAcRyg6KZphsPhTCbj1HGfihAEIRgM8jzPAsDa2tq+4juAqqqrq6sAwGYymX2vsmMkEolkMskm
+                k0mnlvtUk0Qiwe5HKTuMoiisJElOzfapJplMhtU0zanZPlWGdWqwT/XZF30X2Bd9F9gXfRfYF30X2Bd9
+                F9gXfRfYF30X2Bd9F+CdGuwydGHLEYZhnJrsCfao6LTWpLa1VeOiWu/lE7C3RMcyFlASmxYej0cQBI/H
+                U1NTAwA8n/3mmqYxDCPLMsMwqqoqiqKqKlF8b0q/+6ITlfGBYRiGYRChfT6fz+fz+/2otUs2NjbS6XQq
+                lUqlUqg7/XfX2U3RiTkbFqZpGobR0NDQ1NTk9/tra2vt32Er8FTh41QqlU6nRVFUVRX2hu7Mw4cPndpU
+                H2LUqLJhGLquG4bR2dnZ0tJSttb2RCKRaDSK7mh3pd9p0YmPJkLruu71eltaWvx+Pz05ZJtQFCUejz9/
+                /nwXHc6OuhdabkRV1dHR0W0y7aJ4PJ7W1tbGxsalpSVJkkzT3Hndd050dCa6rmuapmmaruudnZ3t7e07
+                qTjB4/H09/dHIhFRFNHhOPWoJtvuXkhwgqataZqiKIIgDA0N7YAzcUMkEkFvs2PSb7ulE5eiaZqqqqqq
+                dnd3t7W17RHFAaC1tbW+vn5paWnHTH4bcy8kMkHrliQpnU4PDQ0Fg8G9ozji9Xpxwpu59bi3imyXe0ED
+                J3dLVVUlSXrttdcql3tlZSWdTuNj4rt8Pp/X621oaLDt6szS0lIsFttuV7Mt7oWOvhVFURSFZdlvf/vb
+                5SmOKj9//hwnAm5sbJCX6AAUAAzDaG9vb29vb2howL9bvukWdHV1eTyeSCSyrVFN9S2dDgpVVU2n016v
+                t7zb5oMHD8LhcCqVYlmWZVnGAgpGs+S2YVIjgJMnTx45coQMTd0jiuLy8jJsWxRfZdHz/Hgmk6mrqztx
+                4oTX63XqukkkEvn88885jpMkSRAEhmFYC/rCJ2au6zoRXafQNM0wjPr6+oGBgcOHD5dk+Nsa0lRZdDQx
+                TdNwLUcmkzl16pR7xVOp1J07d2RZ5nme53mO43ieZxiG4zjazAm0eyGi419VVTULXdfr6+sHBwdHR0e3
+                +uhClpaW4vH4nhYdDx4PEr2KJElvvvmme8VnZmaePXumqirP84IgcBzHcVyegedZOv2X+DTDMPDWreu6
+                LMuovqIomqa1tbWdPn3avckvLCyk0+mq23t1RDetBJaqqmjg6XT61VdfbWlpceoKAPDkyZO5uTlVVT0e
+                D7Fx2rqLmjmBtnf0NoY1LMD0uizLeD/HE/Dee+/5/f6ib5WHoigLCwuaprFsNWPr6kQvxMzRj8uyfOzY
+                MZeKz87OrqysmKZZV1e3lYGD7T2NYbIrp1iWNU2T4zjDMNA14V98Hl3QyZMnXSoOAB6Pp7u7OxwOOzUs
+                jSqIjoqjEaErx6yhUz8AgK+++mp1dbW2trampgbVyXPfbkSH3EoT/uU4Ttd1hmFQcfQ2x48ff+mll2ze
+                pxCv19va2hqJRGwutVKpguhgxW14CcuyPDo66iZQu3Pnjq7rtbW16FWIdQMAuZxdHmdhM3wHXdfJ4+PH
+                jx8/frywryOBQCAWi2E86vL72FOpq6IDRFVVM5lMY2OjGzO/f/++YRho44IgoCsgoSHk3jPdQ/cyqahm
+                cHCwPMWRrq4ucjFVTkWio2PBKA0VVxTFTVj25z//WZKk+vr6mpqaPDOnfUt5kBsMuZcGg8GjR4869bPD
+                6/UGAoFq6V6p6BioYYQgy/Lw8LCjY1ldXV1fX0cnjtZNVK5EawQVN6gMRG9v7+DgoFM/Z1pbW/HNnRo6
+                U77oeWauKAoWZex7xWKxJ0+eoEsRBKFa1o3QcqMRdHd3u1Q8kUg4NYFAIODUxBXliw4AOBhBxRVFeeWV
+                VxzNfG5uzjRNdOIMw+TFhZVgUll7HCu4V3xlZeWTTz6ZnZ21b1ZfX18VYy9TdPoeRUR3LLw9evTIMAz0
+                KlVzKeGb165du3btxkKuV+np6RkYGMhrO/3RlY+m899gZWXl008/lSTJUXSfz9fY2Fi57uWLDpal40H2
+                9fU5mnkqlSI2Xh3FNzENKuFTzMafj/3syocT+d0ikcjExISiKIIgrK6u3rlzJ79FLs3NzfYN3FCO6Hiq
+                MZGEkaKqqv39/fa9Hj58aBgGCQqr6FXwX11VFUWRJKmnp8elV4lGow8ePDBNE+MonudnZ2ftl5B7vV50
+                MjZtHClncGRaaFbZs7a2tq2tzaZLInFv7Jf/sQjQf+b7L3zx8bgIAADNL7/7zslG0ig++dvf3Bez/8l7
+                LQeq4cEzZ7Kiq4oiy3Jvb6907+dXfm417fjuT358LgDPx372wfVlAICJD69MwMjFqxe6otGxX//jvSdW
+                S2/fsSMHWMOYnJw8deoUbE1jY2M6nTYrGCiVaenEm+PfEydO2Hd59kzEL7hww1IcAMT7v7kZzj4O37y2
+                qTi+do28SJNzamD+xo0FAAAw1Eymp6cn87+/yPEhy9c/KPTiABvR6K1/pRQHgNTiw8UNQRAePXpU2J7G
+                4/HsgqWDNRDF0AWz1fbtNU3PWkXz6LvvDDcChG9eGwsBhBbCbwWDEL45FgIAOHTu8ltBsJQNjd3sx/9v
+                Ep5AxQ+evXS6V9OiX/7h91NxANBbensHB6SPfgEAIxevXhgCgOmPrnw4ARNT0xcunPvxT+BnH1xfhpGL
+                V893i7OzNx8/BoC+Ny683qnrysLd3917Autiot9fz7Lj4+M2Qzyfz7fTopO4hZQLdF23z1Cvra2pqo6P
+                D45kfUaw/xCEQtkW8VgUAODQubeC+ETjydFD98dC1jnZJNvy4JnTvbquq2rd4NGeqT89AajvGBgAgAtX
+                r14AoNxJPnJKnJmZMYz21997j+d5JvHVH37/RSz7IsvxPK/rWIy1oa2tLRKJQLmBQJmi69RErZaWFvu4
+                JRqNsqzttxNFyrEgzc3NACJEY3EAyrVnW5qGFTXJNfUvAEQhm61F47Zh49kjs8P0eDzLn/3brXDeiywn
+                CJymraysFOu6ieOVbU9pPt2kyjTEvbS3t9t0kWU5lUqxrG2GtkggllX3haacm6nZ2NQMACBG11VFUTKZ
+                TG+tHiUvT3+Eio9cvHr16tWrF0cAADqyt3hJBwAwDF0QBGH5M1T84Jn3L1269MPTQQAAf6NfEDAz8cUX
+                X8DWoFsvO2AvTXTITW7oum6apn3ckkwmcShk0wYam14AAAiNWbfO+OQ4+vj+4GYr0zQNf2MjAEBsampe
+                luXe3obw1Bxp8Hx1GQCg47t/OQQAMD21afOimIhkAAASKUkQhGQiDgDQPDrczwDAk8UwAGTdC8+zLIuz
+                AbbC4/HYvOpIae6FnF4iumEY9r5FVVUXEXnwrXOHQmMhCI1dC20+u+njN+efdh8bagxPx+HJvf+iYw8A
+                AAi0dQAsw/L1D65c33x2eTUUjXJzUX8jQALiU//166nm0dFmABHE8d/+cnyzZSKZ4Tgfx3Ecl0ql8t89
+                l8bGRjfpmqKUbOlAhS741170zQUoNo0AIPjW5XdfppxM88vvbgYueKYxPK0dPHv6MLlvj1xEH4IMXfjJ
+                dzs2X8r6l6dfjz/SdT34jW80kZbBt6hPO3jm0pkgAEAiLWUrtI6iV2LspRWmUWWsO6dSqWQyKQjCO++8
+                Y9MFB6KY27JpZgM9LMD0ofsxpyhirGLgOrGiOR9yi8pkMnhoiUQCJwEWZm/od15aWirvuEpwL+S+YVgL
+                sUxrPpsNuq6TIlwZoBxE8Uwm4z4/LooijnQwk0ynkelm5ElSE8cH9vkAQRBsXrWnBNERojVi71sURbF5
+                1RH8LN1K2cuy3NfXV5LihmFgim0rxRHyEltQGd8OShYdKN0BwHHiTtlfHa8nUn2VJKlUxXVdR6/iMr9G
+                Sw8VfHNHShDdzAU2M3zVp3KvQvy4vY0TGMvRuzxDJa1rzaPkmwBCpHfMoZdBUa9y+PBhp34AJXoVAnmV
+                SO8oOlRgcyVYelHcbGDq5gAIO+9VCO5bAoBcwSailYruSElHYudVsjmskYtXLwzRj62+xbzK4q1f3Zjf
+                zF3mks0RF3/RESK6WXpivXzR8ZPsLb2kEURRr1KSjRfxKk4daYi7wAeOnpP4IvtmhZQpuvvP43lec7Fq
+                zdmrBM79+Oq5on0r9Co0JEBwvF2pqmrzqj2lic7kAgD2w+WcRKtVgMPyBV2Om79x7cY8QN/pv/uLdkVR
+                Fv/08QRJN2XrbbnuhfoIVPzxZ//+2WPyQaPv/O3JZoahUg/ZkglAcV+DKsenP/nPL7Op9brOY39tO7O+
+                Ep9eQvRCbIfWnV52lUd+atsqzgX7DwGAGFqIAwCAaYoxEQCgr6dDVdXFe5TisGW9DUkVKg4A4vhvby3S
+                zUJjYyHqP0XLgIu3/pkoDgDSs4e/+FO6sBmhknFfCaITmNxgdm5uM7lKgYnVkfd++tP333//R2cPAgCE
+                FsKwqfq8aBqGYUQX5kWAxqHBVjmVmk88A5IPzyasJqa2UF1+9uiRYTx+9hgA+s9cupT/QYTml9+9fPny
+                ZSulFhqfjOe8kSlOfrEAAH3f/P7333777W9960gvwPL1/9nybFcmemnuBSjFyTTELe6lQ1g5Sy1e/6df
+                jeUWhrBUJ86HxaEh//r8fAzA39XGS1Jf8Jt/dfWHAHb1NkQHANgwDMPjOfjm3x9mWZaJT338u/HcD8py
+                aDTryKwqoCiKAHTdJIYlk8V7H9OXyMTU9IUh2pdZyLKsaRrHcUVec0FpohPrpqevPHv2bHh4uLCxTeUs
+                OPJyc+i+OB9eP9oVDscA/G0H+GAwODg46FhvA4B4MiMDAJiCx8Nx3JPb/5KdElAcui6VrQLSmMTBuSaZ
+                TDJl3aiREkRnqFUmNMUrilTl7G8OpsK3PvzVjXk8ZNM0zYbe/ub7orgeXVcX4wANgeFjfYODg3SvC0PW
+                eevIKU2lRHFmYc0EAGBYnuee3EbFD5790Zl+xrpN0/U/URRJnbVINdYkoaL/+Buv9UIq5fP5zp49m9+O
+                YmNjg9zVbJptRWk+HT8GtaYXBxXOAqQrZ16vN7wwj89jUtgw/F29TQCLi9NiAmDgW2e/efgw2NbbLOTl
+                uTnDMFgAPPvxeAwAoPnl0X4GAMILVOXJgpQBi1YBAaCpt78JABIPZpcNXddPeMJXrly5UmTeYxbHEoc9
+                JVg6gaFSz+wWbr145UyMxgAaDEPTtPoXj3d/effp06cAA6+/fdiu1/LqKkDA8uOmYXgE62szTHMTFt7u
+                /+bafeqDKOMGgPwyYH8QKExTbzh+om/i00VYmfzvFYC7ALB56osgy3JJ4748yrF0YuxkVn+RiSK5lbMf
+                /MMPDgIAiGKUjPIDLTiLYOT1zWMrXm9bXn0OsUTWj/MeD8/j5AKGYZjcwtuhc5fPHQIAnLqx+Sw+CZBX
+                BgQgubuOV98d7th8lgwPCllbW2Ncjw2LUlq5DgBMayFdJpPZ2NjAveAymcz58+c7OzttOs7Pz29sbOjW
+                fHYcc7rPHc7NzZWaO3SDQa2ox8P5zne+Yz8WnZqawm9S9hcozdIR2qdz1kLNUKiIM6UJBAIkkyVJUjAY
+                dKl4PB5HxT0eD0ctlynvgGnM7A3GwIlTqqo6rgtMJpNYgLRp40jJnckBo9xkdfPMzIx9R5/PFwgEZFlO
+                p9PuM1mxWGx2dpYozlGV5QoxraKjaq1jd7N85+nTpwDAVlD1hTJER9DSBQuUfmLCIcDu7u4GAPc2Tmdr
+                87xKJceMmNT8QFmWFUVxNHMA0Kgl62V/hzKjF+JhiLEzDGM/KwoZGRlxuUVDnlepotxAKa5aa3c6Ozsd
+                zRz3+eL5ckSjKcfSGWtQyvO8x+PBTYcFQXj+/Pn4ODVhqhjuFZ+dnTVNkyxfJ2bu1NUZ4sfJRBq/33/k
+                yBGnfrC+vs5VY65AmaIz1mwFnufRvaC9O86odwN6FdM0t5oeVAnElRvWnh0ul78+fPhQs7aMrfCblCM6
+                UMbOcZzH2mSb53ncJceptx3Eq9CKV36cSJ4fx1VhZ8+edbz+EokEzg+syjcpX3QyPhIEgSzGFQRhZmbG
+                jXMvCvEqhWvXnbo6QyuOgbn7bYBCoRC5dUHF11yZokOuk0HPTvyMYxhTlJ3xKpq1jQHLsi4Vf/z4MQYt
+                1bKA8kUHKgmDd1Syn8Xq6urt27edeuewfV6FlluztuVkGOaVV15xo3g8Hl9fXycBq1NzV1QU/eCXQNFr
+                amoMa5M+0zRnZ2fb29tdxuOSJIXDYRKPM1Wa2GZS012J4jito7Oz043iYK2r93g8VbzsqiA62rsgCLq1
+                Kx+uF7h9+3ZDQ0NHB5VG2oK6urqXXnppaWmJ5JKgssMzqV0b8cug4l6vd3h42P2Koc8//xzdXbUcC1KR
+                e0GIkyExe21tLXqJW7duuZkChnR1dR09elSwpiAT4UrCtMiLxCVJ6uzsfPHFF90r/uWXX+a5O6cebik5
+                y1gUsioDgzBJklKplCzLqqq2trZ+73vfc3qDHFZXV3Fbc6AKhG4gipPvoyiKpml9fX2BQMC93ADw9ddf
+                R6PR2tpaOohy6uSW6ohuWBuvKtZGK5jvxZxGIBAoVXcAUBQlFouRHxAByuHgA3IpmNQMIV3XTWvfggMH
+                DvT09ABAqTvOhsPh9fV1oyAD4dTPLdURnZiYZu3SgKIjaO9vvPGG42T2omCaG5dG5k18oOXGEMXn8/E8
+                39DQ0Nzc7LgVSlHQxkkir+qKQ7VER8h1rWlahgLtva6u7vz58+XpTrOxsUF+AZ4YO255V57KNJOTkxsb
+                Gxj7crlbXVWRaooOAHh169aWJHm667p+6tQpl3HkznP37l3T+umwKkauhVQUMhbCsqxpTR0m9x8ctbIs
+                qyjK3bt3k8mkmx3tdpJoNDozM8MwjMdahMdWnDS3ocqiM1Tkjg9M0yTqcxynKMr09PTq6uqpU6cqdzVV
+                IRQKRSIRwzDyNtCD7VEcqu5eENNaBkZPNsdokvgZTdNOnjw5MkItvd1xlpaWQqEQyk0SRwCwTV6FsC2i
+                Q0HIrFpbO8vUBs+qqtbV1Q0MDOyKt/njH/+oaRqO5nhqH2socXBQBlV2LwT83hhdkCPhLQRBwBOgaRru
+                cdzR0VF0QmTVWV9fx93oTdPEkXNhoLKtisP2WToBx00AoFnb+JOyJKJZeL3egYGBgYGBbfL1a2trk5OT
+                qqqSvWYxqYKBClRc43fPtoueN37RqZ9PQMXR1ejWDyoYhjE8PNzW1kb/vGUlrK2toXUrisJbRV2WZVFx
+                YuDb7VJotl10An13Naj9vzRNQz+D6BamaQYCAfzlnEAgUNIJiEQikUhkbW0NbyGoNWfNGeFyN8XfSbmR
+                7fLpRWGtnfxZC13XMR2PbodcB0gsFltfX8erBH8+Cv/iu9GngWXZSCSCe3NwHCdJEm/9TIDX6yWP6Y8G
+                68azw4rDTlo6gTgckiYzrN1j0NhNK4djUKD0QA39iV4M9Zs8GIGQaIS3fn2gqGnvvNzIjlo6wjCMaZqM
+                9cMJLMsahsFxnGEYPM+Tc0DCTXJuCkUHS3Fadxo8BywVmbDbOdR0yS6IDrlJWtQdLOdDbJ8IXVRx+n1o
+                WckJoP9Lt4RdlRvZHdERIgGREiXmOI5IXOhV8iydfswW/K4DebzrQtPspuiEQvlQa/p5G9ELBc3THfYY
+                e0J0AlGcqFbUrm0oPH97kL0lOvL/QrhK2KGB7z40bOUlrn1Kgud5ttRK+T4VUldXty/6TlNbW8v6/X6X
+                s/r2qZyampoDBw6wANDZ2cmVu6HDPu5hGKazs5NhrNGgLMvLy8tkPsk+VaempqajowOd+eYQHABEUUwm
+                k5jd3rr7PiXAMEx9fX19ff2BAwdIdP5/NozuG5Lct4oAAAAASUVORK5CYII=
+</property>
+        </structure>
+        <structure>
+            <property name="name">logo.png</property>
+            <property name="type">image/png</property>
+            <property name="data">
+                iVBORw0KGgoAAAANSUhEUgAAAMgAAAAzCAIAAABdb9ATAAAa1klEQVR42u2dCYxVVZrHXyedmBinp6Xd
+                WofWMQ6mM8YY49ijttM9Rqen40zbtmbacYkbDBEBAa0AokKQQRod1LGx3FAQEFpZpZoCqoqykKILqqAo
+                LLZincIS2bukAoLb/C5/+Dycc++t+4qiIB2Sk5f77jvLt/y/5Sz3vtzX33yZV/ms5c97mnfvaN5rha8q
+                3s3sfe5p2V80t7S4rHx+SVS4mDOvOF/CrOw/sG/n7u100rPPo/9y479e2PmiH557/vnnXdD5gh/d/Mt/
+                HzTgibIFlVB48MsDrXb1yc7d9GNFtK1dt0a/fvPVN2GTfV98vXzpCqtsZU3Dqi++OmitxlZ9PKJ84wtl
+                hwvXFG6qE8nBLSYcr1uXtiU1VUmMLKpZ5vW2YfN6SM0uVYhHTTTs27vfddf8FHki1XPPPu+an1z7SM8+
+                H1ZU8qsrlly+akNAS6trFy+r41OFa/crBTZW1Ndl7/ON19787ndO+6vT/9oKX1F/G1DF0I/1LfjxpX9/
+                +mlnfP97nc4+61z4t8JXbvLTFZdf+dzIUSsb1qf3NvX9Io8wCqIEuInSb94NmhnCbcJXqDrwxedW88z+
+                pWf2mO2VLk8v0K8Q6Q2apfzs+p8nWRpG5ZLE9a/+7Za8UDVx/KTrr/sn2kIbeJKtmki/d8b36RB4WZO2
+                AAuLrF6+YsXy+pq6ej6t2FcuVq6uz97n5ZddYbSKXMqdd9ydsfk3X32hi4LHnwBSsKrejHkr9pUKZ3U6
+                5+qr/rFw9KspPRfNnoXIaHXOOZ3dfn43fGSSwwNYiNgI0KCQhKd0gQWGcr2Kc31K3HLmM4cVAw7c4ayf
+                2AJt4gt/HEvSe5On0KHLAtegYUNjU0YJd3uwu7gwAYYXyLPLJZdO+MMUaaQtwAJVFNCTVPg1O7CAOUy6
+                ghOhoG3L5qZ0M/pWnTubsacQTB6wXA3Z9YCCgdh07BAz/jhHwPJ6OO+HF61dtU40GBmKLBmBlRuyMB1Y
+                HpTbDCyouueue0NpIHMYz6Igax4rSe8aw65YVNVGj5WOqnyBde8997vuSvRFFxdc/NaYcR6AYkvDpkZQ
+                RSdJoo8tJhGgM+SpobHYMmB5rQAK8U6EeeQZsNxWbQBWXrykAGvFmgbivinerc8orcoWD+S6z1bJgNMH
+                7uu67/OWXIZAc1SKumXD+nYBlux7c+NGMO4RbcoDcy379qYzz2QCRWJ/MtyjoHm0KEPJutiKNd8QWNYJ
+                94cNf9rlJQuwLGpnBJbGMp8UQrxVYE2cNMESzZB3fk2RLVOcm2+51fW+1gk3vW4Nu/yEqeeyxJrP9x2c
+                /tE25iwvVzVaHCTTOnaPRdoug/DQoPK3F15MNEwClu4DPqJ7aEyuf0YxiizefbcmZEBMdmBF5F3SZeHi
+                6qQcK2+P1avYknfXY4XUxrorPn/5i5s9XwDib7v1dsuNPPFy/R+3/zZFOys/Wh2bpGLGeMEbb7gpNlIj
+                MTL9VoC1eVfLXW/URCJQ6V78zvzalbXLUlCVHVh4I8XBJL8KiYqGSYW0NGzusoqGLux8EQDlk5ICLAqz
+                aCbhrkXFAssdCLXhMtsIrH5HgNWvuHOf2VxcNqJCv15ycRcRrGK25xHs1qGEE73Grdu9/NWjH3zU1q9O
+                Eu+702cyDXTFJYfE3MXyIsVZV5iMyBQ4l7IaNKJ842E8mQgeLn1v/pLaumVCzzECa/X6jcwjYm3Rcl7m
+                9ilBkAl2THImd3LhxWSduPot23ZguM37DyDBYSOexc5cD+e6MSQy+qXCVj2WOxwUYp1ufM8IrJFlW/57
+                zkavvFmzS79u3fYJpWn7Lsq2HZ9iXS62dAGSmIBTgZrwyEW4CPLkoMEwlSRe0f/KmLeSJAyADJf2yVTa
+                nVSNnThJyzpW+EqalUtKgIZMW3kYVW4S0GM2wKqprW4VWOSMWeJgbGrsJhZYTBhubJHJnJD7SUPwOq+4
+                JHYBcPvWnc+NHCVZoH6VH5wVJQ2dOp2Pq7CFvizAohVN6DNfj7VuVf2iinKvEApiOZ05fZaXdclycEhJ
+                yav8LnViXZ1LGNEQq4sdt0fvPhihJa9qS068tLrW6gBrerjzjrut8BUJxwNrat3WMLU0j6WVqvQcKwuw
+                8EZKAF0+Pb/KHRxPrPjwt8oePMGhA1x0yrgHvzwwbcqMq668OixIzV2/TgGWEQkNltxkB5a2BFC8Fb4S
+                WGMJnjx1ujdPFLA2fbw1CVWWJ3iwCHGWsqA1+Onh5vDcJUACBfM+W23h2i1kOIS7XEgQVc/sX5oFWFop
+                NZApr1dpFVi4vdNPO8PDECrBAdhNCQWJ4+rDHBlchpKik7LykiyLFFlmLSnJu1uQtSX+GYEVro/wNWmF
+                U8DyOI0FllsgQ/7bXV/gpmeNQGfIU0OT1hpg3wsIYoeYUFW5RGs0nqj1NReCndTqvJ5zYlB1JBQKWK5/
+                8hwY160CCz/kuStwNr+knPCM+/U8kJf6UDAyhX/P4eGKMZpjQVWr61ixIfvyy64gZWwbsExb6cDK4rHc
+                CR0keQsE9P9hRaVx5EbV2E5QooJp7GozamLuVTS3VN7LK7nQTM98pjIJWLixmWXVK+rrSIS1exNd1NeR
+                HOCBzF1FwErdK8QDheEf2SF6HLgWpVxOCNs4WLcHIEj65QmIHsJUlOSXXIQRsxQlwmZjSR4rXL8BFmQk
+                WZJ3de55LIWYJGARuPMF1quFr7syFA3k8vzEPM6GllUAEcQeum1yr24Pdk9a/Re2IINMgIw2EVja4qGv
+                KA72K04CFkn9u3OXUsaX1FB0PaF4+ZYN68lsVDY0bNrcuDElyrwwutBbbYLEnj168RNI1ZKpq0Lu4AiP
+                SvzHjQ9VHuXs5QvCjcgsS8aUC0DmoaJNiYw5lpus4A+0YNu+oTBfYEEDpuhumFKoz3SHX4cNPSpzUm/k
+                fEkZC1JNX0KTVTzSM7Irc09+8l7X1BwB69DiShK2yLT0SWTUNRd5HWtR+HcLrM4ummOhxFvM5Fdvt9jL
+                K1XA3+JlvqfkZsbdHhsURaaEQubbAwoGxsLr0r/7MVPxEw6sDZvXh8t1TE1k7QQ4bxFBoiP+JC0Wkvi6
+                50TcvM3UhKBI6vEpicACPYTCKBraumivBJAdWd+jQnZgESvNJxl9+BUtTmr1RdS7i3Jowo3XWmIJPZZ7
+                ciMvYLkymjZjaorHAlh4ZUzc9QeSdadOUdQ2wzhRyTs+ySVbkrRFdvzZ1dde7+3PUv73+ZeSVEYcADSC
+                o+kl3BjQuqMOI+XWrlqnsnJ1PViuWr7mN698EJYrn5qfCC881jNZz04x1cf3eMvBMEnSbduCxWXlSM1l
+                QAaBW04PhbQyZ3MsHstWzmKBhemTipGqa6E1XODV6lq7Ayu7x4IA16lwTee2kAsZA54c7M6cxMVtt96e
+                cjyzafuuQUOGwrI35QpjIhk9CVXOncrpk0zcK+tW1f969JIkYBEH+723KnscvPGGm1yZSgSuuRCqiSne
+                pjJYvL9bdy95D2eFeDtvSihgeUam3cMkj2UKSwKWYkpoIUl5bkcCC3frrbZL3+4q6Mzps8KVGpLLVufy
+                wIt0nqHDPTG7QC9Lq2tzHqpiFzzXfLTirpfLU4C1+P/2ZgQWgdwFhD4htPJPC90lj64PPUxY8cyOzx3N
+                ey2NCJcbuMYV404889W5R68kAQsVpi83GLAAim3xtnqYpMOAxRzNOzWJm/GWXteuW0NA9wIZnNomYPpC
+                4IbGJqItPbiJl9HGcCTyufQDMAas20YvjAdWr2KcGSLLuHQE3sMIAon89PbYCfc80BVH+sB9XbUJ6C3N
+                Ucyx4bRpFa7dgRhNqo2eotmzMFCvTH7nXa2vhvNnVwfpHouypKYK53ryAIs5tVaYXfGeftoZRXNLWz7b
+                Bw333HUvEuYzTHMhgCTV80+f7Ny9c/d2Fa4p7ioXCUy4+EI/V1x+5bECiylkxdodGVFF2pgUJvi1b+9+
+                3tGfvznb3yr+55t+IfUQUqnvHZihvhbf3xw7JtxR8FYrQkrwYTrykR1YNtWwmH5igTVsxLOWrbsLhHta
+                9jdu3X7dNT91Jdz5nJjjJDZxAYhaYQepKlxTXC6YAut0g7dxxEXrwGISR44VAyxy9v6lL5RtTNGfV/A3
+                kqY7mYIZbe3hP2NX4VyHhJ1VVS5xJ+He1NfdY4k9FEqqEeZGbg/uOnIWYNmm5wn3WFqp8QTC0OSmDA2w
+                rrn2htCWvNTbFrRwUdpz82YnDZsa3ecM5LS8rjIBi8TrW2BpcevQwlWXpxe8XNWYtAMau22so2GeNBUH
+                DVitxpTnRo7Sgwxw7h2b8TYN8fmoBI+NAyfxgpexEycR6bT/FTYEbaQOrR6bCYFFACLzTTm82zHAwgXY
+                s26uHCb8YQohpWnrxyGwwsJAlsK7m7mGGO845M233BqGwssvuyIfYHWP8MQnkBpZtmXzrpaMe7060Fix
+                6Kh0xFIigBICKzwvZdLHpCyFR2S2sRge5OUnxAQO0CJRAKfNV/cAhScRKsh3pmxC07kHLJnT6JcKU47U
+                dQywtLbneQ58PICDI0wrBFbssUfbk/aenlLohP15xSXwQgaGHRqU7VN7iJlCYU1tdf36piUNuynNn+W9
+                lYvbRPqwbfHCPeRqR1zcHMt7/sRbd9BGpNR/593/eXg2cHbn2B29pOMi4df/efH3WY4mhx5LeS7TsfCZ
+                hY4EFhj6wVlHcUSfBEedcY2AdeQ8SOx2p3t2XqarY9/eQmv67pZyGyJDpuR98bK68OBKXkWPcXrbrtqi
+                skU5smB8hlvcTUMXWNpVPOwwPm9BSbHH3rM/30JzJqQZH6YIgSWIY8cy3xMCLEYncnmTaC7M/aDBX//q
+                NzghV8J2eMHrWbulBIQUN5wkTLRGlpLJY1G8xaF8Cz5Pq3beAawBTw42caOt2rpl5CsqKz9a/d7kKd6s
+                2B6LcJf78HnYoqenlIPeIVKJwhkf/0oBFmVAwcBwda19geWedXGBhYm6EwjRQOZne1wwiKCQcHQspb4u
+                KsvrdXbZc13KNZWWwWwKsGInQDh+2mbyWABLHouIZtOB2DcXJBV8TAgsRIPm0g/ceatNQpUdTjeNoul/
+                +MlV8lvhAzmxqLKHzPr1H+g9ENEqsJL2UpCJlg3z8lg2I8vosVT/Rxd2MTI2NGzS7MHjDrNM18vCxdX2
+                2KCXfWuGRKruLuUk7eTI4AnERF6ZaFaPFXu8Ovs2Tuy2Ghpq9SlvPHksVmgbC98wu0rxWCDbngKKnYXk
+                CyxtLbTBY0md7hHnvDyWpOSlp7ZWnFIIRN5UXZ0QVeeVzrVJVUYrpStz/Dm90iO9LKpZdiw51vMvjtIr
+                OrySdMTbO8QYbshI2RUffhDztoW5pb+96x4slWraMbUJgZ6x5D6GhV4RuvsQRNJTDN/9zmne6EnP/suF
+                gx4w5DWBBaKkCyzQCRceUynAghevTyQgsyShwa+HIoJy0olWJfxY34JQNRCsBS3ZG+b3s+t/jvSSRIpM
+                vJWanPvuoZSS9HaDLKWsvOTtsRMmjp/kljfGjccRZmnuNbSS9MQE6fzS6lpGxIFhQ6SoWjhG+kAZ/slz
+                M74PY8Pm9dDpjTttxtSk0GlugOzQYxb7dJ3i1PeLPJnwtbisPOkdAsyzvMpk1iIDYE2bMiOUD00y7d6u
+                afA6V1uvOUxhZtgM8RqRahWeuH/nHXe/Wvh6uHud+7o9zoZnfDahg3vAQwAy0vyWfXspXGAeWV6LlT5u
+                ex2oD/vJ3nN70ZDvKCTZyFBS3dOynwu+utW+fYdAB9B3okpeLxY7SUyoDX12DMjyHfEvGVinynE12nS7
+                PQWsU+W4BIdTwDpVjkvJdbDzNGgnOVJl3CdtEtbxeduJpaHNY+U6bGLCfJUZ8gdlC5igvTt9JiVm56eu
+                /vUxr730ymtFc0uPXz5rv84umvPe5CnbdnyahX5m9VQWYZV/WvjKmLeSXnF7/HLqPc27J0+d7grHRmnH
+                uSpaeOO1N5u2fszUb9qUGUWzZ53UHmvFmoa+vfsVjn4V6QwbOjx8XwCcDCgY+EjPPj179Hqsb8H8kvLj
+                TdLvho8cNOAJe+wsvWz6eCuVdQJi4qToFHXSQ7nHbxYZiejJwSnPabULsGb8cU63B7ujLzQFy/biwryo
+                zbk7lCvq6xq3bncXiL0hcTbEKdirrV/NqAe/PMDnytX1tKUHW8OIDuscqsMn11pA4mLb7uaWz6KXsAMs
+                b6FWb7kFT3C1ZXMTCNM5Lc8V08lnLX+GhpUN6+EceqABXwjlGstdJgUx3N/RvFdLWfxKZbHAT1wzhAFL
+                r0nRKhc1gRFtxZetUkqpEdct+5u276Ka0cPo1PcWTvmqR8NtOS12vwsCJE+u6Zn+6VYEWx3uI39qGg16
+                lk5DoAIjXm+0M5I+2blbr2iXmlwaIo3s+FSii7KUQ4tSlKnvF0XAqq+jwp6dzXb6ja/ojvvRO+KPpCsi
+                la+YmSQgleV0chk139+tuwrBKHZlmZbS9wP3daVwjVMBCtgurYaNeFYnIGiLI+3e7SHqPNT9YVwUNV8t
+                fJ3mTw4a/NaYcVRguMFPDw9dGr0RB4lQ+DZb+XUNpWJRFS4Nbycannnu+WkzpmosZPHm2DFimLHwRtzh
+                Pl2hCXomfq1dtQ4kDR82ovvDvakjYHGB9CESqoAL5BHm4KjrQw/TA/0AMsTHr3RFP1gwAQIy4Hfh4mr1
+                L3r6Fgyw7QSGo3Pd5wJSaeK9iQpN07/q9Ojd541x4/HWq9dvnDOvmK96qpuhEQXEyNOLBlgARvNK53Kt
+                5lzMK1/ATSTAQIOGDKUr3SfrgDtVQ3RmSPhduuUmzMICnaM4yEY4tGIg9IuI5CARy8TxkyRqCgRotb24
+                rFyiE3j69R+oc4U5WIU3iIAsqr49dkLEYfA2Tj30o/GQJpXpjmvktfKj1UgEanQOH+iAJ3rACssWVCJT
+                RcDI2goGcj8ElqAD0kGehoAZ1AnnXrKFV6Nzmq9YXk+2QWWoBQcgBmTTUI+RIT6Ei/qhARfY+9ECvlZ8
+                +AHVFG3JG+SxGBHCRr9U2LPPo3pO9YXRhUiDdBBp6I8Y6Fkb0pIgQ5BsUQdDpwkX4GlpdS0V6AS+MHrG
+                hTZ4h2CuYYdqUO4CC/9Nz6gWD8FYfHJtwIJIvakLYKEUdAawkIZoqKpcAhnwBf2LapZRCh6P5FxTW80Q
+                9MNP6Aiq8HD0ySdkIDHq6BkvGER0qI+MCi4glWqyf8I915PfeTeS6tDhCh2wDP0IClIhg7YIGTuUiLim
+                E9RNHfqM3pqMh8QuyamNYYiAXMyRMaKX99VWwyHCQtN0Ya9zYTxkp0cb+LXbf3UFNLhKJMJPdnwPq4JJ
+                AxbNYz0W4sNXCVVwhZJAFdLUu0AsIKInqBUCUAx2QxN5SuiEK7wd1EIDxFi8oCvuoAk5RcRnLCBQLIGb
+                erAHIrl2k5iZ02dhpriWLdt2IBYd1/GAZU+2IDoUzH2q0Y+9XAQK5ULcCS/ERBY4brz77BBjmccyYHFf
+                wBINkIdARhf+nuZ26gQd0xZeiFzcR5gKjkiS+yYxyIBl6AFeDGFqwmsIWDIhhAyq6ErAAqyw4/5tAmaA
+                SPXvKahM/xsgs6Qm3eawY5wNndKXCuOBAEQsUFO4CWIAFn3ZbE76sNcVUYdOaUVXUUg68uIRkiEMOt1j
+                6XkEegP4SJOfNC4dei+7QlWIWA+K8BOsglpVwAyQIMCSVtzcHx5hXh6L+hiuAUuRhSKRgU68jlhWgR1K
+                WXkJygA3St6RDF5BwGJQHIY65FfUBnkQBrMo0pIkGKeJAQuaaUv/eresWID3SKPr1ogF/A1ilMdiFAEL
+                EQEsOoyGeLy/6/L5CRdINeFVKRoSE0r0n0XUAfrYCQhTmqu2YAjI6s0rOCSETB0F31HPvQDZhD+9rEb1
+                AQMkcYfKSM+2zwmXfEXF0bEZBsbC+I1K84pLiOgIDiQBBVhFaohA2Rnc2ssRYoGF9OGKC8t5cWmux0oC
+                lkxfr1nCS9GEsXQM0AKlBywFcWoKEwYsAERbsyF5HXmsEFiQhJ6Al25GZtC7H0JnaKRBoR+STohHqQYs
+                PFYssIgCqA1KlNXV1i2zf6FS1Pt830H3VC1Cc4860q08FjhGjHJ4kcc6lLO6wOImn7BpsZUhoBxHBUSQ
+                pAELrhlFL+owYMEOKnBP8mzfupPm8lghsBgFAbqvv4M2RqEmNqD0zt51exhYNGYA7AwMASaSD1Qe+yZd
+                5KXEJQlYYhhlQyLVABnmSLSC/xRgmWPjV9hG3BCH+vGjUOWdjYEfTCcFWNgQ/dOWLBL1MOsB2YgyCViY
+                KSGJfuBFfwsFqqiDHJAGxEA/cLGpfqvA0myA+4wImJAPOkOeCAFNuDkWzRkdd76oohzfhotFAtSBHrhG
+                nmhU2Qi8eMDSIXf65Joohmw1OcA7gB4qxwILyQhY1AElqEnrVcgTUTB0ksfiJizQP4wz0QEqiAJqqSNg
+                WXz4FljyFlRS9CEQFPR/LHbpTx7LtALpKMDeEk6OBa0IDkLlb1Rggz6xJKjn2maFtjrinruyhogSI4Bz
+                ceUGNcRkoRDNWRSDPKwc58Q1btgIEA18Akp0xhD29rrDyXtjE7pHalwzQdYM0drSv+II2QzSxBlbjsUd
+                AcvehwvsGEvkwSn0W6gFQGDRW8rRxMLGUqKt2Ras2X3qaFYInSDj+RdHyZNFWfahwC3F8ZVAgQrMY2G0
+                CoWuxwL6qICcDCFbc4agoCYBS00ELNlVtIxHmnikPhwJCVTmpuuxlLodXsdCdtyiXyxeVuWdW9IfpiEI
+                O9JFBkCndrKUBBYpS3DcJIJoAR2/Baj5CRfNBToAEPgSvYI2PIKNRGirpBJPgAjcHAvTJMlT7kJwJJfH
+                cEUqTUCVkccFqR6+HckSXPBAtIUY6tu5SmAKSRqLaSa8601JkMooZMdQosOiYh9/oCwYc2Is7gBKGLeV
+                UsaiDs31yknGAl5whNwVJb1H4vSUKXWItrTVkT1UrrUoeoYGKMftQRtyAxn4Bs18Dx+iXFCJL6HYv/DR
+                LbRhWhILKOer+gR2+nNDpXpax2cImIVgpCHugBRNMDCqQbmd1I2mpbNnUR+OzKHgtLgpW1J85+u3b00+
+                gaXdtz7cf+TqyP0yd1CtBRCngAvQIeIQXMJ/YEyhM69nVdpR7Nnvpws5d7LtsP7FFLw1cVAhhmARuZyT
+                T7zHj6T/BybhuIFH+R7lAAAAAElFTkSuQmCC
+</property>
+        </structure>
+    </list-property>
 </report>

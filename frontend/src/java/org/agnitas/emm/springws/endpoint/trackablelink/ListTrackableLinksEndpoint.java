@@ -26,15 +26,15 @@ import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.TrackableLinkListItem;
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
 @Endpoint
 public class ListTrackableLinksEndpoint extends BaseEndpoint {
 
-    private final TrackableLinkService trackableLinkService;
+    private final ComTrackableLinkService trackableLinkService;
     private final SecurityContextAccess securityContextAccess;
 
-    public ListTrackableLinksEndpoint(TrackableLinkService trackableLinkService, final SecurityContextAccess securityContextAccess) {
+    public ListTrackableLinksEndpoint(ComTrackableLinkService trackableLinkService, final SecurityContextAccess securityContextAccess) {
         this.trackableLinkService = Objects.requireNonNull(trackableLinkService, "trackableLinkService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }

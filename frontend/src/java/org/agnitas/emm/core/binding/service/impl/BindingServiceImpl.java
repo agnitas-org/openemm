@@ -38,7 +38,8 @@ import com.agnitas.dao.ComRecipientDao;
 
 public class BindingServiceImpl implements BindingService {
 
-	private static final Logger logger = LogManager.getLogger(BindingServiceImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger( BindingServiceImpl.class);
 
 	private ComBindingEntryDao bindingEntryDao;
 	

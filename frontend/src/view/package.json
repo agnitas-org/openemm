@@ -1,15 +1,14 @@
 {
   "name": "grunt-agnitas",
-  "description": "Package for the Agnitas js/css compiler and help compilation",
+  "description": "package for the agnitas js/css compiler and help compilation",
   "version": "0.2.0",
   "private": true,
-  "dependencies": {
+  "devDependencies": {
     "gray-matter": "^2.1.1",
     "grunt": "^1.5.3",
     "grunt-banner": "^0.6.0",
     "grunt-contrib-clean": "^2.0.0",
     "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-connect": "^4.0.0",
     "grunt-contrib-copy": "^1.0.0",
     "grunt-contrib-cssmin": "^3.0.0",
     "grunt-contrib-uglify": "^4.0.1",
@@ -17,11 +16,10 @@
     "grunt-focus": "^1.0.0",
     "grunt-sass": "^3.1.0",
     "grunt-shell": "^3.0.1",
-    "grunt-svg-sprite": "^2.0.2",
-    "grunt-template": "^1.0.0",
+    "grunt-svg-sprite": "^1.5.0",
     "load-grunt-config": "^3.0.1",
     "lodash": "^4.17.21",
-    "sass": "^1.70.0",
+    "node-sass": "^7.0.1",
     "time-grunt": "^2.0.0",
     "underscore.string": "^3.3.5"
   }

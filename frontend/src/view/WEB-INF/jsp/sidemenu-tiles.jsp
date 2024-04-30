@@ -1,7 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean"     prefix="bean"%>
+<%@ taglib uri="http://struts.apache.org/tags-html"     prefix="html"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="sidemenu_active" type="java.lang.String"--%>
 <%--@elvariable id="sidemenu_sub_active" type="java.lang.String"--%>
@@ -86,7 +87,7 @@
 
             <c:set var="sideMenuItem">
                 <i class="menu-item-logo icon-fa5 icon-fa5-${_navigation_iconClass}"></i>
-	            <span class="menu-item-text"><mvc:message code="${_navigation_navMsg}" /></span>
+	            <span class="menu-item-text"><bean:message key="${_navigation_navMsg}" /></span>
                 <i class="nav-arrow icon-fa5<c:if test="${isSubmenuAvailable}"> icon-fa5-caret-down</c:if>"></i>
             </c:set>
 
@@ -98,9 +99,9 @@
                         <c:param name="featureNameKey" value="${_navigation_navMsg}"/>
                     </c:url>
 
-                    <a href="${upsellingLink}" title="<mvc:message code="default.forbidden.tab.premium.feature" />" class="menu-item ${sideMenuItemStyles}">
+                    <html:link href="${upsellingLink}" titleKey="default.forbidden.tab.premium.feature" styleClass="menu-item ${sideMenuItemStyles}">
                         ${sideMenuItem}
-                    </a>
+                    </html:link>
                 </c:when>
                 <c:otherwise>
                     <c:url var="menuItemLink" value="${_navigation_href}">
@@ -121,7 +122,7 @@
 
             <div class="submenu">
                 <div class="arrow"></div>
-                <div class="submenu-header"><mvc:message code="${_navigation_navMsg}" /></div>
+                <div class="submenu-header"><bean:message key="${_navigation_navMsg}" /></div>
                 <%-- Hide sub-items for menu item shown without permission --%>
                 <c:if test="${isSubmenuAvailable and not showUpsellingPage}">
 
@@ -164,7 +165,7 @@
                             <c:if test="${showSubMenuItem}">
                                 <li>
                                     <a href="${subItemPage}" class="menu-item ${_sub_navigation_isHighlightKey ? 'active' : ''}">
-		                                <mvc:message code="${_sub_navigation_navMsg}" />
+		                                <bean:message key="${_sub_navigation_navMsg}" />
                                     </a>
                                 </li>
                             </c:if>

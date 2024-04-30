@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title><![CDATA[Zum Versandzeitpunkt]]></title>
-	<content><![CDATA[Wenn Sie die Option "zum Versandzeitpunkt" f&#xFC;r den Auto-Export Ihrer Mailing-Empf&#xE4;nger ausw&#xE4;hlen, dann wird der Export immer erst zur n&#xE4;chsten vollen Stunde generiert. Liegt der Versand Ihres Mailings z.B. zwischen 09:00 und 9:59 Uhr, dann wird der dazugeh&#xF6;rige Auto-Export um 10:00 Uhr ausgef&#xFC;hrt.]]></content>
-</HelpBalloon>

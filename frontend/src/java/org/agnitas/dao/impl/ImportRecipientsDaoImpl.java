@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -29,7 +28,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.service.ImportException;
-import org.agnitas.service.ProfileImportException.ReasonCode;
+import org.agnitas.service.ProfileImportCsvException.ReasonCode;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -42,8 +41,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.json.JsonObject;
 
 public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements ImportRecipientsDao {
@@ -76,7 +75,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
     }
 
 	@Override
-	public String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception {
+	public String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception {
 		List<String> alreadyRunningImports = select(logger, "SELECT description FROM import_temporary_tables WHERE import_table_name = ?", StringRowMapper.INSTANCE, destinationTableName.toLowerCase());
 		if (alreadyRunningImports.size() > 0) {
 			throw new ImportException(false, "error.import.AlreadyRunning", alreadyRunningImports.get(0));
@@ -133,8 +132,8 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	}
 
 	@Override
-	public String createTemporaryCustomerErrorTable(int companyID, int datasourceID, List<String> csvColumns, String sessionId) throws Exception {
-		String tempTableName = "tmp_err" + companyID + "_" + datasourceID;
+	public String createTemporaryCustomerErrorTable(int companyID, int adminID, int datasourceID, List<String> csvColumns, String sessionId) throws Exception {
+		String tempTableName = "tmp_err" + companyID + "_" + adminID + "_" + datasourceID;
 		
 		retryableUpdate(companyID, logger, "INSERT INTO import_temporary_tables (session_id, temporary_table_name, host) VALUES(?, ?, ?)", sessionId, tempTableName, AgnUtils.getHostName());
 		
@@ -169,7 +168,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		execute(logger, "CREATE INDEX tmperr_" + datasourceID + "_rsn_idx ON " + tempTableName + " (reason)");
 		
 		for (String column : csvColumns) {
-			execute(logger, "ALTER TABLE " + tempTableName + " ADD " + column + " " + (isOracleDB() ? "CLOB" : "LONGTEXT"));
+			execute(logger, "ALTER TABLE " + tempTableName + " ADD " + column + " " + (isOracleDB() ? "CLOB" : "TEXT"));
 		}
 		
 		return tempTableName;
@@ -300,7 +299,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	 * @throws Exception
 	 */
 	@Override
-	public int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception {
+	public int updateFirstExistingCustomers(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception {
 		if (keyColumns == null || keyColumns.isEmpty()) {
 			throw new Exception("Missing keycolumns");
 		}
@@ -323,24 +322,8 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 							+ " WHERE " + importIndexColumn + " = (SELECT MAX(" + importIndexColumn + ") FROM " + tempTableName + " src WHERE dst.customer_id = src.customer_id))"
 						+ " WHERE EXISTS (SELECT 1 FROM " + tempTableName + " src WHERE dst.customer_id = src.customer_id)";
 					retryableUpdate(companyID, logger, updateAllAtOnce);
-				} else if (isMariaDB()) {
-					// MariaDB does not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
-					String updateSetPart = "";
-					for (String updateColumn : updateColumns) {
-						if (updateSetPart.length() > 0) {
-							updateSetPart += ", ";
-						}
-						updateSetPart += "dst." + updateColumn + " = updatevalues." + updateColumn;
-					}
-					String updateAllAtOnce = "UPDATE " + destinationTableName + " dst"
-						+ " JOIN (SELECT * FROM " + tempTableName + " WHERE " + importIndexColumn + " IN ("
-								+ "SELECT MAX(src." + importIndexColumn + ") FROM " + tempTableName + " src GROUP BY src.customer_id"
-							+ ")) AS updatevalues"
-							+ " ON dst.customer_id = updatevalues.customer_id"
-						+ " SET " + updateSetPart;
-					retryableUpdate(companyID, logger, updateAllAtOnce);
 				} else {
-					// MySQL does not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
+					// MySQL and MariaDB do not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
 					String updateSetPart = "";
 					for (String updateColumn : updateColumns) {
 						if (updateSetPart.length() > 0) {
@@ -366,17 +349,16 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
 		int updatedItems;
 		// Set change date and latest datasource id for updated items
-		boolean hasCleanedDateField = DbUtilities.checkTableAndColumnsExist(getDataSource(), destinationTableName, RecipientStandardField.CleanedDate.getColumnName());
-		updatedItems = retryableUpdate(companyID, logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP" + (hasCleanedDateField ? ", " + RecipientStandardField.CleanedDate.getColumnName() + " = NULL" : "") + " , latest_datasource_id = ? WHERE customer_id IN (SELECT DISTINCT customer_id FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
+		boolean hasCleanedDateField = DbUtilities.checkTableAndColumnsExist(getDataSource(), destinationTableName, ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE);
+		updatedItems = retryableUpdate(companyID, logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP" + (hasCleanedDateField ? ", " + ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE + " = NULL" : "") + " , latest_datasource_id = ? WHERE customer_id IN (SELECT DISTINCT customer_id FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
 		
 		return updatedItems;
 	}
-	
 	/**
 	 * Update all customers with the suitable keycolumn value combination
 	 */
 	@Override
-	public int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception {
+	public int updateAllExistingCustomersByKeyColumn(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception {
 		if (keyColumns == null || keyColumns.isEmpty()) {
 			throw new Exception("Missing keycolumns");
 		}
@@ -390,13 +372,12 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		updateColumns.removeAll(keyColumns);
 		
 		if (!updateColumns.isEmpty()) {
+			List<String> keycolumnParts = new ArrayList<>();
+			for (String keyColumn : keyColumns) {
+				keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
+			}
 			if (nullValuesAction == NullValuesAction.OVERWRITE.getIntValue()) {
 				if (isOracleDB()) {
-					List<String> keycolumnParts = new ArrayList<>();
-					for (String keyColumn : keyColumns) {
-						keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
-					}
-					
 					// Oracle supports multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)",
 					// which are more performant than "UPDATE table SET a = (SELECT ...), b = (SELECT ...), c = (SELECT ...)"
 					String updateAllAtOnce = "UPDATE " + destinationTableName + " dst"
@@ -404,34 +385,8 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 							+ " WHERE " + importIndexColumn + " = (SELECT MAX(" + importIndexColumn + ") FROM " + tempTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + " AND customer_id > 0))"
 						+ " WHERE EXISTS (SELECT 1 FROM " + tempTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + " AND customer_id > 0)";
 					retryableUpdate(companyID, logger, updateAllAtOnce);
-				} else if (isMariaDB()) {
-					List<String> keycolumnParts = new ArrayList<>();
-					for (String keyColumn : keyColumns) {
-						keycolumnParts.add("updatevalues." + keyColumn + " = dst." + keyColumn + " AND updatevalues." + keyColumn + " IS NOT NULL");
-					}
-					
-					// MariaDB does not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
-					String updateSetPart = "";
-					for (String updateColumn : updateColumns) {
-						if (updateSetPart.length() > 0) {
-							updateSetPart += ", ";
-						}
-						updateSetPart += "dst." + updateColumn + " = updatevalues." + updateColumn;
-					}
-					String updateAllAtOnce = "UPDATE " + destinationTableName + " dst"
-						+ " JOIN (SELECT * FROM " + tempTableName + " WHERE " + importIndexColumn + " IN ("
-								+ "SELECT MAX(src." + importIndexColumn + ") FROM " + tempTableName + " src GROUP BY src." + StringUtils.join(keyColumns, ", src.")
-							+ ")) AS updatevalues"
-							+ " ON " + StringUtils.join(keycolumnParts, " AND ")
-						+ " SET " + updateSetPart;
-					retryableUpdate(companyID, logger, updateAllAtOnce);
 				} else {
-					List<String> keycolumnParts = new ArrayList<>();
-					for (String keyColumn : keyColumns) {
-						keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
-					}
-					
-					// MySQL does not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
+					// MySQL and MariaDB do not support multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)"
 					String updateSetPart = "";
 					for (String updateColumn : updateColumns) {
 						if (updateSetPart.length() > 0) {
@@ -445,16 +400,11 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 					retryableUpdate(companyID, logger, updateAllAtOnce);
 				}
 			} else {
-				List<String> keycolumnParts = new ArrayList<>();
-				for (String keyColumn : keyColumns) {
-					keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
-				}
-				
 				for (String updateColumn : updateColumns) {
 					String updateSingleColumn = "UPDATE " + destinationTableName + " dst"
-						+ " SET " + updateColumn + " = (SELECT src." + updateColumn + " FROM " + tempTableName + " src WHERE src." + importIndexColumn + " ="
-							+ " (SELECT MAX(" + importIndexColumn + ") FROM " + tempTableName + " src WHERE src." + updateColumn + " IS NOT NULL AND " + StringUtils.join(keycolumnParts, " AND ") + " AND src.customer_id > 0))"
-						+ " WHERE EXISTS (SELECT 1 FROM " + tempTableName + " src WHERE src." + updateColumn + " IS NOT NULL AND " + StringUtils.join(keycolumnParts, " AND ") + " AND src.customer_id > 0)";
+						+ " SET " + updateColumn + " = (SELECT " + updateColumn + " FROM " + tempTableName + " WHERE " + importIndexColumn + " ="
+							+ " (SELECT MAX(" + importIndexColumn + ") FROM " + tempTableName + " src WHERE " + updateColumn + " IS NOT NULL AND " + StringUtils.join(keycolumnParts, " AND ") + " AND customer_id > 0))"
+						+ " WHERE EXISTS (SELECT 1 FROM " + tempTableName + " src WHERE " + updateColumn + " IS NOT NULL AND " + StringUtils.join(keycolumnParts, " AND ") + " AND customer_id > 0)";
 					retryableUpdate(companyID, logger, updateSingleColumn);
 				}
 			}
@@ -462,8 +412,8 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		
 		int updatedItems;
 		// Set change date and latest datasource id for updated items
-		boolean hasCleanedDateField = DbUtilities.checkTableAndColumnsExist(getDataSource(), destinationTableName, RecipientStandardField.CleanedDate.getColumnName());
-		updatedItems = retryableUpdate(companyID, logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP" + (hasCleanedDateField ? ", " + RecipientStandardField.CleanedDate.getColumnName() + " = NULL" : "") + " , latest_datasource_id = ? WHERE (" + StringUtils.join(keyColumns, ", ") + ") IN (SELECT DISTINCT " + StringUtils.join(keyColumns, ", ") + " FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
+		boolean hasCleanedDateField = DbUtilities.checkTableAndColumnsExist(getDataSource(), destinationTableName, ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE);
+		updatedItems = retryableUpdate(companyID, logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP" + (hasCleanedDateField ? ", " + ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE + " = NULL" : "") + " , latest_datasource_id = ? WHERE (" + StringUtils.join(keyColumns, ", ") + ") IN (SELECT DISTINCT " + StringUtils.join(keyColumns, ", ") + " FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
 		
 		return updatedItems;
 	}
@@ -563,22 +513,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		parameters[columnNames.size() + 2] = jsonAttributeName;
 
 		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", jsonObjectCount);
-		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
-	}
-
-	@Override
-	public void addErroneousDataItem(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, Map<String, Object> dataItem, int dataItemCount, ReasonCode reasonCode, String dataAttributeName) {
-		List<String> columnNames = new ArrayList<>();
-		Object[] parameters = new Object[importedDBColumns.size() + 3];
-		for (int i = 0; i < importedDBColumns.size(); i++) {
-			columnNames.add("data_" + (i + 1));
-			parameters[i] = dataItem.get(columnMappingByDbColumn.get(importedDBColumns.get(i)).getFileColumn());
-		}
-		parameters[columnNames.size()] = dataItemCount;
-		parameters[columnNames.size() + 1] = reasonCode == null ? "Unknown" : reasonCode.toString();
-		parameters[columnNames.size() + 2] = dataAttributeName;
-
-		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", dataItemCount);
 		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
 	}
 
@@ -834,13 +768,13 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
 	@Override
 	public boolean checkUnboundCustomersExist(int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND " + RecipientStandardField.Bounceload.getColumnName() + " = 0)") > 0;
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0)") > 0;
 	}
 
 	@Override
 	public int getAllRecipientsCount(int companyID) {
 		if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
-			return selectInt(logger, String.format("SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + RecipientStandardField.Bounceload.getColumnName() + " = 0"));
+			return selectInt(logger, String.format("SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"));
 		} else {
 			return 0;
 		}
@@ -924,27 +858,5 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		
 		return retryableUpdate(companyId, logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ?" + inclusiveUserTypesPart + exclusiveUserTypesPart + " AND mailinglist_id = ? AND customer_id NOT IN ("
 			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId);
-	}
-
-	@Override
-	public Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> getMailinglistStatusesForImportedRecipients(int companyID, List<Integer> mailinglistIDsToAssign, Set<MediaTypes> mediaTypes, int datasourceID) throws Exception {
-		Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> resultMap = new HashMap<>();
-		if (mailinglistIDsToAssign != null) {
-			for (int mailinglistID : mailinglistIDsToAssign) {
-				Map<MediaTypes, Map<UserStatus, Integer>> mediatypeMap = new HashMap<>();
-				if (mediaTypes != null) {
-					for (MediaTypes mediaType : mediaTypes) {
-						Map<UserStatus, Integer> userstatusMap = new HashMap<>();
-						List<Map<String, Object>> result = select(logger, "SELECT user_status, COUNT(*) AS amount FROM customer_" + companyID + "_binding_tbl WHERE mailinglist_id = ? AND mediatype = ? AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE datasource_id = ? OR latest_datasource_id = ?) GROUP BY user_status", mailinglistID, mediaType.getMediaCode(), datasourceID, datasourceID);
-						for (Map<String, Object> row : result) {
-							userstatusMap.put(UserStatus.getUserStatusByID(((Number) row.get("user_status")).intValue()), ((Number) row.get("amount")).intValue());
-						}
-						mediatypeMap.put(mediaType, userstatusMap);
-					}
-				}
-				resultMap.put(mailinglistID, mediatypeMap);
-			}
-		}
-		return resultMap;
 	}
 }

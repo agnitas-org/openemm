@@ -1,10 +1,10 @@
 AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
 
   // libs
-  const Modal = AGN.Lib.Modal;
-  const Confirm = AGN.Lib.Confirm;
-  const Template = AGN.Lib.Template;
-  const AutoSave = AGN.Lib.AutoSave;
+  var Modal = AGN.Lib.Modal;
+  var Confirm = AGN.Lib.Confirm;
+  var Template = AGN.Lib.Template;
+  var AutoSave = AGN.Lib.AutoSave;
 
   // configuration
   var currentDynTag;
@@ -13,7 +13,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   var DynTagObject;
   var showHTMLEditor;
   var isEditableMailing;
-  var isContentGenerationAllowed;
 
   // ui elements
   var $selectableContainer;
@@ -36,7 +35,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     DynTagObject = config.DynTagObject;
     showHTMLEditor = config.showHTMLEditor;
     isEditableMailing = config.isEditableMailing;
-    isContentGenerationAllowed = config.isContentGenerationAllowed;
 
     $selectableContainer = $('#content_area');
     $orderedArea = $('#ordered_area');
@@ -46,7 +44,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     preparedEntryTemplate = Template.prepare('mailing-content-entry-template');
 
     initSortable();
-    initModalListeners();
     initButtonClickListeners();
     initDynContent(currentDynTag);
     initInterestGroup(currentDynTag.interestGroup);
@@ -172,17 +169,10 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
           editorType: getActiveEditor(),
           isFullHtmlTags: currentDynTag.name == 'HTML-Version',
           showHTMLEditor: showHTMLEditor,
-          isEditableMailing: isEditableMailing,
-          isContentGenerationAllowed: isContentGenerationAllowed
+          isEditableMailing: isEditableMailing
         }, 'enlarged-content-editor-template');
 
-      const $modal = $('#content_modal');
-      const $enlargedModal = $('#enlarged_content_modal');
-
-      $modal.trigger('modal:enlarged', [$enlargedModal]);
-
       promise.done(function (response) {
-        $modal.trigger('modal:enlarged:apply', [$enlargedModal]);
         var updatedContentBlock = currentDynTag.changeContent(selectedContentBlockId, response.content);
         setEditorsContent(updatedContentBlock.content);
         synchronizeEditorTab(response.editorType);
@@ -199,12 +189,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   this.addAction({
     click: 'saveDynTag'
   }, function () {
-    const event = $.Event('saveDynTag');
-
-    this.el.closest('.modal').trigger(event, [currentDynTag]);
-    if (!event.isDefaultPrevented()) {
-      saveDynTag();
-    }
+    saveDynTag();
   });
 
   function saveDynTag() {
@@ -289,14 +274,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     }
   };
 
-  var initModalListeners = function () {
-    const $modal = $('#content_modal');
-
-    $modal.on('saveDynTagContent', function (e, content) {
-      setContentToDynTag(content);
-      saveDynTag();
-    });
-  }
   var initButtonClickListeners = function () {
     var ESC =  27;
     var UP = 38;
@@ -362,11 +339,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       return 'html';
     }
 
-    const $aiTextGenerationBlock = $('#tab-content-ai-text-generation');
-    if ($aiTextGenerationBlock.is(":visible")) {
-      return 'ai-text-generation';
-    }
-
     return '';
   };
 
@@ -382,10 +354,8 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   };
 
   var setEditorsContent = function (content, selectAll) {
-    const $wysiwygEditorBlock = $('#tab-content-wysiwyg');
-    const $htmlEditorBlock = $('#contentEditor');
-    const $aiTextGenerationBlock = $('#tab-content-ai-text-generation');
-
+    var $wysiwygEditorBlock = $('#tab-content-wysiwyg');
+    var $htmlEditorBlock = $('#contentEditor');
     if ($wysiwygEditorBlock.is(":visible")) {
       var editor = CKEDITOR.instances['content'];
       if (editor.status === 'ready') {
@@ -408,11 +378,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         aceEditor.setTheme("ace/theme/idle_fingers");
       }
       aceEditor.setValue(content, cursorPos);
-    }
-
-    if ($aiTextGenerationBlock.is(":visible")) {
-      // when user selects another content block and 'Text generation' tab was opened, we should set of content to WYSIWYG and HTML tab
-      $aiTextGenerationBlock.closest('form').find('.js-wysiwyg').val(content);
     }
   };
 
@@ -442,13 +407,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       }
     }
   };
-
-  var setContentToDynTag = function (content) {
-    const selectedContentBlockId = getSelectedContentBlockId();
-    if (selectedContentBlockId > 0) {
-      currentDynTag.changeContent(selectedContentBlockId, content);
-    }
-  }
 
   var initDynContent = function (dynTag) {
     dynTag.contentBlocks.forEach(function (contentBlock) {

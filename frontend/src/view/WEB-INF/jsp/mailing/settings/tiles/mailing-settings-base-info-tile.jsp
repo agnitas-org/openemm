@@ -34,7 +34,7 @@
             <div class="col-sm-8">
                 <mvc:text id="mailingShortname" cssClass="form-control" path="shortname" maxlength="99"
                           data-field-validator="length"
-                          data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}" disabled="${isSettingsReadonly}"/>
+                          data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}"/>
             </div>
         </div>
         <div class="form-group">
@@ -45,7 +45,7 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <mvc:textarea id="mailingDescription" cssClass="form-control v-resizable" path="description" rows="5" cols="32" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
+                <mvc:textarea id="mailingDescription" cssClass="form-control v-resizable" path="description" rows="5" cols="32" placeholder="${descriptionMsg}"/>
             </div>
         </div>
 
@@ -58,7 +58,7 @@
                 </div>
                 <div class="col-sm-8">
                     <div class="input-group">
-                        <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven || isSettingsReadonly}"/>
+                        <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven}"/>
                         <div class="input-group-controls">
                             <input type="text" name="planDate" value="${mailingSettingsForm.planDate}"
                                    id="mailingPlanDate" class="form-control datepicker-input js-datepicker"
@@ -84,25 +84,20 @@
                 </div>
             </div>
         </c:if>
-        <emm:ShowByPermission token="settings.extended">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="mailingContentTypeAdvertising">
-                        <mvc:message code="mailing.contentType.advertising"/>
-                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <label class="toggle">
-                        <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising" disabled="${isSettingsReadonly}"/>
-                        <div class="toggle-control"></div>
-                    </label>
-                </div>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label checkbox-control-label" for="mailingContentTypeAdvertising">
+                    <mvc:message code="mailing.contentType.advertising"/>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
+                </label>
             </div>
-        </emm:ShowByPermission>
-        <emm:HideByPermission token="settings.extended">
-            <mvc:hidden path="mailingContentTypeAdvertising"/>
-        </emm:HideByPermission>
+            <div class="col-sm-8">
+                <label class="toggle">
+                    <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising"/>
+                    <div class="toggle-control"></div>
+                </label>
+            </div>
+        </div>
         <%@include file="../fragments/mailing-frequency-toggle.jspf" %>
 
         <c:if test="${isMailingGrid and (not empty mailingId and mailingId ne 0 or isCopying)}">

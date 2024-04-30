@@ -56,7 +56,7 @@ public class ImportModeBlacklistExclusiveHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Do nothing
 	}
 

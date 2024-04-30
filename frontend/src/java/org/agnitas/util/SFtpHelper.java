@@ -518,10 +518,7 @@ public class SFtpHelper implements RemoteFileHelper {
 			} else {
 				throw new Exception("Invalid directory");
 			}
-		} catch (@SuppressWarnings("unused") SftpException e) {
-			return false;
 		} catch (Exception e) {
-			logger.error("Cannot check directory exists: " + directoryPath + " Error: " + e.getMessage(), e);
 			return false;
 		}
 	}

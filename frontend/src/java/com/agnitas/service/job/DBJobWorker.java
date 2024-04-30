@@ -19,7 +19,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.FileCompressionType;
 import org.agnitas.service.GenericExportWorker;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
@@ -238,8 +237,8 @@ public class DBJobWorker extends JobWorker {
 		}
 		exportWorker.setAlwaysQuote(alwaysQuote);
 		exportWorker.setOverwriteFile(true);
-		if (format != null && format.toUpperCase().startsWith("CSV_")) {
-			exportWorker.setCompressionType(FileCompressionType.getFromString(format.substring(4)));
+		if ("CSV_ZIP".equalsIgnoreCase(format)) {
+			exportWorker.setZipped(true);
 			if (StringUtils.isNotBlank(zipFilePassword)) {
 				exportWorker.setZipPassword(zipFilePassword);
 			}

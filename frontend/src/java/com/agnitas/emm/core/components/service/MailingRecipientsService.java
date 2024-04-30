@@ -11,16 +11,8 @@
 package com.agnitas.emm.core.components.service;
 
 import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.SqlPreparedStatementManager;
 
 public interface MailingRecipientsService {
 
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) throws Exception;
-
     RecipientEmailStatus saveStatusMailRecipients(int mailingId, String statusmailRecipients);
-
-    SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, int mailingId, int companyId);
 }

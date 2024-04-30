@@ -39,8 +39,8 @@ public class AnonymizeStatisticsJobWorker extends JobWorker {
 				LOGGER.info(String.format("%s started", this.getClass().getSimpleName()));
 			}
 			
-			final List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
-			final List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
+			final List<Integer> includedCompanyIds = parameterAsIntegerListOrNull("includedCompanyIds");
+			final List<Integer> excludedCompanyIds = parameterAsIntegerListOrNull("excludedCompanyIds");
 	
 			if(LOGGER.isInfoEnabled()) {
 				LOGGER.info(String.format(

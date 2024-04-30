@@ -12,7 +12,6 @@ package com.agnitas.emm.core.components.form;
 
 import org.springframework.web.multipart.MultipartFile;
 
-// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 public class FormZipUploadComponentsForm {
 
 	private MultipartFile zipFile;

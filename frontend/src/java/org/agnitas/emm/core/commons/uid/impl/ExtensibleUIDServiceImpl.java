@@ -20,9 +20,6 @@ import org.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -31,8 +28,6 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
  * Facade. Implementation of ExtensibleUIDService.
  */
 public class ExtensibleUIDServiceImpl implements ExtensibleUIDService {
-
-    private static final Logger logger = LogManager.getLogger(ExtensibleUIDServiceImpl.class);
 
     /**
      * Parser for UIDs.
@@ -54,27 +49,6 @@ public class ExtensibleUIDServiceImpl implements ExtensibleUIDService {
     @Override
     public ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
         return this.parser.parse(uidString);
-    }
-
-    @Override
-    public ComExtensibleUID parseOrNull(final String uid) {
-        if (StringUtils.isBlank(uid)) {
-            return null;
-        }
-        return tryParseUid(uid);
-    }
-
-    private ComExtensibleUID tryParseUid(String uid) {
-        try {
-            return parse(uid);
-        } catch (DeprecatedUIDVersionException e) {
-            logger.error(String.format("Deprecated UID version of UID: %s", uid), e);
-        } catch (UIDParseException e) {
-            logger.error(String.format("Error parsing UID: %s", uid), e);
-        } catch (InvalidUIDException e) {
-            logger.error(String.format("Invalid UID: %s", uid), e);
-        }
-        return null;
     }
 
     /**

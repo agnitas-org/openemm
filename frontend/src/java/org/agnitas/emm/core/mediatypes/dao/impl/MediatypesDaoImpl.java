@@ -57,14 +57,9 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
                     // process special characters for subject
                     MediatypeEmail mediatypeEmail = (MediatypeEmail) mediatype;
                     String subject = mediatypeEmail.getSubject();
-                    String preHeader = mediatypeEmail.getPreHeader();
-
                     subject = SpecialCharactersWorker.processString(subject, mediatypeEmail.getCharset());
-                    preHeader = SpecialCharactersWorker.processString(preHeader, mediatypeEmail.getCharset());
-
                     mediatypeEmail.setSubject(subject);
-                    mediatypeEmail.setPreHeader(preHeader);
-
+                    
                 	// Add default bcc email addresses if not already included
                 	Set<String> currentBccEmailAddresses = AgnUtils.splitAndNormalizeEmails(mediatypeEmail.getBccRecipients());
                 	Set<String> defaultBccEmailAddresses = AgnUtils.splitAndNormalizeEmails(configService.getValue(ConfigValue.DefaultBccEmail, companyID));

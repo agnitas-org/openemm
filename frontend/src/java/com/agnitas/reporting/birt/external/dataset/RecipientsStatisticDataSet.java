@@ -10,18 +10,22 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.dao.DataAccessException;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ACTIVE_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ACTIVE_STATUS;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BLACKLISTED;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BLACKLISTED_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BOUNCES_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BOUNCES_STATUS;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPT_OUTS;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPT_OUTS_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_HTML;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_HTML_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_OFFILE_HTML;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_OFFLINE_HTML_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_TEXT;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_TEXT_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR_CONFIRM;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR_CONFIRM_INDEX;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -33,32 +37,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ACTIVE_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ACTIVE_STATUS;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BLACKLISTED;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BLACKLISTED_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BOUNCES_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BOUNCES_STATUS;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPT_OUTS;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPT_OUTS_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_HTML;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_HTML_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_OFFILE_HTML;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_OFFLINE_HTML_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_TEXT;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.SENT_TEXT_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR_CONFIRM;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR_CONFIRM_INDEX;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.dao.DataAccessException;
+
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
@@ -131,10 +121,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 addRecipientStatMailtype(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, hiddenFilterTargetIdStr);
             }
 
-            if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {
-                addRecipientStatDoi(companyId, tempTableId, mailingListIds, startDateString, stopDateString);
-            }
-
             // this method calculate recipients count for chart "Recipient analysis by
             // target groups" which is shown always
             addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, false, hiddenFilterTargetIdStr);
@@ -173,7 +159,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             String selectMailinglistSql = "SELECT mailinglist_id, mailinglist_name, mailinglist_group_id, targetgroup_id, mailinglist_name, targetgroup_name, count_type_text, count_type_html,"
                     + " count_type_offline_html, count_active, count_active_for_period, count_waiting_for_confirm, count_blacklisted, count_optout, count_bounced, count_gender_male,"
                     + " count_gender_female, count_gender_unknown, count_recipient, count_target_group, count_active_as_of, count_blacklisted_as_of, count_optout_as_of, count_bounced_as_of,"
-                    + " count_waiting_for_confirm_as_of, count_recipient_as_of, count_doi_not_confirmed, count_doi_not_confirmed_deleted, count_doi_confirmed, count_doi_confirmed_not_active, count_doi_total"
+                    + " count_waiting_for_confirm_as_of, count_recipient_as_of"
                     + " FROM " + getTempReportTableName(tempTableId)
                     + " ORDER BY mailinglist_id, targetgroup_id";
 
@@ -229,51 +215,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         });
 
         return statsByActivity;
-    }
-
-    public List<RecipientsStatisticRowByCategoryIndex> getRecipientDoiStatistics(int tempTableId) throws Exception {
-        List<RecipientsStatisticCommonRow> statistics = getRecipientsStatistic(tempTableId);
-        List<RecipientsStatisticRowByCategoryIndex> statsByMailtype = new ArrayList<>(statistics.size() * 2);
-
-        statistics.stream()
-                .filter(statRow -> statRow.getTargetGroupId() == 1)
-                .forEach(statRow -> {
-                    statsByMailtype.add(getRecipientDoiStatisticRow(statRow, CONFIRMED_DOI_INDEX, CONFIRMED_DOI));
-                    statsByMailtype.add(getRecipientDoiStatisticRow(statRow, CONFIRMED_AND_NOT_ACTIVE_DOI_INDEX, CONFIRMED_AND_NOT_ACTIVE_DOI));
-                    statsByMailtype.add(getRecipientDoiStatisticRow(statRow, NOT_CONFIRMED_DOI_INDEX, NOT_CONFIRMED_DOI));
-                    statsByMailtype.add(getRecipientDoiStatisticRow(statRow, NOT_CONFIRMED_AND_DELETED_DOI_INDEX, NOT_CONFIRMED_AND_DELETED_DOI));
-                    statsByMailtype.add(getRecipientDoiStatisticRow(statRow, TOTAL_DOI_INDEX, TOTAL_DOI));
-                });
-
-        return statsByMailtype;
-    }
-
-    private RecipientsStatisticRowByCategoryIndex getRecipientDoiStatisticRow(RecipientsStatisticCommonRow statRow, int categoryIndex, String categoryNameKey) {
-        RecipientsStatisticRowByCategoryIndex row = new RecipientsStatisticRowByCategoryIndex();
-        row.setMailingListId(statRow.getMailingListId());
-        row.setMailingListName(statRow.getMailingListName());
-        row.setCategoryIndex(categoryIndex);
-        row.setCategoryNameKey(categoryNameKey);
-        row.setMailingListGroupId(statRow.getMailingListGroupId());
-        row.setSortOrder(categoryIndex == TOTAL_DOI_INDEX ? -1 : 0);
-        int value = 0;
-
-        if (CONFIRMED_DOI_INDEX == categoryIndex) {
-            value = statRow.getConfirmedDoiCount();
-        } else if (NOT_CONFIRMED_DOI_INDEX == categoryIndex) {
-            value = statRow.getNotConfirmedDoiCount();
-        } else if (NOT_CONFIRMED_AND_DELETED_DOI_INDEX == categoryIndex) {
-            value = statRow.getNotConfirmedAndDeletedDoiCount();
-        } else if (CONFIRMED_AND_NOT_ACTIVE_DOI_INDEX == categoryIndex) {
-            value = statRow.getConfirmedAndNotActiveDoiCount();
-        } else if (TOTAL_DOI_INDEX == categoryIndex) {
-            value = statRow.getTotalDoiCount();
-        }
-
-        row.setValue(value);
-        row.setPercent(calcPercent(value, statRow.getTotalDoiCount()));
-
-        return row;
     }
 
     public List<RecipientsStatisticRowByCategoryIndex> getRecipientStatisticByMailtype(int tempTableId) throws Exception {
@@ -495,11 +436,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 + " targetgroup_id INTEGER,"
                 + " targetgroup_name VARCHAR(200),"
                 + " targetgroup_index INTEGER,"
-                + " count_doi_not_confirmed INTEGER,"
-                + " count_doi_not_confirmed_deleted INTEGER,"
-                + " count_doi_confirmed INTEGER,"
-                + " count_doi_confirmed_not_active INTEGER,"
-                + " count_doi_total INTEGER,"
                 + " count_type_text INTEGER,"
                 + " count_type_html INTEGER,"
                 + " count_type_offline_html INTEGER,"
@@ -798,24 +734,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                     }
                 }
             }
-        }
-    }
-
-    private void addRecipientStatDoi(int companyId, int tempTableId, List<Integer> mailingListIds, String startDateStr, String stopDateStr) throws Exception {
-        Date startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateStr);
-        Date endDate = DateUtils.addDays(new SimpleDateFormat("yyyy-MM-dd").parse(stopDateStr), 1);
-
-        for (int mailinglistId : mailingListIds) {
-            int totalCount = getTotalDoiCount(companyId, mailinglistId, startDate, endDate);
-            int notConfirmedCount = getNotConfirmedDoiCount(companyId, mailinglistId, startDate, endDate);
-            int notConfirmedAndDeletedCount = getNotConfirmedAndDeletedDoiCount(companyId, mailinglistId, startDate, endDate);
-            int confirmedCount = getConfirmedDoiCount(companyId, mailinglistId, startDate, endDate);
-            int confirmedAndNotActiveCount = getConfirmedAndNotActiveDoiCount(companyId, mailinglistId, startDate, endDate);
-
-            String updateQuery = "UPDATE " + getTempReportTableName(tempTableId) +
-                    " SET count_doi_not_confirmed = ?, count_doi_not_confirmed_deleted = ?, count_doi_confirmed = ?, count_doi_confirmed_not_active = ?, count_doi_total = ?" +
-                    " WHERE mailinglist_id = ?";
-            updateEmbedded(logger, updateQuery, notConfirmedCount, notConfirmedAndDeletedCount, confirmedCount, confirmedAndNotActiveCount, totalCount, mailinglistId);
         }
     }
 

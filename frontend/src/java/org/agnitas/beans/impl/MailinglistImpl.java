@@ -48,8 +48,6 @@ public class MailinglistImpl implements Mailinglist {
 	protected boolean isRemoved;
 
 	protected boolean isFrequencyCounterEnabled;
-	private String senderEmail;
-	private String replyEmail;
 
 	@Override
 	public int getId() {
@@ -133,25 +131,5 @@ public class MailinglistImpl implements Mailinglist {
 	@Override
 	public void setRemoved(boolean removed) {
 		isRemoved = removed;
-	}
-
-	@Override
-	public String getSenderEmail() {
-		return senderEmail;
-	}
-
-	@Override
-	public void setSenderEmail(String senderEmail) {
-		this.senderEmail = senderEmail;
-	}
-
-	@Override
-	public String getReplyEmail() {
-		return replyEmail;
-	}
-
-	@Override
-	public void setReplyEmail(String replyEmail) {
-		this.replyEmail = replyEmail;
 	}
 }

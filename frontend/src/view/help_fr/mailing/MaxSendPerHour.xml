@@ -1,4 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Nombre d'e-mails envoy&#xE9;s par heure max.]]></title>
-    <content><![CDATA[La limitation des envois par d&#xE9;faut a &#xE9;t&#xE9; activ&#xE9;e dans votre client EMM. Par cons&#xE9;quent, seules les valeurs inf&#xE9;rieures ou &#xE9;gales au montant d&#xE9;fini dans la configuration du client seront disponibles dans cette liste d&#xE9;roulante. Si vous souhaitez augmenter la limite, vous pouvez l'ajuster dans la zone d'administration sous Clients.]]></content>
-</HelpBalloon>

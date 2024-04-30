@@ -30,6 +30,7 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowImportImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowReportImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -43,6 +44,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
         @JsonSubTypes.Type(value = WorkflowDecisionImpl.class, name = WorkflowIconType.Constants.DECISION_VALUE),
         @JsonSubTypes.Type(value = WorkflowDeadlineImpl.class, name = WorkflowIconType.Constants.DEADLINE_VALUE),
         @JsonSubTypes.Type(value = WorkflowParameterImpl.class, name = WorkflowIconType.Constants.PARAMETER_VALUE),
+		@JsonSubTypes.Type(value = WorkflowReportImpl.class, name = WorkflowIconType.Constants.REPORT_VALUE),
 		@JsonSubTypes.Type(value = WorkflowRecipientImpl.class, name = WorkflowIconType.Constants.RECIPIENT_VALUE),
         @JsonSubTypes.Type(value = WorkflowArchiveImpl.class, name = WorkflowIconType.Constants.ARCHIVE_VALUE),
         @JsonSubTypes.Type(value = WorkflowFormImpl.class, name = WorkflowIconType.Constants.FORM_VALUE),

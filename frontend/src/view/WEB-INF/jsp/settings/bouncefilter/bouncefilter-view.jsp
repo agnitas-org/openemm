@@ -1,5 +1,6 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -17,16 +18,15 @@
           data-form="resource">
 
     <mvc:hidden path="id"/>
-    <input type="hidden" name="forAddress" value="${forAddress}"/>
 
     <div class="tile">
         <div class="tile-header">
-            <h2 class="headline"><mvc:message code="settings.EditMailloop"/></h2>
+            <h2 class="headline"><bean:message key="settings.EditMailloop"/></h2>
         </div>
         <div class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="shortName"><mvc:message code="Name"/>*</label>
+                    <label class="control-label" for="shortName"><bean:message key="Name"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="shortName" id="shortName" maxlength="99" size="32" cssClass="form-control"/>
@@ -34,7 +34,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="description"><mvc:message code="Description"/></label>
+                    <label class="control-label" for="description"><bean:message key="Description"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:textarea path="description" id="description" rows="5" cols="32" cssClass="form-control"/>
@@ -45,14 +45,14 @@
 
     <div class="tile">
         <div class="tile-header">
-            <h2 class="headline"><mvc:message code="report.mailing.filter" /></h2>
+            <h2 class="headline"><bean:message key="report.mailing.filter" /></h2>
         </div>
         <div class="tile-content tile-content-forms" data-field="toggle-vis">
             <div class="hidden" data-field-vis-default="" data-field-vis-hide="#forward-field-container, #autoresponder-field-container"></div>
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label" for="filterEmail">
-                        <mvc:message code="mailloop.filter_adr"/>
+                        <bean:message key="mailloop.filter_adr"/>
                         <button class="icon icon-help" data-help="help_${helplanguage}/settings/BounceFilterAddress.xml"
                                 tabindex="-1" type="button"></button>
                     </label>
@@ -62,12 +62,12 @@
                         <label class="radio-inline" for="radio-address-default">
                             <input type="radio" id="radio-address-default" name="addressType" data-field-vis="" data-field-vis-show="#filterEmailDefault"
                                    data-field-vis-hide="#filterEmailOwn, #ownForwardEmailSelected" ${bounceFilterForm.ownForwardEmailSelected ? '' : 'checked'} />
-                            <mvc:message code="mailloop.address.default"/>
+                            <bean:message key="mailloop.address.default"/>
                         </label>
                         <label class="radio-inline" for="radio-address-individual">
                             <input type="radio" id="radio-address-individual" name="addressType" data-field-vis="" data-field-vis-show="#filterEmailOwn, #ownForwardEmailSelected"
                                    data-field-vis-hide="#filterEmailDefault" ${bounceFilterForm.ownForwardEmailSelected ? 'checked' : ''}/>
-                            <mvc:message code="mailloop.address.individual"/>
+                            <bean:message key="mailloop.address.individual"/>
                         </label>
                     </div>
 
@@ -86,7 +86,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="doForward"><mvc:message code="settings.mailloop.forward"/></label>
+                    <label class="control-label checkbox-control-label" for="doForward"><bean:message key="settings.mailloop.forward"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
@@ -98,7 +98,7 @@
             </div>
             <div id="forward-field-container" class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="forwardEmail"><mvc:message code="settings.mailloop.forward.address"/></label>
+                    <label class="control-label" for="forwardEmail"><bean:message key="settings.mailloop.forward.address"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="forwardEmail" id="forwardEmail" maxlength="99" size="42" cssClass="form-control"/>
@@ -106,7 +106,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="doAutoRespond"> <mvc:message code="mailloop.autoresponder"/></label>
+                    <label class="control-label checkbox-control-label" for="doAutoRespond"> <bean:message key="mailloop.autoresponder"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
@@ -119,7 +119,7 @@
 
             <div id="autoresponder-field-container" class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="arMailingId"><mvc:message code="mailloop.autoresponder.mailing"/></label>
+                    <label class="control-label" for="mailingListId"><bean:message key="mailloop.autoresponder.mailing"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:select path="arMailingId" id="arMailingId" cssClass="form-control js-select" size="1">

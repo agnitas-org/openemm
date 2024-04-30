@@ -1,6 +1,7 @@
 <%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
 <%@ page contentType="text/html; charset=utf-8" %>
 <%@ page session="false" buffer="none" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 
 <%-----------------------------------------------------------------------------
 	Progress page

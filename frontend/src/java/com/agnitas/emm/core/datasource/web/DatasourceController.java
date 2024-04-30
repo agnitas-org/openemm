@@ -12,7 +12,7 @@ package com.agnitas.emm.core.datasource.web;
 
 import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
+import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.datasource.form.DatasourceForm;
+import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -48,7 +49,7 @@ public class DatasourceController implements XssCheckAware {
     @RequestMapping("/list.action")
     public String list(Admin admin, DatasourceForm form, Model model, Popups popups) {
         try {
-            FormUtils.syncNumberOfRows(webStorage, WebStorage.DATASOURCE_OVERVIEW, form);
+            FormUtils.syncNumberOfRows(webStorage, ComWebStorage.DATASOURCE_OVERVIEW, form);
             model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
             userActivityLogService.writeUserActivityLog(admin, "datasource list", "show datasource IDs");
         } catch (Exception e) {

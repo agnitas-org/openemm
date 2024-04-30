@@ -12,7 +12,6 @@ package com.agnitas.emm.core.logon.forms;
 
 public final class LogonTotpForm {
     private String totp;
-    private boolean trustDevice;
 
 	public String getTotp() {
 		return totp;
@@ -20,14 +19,6 @@ public final class LogonTotpForm {
 
 	public void setTotp(String totp) {
 		this.totp = totp;
-	}
-
-	public final boolean isTrustDevice() {
-		return trustDevice;
-	}
-
-	public final void setTrustDevice(boolean trustDevice) {
-		this.trustDevice = trustDevice;
 	}
 
 }

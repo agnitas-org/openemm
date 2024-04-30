@@ -102,8 +102,4 @@ public interface ComReferenceTable {
 	String getContentViewKeyColumn();
 
 	void setContentViewKeyColumn(String contentViewKeyColumn);
-
-    int getRowsCount();
-
-    void setRowsCount(int rowsCount);
 }

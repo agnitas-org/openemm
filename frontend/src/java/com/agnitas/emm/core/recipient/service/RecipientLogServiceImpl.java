@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.recipient.service;
 
+import static org.agnitas.emm.core.recipient.RecipientUtils.MAIN_COLUMNS;
 import static org.agnitas.emm.core.recipient.RecipientUtils.getSalutationByGenderId;
 
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 @Service("recipientLogService")
 public class RecipientLogServiceImpl implements RecipientLogService {
@@ -108,7 +108,7 @@ public class RecipientLogServiceImpl implements RecipientLogService {
             for (ProfileField column : existedRecipient.getDbColumns().values()) {
                 String columnName = column.getColumn();
 
-                if (!RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(columnName) && !RecipientUtils.hasSupplementalSuffix(columnName)) {
+                if (!MAIN_COLUMNS.contains(columnName) && !RecipientUtils.hasSupplementalSuffix(columnName)) {
                     String existingValue = existedRecipient.getColumnFormattedValue(admin, columnName);
                     String newValue = recipient.getStringValue(columnName);
                     if (!StringUtils.equals(existingValue, newValue)) {

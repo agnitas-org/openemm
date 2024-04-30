@@ -3517,7 +3517,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
-			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Date&quot;, reportContext.getLocale());
+			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
 	}
@@ -4885,7 +4885,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
-			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Date&quot;, reportContext.getLocale());
+			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
 	}
@@ -6253,7 +6253,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
-			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Date&quot;, reportContext.getLocale());
+			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
 	}
@@ -7621,7 +7621,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
-			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Date&quot;, reportContext.getLocale());
+			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
 	}

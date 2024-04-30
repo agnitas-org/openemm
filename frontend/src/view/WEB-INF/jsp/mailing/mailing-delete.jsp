@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
@@ -23,7 +23,7 @@
     </c:otherwise>
 </c:choose>
 
-    <div class="modal" data-controller="mailing-deletion-modal" data-initializer="mailing-deletion-modal">
+    <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

@@ -1,5 +1,5 @@
 <%@page import="com.agnitas.emm.landingpage.dao.LandingpageDao"%>
-<%@ page language="java" import="org.springframework.web.context.support.WebApplicationContextUtils, com.agnitas.dao.LandingpageDao" pageEncoding="UTF-8" errorPage="/error.action"%>
+<%@ page language="java" import="org.springframework.web.context.support.WebApplicationContextUtils, com.agnitas.dao.LandingpageDao" pageEncoding="UTF-8" errorPage="/error.do"%>
 <%
 	LandingpageDao landingpageDao = (LandingpageDao) WebApplicationContextUtils.getRequiredWebApplicationContext(request.getSession().getServletContext()).getBean("LandingpageDao");
 	String rdirectUrl = landingpageDao.getLandingPage(request.getRequestURL().toString());

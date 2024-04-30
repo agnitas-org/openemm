@@ -12,24 +12,24 @@ package org.agnitas.beans;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SortingWebStorageEntry extends RowsCountWebStorageEntry {
+public class SortingWebStorageEntry implements WebStorageEntry {
 
-    @JsonProperty("sortColumn")
-    private String sortColumn;
+    @JsonProperty("column-name")
+    private String columnName;
 
-    @JsonProperty("ascendingOrder")
+    @JsonProperty("ascending-order")
     private boolean ascendingOrder = true;
 
-    public String getSortColumn() {
-        return sortColumn;
+    public String getColumnName() {
+        return columnName;
     }
 
     public boolean isAscendingOrder() {
         return ascendingOrder;
     }
 
-    public void setSortColumn(String sortColumn) {
-        this.sortColumn = sortColumn;
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
     }
 
     public void setAscendingOrder(boolean ascendingOrder) {
@@ -37,11 +37,10 @@ public class SortingWebStorageEntry extends RowsCountWebStorageEntry {
     }
 
     @Override
-    public RowsCountWebStorageEntry clone() throws CloneNotSupportedException {
+    public WebStorageEntry clone() throws CloneNotSupportedException {
         final SortingWebStorageEntry clone = new SortingWebStorageEntry();
-        clone.setSortColumn(getSortColumn());
+        clone.setColumnName(getColumnName());
         clone.setAscendingOrder(isAscendingOrder());
-        clone.setRowsCount(getRowsCount());
         return clone;
     }
 }

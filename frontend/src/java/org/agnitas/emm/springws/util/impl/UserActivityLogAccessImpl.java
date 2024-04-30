@@ -13,25 +13,23 @@ package org.agnitas.emm.springws.util.impl;
 import java.util.List;
 import java.util.Objects;
 
-import com.agnitas.beans.impl.AdminImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.agnitas.service.UserActivityLogService;
 
 import com.agnitas.beans.Admin;
-import org.springframework.stereotype.Component;
+import com.agnitas.beans.impl.AdminImpl;
 
-@Component("userActivityLogAccess")
 public final class UserActivityLogAccessImpl implements UserActivityLogAccess {
 
 	private final UserActivityLogService service;
 	private final SecurityContextAccess securityContextAccess;
-
+	
 	public UserActivityLogAccessImpl(final UserActivityLogService service, final SecurityContextAccess securityContextAccess) {
 		this.service = Objects.requireNonNull(service, "userActivityLogService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
-    }
+	}
 	
 	@Override
 	public void writeLog(List<UserAction> userActions) {
@@ -42,10 +40,11 @@ public final class UserActivityLogAccessImpl implements UserActivityLogAccess {
 		}
 	}
 
-    private Admin getAdminForUserActivityLog() {
+    private final Admin getAdminForUserActivityLog() {
 		final Admin admin = new AdminImpl();
 		admin.setUsername(this.securityContextAccess.getWebserviceUserName());
 		
 		return admin;
 	}
+
 }

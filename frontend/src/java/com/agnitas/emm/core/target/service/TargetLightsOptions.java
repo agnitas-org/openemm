@@ -11,13 +11,11 @@
 
 package com.agnitas.emm.core.target.service;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.commons.dto.IntRange;
-import com.agnitas.emm.core.target.AltgMode;
-import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
+import java.util.Objects;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.util.Objects;
+import com.agnitas.emm.core.target.AltgMode;
 
 public class TargetLightsOptions {
 
@@ -30,21 +28,13 @@ public class TargetLightsOptions {
     private int adminId;
     private int companyId;
     private boolean includeDeleted;
-    private boolean worldDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean adminTestDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private TargetGroupDeliveryOption deliveryOption;
+    private boolean worldDelivery;
+    private boolean adminTestDelivery;
     private boolean content;
-    private DateRange creationDate;
-    private DateRange changeDate;
-    private IntRange complexity;
-    private int recipientCountBasedComplexityAdjustment;
-    private boolean isSearchName; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean isSearchDescription; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean isSearchName;
+    private boolean isSearchDescription;
     private boolean includeInvalid = true;
-    private String searchText = ""; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean isRedesignedUiUsed; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private String searchName;
-    private String searchDescription;
+    private String searchText = "";
     private AltgMode altgMode = AltgMode.ALL;
     private int pageNumber;
     private int pageSize;
@@ -107,38 +97,6 @@ public class TargetLightsOptions {
         return direction;
     }
 
-    public String getSearchName() {
-        return searchName;
-    }
-
-    public DateRange getCreationDate() {
-        return creationDate;
-    }
-
-    public DateRange getChangeDate() {
-        return changeDate;
-    }
-
-    public IntRange getComplexity() {
-        return complexity;
-    }
-
-    public int getRecipientCountBasedComplexityAdjustment() {
-        return recipientCountBasedComplexityAdjustment;
-    }
-
-    public void setRecipientCountBasedComplexityAdjustment(int recipientCountBasedComplexityAdjustment) {
-        this.recipientCountBasedComplexityAdjustment = recipientCountBasedComplexityAdjustment;
-    }
-
-    public void setComplexity(IntRange complexity) {
-        this.complexity = complexity;
-    }
-
-    public String getSearchDescription() {
-        return searchDescription;
-    }
-
     public final boolean isIncludeInvalid() {
 		return includeInvalid;
 	}
@@ -147,27 +105,7 @@ public class TargetLightsOptions {
 		this.includeInvalid = includeInvalid;
 	}
 
-    public void setSearchName(boolean searchName) {
-        isSearchName = searchName;
-    }
-
-    public void setSearchDescription(boolean searchDescription) {
-        isSearchDescription = searchDescription;
-    }
-
-    public boolean isRedesignedUiUsed() {
-        return isRedesignedUiUsed;
-    }
-
-    public TargetGroupDeliveryOption getDeliveryOption() {
-        return deliveryOption;
-    }
-
-    public void setDeliveryOption(TargetGroupDeliveryOption deliveryOption) {
-        this.deliveryOption = deliveryOption;
-    }
-
-    @Override
+	@Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("adminId", adminId)
@@ -283,36 +221,6 @@ public class TargetLightsOptions {
         	options.includeInvalid = include;
         	
         	return this;
-        }
-
-        public Builder setSearchName(String name) {
-            options.searchName = name;
-            return this;
-        }
-
-        public Builder setSearchDescription(String description) {
-            options.searchDescription = description;
-            return this;
-        }
-
-        public Builder setRedesignedUiUsed(boolean value) {
-            options.isRedesignedUiUsed = value;
-            return this;
-        }
-
-        public Builder setCreationDate(DateRange creationDate) {
-            options.creationDate = creationDate;
-            return this;
-        }
-
-        public Builder setChangeDate(DateRange changeDate) {
-            options.changeDate = changeDate;
-            return this;
-        }
-
-        public Builder setDeliveryOption(TargetGroupDeliveryOption deliveryOption) {
-            options.deliveryOption = deliveryOption;
-            return this;
         }
 
         public TargetLightsOptions build() {

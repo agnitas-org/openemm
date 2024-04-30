@@ -1,4 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Anonymiser les donn&#xE9;es de suivi de tous les destinataires]]></title>
-    <content><![CDATA[ATTENTION : Veuillez noter que si vous activez le param&#xE8;tre "Anonymiser les donn&#xE9;es de suivi de tous les destinataires", de nombreuses fonctions de l'EMM ne seront plus disponibles. Cela ne concerne pas seulement l'&#xE9;valuation statistique des ouvertures et des clics, mais aussi, en particulier, les campagnes et les mailings qui se basent sur le comportement des destinataires, car il n'est plus possible de savoir quel destinataire a ouvert ou cliqu&#xE9;, par exemple. Si les donn&#xE9;es de suivi ont &#xE9;t&#xE9; rendues anonymes, elles ne peuvent plus &#xEA;tre produites.]]></content>
-</HelpBalloon>

@@ -39,9 +39,17 @@ public class ComBirtReportJobWorker extends JobWorker {
 	@Override
 	public String runJob() {
 		try {
-	        List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
+			String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
+	        List<Integer> includedCompanyIds = null;
+	        if (StringUtils.isNotBlank(includedCompanyIdsString)) {
+	        	includedCompanyIds = AgnUtils.splitAndTrimList(includedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+	        }
 	        
-	        List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
+	        String excludedCompanyIdsString = job.getParameters().get("excludedCompanyIds");
+	        List<Integer> excludedCompanyIds = null;
+	        if (StringUtils.isNotBlank(excludedCompanyIdsString)) {
+	        	excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+	        }
 	        
 	        int maximumRunningAutoExports = configService.getIntegerValue(ConfigValue.MaximumParallelReports);
 	        int currentlyRunningAutoExports = serviceLookupFactory.getBeanBirtReportService().getRunningReportsByHost(AgnUtils.getHostName());
@@ -82,7 +90,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 						// by mailing sending, so the user will be confused if he gets reports for several mailings in one report-email
 						ComBirtReportMailingSettings mailingSettings = report.getReportMailingSettings();
 						final List<Integer> mailingsIdsToSend = mailingSettings.getMailingsIdsToSend().stream()
-								.filter(mailingId -> isMailingExists(mailingId, companyID))
+								.filter(mailingId -> !isMailingMarkedDeleted(mailingId, companyID))
 								.collect(Collectors.toList());
 
 						if (mailingsIdsToSend != null && mailingsIdsToSend.size() > 0) {
@@ -117,7 +125,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 		executorThread.start();
 	}
 
-	private boolean isMailingExists(int mailingId, int companyId) {
-		return serviceLookupFactory.getBeanMailingService().exists(mailingId, companyId);
+	private boolean isMailingMarkedDeleted(int mailingId, int companyId) {
+		return serviceLookupFactory.getBeanMailingService().isMailingMarkedDeleted(mailingId, companyId);
 	}
 }

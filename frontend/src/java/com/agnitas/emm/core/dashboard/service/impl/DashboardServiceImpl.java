@@ -10,38 +10,31 @@
 
 package com.agnitas.emm.core.dashboard.service.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
-import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
-import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
-import com.agnitas.emm.core.dashboard.service.DashboardService;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.SendStatRow;
-import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
-import com.agnitas.reporting.birt.external.dataset.CommonKeys;
-import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
-import net.sf.json.JSONObject;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingStatus;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SafeString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.dashboard.service.DashboardService;
+import com.agnitas.reporting.birt.external.beans.SendStatRow;
+import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
+import com.agnitas.reporting.birt.external.dataset.CommonKeys;
+import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
+
+import net.sf.json.JSONObject;
 
 public class DashboardServiceImpl implements DashboardService {
 	
@@ -51,9 +44,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
     private ComMailingDao mailingDao;
-    private ComWorkflowService workflowService;
-    private RecipientsReportService recipientsReportService;
-
+    
     private static final List<Integer> OPENERS_STATISTIC_INDEXES = new ArrayList<>(Arrays.asList(
                 CommonKeys.OPENERS_PC_INDEX, CommonKeys.OPENERS_MOBILE_INDEX, CommonKeys.OPENERS_TABLET_INDEX,
                 CommonKeys.OPENERS_SMARTTV_INDEX, CommonKeys.OPENERS_PC_AND_MOBILE_INDEX));
@@ -72,16 +63,6 @@ public class DashboardServiceImpl implements DashboardService {
         this.mailingSummaryDataSetFactory = mailingSummaryDataSetFactory;
     }
 
-    @Required
-    public void setWorkflowService(ComWorkflowService workflowService) {
-        this.workflowService = workflowService;
-    }
-
-    @Required
-    public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
-        this.recipientsReportService = recipientsReportService;
-    }
-
     public ComMailingDao getMailingDao() {
         return mailingDao;
     }
@@ -94,34 +75,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums) {
         return mailingDao.getLastSentWorldMailings(admin, rownums);
-    }
-
-    @Override
-    public List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate) {
-        endDate = DateUtilities.addDaysToDate(endDate, 1);
-
-        List<ScheduledMailing> mailings = mailingDao.getScheduledMailings(admin, startDate, endDate);
-
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", admin.getLocale());
-        SimpleDateFormat dateFormat = admin.getDateFormat();
-
-        mailings.forEach(m -> {
-            m.setWorkstatusIn(I18nString.getLocaleString(m.getWorkstatus(), admin.getLocale()));
-            m.setSendDate(DateUtilities.format(m.getMaildropSendDate(), dateFormat));
-            m.setSendTime(DateUtilities.format(m.getMaildropSendDate(), timeFormat));
-        });
-
-        return mailings;
-    }
-
-    @Override
-    public List<DashboardWorkflow> getWorkflows(Admin admin) {
-        return workflowService.getWorkflowsForDashboard(admin);
-    }
-
-    @Override
-    public List<DashboardRecipientReport> getRecipientReports(Admin admin) {
-        return recipientsReportService.getReportsForDashboard(admin.getCompanyID());
     }
 
     @Override

@@ -19,8 +19,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
 
 public class ActionOperationIdentifyCustomerDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationIdentifyCustomerParameters> {
-
-	private static final Logger logger = LogManager.getLogger(ActionOperationIdentifyCustomerDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ActionOperationIdentifyCustomerDaoImpl.class);
 	
 	@Override
 	protected void processGetOperation(ActionOperationIdentifyCustomerParameters operation) {

@@ -16,8 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.agnitas.emm.core.company.form.CompanyListForm;
-import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.Tuple;
@@ -61,7 +59,7 @@ public interface ComCompanyDao {
 	
 	void updateCompanyStatus(int companyID, CompanyStatus status);
 
-    List<Integer> getAllActiveCompaniesIds(boolean includeMasterCompany);
+    List<Integer> getAllActiveCompaniesIds(boolean includeMaterCompany);
 	
 	List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany);
 
@@ -72,8 +70,6 @@ public interface ComCompanyDao {
     List<Company> getAllActiveCompanies();
     
     boolean checkDeeptrackingAutoActivate(int companyID);
-	
-	public void setAutoDeeptracking(int companyID, boolean active);
     
     int getCompanyDatasource(int companyID);
 
@@ -93,8 +89,6 @@ public interface ComCompanyDao {
 	void copySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain) throws Exception;
 
 	boolean addExecutiveAdmin(int companyID, int executiveAdminID);
-
-    PaginatedListImpl<CompanyEntry> getCompanyList(CompanyListForm filter, int companyId);
 
 	//get all active companies
 	List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus);
@@ -155,12 +149,4 @@ public interface ComCompanyDao {
 	boolean existOldLayoutBuilderTemplates(int id);
 
 	Optional<String> getCompanyToken(int companyID) throws UnknownCompanyIdException;
-
-    List<Integer> getActiveCompanies(CompaniesConstraints constraints);
-
-	boolean existsTestVipRecipientOnAllMailinglists(int companyID);
-
-	void createMissingOpenemmPlusPermissions();
-
-	String getSpamCheckAddress(int companyID);
 }

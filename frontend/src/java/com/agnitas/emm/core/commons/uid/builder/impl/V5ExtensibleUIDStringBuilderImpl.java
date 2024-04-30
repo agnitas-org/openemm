@@ -13,6 +13,7 @@ package com.agnitas.emm.core.commons.uid.builder.impl;
 import java.io.IOException;
 import java.util.Objects;
 
+import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
@@ -23,14 +24,13 @@ import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.EncodingException;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
-import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
-import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
 /**
  * V5 agnUID builder
@@ -61,11 +61,11 @@ public class V5ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 	
 	// ---------------------------------------------------- Dependency Injection
 	
-	private CompanyUidDataDaoCache companyUidDataCache;
+	private CompanyDaoCache companyDaoCache;
 	
 	@Required
-	public final void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache cache) { // TODO Replace by constructor injection
-		this.companyUidDataCache = Objects.requireNonNull(cache, "Cache canno tbe null");
+	public final void setCompanyDaoCache(final CompanyDaoCache cache) {
+		this.companyDaoCache = Objects.requireNonNull(cache, "Cache cannot be null");
 	}
 	
 	// ---------------------------------------------------- Business Logic
@@ -88,13 +88,13 @@ public class V5ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 			throw new RequiredInformationMissingException("company ID");
 		}
 
-		final CompanyUidData companyUidData = this.companyUidDataCache.getItem(uid.getCompanyID());
+		final Company company = this.companyDaoCache.getItem(uid.getCompanyID());
 		
-		if (companyUidData.getSecretKey() != null && !companyUidData.getSecretKey().equals("")) {
+		if (company.getSecretKey() != null && !company.getSecretKey().equals("")) {
 			try {
 				byte[] packed = createPacked (uid);
 			
-				return makeBaseUID(uid, packed) + SEPARATOR + getSignature(uid, packed, companyUidData.getSecretKey());
+				return makeBaseUID(uid, packed) + SEPARATOR + getSignature(uid, packed, company.getSecretKey());
 			} catch (IOException e) {
 				throw new UIDStringBuilderException ("failed to pack UID: " + e.toString ());
 			}

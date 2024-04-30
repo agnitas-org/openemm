@@ -182,56 +182,49 @@ public class DBase {
 					expectedPlaceHolder = new HashSet <> (placeHolder);
 				}
 
-				public PreparedStatement fill (Connection connection, Map<String, Object> parameters) throws SQLException {
-					PreparedStatement preparedStatement = null;
-					try {
-						preparedStatement = connection.prepareStatement (parsedSQL);
-						if (parameters != null) {
-							int	pos = 1;
-	
-							for (String ph : placeHolder) {
-								if (parameters.containsKey (ph)) {
-									Object	value = parameters.get (ph);
-									int	valueType = Types.JAVA_OBJECT;
-							
-									if (value != null) {
-										if (value instanceof java.util.Date) {
-											valueType = Types.TIMESTAMP;
-										}
+				public PreparedStatement fill (Connection c, Map <String, Object> param) throws SQLException {
+					PreparedStatement	rc = c.prepareStatement (parsedSQL);
+			
+					if (param != null) {
+						int	pos = 1;
+
+						for (String ph : placeHolder) {
+							if (param.containsKey (ph)) {
+								Object	value = param.get (ph);
+								int	valueType = Types.JAVA_OBJECT;
+						
+								if (value != null) {
+									if (value instanceof java.util.Date) {
+										valueType = Types.TIMESTAMP;
 									}
-									if (valueType == Types.JAVA_OBJECT) {
-										preparedStatement.setObject (pos++, value);
-									} else {
-										preparedStatement.setObject (pos++, value, valueType);
-									}
+								}
+								if (valueType == Types.JAVA_OBJECT) {
+									rc.setObject (pos++, value);
 								} else {
-									throw new SQLException (originalSQL + ": no value passed for placeholder \"" + ph + "\"");
+									rc.setObject (pos++, value, valueType);
+								}
+							} else {
+								throw new SQLException (originalSQL + ": no value passed for placeholder \"" + ph + "\"");
+							}
+						}
+						String	unexpected = null;
+
+						for (String key : param.keySet ()) {
+							if (! expectedPlaceHolder.contains (key)) {
+								if (unexpected == null) {
+									unexpected = key;
+								} else {
+									unexpected += ", " + key;
 								}
 							}
-							String	unexpected = null;
-	
-							for (String key : parameters.keySet ()) {
-								if (! expectedPlaceHolder.contains (key)) {
-									if (unexpected == null) {
-										unexpected = key;
-									} else {
-										unexpected += ", " + key;
-									}
-								}
-							}
-							if (unexpected != null) {
-								throw new SQLException (originalSQL + ": passed unexpected values for these keys: " + unexpected);
-							}
-						} else if (placeHolder.size () > 0) {
-							throw new SQLException (originalSQL + ": no paramater at all passed for expected placeholder");
 						}
-						return preparedStatement;
-					} catch (Exception e) {
-						if (preparedStatement != null) {
-							preparedStatement.close();
+						if (unexpected != null) {
+							throw new SQLException (originalSQL + ": passed unexpected values for these keys: " + unexpected);
 						}
-						throw e;
+					} else if (placeHolder.size () > 0) {
+						throw new SQLException (originalSQL + ": no paramater at all passed for expected placeholder");
 					}
+					return rc;
 				}
 			}
 			static private Map <String, ParsedSQL> parsedSQLCache = new HashMap <> ();
@@ -604,12 +597,10 @@ public class DBase {
 			}
 		}
 		cursorTrace ("released");
-		if (defaultCursor != null) {
-			try {
-				defaultCursor.close ();
-			} catch (IOException e) {
-				logging (Log.WARNING, "failed to close default cursor: " + e.toString ());
-			}
+		try {
+			defaultCursor.close ();
+		} catch (IOException e) {
+			logging (Log.WARNING, "failed to close default cursor: " + e.toString ());
 		}
 		db.done ();
 		return null;
@@ -1287,27 +1278,19 @@ public class DBase {
 	 * the connection
 	 */
 	public Connection getConnection() throws SQLException {
-		Connection connection = null;
+		Connection	conn = db.dataSource ().getConnection();
+
 		try {
-			connection = db.dataSource().getConnection();
-			try {
-				if (connection.getAutoCommit()) {
-					connection.setAutoCommit(false);
-				}
-				connection.commit();
-			} catch (SQLException e) {
-				logging(Log.WARNING, "new connections: commit fails even auto commit had been turned off: " + e.toString());
-			} finally {
-				connection.setAutoCommit(true);
+			if (conn.getAutoCommit ()) {
+				conn.setAutoCommit (false);
 			}
-			return connection;
-		} catch (Exception e) {
-			if (connection != null) {
-				connection.close();
-				connection = null;
-			}
-			throw e;
+			conn.commit ();
+		} catch (SQLException e) {
+			logging (Log.WARNING, "new connections: commit fails even auto commit had been turned off: " + e.toString ());
+		} finally {
+			conn.setAutoCommit (true);
 		}
+		return conn;
 	}
 
 	public Connection getConnection(String query, Object... param) throws SQLException {
@@ -1339,13 +1322,14 @@ public class DBase {
 					}
 					rc = true;
 				} catch (Exception e) {
-					boolean recoverable = recoverableErrors(e, first);
+					boolean recoverable = recoverableErrors(e);
 
 					r.error = e instanceof SQLException ? (SQLException) e : new SQLException(e.toString(), e);
 					r.reset();
 					if (first) {
 						logging(recoverable ? Log.WARNING : Log.ERROR, r.name, "Initial failure (" + (recoverable ? "" : "NOT ") + "recoverable): " + e.toString(), e);
 					}
+					rc = false;
 					if (!recoverable) {
 						rerun = false;
 						break;
@@ -1375,13 +1359,13 @@ public class DBase {
 	 * @param t a throwable to check
 	 * @return true, if all occured exceptions had been recoverable, false otherwise
 	 */
-	private boolean recoverableErrors(Throwable t, boolean first) {
+	private boolean recoverableErrors(Throwable t) {
 		for (Throwable s : t.getSuppressed()) {
-			if (recoverableError(s, first)) {
+			if (recoverableError(s)) {
 				return true;
 			}
 		}
-		return recoverableError(t, first);
+		return recoverableError(t);
 	}
 
 	/**
@@ -1390,30 +1374,20 @@ public class DBase {
 	 * @param t the exception to check
 	 * @return true, if the exception is considered as recoverable, false otherwise
 	 */
-	private boolean recoverableError (Throwable t, boolean first) {
+	private boolean recoverableError (Throwable t) {
 		Class <? extends Throwable>	cls = t.getClass ();
 		
-		if (cls == org.springframework.jdbc.UncategorizedSQLException.class) {
-			return first;
-		}
 		if ((cls == org.springframework.jdbc.BadSqlGrammarException.class) ||
 		    (cls == org.springframework.dao.DataIntegrityViolationException.class) ||
 		    (cls == org.springframework.dao.DuplicateKeyException.class) ||
 		    (cls == org.springframework.dao.PermissionDeniedDataAccessException.class) ||
-		    (cls == org.springframework.dao.EmptyResultDataAccessException.class)) {
+		    (cls == org.springframework.dao.EmptyResultDataAccessException.class) ||
+		    (cls == org.springframework.jdbc.UncategorizedSQLException.class)) {
 			return false;
 		}
 		if ((t instanceof org.springframework.dao.DataAccessException) ||
 		    (t instanceof org.springframework.remoting.RemoteAccessException) ||
 		    (t instanceof org.springframework.transaction.TransactionException)) {
-			return true;
-		}
-		if ((t instanceof java.sql.SQLIntegrityConstraintViolationException) ||
-		    (t instanceof java.sql.SQLSyntaxErrorException)) {
-			return false;
-		}
-		if ((t instanceof java.sql.SQLRecoverableException) ||
-		    (t instanceof java.sql.SQLWarning)) {
 			return true;
 		}
 		if (t instanceof RuntimeException) {

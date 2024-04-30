@@ -42,16 +42,6 @@ public class PreviewHelper {
 		}
 	}
 
-	public static String getPreHeader(String head) {
-		Pattern pattern = Pattern.compile("\\s*Pre-Header\\s*:(.*)");
-		Matcher matcher = pattern.matcher(head);
-		if (matcher.find()) {
-			return matcher.group(1).trim();
-		} else {
-			return null;
-		}
-	}
-
 	/**
 	 * extract the different tags and corresponding tag-errors from
 	 * the error report

@@ -23,7 +23,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
@@ -34,10 +33,6 @@ public class ImportController {
 
     private static final Logger LOGGER = LogManager.getLogger(ImportController.class);
 
-    public enum ImportType {
-        MAILING, CLASSIC_TEMPLATE, LB_TEMPLATE, USER_FORM
-    }
-    
     private final MailingImportService mailingImportService;
     private final UserActivityLogService userActivityLogService;
 
@@ -85,12 +80,6 @@ public class ImportController {
         writeUserActivityLog(admin, action, String.valueOf(result.getMailingID()));
 
         return String.format("redirect:/mailing/%d/settings.action", result.getMailingID());
-    }
-
-    @GetMapping("/file.action")
-    public String file(@RequestParam ImportType type, @ModelAttribute("form") ImportForm form, Model model) {
-        model.addAttribute("type", type);
-        return "import_modal";
     }
 
     @GetMapping("/mailing.action")

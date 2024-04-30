@@ -1,5 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -22,18 +23,18 @@
 
     <div class="tile">
         <div class="tile-header">
-            <h2 class="headline"><mvc:message code="default.Overview"/></h2>
+            <h2 class="headline"><bean:message key="default.Overview"/></h2>
 
             <ul class="tile-header-actions">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-eye"></i>
-                        <span class="text"><mvc:message code="button.Show"/></span>
+                        <span class="text"><bean:message key="button.Show"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
 
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                        <li class="dropdown-header"><bean:message key="listSize"/></li>
 
                         <li>
                             <label class="label">
@@ -57,7 +58,7 @@
                             <p>
                                 <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
                                     <i class="icon icon-refresh"></i>
-                                    <span class="text"><mvc:message code="button.Show"/></span>
+                                    <span class="text"><bean:message key="button.Show"/></span>
                                 </button>
                             </p>
                         </li>
@@ -104,7 +105,10 @@
 
                         <c:if test="${allowedDeletion}">
                             <c:url var="deleteBounceFilterLink" value="/administration/bounce/${bounceFilter.id}/confirmDelete.action"/>
-                            <mvc:message var="deleteMessage" code="Delete"/>
+
+                            <c:set var="deleteMessage">
+                                <bean:message key="Delete"/>
+                            </c:set>
 
                             <a href="${deleteBounceFilterLink}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${deleteMessage}">
                                 <i class="icon icon-trash-o"></i>

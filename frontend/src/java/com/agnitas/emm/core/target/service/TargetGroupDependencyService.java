@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.service;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
 import com.agnitas.messages.Message;
 
@@ -22,6 +23,6 @@ public interface TargetGroupDependencyService {
 
     Optional<TargetGroupDependentEntry> findAnyActualDependency(List<TargetGroupDependentEntry> dependencies);
 
-    Message buildErrorMessage(TargetGroupDependentEntry dependency, String targetName);
+    Message buildErrorMessage(TargetGroupDependentEntry dependency, String targetName, Admin admin);
 
 }

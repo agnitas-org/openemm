@@ -11,8 +11,11 @@
 package com.agnitas.mailing.autooptimization.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.agnitas.service.JobWorker;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Example Insert in DB:
@@ -26,10 +29,16 @@ public class ComOptimizationJobWorker extends JobWorker {
 		// Invoke the secured method to finish optimizations. This method will terminate, if another thread previously started the process and has not terminated yet.
 //		((ComOptimizationService) applicationContext.getBean("optimizationService")).finishOptimizationsSingle();
 
-		List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
-
-        List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
-
+		List<Integer> includedCompanyIds = null;
+        String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
+        if (StringUtils.isNotBlank(includedCompanyIdsString)) {
+        	includedCompanyIds = AgnUtils.splitAndTrimList(includedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+        }
+        List<Integer> excludedCompanyIds = null;
+        String excludedCompanyIdsString = job.getParameters().get("excludedCompanyIds");
+        if (StringUtils.isNotBlank(excludedCompanyIdsString)) {
+        	excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+        }
 		serviceLookupFactory.getBeanOptimizationService().finishOptimizationsSingle(includedCompanyIds, excludedCompanyIds);
 		
 		return null;

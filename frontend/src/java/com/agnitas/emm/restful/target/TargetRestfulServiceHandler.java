@@ -44,8 +44,6 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -274,24 +272,12 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 						if ("name".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
 								target.setTargetName((String) entry.getValue());
-								// Check for unallowed html tags
-								try {
-									HtmlChecker.checkForUnallowedHtmlTags(target.getTargetName(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Targetgroup name contains unallowed HTML tags");
-								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'name'. String expected");
 							}
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
 								target.setTargetDescription((String) entry.getValue());
-								// Check for unallowed html tags
-								try {
-									HtmlChecker.checkForUnallowedHtmlTags(target.getTargetDescription(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Targetgroup description contains unallowed HTML tags");
-								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");
 							}

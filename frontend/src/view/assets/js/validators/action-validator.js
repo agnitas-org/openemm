@@ -1,6 +1,6 @@
 AGN.Lib.Validator.new('action', {
-  valid: function ($e, options, isFieldsValid) {
-    return isFieldsValid && !this.errors($e, options).length;
+  valid: function ($e, options) {
+    return !this.errors($e, options).length;
   },
   errors: function ($e, options) {
     var errors = [];

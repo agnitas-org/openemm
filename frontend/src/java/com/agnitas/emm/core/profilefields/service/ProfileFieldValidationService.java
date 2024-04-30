@@ -11,16 +11,12 @@
 package com.agnitas.emm.core.profilefields.service;
 
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Locale;
 
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.util.DbColumnType.SimpleDataType;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Popups;
 
 public interface ProfileFieldValidationService {
 
@@ -42,7 +38,7 @@ public interface ProfileFieldValidationService {
 
     boolean isInvalidVarcharField(String fieldType, long fieldLength);
 
-    boolean mayAddNewColumn(int companyId) throws Exception;
+    boolean mayAddNewColumn(int companyId);
 
     boolean notContainsInDb(int companyId, String fieldName);
 
@@ -50,19 +46,9 @@ public interface ProfileFieldValidationService {
 
     boolean hasTargetGroups(int companyId, String fieldName);
 
-    boolean isValidToDelete(String column, int companyId, Locale locale, Popups popups);
-
     boolean isStandardColumn(String fieldName);
-
-    ServiceResult<Object> validateNewProfileFieldValue(Admin admin, String fieldName, SimpleDataType newSimpleDataType, String newValue, boolean clearThisField);
+    
+    ServiceResult<Object> validateNewProfileFieldValue(Admin admin, RecipientFieldDto field);
 
 	boolean isInvalidFloatField(String fieldType, String fieldDefault, Locale locale);
-
-	List<Integer> getImportsContainingProfileField(int companyId, String fieldName);
-
-	List<Integer> getExportsContainingProfileField(int companyId, String fieldName);
-
-	ImportProfile getImportProfile(int importProfileID);
-
-	ExportPredef getExportProfile(int companyID, int exportProfileID);
 }

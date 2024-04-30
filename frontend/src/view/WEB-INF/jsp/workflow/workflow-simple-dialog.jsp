@@ -1,12 +1,12 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 
 <div id="workflow-${param.dialogName}-dialog">
 
     <div class="form-group">
         <div class="col-xs-12">
             <div class="well">
-                <mvc:message code="${param.messageKey}"/>
+                <bean:message key="${param.messageKey}"/>
             </div>
         </div>
     </div>
@@ -17,7 +17,7 @@
         <div class="col-xs-12">
             <div class="btn-group">
                 <a href="#" class="btn btn-regular btn-primary" onclick="workflow${param.dialogName}DialogHandler.closeDialog(); return false;">
-                    <mvc:message code="button.OK"/>
+                    <bean:message key="button.OK"/>
                 </a>
             </div>
         </div>
@@ -32,7 +32,7 @@
         },
         showDialog : function() {
             jQuery('#workflow-${param.dialogName}-dialog').dialog({
-                title: '<span class="dialog-fat-title"><mvc:message code="${param.titleKey}"/></span>',
+                title: '<span class="dialog-fat-title"><bean:message key="${param.titleKey}"/></span>',
                 dialogClass: "no-close",
                 width: 650,
                 modal: true,

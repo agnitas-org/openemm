@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -27,7 +27,14 @@
                     </a>
                 </li>
                 <li>
-                    <a href='<c:url value="/recipient/import/wizard/step/file.action"/>' class="link-list-item">
+                    <emm:ShowByPermission token="import.wizard.rollback">
+                        <c:url var="importWizardLink" value="/importwizard.do?action=1"/>
+                    </emm:ShowByPermission>
+                    <emm:HideByPermission token="import.wizard.rollback">
+                        <c:url var="importWizardLink" value="/recipient/import/wizard/step/file.action"/>
+                    </emm:HideByPermission>
+
+                    <a href="${importWizardLink}" class="link-list-item">
                         <div class="thumbnail">
                             <img alt="" class="media-object" src="<c:url value="/assets/core/images/facelift/agn_mailing-new-assistant.png" />">
                         </div>

@@ -1,9 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 
 <%@ page import="org.agnitas.util.AgnUtils" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -15,21 +15,22 @@
 <%--@elvariable id="isMailingUndoAvailable" type="java.lang.Boolean"--%>
 <%--@elvariable id="attachments" type="com.agnitas.beans.Mailing"--%>
 <%--@elvariable id="targetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="pdfUploads" type="java.util.List<com.agnitas.emm.core.upload.bean.UploadData>"--%>
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
-<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
     <c:if test="${isMailingGrid}">
-        <tiles:putAttribute name="header" type="string">
+        <tiles:put name="header" type="string">
             <ul class="tile-header-nav">
                 <!-- Tabs BEGIN -->
-                <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                 <!-- Tabs END -->
             </ul>
-        </tiles:putAttribute>
+        </tiles:put>
     </c:if>
 
-    <tiles:putAttribute name="content" type="string">
+    <tiles:put name="content" type="string">
         <c:set var="uploadFormContent">
             <mvc:form servletRelativeAction="/mailing/${mailing.id}/attachment/upload.action"
                       id="mailing-upload-attachments-form" cssClass="form-vertical"
@@ -55,7 +56,8 @@
                                         <mvc:message code="mailing.Attachment"/>
                                     </label>
                                     <input type="file" name="attachment" id="attachment"
-                                           class="form-control" ${isMailingEditable ? 'data-upload="" data-action="change-attachment-file"' : 'disabled'}>
+                                           data-upload="" data-action="change-attachment-file"
+                                           class="form-control" >
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -63,7 +65,7 @@
                                     <label for="attachmentName" class="form-label">
                                         <mvc:message code="attachment.name"/>
                                     </label>
-                                    <mvc:text path="attachmentName" id="attachmentName" cssClass="form-control" disabled="${not isMailingEditable}"/>
+                                    <mvc:text path="attachmentName" id="attachmentName" cssClass="form-control"/>
                                 </div>
                             </div>
                             <%@include file="mailing-attachments-types.jsp" %>
@@ -72,7 +74,7 @@
                                     <label for="targetId" class="form-label">
                                         <mvc:message code="Target"/>
                                     </label>
-                                    <mvc:select path="targetId" id="targetId" cssClass="form-control js-select" disabled="${not isMailingEditable}">
+                                    <mvc:select path="targetId" id="targetId" cssClass="form-control js-select">
                                         <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
                                         <c:forEach items="${targetGroups}" var="target">
                                             <mvc:option value="${target.id}">${target.targetName}</mvc:option>
@@ -84,10 +86,12 @@
                             <div class="col-xs-12">
                                 <div class="form-group">
                                     <div class="btn-group">
-                                        <button type="button" tabindex="-1" class="btn btn-regular btn-primary" ${isMailingEditable ? 'data-form-submit' : 'disabled'}>
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <span class="text"><mvc:message code="button.Add"/></span>
-                                        </button>
+                                        <c:if test="${isMailingEditable}">
+                                            <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-submit>
+                                                <i class="icon icon-cloud-upload"></i>
+                                                <span class="text"><mvc:message code="button.Add"/></span>
+                                            </button>
+                                        </c:if>
                                     </div>
                                 </div>
                             </div>
@@ -106,12 +110,14 @@
                 <div class="tile">
                     <div class="tile-header">
                         <div class="tile-header-actions">
-                            <div>
-                                <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-set="save: save" ${isMailingEditable ? 'data-form-submit' : 'disabled'}>
-                                    <i class="icon icon-save"></i>
-                                    <span class="text"><mvc:message code="button.Save"/></span>
-                                </button>
-                            </div>
+                            <c:if test="${isMailingEditable}">
+                                <div>
+                                    <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-set="save: save" data-form-submit>
+                                        <i class="icon icon-save"></i>
+                                        <span class="text"><mvc:message code="button.Save"/></span>
+                                    </button>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
 
@@ -133,7 +139,7 @@
                                     <tr>
                                         <td>${attachment.name}</td>
                                         <td>
-                                            <mvc:select path="attachments[${loopStatus.index}].targetId" cssClass="form-control js-select" disabled="${not isMailingEditable}">
+                                            <mvc:select path="attachments[${loopStatus.index}].targetId" cssClass="form-control js-select">
                                                 <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
                                                 <c:forEach items="${targetGroups}" var="target">
                                                     <mvc:option value="${target.id}">${target.targetName}</mvc:option>
@@ -183,5 +189,5 @@
             </c:otherwise>
         </c:choose>
 
-    </tiles:putAttribute>
-</tiles:insertTemplate>
+    </tiles:put>
+</tiles:insert>

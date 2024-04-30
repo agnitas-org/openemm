@@ -2,8 +2,9 @@
 scriptDir=$(dirname "${0}")
 
 if [ "$1" = "dbcfg" ]; then {
-	dbcfgFile="/opt/agnitas.com/etc/dbcfg"
-	if [ -f "${HOME}/etc/dbcfg" ]; then {
+	if [ -f "/opt/agnitas.com/etc/dbcfg" ]; then {
+		dbcfgFile="/opt/agnitas.com/etc/dbcfg"
+	} elif [ -f "${HOME}/etc/dbcfg" ]; then {
 		dbcfgFile="${HOME}/etc/dbcfg"
 	} fi
 	if [ -e "${dbcfgFile}" ]; then {
@@ -155,13 +156,7 @@ if [ "${dbname}" == "" ]; then {
 } fi
 
 if [ "${secure}" = "yes" ] || [ "${secure}" = "true" ] || [ "${secure}" = "y" ] || [ "${secure}" = "j" ] || [ "${secure}" = "YES" ] || [ "${secure}" = "TRUE" ] || [ "${secure}" = "Y" ] || [ "${secure}" = "J" ] || [ "${secure}" = "" ]; then {
-	mysql --ssl-mode=REQUIRED 2> /dev/null
-	if [ $? == 7 ]; then {
-		# currently the mysql/mariadb client only works with parameter "--ssl" (in contrast to the mysql documentation)
-		optionalSslParameter="--ssl"
-	} else {
-		optionalSslParameter=" --ssl-mode=REQUIRED"
-	} fi
+	optionalSslParameter=" --ssl"
 } else {
 	optionalSslParameter=""
 } fi

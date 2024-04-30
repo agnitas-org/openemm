@@ -22,8 +22,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.sql.DataSource;
-
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ColumnMappingImpl;
@@ -31,18 +29,19 @@ import org.agnitas.beans.impl.ImportProfileImpl;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.CollectionUtils;
 
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -58,12 +57,19 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	protected DataEncryptor dataEncryptor;
 	private EmmActionOperationDao emmActionOperationDao;
     private ComMailingDao mailingDao;
-    
-    public ImportProfileDaoImpl(DataSource dataSource, JavaMailService javaMailService, DataEncryptor dataEncryptor, EmmActionOperationDao emmActionOperationDao, ComMailingDao mailingDao) {
-    	super(dataSource, javaMailService);
-    	
+
+	@Required
+	public void setDataEncryptor(DataEncryptor dataEncryptor) {
 		this.dataEncryptor = dataEncryptor;
+	}
+	
+	@Required
+	public void setEmmActionOperationDao(EmmActionOperationDao emmActionOperationDao) {
 		this.emmActionOperationDao = emmActionOperationDao;
+	}
+	
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -232,7 +238,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
     public ImportProfile getImportProfileById(int id) {
 		try {
 			return selectObjectDefaultNull(logger, "SELECT * FROM import_profile_tbl WHERE id = ? AND deleted != 1", new ImportProfileRowMapper(), id);
-		} catch (@SuppressWarnings("unused") DataAccessException e) {
+		} catch (DataAccessException e) {
 			// No ImportProfile found
 			return null;
 		}
@@ -262,7 +268,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
     		update(logger, "DELETE FROM import_profile_tbl WHERE id = ?", profileId);
     		update(logger, "DELETE FROM import_column_mapping_tbl WHERE profile_id = ?", profileId);
     		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", profileId);
-    	} catch (@SuppressWarnings("unused") Exception e) {
+    	} catch (Exception e) {
     		return false;
     	}
     	return true;
@@ -471,6 +477,22 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
     }
 
 	@Override
+	public Map<String, Integer> getImportProfileGenderMapping(int id) {
+		List<Map<String, Object>> queryResult = select(logger, "SELECT * FROM import_gender_mapping_tbl WHERE profile_id = ? AND deleted != 1 ORDER BY id", id);
+        Map<String, Integer> genderMappings = new HashMap<>();
+        for (Map<String, Object> resultSetRow : queryResult) {
+        	genderMappings.put((String) resultSetRow.get("string_gender"), ((Number)resultSetRow.get("int_gender")).intValue());
+        }
+		return genderMappings;
+	}
+
+	@Override
+	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
+		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", id);
+		insertGenderMappings(genderMapping, id);
+	}
+
+	@Override
 	public int findImportProfileIdByName(String name, int companyId) {
 		return selectIntWithDefaultValue(logger, "SELECT id FROM import_profile_tbl WHERE shortname = ? AND company_id = ?", -1, name, companyId);
 	}
@@ -479,10 +501,5 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	public boolean isColumnWasImported(String columnName, int id) {
 		String query = "SELECT 1 FROM import_column_mapping_tbl WHERE db_column = ? AND profile_id = ? AND deleted != 1";
 		return selectIntWithDefaultValue(logger, query, 0, columnName, id) > 0;
-	}
-	
-	@Override
-	public List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName) {
-		return select(logger, "SELECT DISTINCT(profile_id) FROM import_column_mapping_tbl WHERE profile_id IN (SELECT id FROM import_profile_tbl WHERE company_id = ?) AND LOWER(db_column) = ? ORDER BY profile_id", IntegerRowMapper.INSTANCE, companyID, profileFieldName.toLowerCase());
 	}
 }

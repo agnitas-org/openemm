@@ -10,19 +10,8 @@
 
 package org.agnitas.emm.core.recipient.service.validation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.validator.BaseValidator;
-
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
 
 public class RecipientModelValidator extends BaseValidator {
 
@@ -35,13 +24,9 @@ public class RecipientModelValidator extends BaseValidator {
     private static final String MAILTYPE = "mailtype";
     private static final String COMPANY_ID = "company.id";
     private static final String CUSTOMER_ID = "customer.id";
-    
-    private final ConfigService configService;
 
-    public RecipientModelValidator(String propertiesFile, final ConfigService configService) {
+    public RecipientModelValidator(String propertiesFile) {
         super(propertiesFile);
-        
-        this.configService = Objects.requireNonNull(configService, "config service");
     }
 
     public void assertIsValidToGetOrDelete(RecipientModel model) {
@@ -57,7 +42,6 @@ public class RecipientModelValidator extends BaseValidator {
         assertIsEmail(model.getEmail(), EMAIL);
         assertNotNull(model.getMailtype(), MAILTYPE);
         assertInRange(model.getMailtype(), MAILTYPE_MIN_VAL, MAILTYPE_MAX_VAL, MAILTYPE);
-        assertValidProfilefieldContent(model);
     }
 
     public void assertIsValidToUpdate(RecipientModel model) {
@@ -72,27 +56,5 @@ public class RecipientModelValidator extends BaseValidator {
         if (model.getMailtype() != null) {
             assertInRange(model.getMailtype(), MAILTYPE_MIN_VAL, MAILTYPE_MAX_VAL, MAILTYPE);
         }
-        assertValidProfilefieldContent(model);
-    }
-    
-    private final void assertValidProfilefieldContent(final RecipientModel model) {
-		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, model.getCompanyId());
-		final List<String> profileFieldsWithUnallowedHtml = new ArrayList<>();
-		
-		for (final Map.Entry<String, Object> entry : model.getParameters().entrySet()) {
-			try {
-				if(entry.getValue() != null) {
-					HtmlChecker.checkForUnallowedHtmlTags(entry.getValue().toString(), allowHtmlTags);
-				}
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-				profileFieldsWithUnallowedHtml.add(entry.getKey());
-			}
-		}
-		
-		if (!profileFieldsWithUnallowedHtml.isEmpty()) {
-			throw new IllegalArgumentException(String.format(
-					"Profile fields containing HTML code: %s", 
-					profileFieldsWithUnallowedHtml.stream().collect(Collectors.joining(", "))));
-		}
     }
 }

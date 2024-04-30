@@ -10,21 +10,22 @@
 
 package org.agnitas.service;
 
+import java.util.List;
+import java.util.Map;
+
 import com.agnitas.beans.Admin;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
-import org.agnitas.util.importvalues.ImportMode;
-
-import java.util.List;
-import java.util.Set;
 
 public interface ImportProfileService {
+
+    void saveImportProfile(ImportProfile profile);
 
     ColumnMapping findColumnMappingByDbColumn(String column, List<ColumnMapping> mappings);
 
     void saveColumnsMappings(List<ColumnMapping> columnMappings, int profileId, Admin admin);
 
-    void saveImportProfileWithoutColumnMappings(ImportProfile profile, Admin admin);
+    void saveImportProfileWithoutColumnMappings(ImportProfile profile);
 
     ImportProfile getImportProfileById(int id);
 
@@ -34,31 +35,15 @@ public interface ImportProfileService {
 
     void deleteImportProfileById(int id);
 
-    List<ImportProfile> getAvailableImportProfiles(Admin admin);
-    List<ImportProfile> getAvailableImportProfiles(int companyId);
+    List<ImportProfile> getImportProfilesByCompanyId(int companyId);
 
     List<Integer> getSelectedMailingListIds(int id, int companyId);
 
+	Map<String, Integer> getImportProfileGenderMapping(int id);
+
+	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
+
+	boolean addImportProfileGenderMapping(int profileId, String addedGender, int addedGenderInt);
+
 	boolean isKeyColumnsIndexed(ImportProfile profile);
-
-    boolean isCheckForDuplicatesAllowed(Admin admin);
-
-    boolean isUpdateDuplicatesChangeAllowed(Admin admin);
-
-    boolean isPreprocessingAllowed(Admin admin);
-
-    boolean isAllMailinglistsAllowed(Admin admin);
-
-    boolean isCustomerIdImportAllowed(Admin admin);
-
-    boolean isAllowedToShowMailinglists(Admin admin);
-
-    boolean isImportModeAllowed(int mode, Admin admin);
-
-    boolean isEcryptedImportAllowed(Admin admin);
-
-    Set<ImportMode> getAvailableImportModes(Admin admin);
-
-    boolean isManageAllowed(ImportProfile profile, Admin admin);
-
 }

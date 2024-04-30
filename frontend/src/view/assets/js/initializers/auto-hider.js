@@ -1,38 +1,38 @@
 /*doc
----
-title: Checkbox Hider Directive
-name: checkbox-hider-directive
-parent: directives
----
+ ---
+ title: Checkbox Hider Directive
+ name: checkbox-hider-directive
+ parent: directives
+ ---
 
-By setting `data-show-by-checkbox` the object will be hidden if checkbox is not checked. Checkbox JQuery selector should be set in 'data-hide-by-checkbox'.
+ By setting `data-show-by-checkbox` the object will be hidden if checkbox is not checked. Checkbox JQuery selector should be set in 'data-hide-by-checkbox'.
 
-By setting `data-hide-by-checkbox`  the object will be hidden if checkbox is checked.
+ By setting `data-hide-by-checkbox`  the object will be hidden if checkbox is checked.
 
-```htmlexample
-<div class="form-group">
-  <div class="col-sm-4">
-    <label for="checkboxID" class="control-label">Checkbox or toggle</label>
-  </div>
+ ```htmlexample
+ <div class="form-group">
+ <div class="col-sm-4">
+ <label class="control-label">Checkbox or toggle</label>
+ </div>
+ <div class="col-sm-4">
+ <label class="toggle">
+ <input type"checkbox" id="checkboxID"/>
+ <div class="toggle-control"></div>
+ </label>
+ </div>
+ </div>
 
-  <div class="col-sm-4">
-    <label class="toggle">
-      <input type="checkbox" id="checkboxID"/>
-      <div class="toggle-control"></div>
-    </label>
-  </div>
-</div>
+ <div class="form-group" data-show-by-checkbox="#checkboxID">
+ <div class="col-sm-4">
+ <label class="control-label">Some input field</label>
+ </div>
+ <div class="col-sm-4">
+ <input type="text" class="form-control" name="lastname" />
+ </div>
+ </div>
 
-<div class="form-group" data-show-by-checkbox="#checkboxID">
-  <div class="col-sm-4">
-    <label for="lastname" class="control-label">Some input field</label>
-  </div>
-  <div class="col-sm-4">
-    <input type="text" class="form-control" name="lastname" id="lastname"/>
-  </div>
-</div>
-```
-*/
+ ```
+ */
 
 ;(function(){
 

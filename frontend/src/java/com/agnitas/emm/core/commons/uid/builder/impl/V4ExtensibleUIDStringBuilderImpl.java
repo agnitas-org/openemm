@@ -13,6 +13,7 @@ package com.agnitas.emm.core.commons.uid.builder.impl;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
@@ -20,14 +21,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.EncodingException;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
-import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
-import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
 public class V4ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuilder {
 
@@ -38,11 +38,11 @@ public class V4ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 	
 	// ---------------------------------------------------- Dependency Injection
 	
-	private CompanyUidDataDaoCache companyUidDataCache;
+	private CompanyDaoCache companyDaoCache;
 	
 	@Required
-	public final void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache cache) { // TODO Replace by constructor injection
-		this.companyUidDataCache = Objects.requireNonNull(cache, "Cache canno tbe null");
+	public final void setCompanyDaoCache(final CompanyDaoCache cache) {
+		this.companyDaoCache = Objects.requireNonNull(cache, "Cache cannot be null");
 	}
 	
 	// ---------------------------------------------------- Business Logic
@@ -65,10 +65,10 @@ public class V4ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 			throw new RequiredInformationMissingException("company ID");
 		}
 
-		final CompanyUidData companyUidData = this.companyUidDataCache.getItem(uid.getCompanyID());
+		final Company company = this.companyDaoCache.getItem(uid.getCompanyID());
 		
-		if (companyUidData.getSecretKey() != null && !companyUidData.getSecretKey().equals("")) {
-			return makeBaseUID(uid) + SEPARATOR + getSignature(uid, companyUidData.getSecretKey());
+		if (company.getSecretKey() != null && !company.getSecretKey().equals("")) {
+			return makeBaseUID(uid) + SEPARATOR + getSignature(uid, company.getSecretKey());
 		} else {
 			throw new RequiredInformationMissingException("secret key");
 		}

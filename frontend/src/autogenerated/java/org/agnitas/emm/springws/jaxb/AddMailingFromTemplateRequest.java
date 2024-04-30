@@ -11,14 +11,11 @@
 
 package org.agnitas.emm.springws.jaxb;
 
-import java.util.Date;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlSchemaType;
 import jakarta.xml.bind.annotation.XmlType;
-import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 
 /**
@@ -35,7 +32,6 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *         &lt;element name="shortname" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
  *         &lt;element name="autoUpdate" type="{http://www.w3.org/2001/XMLSchema}boolean"/&gt;
- *         &lt;element name="plannedDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/&gt;
  *       &lt;/all&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -57,10 +53,6 @@ public class AddMailingFromTemplateRequest {
     protected String shortname;
     protected String description;
     protected boolean autoUpdate;
-    @XmlElement(type = String.class)
-    @XmlJavaTypeAdapter(DateAdapter.class)
-    @XmlSchemaType(name = "dateTime")
-    protected Date plannedDate;
 
     /**
      * Gets the value of the templateID property.
@@ -140,30 +132,6 @@ public class AddMailingFromTemplateRequest {
      */
     public void setAutoUpdate(boolean value) {
         this.autoUpdate = value;
-    }
-
-    /**
-     * Gets the value of the plannedDate property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public Date getPlannedDate() {
-        return plannedDate;
-    }
-
-    /**
-     * Sets the value of the plannedDate property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPlannedDate(Date value) {
-        this.plannedDate = value;
     }
 
 }

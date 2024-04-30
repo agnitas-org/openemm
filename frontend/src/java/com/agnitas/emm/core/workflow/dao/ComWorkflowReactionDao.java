@@ -10,12 +10,14 @@
 
 package com.agnitas.emm.core.workflow.dao;
 
+import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.CompaniesConstraints;
 
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
+import com.agnitas.emm.core.workflow.beans.WorkflowActionMailingDeferral;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStep;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepInstance;
@@ -48,17 +50,6 @@ public interface ComWorkflowReactionDao {
 
     void saveReaction(ComWorkflowReaction reaction);
 
-    /**
-   	 * Updates properties of the steps declarations (mailing_id and target_id).
-     * For example used in case when mailing icons updated during pause and declarations of the steps
-     * should take into account new mailings and appropriate 'received previous mailing' targets 
-     *
-   	 * @param steps stepDeclarations with updated mailing ids and targets
-   	 * @param reactionId an identifier of the reaction to be deactivated.
-   	 * @param companyId an identifier of a company that owns referenced reaction.
-   	 */
-    void updateStepsDeclarations(List<WorkflowReactionStepDeclaration> steps, int reactionId, int companyId);
-
     void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, int companyId);
 
 	/**
@@ -67,20 +58,15 @@ public interface ComWorkflowReactionDao {
 	 * @param workflowId an identifier of the action-based workflow whose trigger should be deactivated.
 	 * @param companyId an identifier of a company that owns referenced workflow.
 	 */
-	void deactivateWorkflowReactions(int workflowId, int companyId, boolean keepReactionLog);
-
-	void activateWorkflowReactions(int workflowId, int companyId);
+	void deactivateWorkflowReactions(int workflowId, int companyId);
 
 	/**
 	 * Mark the reaction as inactive and clear all logs (except the entries for trigger-step).
 	 *
 	 * @param reactionId an identifier of the reaction to be deactivated.
 	 * @param companyId an identifier of a company that owns referenced reaction.
-	 * @param keepReactionLog whether or not to keep reaction logs.
 	 */
-	void deactivateReaction(int reactionId, int companyId, boolean keepReactionLog);
-
-	void activateReaction(int reactionId, int companyId);
+	void deactivateReaction(int reactionId, int companyId);
 
 	/**
 	 * See {@link #deleteReaction(int, int)} and {@link #getReactionId(int, int)}.
@@ -116,6 +102,8 @@ public interface ComWorkflowReactionDao {
 	/**
 	 * Register triggered (reacted) recipients, generate action-based campaign execution plan from declarations (see {@link #saveReactionStepDeclarations(List, int, int)}).
 	 * Use "now" as reaction timestamp and calculate deadlines (if any) for steps (decisions and mailings).
+	 *
+	 * The method supports legacy mode as well (see {@link ComWorkflowReaction#isLegacyMode()}).
 	 *
 	 * @param reaction the reaction that has been triggered.
 	 * @param recipients recipients who triggered the reaction.
@@ -172,7 +160,25 @@ public interface ComWorkflowReactionDao {
 	 */
 	List<Integer> getStepRecipients(WorkflowReactionStepInstance step);
 
+	/**
+	 * For legacy mode only (see {@link ComWorkflowReaction#isLegacyMode()}).
+	 */
+	@Deprecated
+	void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, int companyId);
+
+	/**
+	 * For legacy mode only (see {@link ComWorkflowReaction#isLegacyMode()}).
+	 */
+	@Deprecated
+	List<WorkflowActionMailingDeferral> getDeferredActionMailings(CompaniesConstraints constraints);
+
+	/**
+	 * For legacy mode only (see {@link ComWorkflowReaction#isLegacyMode()}).
+	 */
+	@Deprecated
+	void markDeferredActionMailingsAsSent(List<Integer> deferralsIds);
+
     int getReactionId(int workflowId, int companyId);
 
-    boolean isLinkUsedInActiveWorkflow(TrackableLink linkId);
+    boolean isLinkUsedInActiveWorkflow(ComTrackableLink linkId);
 }

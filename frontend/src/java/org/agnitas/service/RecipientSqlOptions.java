@@ -10,7 +10,6 @@
 
 package org.agnitas.service;
 
-import java.util.List;
 import java.util.Set;
 
 public class RecipientSqlOptions implements RecipientOptions {
@@ -23,9 +22,8 @@ public class RecipientSqlOptions implements RecipientOptions {
     private int accessLimitTargetId;
     private String targetEQL;
     private String queryBuilderRules;
-    private List<String> userTypes;
+    private String userType;
     private String searchFirstName;
-    private Integer gender;
     private String searchLastName;
     private String searchEmail;
     private int userStatus;
@@ -76,10 +74,10 @@ public class RecipientSqlOptions implements RecipientOptions {
     }
 
     @Override
-	public List<String> getUserTypes() {
-        return userTypes;
+	public String getUserType() {
+        return userType;
     }
-
+    
     public String getSearchFirstName() {
         return searchFirstName;
     }
@@ -91,11 +89,7 @@ public class RecipientSqlOptions implements RecipientOptions {
     public String getSearchEmail() {
         return searchEmail;
     }
-
-    public Integer getGender() {
-        return gender;
-    }
-
+    
     @Override
 	public int getUserStatus() {
         return userStatus;
@@ -129,11 +123,6 @@ public class RecipientSqlOptions implements RecipientOptions {
             options.searchFirstName = searchFirstName;
             return this;
         }
-
-        public Builder setGender(Integer gender) {
-            options.gender = gender;
-            return this;
-        }
     
         public Builder setSearchLastName(String searchLastName) {
             options.searchLastName = searchLastName;
@@ -155,8 +144,8 @@ public class RecipientSqlOptions implements RecipientOptions {
             return this;
         }
     
-        public Builder setUserTypes(List<String> userTypes) {
-            options.userTypes = userTypes;
+        public Builder setUserType(String userType) {
+            options.userType = userType;
             return this;
         }
     

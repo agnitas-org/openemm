@@ -146,7 +146,6 @@
 				<xs:element name="shortname" type="xs:string" />
 				<xs:element name="description" type="xs:string" minOccurs="0" />
 				<xs:element name="autoUpdate" type="xs:boolean" />
-				<xs:element name="plannedDate" type="xs:dateTime" minOccurs="0" />
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
@@ -182,7 +181,6 @@
 				<xs:element name="linefeed" type="xs:int" />
 				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
 				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
-				<xs:element name="plannedDate" type="xs:dateTime" minOccurs="0" />
 <!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
 			</xs:all>
 		</xs:complexType>
@@ -526,7 +524,6 @@
 			</xs:element>
 			<xs:element name="onePixel" type="xs:string" />
 			<xs:element name="autoUpdate" type="xs:boolean" />
-			<xs:element name="plannedDate" type="xs:dateTime" />
 		</xs:all>
 	</xs:complexType>
 
@@ -919,28 +916,6 @@
 		<xs:complexType />
 	</xs:element>
 
-	<xs:element name="PauseCampaignRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="campaignID" type="xs:int" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="PauseCampaignResponse">
-		<xs:complexType />
-	</xs:element>
-
-	<xs:element name="ResumeCampaignRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="campaignID" type="xs:int" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="ResumeCampaignResponse">
-		<xs:complexType />
-	</xs:element>
-
 	<xs:element name="UpdateContentBlockRequest">
 		<xs:complexType>
 			<xs:all>
@@ -980,7 +955,6 @@
 				<xs:element name="linefeed" type="xs:int" />
 				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
 				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
-				<xs:element name="plannedDate" type="xs:dateTime" minOccurs="0" />
 <!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
 			</xs:all>
 		</xs:complexType>
@@ -1055,7 +1029,23 @@
 		<xs:complexType />
 	</xs:element>
 	
-
+	<xs:element name="DecryptLinkDataRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="linkparam" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DecryptLinkDataResponse">		
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="companyID" type="xs:int" />
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="urlID" type="xs:int" />
+				<xs:element name="customerID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
 
 	<!-- Get trackable links-->
 	<xs:element name="ListTrackableLinksRequest">

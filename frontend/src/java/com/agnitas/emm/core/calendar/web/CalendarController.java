@@ -203,9 +203,7 @@ public class CalendarController implements XssCheckAware {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(admin.isRedesignedUiUsed()
-                ? calendarService.getMailingsRedesigned(admin, startDate, endDate)
-                : calendarService.getMailings(admin, startDate, endDate));
+        return ResponseEntity.ok(calendarService.getMailings(admin, startDate, endDate));
     }
 
     @RequestMapping(value = "/calendar/moveMailing.action", method = RequestMethod.POST)

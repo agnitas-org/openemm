@@ -56,10 +56,6 @@
 			"attachment":
 				{
 					"type": "string"
-				},
-			"createNewCustomerEntry":
-				{
-					"type": "boolean"
 				}
 		},
 	"required":

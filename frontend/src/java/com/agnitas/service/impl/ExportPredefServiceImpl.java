@@ -10,43 +10,28 @@
 
 package com.agnitas.service.impl;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import javax.sql.DataSource;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.FileCompressionType;
-import org.agnitas.service.RecipientExportWorker;
-import org.agnitas.service.RecipientExportWorkerFactory;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.Charset;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.service.ServiceResult;
+import org.agnitas.beans.ExportPredef;
+import org.agnitas.dao.ExportPredefDao;
+import org.agnitas.emm.core.autoimport.service.RemoteFile;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.service.RecipientExportWorker;
+import org.agnitas.service.RecipientExportWorkerFactory;
+import org.agnitas.util.DateUtilities;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
 
@@ -68,11 +53,12 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public int save(ExportPredef src, Admin admin) throws Exception {
-        if (!isManageAllowed(src, admin)) {
-            throw new UnsupportedOperationException();
-        }
+    public ExportPredef create(int companyId) {
+        return exportPredefDao.create(companyId);
+    }
 
+    @Override
+    public int save(ExportPredef src) {
         return exportPredefDao.save(src);
     }
 
@@ -112,7 +98,8 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         RecipientExportWorker worker = recipientExportWorkerFactory.newWorker(export, admin);
         worker.setDataSource(dataSource);
         worker.setExportFile(tmpExportFile.getAbsolutePath());
-        worker.setCompressionType(FileCompressionType.ZIP);
+        worker.setZipped(true);
+        worker.setZippedFileName(getExportDownloadZipName(admin));
         worker.setUsername(admin.getUsername() + " (ID: " + admin.getAdminID() + ")");
         worker.setRemoteFile(new RemoteFile("", tmpExportFile, -1));
         worker.setMaximumExportLineLimit(configService.getIntegerValue(ConfigValue.ProfileRecipientExportMaxRows, admin.getCompanyID()));
@@ -122,12 +109,26 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     private File getTempRecipientExportFile(int companyId) {
         File companyCsvExportDirectory = getExportDirectory(companyId);
         String dateString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
-        File importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + ".csv.zip");
+        File importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + ".zip");
         int duplicateCount = 1;
         while (importTempFile.exists()) {
-            importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + "_" + (duplicateCount++) + ".csv.zip");
+            importTempFile = new File(companyCsvExportDirectory, getMandatoryExportTmpFilePrefix(companyId) + dateString + "_" + (duplicateCount++) + ".zip");
         }
         return importTempFile;
+    }
+    
+    /**
+     * Generates a filename to be used for the Download.
+     * This name appear in the download window and is NOT the the real name within the webserver's filesystem.
+     *
+     * @param admin current user
+     * @return filename
+     */
+    @Override
+    public String getExportDownloadZipName(Admin admin) {
+        return admin.getCompany().getShortname() + "_"
+                + new SimpleDateFormat(DateUtilities.YYYYMD).format(new Date())
+                + ".zip";
     }
     
     private File getExportDirectory(int companyId) {
@@ -140,86 +141,6 @@ public class ExportPredefServiceImpl implements ExportPredefService {
 
     public final ExportPredefDao getExportPredefDao() {
     	return this.exportPredefDao;
-    }
-
-    @Override
-    public Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) throws Exception {
-        Set<Charset> options = getAvailableCharsetOptions(admin);
-        if (export != null && !options.contains(Charset.getCharsetByName(export.getCharset()))) {
-            options.add(Charset.getCharsetByName(export.getCharset()));
-        }
-
-        return options;
-    }
-
-    @Override
-    public Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException {
-        Set<UserStatus> options = getAvailableUserStatusOptions(admin);
-        if (export != null && export.getUserStatus() != 0 && !options.contains(UserStatus.getUserStatusByID(export.getUserStatus()))) {
-            options.add(UserStatus.getUserStatusByID(export.getUserStatus()));
-        }
-
-        return options;
-    }
-
-    @Override
-    public EnumSet<BindingEntry.UserType> getAvailableUserTypeOptionsForDisplay(Admin admin, ExportPredef export) throws Exception {
-        EnumSet<BindingEntry.UserType> options = getAvailableUserTypeOptions(admin);
-        if (export != null && !options.contains(BindingEntry.UserType.getUserTypeByString(export.getUserType()))) {
-            options.add(BindingEntry.UserType.getUserTypeByString(export.getUserType()));
-        }
-
-        return options;
-    }
-
-    @Override
-    public boolean isManageAllowed(ExportPredef export, Admin admin) throws Exception {
-        if (export == null) {
-            return true;
-        }
-
-        final Set<Charset> availableCharsetOptions = getAvailableCharsetOptions(admin);
-        if (!availableCharsetOptions.contains(Charset.getCharsetByName(export.getCharset()))) {
-            return false;
-        }
-
-        final Set<UserStatus> availableUserStatusOptions = getAvailableUserStatusOptions(admin);
-        if (export.getUserStatus() != 0 && !availableUserStatusOptions.contains(UserStatus.getUserStatusByID(export.getUserStatus()))) {
-            return false;
-        }
-
-        final EnumSet<BindingEntry.UserType> availableUserTypeOptions = getAvailableUserTypeOptions(admin);
-        return availableUserTypeOptions.contains(BindingEntry.UserType.getUserTypeByString(export.getUserType()));
-    }
-
-    protected Set<Charset> getAvailableCharsetOptions(Admin admin) {
-        final Map<Charset, Permission> charsetPermissions = Map.of(
-                Charset.ISO_8859_15, Permission.CHARSET_USE_ISO_8859_15,
-                Charset.UTF_8, Permission.CHARSET_USE_UTF_8
-        );
-
-        final Set<Charset> charsets = new HashSet<>(Set.of(Charset.values()));
-        charsets.removeAll(Set.of(Charset.ISO_8859_1, Charset.CHINESE_SIMPLIFIED, Charset.ISO_2022_JP, Charset.ISO_8859_2));
-
-        return charsets.stream()
-                .filter(c -> !charsetPermissions.containsKey(c) || admin.permissionAllowed(charsetPermissions.get(c)))
-                .collect(Collectors.toSet());
-    }
-
-    private Set<UserStatus> getAvailableUserStatusOptions(Admin admin) {
-        final Map<UserStatus, Permission> statusPermissions = Map.of(UserStatus.Blacklisted, Permission.BLACKLIST);
-
-        return Stream.of(UserStatus.values())
-                .filter(s -> !statusPermissions.containsKey(s) || admin.permissionAllowed(statusPermissions.get(s)))
-                .collect(Collectors.toSet());
-    }
-
-    protected EnumSet<BindingEntry.UserType> getAvailableUserTypeOptions(Admin admin) {
-        final EnumSet<BindingEntry.UserType> options = EnumSet.allOf(BindingEntry.UserType.class);
-        //options.removeAll(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP);
-        //options.remove(BindingEntry.UserType.WorldVIP);
-        options.removeAll(Set.of(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP));
-        return options;
     }
 
     @Override

@@ -77,18 +77,17 @@ public class MaildropStatusDAO {
 				optimizeMailGeneration = dbase.asString (row.get ("optimize_mail_generation"));
 				selectedTestRecipients = dbase.asInt (row.get ("selected_test_recipients")) == 1;
 				overwriteTestRecipient = dbase.asLong (row.get ("overwrite_test_recipient"));
-				dependsOnAutoImportID = false;
-				autoImportOK = false;
-				if ((! "A".equals (statusField)) && (! "T".equals (statusField))) {
-					rq = dbase.query (with.cursor (),
-							  "SELECT auto_import_id, status_ok " +
-							  "FROM mailing_import_lock_tbl " +
-							  "WHERE mailing_id = :mailingID",
-							  "mailingID", mailingID);
-					if (rq.size () > 0) {
-						dependsOnAutoImportID = true;
-						autoImportOK = rq.stream ().filter (r -> dbase.asInt (r.get ("status_ok")) == 1).count () == rq.size ();
-					}
+				rq = dbase.query (with.cursor (),
+						  "SELECT auto_import_id, status_ok " +
+						  "FROM mailing_import_lock_tbl " +
+						  "WHERE maildrop_status_id = :statusID",
+						  "statusID", forStatusID);
+				if (rq.size () > 0) {
+					dependsOnAutoImportID = true;
+					autoImportOK = rq.stream ().filter (r -> dbase.asInt (r.get ("status_ok")) == 1).count () == rq.size ();
+				} else {
+					dependsOnAutoImportID = false;
+					autoImportOK = false;
 				}
 			} else {
 				statusID = 0;

@@ -32,7 +32,6 @@ public abstract class AbstractActionOperationParameters implements ActionOperati
 	private int id;
 	private int companyId;
 	private int actionId;
-	private boolean readonly;
 	private final ActionOperationType type;
 
 	public AbstractActionOperationParameters(ActionOperationType type) {
@@ -66,15 +65,7 @@ public abstract class AbstractActionOperationParameters implements ActionOperati
 	public ActionOperationType getOperationType() {
 		return this.type;
 	}
-
-    public boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
-    }
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {

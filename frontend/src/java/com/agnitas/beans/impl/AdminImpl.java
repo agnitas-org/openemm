@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -67,7 +66,6 @@ public class AdminImpl implements Admin {
 	private Date lastLoginDate;
 	private boolean restful = false;
 	protected String employeeID;
-    private PasswordReminderState passwordReminderState;
 
 	/**
      * This member is not stored in db, but encrypted into securePasswordHash by PasswordEncryptor
@@ -417,17 +415,7 @@ public class AdminImpl implements Admin {
 			return permissionAllowedByGroups(permissions);
 		}
 	}
-
-	@Override
-	public boolean isRedesignedUiUsed(Permission permission) {
-		return isRedesignedUiUsed() && permissionAllowed(permission);
-	}
-
-	@Override
-	public boolean isRedesignedUiUsed() {
-		return permissionAllowed(Permission.UI_DESIGN_MIGRATION) && permissionAllowed(Permission.USE_REDESIGNED_UI);
-	}
-
+	
 	@Override
 	public String toString()  {
 		return username + " (ID: " + adminID + ")";
@@ -575,14 +563,4 @@ public class AdminImpl implements Admin {
 
 		return username;
 	}
-
-    @Override
-    public PasswordReminderState getPasswordReminderState() {
-        return passwordReminderState;
-    }
-
-    @Override
-    public void setPasswordReminderState(PasswordReminderState passwordReminderState) {
-        this.passwordReminderState = passwordReminderState;
-    }
 }

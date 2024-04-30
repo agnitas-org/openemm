@@ -10,11 +10,40 @@
 
 package org.agnitas.ecs.backend.beans;
 
+
+
 /**
  * Bean that stores color value for percent range (used for ECS)
  */
 public interface ClickStatColor {
 
+	/**
+	 * Getter for id property
+	 *
+	 * @return id
+	 */
+	int getId();
+
+	/**
+	 * Setter for id property
+	 *
+	 * @param id new id of object
+	 */
+	void setId(int id);
+
+	/**
+	 * Getter for companyId property
+	 *
+	 * @return id of company
+	 */
+	int getCompanyId();
+
+	/**
+	 * Setter for companyId property
+	 *
+	 * @param companyId new id of company
+	 */
+	void setCompanyId(int companyId);
 
 	/**
 	 * Getter for color property (should be in HEX i.e. "FF00FF")
@@ -24,6 +53,13 @@ public interface ClickStatColor {
 	String getColor();
 
 	/**
+	 * Setter for color property (should be in HEX i.e. "FF00FF")
+	 *
+	 * @param color new color property for this object
+	 */
+	void setColor(String color);
+
+	/**
 	 * Getter for rangeStart property - lower limit of percent range
 	 *
 	 * @return rangeStart property
@@ -31,10 +67,24 @@ public interface ClickStatColor {
 	double getRangeStart();
 
 	/**
+	 * Setter for rangeStart property - lower limit of percent range
+	 *
+	 * @param rangeStart new rangeStart for this object
+	 */
+	void setRangeStart(double rangeStart);
+
+	/**
 	 * Getter for rangeEnd property - upper limit of percent range
 	 *
 	 * @return rangeEnd property
 	 */
 	double getRangeEnd();
+
+	/**
+	 * Setter for rangeEnd property - upper limit of percent range
+	 *
+	 * @param rangeEnd new rangeEnd for this object
+	 */
+	void setRangeEnd(double rangeEnd);
 
 }

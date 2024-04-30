@@ -79,8 +79,6 @@ public class ImportStatusImpl implements ImportStatus {
 	
 	private List<String> firstErrorColumns = new ArrayList<>();
 
-	private int duplicatesInImportData;
-	
 	private int alreadyInDb;
 	
 	private Date changeDate;
@@ -527,15 +525,5 @@ public class ImportStatusImpl implements ImportStatus {
 	@Override
 	public boolean isNearLimit() {
 		return nearLimit;
-	}
-
-	@Override
-	public int getDuplicateInImportData() {
-		return duplicatesInImportData;
-	}
-
-	@Override
-	public void setDuplicatesInImportData(int duplicatesInImportData) {
-		this.duplicatesInImportData = duplicatesInImportData;
 	}
 }

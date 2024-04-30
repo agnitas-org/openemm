@@ -38,9 +38,9 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
@@ -134,7 +134,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         String imageUrl = req.getURL();
         int urlId = 0;
         if (StringUtils.isNotBlank(imageUrl)) {
-            TrackableLink trackableLink = new TrackableLinkImpl();
+            ComTrackableLink trackableLink = new ComTrackableLinkImpl();
             trackableLink.setCompanyID(companyId);
             trackableLink.setMailingID(req.getMailingID());
             trackableLink.setFullUrl(imageUrl);

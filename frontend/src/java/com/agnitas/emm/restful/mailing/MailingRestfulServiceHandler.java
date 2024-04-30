@@ -12,18 +12,15 @@ package com.agnitas.emm.restful.mailing;
 
 import java.io.File;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
@@ -33,35 +30,28 @@ import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingExporter;
 import org.agnitas.service.MailingImporter;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.JsonRequestResponse;
 import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -90,8 +80,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	private CopyMailingService copyMailingService;
 	private ThumbnailService thumbnailService;
 	private ComMailingBaseService mailingBaseService;
-	private CompanyTokenService companyTokenService;
-    private MaildropService maildropService;
 
 	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
@@ -130,16 +118,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
 		this.mailingBaseService = mailingBaseService;
-	}
-	
-	@Required
-	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
-		this.companyTokenService = companyTokenService;
-	}
-	
-	@Required
-	public void setMaildropService(MaildropService maildropService) {
-		this.maildropService = maildropService;
 	}
 
 	@Override
@@ -186,124 +164,13 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 
 			JsonArray mailingsJsonArray = new JsonArray();
 			
-			Map<String, String[]> requestParameters = request.getParameterMap();
-			Pattern filterPatternMailingName = null;
-			if (requestParameters.get("name") != null && requestParameters.get("name").length > 0 && StringUtils.isNotBlank(requestParameters.get("name")[0])) {
-				filterPatternMailingName = Pattern.compile(".*" + requestParameters.get("name")[0].toLowerCase().replace("*", ".*") + ".*");
-			}
-			
-			final Pattern filterPatternMailingType;
-			if (requestParameters.get("type") != null && requestParameters.get("type").length > 0 && StringUtils.isNotBlank(requestParameters.get("type")[0])) {
-				filterPatternMailingType = Pattern.compile(".*" + requestParameters.get("type")[0].toLowerCase().replace("*", ".*") + ".*");
-			} else {
-				filterPatternMailingType = null;
-			}
-			
-			Pattern filterPatternMailinglistID = null;
-			if (requestParameters.get("mailinglistid") != null && requestParameters.get("mailinglistid").length > 0 && StringUtils.isNotBlank(requestParameters.get("mailinglistid")[0])) {
-				filterPatternMailinglistID = Pattern.compile(".*" + requestParameters.get("mailinglistid")[0].replace("*", ".*") + ".*");
-			}
-			
-			Pattern filterPatternMailinglistName = null;
-			if (requestParameters.get("mailinglistname") != null && requestParameters.get("mailinglistname").length > 0 && StringUtils.isNotBlank(requestParameters.get("mailinglistname")[0])) {
-				filterPatternMailinglistName = Pattern.compile(".*" + requestParameters.get("mailinglistname")[0].toLowerCase().replace("*", ".*") + ".*");
-			}
-			
-			Pattern filterPatternMailingStatus = null;
-			if (requestParameters.get("status") != null && requestParameters.get("status").length > 0 && StringUtils.isNotBlank(requestParameters.get("status")[0])) {
-				filterPatternMailingStatus = Pattern.compile(requestParameters.get("status")[0].toLowerCase().replace("*", ".*"));
-			}
-			
-			Pattern filterPatternCreationDate = null;
-			if (requestParameters.get("creationdate") != null && requestParameters.get("creationdate").length > 0 && StringUtils.isNotBlank(requestParameters.get("creationdate")[0])) {
-				filterPatternCreationDate = Pattern.compile(".*" + requestParameters.get("creationdate")[0].replace("*", ".*") + ".*");
-			}
-			
-			Pattern filterPatternSendDate = null;
-			if (requestParameters.get("senddate") != null && requestParameters.get("senddate").length > 0 && StringUtils.isNotBlank(requestParameters.get("senddate")[0])) {
-				filterPatternSendDate = Pattern.compile(".*" + requestParameters.get("senddate")[0].replace("*", ".*") + ".*");
-			}
-			
-			List<MailingType> mailingTypes = Arrays.asList(MailingType.values());
-			
-			if (filterPatternMailingType != null) {
-				mailingTypes = mailingTypes.stream().filter(x -> filterPatternMailingType.matcher(x.name().toLowerCase()).matches()).collect(Collectors.toList());
-			}
-			
-			for (MailingType mailingType : mailingTypes) {
+			for (MailingType mailingType : MailingType.values()) {
 				for (LightweightMailing mailing : mailingDao.getMailingsByType(mailingType.getCode(), admin.getCompanyID())) {
 					JsonObject mailingJsonObject = new JsonObject();
 					mailingJsonObject.add("mailing_id", mailing.getMailingID());
 					mailingJsonObject.add("type", mailing.getMailingType().name());
 					mailingJsonObject.add("name", mailing.getShortname());
 					mailingJsonObject.add("description", mailing.getMailingDescription());
-					
-					Mailing fullMailing = null;
-					
-					if (filterPatternMailingName != null && !filterPatternMailingName.matcher(mailing.getShortname().toLowerCase()).matches()) {
-						continue;
-					}
-					
-					if (filterPatternMailingType != null) {
-						mailingJsonObject.add("type", mailing.getMailingType().name());
-					}
-					
-					if (filterPatternMailinglistID != null) {
-						if (fullMailing == null) {
-							fullMailing = mailingDao.getMailing(mailing.getMailingID(), mailing.getCompanyID());
-						}
-						
-						if (!filterPatternMailinglistID.matcher(Integer.toString(fullMailing.getMailinglistID())).matches()) {
-							continue;
-						} else {
-							mailingJsonObject.add("mailinglistid", fullMailing.getMailinglistID());
-						}
-					}
-					
-					if (filterPatternMailinglistName != null) {
-						if (fullMailing == null) {
-							fullMailing = mailingDao.getMailing(mailing.getMailingID(), mailing.getCompanyID());
-						}
-						
-						String mailinglistName = mailinglistDao.getMailinglistName(fullMailing.getMailinglistID(), mailing.getCompanyID());
-						if (!filterPatternMailinglistName.matcher(mailinglistName.toLowerCase()).matches()) {
-							continue;
-						}
-						mailingJsonObject.add("mailinglistid", fullMailing.getMailinglistID());
-						mailingJsonObject.add("mailinglist", mailinglistName);
-					}
-					
-					if (filterPatternMailingStatus != null) {
-						if (mailing.getWorkStatus().isEmpty() || !filterPatternMailingStatus.matcher(MailingStatus.fromDbKey(mailing.getWorkStatus().get()).name().toLowerCase()).matches()) {
-							continue;
-						}
-						mailingJsonObject.add("status", MailingStatus.fromDbKey(mailing.getWorkStatus().get()).name());
-					}
-					
-					if (filterPatternCreationDate != null) {
-						if (fullMailing == null) {
-							fullMailing = mailingDao.getMailing(mailing.getMailingID(), mailing.getCompanyID());
-						}
-						
-						SimpleDateFormat mailingCreationDateFormat = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT);
-						if (!filterPatternCreationDate.matcher(mailingCreationDateFormat.format(fullMailing.getCreationDate())).matches()) {
-							continue;
-						}
-						mailingJsonObject.add("creation_date", fullMailing.getCreationDate());
-					}
-					
-					if (filterPatternSendDate != null) {
-						if (fullMailing == null) {
-							fullMailing = mailingDao.getMailing(mailing.getMailingID(), mailing.getCompanyID());
-						}
-						
-						SimpleDateFormat mailingSendDateFormat = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT);
-						if (fullMailing.getSenddate() == null || !filterPatternSendDate.matcher(mailingSendDateFormat.format(fullMailing.getSenddate())).matches()) {
-							continue;
-						}
-						mailingJsonObject.add("send_date", fullMailing.getSenddate());
-					}
-					
 					mailingsJsonArray.add(mailingJsonObject);
 				}
 			}
@@ -335,8 +202,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		} else if (restfulContext.length == 2) {
 			if (AgnUtils.isNumber(restfulContext[0]) && "status".equalsIgnoreCase(restfulContext[1])) {
 				int mailingID = Integer.parseInt(restfulContext[0]);
-				MailingStatus status = mailingDao.getStatus(admin.getCompanyID(), mailingID);
-				return status.name();
+				String status = mailingDao.getWorkStatus(admin.getCompanyID(), mailingID);
+				return MailingStatus.fromDbKey(status).name();
 			} else {
 				throw new RestfulClientException("Invalid request");
 			}
@@ -451,10 +318,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		
 		Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
 		if (mailing != null) {
-			if (!isMailingEditable(mailingID, admin)) {
-				throw new RestfulClientException("This mailing may not be changed, because it was already sent or is an active actionbased mailing");
-			}
-			
 			try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 				try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 					JsonNode jsonNode = jsonReader.read();
@@ -464,24 +327,12 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 							if ("shortname".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof String) {
 									mailing.setShortname((String) entry.getValue());
-									// Check for unallowed html tags
-									try {
-										HtmlChecker.checkForUnallowedHtmlTags(mailing.getShortname(), false);
-									} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-										throw new RestfulClientException("Mailing name contains unallowed HTML tags");
-									}
 								} else {
 									throw new RestfulClientException("Invalid data type for 'shortname'. String expected");
 								}
 							} else if ("description".equals(entry.getKey())) {
 								if (entry.getValue() instanceof String) {
 									mailing.setDescription((String) entry.getValue());
-									// Check for unallowed html tags
-									try {
-										HtmlChecker.checkForUnallowedHtmlTags(mailing.getDescription(), false);
-									} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-										throw new RestfulClientException("Mailing description contains unallowed HTML tags");
-									}
 								} else {
 									throw new RestfulClientException("Invalid data type for 'description'. String expected");
 								}
@@ -612,12 +463,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 											JsonObject parameterJsonObject = (JsonObject) parameterObject;
 											ComMailingParameter mailingParameter = new ComMailingParameter();
 											mailingParameter.setName((String) parameterJsonObject.get("name"));
-											// Check for unallowed html tags
-											try {
-												HtmlChecker.checkForUnallowedHtmlTags(mailingParameter.getName(), false);
-											} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-												throw new RestfulClientException("Mailing parameter name contains unallowed HTML tags");
-											}
 											mailingParameter.setValue((String) parameterJsonObject.get("value"));
 											mailingParameter.setDescription((String) parameterJsonObject.get("description"));
 											parameters.add(mailingParameter);
@@ -630,90 +475,47 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'parameters'. JsonArray expected");
 								}
 							} else if ("links".equals(entry.getKey())) {
-								Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
-								String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
-								
-								Map<String, TrackableLink> trackableLinks = new HashMap<>();
+								Map<String, ComTrackableLink> trackableLinks = new HashMap<>();
 								for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 									JsonObject linkJsonObject = (JsonObject) linkObject;
-									TrackableLink trackableLink = new TrackableLinkImpl();
-									for (Entry<String, Object> linkDataEntry : linkJsonObject.entrySet()) {
-										if (linkDataEntry.getKey().equals("id")) {
-											trackableLink.setId((Integer) linkDataEntry.getValue());
-										} else if (linkDataEntry.getKey().equals("name")) {
-											trackableLink.setShortname((String) linkDataEntry.getValue());
-											// Check for unallowed html tags
-											try {
-												HtmlChecker.checkForUnallowedHtmlTags(trackableLink.getShortname(), false);
-											} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-												throw new RestfulClientException("Link name contains unallowed HTML tags");
+									ComTrackableLink trackableLink = new ComTrackableLinkImpl();
+									trackableLink.setShortname((String) linkJsonObject.get("name"));
+									String fullUrl = (String) linkJsonObject.get("url");
+									fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", admin.getCompany().getRdirDomain());
+									trackableLink.setFullUrl(fullUrl);
+
+									if (linkJsonObject.containsPropertyKey("deep_tracking")) {
+										trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("usage")) {
+										trackableLink.setUsage((Integer) linkJsonObject.get("usage"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("action_id")) {
+										trackableLink.setActionID((Integer) linkJsonObject.get("action_id"));
+									}
+									
+									if (linkJsonObject.containsPropertyKey("administrative")) {
+										trackableLink.setAdminLink((Boolean) linkJsonObject.get("administrative"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("properties")) {
+										List<LinkProperty> linkProperties = new ArrayList<>();
+										for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
+											JsonObject propertyJsonObject = (JsonObject) propertyObject;
+											String propertyName = (String) propertyJsonObject.get("name");
+											if (propertyName == null) {
+												propertyName = "";
 											}
-										} else if (linkDataEntry.getKey().equals("url")) {
-											String fullUrl = (String) linkDataEntry.getValue();
-											fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", admin.getCompany().getRdirDomain());
-											if (StringUtils.isNotBlank(companyToken)) {
-												fullUrl = fullUrl.replace("[CTOKEN]", companyToken);
-											} else {
-												fullUrl = fullUrl.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + admin.getCompanyID());
+											String propertyValue = (String) propertyJsonObject.get("value");
+											if (propertyValue == null) {
+												propertyValue = "";
 											}
-											trackableLink.setFullUrl(fullUrl);
-										} else if (linkDataEntry.getKey().equals("deep_tracking")) {
-											trackableLink.setDeepTracking((Integer) linkDataEntry.getValue());
-										} else if (linkDataEntry.getKey().equals("usage")) {
-											trackableLink.setUsage((Integer) linkDataEntry.getValue());
-										} else if (linkDataEntry.getKey().equals("action_id")) {
-											trackableLink.setActionID((Integer) linkDataEntry.getValue());
-										} else if (linkDataEntry.getKey().equals("administrative")) {
-											trackableLink.setAdminLink((Boolean) linkDataEntry.getValue());
-										} else if (linkDataEntry.getKey().equals("properties")) {
-											List<LinkProperty> linkProperties = new ArrayList<>();
-											for (Object propertyObject : (JsonArray) linkDataEntry.getValue()) {
-												JsonObject propertyJsonObject = (JsonObject) propertyObject;
-												String propertyName = null;
-												String propertyValue = null;
-												PropertyType propertyType = null;
-												for (Entry<String, Object> propertyDataEntry : propertyJsonObject.entrySet()) {
-													if (propertyDataEntry.getKey().equals("name")) {
-														propertyName = (String) propertyDataEntry.getValue();
-														// Check for unallowed html tags
-														try {
-															HtmlChecker.checkForUnallowedHtmlTags(propertyName, false);
-														} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-															throw new RestfulClientException("Link property name contains unallowed HTML tags");
-														}
-													} else if (propertyDataEntry.getKey().equals("value")) {
-														propertyValue = (String) propertyDataEntry.getValue();
-													} else if (propertyDataEntry.getKey().equals("type")) {
-														String propertyTypeString = (String) propertyDataEntry.getValue();
-														try {
-															propertyType = PropertyType.parseString(propertyTypeString);
-														} catch (Exception e) {
-															throw new RestfulClientException("Invalid property type '" + propertyTypeString + "' for mailing link property", e);
-														}
-													} else {
-														throw new RestfulClientException("Invalid property '" + propertyDataEntry.getKey() + "' for mailing link property");
-													}
-												}
-												
-												if (propertyValue == null) {
-													propertyValue = "";
-												}
-													
-												if (propertyName == null) {
-													propertyName = "";
-												}
-												
-												if (propertyType == null) {
-													propertyType = PropertyType.LinkExtension;
-												}
-													
-												LinkProperty linkProperty = new LinkProperty(propertyType, propertyName, propertyName);
-												linkProperties.add(linkProperty);
-											}
-											trackableLink.setProperties(linkProperties);
-										} else {
-											throw new RestfulClientException("Invalid link data property '" + linkDataEntry.getKey() + "' for mailing link");
+											LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), propertyName, propertyName);
+											linkProperties.add(linkProperty);
 										}
+										trackableLink.setProperties(linkProperties);
 									}
 
 									trackableLinks.put(trackableLink.getFullUrl(), trackableLink);
@@ -745,19 +547,4 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
 		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
-
-    /**
-     * Check whether or not a mailing is editable.
-     * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
-     * that unlocks sent mailing so it could be edited anyway.
-     *
-     * @return whether ({@code true}) or not ({@code false}) mailing editing is permitted.
-     */
-    private boolean isMailingEditable(int mailingId, Admin admin) {
-        if (maildropService.isActiveMailing(mailingId, admin.getCompanyID())) {
-            return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-        } else {
-            return true;
-        }
-    }
 }

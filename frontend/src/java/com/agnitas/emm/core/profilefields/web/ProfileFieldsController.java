@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.profilefields.web;
 
+import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
@@ -19,7 +19,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -30,25 +29,24 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.ImportProfile;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
-import org.agnitas.util.MvcUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,36 +60,35 @@ import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
 import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
-import com.agnitas.emm.core.profilefields.form.ProfileFieldFormSearchParams;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
+import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.WebStorage;
+import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
-import jakarta.servlet.http.HttpSession;
-
+@Controller
+@RequestMapping("/profiledb")
+@PermissionMapping("profiledb")
 public class ProfileFieldsController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(ProfileFieldsController.class);
 
     private static final String INVALID_DEFAULT_VALUE_ERROR_MSG = "error.profiledb.invalidDefaultValue";
 
-    protected final ConfigService configService;
     private final RecipientFieldService recipientFieldService;
     private final WebStorage webStorage;
+    private final ConfigService configService;
     private final ProfileFieldValidationService validationService;
     private final UserActivityLogService userActivityLogService;
     private final ObjectUsageService objectUsageService;
@@ -111,31 +108,19 @@ public class ProfileFieldsController implements XssCheckAware {
         this.targetService = targetService;
     }
 
-    @ModelAttribute
-    public ProfileFieldFormSearchParams getSearchParams() {
-        return new ProfileFieldFormSearchParams();
-    }
-
     @RequestMapping("/profiledb.action")
-    public String list(@ModelAttribute("profileForm") ProfileFieldForm profileForm, @ModelAttribute ProfileFieldFormSearchParams searchParams,
-                       Admin admin, Model model, Popups popups, @RequestParam(required = false) boolean restoreSort) {
-        if (isRedesignedViewUsageAllowed(admin)) {
-            FormUtils.syncSearchParams(searchParams, profileForm, true);
+    public String list(@ModelAttribute("profileForm") ProfileFieldForm profileForm, Admin admin, Model model, Popups popups,
+                       @RequestParam(value = "syncSorting", required = false) boolean syncSorting) {
+    	FormUtils.syncNumberOfRows(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+
+    	if (syncSorting) {
+            FormUtils.syncSortingParams(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
         }
-    	FormUtils.syncNumberOfRows(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
-        FormUtils.updateSortingState(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm, restoreSort);
 
     	int companyId = admin.getCompanyID();
 
     	try {
-    		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(
-                    companyId,
-                    profileForm.getFilterFieldName(),
-                    profileForm.getFilterDbFieldName(),
-                    profileForm.getFilterDescription(),
-                    profileForm.getFilterType(),
-                    profileForm.getFilterMode()
-            );
+    		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyId);
 
 	        Map<String, Comparator<RecipientFieldDescription>> sortableColumns = new HashMap<>();
 	
@@ -145,12 +130,8 @@ public class ProfileFieldsController implements XssCheckAware {
 	        sortableColumns.put("dataTypeLength", Comparator.comparing(RecipientFieldDescription::getCharacterLength));
 	        sortableColumns.put("defaultValue", Comparator.comparing(pf -> pf.getDefaultValue() == null ? "" : pf.getDefaultValue().toLowerCase()));
 	        sortableColumns.put("modeEdit", Comparator.comparing(pf -> pf.getDefaultPermission().getStorageCode()));
-            if (isRedesignedViewUsageAllowed(admin)) {
-                sortableColumns.put("description", Comparator.comparing(pf -> pf.getDescription() == null ? "" : pf.getDescription().toLowerCase()));
-            } else {
-                sortableColumns.put("sort", Comparator.comparing(RecipientFieldDescription::getSortOrder));
-            }
-
+	        sortableColumns.put("sort", Comparator.comparing(RecipientFieldDescription::getSortOrder));
+	
 	        if (StringUtils.isNotBlank(profileForm.getSort())) {
 	        	if (sortableColumns.containsKey(profileForm.getSort())) {
 		            Comparator<RecipientFieldDescription> comparator = sortableColumns.get(profileForm.getSort());
@@ -170,10 +151,8 @@ public class ProfileFieldsController implements XssCheckAware {
 	    	PaginatedListImpl<RecipientFieldDescription> paginatedFieldsList = new PaginatedListImpl<>(partialFieldsList, recipientFields.size(), profileForm.getNumberOfRows(), profileForm.getPage(), profileForm.getSort(), profileForm.getDir());
 	    	
 	        model.addAttribute("profileFields", paginatedFieldsList);
-            if (!isRedesignedViewUsageAllowed(admin)) {
-                model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
-            }
-
+	        model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
+	
 	        if (!validationService.mayAddNewColumn(companyId)) {
 	            popups.alert("error.profiledb.maxCount");
 	        }
@@ -195,10 +174,9 @@ public class ProfileFieldsController implements XssCheckAware {
 	            popups.warning("error.profiledb.nearLimit", currentFieldCount, maxFields);
 	        }
 	
-	        int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyId); 
-			boolean isWithinGracefulLimit = maxFields < currentFieldCount && currentFieldCount < maxFields + gracefulExtension;
+			boolean isWithinGracefulLimit = maxFields < currentFieldCount && currentFieldCount < maxFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension();
 	        if (isWithinGracefulLimit) {
-	            popups.warning("error.numberOfProfileFieldsExceeded.graceful", maxFields, currentFieldCount, gracefulExtension);
+	            popups.warning("error.numberOfProfileFieldsExceeded.graceful", maxFields, currentFieldCount, ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension());
 	        }
     	} catch (Exception e) {
     		logger.error("Cannot read profile fields", e);
@@ -206,16 +184,6 @@ public class ProfileFieldsController implements XssCheckAware {
 		}
 
         return "settings_profile_field_list";
-    }
-
-    private boolean isRedesignedViewUsageAllowed(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
-    @GetMapping("/search.action")
-    public String search(@ModelAttribute ProfileFieldForm form, @ModelAttribute ProfileFieldFormSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, form, false);
-        return "redirect:/profiledb/profiledb.action?restoreSort=true";
     }
 
     @RequestMapping("/{fieldname}/view.action")
@@ -246,7 +214,7 @@ public class ProfileFieldsController implements XssCheckAware {
 	            form.setFieldVisible(field.getDefaultPermission() != ProfileFieldMode.NotVisible);
 	            form.setIncludeInHistory(field.isHistorized());
 	            form.setAllowedValues(field.getAllowedValues() == null ? null : field.getAllowedValues().toArray(new String[0]));
-	            form.setUseAllowedValues(form.getAllowedValues() != null && form.getAllowedValues().length > 0);
+	            form.setUseAllowedValues(form.getAllowedValues() != null);
 	            
 	            prepareDefaultValue(form, admin.getLocale());
 	
@@ -264,9 +232,6 @@ public class ProfileFieldsController implements XssCheckAware {
 	        model.addAttribute("creationDate", creationDate);
 	        model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
 	        model.addAttribute("changeDate", changeDate);
-            if (isRedesignedViewUsageAllowed(admin)) {
-                model.addAttribute("dependents", findDependents(fieldName, companyId));
-            }
     	} catch (Exception e) {
     		logger.error("Cannot read profile field: {}", fieldName, e);
     		popups.alert(ERROR_MSG);
@@ -287,7 +252,6 @@ public class ProfileFieldsController implements XssCheckAware {
     }
 
     @RequestMapping("/{fieldname}/dependents.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String dependents(Admin admin, @PathVariable("fieldname") String fieldName, Model model, Popups popups) {
     	try {
 	        int companyId = admin.getCompanyID();
@@ -299,7 +263,21 @@ public class ProfileFieldsController implements XssCheckAware {
 	        }
 	
 	        model.addAttribute("fieldname", fieldName);
-	        model.addAttribute("dependents", findDependents(fieldName, companyId));
+	        
+	        List<Workflow> dependentWorkflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
+	        List<TargetLight> dependentTargets = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
+	
+	        List<Dependent<ProfileFieldDependentType>> dependents = new ArrayList<>(dependentWorkflows.size() + dependentTargets.size());
+	
+	        for (Workflow workflow : dependentWorkflows) {
+	            dependents.add(ProfileFieldDependentType.WORKFLOW.forId(workflow.getWorkflowId(), workflow.getShortname()));
+	        }
+	
+	        for (TargetLight target : dependentTargets) {
+	            dependents.add(ProfileFieldDependentType.TARGET_GROUP.forId(target.getId(), target.getTargetName()));
+	        }
+	        
+	        model.addAttribute("dependents", dependents);
     	} catch (Exception e) {
     		popups.alert("Cannot read dependents", e);
 		}
@@ -307,37 +285,8 @@ public class ProfileFieldsController implements XssCheckAware {
         return "settings_profile_field_dependents_list";
     }
 
-    private List<Dependent<ProfileFieldDependentType>> findDependents(String fieldName, int companyId) {
-        List<Workflow> dependentWorkflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
-        List<TargetLight> dependentTargets = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
-        List<Integer> importProfileIds = validationService.getImportsContainingProfileField(companyId, fieldName);
-        List<Integer> exportProfileIds = validationService.getExportsContainingProfileField(companyId, fieldName);
-
-        List<Dependent<ProfileFieldDependentType>> dependents = new ArrayList<>(dependentWorkflows.size() + dependentTargets.size());
-
-        for (Workflow workflow : dependentWorkflows) {
-            dependents.add(ProfileFieldDependentType.WORKFLOW.forId(workflow.getWorkflowId(), workflow.getShortname()));
-        }
-
-        for (TargetLight target : dependentTargets) {
-            dependents.add(ProfileFieldDependentType.TARGET_GROUP.forId(target.getId(), target.getTargetName()));
-        }
-
-        for (Integer importProfileId : importProfileIds) {
-        	ImportProfile importProfile = validationService.getImportProfile(importProfileId);
-            dependents.add(ProfileFieldDependentType.IMPORT_PROFILE.forId(importProfile.getId(), importProfile.getName()));
-        }
-
-        for (Integer exportProfileId : exportProfileIds) {
-        	ExportPredef exportProfile = validationService.getExportProfile(companyId, exportProfileId);
-            dependents.add(ProfileFieldDependentType.EXPORT_PROFILE.forId(exportProfile.getId(), exportProfile.getShortname()));
-        }
-
-        return dependents;
-    }
-
     @PostMapping("/save.action")
-    public String save(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, @RequestParam(required = false) String targetUrl, Popups popups, HttpSession session) {
+    public String save(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Popups popups) {
     	try {
 	        if (StringUtils.isBlank(profileForm.getFieldname())) {
 	            popups.alert("error.profiledb.invalid_fieldname", "''");
@@ -352,14 +301,12 @@ public class ProfileFieldsController implements XssCheckAware {
 	                clearAllowedValues(profileForm);
 	            }
 	
-	            validateField(admin, profileForm, field, popups, session);
+	            validateField(admin, profileForm, field, popups);
 	
 	            if (!popups.hasAlertPopups()) {
-	                if (isNewField ? createField(admin, profileForm, session) : updateField(admin, field, profileForm)) {
+	                if (isNewField ? createField(admin, profileForm) : updateField(admin, field, profileForm)) {
 	                    popups.success(CHANGES_SAVED_MSG);
-	                    return StringUtils.isBlank(targetUrl)
-                                ? "redirect:/profiledb/profiledb.action?restoreSort=true"
-                                : "redirect:" + targetUrl;
+	                    return "redirect:/profiledb/profiledb.action?syncSorting=true";
 	                } else {
 	                    popups.alert(ERROR_MSG);
 	                }
@@ -372,31 +319,48 @@ public class ProfileFieldsController implements XssCheckAware {
         return MESSAGES_VIEW;
     }
 
+    @RequestMapping("/saveWizardField.action")
+    public String saveWizardField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, RedirectAttributes model, Popups popups) {
+        String tile = save(admin, profileForm, popups);
+
+        if (tile.equals(MESSAGES_VIEW)) {
+            return MESSAGES_VIEW;
+        }
+
+        model.addFlashAttribute("profileForm", profileForm);
+
+        return "redirect:/profiledb/newWizardField.action";
+    }
+
     @RequestMapping("/{column}/confirmDelete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String confirmDelete(Admin admin, @PathVariable String column, final Popups popups) {
-        if (!validationService.isValidToDelete(column, admin.getCompanyID(), admin.getLocale(), popups)) {
+        ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(admin.getCompanyID(), column);
+        if (!usages.isEmpty()) {
+        	ObjectUsagesToPopups.objectUsagesToPopups(
+        	        "error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
         	return MESSAGES_VIEW;
         }
         return "settings_profile_field_delete_ajax";
     }
 
-    @GetMapping("/{column}/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(Admin admin, @PathVariable String column, Popups popups, Model model) {
-        if (!validationService.isValidToDelete(column, admin.getCompanyID(), admin.getLocale(), popups)) {
-            return MESSAGES_VIEW;
-        }
-
-        MvcUtils.addDeleteAttrs(model, column, "settings.profile.ProfileDelete", "settings.profile.field.delete.question");
-        return DELETE_VIEW;
-    }
-
     @RequestMapping(value = "/{fieldname}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     public String delete(Admin admin, @PathVariable("fieldname") String fieldName, Popups popups) {
     	try {
-            if (validationService.isValidToDelete(fieldName, admin.getCompanyID(), admin.getLocale(), popups)) {
-                recipientFieldService.deleteRecipientField(admin.getCompanyID(), fieldName);
+	        final int companyId = admin.getCompanyID();
+	
+	        if (validationService.notContainsInDb(companyId, fieldName)) {
+	            popups.alert("error.profiledb.NotExists", fieldName);
+	        } else if (validationService.hasNotAllowedNumberOfEntries(companyId)) {
+	            popups.alert("error.profiledb.delete.tooMuchRecipients", fieldName);
+	        } else if (validationService.hasTargetGroups(companyId, fieldName)) {
+	            popups.alert("error.profiledb.delete.usedInTargetGroups", fieldName);
+	        } else if (validationService.isStandardColumn(fieldName)) {
+	            popups.alert("error.profiledb.cannotDropColumn", fieldName);
+	        }
+	
+	        if (!popups.hasAlertPopups()) {
+	            recipientFieldService.deleteRecipientField(companyId, fieldName);
+	
 	            popups.success("default.selection.deleted");
 	            writeUserActivityLog(admin, new UserAction("delete profile field", String.format("Profile field %s removed", fieldName)));
 	        }
@@ -405,16 +369,12 @@ public class ProfileFieldsController implements XssCheckAware {
 			popups.alert(ERROR_MSG);
 		}
 
-        return "redirect:/profiledb/profiledb.action?restoreSort=true";
+        return "redirect:/profiledb/profiledb.action";
     }
 
     @RequestMapping("/new.action")
-    public String newField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model,
-                           @RequestParam(name = "postalField", required = false) String postalField, Popups popups,
-                           HttpSession session) {
+    public String newField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model, Popups popups) {
     	try {
-            handlePostalField(postalField, admin, model, session);
-
 	        final int companyId = admin.getCompanyID();
 			List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyId);
 			
@@ -432,11 +392,39 @@ public class ProfileFieldsController implements XssCheckAware {
         return "settings_profile_field_view";
     }
 
-    protected void handlePostalField(String field, Admin admin, Model model, HttpSession session) {
-        // nothing to do
+    @RequestMapping("/newWizardField.action")
+    public String newWizardField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model, Popups popups) {
+    	try {
+	        model.addAttribute("isNewField", isNewField(admin, profileForm.getFieldname()));
+	        
+			List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());    	
+	        model.addAttribute("customerFields", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
+    	} catch (Exception e) {
+			logger.error("Cannot prepare new profile field", e);
+			popups.alert(ERROR_MSG);
+		}
+    	
+        return "mailing_wizard_new_field";
     }
 
-    protected boolean createField(Admin admin, ProfileFieldForm form, HttpSession session) {
+    @RequestMapping("/backToTarget.action")
+    public String backToTarget() {
+        return "mailing_wizard_new_target";
+    }
+
+    private boolean isNewField(Admin admin, String fieldName) throws Exception {
+        if (StringUtils.isBlank(fieldName)) {
+            return true;
+        }
+
+        if (validationService.isValidDbFieldName(fieldName)) {
+            return recipientFieldService.getRecipientField(admin.getCompanyID(), fieldName) == null;
+        } else {
+            return true;
+        }
+    }
+
+    private boolean createField(Admin admin, ProfileFieldForm form) {
     	RecipientFieldDescription field = new RecipientFieldDescription();
 
         field.setColumnName(form.getFieldname());
@@ -510,7 +498,7 @@ public class ProfileFieldsController implements XssCheckAware {
 		}
     }
 
-    private void validateField(Admin admin, ProfileFieldForm form, RecipientFieldDescription profileField, Popups popups, HttpSession session) throws Exception {
+    private void validateField(Admin admin, ProfileFieldForm form, RecipientFieldDescription profileField, Popups popups) throws Exception {
         final int companyId = admin.getCompanyID();
 
         if (validationService.isDbFieldNameContainsSpaces(form.getFieldname())) {
@@ -549,7 +537,7 @@ public class ProfileFieldsController implements XssCheckAware {
         }
 
         if (profileField == null) {
-            validateForCreating(companyId, form, popups, admin.getDateFormat(), admin.getLocale(), session);
+            validateForCreating(companyId, form, popups, admin.getDateFormat(), admin.getLocale());
         } else {
             validationForUpdating(companyId, profileField, form, popups, admin.getDateFormat(), admin.getLocale());
         }
@@ -563,7 +551,7 @@ public class ProfileFieldsController implements XssCheckAware {
                 + " or " + "1234567" + decimalSeparator + "89";
     }
 
-    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat, Locale locale, HttpSession session) throws Exception {
+    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat, Locale locale) {
         if (!form.isFieldNull() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
@@ -578,13 +566,9 @@ public class ProfileFieldsController implements XssCheckAware {
             popups.alert("error.profiledb.tooManyEntriesToChangeDefaultValue", configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId));
         } else if (containNotAllowedValue(form, form.getFieldType(), dateFormat)) {
             popups.alert("error.profiledb.invalidFixedValue");
-        } else if (!mayAddNewColumn(companyId, session)) {
+        } else if (!validationService.mayAddNewColumn(companyId)) {
             popups.alert("error.profiledb.maxCount");
         }
-    }
-
-    protected boolean mayAddNewColumn(int companyId, HttpSession session) throws Exception {
-        return validationService.mayAddNewColumn(companyId);
     }
 
     private void validationForUpdating(int companyId, RecipientFieldDescription field, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat, Locale locale) throws Exception {
@@ -601,7 +585,7 @@ public class ProfileFieldsController implements XssCheckAware {
             final Set<String> columnSet = recipientFieldService.getRecipientFields(companyId).stream().filter(x -> x.isHistorized()).map(x -> x.getColumnName()).collect(Collectors.toSet());
 
             String fieldNameInLower = form.getFieldname().toLowerCase();
-            if (!RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames().contains(fieldNameInLower)) {
+            if (!RecipientProfileHistoryUtil.DEFAULT_COLUMNS_FOR_HISTORY.contains(fieldNameInLower)) {
                 columnSet.add(fieldNameInLower);
             }
 
@@ -694,7 +678,7 @@ public class ProfileFieldsController implements XssCheckAware {
     @Override
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
         return ("allowedValues".equals(param) || "fieldDefault".equals(param))
-        	&& configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields);
+                && admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED);
     }
 
     public UserAction getOpenEmmChangeLog(RecipientFieldDescription field, ProfileFieldForm form) {
@@ -739,63 +723,12 @@ public class ProfileFieldsController implements XssCheckAware {
             }
         }
 
-        List<String> deletedFixedValues = detectDeletedFixedValues(field, form);
-        if (!deletedFixedValues.isEmpty()) {
-            changes.add("fixed values deleted: [" + String.join(", ", deletedFixedValues) + "]");
-        }
-
-        List<String> addedFixedValues = detectNewAddedFixedValues(field, form);
-        if (!addedFixedValues.isEmpty()) {
-            changes.add("fixed values added: [" + String.join(", ", addedFixedValues) + "]");
-        }
-
-        if (!changes.isEmpty()) {
+        if (changes.size() > 0) {
             userAction = new UserAction("edit profile field", String.format("Short name: %s. Profile field:%n%s",
                     existingShortName, StringUtils.join(changes, System.lineSeparator())));
         }
 
         return userAction;
-    }
-
-    private List<String> detectNewAddedFixedValues(RecipientFieldDescription field, ProfileFieldForm form) {
-        if (form.getAllowedValues() == null) {
-            return Collections.emptyList();
-        }
-
-        if (field.getAllowedValues() == null) {
-            return List.of(form.getAllowedValues());
-        }
-
-        List<String> addedValues = new ArrayList<>();
-
-        for (String newValue : form.getAllowedValues()) {
-            if (!field.getAllowedValues().contains(newValue)) {
-                addedValues.add(newValue);
-            }
-        }
-
-        return addedValues;
-    }
-
-    private List<String> detectDeletedFixedValues(RecipientFieldDescription field, ProfileFieldForm form) {
-        if (field.getAllowedValues() == null) {
-            return Collections.emptyList();
-        }
-
-        if (form.getAllowedValues() == null) {
-            return field.getAllowedValues();
-        }
-
-        List<String> deletedValues = new ArrayList<>();
-        List<String> formValues = List.of(form.getAllowedValues());
-
-        for (String fieldValue : field.getAllowedValues()) {
-            if (!formValues.contains(fieldValue)) {
-                deletedValues.add(fieldValue);
-            }
-        }
-
-        return deletedValues;
     }
 
     public UserAction getEmmChangeLog(RecipientFieldDescription field, ProfileFieldForm form) {

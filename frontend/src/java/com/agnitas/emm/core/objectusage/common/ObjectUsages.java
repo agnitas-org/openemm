@@ -15,12 +15,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToMessages;
-import com.agnitas.messages.Message;
 
 /**
  * Container for all object usages found.
@@ -93,8 +89,5 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 
 		return map;
 	}
-
-	public Message toMessage(String msgKey, final Locale locale) {
-        return ObjectUsagesToMessages.objectUsagesToMessage(msgKey, this, locale);
-    }
+	
 }

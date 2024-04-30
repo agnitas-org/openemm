@@ -10,8 +10,6 @@
 
 package org.agnitas.service.impl;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import javax.sql.DataSource;
@@ -22,17 +20,16 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientOptions;
 import org.agnitas.service.RecipientQueryBuilder;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.service.ColumnInfoService;
 
@@ -129,7 +126,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
             String whereClause = asExistsClause(sqlCheckBinding, false);
 
             if (isDuplicate && options.isUserTypeEmpty()) {
-                SqlPreparedStatementManager checkIfUserStatusNotExists = createBindingCheckQuery(companyId, adminId, 0, 0, Collections.emptyList());
+                SqlPreparedStatementManager checkIfUserStatusNotExists = createBindingCheckQuery(companyId, adminId, 0, 0, "");
                 whereClause += " OR " + asExistsClause(checkIfUserStatusNotExists, false);
             }
             mainStatement.addWhereClause(whereClause, sqlCheckBinding.getPreparedSqlParameters());
@@ -144,10 +141,10 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     }
 
     protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, RecipientOptions options) throws Exception {
-        return createBindingCheckQuery(companyId, adminId, options.getListId(), options.getUserStatus(), options.getUserTypes());
+        return createBindingCheckQuery(companyId, adminId, options.getListId(), options.getUserStatus(), options.getUserType());
     }
 
-    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, int mailingListId, int userStatus, List<String> userTypes) throws Exception {
+    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, int mailingListId, int userStatus, String userType) throws Exception {
         SqlPreparedStatementManager sqlCheckBinding;
 
         sqlCheckBinding = new SqlPreparedStatementManager("SELECT 1 FROM customer_" + companyId + "_binding_tbl bind");
@@ -167,8 +164,8 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
                 sqlCheckBinding.addWhereClause("bind.user_status = ?", userStatus);
             }
 
-            if (CollectionUtils.isNotEmpty(userTypes)) {
-                sqlCheckBinding.addWhereClause("bind.user_type IN (" + AgnUtils.csvQMark(userTypes.size()) + ")", userTypes.toArray());
+            if (StringUtils.isNotBlank(userType)) {
+                sqlCheckBinding.addWhereClause("bind.user_type = ?", userType);
             }
         }
 
@@ -179,7 +176,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
      *  Checks if a customer binding check (its presence or its absence) to pass a filter (otherwise all unbound customers will be excluded).
      */
     protected boolean isBindingCheckRequired(RecipientOptions options) {
-    	return options.getListId() != 0 || options.getUserStatus() != 0 || CollectionUtils.isNotEmpty(options.getUserTypes());
+    	return options.getListId() != 0 || options.getUserStatus() != 0 || StringUtils.isNotBlank(options.getUserType());
     }
 
     protected boolean isOracleDB() {
@@ -202,7 +199,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     }
 
     protected void addBounceLoad(int companyId, SqlPreparedStatementManager mainStatement) throws Exception {
-        mainStatement.addWhereClause(RecipientStandardField.Bounceload.getColumnName() + " = 0");
+        mainStatement.addWhereClause(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 
         boolean respectHideSign = configService.getBooleanValue(ConfigValue.RespectHideDataSign, companyId);
         if (respectHideSign) {

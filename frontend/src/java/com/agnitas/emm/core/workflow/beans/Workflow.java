@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import com.agnitas.beans.IntEnum;
 
 public class Workflow {
-
 	private int workflowId;
 	private int companyId;
 	private String shortname;

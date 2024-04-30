@@ -12,7 +12,6 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistRequest;
@@ -46,10 +45,6 @@ public class UpdateMailinglistEndpoint extends BaseEndpoint {
         mailinglist.setId(request.getMailingListId());
         mailinglist.setShortname(request.getShortname());
         mailinglist.setDescription(request.getDescription());
-        
-        if(mailinglist.getId() <= 0) {
-        	throw new MailinglistException(mailinglist.getId(), this.securityContextAccess.getWebserviceUserCompanyId(), "mailinglist id value should be > 0");
-        }
 
         mailinglistService.saveMailinglist(this.securityContextAccess.getWebserviceUserCompanyId(), mailinglist);
         

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.report.printer;
 
+
 import java.util.Locale;
 import java.util.Map;
 
@@ -17,8 +18,8 @@ import org.springframework.format.Printer;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.report.dto.RecipientEntityDto;
+import com.agnitas.emm.core.report.enums.fields.RecipientFields;
 import com.agnitas.emm.core.report.generator.constants.TableSpecialCharacters;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.messages.I18nString;
 
 @Component
@@ -30,32 +31,32 @@ public class RecipientEntityDtoPrinter implements Printer<RecipientEntityDto> {
     public String print(RecipientEntityDto recipient, Locale locale) {
         StringBuilder out = new StringBuilder("RECIPIENT DATA:" + TableSpecialCharacters.CRLF_LINE_SEPARATOR);
 
-        String salutation = I18nString.getLocaleStringOrDefault(RecipientStandardField.Gender.getMessageKey(),
-                locale, RecipientStandardField.Gender.getColumnName());
+        String salutation = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_SALUTATION.getTranslationKey(),
+                locale, RecipientFields.COLUMN_SALUTATION.getReadableName());
         out.append(String.format(ROW_FORMAT, salutation, recipient.getSalutation()));
 
-        String title = I18nString.getLocaleStringOrDefault(RecipientStandardField.Title.getMessageKey(), locale,
-                RecipientStandardField.Title.getColumnName());
+        String title = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_TITLE.getTranslationKey(), locale,
+                RecipientFields.COLUMN_TITLE.getReadableName());
         out.append(String.format(ROW_FORMAT, title, recipient.getTitle()));
 
-        String firstName = I18nString.getLocaleStringOrDefault(RecipientStandardField.Firstname.getMessageKey(),
-                locale, RecipientStandardField.Firstname.getColumnName());
+        String firstName = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_FIRST_NAME.getTranslationKey(),
+                locale, RecipientFields.COLUMN_FIRST_NAME.getReadableName());
         out.append(String.format(ROW_FORMAT, firstName, recipient.getFirstName()));
 
-        String lastName = I18nString.getLocaleStringOrDefault(RecipientStandardField.Lastname.getMessageKey(),
-                locale, RecipientStandardField.Lastname.getColumnName());
+        String lastName = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_LAST_NAME.getTranslationKey(),
+                locale, RecipientFields.COLUMN_LAST_NAME.getReadableName());
         out.append(String.format(ROW_FORMAT, lastName, recipient.getLastName()));
 
-        String email = I18nString.getLocaleStringOrDefault(RecipientStandardField.Email.getMessageKey(), locale,
-                RecipientStandardField.Email.getColumnName());
+        String email = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_EMAIL.getTranslationKey(), locale,
+                RecipientFields.COLUMN_EMAIL.getReadableName());
         out.append(String.format(ROW_FORMAT, email, recipient.getEmail()));
 
-        String trackingVeto = I18nString.getLocaleStringOrDefault(RecipientStandardField.DoNotTrack.getMessageKey(),
-                locale, RecipientStandardField.DoNotTrack.getColumnName());
+        String trackingVeto = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_TRACKING_VETO.getTranslationKey(),
+                locale, RecipientFields.COLUMN_TRACKING_VETO.getReadableName());
         out.append(String.format(ROW_FORMAT, trackingVeto, recipient.isTrackingVeto()));
 
-        String mailFormat = I18nString.getLocaleStringOrDefault(RecipientStandardField.Mailtype.getMessageKey(),
-                locale, RecipientStandardField.Mailtype.getColumnName());
+        String mailFormat = I18nString.getLocaleStringOrDefault(RecipientFields.COLUMN_MAIL_TYPE.getTranslationKey(),
+                locale, RecipientFields.COLUMN_MAIL_TYPE.getReadableName());
 
         out.append(String.format(ROW_FORMAT, mailFormat, recipient.getMailFormat()));
         out.append(TableSpecialCharacters.CRLF_LINE_SEPARATOR);

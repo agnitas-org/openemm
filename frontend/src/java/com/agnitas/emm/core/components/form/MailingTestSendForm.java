@@ -14,11 +14,10 @@ import com.agnitas.emm.core.components.entity.TestRunOption;
 
 public class MailingTestSendForm {
 
-    private int adminTargetGroupID;
+    int adminTargetGroupID;
     private String[] mailingTestRecipients = new String[] {};
     private TestRunOption testRunOption;
     private String targetName;
-    private boolean clearance; // GWUA-5738 approval via mailing link
 
     public int getAdminTargetGroupID() {
         return adminTargetGroupID;
@@ -50,13 +49,5 @@ public class MailingTestSendForm {
 
     public void setTargetName(String targetName) {
         this.targetName = targetName;
-    }
-
-    public boolean isClearance() {
-        return clearance;
-    }
-
-    public void setClearance(boolean clearance) {
-        this.clearance = clearance;
     }
 }

@@ -18,8 +18,7 @@ public enum MailingAdditionalColumn {
     MAILING_ID("MailingId", "mailingID"),
     RECIPIENTS_COUNT("Recipients", "recipients_count"),
     CHANGE_DATE("default.changeDate", "change_date"),
-    ARCHIVE("mailing.archive", "archives"),
-    PLAN_DATE("mailing.plan.date", "plan_date");
+    ARCHIVE("mailing.archive", "archives");
 
     public final String messageKey;
     public final String sortColumn;

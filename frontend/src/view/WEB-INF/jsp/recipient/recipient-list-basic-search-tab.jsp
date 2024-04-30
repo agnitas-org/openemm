@@ -1,11 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.forms.FormSearchParams" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="listForm" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
@@ -83,13 +83,13 @@
 
                             <c:if test="${recipientList.getFullListSize() <= 0}">
                                 <c:set var="isCreateRecipientButtonShown"
-                                       value="${not empty fn:trim(listForm.searchFirstName) or not empty fn:trim(listForm.searchLastName) or not empty fn:trim(listForm.searchEmail)}"/>
+                                       value="${not empty fn:trim(form.searchFirstName) or not empty fn:trim(form.searchLastName) or not empty fn:trim(form.searchEmail)}"/>
 
                                 <c:if test="${isCreateRecipientButtonShown}">
                                     <c:url var="createNewRecipientUrl" value="/recipient/create.action">
-                                        <c:param name="firstname" value="${listForm.searchFirstName}"/>
-                                        <c:param name="lastname" value="${listForm.searchLastName}"/>
-                                        <c:param name="email" value="${listForm.searchEmail}"/>
+                                        <c:param name="firstname" value="${form.searchFirstName}"/>
+                                        <c:param name="lastname" value="${form.searchLastName}"/>
+                                        <c:param name="email" value="${form.searchEmail}"/>
                                     </c:url>
                                     <a href="${createNewRecipientUrl}" class="btn btn-primary btn-regular">
                                         <i class="icon icon-plus"></i>

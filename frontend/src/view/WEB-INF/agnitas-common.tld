@@ -85,12 +85,6 @@
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.String</type>
         </attribute>
-        <attribute>
-            <name>redesigned</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
     </tag>
 
     <tag>
@@ -126,66 +120,6 @@
             <required>false</required>
             <rtexprvalue>true</rtexprvalue>
             <type>int</type>
-        </attribute>
-    </tag>
-
-    <tag>
-        <name>messages</name>
-        <tag-class>com.agnitas.taglib.message.MessagesTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>var</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>type</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
-
-    <tag>
-        <name>fieldMessages</name>
-        <tag-class>com.agnitas.taglib.message.FieldMessagesTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>var</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>fieldNameVar</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>type</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
-
-    <tag>
-        <name>messagesPresent</name>
-        <tag-class>com.agnitas.taglib.message.MessagesPresentTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>type</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>formField</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.Boolean</type>
         </attribute>
     </tag>
 
@@ -753,30 +687,6 @@
 
     <function>
         <description>
-            Returns date format of admin if exists, Otherwise - default format
-        </description>
-        <name>getDateFormat</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.lang.String getDateFormat(jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            ${emm:getDateFormat(pageContext.request)}
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Returns date time format of admin if exists, Otherwise - default format
-        </description>
-        <name>getDateTimeFormat</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.lang.String getDateTimeFormat(jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            ${emm:getDateTimeFormat(pageContext.request)}
-        </example>
-    </function>
-
-    <function>
-        <description>
             Gets an ID of admin's timezone (if authorized) or null.
         </description>
         <name>getTimeZoneId</name>
@@ -796,18 +706,6 @@
         <function-signature>int toInt(java.lang.String,int)</function-signature>
         <example>
             &lt;c:set var="imageId" value="${emm:toInt(content, 0)}"/&gt;
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Convert object to string.
-        </description>
-        <name>toString</name>
-        <function-class>java.lang.String</function-class>
-        <function-signature>java.lang.String valueOf(java.lang.Object)</function-signature>
-        <example>
-            &lt;c:set var="imageId" value="${emm:toString(number)}"/&gt;
         </example>
     </function>
 
@@ -928,51 +826,4 @@
         </example>
     </function>
 
-    <function>
-        <description>
-            Gets an ID of admin (if authorized) or null.
-        </description>
-        <name>getAdminId</name>
-        <function-class>com.agnitas.util.JspUtilities</function-class>
-        <function-signature>java.lang.String getAdminId(jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            ${emm:getAdminId(pageContext.request)}
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Gets an ID of company (if authorized) or null.
-        </description>
-        <name>getCompanyId</name>
-        <function-class>com.agnitas.util.JspUtilities</function-class>
-        <function-signature>java.lang.String getCompanyId(jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            ${emm:getCompanyId(pageContext.request)}
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Gets an url to manual by helpKey
-        </description>
-        <name>getHelpUrl</name>
-        <function-class>com.agnitas.util.ComHelpUtil</function-class>
-        <function-signature>java.lang.String getHelpPageUrl(jakarta.servlet.http.HttpServletRequest,java.lang.String)</function-signature>
-        <example>
-            ${emm:getHelpUrl(pageContext.request, helpKey)}
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Checks if permission granted to the user
-        </description>
-        <name>permissionAllowed</name>
-        <function-class>com.agnitas.util.JspUtilities</function-class>
-        <function-signature>boolean permissionAllowed(java.lang.String,jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            ${emm:permissionAllowed(token, pageContext.request)}
-        </example>
-    </function>
 </taglib>

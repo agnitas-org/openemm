@@ -23,7 +23,8 @@ import org.apache.logging.log4j.Logger;
  */
 public class ProcessUtils {
 	
-	private static final Logger logger = LogManager.getLogger(ProcessUtils.class);
+	/** log4j logger. */
+	private static final transient Logger logger = LogManager.getLogger( ProcessUtils.class);
 	
 	/**
 	 * Writes the output of the given process to log4j.
@@ -38,24 +39,6 @@ public class ProcessUtils {
 		logStream( process.getInputStream(), loggerToUse, outputMessage);
 		logStream( process.getErrorStream(), loggerToUse, errorMessage);
 	}
-
-    public static void runCommand(String command) throws IOException {
-        logDebug("Executing command:\n" + command);
-        Process process = Runtime.getRuntime().exec(command.split("\\s+"));
-        try {
-            process.waitFor();
-        } catch (InterruptedException ex) {
-            logger.error("Error while executing command:\n{}", command, ex);
-            process.destroy();
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private static void logDebug(String log) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(log);
-        }
-    }
 	
 	/**
 	 * Write content of stream to log4j.

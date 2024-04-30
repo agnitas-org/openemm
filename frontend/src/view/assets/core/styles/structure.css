@@ -3004,6 +3004,10 @@ h3.header_coloured{
     height: auto;
 }
 
+.mailing_wizard_form_item{
+	float:left;
+
+}
 .assistant_step7_form_item .info_bubble .reset_icon{
 	display:block;
 	float:left;
@@ -4786,6 +4790,10 @@ h2.predelivery_result{
     display: block;
     overflow: auto;
     position: relative;
+}
+
+.social_networks_label {
+    padding-top: 4px;
 }
 
 .content_list_preview_icon_panel {

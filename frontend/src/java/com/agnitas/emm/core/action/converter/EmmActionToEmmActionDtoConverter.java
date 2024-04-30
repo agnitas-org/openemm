@@ -27,7 +27,6 @@ public class EmmActionToEmmActionDtoConverter implements Converter<EmmAction, Em
     public EmmActionDto convert(EmmAction emmAction) {
         EmmActionDto dto = new EmmActionDto();
         dto.setId(emmAction.getId());
-        dto.setType(emmAction.getType());
         dto.setShortname(emmAction.getShortname());
         dto.setDescription(emmAction.getDescription());
         dto.setFormNames(emmAction.getFormNameList());

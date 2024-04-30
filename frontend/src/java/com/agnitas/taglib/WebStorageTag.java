@@ -12,7 +12,7 @@
 package com.agnitas.taglib;
 
 import org.agnitas.beans.WebStorageEntry;
-import com.agnitas.service.WebStorage;
+import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 import org.apache.taglibs.standard.tag.common.core.SetSupport;
 import org.springframework.web.context.support.WebApplicationContextUtils;

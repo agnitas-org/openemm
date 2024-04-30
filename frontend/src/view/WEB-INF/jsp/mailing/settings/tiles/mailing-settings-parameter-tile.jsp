@@ -6,7 +6,7 @@
 
 <c:set var="isChangeable" value="${false}"/>
 <emm:ShowByPermission token="mailing.parameter.change">
-    <c:set var="isChangeable" value="${MAILING_EDITABLE}"/>
+    <c:set var="isChangeable" value="${true}"/>
 </emm:ShowByPermission>
 
 <div class="tile" data-action="scroll-to">
@@ -22,7 +22,7 @@
             <script data-initializer="mailing-params" type="application/json">
                 {
                   "params": ${emm:toJson(mailingSettingsForm.params)},
-                  "isChangeable": ${isChangeable and not isSettingsReadonly}
+                  "isChangeable": ${isChangeable}
                 }
             </script>
             <table class="table table-bordered table-striped" id="mailingParamsTable">
@@ -31,7 +31,7 @@
                         <th><mvc:message code="default.Name"/></th>
                         <th><mvc:message code="Value"/></th>
                         <th><mvc:message code="default.description"/></th>
-                        <c:if test="${isChangeable and not isSettingsReadonly}">
+                        <c:if test="${isChangeable}">
                             <th></th>
                         </c:if>
                     </tr>

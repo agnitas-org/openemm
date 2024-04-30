@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "src/view/WEB-INF/struts-config_1_1.dtd">
+<struts-config>
+	<!-- ========== Form Bean Definitions =================================== -->
+	<form-beans type="org.apache.struts.action.ActionFormBean">
+
+		<form-bean name="importWizardForm" type="com.agnitas.web.ComImportWizardForm" />
+
+		<!-- new import form beans -->
+		<form-bean name="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm" />
+
+		<form-bean name="importProfileColumnsForm" type="com.agnitas.web.forms.ImportProfileColumnsForm" />
+
+		<form-bean name="newImportWizardForm" type="com.agnitas.web.forms.ComNewImportWizardForm" />
+
+		<form-bean name="exportWizardForm" type="org.agnitas.web.forms.ExportWizardForm" />
+
+		<form-bean name="newsForm" type="com.agnitas.web.ComNewsForm" />
+
+		<form-bean name="previewMailingImageGeneratorForm" type="com.agnitas.web.ComPreviewMailingImageGeneratorForm" />
+
+		<form-bean name="calendarForm" type="org.agnitas.web.forms.StrutsFormBase" />
+
+		<form-bean name="autoImportForm" type="org.agnitas.emm.core.autoimport.forms.AutoImportForm" />
+
+		<form-bean name="autoExportForm" type="org.agnitas.emm.core.autoexport.forms.AutoExportForm" />
+
+		<form-bean name="sendMailloopAutoresponderMailForm" type="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailForm" />
+	</form-beans>
+
+	<!-- ========== Global Exception Handling ============================== -->
+	<global-exceptions>
+		<exception
+			key="error.invalid.path"
+			type="org.apache.struts.chain.commands.InvalidPathException"
+			handler="org.agnitas.emm.core.commons.errorhandling.InvalidPathExceptionHandler"
+			path="/error.do">
+		</exception>
+		<exception
+			key="error.notallowed.action"
+			type="com.agnitas.web.perm.NotAllowedActionException"
+			handler="com.agnitas.web.perm.NotAllowedActionExceptionHandler"
+			path="/permissionDenied.do">
+		</exception>
+	</global-exceptions>
+    <!-- ========== Global Exception Handling ============================== -->
+
+	<!-- ========== Global Forward Definitions ============================== -->
+	<global-forwards type="org.apache.struts.action.ActionForward">
+		<forward name="logon" path="/logon.action" />
+		<forward name="success" path="/dashboard.action" />
+	</global-forwards>
+
+	<!-- ========== Action Mapping Definitions ============================== -->
+	<action-mappings type="org.apache.struts.action.ActionMapping">
+
+		<action path="/newimportwizard" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="newImportWizardForm" scope="session" parameter="action" input="importwizard_start_import">
+            <forward name="init" path="import_new" />
+            <forward name="standard" path="/newimportwizard.do?action=1"/>
+            <forward name="wizard" path="/importwizard.do?action=1"/>
+			<forward name="start" path="importwizard_start_import" />
+			<forward name="preview" path="importwizard_preview" />
+			<forward name="error_edit" path="importwizard_edit_error" />
+			<forward name="result_page" path="importwizard_result_page" />
+			<forward name="mailing_lists" path="importwizard_mailing_lists" />
+			<forward name="progress" path="importwizard_progress" />
+			<forward name="loading" path="importwizard_loading" />
+			<forward name="profile_edit" path="/importprofile.do" />
+		</action>
+
+		<action path="/importprofile" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="importProfileForm" scope="request" parameter="action" input="importwizard_profile_view">
+			<forward name="view" path="importwizard_profile_view" />
+			<forward name="list" path="importwizard_profile_list" />
+			<forward name="delete" path="importwizard_profile_delete" />
+		</action>
+
+		<action path="/importprofile_columns" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="importProfileColumnsForm" scope="session" parameter="action" input="importwizard_profile_columns_view">
+			<forward name="view" path="importwizard_profile_columns_view" />
+			<forward name="start" path="/newimportwizard.do?action=1" />
+		</action>
+
+		<!-- Process an import wizard -->
+		<action path="/importwizard" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="importWizardForm" scope="session" input="importwizard_classic_error">
+			<forward name="start" path="importwizard_classic_start" />
+			<forward name="mode" path="importwizard_classic_mode" />
+			<forward name="mapping" path="importwizard_classic_mapping" />
+			<forward name="verifymissingfields" path="importwizard_classic_verifymissingfields" />
+			<forward name="verify" path="importwizard_classic_verify" />
+			<forward name="prescan" path="importwizard_classic_prescan" />
+			<forward name="mlists" path="importwizard_classic_mlist" />
+			<forward name="view_status" path="importwizard_classic_upload_status" />
+			<forward name="view_status_window" path="/WEB-INF/jsp/importwizard_classic/upload_window.jsp" />
+			<forward name="error" path="importwizard_classic_error" />
+		</action>
+
+		<!-- Process a export through a wizard -->
+		<action path="/exportwizard" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="exportWizardForm" scope="session" input="exportwizard_view">
+			<forward name="list" path="exportwizard_list" />
+			<forward name="view" path="exportwizard_view" />
+			<forward name="finish" path="exportwizard_finish" />
+			<forward name="download" path="/WEB-INF/jsp/exportwizard/exportwizard-download.jsp" />
+			<forward name="delete_question" path="exportwizard_delete_ajax" />
+			<forward name="progress" path="exportwizard_progress" />
+		</action>
+
+        <!-- Do not use com.agnitas.web.perm.DelegatingActionProxySecured here. This action is called by some script from internal that has no EMM user. -->
+        <action path="/sendMailloopAutoresponder" type="org.springframework.web.struts.DelegatingActionProxy" scope="request" name="sendMailloopAutoresponderMailForm">
+            <!-- Currently no forwards defined -->
+        </action>
+
+		<!-- Temporary action to convert EMM actions -->
+		<action path="/convert_mailloops" type="org.springframework.web.struts.DelegatingActionProxy" />
+
+		<action path="/permissionDenied" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="permissionDenied">
+			<forward name="permissionDenied" path="permission_denied" />
+		</action>
+
+		<action path="/error" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="error">
+			<forward name="error" path="error" />
+		</action>
+
+		<!-- Process an optimization -->
+		<action path="/form" type="org.springframework.web.struts.DelegatingActionProxy">
+			<!-- Legacy form.do for redirection to form.action -->
+		</action>
+	</action-mappings>
+
+	<controller maxFileSize="500M" />
+
+	<message-resources factory="com.agnitas.messages.DBMessagesResourceFactory" parameter="parameterNotNeeded" />
+
+	<plug-in className="org.apache.struts.tiles.TilesPlugin">
+		<set-property property="definitions-config" value="/WEB-INF/tiles-defs.xml" />
+	</plug-in>
+</struts-config>

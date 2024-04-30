@@ -4,29 +4,11 @@ AGN.Lib.Controller.new('userform-view', function () {
     var Confirm = AGN.Lib.Confirm;
 
     var actionURLPattern;
-    var formId = 0;
 
     this.addDomInitializer('userform-view', function() {
         var config = this.config;
         actionURLPattern = config.actionURLPattern;
-        formId = config.formId;
         $('#userFormForm').dirty();
-    });
-
-    this.addAction({click: 'activate-and-test'}, function() {
-        const $el = this.el;
-        const url = $el.attr('href');
-
-        Confirm.createFromTemplate({}, 'userform-activate-and-test').done(function () {
-            $.post(AGN.url('/webform/' + formId + '/activate.action')).done(function(resp) {
-                AGN.Lib.JsonMessages(resp.popups, true);
-                if (resp.success) {
-                    $('#is-active-switch').prop('checked', true);
-                    $el.removeAttr('data-action');
-                    window.open(url, '_blank');
-                }
-            });
-        });
     });
 
     this.addAction({change: 'change-intro-action'}, function() {

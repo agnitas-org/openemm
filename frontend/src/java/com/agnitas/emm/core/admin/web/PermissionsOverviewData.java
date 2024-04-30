@@ -23,9 +23,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.permission.bean.PermissionCategory;
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.dao.LicenseType;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -109,16 +107,9 @@ public class PermissionsOverviewData {
 	            if (adminToEdit == null) {
 	                adminToEdit = admin;
 	            }
-
-				LicenseType licenseTypeFromID = LicenseType.getLicenseTypeByID(licenseType);
+	            
 	            Set<Permission> filtered = visiblePermissions.stream()
-	                    .filter(permission -> {
-							return (permission.getPermissionType() != PermissionType.System || admin.permissionAllowed(permission)
-								|| ((admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID)
-									&& !(licenseTypeFromID == LicenseType.Inhouse
-							    		|| licenseTypeFromID == LicenseType.OpenEMM
-							    		|| licenseTypeFromID == LicenseType.OpenEMM_Plus)));
-						})
+	                    .filter(permission -> (permission.getPermissionType() != PermissionType.System || admin.permissionAllowed(permission) || ((admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID) && !"Inhouse".equalsIgnoreCase(licenseType))))
 	                    .filter(permission -> (permission.getPermissionType() != PermissionType.Migration || admin.permissionAllowed(Permission.SHOW_MIGRATION_PERMISSIONS)))
 	                    .collect(Collectors.toSet());
 	    
@@ -356,10 +347,6 @@ public class PermissionsOverviewData {
             this.name = name;
             // Using LinkedHashMap to keep the sorted order
             subCategories = new LinkedHashMap<>();
-        }
-
-        public String getIconCode() {
-            return PermissionCategory.from(getName()).getIconCode();
         }
     
         public String getName() {

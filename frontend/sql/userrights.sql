@@ -113,6 +113,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'settings.extended' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailinglists.addresses' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 
 -- User/Admin: EMM-Master
 DELETE FROM admin_permission_tbl WHERE admin_id = 1;
@@ -224,3 +225,4 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'settings.extended');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailinglists.addresses');

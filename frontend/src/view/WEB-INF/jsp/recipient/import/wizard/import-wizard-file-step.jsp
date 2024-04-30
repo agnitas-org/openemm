@@ -1,15 +1,27 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="csvFiles" type="java.util.List<com.agnitas.emm.core.upload.bean.UploadData>"--%>
 
 <mvc:form servletRelativeAction="/recipient/import/wizard/step/file.action" modelAttribute="importWizardSteps" enctype="multipart/form-data" data-form="resource">
     <c:set var="tileContent">
         <div class="tile-content tile-content-forms">
-            <%@include file="fragments/import-wizard-use-upload-switch.jspf" %>
-            
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label checkbox-control-label" for="useCsvUpload">
+                        <mvc:message code="import.wizard.uploadCsvFile"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <label class="toggle">
+                        <mvc:checkbox path="fileStep.useCsvUpload" id="useCsvUpload" />
+                        <div class="toggle-control"></div>
+                    </label>
+                </div>
+            </div>
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
@@ -19,7 +31,11 @@
                 </div>
                 <div class="col-sm-8">
                     <input type="file" name="fileStep.csvFile" class="form-control" id="csvFile" data-hide-by-checkbox="#useCsvUpload"/>
-                    <%@include file="fragments/import-wizard-uploads-select.jspf" %>
+                    <mvc:select path="fileStep.attachmentCsvFileId" cssClass="form-control js-select" size="1" id="attachment_csv_file_id" data-show-by-checkbox="#useCsvUpload">
+                        <c:forEach var="csvFile" items="${csvFiles}">
+                            <mvc:option value="${csvFile.uploadID}">${csvFile.filename}</mvc:option>
+                        </c:forEach>
+                    </mvc:select>
                 </div>
             </div>
             <div class="form-group">
@@ -91,9 +107,13 @@
             </div>
         </div>
     </c:set>
-
     <c:set var="step" value="1"/>
-    <c:url var="backUrl" value="/recipient/import/chooseMethod.action"/>
+    <emm:ShowByPermission token="import.init.rollback">
+        <c:url var="backUrl" value="/newimportwizard.do?action=10"/>
+    </emm:ShowByPermission>
+    <emm:HideByPermission token="import.init.rollback">
+        <c:url var="backUrl" value="/recipient/import/chooseMethod.action"/>
+    </emm:HideByPermission>
 
     <%@ include file="fragments/import-wizard-step-template.jspf" %>
 </mvc:form>

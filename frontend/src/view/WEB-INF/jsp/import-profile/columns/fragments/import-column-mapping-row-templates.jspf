@@ -48,23 +48,21 @@
 				</label>
 			</td>
 
-			<c:choose>
-				<c:when test="${isEncryptedImportAllowed}">
-					<td>
-						<label class="toggle">
-							{{ if (encrypted) { }}
-								<input type="checkbox" checked="checked" data-mapping-ecnrypted />
-							{{ } else { }}
-								<input type="checkbox" data-mapping-ecnrypted />
-							{{ } }}
-							<div class="toggle-control"></div>
-						</label>
-					</td>
-				</c:when>
-				<c:otherwise>
-					<input type="hidden" value="{{= encrypted }}" data-mapping-ecnrypted>
-				</c:otherwise>
-			</c:choose>
+			<emm:ShowByPermission token="recipient.import.encrypted">
+				<td>
+					<label class="toggle">
+						{{ if (encrypted) { }}
+							<input type="checkbox" checked="checked" data-mapping-ecnrypted />
+						{{ } else { }}
+							<input type="checkbox" data-mapping-ecnrypted />
+						{{ } }}
+						<div class="toggle-control"></div>
+					</label>
+				</td>
+			</emm:ShowByPermission>
+			<emm:HideByPermission token="recipient.import.encrypted">
+				<input type="hidden" value="{{= encrypted }}" data-mapping-ecnrypted>
+			</emm:HideByPermission>
 
 			<td>
 				<input type="text" class="form-control" value="{{= defaultValue}}" data-mapping-defaultValue>
@@ -100,14 +98,14 @@
 					<div class="toggle-control"></div>
 				</label>
 			</td>
-			<c:if test="${isEncryptedImportAllowed}">
+			<emm:ShowByPermission token="recipient.import.encrypted">
 				<td>
 					<label class="toggle">
 						<input id="encrypted-new" type="checkbox" />
 						<div class="toggle-control"></div>
 					</label>
 				</td>
-			</c:if>
+			</emm:ShowByPermission>
 			<td>
 				<input class="form-control" name="default-value-new" />
 			</td>

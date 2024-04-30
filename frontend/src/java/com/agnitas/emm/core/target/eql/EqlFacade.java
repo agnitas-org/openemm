@@ -186,6 +186,15 @@ public class EqlFacade {
 		return convertEqlToBeanShellExpression(target.getEQL(), target.getCompanyID());
 	}
 
+	public EqlAnalysisResult analyseEql(final String eql) throws EqlParserException {
+		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
+		
+		final RequireMailtrackingSyntaxTreeAnalyzer mailtrackingAnalyzer = new RequireMailtrackingSyntaxTreeAnalyzer();
+		node.traverse(mailtrackingAnalyzer);
+		
+		return new EqlAnalysisResult(mailtrackingAnalyzer.isMailtrackingRequired());
+	}
+
 	public EqlDetailedAnalysisResult analyseEqlSafely(final String eql) {
 		try {
 			final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);

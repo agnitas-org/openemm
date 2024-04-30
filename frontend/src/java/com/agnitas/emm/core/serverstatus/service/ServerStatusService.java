@@ -32,8 +32,6 @@ public interface ServerStatusService {
     
     boolean checkDatabaseConnection();
     
-    String getDbVendor();
-    
     String getDbUrl();
     
     boolean isDBStatusOK();
@@ -41,11 +39,8 @@ public interface ServerStatusService {
     List<VersionStatus> getLatestDBVersionsAndErrors();
     
     Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception;
-	int calcDiskSpaceFreePercentage();
     
     ServerStatus getServerStatus(ServletContext servletContext, Admin admin);
-    
-    ServerStatus getAnonymousServerStatus(ServletContext servletContext);
     
     SimpleServiceResult sendTestMail(Admin admin, String testMailAddress);
     
@@ -89,9 +84,7 @@ public interface ServerStatusService {
 
 	List<AutoImport> getStallingAutoImports();
 
-	int getStallingImportsAmount(int maxUserImportDurationMinutes);
+	int getStallingImportsAmount();
 
 	boolean isLicenseStatusOK();
-
-	boolean isOverallStatusOK();
 }

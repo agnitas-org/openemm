@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.agnitas.beans.Recipient;
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
@@ -22,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;

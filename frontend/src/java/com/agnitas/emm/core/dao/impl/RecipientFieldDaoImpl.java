@@ -64,8 +64,8 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			
 			recipientFieldDescription.setColumnName(fieldEntry.getKey().toLowerCase());
 			recipientFieldDescription.setShortName(fieldEntry.getKey());
+			recipientFieldDescription.setSimpleDataType(fieldEntry.getValue().getSimpleDataType());
 			
-			SimpleDataType simpleDataType = fieldEntry.getValue().getSimpleDataType();
 			String databaseDataType = fieldEntry.getValue().getTypeName();
 			if (isOracleDB()) {
 				// Some Oracle DATE fields should be displayed with time
@@ -75,11 +75,9 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 						|| fieldEntry.getKey().equalsIgnoreCase("lastopen_date")
 						|| fieldEntry.getKey().equalsIgnoreCase("lastsend_date")) {
 					databaseDataType = "TIMESTAMP";
-					simpleDataType = SimpleDataType.DateTime;
 				}
 			}
 			recipientFieldDescription.setDatabaseDataType(databaseDataType);
-			recipientFieldDescription.setSimpleDataType(simpleDataType);
 			
 			recipientFieldDescription.setCharacterLength(fieldEntry.getValue().getCharacterLength());
 			recipientFieldDescription.setNumericPrecision(fieldEntry.getValue().getNumericPrecision());
@@ -384,20 +382,5 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 		} else {
 			return DbUtilities.RESERVED_WORDS_MYSQL_MARIADB.contains(fieldname);
 		}
-	}
-
-	@Override
-	public boolean hasRecipients(int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") > 0;
-	}
-
-	@Override
-	public boolean hasRecipientsWithNullValue(int companyID, String columnName) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE columnName IS NULL") > 0;
-	}
-	
-	@Override
-	public final int countCustomerEntries(final int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
 	}
 }

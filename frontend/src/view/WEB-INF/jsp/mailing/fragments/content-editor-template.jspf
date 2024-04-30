@@ -1,6 +1,4 @@
-<%@ page import="com.agnitas.util.ComHelpUtil" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
@@ -17,7 +15,6 @@
 
 <script id="content-editor-template" type="text/x-mustache-template">
     {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
-    {{var disabled = isEditableMailing ? '' : 'disabled="disabled"';}}
 
     <div id="content_modal"
          class="modal modal-extra-wide"
@@ -104,8 +101,8 @@
                             <div class="fixed-content-40-0 full-height">
                                 <div class="fixed-header">
                                     <div class="row no-margin full-height">
-                                        <div class="col-sm-8 no-padding">
-                                            {{ if (showHTMLEditor || isContentGenerationAllowed) { }}
+                                        <div class="col-sm-4 no-padding">
+                                            {{ if (showHTMLEditor) { }}
                                             <ul id="editor_tabs" class="inline-tile-header-nav">
                                                 <emm:HideByPermission token="mailing.editor.hide.html">
                                                     <li class="active">
@@ -115,17 +112,11 @@
                                                     </li>
                                                 </emm:HideByPermission>
                                                 <emm:HideByPermission token="mailing.editor.hide">
-                                                    {{ if (showHTMLEditor) { }}
-                                                        <li>
-                                                            <a href="#" data-toggle-tab="#tab-content-wysiwyg" data-action="hide-char-counter" style="line-height: 28px;">
-                                                                <mvc:message code="mailingContentHTMLEditor"/>
-                                                            </a>
-                                                        </li>
-                                                    {{ } }}
-
-                                                    <jsp:include page="/WEB-INF/jsp/mailing/fragments/ai-text-generation-tab.jsp">
-                                                        <jsp:param name="enlargedEditor" value="false" />
-                                                    </jsp:include>
+                                                    <li>
+                                                        <a href="#" data-toggle-tab="#tab-content-wysiwyg" data-action="hide-char-counter" style="line-height: 28px;">
+                                                            <mvc:message code="mailingContentHTMLEditor"/>
+                                                        </a>
+                                                    </li>
                                                 </emm:HideByPermission>
                                             </ul>
                                             {{ } }}
@@ -153,10 +144,6 @@
                                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                                       {{- readonly }}></textarea>
                                         </div>
-
-                                        <jsp:include page="/WEB-INF/jsp/mailing/fragments/ai-text-generation-tab-content.jsp" flush="true">
-                                            <jsp:param name="enlargedEditor" value="false"/>
-                                        </jsp:include>
                                     </emm:HideByPermission>
                                     <div class="modal-char-counter" data-char-counter-for="content">
                                         <span class="small status">&nbsp;</span>
@@ -188,5 +175,3 @@
         </div>
     </div>
 </script>
-
-<%@include file="ai-text-generation-apply.jspf" %>

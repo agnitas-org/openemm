@@ -17,8 +17,6 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagContentRowMapper;
 import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagRowMapper;
-import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -74,19 +72,6 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
             return dynamicTag;
         }
-    }
-    
-    private static final class ContentBlockAndMailingMetaDataRowMapper implements RowMapper<ContentBlockAndMailingMetaData> {
-
-		@Override
-		public ContentBlockAndMailingMetaData mapRow(ResultSet rs, int row) throws SQLException {
-			return new ContentBlockAndMailingMetaData(
-					rs.getInt("mailing_id"),
-					rs.getString("mailing_name"),
-					rs.getInt("contentblock_id"),
-					rs.getString("contentblock_name"));
-		}
-    	
     }
 
     @Override
@@ -262,7 +247,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteAllDynTags(final int mailingId) {
-        update(logger, "DELETE FROM dyn_content_tbl WHERE mailing_id = ?", mailingId);
+        update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ?)", mailingId);
         update(logger, "DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
     }
 
@@ -459,13 +444,4 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
             throw new RuntimeException("Value for dyn_name_tbl.dyn_name is to long (Maximum: 100, Current: " + dynName.length() + ")");
         }
     }
-
-	@Override
-	public List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(int targetId, int companyID) {
-		final String sql = "SELECT c.dyn_content_id AS contentblock_id, n.dyn_name as contentblock_name, c.mailing_id AS mailing_id, m.shortname AS mailing_name FROM dyn_content_tbl c, dyn_name_tbl n, mailing_tbl m WHERE c.company_id=? AND c.target_id=? AND n.dyn_name_id=c.dyn_name_id AND m.mailing_id=c.mailing_id";
-
-		return select(logger, sql, new ContentBlockAndMailingMetaDataRowMapper(), companyID, targetId);
-	}
-    
-    
 }

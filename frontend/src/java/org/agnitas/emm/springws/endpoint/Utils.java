@@ -15,9 +15,12 @@ import java.util.OptionalInt;
 
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.w3c.dom.Element;
 
+import com.agnitas.emm.springws.WebserviceUserDetails;
 import com.agnitas.emm.springws.exception.BulkSizeLimitExeededExeption;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
@@ -57,7 +60,31 @@ public class Utils {
 	private static final String stringFromSubXml(final Element object) {
 		return object.getTextContent();
 	}
- 
+	
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserCompanyId() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
+	public static int getUserCompany() {
+		return getWebserviceUserDetails().getCompanyID();
+	}
+
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserName() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
+    private static String getUserName(){
+    	return getWebserviceUserDetails().getUsername();
+    }
+    
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserDetails() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
+    private static final WebserviceUserDetails getWebserviceUserDetails() {
+    	return ((WebserviceUserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    }
+
 	public static Map toJaxbMap(java.util.Map<String, Object> map) {
 		if (map == null) {
 			return null;
@@ -86,7 +113,8 @@ public class Utils {
 		return resultMap;
 	}
 	
-	public static void checkBulkSizeLimit(final String username, final String endpointName, final WebserviceUserService userService, final int size) throws BulkSizeLimitExeededExeption {
+	public static void checkBulkSizeLimit(final String endpointName, final WebserviceUserService userService, final int size) throws BulkSizeLimitExeededExeption {
+		final String username = Utils.getUserName();
 		final OptionalInt bulkSizeLimitOptional = readBulkSizeLimitForWebserviceUser(userService, username);
 		
 		if (bulkSizeLimitOptional.isPresent() && bulkSizeLimitOptional.getAsInt() != 0 && bulkSizeLimitOptional.getAsInt() < size) {

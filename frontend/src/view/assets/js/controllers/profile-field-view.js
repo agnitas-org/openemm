@@ -1,9 +1,10 @@
 AGN.Lib.Controller.new('profile-field-view', function() {
   const Form = AGN.Lib.Form;
-  var config;
 
-  this.addDomInitializer('profile-field-view', function() {
-    config = this.config;
+  this.addDomInitializer('profile-field-view', function($elem) {
+    var data = $elem.json();
+
+    $.i18n.load(data.translations);
   });
 
   this.addAction({submission: 'submit-profile-field-save'}, function () {
@@ -16,11 +17,6 @@ AGN.Lib.Controller.new('profile-field-view', function() {
       $e.closest('.form-group').addClass('has-feedback');
     });
 
-    const form = Form.get($form);
-    if (config.targetUrl) {
-      form.setValueOnce('targetUrl', config.targetUrl);
-    }
-
-    form.submit();
+    Form.get($form).submit();
   });
 });

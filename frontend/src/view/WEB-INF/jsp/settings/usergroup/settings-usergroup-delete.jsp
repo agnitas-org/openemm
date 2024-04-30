@@ -1,5 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="userGroupForm" type="com.agnitas.emm.core.usergroup.form.UserGroupForm"--%>

@@ -82,9 +82,9 @@
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <div class="yes-no-btn" data-action="change-target-mode">
-                        <mvc:radiobutton path="targetMode" value="${TARGET_MODE_AND}" id="targetModeAndBtn" disabled="${TARGET_MODE_TOGGLE_DISABLED or isSettingsReadonly}"/>
+                        <mvc:radiobutton path="targetMode" value="${TARGET_MODE_AND}" id="targetModeAndBtn" disabled="${TARGET_MODE_TOGGLE_DISABLED}"/>
                         <label for="targetModeAndBtn" class="yes-no-btn-left">AND</label>
-                        <mvc:radiobutton path="targetMode" value="${TARGET_MODE_OR}" id="targetModeOrBtn" disabled="${TARGET_MODE_TOGGLE_DISABLED or isSettingsReadonly}"/>
+                        <mvc:radiobutton path="targetMode" value="${TARGET_MODE_OR}" id="targetModeOrBtn" disabled="${TARGET_MODE_TOGGLE_DISABLED}"/>
                         <label for="targetModeOrBtn" class="yes-no-btn-right">OR</label>
                    	</div>
                     <span id="target-mode-desc" class="text" style="margin-left: 10px;">
@@ -100,7 +100,6 @@
                     <p class="help-block">
                         <mvc:message code="report.numberRecipients"/>:
                         <strong id="calculatedRecipientsBadge">?</strong>
-                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/NumberOfRecipients.xml" tabindex="-1" type="button"></button>
                     </p>
                     <button type="button" class="btn btn-regular" data-action="calculateRecipients">
                         <span><mvc:message code="button.Calculate"/></span>
@@ -118,7 +117,7 @@
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <c:set var="isNeedsTargetCheckboxDisabled" value="${not MAILING_EDITABLE or mailingSettingsForm.mailingType eq DATEBASED_MAILING_TYPE or  mailingSettingsForm.mailingType eq INTERVAL_MAILING_TYPE or isSettingsReadonly}"/>
+                        <c:set var="isNeedsTargetCheckboxDisabled" value="${not MAILING_EDITABLE or mailingSettingsForm.mailingType eq DATEBASED_MAILING_TYPE or  mailingSettingsForm.mailingType eq INTERVAL_MAILING_TYPE}"/>
                         <label class="toggle">
                             <mvc:checkbox path="needsTarget" id="needsTargetToggle" disabled="${isNeedsTargetCheckboxDisabled}"/>
                             <div class="toggle-control"></div>
@@ -145,7 +144,7 @@
             <div class="col-sm-8">
                 <mvc:select path="splitBase" id="settingsTargetgroupsListSplit"
                             cssClass="form-control js-double-select-trigger"
-                            disabled="${not MAILING_EDITABLE or wmSplit or workflowId gt 0 or isSettingsReadonly}">
+                            disabled="${not MAILING_EDITABLE or wmSplit or workflowId gt 0}">
                     <c:if test="${splitId eq -1}">
                         <mvc:option value="yes"><mvc:message code="default.Yes"/></mvc:option>
                     </c:if>
@@ -190,7 +189,7 @@
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
-                        <mvc:select path="splitPart" id="settingsTargetgroupsListSplitPart" disabled="${not MAILING_EDITABLE or wmSplit or workflowId gt 0 or isSettingsReadonly}"
+                        <mvc:select path="splitPart" id="settingsTargetgroupsListSplitPart" disabled="${not MAILING_EDITABLE or wmSplit or workflowId gt 0}"
                                      cssClass="form-control js-double-select-target">
                             <c:choose>
                                 <c:when test="${wmSplit}">

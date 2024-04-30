@@ -32,18 +32,16 @@
             <%-- Mailing copy --%>
 
         <emm:ShowByPermission token="${param.isTemplate ? 'template.change' : 'mailing.change'}">
-            <emm:HideByPermission token="mailing.content.readonly">
-                <emm:instantiate var="option" type="java.util.LinkedHashMap">
-                    <c:set target="${dropDownItems}" property="1" value="${option}"/>
-                    <c:set target="${option}" property="url">
-                        <c:url value="/mailing/${param.mailingId}/copy.action"/>
-                    </c:set>
-                    <c:set target="${option}" property="icon" value="icon-copy"/>
-                    <c:set target="${option}" property="name">
-                        <mvc:message code="button.Copy"/>
-                    </c:set>
-                </emm:instantiate>
-            </emm:HideByPermission>
+            <emm:instantiate var="option" type="java.util.LinkedHashMap">
+                <c:set target="${dropDownItems}" property="1" value="${option}"/>
+                <c:set target="${option}" property="url">
+                    <c:url value="/mailing/${param.mailingId}/copy.action"/>
+                </c:set>
+                <c:set target="${option}" property="icon" value="icon-copy"/>
+                <c:set target="${option}" property="name">
+                    <mvc:message code="button.Copy"/>
+                </c:set>
+            </emm:instantiate>
         </emm:ShowByPermission>
     
         <%-- Return to campaign --%>

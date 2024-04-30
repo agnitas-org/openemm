@@ -43,6 +43,4 @@ public interface ExtensibleUIDService {
      * @throws DeprecatedUIDVersionException if version of UID encoded in given String is deprecated
      */
     ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException;
-
-    ComExtensibleUID parseOrNull(String uidStr);
 }

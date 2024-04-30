@@ -28,6 +28,10 @@ AGN.Lib.Controller.new('mailing-send', function() {
         }
     };
 
+    this.addDomInitializer("test-run-recipients-select", function () {
+        updateTestRunTile(this.el);
+    });
+
     this.addAction({
         'click': 'configure-delivery-mailing-size-warning'
     }, function() {
@@ -69,6 +73,9 @@ AGN.Lib.Controller.new('mailing-send', function() {
     this.addAction({
         'click': 'start-delivery'
     }, function() {
+        const action = this.el.data('action-value');
+        const form = Form.get(this.el);
+
         if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION) {
             var isTestRecipientsRequired = true;
 
@@ -87,9 +94,12 @@ AGN.Lib.Controller.new('mailing-send', function() {
 
         Helpers.disableSendButtons();
 
-        const form = Form.get(this.el);
-        form.setActionOnce(this.el.data('url'));
-        form.submit();
+        const baseUrl = form.url;
+        form.url += action;
+
+        form.submit().done(function() {
+            form.url = baseUrl;
+        });
     });
 
     this.addAction({
@@ -210,48 +220,47 @@ AGN.Lib.Controller.new('mailing-send', function() {
         changeSaveTestRunTargetBtnState(false);
     });
 
-
-  var approvalOptions;
-
-  this.addDomInitializer("test-run-recipients", function () {
-    approvalOptions = JSON.parse(this.config ? this.config.approvalOptions : '[]');
-    controlTestRunOptionsDisplaying();
-    $('#get-approval-switch').on('change', function () {
-      controlTestRunOptionsDisplaying();
+    this.addAction({change: 'admin-target-group'}, function() {
+        updateTestRunTile(this.el);
     });
-    controlTestRunRecipientsDisplaying();
-    $('#test-run-options').on('change', function () {
-      controlTestRunRecipientsDisplaying();
+
+    function updateTestRunTile(testRunDropdown) {
+        if (!testRunDropdown) {
+          return;
+        }
+        const isSingleRecipientOption = testRunDropdown.val() == RECIPIENT_TEST_RUN_OPTION;
+        const isTargetIdRunOption = testRunDropdown.val() == TARGET_TEST_RUN_OPTION;
+        const isSendToSelfRunOption = testRunDropdown.val() == SEND_TO_SELF_TEST_RUN_OPTION;
+        const newTargetElementsHidden = !isSingleRecipientOption || !$('#save-target-toggle').prop('checked');
+        $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientOption));
+        $('#adminSendButton').toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
+        $('#testTargetSaveButton').toggleClass('hidden', newTargetElementsHidden);                      
+        $('#test-run-target-name-input').toggleClass('hidden', newTargetElementsHidden);
+        // prevent hidden fields submit
+        $('#adminTargetGroupSelect').prop('disabled', !isTargetIdRunOption);
+        $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
+    }
+
+    const STORAGE_TIME_OF_SETTINGS_CACHE_MS = 60000;
+    var settingsReceiptDate;
+    var settingsResponse;
+
+    this.addAction({click: 'save-security-settings'}, function() {
+        const form = AGN.Lib.Form.get(this.el);
+        const requiredAutoImportId = form.getValue('autoImportId');
+
+        form.submit().done(function(resp) {
+            if(resp.success === true) {
+                AGN.Lib.JsonMessages(resp.popups);
+                $('#close-security-settings').click();
+                settingsReceiptDate -= STORAGE_TIME_OF_SETTINGS_CACHE_MS;
+            } else {
+                AGN.Lib.JsonMessages(resp.popups, true);
+            }
+
+            $("#activation-form input[name='autoImportId']").val(requiredAutoImportId);
+        });
     });
-  });
-
-  function controlTestRunOptionsDisplaying() {
-    const filterOptions = $('#get-approval-switch').prop('checked');
-    const $optionsSelect = $("#test-run-options");
-    $optionsSelect.find("option:not([value='" + approvalOptions.join("']):not([value='") + "']")
-      .attr('disabled', filterOptions);
-    if (filterOptions && approvalOptions.indexOf($optionsSelect.val()) === -1) {
-      $optionsSelect.val($optionsSelect.find("option:not(:disabled):first").val()).trigger('change')
-    }
-  }
-
-  function controlTestRunRecipientsDisplaying() {
-    const $testRunDropdown = $('#test-run-options');
-    if (!$testRunDropdown.length) {
-      return;
-    }
-    const isSingleRecipientOption = $testRunDropdown.val() == RECIPIENT_TEST_RUN_OPTION;
-    const isTargetIdRunOption = $testRunDropdown.val() == TARGET_TEST_RUN_OPTION;
-    const isSendToSelfRunOption = $testRunDropdown.val() == SEND_TO_SELF_TEST_RUN_OPTION;
-    const newTargetElementsHidden = !isSingleRecipientOption || !$('#save-target-toggle').prop('checked');
-    $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientOption));
-    $('#adminSendButton').toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
-    $('#testTargetSaveButton').toggleClass('hidden', newTargetElementsHidden);
-    $('#test-run-target-name-input').toggleClass('hidden', newTargetElementsHidden);
-    // prevent hidden fields submit
-    $('#adminTargetGroupSelect').prop('disabled', !isTargetIdRunOption);
-    $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
-  }
 
     function changeSaveTestRunTargetBtnState(saved) {
         const $testRunTargetBtn = $('#testTargetSaveButton');
@@ -319,6 +328,28 @@ AGN.Lib.Controller.new('mailing-send', function() {
             });
     }
 
+    this.addAction({click: 'load-security-settings'}, function() {
+        const currentDate = new Date();
+
+        if (!settingsReceiptDate || currentDate - settingsReceiptDate >= STORAGE_TIME_OF_SETTINGS_CACHE_MS) {
+            const href = $(this.el).attr('href');
+
+            if (href) {
+                const jqxhr = $.get(href);
+                jqxhr.done(function(resp) {
+                    Page.render(resp);
+                    settingsResponse = resp;
+                    settingsReceiptDate = new Date();
+
+                    initializeFormFields($('#security-settings-form'));
+                });
+            }
+        } else {
+            Page.render(settingsResponse);
+            initializeFormFields($('#security-settings-form'));
+        }
+    });
+
     function initializeFormFields($form) {
         const form = AGN.Lib.Form.get($form);
         form.initFields();
@@ -366,17 +397,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
             $toggle.prop('disabled', false);
         });
     }
-
-    AGN.Lib.Controller.new('mailing-deletion-modal', function() {
-        this.addDomInitializer('mailing-deletion-modal', function() {
-            this.el.find('.js-confirm-positive').on("click", function () {
-                const $deliveryStatusBox = $('#delivery-status-box');
-                if ($deliveryStatusBox.exists()) {
-                    AGN.Lib.Load.get($deliveryStatusBox).stop();
-                }
-            });
-        });
-    });
 });
 
 AGN.Lib.Controller.new('delivery-settings-view', function() {

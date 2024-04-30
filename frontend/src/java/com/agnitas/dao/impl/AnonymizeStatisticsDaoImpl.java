@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.AnonymizeStatisticsDao;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements AnonymizeStatisticsDao {
 	
@@ -29,11 +28,11 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 		
 		final String trackingVetoSubSelect = anonymizeAll
 				? "customer_id > 0 AND "
-				: "customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + RecipientStandardField.DoNotTrack.getColumnName() + " = 1) AND ";
+				: "customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1) AND ";
 		
 		final String trackingVetoClause = anonymizeAll 
 				? ""
-				: " AND " + RecipientStandardField.DoNotTrack.getColumnName() + " = 1 ";
+				: " AND " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1 ";
 		
 		
 		// Anonymize table onepixellog_<CID>_tbl

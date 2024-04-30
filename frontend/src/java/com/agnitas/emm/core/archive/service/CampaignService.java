@@ -10,23 +10,21 @@
 
 package com.agnitas.emm.core.archive.service;
 
-import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
-
-import java.util.List;
-
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.web.forms.PaginationForm;
 
-public interface CampaignService {
-    PaginatedListImpl<Campaign> getOverview(Admin admin, PaginationForm form);
+import java.util.List;
 
-    List<Campaign> getCampaigns(int companyID);
-    
+public interface CampaignService {
+
+    PaginatedListImpl<Campaign> getPaginatedList(Admin admin, PaginationForm form);
+
     Campaign getCampaign(int campaignId, int companyID);
 
-    PaginatedListImpl<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin);
+    List<MailingBase> getCampaignMailings(int campaignId, Admin admin);
 
     int save(Campaign campaign);
 
@@ -36,5 +34,4 @@ public interface CampaignService {
 
     boolean isDefinedForAutoOptimization(int campaignId, Admin admin);
 
-    boolean copySampleCampaigns(int newCompanyId, int fromCompanyId);
 }

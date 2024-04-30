@@ -10,6 +10,10 @@
 
 package org.agnitas.emm.core.recipient.dto;
 
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,13 +21,13 @@ import java.util.List;
 
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.emm.core.recipient.RecipientUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RecipientOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     private static final int MAX_FIELDS_COUNT = RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
-    private static final List<String> DEFAULT_FIELDS = Arrays.asList(RecipientStandardField.Gender.getColumnName(), RecipientStandardField.Firstname.getColumnName(), RecipientStandardField.Lastname.getColumnName());
+    private static final List<String> DEFAULT_FIELDS = Arrays.asList(COLUMN_GENDER, COLUMN_FIRSTNAME, COLUMN_LASTNAME);
 
     @JsonProperty("fields")
     private List<String> selectedFields = DEFAULT_FIELDS;
@@ -33,7 +37,7 @@ public class RecipientOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     }
 
     public void setSelectedFields(List<String> selectedFields) {
-        if (selectedFields == null || selectedFields.size() > MAX_FIELDS_COUNT) {
+        if (CollectionUtils.isEmpty(selectedFields) || selectedFields.size() > MAX_FIELDS_COUNT) {
             this.selectedFields = DEFAULT_FIELDS;
         } else {
             this.selectedFields = selectedFields;

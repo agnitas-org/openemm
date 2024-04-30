@@ -1,0 +1,4975 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+        version="2.0">
+
+    <description>A tag library for AGNITAS EMM</description>
+    <display-name>agnitas-taglib</display-name>
+    <tlib-version>1.0</tlib-version>
+    <short-name>agn</short-name>
+    <uri>https://emm.agnitas.de/jsp/jstl/tags</uri>
+
+    <tag>
+        <name>agnForm</name>
+        <description>Form tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnFormTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>action</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                        <p>The URL to which this form will be submitted.  This
+                        value is also used to select the ActionMapping we are
+                        assumed to be processing, from which we can identify
+                        the appropriate form bean and scope.  If a value is not
+                        provided, the original URI (servletPath) for the request is
+                        used. </p>
+
+                        <p>If you are using extension mapping for selecting the
+                        controller servlet, this value should be equal to the
+                        <code>path</code> attribute of the corresponding
+                        <code>&lt;action&gt;</code> element, optionally
+                        followed by the correct extension suffix.</p>
+
+                        <p>If you are using path mapping to select the
+                        controller servlet, this value should be exactly equal
+                        to the <code>path</code> attribute of the corresponding
+                        <code>&lt;action&gt;</code> element.</p>
+                        ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>acceptCharset</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The list of character encodings for input data that the server should
+                accept.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.2</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Set to <code>true</code> if the Form's input fields should be
+                disabled.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.7</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>enctype</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The content encoding to be used to submit this form, if the method
+                is POST. This must be set to "multipart/form-data" if you are using
+                the file tag to enable file upload. If not specified, the browser
+                default (normally "application/x-www-form-urlencoded") is used.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>focus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The field name (among the fields on this form) to which initial
+                focus will be assigned with a JavaScript function. If not specified,
+                no special JavaScript for this purpose will be rendered.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>focusIndex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                If the focus field is a field array, such as a radio button group, you can
+                specify the index in the array to receive focus.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.1</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>method</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The HTTP method that will be used to submit this request
+                (GET, POST). [POST]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onreset</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed if the form is reset.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onsubmit</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed if the form is submitted.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Set to <code>true</code> if the Form's input fields should be
+                read only.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.7</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>scriptLanguage</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                The form's focus &lt;script&gt; element will not contain a language attribute
+                when this is set to false.  The default is true but this property is ignored
+                in XHMTL mode.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS styles to be applied to this HTML element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Identifier to be assigned to this HTML element (renders
+                an "id" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>target</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Window target to which this form is submitted, such as
+                for use in framed presentations.
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnLink</name>
+        <description>Link tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnLinkTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <body-content>JSP</body-content>
+        <description>
+            <![CDATA[
+		<p><strong>Render an HTML anchor or hyperlink</strong></p>
+
+
+			<p>Renders an HTML <code>&lt;a&gt;</code> element as an
+			anchor definition (if "linkName" is specified) or as a
+			hyperlink to the specified URL.  URL rewriting will be
+			applied automatically, to maintain session state in the
+			absence of cookies.  The content displayed for this
+			hyperlink will be taken from the body of this tag.</p>
+
+			<p>The base URL for this hyperlink is calculated based on
+			which of the following attributes you specify (you must
+			specify exactly one of them):</p>
+			<ul>
+			<li><em>forward</em> - Use the value of this attribute as the
+				name of a global <code>ActionForward</code> to be looked
+				up, and use the module-relative or context-relative
+				URI found there. If the forward is module-relative then
+				it must point to an action and NOT to a page.</li>
+			<li><em>action</em> - Use the value of this attribute as the
+				name of a <code>Action</code> to be looked
+				up, and use the module-relative or context-relative
+				URI found there.</li>
+			 <li><em>href</em> - Use the value of this attribute unchanged.
+				 </li>
+			 <li><em>page</em> - Use the value of this attribute as a
+				module-relative URI, and generate a server-relative
+				URI by including the context path and module
+				prefix.</li>
+			</ul>
+
+			<p>Normally, the hyperlink you specify with one of the
+			attributes described in the previous paragraph will be left
+			unchanged (other than URL rewriting if necessary).  However,
+			there are three ways you can append one or more dynamically
+			defined query parameters to the hyperlink -- specify a single
+			parameter with the <code>paramId</code> attribute (and its
+			associated attributes to select the value), or specify the
+			<code>name</code> (and optional <code>property</code>)
+			attributes to select a <code>java.util.Map</code> bean that
+			contains one or more parameter ids and corresponding values,
+			or nest one or more &lt;html:param&gt; tags in the tag body.
+			</p>
+
+			<p>To specify a single parameter, use the <code>paramId</code>
+			attribute to define the name of the request parameter to be
+			submitted.  To specify the corresponding value, use one of the
+			following approaches:</p>
+			<ul>
+			<li><em>Specify only the <code>paramName</code> attribute</em>
+				- The named JSP bean (optionally scoped by the value of the
+				<code>paramScope</code> attribute) must identify a value
+				that can be converted to a String.</li>
+			<li><em>Specify both the <code>paramName</code> and
+				<code>paramProperty</code> attributes</em> - The specified
+				property getter method will be called on the JSP bean
+				identified by the <code>paramName</code> (and optional
+				<code>paramScope</code>) attributes, in order to select
+				a value that can be converted to a String.</li>
+			</ul>
+
+			<p>If you prefer to specify a <code>java.util.Map</code> that
+			contains all of the request parameters to be added to the
+			hyperlink, use one of the following techniques:</p>
+			<ul>
+			<li><em>Specify only the <code>name</code> attribute</em> -
+				The named JSP bean (optionally scoped by the value of
+				the <code>scope</code> attribute) must identify a
+				<code>java.util.Map</code> containing the parameters.</li>
+			<li><em>Specify both <code>name</code> and
+				<code>property</code> attributes</em> - The specified
+				property getter method will be called on the bean
+				identified by the <code>name</code> (and optional
+				<code>scope</code>) attributes, in order to return the
+				<code>java.util.Map</code> containing the parameters.</li>
+			</ul>
+
+			<p>As the <code>Map</code> is processed, the keys are assumed
+			to be the names of query parameters to be appended to the
+			hyperlink.  The value associated with each key must be either
+			a String or a String array representing the parameter value(s),
+			or an object whose toString() method will be called.
+			If a String array is specified, more than one value for the
+			same query parameter name will be created.</p>
+
+			<p>Supplmenting these two methods, you can nest one or more
+			&lt;html:param&gt; tags to dynamically add parameters in a
+			logic-friendly way (such as executing a for loop that
+			assigns the name/value pairs at runtime). This method does
+			not compete with the aforementioned; it will adds its
+			parameters <em>in addition</em> to whatever parameters are
+			already specified.</p>
+
+			<p>Additionally, you can request that the current transaction
+			control token, if any, be included in the generated hyperlink
+			by setting the <code>transaction</code> attribute to
+			<code>true</code>.
+			You can also request that an anchor ("#xxx") be added to the
+			end of the URL that is created by any of the above mechanisms,
+			by using the <code>anchor</code> attribute.</p>
+
+			]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The keyboard character used to move focus immediately
+			  to this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>action</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Logical name of a <code>Action</code> that
+			  contains the actual content-relative URI of the destination
+			  of this transfer.  This hyperlink may be dynamically
+			  modified by the inclusion of query parameters, as described
+			  in the tag description.  You <strong>must</strong> specify
+			  exactly one of the <code>action</code> attribute, the
+			  <code>forward</code> attribute, the
+			  <code>href</code> attribute, the <code>linkName</code>
+			  attribute, or the <code>page</code> attribute.</p>
+
+		   <p>Additionally, you can specify a <code>module</code> prefix
+		   for linking to other modules.</p>
+
+		   ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>module</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			   <p>Prefix name of a <code>Module</code> that
+			   contains the action mapping for the <code>Action</code>
+			   that is specified by the <code>action</code> attribute.
+			   You <strong>must</strong> specify an <code>action</code>
+			   attribute for this to have an effect.</p>
+
+			   <p><strong>Note: </strong>Use "" to map to the default module.</p>
+		  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>anchor</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Optional anchor tag ("#xxx") to be added to the generated
+			  hyperlink.  Specify this value <strong>without</strong> any
+			  "#" character.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The direction for weak/neutral text for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>forward</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Logical name of a global <code>ActionForward</code> that
+			  contains the actual content-relative URI of the destination
+			   of this transfer.  This hyperlink may be dynamically
+			   modified by the inclusion of query parameters, as described
+			   in the tag description.  You <strong>must</strong> specify
+			   exactly one of the <code>action</code> attribute, the
+			   <code>forward</code> attribute, the
+			   <code>href</code> attribute, the <code>linkName</code>
+			   attribute, or the <code>page</code> attribute.</p>
+			   ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>href</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The URL to which this hyperlink will transfer control
+			   if activated.  This hyperlink may be dynamically modified
+			   by the inclusion of query parameters, as described in the
+			   tag description.  You <strong>must</strong> specify
+			   exactly one of the <code>action</code> attribute, the
+			   <code>forward</code> attribute, the
+			   <code>href</code> attribute, the <code>linkName</code>
+			   attribute, or the <code>page</code> attribute.</p>
+			   ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+			Valid only inside of logic:iterate tag.
+			If <code>true</code> then indexed parameter with name from indexId attribute
+			will be added to the query string. Indexed parameter looks like
+			"index[32]". Number in brackets will be generated
+			for every iteration and taken from ancestor logic:iterate tag.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			By this attribute different name for the indexed parameter can be
+			specified. Take a look to the "indexed" attribute for details.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+				The servlet context attributes key for the MessageResources
+				instance to use.  If not specified, defaults to the
+				application resources configured for our action servlet.
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The language code for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>linkName</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The anchor name to be defined within this page, so that
+			  you can reference it with intra-page hyperlinks.  In other
+			  words, the value specified here will render a "name" element
+			  in the generated anchor tag.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The name of a JSP bean that contains a <code>Map</code>
+			  representing the query parameters (if <code>property</code>
+			  is not specified), or a JSP bean whose property getter is
+			  called to return a <code>Map</code> (if <code>property</code>
+			  is specified).</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element loses input focus.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse click.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse double click.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives input focus.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a key down event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a key press event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a key up event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse down event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse move event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse out event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse over event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>JavaScript event handler that is executed when
+			  this element receives a mouse up event.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>page</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The module-relative path (beginning with a "/"
+			  character) to which this hyperlink will transfer control
+			   if activated.  This hyperlink may be dynamically modified
+			   by the inclusion of query parameters, as described in the
+			   tag description.  You <strong>must</strong> specify exactly
+			   one of the <code>action</code> attribute,
+			   <code>forward</code> attribute, the
+			   <code>href</code> attribute, the <code>linkName</code>
+			   attribute, or the <code>page</code> attribute.</p>
+			   ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>paramId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The name of the request parameter that will be dynamically
+			  added to the generated hyperlink.  The corresponding value is
+			  defined by the <code>paramName</code> and (optional)
+			  <code>paramProperty</code> attributes, optionally scoped by
+			  the <code>paramScope</code> attribute</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>paramName</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The name of a JSP bean that is a String containing the
+			  value for the request parameter named by <code>paramId</code>
+			  (if <code>paramProperty</code> is not specified), or a JSP
+			  bean whose property getter is called to return a String
+			  (if <code>paramProperty</code> is specified).  The JSP bean
+			  is constrained to the bean scope specified by the
+			  <code>paramScope</code> property, if it is specified.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>paramProperty</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The name of a property of the bean specified by the
+			  <code>paramName</code> attribute, whose return value must
+			  be a String containing the value of the request parameter
+			  (named by the <code>paramId</code> attribute) that will be
+			  dynamically added to this hyperlink.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>paramScope</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The scope within which to search for the bean specified
+			  by the <code>paramName</code> attribute.  If not specified,
+			  all scopes are searched.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The name of a property of the bean specified by the
+			  <code>name</code> attribute, whose return value must be
+			  a <code>java.util.Map</code> containing the query parameters
+			  to be added to the hyperlink.  You <strong>must</strong>
+			  specify the <code>name</code> attribute if you specify
+			  this attribute.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>scope</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The scope within which to search for the bean specified
+			  by the <code>name</code> attribute.  If not specified, all
+			  scopes are searched.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>CSS styles to be applied to this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  CSS stylesheet class to be applied to this HTML element
+			  (renders a "class" attribute).
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			Identifier to be assigned to this HTML element (renders
+			an "id" attribute).
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The tab order (ascending positive integers) for
+			  this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>target</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The window target in which the resource requested by this
+			  hyperlink will be displayed, for example in a framed
+			  presentation.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The advisory title for this hyperlink.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The message resources key for the advisory title
+			  for this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>transaction</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+			  <p>If set to <code>true</code>, any current transaction
+			  control token will be included in the generated hyperlink,
+			  so that it will pass an <code>isTokenValid()</code> test
+			  in the receiving Action.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>useLocalEncoding</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+		  <p>If set to <code>true</code>, LocalCharacterEncoding will be
+		  used, that is, the characterEncoding set to the HttpServletResponse,
+		  as prefered character encoding rather than UTF-8, when
+		  URLEncoding is done on parameters of the URL.</p>
+		  ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnText</name>
+        <description>Text tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnTextTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <description>
+            <![CDATA[
+            <p><strong>Render An Input Field of Type text</strong></p>
+
+            <p>Render an input field of type text.  This tag is only valid when
+            nested inside a form tag body.</p>
+        ]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The keyboard character used to move focus immediately to this
+                element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The alternate text for this element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The message resources key of the alternate text for this
+                element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>Name of the bean (in any scope) under which our error messages
+                  have been stored.  If not present, the name specified by the
+                  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+                  <p><strong>N.B.</strong> This is used in conjunction with the
+                  <code>errorStyle</code>, <code>errorStyleClass</code> and
+                  <code>errorStyleId</code> attributes and should be set to
+                  the same value as the <code>name</code> attribute on the
+                  &lt;html:errors/&gt; tag.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element if
+                an error exists for it.</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>style</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element if
+                an error exists for it (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleClass</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element if
+                an error exists for it (renders an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleId</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Valid only inside of logic:iterate tag.
+                If <code>true</code> then name of the html tag will be rendered as
+                "id[34].propertyName". Number in brackets will be generated
+                for every iteration and taken from ancestor logic:iterate tag.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Maximum number of input characters to accept. [No limit]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The attribute name of the bean whose properties are consulted
+                when rendering the current value of this input field. If not
+                specified, the bean associated with the form tag we are nested
+                within is utilized.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus and its value has changed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse double click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed and released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the mouse
+                pointer and a mouse button is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and the pointer is moved.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was under the
+                mouse pointer but the pointer was moved outside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was not under
+                the mouse pointer but the pointer is moved inside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and a mouse button is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when a
+                when a user selects some text in a text field.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Name of this input field, and the name of the corresponding bean
+                property if value is not specified. The corresponding bean property
+                (if any) must be of type String.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          read only.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Number of character positions to allocate. [Browser default]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element.</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element (renders
+                an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The tab order (ascending positive integers) for this element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The advisory title for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The message resources key for the advisory title
+                  for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Value to which this field should be initialized. [Use the
+                corresponding bean property value]
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnHidden</name>
+        <tag-class>com.agnitas.taglib.AgnHiddenTag</tag-class>
+        <body-content>empty</body-content>
+        <dynamic-attributes>true</dynamic-attributes>
+        <description>
+            <![CDATA[
+            <p><strong>
+            Render A Hidden Field
+        </strong></p>
+
+            <p>
+                Renders an HTML &lt;input&gt; element of type hidden, populated
+                from the specified value or the specified property of the bean
+                associated with our current form. This tag is only valid when
+                nested inside a form tag body.
+            </p>
+        ]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The keyboard character used to move focus immediately to this
+                element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The alternate text for this element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The message resources key of the alternate text for this
+                element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Valid only inside of <code>logic:iterate</code> tag.
+                If <code>true</code> then name of the html tag will be rendered as
+                "id[34].propertyName". Number in brackets will be generated
+                for every iteration and taken from ancestor logic:iterate tag.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The attribute name of the bean whose properties are consulted
+                when rendering the current value of this input field. If not
+                specified, the bean associated with the form tag we are nested
+                within is utilized.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus and its value has changed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse double click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed and released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the mouse
+                pointer and a mouse button is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and the pointer is moved.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was under the
+                mouse pointer but the pointer was moved outside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was not under
+                the mouse pointer but the pointer is moved inside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and a mouse button is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Name of this input field, and the name of the corresponding bean
+                property if value is not specified. The corresponding bean property
+                (if any) must be of type String.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS styles to be applied to this HTML element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Identifier to be assigned to this HTML element (renders
+                an "id" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+            <p>The advisory title for this element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+            <p>The message resources key for the advisory title
+            for this element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Value to which this field should be initialized. [Use the
+                corresponding bean property value]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>write</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Should the value of this field also be rendered to the
+                response page to make it visible, in addition to creating
+                an HTML type="hidden" element?  By default, only the
+                hidden element is created.
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnEmail</name>
+        <description>Input (email) tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnEmailTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <description>
+            <![CDATA[
+            <p><strong>Render An Input Field of Type email</strong></p>
+
+            <p>Render an input field of type email.  This tag is only valid when
+            nested inside a form tag body.</p>
+        ]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The keyboard character used to move focus immediately to this
+                element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The alternate text for this element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The message resources key of the alternate text for this
+                element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>Name of the bean (in any scope) under which our error messages
+                  have been stored.  If not present, the name specified by the
+                  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+                  <p><strong>N.B.</strong> This is used in conjunction with the
+                  <code>errorStyle</code>, <code>errorStyleClass</code> and
+                  <code>errorStyleId</code> attributes and should be set to
+                  the same value as the <code>name</code> attribute on the
+                  &lt;html:errors/&gt; tag.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element if
+                an error exists for it.</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>style</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element if
+                an error exists for it (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleClass</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element if
+                an error exists for it (renders an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleId</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Valid only inside of logic:iterate tag.
+                If <code>true</code> then name of the html tag will be rendered as
+                "id[34].propertyName". Number in brackets will be generated
+                for every iteration and taken from ancestor logic:iterate tag.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Maximum number of input characters to accept. [No limit]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The attribute name of the bean whose properties are consulted
+                when rendering the current value of this input field. If not
+                specified, the bean associated with the form tag we are nested
+                within is utilized.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus and its value has changed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse double click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed and released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the mouse
+                pointer and a mouse button is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and the pointer is moved.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was under the
+                mouse pointer but the pointer was moved outside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was not under
+                the mouse pointer but the pointer is moved inside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and a mouse button is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when a
+                when a user selects some text in a text field.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Name of this input field, and the name of the corresponding bean
+                property if value is not specified. The corresponding bean property
+                (if any) must be of type String.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          read only.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Number of character positions to allocate. [Browser default]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element.</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element (renders
+                an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The tab order (ascending positive integers) for this element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The advisory title for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The message resources key for the advisory title
+                  for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Value to which this field should be initialized. [Use the
+                corresponding bean property value]
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnNumber</name>
+        <description>Input (number) tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnNumberTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <description>
+            <![CDATA[
+            <p><strong>Render An Input Field of Type number</strong></p>
+
+            <p>Render an input field of type number.  This tag is only valid when
+            nested inside a form tag body.</p>
+        ]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The keyboard character used to move focus immediately to this
+                element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The alternate text for this element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The message resources key of the alternate text for this
+                element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>Name of the bean (in any scope) under which our error messages
+                  have been stored.  If not present, the name specified by the
+                  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+                  <p><strong>N.B.</strong> This is used in conjunction with the
+                  <code>errorStyle</code>, <code>errorStyleClass</code> and
+                  <code>errorStyleId</code> attributes and should be set to
+                  the same value as the <code>name</code> attribute on the
+                  &lt;html:errors/&gt; tag.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element if
+                an error exists for it.</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>style</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element if
+                an error exists for it (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleClass</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element if
+                an error exists for it (renders an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleId</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Valid only inside of logic:iterate tag.
+                If <code>true</code> then name of the html tag will be rendered as
+                "id[34].propertyName". Number in brackets will be generated
+                for every iteration and taken from ancestor logic:iterate tag.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Maximum number of input characters to accept. [No limit]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The attribute name of the bean whose properties are consulted
+                when rendering the current value of this input field. If not
+                specified, the bean associated with the form tag we are nested
+                within is utilized.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus and its value has changed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse double click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed and released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the mouse
+                pointer and a mouse button is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and the pointer is moved.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was under the
+                mouse pointer but the pointer was moved outside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was not under
+                the mouse pointer but the pointer is moved inside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and a mouse button is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when a
+                when a user selects some text in a text field.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Name of this input field, and the name of the corresponding bean
+                property if value is not specified. The corresponding bean property
+                (if any) must be of type String.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          read only.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Number of character positions to allocate. [Browser default]
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element.</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element (renders
+                an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The tab order (ascending positive integers) for this element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The advisory title for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The message resources key for the advisory title
+                  for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Value to which this field should be initialized. [Use the
+                corresponding bean property value]
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnSelect</name>
+        <description>Select tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnSelectTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The alternate text for this element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The message resources key of the alternate text for this
+			element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+				The servlet context attributes key for the MessageResources
+				instance to use.  If not specified, defaults to the
+				application resources configured for our action servlet.
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The direction for weak/neutral text for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+	  Set to <code>true</code> if this input field should be
+	  disabled.
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Name of the bean (in any scope) under which our error messages
+			  have been stored.  If not present, the name specified by the
+			  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+			  <p><strong>N.B.</strong> This is used in conjunction with the
+			  <code>errorStyle</code>, <code>errorStyleClass</code> and
+			  <code>errorStyleId</code> attributes and should be set to
+			  the same value as the <code>name</code> attribute on the
+			  &lt;html:errors/&gt; tag.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element if
+			an error exists for it.</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>style</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element if
+			an error exists for it (renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleClass</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element if
+			an error exists for it (renders an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleId</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+			Valid only inside of logic:iterate tag.
+			If <code>true</code> then name of the html tag will be rendered as
+			"id[34].propertyName". Number in brackets will be generated
+			for every iteration and taken from ancestor logic:iterate tag.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The language code for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>multiple</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+							If set to any arbitrary value, the rendered
+							select element will support
+							multiple selections.
+					]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The attribute name of the bean whose properties are consulted
+			to determine which option should be pre-selected when rendering
+			this input field.  If not specified, the bean associated with
+			the enclosing <code>&lt;html:form&gt;</code> tag is utilized.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus and its value has changed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse double click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed and released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the mouse
+			pointer and a mouse button is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and the pointer is moved.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was under the
+			mouse pointer but the pointer was moved outside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was not under
+			the mouse pointer but the pointer is moved inside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and a mouse button is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			Name of the request parameter that will be included with this
+			submission, set to the specified value.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element.</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element
+			(renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element (renders
+			an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The tab order (ascending positive integers) for this element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The number of available options displayed at one time.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+		<p>The advisory title for this element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+		<p>The message resources key for the advisory title
+		for this element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The value to compare with for marking an option selected.
+		]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnTextarea</name>
+        <tag-class>com.agnitas.taglib.AgnTextareaTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <description>
+            <![CDATA[
+            <p><strong>
+            Render A Textarea
+        </strong></p>
+
+            Render a textarea element.  This tag is only valid when nested
+                inside a form tag body.
+        ]]>
+        </description>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The keyboard character used to move focus immediately to this
+                element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The alternate text for this element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The message resources key of the alternate text for this
+                element.</p>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>cols</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The number of columns to display.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>Name of the bean (in any scope) under which our error messages
+                  have been stored.  If not present, the name specified by the
+                  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+                  <p><strong>N.B.</strong> This is used in conjunction with the
+                  <code>errorStyle</code>, <code>errorStyleClass</code> and
+                  <code>errorStyleId</code> attributes and should be set to
+                  the same value as the <code>name</code> attribute on the
+                  &lt;html:errors/&gt; tag.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element if
+                an error exists for it.</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>style</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element if
+                an error exists for it (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleClass</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element if
+                an error exists for it (renders an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, this overrides the
+                <code>styleId</code> attribute in the event of an error.</p>
+
+            <dl><dt><b>Since:</b></dt>
+            <dd>Struts 1.2.5</dd></dl>
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Valid only inside of logic:iterate tag.
+                If <code>true</code> then name of the html tag will be rendered as
+                "id[34].propertyName". Number in brackets will be generated
+                for every iteration and taken from ancestor logic:iterate tag.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The attribute name of the bean whose properties are consulted
+                when rendering the current value of this input field. If not
+                specified, the bean associated with the form tag we are nested
+                within is utilized.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element loses input
+                focus and its value has changed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives a
+                mouse double click.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element receives input
+                focus.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is depressed and released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element has focus and a
+                key is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the mouse
+                pointer and a mouse button is depressed.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and the pointer is moved.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was under the
+                mouse pointer but the pointer was moved outside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element was not under
+                the mouse pointer but the pointer is moved inside the element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when this element is under the
+                mouse pointer and a mouse button is released.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                JavaScript event handler executed when a
+                when a user selects some text in a text field.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Name of this input field, and the name of the corresponding bean
+                property if value is not specified. The corresponding bean property
+                (if any) must be of type String.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this input field should be
+          read only.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>rows</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The number of rows to display.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS styles to be applied to this HTML element.</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>Identifier to be assigned to this HTML element (renders
+                an "id" attribute).</p>
+
+                <p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+                overrides this attribute in the event of an error for the element.</p>
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                The tab order (ascending positive integers) for this element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The advisory title for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                  <p>The message resources key for the advisory title
+                  for this element.</p>
+                  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Value to which this field should be initialized. [Use the
+                corresponding bean property value]
+            ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnOption</name>
+        <tag-class>com.agnitas.taglib.AgnOptionTag</tag-class>
+        <description>Option tag which allows using dynamic attributes</description>
+        <dynamic-attributes>true</dynamic-attributes>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The servlet context attributes key for the MessageResources
+                    instance to use.  If not specified, defaults to the
+                    application resources configured for our action servlet.
+                    ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The direction for weak/neutral text for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+          Set to <code>true</code> if this option should be
+          disabled.
+          ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>filter</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+                Set to <code>true</code> if you want the option label to be
+                filtered for sensitive characters in HTML.  By default, such
+                a value is NOT filtered.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                <p>The language code for this element.</p>
+                <dl><dt><b>Since:</b></dt>
+                <dd>Struts 1.3.6</dd></dl>
+                ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>key</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    If specified, defines the message key to be looked up in
+                    the resource bundle specified by <code>bundle</code> for
+                    the text displayed to the user for this option.  If not
+                    specified, the text to be displayed is taken from the body
+                    content of this tag.
+                    ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>locale</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    The session attributes key for the Locale instance to use
+                    for looking up the message specified by the
+                    <code>key</code> attribute.  If not specified, uses the
+                    standard Struts session attribute name.
+                    ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS styles to be applied to this HTML element.
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                Identifier to be assigned to this HTML element (renders
+                an "id" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                CSS stylesheet class to be applied to this HTML element
+                (renders a "class" attribute).
+            ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+                    Value to be submitted for this field if this option is
+                    selected by the user.
+                    ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnCheckbox</name>
+        <description>Checkbox tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnCheckboxTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The keyboard character used to move focus immediately to this
+			element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The alternate text for this element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The message resources key of the alternate text for this
+			element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+				The servlet context attributes key for the MessageResources
+				instance to use.  If not specified, defaults to the
+				application resources configured for our action servlet.
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The direction for weak/neutral text for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+	  Set to <code>true</code> if this input field should be
+	  disabled.
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Name of the bean (in any scope) under which our error messages
+			  have been stored.  If not present, the name specified by the
+			  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+			  <p><strong>N.B.</strong> This is used in conjunction with the
+			  <code>errorStyle</code>, <code>errorStyleClass</code> and
+			  <code>errorStyleId</code> attributes and should be set to
+			  the same value as the <code>name</code> attribute on the
+			  &lt;html:errors/&gt; tag.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element if
+			an error exists for it.</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>style</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element if
+			an error exists for it (renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleClass</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element if
+			an error exists for it (renders an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleId</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+			Valid only inside of <code>logic:iterate</code> tag.
+			If <code>true</code> then name of the html tag will be rendered as
+			"id[34].propertyName". Number in brackets will be generated
+			for every iteration and taken from ancestor logic:iterate tag.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The language code for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The attribute name of the bean whose properties are consulted when
+			rendering the current value of this input field. If not specified,
+			the bean associated with the form tag we are nested within is utilized.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus and its value has changed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse double click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed and released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the mouse
+			pointer and a mouse button is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and the pointer is moved.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was under the
+			mouse pointer but the pointer was moved outside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was not under
+			the mouse pointer but the pointer is moved inside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and a mouse button is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			Name of the request parameter that will be included with this
+			submission, set to the specified value.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element.</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element
+			(renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element (renders
+			an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The tab order (ascending positive integers) for this element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The advisory title for this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The message resources key for the advisory title
+			  for this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+					The value to be transmitted if this checkbox is
+					checked when the form is submitted.  If not specified,
+					the value "on" will be returned.
+		]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnRadio</name>
+        <description>Radio tag which allows using dynamic attributes</description>
+        <tag-class>com.agnitas.taglib.AgnRadioTag</tag-class>
+        <dynamic-attributes>true</dynamic-attributes>
+        <attribute>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The keyboard character used to move focus immediately to this
+			element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The alternate text for this element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>altKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The message resources key of the alternate text for this
+			element.</p>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+				The servlet context attributes key for the MessageResources
+				instance to use.  If not specified, defaults to the
+				application resources configured for our action servlet.
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The direction for weak/neutral text for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+	  Set to <code>true</code> if this input field should be
+	  disabled.
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>Name of the bean (in any scope) under which our error messages
+			  have been stored.  If not present, the name specified by the
+			  <code>Globals.ERROR_KEY</code> constant string will be used.</p>
+
+			  <p><strong>N.B.</strong> This is used in conjunction with the
+			  <code>errorStyle</code>, <code>errorStyleClass</code> and
+			  <code>errorStyleId</code> attributes and should be set to
+			  the same value as the <code>name</code> attribute on the
+			  &lt;html:errors/&gt; tag.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element if
+			an error exists for it.</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>style</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element if
+			an error exists for it (renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleClass</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>errorStyleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element if
+			an error exists for it (renders an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, this overrides the
+			<code>styleId</code> attribute in the event of an error.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.2.5</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>indexed</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+            <description>
+                <![CDATA[
+			Valid only inside of logic:iterate tag.
+			If <code>true</code> then name of the html tag will be rendered as
+			"id[34].propertyName". Number in brackets will be generated
+			for every iteration and taken from ancestor logic:iterate tag.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>The language code for this element.</p>
+			<dl><dt><b>Since:</b></dt>
+			<dd>Struts 1.3.6</dd></dl>
+			]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The attribute name of the bean whose properties are consulted when
+			rendering the current value of this input field. If not specified,
+			the bean associated with the form tag we are nested within is utilized.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element loses input
+			focus and its value has changed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives a
+			mouse double click.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element receives input
+			focus.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is depressed and released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element has focus and a
+			key is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+							The corresponding bean property for this radio tag.
+					]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the mouse
+			pointer and a mouse button is depressed.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and the pointer is moved.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was under the
+			mouse pointer but the pointer was moved outside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element was not under
+			the mouse pointer but the pointer is moved inside the element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			JavaScript event handler executed when this element is under the
+			mouse pointer and a mouse button is released.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS styles to be applied to this HTML element.</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyle</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>CSS stylesheet class to be applied to this HTML element
+			(renders a "class" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleClass</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>styleId</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Identifier to be assigned to this HTML element (renders
+			an "id" attribute).</p>
+
+			<p><strong>N.B.</strong> If present, the <code>errorStyleId</code>
+			overrides this attribute in the event of an error for the element.</p>
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			The tab order (ascending positive integers) for this element.
+		]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The advisory title for this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			  <p>The message resources key for the advisory title
+			  for this element.</p>
+			  ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+						The value of the radio tag.
+					]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>idName</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+			<p>Name of the bean (in some scope) that will return the
+			value of the radio tag. Usually exposed
+			by an iterator. When the idName attribute is
+			present, the value attribute is used as the name of the
+			property on the idName bean that will return the
+			value of the radio tag for this iteration.</p>
+
+		<dl><dt><b>Since:</b></dt>
+		<dd>Struts 1.1</dd></dl>
+	  ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>agnMessage</name>
+        <tag-class>com.agnitas.taglib.AgnMessageTag</tag-class>
+        <body-content>empty</body-content>
+        <description>
+            <![CDATA[
+            <p><strong>
+    Render an internationalized message string to the response.
+    </strong></p>
+
+    <p>Retrieves an internationalized message for the specified locale,
+    using the specified message key, and write it to the output stream.
+    Up to five parametric replacements (such as "{0}") may be specified.</p>
+
+    <p>The message key may be specified directly, using the <code>key</code>
+    attribute, or indirectly, using the <code>name</code> and
+    <code>property</code> attributes to obtain it from a bean.</p>
+
+    <p>
+    <strong>JSTL</strong>:  The equivalent JSTL tag is &lt;fmt:message&gt;.  For example,
+    <br/>
+    <code>
+    	&lt;fmt:message key="my.msg.key"&gt;
+    	  &lt;fmt:param value="replacement text"/&gt;
+    	&lt;/fmt:message&gt;
+    </code>
+    </p>
+    ]]>
+        </description>
+        <attribute>
+            <name>escapeMode</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Specifies the escape mode ("js", "html" and "none" are supported). Default value is "js".</p>
+      ]]>
+            </description>
+        </attribute>
+
+        <attribute>
+            <name>noExceptions</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Specifies if no exceptions should be thrown. Default true (exceptions are not thrown)</p>
+      ]]>
+            </description>
+        </attribute>
+
+        <attribute>
+            <name>arg0</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>First parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg1</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Second parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg2</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Third parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg3</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Fourth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg4</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Fifth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg5</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Sixth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg6</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Seventh parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg7</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Eighth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg8</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Ninth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>arg9</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Tenth parametric replacement value, if any.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>bundle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>The name of the application scope bean under which the
+      <code>MessageResources</code> object containing our messages
+      is stored.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>key</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>The message key of the requested message, which must have
+      a corresponding value in the message resources. If not specified,
+      the key is obtained from the <code>name</code> and
+      <code>property</code> attributes.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>locale</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>The name of the session scope bean under which our currently
+      selected <code>Locale</code> object is stored.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Specifies the attribute name of the bean whose property is accessed
+      to retrieve the value specified by <code>property</code> (if
+      specified).  If <code>property</code> is not specified, the value of
+      this bean itself will be used as the message resource key.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>property</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Specifies the name of the property to be accessed on the bean
+      specified by <code>name</code>.  This value may be a simple, indexed,
+      or nested property reference expression.  If not specified, the value
+      of the bean identified by <code>name</code> will itself be used as the
+      message resource key.</p>
+      ]]>
+            </description>
+        </attribute>
+        <attribute>
+            <name>scope</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <description>
+                <![CDATA[
+      <p>Specifies the variable scope searched to retrieve the bean specified
+      by <code>name</code>.  If not specified, the default rules applied by
+      <code>PageContext.findAttribute()</code> are applied.</p>
+      ]]>
+            </description>
+        </attribute>
+    </tag>
+
+    <function>
+        <description>
+            Escape a string to make it suitable for use in a JS string literal
+        </description>
+        <name>escapeJs</name>
+        <function-class>org.apache.commons.text.StringEscapeUtils</function-class>
+        <function-signature>java.lang.String escapeEcmaScript(java.lang.String)</function-signature>
+        <example>
+            &lt;script type="text/javascript">
+                var foo = '${agn:escapeJs(foo)}';
+                // ...
+            &lt;/script>
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Replace trailing characters with ellipsis when string length exceeds limit.
+        </description>
+        <name>abbreviate</name>
+        <function-class>org.apache.commons.lang3.StringUtils</function-class>
+        <function-signature>java.lang.String abbreviate(java.lang.String,int)</function-signature>
+        <example>
+            &lt;span class="title">${agn:abbreviate(title, 10)}&lt;/span>
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Get current time represented by java.util.Date object.
+        </description>
+        <name>now</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>java.util.Date now()</function-signature>
+        <example>
+            &lt;fmt:formatDate var=&quot;currentServerTime&quot; value=&quot;${agn:now()}&quot; pattern=&quot;yyyy-MM-dd&quot;/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Get current time represented by milliseconds count.
+        </description>
+        <name>milliseconds</name>
+        <function-class>java.lang.System</function-class>
+        <function-signature>long currentTimeMillis()</function-signature>
+        <example>
+            &lt;c:url var=&quot;someLink&quot; value=&quot;/image&quot;&gt;
+                &lt;c:param name=&quot;id&quot; value=&quot;${id}&quot;/&gt;
+                &lt;c:param name=&quot;cacheKiller&quot; value=&quot;${agn:milliseconds()}&quot;/&gt;
+            &lt;/c:url&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Check whether passed date is in the past.
+        </description>
+        <name>isPast</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>boolean isPast(java.util.Date)</function-signature>
+        <example>
+            &lt;c:if test=&quot;${agn:isPast(someForm.sendDate)}&quot;&gt;
+                &lt;!-- ... --&gt;
+            &lt;/c:if&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Check whether passed date is in the future.
+        </description>
+        <name>isFuture</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>boolean isFuture(java.util.Date)</function-signature>
+        <example>
+            &lt;c:if test=&quot;${agn:isFuture(someForm.sendDate)}&quot;&gt;
+                &lt;!-- ... --&gt;
+            &lt;/c:if&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Join collection items to a string using separator.
+        </description>
+        <name>join</name>
+        <function-class>org.apache.commons.lang3.StringUtils</function-class>
+        <function-signature>java.lang.String join(java.util.Iterator,java.lang.String)</function-signature>
+        <example>
+            &lt;c:set var=&quot;rowGutters&quot; value=&quot;${agn:join(${gridTemplateForm.rowGutters}, &#39;, &#39;)}&quot;/&gt;
+
+            &lt;script data-initializer=&quot;grid-layout-view&quot; type=&quot;application/json&quot;&gt;
+                {
+                    // ...
+                    rowGutters: [${rowGutters}]
+                    // ...
+                }
+            &lt;/script&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Ensure that all the selectors in the stylesheet (first argument) select nothing outside an elements selected by a selector specified by second argument.
+            Additional existing selector parts are preserved.
+        </description>
+        <name>cssEnclose</name>
+        <function-class>com.agnitas.emm.grid.grid.util.CssUtils</function-class>
+        <function-signature>java.lang.String enclose(java.lang.String,java.lang.String)</function-signature>
+        <example>
+            &lt;style type="text/css"&gt;
+                ${agn:cssEnclose(stylesForm.css, '#template #template')}
+            &lt;/style&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Represent an object as JSON string.
+        </description>
+        <name>toJson</name>
+        <function-class>org.agnitas.util.HttpUtils</function-class>
+        <function-signature>java.lang.String toJson(java.lang.Object)</function-signature>
+        <example>
+            &lt;script type="application/json" data-initializer="foo"&gt;
+                {
+                    "targets": ${agn:toJson(form.targets)}
+                }
+            &lt;/script&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Gets an ID of admin (if authorized) or null.
+        </description>
+        <name>getAdminId</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String getAdminId(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${agn:getAdminId(pageContext.request)}
+        </example>
+    </function>
+</taglib>

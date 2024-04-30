@@ -40,12 +40,12 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -78,6 +78,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	@Resource(name="CampaignDao")
 	protected CampaignDao campaignDao;
 	
+    // FIXME: Throw an exception, if an unknown source mailing id is given. Otherwise a copy of an empty mailing will be created. (see EMM-9273)
 	@Override
 	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
@@ -103,10 +104,6 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	}
 	
 	protected void exportMailingData(int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception, MediatypesDaoException, IOException {
-		if (mailing == null) {
-			throw new Exception("Mailing for export is not defined");
-		}
-		
 		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
 		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
 		
@@ -185,7 +182,6 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 			if (mediatype.getMediaType() == MediaTypes.EMAIL) {
 				MediatypeEmail mediatypeEmail = (MediatypeEmail) mediatype;
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "subject", mediatypeEmail.getSubject());
-				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "preHeader", mediatypeEmail.getPreHeader());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "from_address", mediatypeEmail.getFromEmail());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "from_fullname", mediatypeEmail.getFromFullname());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "reply_address", mediatypeEmail.getReplyEmail());
@@ -330,7 +326,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		if (mailing.getTrackableLinks() != null && mailing.getTrackableLinks().size() > 0) {
 			writer.openJsonObjectProperty("links");
 			writer.openJsonArray();
-			for (final TrackableLink trackableLink : mailing.getTrackableLinks().values()) {
+			for (final ComTrackableLink trackableLink : mailing.getTrackableLinks().values()) {
 				writer.openJsonObject();
 				
 				writeJsonObjectAttribute(writer, "id", trackableLink.getId());

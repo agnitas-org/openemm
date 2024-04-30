@@ -8,7 +8,6 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   var targetGroupIds = [];
   var mailingListSelect;
   var lastMailingListId = 0;
-  var lastDataForCountingRecipients;
 
   var mediaTypePriorityChanged = false;
 
@@ -39,10 +38,6 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   }
 
   const updateCharCounter = function($el) {
-    if (!$el.length) {
-      return;
-    }
-
     const count = $el.val().length;
 
     $('[data-char-counter-for="' + $el.attr('id') + '"]')
@@ -76,14 +71,13 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     scrollPage();
     if ($('#email-tile').length) {
       updateCharCounter($('#emailSubject'));
-      updateCharCounter($('#pre-header'));
     }
     AGN.Opt.collectMailinParams = collectMailingParams;
   });
   
   function showRemovedMailinglistError() {
     var form = Form.get($('#mailingSettingsForm'));
-    form.showFieldError('mailinglistId', t('fields.mailinglist.errors.removed'), true);
+    form.showFieldError('mailinglistId', 'Mailing list removed', true);
   }
 
   function scrollPage() {
@@ -179,74 +173,38 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   }
 
   this.addAction({click: 'calculateRecipients'}, function() {
-    if (config) {
-      lastDataForCountingRecipients = getDataForCountingRecipients();
+    var $count = $('#calculatedRecipientsBadge');
 
+      var fields = [
+          '#settingsGeneralMailingList',
+          '#settingsTargetgroupsListSplit',
+          '#settingsTargetgroupsListSplitPart',
+          '#lightWeightMailingList',
+          '#assignTargetGroups',
+          '#targetGroupIds',
+          '#altgIds',
+          '#followUpType'
+      ];
+
+    if (config) {
       $.ajax({
         type: 'POST',
         url: AGN.url("/mailing/ajax/" + config.mailingId + "/calculateRecipients.action"),
         traditional: true,
-        data: lastDataForCountingRecipients
+        data: $.extend(getFieldsData(fields), {
+          changeMailing: isChangeMailing,
+          targetMode: $('[name="targetMode"]:checked').val(),
+          isWmSplit: config.wmSplit
+        })
       }).always(function(resp) {
         if (resp && resp.success === true) {
-          setRecipientsCountValue(resp.count);
+          $count.text(resp.count);
         } else {
-          setRecipientsCountValue('?');
+          $count.text('?');
           AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
         }
       });
     }
-  });
-
-  this.addAction({change: 'change-mailing-settings'}, function () {
-      isChangeMailing = true;
-      resetRecipientsCountIfNecessary();
-  });
-
-  function resetRecipientsCountIfNecessary() {
-    if (!lastDataForCountingRecipients) {
-      return;
-    }
-
-    const actualDataForCountingRecipients = getDataForCountingRecipients();
-
-    if (!_.isEqual(actualDataForCountingRecipients, lastDataForCountingRecipients)) {
-      lastDataForCountingRecipients = null;
-      setRecipientsCountValue('?');
-    }
-  }
-
-  function getDataForCountingRecipients() {
-    const fields = [
-      '#settingsGeneralMailingList',
-      '#settingsTargetgroupsListSplit',
-      '#settingsTargetgroupsListSplitPart',
-      '#lightWeightMailingList',
-      '#assignTargetGroups',
-      '#targetGroupIds',
-      '#altgIds',
-      '#followUpType'
-    ];
-
-    return  $.extend(getFieldsData(fields), {
-      changeMailing: isChangeMailing,
-      targetMode: $('[name="targetMode"]:checked').val(),
-      isWmSplit: config.wmSplit
-    });
-  }
-
-  function setRecipientsCountValue(value) {
-    const $count = $('#calculatedRecipientsBadge');
-    $count.text(value);
-  }
-
-  this.addAction({change: 'set-parent-mail-mailinglist'}, function () {
-    setMailingListSelectByFollowUpMailing();
-  });
-
-  this.addAction({change: 'scroll-to'}, function () {
-      var position = getPosition(this.el);
-      scrollOffset = Math.round(position);
   });
 
   function getPosition($e) {
@@ -257,6 +215,19 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
       return $e.position().top;
     }
   }
+
+  this.addAction({change: 'change-mailing-settings'}, function () {
+      isChangeMailing = true;
+  });
+
+  this.addAction({change: 'set-parent-mail-mailinglist'}, function () {
+    setMailingListSelectByFollowUpMailing();
+  });
+
+  this.addAction({change: 'scroll-to'}, function () {
+      var position = getPosition(this.el);
+      scrollOffset = Math.round(position);
+  });
 
   this.addAction({change: 'change-general-mailing-type'}, function() {
     var self = this;
@@ -270,41 +241,15 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   });
 
   this.addAction({change: 'save-mailing-list-id'}, function() {
-    const mailinglistId = this.el.select2("val");
-    const mailingType = $('#settingsGeneralMailType').val();
+    var mailingType = $('#settingsGeneralMailType').val();
     if (!isFollowUpMailing(mailingType)) {
-      lastMailingListId = mailinglistId;
+      lastMailingListId = this.el.select2("val");
     }
 
     if (config.selectedRemovedMailinglistId) {
         mailingListSelect.find('option[value="' + config.selectedRemovedMailinglistId + '"]').remove();
         var form = Form.get($(this.el));
         form.cleanFieldError('mailinglistId');
-    }
-
-    // TODO: remove condition after GWUA-5688 will be successfully tested
-    if (config.allowedMailinglistsAddresses) {
-      const mailinglistData = config.mailinglists.find(function (data) {
-        return data.id == mailinglistId;
-      });
-
-      if (mailinglistData) {
-        if (mailinglistData.senderEmail) {
-          $('#emailSenderMail').val(mailinglistData.senderEmail).trigger('change');
-        }
-
-        if (mailinglistData.replyEmail) {
-          $('#emailReplyEmail').val(mailinglistData.replyEmail);
-        }
-
-        if (mailinglistData.senderEmail && mailinglistData.replyEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_and_reply_emails_changed'), 'info');
-        } else if (mailinglistData.senderEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_email_changed'), 'info');
-        } else if (mailinglistData.replyEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.reply_email_changed'), 'info');
-        }
-      }
     }
   });
   
@@ -342,7 +287,13 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
 
     toggle(isDateBasedMailing(mailingType), '#mailing-bcc-recipients');
 
-    var showTargetGroups = isActionBasedMailing(mailingType) ? config.campaignEnableTargetGroups : true;
+    var showTargetGroups = true;
+    if (isActionBasedMailing(mailingType)) {
+      showTargetGroups = config.campaignEnableTargetGroups;
+    }
+    if (isDateBasedMailing(mailingType)) {
+      showTargetGroups = !config.workflowDriven;
+    }
     toggle(showTargetGroups, '#mailingTargets');
   }
 
@@ -409,8 +360,8 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     const tilesExist = $('#frame-tile').length && $('#email-tile').length;
 
     if (!tilesExist) {
-      const $emailTile = $('#email-tile-template').html();
-      const $frameTile = $('#frame-tile-template').html();
+      const $emailTile = AGN.Lib.Template.dom('email-tile-template');
+      const $frameTile = AGN.Lib.Template.dom('frame-tile-template');
 
       const $baseInfoTile = $('#base-info-tile');
 
@@ -534,7 +485,6 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
 
   this.addAction({
     input: 'count-text-chars',
-    textarea: 'count-text-chars',
     'editor:create': 'count-textarea-chars',
     'editor:change': 'count-textarea-chars'
   }, function() {

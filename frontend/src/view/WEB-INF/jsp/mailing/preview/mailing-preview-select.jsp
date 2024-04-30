@@ -1,10 +1,11 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="org.agnitas.preview.ModeType" %>
 <%@ page import="org.agnitas.preview.Preview" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -13,6 +14,7 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.preview.form.PreviewForm"--%>
 <%--@elvariable id="mailingListExist" type="java.lang.Boolean"--%>
 <%--@elvariable id="availableTargetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="recipientsAvailableForTestRun" type="java.util.List<com.agnitas.beans.impl.ComRecipientLiteImpl>"--%>
 
 <c:set var="EMAIL_TYPE_CODE" value="<%= MediaTypes.EMAIL.getMediaCode() %>" scope="page"/>
 <c:set var="RECIPIENT_MODE" value="<%= ModeType.RECIPIENT %>"/>
@@ -55,13 +57,8 @@
     <c:set var="tileHeaderActions" scope="page">
         <c:if test="${emm:contains(availablePreviewFormats, EMAIL_TYPE_CODE)}">
             <li>
-                <c:url var="downloadHtmlLink" value="/mailing/preview/html.action">
-                    <c:param name="mailingId" value="${form.mailingId}"/>
-                    <c:param name="format" value="${form.format}"/>
-                    <c:param name="modeTypeId" value="${form.modeTypeId}"/>
-                    <c:param name="size" value="${form.size}"/>
-                    <c:param name="customerID" value="${form.customerID}"/>
-                    <c:param name="targetGroupId" value="${form.targetGroupId}"/>
+                <c:url var="downloadHtmlLink" value="/mailing/preview/${form.mailingId}/html.action">
+                    <c:param name="mobile" value="${form.size eq MOBILE_PORTRAIT or form.size eq MOBILE_LANDSCAPE}"/>
                     <c:param name="noImages" value="${form.noImages}"/>
                 </c:url>
                 <a href="${downloadHtmlLink}" class="link" data-tooltip="<mvc:message code="default.HTML.code"/>" data-prevent-load="">
@@ -216,7 +213,7 @@
                                                       data-stored-field="${storedFieldsScope}"
                                                       data-action="change-preview-customer-options"
                                                       data-field-vis="" data-field-vis-hide="#recipient-manual-input"
-                                                      data-field-vis-show="#recipient-select"/>
+                                                      data-field-vis-show="#recipient-select,#personalized-test-run-container"/>
 
                                         <mvc:message code="recipient.TestSubscriber"/>
                                     </label>
@@ -233,7 +230,6 @@
                                                    <c:set var="customerId" value="${recipient.id}"/>
                                                     <c:set var="customerName" value="${recipient.firstname} ${recipient.lastname} &lt;${recipient.email}&gt;"/>
                                                     <c:set var="isSelected" value="${form.customerATID == customerId or form.customerID == customerId}"/>
-
                                                    <option value="${customerId}" data-email="${recipient.email}" ${isSelected ? 'selected="selected"' : ''}>${customerName}</option>
                                                </c:forEach>
                                             </select>
@@ -251,7 +247,7 @@
                                                       id="useCustomEmail"
                                                       data-stored-field="${storedFieldsScope}"
                                                       data-action="change-preview-customer-options"
-                                                      data-field-vis="" data-field-vis-hide="#recipient-select"
+                                                      data-field-vis="" data-field-vis-hide="#recipient-select,#personalized-test-run-container"
                                                       data-field-vis-show="#recipient-manual-input"/>
 
                                         <mvc:message code="mailing.preview.input"/>
@@ -261,15 +257,12 @@
                                 <div id="recipient-manual-input" class="col-xs-10 col-sm-9 col-md-9 col-lg-9">
                                     <div class="inline-block" style="width: 100%;">
                                         <div class="input-group-controls">
-                                            <mvc:text path="customerEmail" cssClass="form-control" data-action="change-personalized-test-recipients" data-stored-field="${storedFieldsScope}" />
+                                            <mvc:text path="customerEmail" cssClass="form-control" data-stored-field="${storedFieldsScope}" />
                                         </div>
                                         <div class="input-group-btn">
-                                            <button type="button" id="btnCustomEmailRefresh" class="btn btn-regular" data-action="refresh-preview" style="margin-right: 10px">
+                                            <button type="button" id="btnCustomEmailRefresh" class="btn btn-regular" data-action="refresh-preview">
                                                 <mvc:message code="default.enter.email"/>
                                             </button>
-                                        </div>
-                                        <div class="input-group-btn">
-                                            <%@include file="fragments/preview-add-to-test-run-btn.jspf" %>
                                         </div>
                                     </div>
                                 </div>
@@ -308,24 +301,24 @@
         </c:if>
     </c:set>
 
-    <tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
         <%-- There're no footer items --%>
 
         <c:if test="${isMailingGrid}">
-            <tiles:putAttribute name="header" type="string">
+            <tiles:put name="header" type="string">
                 <ul class="tile-header-nav">
                     <!-- Tabs BEGIN -->
-                    <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                    <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                     <!-- Tabs END -->
                 </ul>
 
                 <c:if test="${empty mailingListExist or mailingListExist}">
                     <ul class="tile-header-actions">${tileHeaderActions}</ul>
                 </c:if>
-            </tiles:putAttribute>
+            </tiles:put>
         </c:if>
 
-        <tiles:putAttribute name="content" type="string">
+        <tiles:put name="content" type="string">
             <c:if test="${not isMailingGrid}">
                 <div class="tile">
                 <div class="tile-header">
@@ -364,7 +357,7 @@
                                                 src="${previewLink}" border="0"
                                                 data-max-width="${form.width}"
                                                 data-media-query="${form.mediaQuery}"
-                                                style="width: ${form.width}">
+                                                style="width: ${form.width}px;">
                                             Your Browser does not support IFRAMEs, please update!
                                         </iframe>
                                     </div>
@@ -383,8 +376,8 @@
                 </div>
                 </div>
             </c:if>
-        </tiles:putAttribute>
-    </tiles:insertTemplate>
+        </tiles:put>
+    </tiles:insert>
 </mvc:form>
 
 <c:if test="${not isMailingGrid}">

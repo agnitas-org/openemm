@@ -22,18 +22,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -46,28 +47,23 @@ import org.fit.cssbox.io.DefaultDocumentSource;
 import org.fit.cssbox.io.DocumentSource;
 import org.fit.cssbox.layout.BrowserCanvas;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.context.ServletContextAware;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.util.ProcessUtils;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
 
 import cz.vutbr.web.css.MediaSpec;
-import jakarta.servlet.ServletContext;
 
 // TODO Move thumbnail generation to new MailingThumbnailService
-public class PreviewImageServiceImpl implements PreviewImageService, ServletContextAware {
-
+public class PreviewImageServiceImpl implements PreviewImageService {
+    /** The logger */
     private static final Logger logger = LogManager.getLogger(PreviewImageServiceImpl.class);
 
 	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
@@ -77,20 +73,17 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
 
     protected static final int DIV_CONTAINER_THUMBNAIL_WIDTH = 150;
     protected static final int DIV_CONTAINER_THUMBNAIL_HEIGHT = 100;
-    private static final int PUPPETEER_VIEWPORT_WIDTH = 1024;
 
     protected ConfigService configService;
     private ComRecipientDao recipientDao;
     private MediaTypesService mediaTypesService;
-    private ServletContext servletContext;
     private MailingComponentDao mailingComponentDao;
     protected PreviewImageGenerationQueue queue;
 
     @Override
     public void generateMailingPreview(Admin admin, String sessionId, int mailingId, boolean async) {
         int customerId = recipientDao.getPreviewRecipient(admin.getCompanyID(), mailingId);
-        Mediatype activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
-        
+        MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
         if (customerId > 0) {
             queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType, admin), async);
         } else {
@@ -112,15 +105,15 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
                 return outputStream.toByteArray();
             }
         } catch (SAXException e) {
-            logger.error("Error occurred while rendering an html page preview. URL: {}", url, e);
+            logger.error("Error occurred while rendering an html page preview. URL: " + url, e);
         } catch (IOException e) {
-            logger.error("Error occurred while saving preview-image. URL: {}", url, e);
+            logger.error("Error occurred while saving preview-image. URL: " + url, e);
         } finally {
             if (outputStream != null) {
                 try {
                     outputStream.close();
                 } catch (IOException e) {
-                    logger.error("Error occurred: {}", e.getMessage(), e);
+                    logger.error("Error occurred: " + e.getMessage(), e);
                 }
             }
         }
@@ -128,41 +121,48 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
     }
 
     private BufferedImage renderDocument(String url, Admin admin) throws Exception {
-        if (!configService.getBooleanValue(ConfigValue.UseWkhtmltox, admin.getCompanyID())) {
-            return createScreenshotWithPuppeteer(url);
+        if (admin.permissionAllowed(Permission.FIREFOX_SCREENSHOTS)) {
+            return renderDocumentViaFireFox(url);
         }
+
         if (StringUtils.isNotBlank(configService.getValue(ConfigValue.WkhtmlToImageToolPath))) {
             return renderDocumentWithWkhtml(url);
         }
+
         return renderDocumentWithCssBox(url);
     }
 
-    private BufferedImage createScreenshotWithPuppeteer(String url) throws IOException {
-        File imageTmpFile = File.createTempFile("preview_", ".png");
-        try {
-            String command = generatePuppeteerImageToolCommand(url, imageTmpFile.getAbsolutePath());
-            ProcessUtils.runCommand(command);
-            if (!imageTmpFile.exists() || imageTmpFile.length() == 0) {
-                throw new IOException("Screenshot generation failed. Command: " + command);
-            }
-            return ImageIO.read(imageTmpFile);
-        } finally {
-            Files.deleteIfExists(imageTmpFile.toPath());
-        }
-    }
+    private BufferedImage renderDocumentViaFireFox(String url) throws Exception {
+        File imageTempFile = File.createTempFile("preview_", ".png");
 
-    private String generatePuppeteerImageToolCommand(String url, String path) {
-        return String.format("node %s %s %s %d", getImageToolPath(), path, url, PUPPETEER_VIEWPORT_WIDTH);
-    }
+        List<String> command = new ArrayList<>();
+        command.add("firefox");
+        command.add("--headless");
 
-    private String getImageToolPath() {
-        String path = servletContext.getRealPath("WEB-INF/puppeteer/imageTool.js");
-        if (StringUtils.isBlank(path)) {
-        	logger.error("Missing path to imageTool tool");
-        } else if (!new File(path).exists()) {
-        	logger.error("Missing imageTool at path: '{}'", path);
+        // if firefox was already open this operation will be rejected, so as solution we must use another profile
+        // it even can be an empty directory (https://bugzilla.mozilla.org/show_bug.cgi?id=1386727)
+        command.add("--profile");
+        File tmpDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+        command.add(tmpDir.getAbsolutePath());
+
+        command.add("--no-remote");
+        command.add("--screenshot");
+        command.add(imageTempFile.getAbsolutePath());
+        command.add(url);
+        command.add("--fullpage");
+
+        Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
+        process.waitFor();
+
+        if (!imageTempFile.exists() || imageTempFile.length() == 0 || !tmpDir.exists()) {
+            throw new Exception("Preview generation via FF failed: \n" + StringUtils.join(command, "\n"));
         }
-        return path;
+
+        BufferedImage image = ImageIO.read(imageTempFile);
+        imageTempFile.delete();
+        tmpDir.delete();
+
+        return image;
     }
 
 	private BufferedImage renderDocumentWithWkhtml(String url) throws Exception {
@@ -417,20 +417,15 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
         this.mediaTypesService = mediaTypesService;
     }
 
-    @Override
-   	public void setServletContext(final ServletContext servletContext) {
-   		this.servletContext = Objects.requireNonNull(servletContext, "servletContext is null");
-   	}
-
     private class MailingPreviewTask implements PreviewImageGenerationTask {
         private Admin admin;
         private String sessionId;
         private int companyId;
         private int mailingId;
         private int customerId;
-        private Mediatype mediaType;
+        private MediaTypes mediaType;
 
-        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, Mediatype mediaType, Admin admin) {
+        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, MediaTypes mediaType, Admin admin) {
             this.sessionId = sessionId;
             this.companyId = companyId;
             this.mailingId = mailingId;
@@ -441,7 +436,7 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
 
         @Override
         public String getId() {
-            return "MAILING#" + companyId + "#" + mailingId + "#" + customerId + "#" + mediaType.getMediaType();
+            return "MAILING#" + companyId + "#" + mailingId + "#" + customerId + "#" + mediaType;
         }
 
         @Override
@@ -489,17 +484,9 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
             }
 
             return baseUrl + "/mailing/preview/view-content.action;jsessionid=" + sessionId
-                    + "?format=" + getPreviewFormat()
+                    + "?format=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1)
                     + "&customerID=" + customerId
                     + "&mailingId=" + mailingId;
-        }
-
-        private int getPreviewFormat() {
-            if (mediaType instanceof MediatypeEmail
-                    && ((MediatypeEmail) mediaType).getMailFormat() == MailingModel.Format.TEXT.getCode()) {
-                return MailingPreviewHelper.INPUT_TYPE_TEXT; 
-            }
-            return mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaType().getMediaCode() + 1;
         }
     }
 }

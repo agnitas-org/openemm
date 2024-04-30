@@ -298,29 +298,4 @@ public class HttpRequest {
 
 		return this;
 	}
-	
-	@Override
-	public String toString() {
-		String returnText = "Url: " + url + "\n";
-		
-		if (urlParameters != null && urlParameters.size() > 0) {
-			returnText += "UrlParameters:\n";
-			for (Tuple<String, Object> urlParameter : urlParameters) {
-				returnText += "\t" + urlParameter.getFirst() + ":" + urlParameter.getSecond() + "\n";
-			}
-		}
-		
-		if (postParameters != null && postParameters.size() > 0) {
-			returnText += "PostParameters:\n";
-			for (Tuple<String, Object> postParameter : postParameters) {
-				returnText += "\t" + postParameter.getFirst() + ":" + postParameter.getSecond() + "\n";
-			}
-		}
-		
-		if (requestBody != null) {
-			returnText += "RequestBody: " + requestBody + "\n";
-		}
-		
-		return returnText;
-	}
 }

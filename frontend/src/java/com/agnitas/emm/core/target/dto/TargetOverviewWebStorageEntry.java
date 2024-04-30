@@ -14,13 +14,12 @@ import org.agnitas.beans.RowsCountWebStorageEntry;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-// TODO: replace with RowsCountWebStorageEntry after EMMGUI-714 will be finished and old design will removed
 public class TargetOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("show-world-targets")
-    private boolean showWorldDelivery = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean showWorldDelivery = true;
 
     @JsonProperty("show-test-and-admin-targets")
-    private boolean showTestAndAdminDelivery = false; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean showTestAndAdminDelivery = false;
 
     public boolean isShowWorldDelivery() {
         return showWorldDelivery;

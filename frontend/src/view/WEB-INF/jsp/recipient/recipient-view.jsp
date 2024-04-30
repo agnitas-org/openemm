@@ -1,5 +1,4 @@
-<%@page import="com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField"%>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>
 <%@ page import="org.agnitas.util.DbColumnType" %>
@@ -26,15 +25,10 @@
 <c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
 <c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.SimpleDataType.Characters %>"/>
-<c:set var="COLUMN_CUSTOMER_ID" value="<%= RecipientStandardField.CustomerID.getColumnName() %>"/>
-<c:set var="COLUMN_DATASOURCE_ID" value="<%= RecipientStandardField.DatasourceID.getColumnName() %>"/>
-<c:set var="COLUMN_LATEST_DATASOURCE_ID" value="<%= RecipientStandardField.LatestDatasourceID.getColumnName() %>"/>
-<c:set var="COLUMN_CHANGE_DATE" value="<%= RecipientStandardField.ChangeDate.getColumnName() %>"/>
-<c:set var="COLUMN_CREATION_DATE" value="<%= RecipientStandardField.CreationDate.getColumnName() %>"/>
-<c:set var="COLUMN_CLEANED_DATE" value="<%= RecipientStandardField.CleanedDate.getColumnName() %>"/>
-<c:set var="COLUMN_LASTCLICK_DATE" value="<%= RecipientStandardField.LastClickDate.getColumnName() %>"/>
-<c:set var="COLUMN_LASTOPEN_DATE" value="<%= RecipientStandardField.LastOpenDate.getColumnName() %>"/>
-<c:set var="COLUMN_LASTSEND_DATE" value="<%= RecipientStandardField.LastSendDate.getColumnName() %>"/>
+<c:set var="COLUMN_CUSTOMER_ID" value="<%= RecipientUtils.COLUMN_CUSTOMER_ID %>"/>
+<c:set var="COLUMN_DATASOURCE_ID" value="<%= RecipientUtils.COLUMN_DATASOURCE_ID %>"/>
+<c:set var="COLUMN_LATEST_DATASOURCE_ID" value="<%= RecipientUtils.COLUMN_LATEST_DATASOURCE_ID %>"/>
+<c:set var="COLUMN_TIMESTAMP" value="<%= RecipientUtils.COLUMN_TIMESTAMP %>"/>
 
 <c:set var="MAILTYPE_TEXT" value="<%= MailType.TEXT %>" scope="page"/>
 <c:set var="MAILTYPE_HTML" value="<%= MailType.HTML %>" scope="page"/>
@@ -174,6 +168,7 @@
                             </div>
                         </div>
 
+                        <emm:ShowByPermission token="recipient.tracking.veto">
 						<div class="form-group">
                             <div class="col-sm-4">
                               <label for="trackingVeto" class="control-label checkbox-control-label">
@@ -188,6 +183,7 @@
   								</label>
             				</div>
                         </div>
+                        </emm:ShowByPermission>
 
                         <div class="form-group">
                             <div class="col-sm-4">
@@ -274,65 +270,10 @@
                                         </div>
                                     </c:if>
                                     
-                                    <c:if test="${definition.shortname eq COLUMN_CHANGE_DATE}">
+                                    <c:if test="${definition.shortname eq COLUMN_TIMESTAMP}">
                                         <div class="form-group">
                                             <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_CHANGE_DATE}:</label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    
-                                    <c:if test="${definition.shortname eq COLUMN_CREATION_DATE}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_CREATION_DATE}:</label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    
-                                    <c:if test="${definition.shortname eq COLUMN_CLEANED_DATE}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_CLEANED_DATE}:</label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    
-                                    <c:if test="${definition.shortname eq COLUMN_LASTCLICK_DATE}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_LASTCLICK_DATE}:</label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    
-                                    <c:if test="${definition.shortname eq COLUMN_LASTOPEN_DATE}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_LASTOPEN_DATE}:</label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    
-                                    <c:if test="${definition.shortname eq COLUMN_LASTSEND_DATE}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${COLUMN_LASTSEND_DATE}:</label>
+                                                <label class="control-label multiline-auto">${COLUMN_TIMESTAMP}:</label>
                                             </div>
                                             <div class="col-sm-8">
                                                 <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>

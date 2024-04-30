@@ -1,13 +1,15 @@
 <%@ page contentType="text/html; charset=utf-8"%>
 <%@ page import="com.agnitas.emm.core.Permission" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <%--@elvariable id="userGroupForm" type="com.agnitas.emm.core.usergroup.form.UserGroupForm"--%>
+<%--@elvariable id="permissionCategoryList" type="java.util.List<java.lang.String>"--%>
+<%--@elvariable id="permissionCategoriesMap" type="java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.String>>"--%>
 <%--@elvariable id="permissionChangeable" type="java.util.Set<java.lang.String>"--%>
-<%--@elvariable id="permissionCategories" type="java.util.Set<com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionCategoryEntry>"--%>
 
 <c:set var="USERRIGHT_MESSAGEKEY_PREFIX" value="<%= Permission.USERRIGHT_MESSAGEKEY_PREFIX %>"/>
 
@@ -20,13 +22,10 @@
           modelAttribute="userGroupForm"
           id="userGroupForm"
           data-form="resource"
-          data-form-focus="shortname"
-          data-controller="user|groups-permissions">
+          data-form-focus="shortname">
 
     <mvc:hidden path="id"/>
     <mvc:hidden path="companyId"/>
-
-    <%@ include file="../admin/fragments/user-permissions-filter-tile.jspf" %>
 
     <div class="tile">
         <div class="tile-header">
@@ -54,7 +53,7 @@
             </emm:ShowByPermission>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="userGroupShortname"><mvc:message code="default.Name"/>*</label>
+                    <label class="control-label" for="userGroupShortname"><mvc:message code="default.Name"/></label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="shortname" id="userGroupShortname" size="52" maxlength="99" cssClass="form-control"/>
@@ -144,12 +143,13 @@
         </div>
 
         <div class="tile-content tile-content-forms">
+            <%--@elvariable id="permissionCategories" type="java.util.Set<com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionCategoryEntry>"--%>
             <c:forEach items="${permissionCategories}" var="category" varStatus="categoryIndex">
-                <div class="tile permission-categories-tile">
+                <div class="tile">
                     <div class="tile-header">
                         <a href="#" class="headline" data-toggle-tile="#permission_category_${categoryIndex.index}">
                             <i class="icon tile-toggle icon-angle-up"></i>
-							<mvc:message code="${category.name}"/>
+							<bean:message key="${category.name}"/>
                         </a>
                         <ul class="tile-header-actions">
                             <!-- dropdown for toggle all on/off -->
@@ -182,8 +182,8 @@
                             <%--@elvariable id="subCategory" type="com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionSubCategoryEntry"--%>
 
                                 <c:if test="${not empty subCategory.name}">
-                                    <div class="tile-header sub-category-header">
-                                        <h3 class="headline"><mvc:message code="${subCategory.name}"/></h3>
+                                    <div class="tile-header">
+                                        <h3 class="headline"><bean:message key="${subCategory.name}"/></h3>
                                     </div>
                                 </c:if>
 

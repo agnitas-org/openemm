@@ -178,29 +178,25 @@ public class ImportProfileChangesDetector {
     private String getActionForNewRecipientsName(int actionId, int companyId) {
         if (actionId == 0) {
             return NONE;
-        } else {
-	        List<EmmAction> emmActions = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING);
-	        EmmAction emmAction = emmActions.stream()
-	                .filter(action -> action.getId() == actionId)
-	                .findFirst()
-	                .orElse(null);
-	
-	        return emmAction != null ? emmAction.getShortname() : UNKNOWN_ACTION;
         }
+
+        List<EmmAction> emmActions = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING);
+        EmmAction emmAction = emmActions.stream()
+                .filter(action -> action.getId() == actionId)
+                .findFirst()
+                .orElse(null);
+
+        return emmAction != null ? emmAction.getShortname() : UNKNOWN_ACTION;
     }
 
     private String getPreImportActionLog(int oldId, int newId, int companyId) {
-    	if (importProcessActionDao == null) {
-	    	return "";
-	    } else {
-	        List<ImportProcessAction> allActions = importProcessActionDao.getAvailableImportProcessActions(companyId);
-	
-	        return addChangedFieldLog(
-	                "Pre import action",
-	                getImportProcessActionName(newId, allActions),
-	                getImportProcessActionName(oldId, allActions)
-	        );
-	    }
+        List<ImportProcessAction> allActions = importProcessActionDao.getAvailableImportProcessActions(companyId);
+
+        return addChangedFieldLog(
+                "Pre import action",
+                getImportProcessActionName(newId, allActions),
+                getImportProcessActionName(oldId, allActions)
+        );
     }
 
     private String getImportProcessActionName(int actionId, List<ImportProcessAction> allActions) {

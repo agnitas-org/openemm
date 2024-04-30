@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -8,6 +8,10 @@
 <%--@elvariable id="isGenderSectionFocused" type="java.lang.Boolean"--%>
 
 <c:set var="isNewProfile" value="${form.id == 0}"/>
+<c:set var="mailinglistShowPermissionAllowed" value="${false}"/>
+<emm:ShowByPermission token="mailinglist.show">
+    <c:set var="mailinglistShowPermissionAllowed" value="${true}"/>
+</emm:ShowByPermission>
 
 <c:choose>
     <c:when test="${isNewProfile}">
@@ -19,12 +23,12 @@
 </c:choose>
 
 <mvc:form servletRelativeAction="/import-profile/save.action" modelAttribute="form" id="importProfileForm"
-          data-form="resource" data-controller="import-profile" data-initializer="import-profile-view"
+          data-form="resource" data-controller="import-profile-new" data-initializer="import-profile-view"
           data-form-focus="${isGenderSectionFocused ? 'genderTextValue' : 'name'}">
 
     <script id="config:import-profile-view" type="application/json">
         {
-            "isAllowedToShowMailinglists": ${isAllowedToShowMailinglists},
+            "mailinglistShowPermissionAllowed": ${mailinglistShowPermissionAllowed},
             "genderMappings": ${emm:toJson(genderMappingJoined)}
         }
     </script>

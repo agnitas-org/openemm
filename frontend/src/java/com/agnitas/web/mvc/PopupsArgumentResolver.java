@@ -10,9 +10,9 @@
 
 package com.agnitas.web.mvc;
 
-import com.agnitas.web.mvc.impl.PopupsImpl;
 import jakarta.servlet.http.HttpServletRequest;
 
+import com.agnitas.web.mvc.impl.StrutsPopups;
 import org.springframework.core.MethodParameter;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -32,15 +32,15 @@ public class PopupsArgumentResolver implements HandlerMethodArgumentResolver {
         return initializePopups(mav.getDefaultModel(), nativeWebRequest.getNativeRequest(HttpServletRequest.class));
     }
 
-    private PopupsImpl initializePopups(ModelMap model, HttpServletRequest request) {
-        PopupsImpl popups = PopupsImpl.get(model);
+    private StrutsPopups initializePopups(ModelMap model, HttpServletRequest request) {
+        StrutsPopups popups = StrutsPopups.get(model);
 
         if (popups == null) {
-            popups = new PopupsImpl();
+            popups = new StrutsPopups();
 
-            PopupsImpl.put(model, popups);
+            StrutsPopups.put(model, popups);
         }
-        PopupsImpl.put(RequestContextUtils.getOutputFlashMap(request), popups);
+        StrutsPopups.put(RequestContextUtils.getOutputFlashMap(request), popups);
 
         return popups;
     }

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -11,18 +11,18 @@
 <c:set var="profileFieldsAsJson" value="${emm:toJson(profileFields)}"/>
 
 <mvc:form id="importProfileColumnsForm" servletRelativeAction="/import-profile/columns/save.action" modelAttribute="form"
-		  enctype="multipart/form-data" data-form="resource" data-controller="import-profile-mappings"
-		  data-initializer="import-profile-mappings" data-validator="import-profile-mappings/form" data-action="save-mappings">
+		  enctype="multipart/form-data" data-form="resource" data-controller="import-profile-fields-new"
+		  data-initializer="import-profile-fields" data-validator="import-profile-fields/form" data-action="save-mappings">
 
 	<mvc:hidden path="profileId" />
 
-    <script type="application/json" id="config:import-profile-mappings-validator">
+    <script type="application/json" id="config:import-profile-fields-validator">
         {
             "columns": ${profileFieldsAsJson}
         }
     </script>    
     
-    <script type="application/json" id="config:import-profile-mappings">
+    <script type="application/json" id="config:import-profile-fields">
         {
             "columns" : ${profileFieldsAsJson},
             "columnMappings": ${emm:toJson(columnMappings)},
@@ -100,9 +100,9 @@
 								<th><mvc:message code="import.DbColumn"/></th>
 								<c:if test="${not isReadonly}">
 									<th><mvc:message code="import.profile.column.mandatory"/></th>
-									<c:if test="${isEncryptedImportAllowed}">
+									<emm:ShowByPermission token="recipient.import.encrypted">
 										<th><mvc:message code="import.profile.column.encrypted"/></th>
-									</c:if>
+									</emm:ShowByPermission>
 									<th><mvc:message code="settings.Default_Value"/></th>
 									<th></th>
 								</c:if>

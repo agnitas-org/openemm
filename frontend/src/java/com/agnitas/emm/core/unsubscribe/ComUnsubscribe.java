@@ -22,7 +22,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
@@ -141,9 +140,7 @@ public final class ComUnsubscribe extends HttpServlet {
     		
     		response.getWriter().println(result.responseContent);
     		response.getWriter().flush();
-    	} catch (FormNotFoundException nfe) {
-			logger.error("User form 'unsubscribe' not found for company ID {}!", uid.getCompanyID());
-		} catch(final Exception e) {
+    	} catch(final Exception e) {
     		logger.error("Error showing landing page for unsubscription", e);
     	}
     }

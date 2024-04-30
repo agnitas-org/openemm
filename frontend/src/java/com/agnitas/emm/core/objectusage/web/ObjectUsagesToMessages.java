@@ -16,7 +16,6 @@ import java.util.Locale;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.common.ObjectUserType;
-import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 
 /**
@@ -57,23 +56,6 @@ public final class ObjectUsagesToMessages {
 		}
 	}
 
-    public static Message objectUsagesToMessage(String msgKey, ObjectUsages usages, Locale locale) {
-	    if (usages.isEmpty()) {
-	        return Message.exact("");
-        }
-        return Message.exact(
-                I18nString.getLocaleString(msgKey, locale) +
-                itemsToHtmlList(usages, locale) +
-                getAndMorePart(usages.size(), locale));
-    }
-
-    private static String getAndMorePart(int usagesCount, Locale locale) {
-	    if (usagesCount <= MAX_OBJECTS_PER_MESSAGE) {
-	        return "";
-        }
-        return I18nString.getLocaleString("error.showNumberOfLeft", locale, usagesCount - MAX_OBJECTS_PER_MESSAGE);
-    }
-
 	/**
 	 * Converts object usages to a HTML list.
 	 * 
@@ -89,6 +71,10 @@ public final class ObjectUsagesToMessages {
 		
 		for(final ObjectUserType userType : ObjectUserType.values()) {
 			for(final ObjectUsage usage : usages.getUsagesByUserType(userType)) {
+				if(count > 0) {
+					buffer.append(", ");
+				}
+				
 				count++;
 				
 				buffer.append("<li>");

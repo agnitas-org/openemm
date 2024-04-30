@@ -11,22 +11,19 @@
 package org.agnitas.service;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.ImportStatus;
+import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.web.ProfileImportReporter;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
 import com.agnitas.service.ColumnInfoService;
 
 public class ProfileImportWorkerFactory {
@@ -36,7 +33,6 @@ public class ProfileImportWorkerFactory {
 	private ImportModeHandlerFactory importModeHandlerFactory;
 	private ImportRecipientsDao importRecipientsDao;
 	private ColumnInfoService columnInfoService;
-	private ImportQuotaCheckService importQuotaCheckService;
 	
 	@Required
 	public void setConfigService(ConfigService configService) {
@@ -68,12 +64,7 @@ public class ProfileImportWorkerFactory {
 		this.columnInfoService = columnInfoService;
 	}
 	
-	@Required
-	public final void setImportQuotaCheckService(final ImportQuotaCheckService service) {
-		this.importQuotaCheckService = Objects.requireNonNull(service, "import quota check service");
-	}
-	
-	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, int companyID, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
+	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
 		ProfileImportWorker profileImportWorker = new ProfileImportWorker();
 
 		profileImportWorker.setConfigService(configService);
@@ -89,17 +80,14 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setImportProfile(importProfile);
 		profileImportWorker.setImportFile(importFile);
 		profileImportWorker.setCustomerImportStatus(importStatus);
-		profileImportWorker.setImportQuotaCheckService(importQuotaCheckService);
-		profileImportWorker.setCheckHtmlTags(!configService.getBooleanValue(ConfigValue.NoHtmlCheckOnProfileImport, companyID));
-		profileImportWorker.setAllowSafeHtmlTags(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, companyID));
 		
 		if (importProfile.isMailinglistsAll()) {
-			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(companyID).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
+			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(importProfile.getCompanyId()).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
 		} else {
 			profileImportWorker.setMailingListIdsToAssign(mailingListIdsToAssign);
 		}
 		
-		if (admin == null || admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
+		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
 			profileImportWorker.setMaxGenderValue(ConfigService.MAX_GENDER_VALUE_EXTENDED);
 		} else {
 			profileImportWorker.setMaxGenderValue(ConfigService.MAX_GENDER_VALUE_BASIC);

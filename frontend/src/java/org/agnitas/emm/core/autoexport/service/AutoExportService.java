@@ -10,27 +10,23 @@
 
 package org.agnitas.emm.core.autoexport.service;
 
-import java.util.Date;
-import java.util.List;
-
-import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
-import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.service.CsvImportExportDescription;
+import org.agnitas.beans.ExportPredef;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.bean.AutoExport.AutoExportType;
+import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 
 public interface AutoExportService {
 
-    int MAX_SHORTNAME_LENGTH = 100;
-
-    List<AutoExport> getAutoExports(Admin admin);
-    List<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, Admin admin);
+    List<AutoExport> getAutoExportsOverview(Admin admin);
 
     List<AutoExport> getAutoExportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
@@ -72,11 +68,18 @@ public interface AutoExportService {
 
     List<AutoExport> getMailingAutoExports(int companyId, boolean active);
 
+    /**
+     * Returns temporary auto-export file
+     *
+     * @return null or file (can exist or not)
+     */
+    File getSavedAutoExportFile(int companyId, AutoExportType exportType, String fileName);
+
     AutoExportStatus doExportReactionsData(AutoExport autoExport) throws Exception;
 
 	AutoExportStatus doExportReactionsAndStatusData(AutoExport autoExport) throws Exception;
 
-    ServiceResult<AutoExport> copyAutoExport(Admin admin, int autoExportId) throws Exception;
+    AutoExport copyAutoExport(Admin admin, int autoExportId) throws Exception;
 
     AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
 

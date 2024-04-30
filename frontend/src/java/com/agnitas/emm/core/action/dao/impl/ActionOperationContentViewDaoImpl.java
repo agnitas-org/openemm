@@ -19,8 +19,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationContentViewParameters;
 
 public class ActionOperationContentViewDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationContentViewParameters> {
-
-	private static final Logger logger = LogManager.getLogger(ActionOperationContentViewDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ActionOperationContentViewDaoImpl.class);
 	
 	@Override
 	protected void processGetOperation(ActionOperationContentViewParameters operation) {

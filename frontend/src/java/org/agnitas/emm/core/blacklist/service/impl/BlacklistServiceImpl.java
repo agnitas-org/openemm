@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -168,8 +167,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public PaginatedListImpl<BlacklistDto> getAll(BlacklistOverviewFilter filter, int companyId) {
-		PaginatedListImpl<BlackListEntry> blacklistedRecipients = blacklistDao.getBlacklistedRecipients(filter, companyId);
+	public PaginatedListImpl<BlacklistDto> getAll(int companyId, String sort, String direction, int page,
+												  int rowNumber, String likePattern) {
+
+		PaginatedListImpl<BlackListEntry> blacklistedRecipients = blacklistDao.getBlacklistedRecipients(companyId, sort,
+				direction, page, rowNumber, likePattern);
+
 		return conversionService.convertPaginatedList(blacklistedRecipients, BlackListEntry.class, BlacklistDto.class);
 	}
 

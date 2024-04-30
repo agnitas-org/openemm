@@ -26,7 +26,6 @@ import org.agnitas.emm.core.mailing.service.TemplateNotExistException;
 import org.agnitas.emm.core.mailing.service.WorldMailingAlreadySentException;
 import org.agnitas.emm.core.mailing.service.WorldMailingWithoutNormalTypeException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.recipient.service.InvalidDataException;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
@@ -47,7 +46,6 @@ import org.springframework.oxm.MarshallingException;
 import org.springframework.ws.soap.server.endpoint.AbstractSoapFaultDefinitionExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
-import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.springws.exception.BulkDataSizeLimitExeededExeption;
 import com.agnitas.emm.springws.exception.BulkSizeLimitExeededExeption;
@@ -165,10 +163,6 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
         	definition.setFaultStringOrReason(ex.getMessage());
         } else if(ex instanceof ComponentAlreadyExistException) {
         	definition.setFaultStringOrReason("Mailing component of same name already exists");
-        } else if(ex instanceof ShortnameTooShortException) {
-        	definition.setFaultStringOrReason("shortname is required");
-        } else if(ex instanceof MailinglistException) {
-        	definition.setFaultStringOrReason(ex.getMessage());
         } else {
             definition.setFaultStringOrReason("Unknown error");
             

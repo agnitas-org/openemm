@@ -23,7 +23,6 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.CompanyFactory;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.LicenseType;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
@@ -37,7 +36,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
@@ -68,6 +66,7 @@ import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.LicenseError;
 import com.agnitas.web.mvc.Popups;
@@ -78,12 +77,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     private RecipientProfileHistoryService recipientProfileHistoryService;
     private UserActivityLogService userActivityLogService;
-    protected ExtendedConversionService conversionService;
+    private ExtendedConversionService conversionService;
     private CompanyFactory companyFactory;
     private ConfigService configService;
     private AdminService adminService;
     private AdminGroupService adminGroupService;
-    @Qualifier("BounceFilterService")
+    private WebserviceUserService webserviceUserService;
     private BounceFilterService bounceFilterService;
     protected ComCompanyDao companyDao;
     private CompanyTokenService companyTokenService;
@@ -136,7 +135,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         return companyDao.getCompanyPermissions(companyId);
     }
 
-    // TODO: check usage and remove after EMMGUI-714 will be finished and old design will be removed
     @Override
     public PaginatedListImpl<CompanyInfoDto> getCompanyList(int companyID, String sort, String direction, int page, int rownums) {
         PaginatedListImpl<CompanyEntry> companyList = companyDao.getCompanyList(companyID, sort, direction, page, rownums);
@@ -235,13 +233,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
         	// Check maximum number of companies
     		int maximumNumberOfCompanies = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies);
-    		int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful);
     		if (maximumNumberOfCompanies >= 0) {
     			int numberOfCompanies = getNumberOfCompanies();
     			if (numberOfCompanies >= maximumNumberOfCompanies) {
-    				if (gracefulExtension > 0
-    						&& numberOfCompanies < maximumNumberOfCompanies + gracefulExtension) {
-    					logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
+    				if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
+    						&& numberOfCompanies < maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
+    					logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
 	    			} else {
 	    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
 	    			}
@@ -282,7 +279,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setShortname(companyInfoDto.getName());
         company.setDescription(companyInfoDto.getDescription());
     }
-    
+
     private void setupSettings(Company company, CompanySettingsDto settingsDto) {
         company.setSalutationExtended(BooleanUtils.toInteger(settingsDto.isHasExtendedSalutation()));
         company.setStatAdmin(settingsDto.getExecutiveAdministrator());
@@ -374,8 +371,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         
         checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId, admin, settings.isAnonymizeAllRecipients());
         
-        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, companyId, admin, settings.isHtmlContentAllowed());
-        
         if (admin.permissionAllowed(Permission.COMPANY_SETTINGS_INTERN)) {      
             checkChangeAndLogCompanyInfoValue(ConfigValue.DefaultLinkExtension, companyId, admin, settings.getDefaultLinkExtension());
 	        
@@ -409,7 +404,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireSuccess, companyId, admin, settings.getExpireSuccess());
 	        
-        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getExpireRecipient());
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getRecipientExpireDays());
 	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireBounce, companyId, admin, settings.getExpireBounce());
 	        
@@ -432,11 +427,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         if (settings.isRegenerateTargetSqlOnce()) {
         	regenerateTargetSql(companyId);
         	settings.setRegenerateTargetSqlOnce(false);
-        }
-        if (settings.isAutoDeeptracking()){
-            companyDao.setAutoDeeptracking(companyId, true);
-        }else {
-            companyDao.setAutoDeeptracking(companyId, false);
         }
     }
 
@@ -530,8 +520,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         if (initTables(companyId)) {
             logger.info("Company: " + companyId + " created");
 
-            LicenseType licenseType = LicenseType.getLicenseTypeByID(configService.getValue(ConfigValue.System_License_Type));
-			if (licenseType == LicenseType.Inhouse || licenseType == LicenseType.OpenEMM || licenseType == LicenseType.OpenEMM_Plus) {
+            if ("Inhouse".equalsIgnoreCase(configService.getValue(ConfigValue.System_License_Type))) {
                 if (StringUtils.isBlank(configService.getValue(ConfigValue.RecipientProfileFieldHistory, companyId))) {
                     // Setup RecipientProfileFieldHistory for inhouse instances only
                     recipientProfileHistoryService.enableProfileFieldHistory(companyId);
@@ -693,6 +682,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
 	@Required
+    public void setWebserviceUserService(WebserviceUserService webserviceUserService) {
+        this.webserviceUserService = webserviceUserService;
+    }
+
+	@Required
     public void setCompanyDao(ComCompanyDao companyDao) {
         this.companyDao = companyDao;
     }
@@ -723,11 +717,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	public int getNumberOfCompanies() {
 		return companyDao.getNumberOfCompanies();
 	}
-
-    @Override
-    public String getTechnicalContact(int companyId) {
-        return getCompany(companyId).getContactTech();
-    }
 
     private void regenerateTargetSql(int companyID) {
     	for (TargetLight targetLight : targetDao.getTargetLights(companyID, false)) {

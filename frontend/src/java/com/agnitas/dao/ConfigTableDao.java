@@ -14,16 +14,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.sql.DataSource;
-
-import com.agnitas.util.Version;
-
 /**
  * This class is intended to simplify access to the config_tbl.
  */
 public interface ConfigTableDao {
-	DataSource getDataSource();
-	
 	Map<String, Map<Integer, String>> getAllEntriesForThisHost();
 
 	@DaoUpdateReturnValueCheck
@@ -38,8 +32,4 @@ public interface ConfigTableDao {
 	void checkAndSetReleaseVersion();
 
 	Date getCurrentDbTime();
-
-	int getStartupCountOfLtsVersion(Version versionToCheck);
-
-	int getStartupCount();
 }

@@ -10,7 +10,7 @@
 
 package com.agnitas.web.mvc;
 
-import com.agnitas.web.mvc.impl.PopupsImpl;
+import com.agnitas.web.mvc.impl.StrutsPopups;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.support.RequestContextUtils;
@@ -27,10 +27,10 @@ public class AgnRedirectView extends RedirectView {
 
     @Override
     protected void renderMergedOutputModel(Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        PopupsImpl popups = PopupsImpl.get(model);
+        StrutsPopups popups = StrutsPopups.get(model);
 
         if (popups != null) {
-            PopupsImpl.put(RequestContextUtils.getOutputFlashMap(request), popups);
+            StrutsPopups.put(RequestContextUtils.getOutputFlashMap(request), popups);
         }
 
         super.renderMergedOutputModel(model, request, response);

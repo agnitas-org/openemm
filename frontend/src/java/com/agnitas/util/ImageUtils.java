@@ -22,11 +22,13 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,15 +37,12 @@ import org.springframework.xml.validation.XMLReaderFactoryUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.agnitas.emm.validator.ApacheTikaUtils;
-
 public class ImageUtils {
 	private static final Logger logger = LogManager.getLogger(ImageUtils.class);
 
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
 
 	public static final Set<String> availableImageExtensions = Set.of("png", "gif", "jpg", "jpeg", "svg", "ico");
-	public static final String[] ALLOWED_MIMETYPES = {"image/png", "image/jpg", "image/jpeg", "image/gif", "image/svg+xml", "image/x-icon"};
 
 	public static boolean isValidImageFileExtension(String format) {
 		return availableImageExtensions.contains(format.toLowerCase());
@@ -79,7 +78,7 @@ public class ImageUtils {
 				ImageReader reader = iterator.next();
 				return isValidImageFileExtension(reader.getFormatName());
 			} else {
-				return isValidImageFileExtension(ApacheTikaUtils.getFileExtension(stream, false));
+				return false;
 			}
 		} catch (IOException e) {
 			return false;
@@ -194,6 +193,18 @@ public class ImageUtils {
 
 	public interface ImageProcessor {
 		BufferedImage process(BufferedImage image);
+	}
+
+	public static String getFileMask(String basename, String extension) {
+		if ("*".equals(extension) || ("*".equals(basename) && StringUtils.isBlank(extension))) {
+			return availableImageExtensions.stream()
+					.map(e -> basename + "." + e)
+					.collect(Collectors.joining("|"));
+		} else if (availableImageExtensions.contains(extension)) {
+			return basename + "." + extension;
+		}
+
+		return null;
 	}
 
 	private static boolean validateSvgContent(final byte[] data) {

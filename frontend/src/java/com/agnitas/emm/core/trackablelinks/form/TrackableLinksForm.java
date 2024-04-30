@@ -24,7 +24,6 @@ public class TrackableLinksForm extends PaginationForm {
     private boolean intelliAdEnabled;
     private boolean trackOnEveryPosition;
     private boolean modifyAllLinksExtensions;
-    private boolean numberOfRowsChanged;
     private List<ExtensionProperty> extensions = new ArrayList<>();
     private int bulkUsage;
     private int bulkAction;
@@ -35,7 +34,6 @@ public class TrackableLinksForm extends PaginationForm {
     private boolean modifyBulkLinksExtensions;
     private List<Integer> bulkIds = new ArrayList<>();
     private List<TrackableLinkForm> links = new ArrayList<>();
-    private Boolean includeDeleted; // keep it as object to detect if it change from UI form if not null
 
     public List<TrackableLinkForm> getLinks() {
         return links;
@@ -101,14 +99,6 @@ public class TrackableLinksForm extends PaginationForm {
         this.bulkModifyDescription = bulkModifyDescription;
     }
 
-    public boolean isNumberOfRowsChanged() {
-        return numberOfRowsChanged;
-    }
-
-    public void setNumberOfRowsChanged(boolean numberOfRowsChanged) {
-        this.numberOfRowsChanged = numberOfRowsChanged;
-    }
-
     public int getOpenActionId() {
         return openActionId;
     }
@@ -171,13 +161,5 @@ public class TrackableLinksForm extends PaginationForm {
 
     public void setExtensions(List<ExtensionProperty> extensions) {
         this.extensions = extensions;
-    }
-
-    public Boolean getIncludeDeleted() {
-        return includeDeleted;
-    }
-
-    public void setIncludeDeleted(Boolean includeDeleted) {
-        this.includeDeleted = includeDeleted;
     }
 }

@@ -8,7 +8,7 @@
 
 */
 
--- Exported at 2024.03.04 06:30:03
+-- Exported at 2023.02.27 06:30:02
 
 TRUNCATE TABLE messages_tbl;
 -- SET DEFINE OFF;
@@ -88,7 +88,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'AdminDeleteQuestion',
 	'Do you really want to delete this user?',
-	'Wollen Sie den Benutzer wirklich löschen?',
+	'Möchten Sie den Benutzer wirklich löschen?',
 	'¿Está seguro que quiere borrar este usuario?',
 	'Voulez-vous vraiment supprimer cet utilisateur ?',
 	'Vuoi davvero eliminare l''utente?',
@@ -96,7 +96,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este administrador?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:21:23', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'AdminLink',
 	'Administrative',
@@ -1192,7 +1192,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'DeleteSalutationQuestion',
 	'Do you really want to delete this form of salutation?',
-	'Wollen Sie diese Anredeart wirklich löschen?',
+	'Möchten Sie diese Anredeart wirklich löschen?',
 	'¿Está seguro de que quiere eliminar este archivo?',
 	'Voulez-vous vraiment supprimer cette forme de salutation ?',
 	'Vuoi davvero eliminare questo tipo di titolo?',
@@ -1200,7 +1200,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta forma de saudaçãe?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:21:29', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'DeleteTable',
 	'Delete table',
@@ -1216,7 +1216,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Delete_Template_Question',
 	'Do you really want to delete this template?',
-	'Wollen Sie diese Schablone wirklich löschen?',
+	'Möchten Sie diese Schablone wirklich löschen?',
 	'¿Está seguro que quiere borrar esta plantilla?',
 	'Voulez-vous vraiment supprimer ce modèle ?',
 	'Vuoi davvero eliminare questo template?',
@@ -1224,7 +1224,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este modelo?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:21:33', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Delimiter',
 	'Text recognition character',
@@ -1466,42 +1466,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.numberOfCustomersExceeded',
-	'License limit of {0} recipients was exceeded. Currently there are {1} recipients.',
-	'Lizenzbegrenzung von {0} Empfänger wurde überschritten. Aktuell liegen {1} Empfänger vor.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('01.02.2024 13:10:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.02.2024 13:10:23', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.target.noCompatibleWithContentBlock.moreThanLimit',
-	'Target group not compatible with content block. Used in <ul>{0}</ul> and {1} more.',
-	'Die Zielgruppe ist nicht kompatibel mit Inhaltsbausteinen. Die Zielgruppe wird aktuell verwendet in <ul>{0}</ul> und {1} mehr.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.target.noCompatibleWithContentBlock.upToLimit',
-	'Target group not compatible with content block. Used in <ul>{0}</ul>',
-	'Die Zielgruppe ist nicht kompatibel mit Inhaltsbausteinen. Die Zielgruppe wird aktuell verwendet in <ul>{0}</ul>',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'EditField',
 	'Edit column',
 	'Spalte bearbeiten',
@@ -1708,7 +1672,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ExportWizardDeleteQuestion',
 	'Do you really want to delete this export definition?',
-	'Wollen Sie diese Export-Definition wirklich löschen?',
+	'Möchten Sie diese Export-Definition wirklich löschen?',
 	'¿Está seguro que quiere borrar esta definición de exportación?',
 	'Voulez-vous vraiment supprimer cette définition d''exportation ?',
 	'Vuoi davvero eliminare questa definizione di esportazione?',
@@ -1716,7 +1680,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta definição exportação?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:21:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Facebook',
 	'Facebook',
@@ -1995,16 +1959,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Forms',
-	'Pages & Forms',
-	'Seiten & Formulare',
-	'Páginas & formularios',
-	'Pages & formulaires ',
-	'Pagine & Moduli',
-	'Pagina''s & formulieren',
-	'Páginas & formulários',
+	'Web forms',
+	'Webformulare',
+	'Formularios',
+	'Formulaires',
+	'Moduli',
+	'Formulieren',
+	'Formulários',
 	0,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'From',
 	'From',
@@ -2042,1724 +2006,284 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.VouchercodesLeft',
-	'Vouchercodes left',
-	NULL,
+	'GWUA.UserRight.grid.div.fix',
+	'Allow to set up editing mode for building block',
+	'Ermöglicht die Einrichtung des Bearbeitungsmodus für den Baustein',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:36:23', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:03:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.actions',
-	'Actions',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.addNewField',
-	'Add new field',
-	NULL,
+	'GWUA.access.limit.target.abbreviation',
+	'ALTG',
+	'ALTG',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('08.08.2023 13:45:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.08.2023 13:45:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.adminAndTestData.cleanup',
-	'Clean up admin and test recipient before sending',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.11.2022 11:51:41', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 14:28:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domain.address',
 	'address',
-	NULL,
+	'adresse',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:03:30', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domain.mx.warning',
 	'MX Entry of your domain is incorrect',
-	NULL,
+	'MX Eintrag von ihrer Domain ist ungültig',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.01.2023 09:37:06', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:04:43', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domain.save.warning',
 	'SPF Entry or MX Entry of your domain is incorrect',
-	NULL,
+	'SPF Eintrag oder MX Eintrag ihrer Domain ist ungültig',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.12.2022 14:46:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:05:21', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domain.spf.warning',
 	'SPF Entry of your domain is incorrect',
-	NULL,
+	'SPF Eintrag von ihrer Domain ist ungültig',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.01.2023 09:37:06', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:05:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.DKIM',
-	'DKIM',
-	NULL,
+	'DKIM key',
+	'DKIM key',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 14:28:41', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.MX',
-	'MX',
-	NULL,
+	'Mx entry',
+	'MX Eintrag',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:06:27', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.SPF',
-	'SPF',
-	NULL,
+	'SPF entry',
+	'SPF Eintrag',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:08:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.edit',
 	'Edit address',
-	NULL,
+	'Adresse bearbeiten',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:08:29', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.exist',
 	'The domain address with the specified name has already been created. Please use the previously created domain address.',
-	NULL,
+	'Die Domain-Adresse mit dem spezifischen Namen wurde schon erstellt. Bitte verwenden sie sie zuvor erstellte Domain-Adresse. ',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('19.12.2022 15:18:12', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:11:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.forward.valid',
 	'Forward address is not valid',
-	NULL,
+	'weiterleitungsadresse ist ungültig',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.12.2022 14:46:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:18:20', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.forwardAddress',
 	'Forward address',
-	NULL,
+	'weiterleitungsadresse',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:18:37', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.forwardNonFiltered',
 	'Forward non-filtered emails',
-	NULL,
+	'nicht gefillterte E-Mails weiterleiten',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:20:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.id',
 	'Address Id',
-	NULL,
+	'Adressen ID',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:21:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.name',
 	'Address name',
-	NULL,
+	'Adressen Name',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:21:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.new',
 	'New address',
-	NULL,
+	'Neue Adresse',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:22:04', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.not.valid',
 	'Address name is not valid',
-	NULL,
+	'Adressen Name ist ungültig',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.12.2022 14:46:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:24:15', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.save.sucess',
 	'Address successfully saved',
-	NULL,
+	'Adresse erfolgreich gespeichert',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.12.2022 14:46:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:24:34', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.address.sendAutoResponder',
 	'Send auto responder email',
-	NULL,
+	'Sende auto Responder E-Mail',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:25:34', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.addresses',
 	'Addresses',
-	NULL,
+	'Adressen',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:25:46', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.addresses.count',
 	'Number of addresses',
-	NULL,
+	'Anzahl von Adressen',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:26:38', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.administration.domains.edit.address',
 	'Edit domain addresses',
+	'Bearbeite domain Adresse',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.alignment.horizontal',
-	'Horizontal format',
-	'Querformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.alignment.vertical',
-	'Vertical format',
-	'Hochformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.artisticFilters',
-	'Artistic Filters',
-	'Künstlerische Filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.brands',
-	'Brands/Logos',
-	'Marken/Logos',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.abstract',
-	'Abstract',
-	'Abstrakt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.asymmetrical',
-	'Asymmetrical ',
-	'Asymmetrisch ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.average',
-	'Average',
-	'Durchschnittlich',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.birdsEyeView',
-	'Bird''s eye view',
-	'Vogelperspektive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.blurred',
-	'Blurred',
-	'Verschwommen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.bright',
-	'Bright',
-	'Hell',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.cartoon',
-	'Cartoon',
-	'Cartoon',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.centered',
-	'Centered',
-	'Zentriert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.colorful',
-	'Colorful',
-	'Bunt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.complex',
-	'Complex',
-	'Komplex',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.dark',
-	'Dark',
-	'Dunkel',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.dynamic',
-	'Dynamic',
-	'Dynamisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.fantasy',
-	'Fantasy',
-	'Fantasy',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.futuristic',
-	'Futuristic',
-	'Futuristisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.geometric',
-	'Geometric',
-	'Geometrisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.gradient',
-	'Gradient',
-	'Farbverlauf',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.happy',
-	'Happy',
-	'Fröhlich',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.highlyAbstract',
-	'Highly abstract',
-	'Hoch abstrakt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.lowAbstract',
-	'Low abstract',
-	'Gering abstrakt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.maximalistic',
-	'Maximalistic',
-	'Maximalistisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.melancholic',
-	'Melancholic',
-	'Melancholisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.minimalistic',
-	'Minimalistic',
-	'Minimalistisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.monochromatic',
-	'Monochromatic',
-	'Monochrom',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.mysterious',
-	'Mysterious',
-	'Mysteriös',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.nature',
-	'Nature',
-	'Natur',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.normalPerspective',
-	'Normal perspective',
-	'Normalperspektive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.organic',
-	'Organic',
-	'Organisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.painterlyEffect',
-	'Painterly effect',
-	'Gemäldeeffekt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.realism',
-	'Realism',
-	'Realismus',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.realistic',
-	'Realistic',
-	'Realistisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.repeating',
-	'Repeating',
-	'Wiederholend',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.retro',
-	'Retro',
-	'Retro',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.rough',
-	'Rough',
-	'Rau',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.sciFi',
-	'Sci-Fi',
-	'Sci-Fi',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.semiAbstract',
-	'Semi-abstract',
-	'Semi-abstrakt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.shaded',
-	'Shaded',
-	'Schattig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.simple',
-	'Simple',
-	'Einfach',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.smooth',
-	'Smooth',
-	'Glatt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.statis',
-	'Static',
-	'Statisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.surreal',
-	'Surreal',
-	'Surreal',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.symmetrical',
-	'Symmetrical',
-	'Symmetrisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.technology',
-	'Technology',
-	'Technologie',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.textrured',
-	'Textured',
-	'Strukturiert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.timeless',
-	'Timeless',
-	'Zeitlos',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristic.wormsEyeView',
-	'Worm''s eye view',
-	'Froschperspektive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.characteristics',
-	'Characteristics',
-	'Eigenschaften',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.colorFilters',
-	'Colour Filters',
-	'Farbfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.creativeFilters',
-	'Creative Filters',
-	'Kreative Filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.distortionFilters',
-	'Distortion Filters',
-	'Verzerrungsfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.3dEffect',
-	'3D Effect',
-	'3D Effect',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.blackAndWhite',
-	'Black and White',
-	'Grayscale',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.bokeh',
-	'Bokeh',
-	'Bokeh',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.canvasTexture',
-	'Canvas Texture',
-	'Leinwandtextur',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.cartoon',
-	'Cartoon',
-	'Cartoon',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.colorGrading',
-	'Colour Grading',
-	'Farbgebung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.cool',
-	'Cool',
-	'Kühle',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.crossProcess',
-	'Cross-Process',
-	'Cross-Process',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.cyanotype',
-	'Cyanotype',
-	'Cyanotype',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.duotone',
-	'Duotone',
-	'Duotone',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.filmGrain',
-	'Film Grain',
-	'Filmkörnung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.fishEye',
-	'Fish-Eye',
-	'Fischaugen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.glitch',
-	'Glitch',
-	'Glitch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.grain',
-	'Grain',
-	'Körnung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.hdr',
-	'HDR (High Dynamic Range)',
-	'HDR (High Dynamic Range)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.impressionist',
-	'Impressionist',
-	'Impressionist',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.kaleidoscope',
-	'Kaleidoscope',
-	'Kaleidoscope',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.lensCorrection',
-	'Lens Correction',
-	'Linsenkorrektur',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.lensFlare',
-	'Lens Flare',
-	'Lens Flare',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.mosaic',
-	'Mosaic',
-	'Mosaik',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.oilPainting',
-	'Oil Painting',
-	'Ölgemälde',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.paperTexture',
-	'Paper Texture',
-	'Papiertextur',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.pastel',
-	'Pastel',
-	'Pastel',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.pixelate',
-	'Pixelate',
-	'Pixelate',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.popArt',
-	'Pop Art',
-	'Pop Art',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.seleniumTone',
-	'Selenium Tone',
-	'Selenium Tone',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.sepia',
-	'Sepia',
-	'Sepia',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.sketch',
-	'Sketch',
-	'Skizze',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.softGlow',
-	'Soft Glow',
-	'Weiches Licht',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.sunburst',
-	'Sunburst',
-	'Sonnenstrahlen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.surreal',
-	'Surreal',
-	'Surreal',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.tiltShift',
-	'Tilt-Shift',
-	'Tilt-Shift',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.vignette',
-	'Vignette',
-	'Vignette',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.vintage',
-	'Vintage',
-	'Vintage',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.wallTexture',
-	'Wall Texture',
-	'Wandtextur',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.warmth',
-	'Warmth',
-	'Wärme',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filter.watercolour',
-	'Watercolour',
-	'Aquarell',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.filters',
-	'Filters',
-	'Filters',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.generate',
-	'Generate new image',
-	'Bild neu generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.geometricFilters',
-	'Geometric Filters',
-	'Geometrische Filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.importantObjects',
-	'Important objects',
-	'Wichtige Objekte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.layout',
-	'Layout',
-	'Anordnung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.11.2023 15:06:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.lightingFilters',
-	'Lighting Filters',
-	'Beleuchtungsfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.monochromeFilters',
-	'Monochrome Filters',
-	'Monochromfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.moodFilters',
-	'Mood Filters',
-	'Stimmungsfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.noFormat',
-	'No specific image format',
-	'Kein spezifisches Bildformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.objectColours',
-	'Object colours',
-	'Objektfarben',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.objects',
-	'Objects',
-	'Objekte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.restrictions',
-	'Restrictions',
-	'Einschränkungen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.style',
-	'Style',
-	'Stil',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.textureFilters',
-	'Texture Filters',
-	'Texturfilter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.aiSupportChat',
-	'Support-Chat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.aiSupportChat.headline',
-	'Artificial Intelligence - Support-Chat',
-	'Künstliche Intelligenz - Support-Chat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.aiSupportChat.initialMsg',
-	'Welcome to the EMM Support-Chat. How can I help you?',
-	'Willkommen beim EMM Support-Chat. Wie kann ich Ihnen helfen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.approveTemplate',
-	'Approve template',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.02.2024 13:41:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.02.2024 13:41:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.arhive.delete',
-	'Delete archive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.11.2023 16:06:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.11.2023 16:06:48', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.backToLogin',
-	'Back to login',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.download.audio.all',
-	'Download all audios',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.download.audio.selected',
-	'Download selected audios',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.campaign.show.grid',
-	'Show grid',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.caseSensitive',
-	'Case sensitive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.changeDate',
-	'Change date',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.chrome',
-	'Chrome',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.container.button.fixed',
-	'Fixed building block',
-	'Festgelegter Baustein',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.content.add',
-	'Add content',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
 	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:26:56', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.contentBlocks.empty',
-	'No content blocks available',
+	'GWUA.button.workflow.pause',
+	'Pause',
 	NULL,
 	NULL,
 	NULL,
@@ -3767,56 +2291,56 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.contentDescription',
-	'Content description',
-	'Inhaltsbeschreibung',
+	'GWUA.campaign.Delete.autoopt.defined',
+	'You can''t delete this archive!<br>Auto-Optimization defined for it.',
+	'Sie können dieses Archive nicht löschen!<br>Eine Auto-Optimierung wurde dafür definiert.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('30.01.2023 09:21:08', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.02.2023 13:23:31', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.createNewBuildingBlock',
-	'Create new building block',
+	'GWUA.campaign.Delete.mailing.assigned',
+	'You can''t delete this archive!<br>There are mailings assigned to it.',
+	'Sie können dieses Archiv nicht löschen<br>Es gibt davon abhängende Maillings.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
-	NULL,
 	0,
-	STR_TO_DATE('01.02.2024 13:10:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.02.2024 13:10:23', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('30.01.2023 09:21:08', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:34:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.customerID',
-	'Customer ID',
+	'GWUA.campaign.statistics',
+	'Campaign statistics',
+	'Kampagnen-Statistik',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
-	NULL,
 	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('09.02.2023 13:31:50', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('21.02.2023 11:01:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.data',
-	'Data',
-	NULL,
+	'GWUA.create.CsvMappingMsg',
+	'Column mapping from file created.',
+	'Spaltenzuordnung aus der Datei erstellt.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('20.02.2023 09:28:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:49:58', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.default.from.list',
 	'from list',
@@ -3842,89 +2366,17 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('28.04.2020 22:08:50', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 13:48:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.default.view.save',
-	'The changes to the view were saved.',
-	'Die Änderungen der Ansicht wurden gespeichert.',
+	'GWUA.empty.content.block',
+	'Content block was not selected',
+	'Inhaltsbaustein wurde nicht ausgewählt',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('19.02.2024 14:46:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.02.2024 13:36:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.diskSpaceLeft',
-	'Disk space left',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.edge',
-	'Edge',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.edit.campaign',
-	'Edit campaign',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.edit.node',
-	'Edit node',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.edit.node.select',
-	'Please select a node to edit',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.emailCreator',
-	'E-Mail-Creator',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('24.02.2022 12:16:04', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 13:53:46', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.admin.executive',
 	'This user cannot be deleted since it is the executive administrator for the client: {0}.',
@@ -3961,6 +2413,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('15.06.2021 08:05:23', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('15.06.2021 08:05:23', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.error.delete.last.mailinglist',
+	'It is forbidden to delete the last available mailinglist.',
+	'Es ist verboten, die letzte verfügbare Mailingliste zu löschen',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('16.02.2023 10:28:34', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 14:22:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.email.empty',
 	'Email is missing',
@@ -4022,18 +2486,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.05.2020 12:20:16', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('14.09.2021 11:54:03', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.mailing.followupFor.required',
-	'Please select previous mailing',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.mailing.url.maxLength',
 	'The URL may not be greater than 2000 characters: "{0}"',
 	'Die URL sollte nicht grösser als 200 zeichen sein: "{0}"',
@@ -4070,162 +2522,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.12.2022 11:36:23', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('12.12.2022 11:36:23', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.workflow.autoopt.invalidTime',
-	'Auto-Optimization decision date has to be at least 2 hours after defined time in start icon',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.evaluation',
-	'Evaluation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.feedback.loop',
-	'Feedback loop',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.file.download.ready',
-	'Your file is now ready for download. You can retrieve it by clicking on the link below.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.filterByName',
-	'Filter by name',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('15.02.2024 14:13:22', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.02.2024 14:13:22', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.firefox',
-	'Firefox',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.frameContent.edit',
-	'Edit frame content',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.from.content',
-	'Form content',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.Fixed',
-	'Fixed:',
-	'Festgelegter:',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.mode.anchored',
-	'Anchored in mailing',
-	'Im Mailing verankert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.mode.anchoredAndFixed',
-	'Content fixed and anchored in mailing',
-	'Inhalt fest und im Mailing verankert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.mode.editable',
-	'Freely editable',
-	'Frei editierbar',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.mode.fixed',
-	'Content fixed',
-	'Inhalt fest',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.03.2023 15:31:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.grid.div.container.multiType',
 	'Is multi type',
 	'Ist Multi-Typ',
@@ -4238,89 +2534,29 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('14.10.2021 10:08:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 14:29:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.help.reportError',
-	'Report an error or fault',
-	NULL,
+	'GWUA.grid.layout.all_reference_tables',
+	'All reference tables',
+	'Alle Referenztabellen',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('05.08.2021 12:04:39', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 14:30:18', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.alignment',
-	'Image alignment',
-	'Bildausrichtung',
+	'GWUA.import.CsvMappingMsg',
+	'A mapping must be created before importing of the file will be possible.',
+	'Bevor die Datei importiert werden kann, muss ein Mapping erstellt werden.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.format',
-	'Image format',
-	'Bildformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.import.profile.delete',
-	'Delete import profile',
-	'Importprofil löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.11.2023 13:24:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.12.2023 14:01:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.last.execution',
-	'Last execution',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.07.2023 15:59:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.07.2023 15:59:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.logout.info',
-	'<b>You have been logged out successfully.</b></br></br>This login protects confidential and privileged information. If you are not the intended user (or have received access data in error) please notify our support immediately via e-mail to <a href="mailto:{0}">{0}</a>. Any unauthorized use of this access and copying, disclosure or distribution of its data is strictly forbidden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('18.12.2023 11:46:34', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.12.2023 11:46:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.emc.create',
-	'Create EMC mailing',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.02.2023 09:29:24', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('20.02.2023 14:30:54', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.trackablelinks.description.change',
 	'Edit description',
@@ -4334,99 +2570,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('06.07.2021 13:36:23', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('14.09.2021 13:45:54', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.no_feedback',
-	'no feedback',
-	'keine Rückmeldung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.object',
-	'Object',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.parameter.add',
-	'Add parameter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.password.reminder.email.subject',
-	'Please update your password',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.password.reminder.email.text',
-	'Hello {0} {1},
-
-the password for user access {2} in client {3} (ID {4}) expires in {5} days.
-Please update your password so that your access is not deactivated.
-If you were not able to change the password in time, please contact an administrator or AGNITAS Support to reactivate the user access.
-
-
-Best regards
-
-Your AGNITAS Team',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.passwordChanged',
-	'<b>Your password was changed successfully.</b></br></br>You will now be redirected automatically.</br></br>If you do not get redirected, click <a href="{0}">here</a>.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.pdf.report.generating',
-	'PDF report is generating',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.per.domain',
 	'per domain',
 	'Per Domain',
@@ -4439,30 +2582,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.05.2020 12:20:16', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 14:31:22', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.pleaseSelectContentBlock',
-	'Please select a content block',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.processes',
-	'Processes',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.recipient.save.hidden.question',
 	'After your changes this recipient will be hidden to you. Are you sure you want to save your changes?',
 	'Nach Ihren Änderungen wird dieser Empfänger für Sie nicht mehr sichtbar sein.Sind Sie sicher, dass Sie die Änderungen speichern möchten?',
@@ -4474,198 +2593,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('28.04.2020 22:08:50', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('14.09.2021 13:32:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reference.table.delete.question',
-	'Do you really want to delete the reference table ‘{0}’?',
-	'Wollen Sie die Referenztabelle ‘{0}’ wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.12.2023 12:21:17', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.12.2023 13:59:20', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.referencingObject.MAILINGLIST',
-	'Mailinglist ''{0}''',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.08.2023 13:08:34', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.08.2023 13:08:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.removeApproval',
-	'Remove approval',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.02.2024 13:41:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.02.2024 13:41:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.report.calculation.finished',
-	'Report calculation finished',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.select.profileField',
-	'Select profile field',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.selectContentBlockToEdit',
-	'Please select a content block to edit.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.sending',
-	'Sending',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.source',
-	'Source',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.stat.ctr',
-	'Click-through rate',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('15.02.2024 14:13:22', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.02.2024 14:13:22', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistics.totalClickers.basedOnOpeners',
-	'Total clickers (based on openers)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistics.totalOpeners',
-	'Total openers',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.targetGroup.notEvaluated',
-	'The target group was not evaluated yet.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.targeting',
-	'Targeting',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.none',
-	'Without predefined tonality',
-	'Ohne vorgegebene Tonalität',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.06.2023 09:32:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.06.2023 09:32:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.transfer.method',
-	'Transfer method',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 14:27:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.twoFactorAuthentication.description',
-	'Two-factor authentication is an additional security measure for your user access. Proof of identity is provided with two different and independent access keys.<br/><br/>In addition to your password, you need a 6-digit code via an authenticator app.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.update.text.version',
 	'Update text version',
@@ -4703,17 +2630,29 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('14.10.2021 10:08:36', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('14.10.2021 10:08:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.startDate.changed',
-	'Start date was changed to current date and time.',
-	'Das Startdatum wurde auf das heutigen Datum und den aktuellen Zeitpunkt angepasst.',
+	'GWUA.workflow.status.change',
+	'Change status',
+	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('27.02.2024 09:28:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 11:26:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.workflow.view.status.paused',
+	'Paused',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.02.2023 11:15:58', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Gender',
 	'Gender',
@@ -5108,8 +3047,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:28:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:45', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.01.2023 01:02:18', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('16.01.2023 01:02:18', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Interval.weekly',
 	'weekly',
@@ -5256,7 +3195,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('22.01.2021 11:00:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Layout',
-	'Theme',
+	'Layout',
 	'Layout',
 	'Layout',
 	'Layout',
@@ -5265,7 +3204,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Layout',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.10.2023 14:25:31', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'LayoutID',
 	'LAYOUT_ID',
@@ -5617,7 +3556,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'MailingDeleteQuestion',
 	'Do you really want to delete this mailing?',
-	'Wollen Sie dieses Mailing wirklich löschen?',
+	'Möchten Sie dieses Mailing wirklich löschen?',
 	'¿Está seguro que quiere borrar este mailing?',
 	'Voulez-vous vraiment supprimer cet envoi ?',
 	'Vuoi davvero eliminare questo mailing?',
@@ -5625,7 +3564,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este mailing?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:23:17', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'MailingFilenameNotValid',
 	'The following file names contain invalid special characters: {0}',
@@ -8793,7 +6732,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.admin.show',
 	'Show users',
@@ -9082,18 +7021,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('12.07.2022 10:14:12', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 12:50:39', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.company.settings.deeptracking',
-	'Manage retargeting',
-	'Retargeting einstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.01.2024 15:11:38', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.company.settings.defaultLinkTracking',
 	'Define default link tracking mode',
@@ -9465,7 +7392,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('10.11.2022 12:12:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.grid.grid.change',
 	'Layout Builder: create new grid',
@@ -9492,16 +7419,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.grid.show',
-	'Layout Builder',
-	'Layout Builder',
-	'Mostrar Layout Builder',
-	'Afficher le Layout Builder',
-	'Layout Builder',
-	'Layout Builder',
+	'Layout Builder / Mediapool: show',
+	'Layout Builder / Medienpool anzeigen',
+	'Mostrar Layout Builder / Grupo de medios',
+	'Afficher le Layout Builder / Mediapool',
+	'Layout Builder / visualizza pool multimediale',
+	'Layout Builder / mediapool weergeven',
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.03.2023 14:23:00', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.change',
 	'Change recipient import with profiles',
@@ -9623,18 +7550,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.import.mode.add_upd_excl_light',
-	'Exclusive Import Mode (Unsubscribe recipients not delivered)',
-	'Exklusiver Importmodus (Empfänger abmelden, die nicht geliefert werden)',
-	'Modo de importación exclusivo (Darse de baja a los destinatarios no entregados)',
-	'Mode d''importation exclusif (Se désabonner des destinataires non livrés)',
-	'Modalità di importazione esclusiva (Annulla l''iscrizione dei destinatari non consegnati)',
-	'Exclusieve importmodus (Ontvangers uitschrijven die niet worden geleverd)',
-	'Modo de importação exclusivo (Cancelar inscrição de destinatários não entregues)',
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.add_update',
 	'Add new recipients and update existing recipients',
 	'Neue Empfänger hinzufügen und bestehende aktualisieren',
@@ -9648,8 +7563,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.add_update_exclusive',
-	'Exclusive import mode (Set all user opt-out which are not in given import file, activate bounces)',
-	'Exklusiver Importmodus (Empfänger abmelden, die nicht geliefert werden, Bounces auch anmelden)',
+	'Exclusive import mode (Set all user opt-out which are not in given import file)',
+	'Exklusiver Importmodus (Empfänger abmelden, die nicht geliefert werden)',
 	NULL,
 	NULL,
 	NULL,
@@ -9657,7 +7572,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('12.07.2021 01:02:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.03.2023 14:15:08', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.07.2021 01:02:03', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.add_update_forced',
 	'Add new recipients and update existing recipients. Subscribe unsubscribers.',
@@ -9732,28 +7647,28 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.duplicates',
-	'Duplicate mode for import configurable',
-	'Dubletten-Modus im Import konfigurierbar',
+	'Duplicate mode for import wizard configurable',
+	'Dubletten-Modus im Import-Assistenten konfigurierbar',
 	NULL,
-	'Mode doublons dans l’importation configurable',
+	'Mode doublons dans l’importation classique configurable',
 	NULL,
-	'Dοublettenmodus in import configureerbaar',
+	'Dοublettenmodus in klassieke import configureerbaar',
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.09.2023 10:46:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('20.01.2021 09:44:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.null_values',
-	'Configure empty value handling on update',
-	'Behandlung von leeren Werten bei Update einstellbar',
+	'Configure null value handling on update',
+	'Behandlung von Null-Werten bei Update einstellbar',
 	NULL,
-	'Traitement des valeurs vides réglable lors de la mise à jour',
+	'Gestion des valeurs nulles lors de la mise ï¿½ jour paramï¿½trable',
 	NULL,
 	'Behandeling van nulwaarden bij update instelbaar',
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.12.2023 12:32:55', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.only_update',
 	'Update only existing recipients',
@@ -9816,16 +7731,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.nocsvheaders',
-	'Allow profile import without header line in file',
-	'Profil-Import ohne Spaltenüberschriften erlauben',
-	'Permitir importación de perfil sin encabezamiento de columna',
-	'Autoriser l''importation de profil sans en-tête dans le fichier',
-	'Consenti l''importazione del profilo senza titoli delle colonne del file',
-	'Profielimport zonder kolomkoppen toestaan',
+	'Allow profile import without header line in CSV file',
+	'Profil-Import ohne CSV-Spaltenüberschriften erlauben',
+	'Permitir importación de perfil sin encabezamiento de columna CSV',
+	'Autoriser l''importation de profil sans en-tête dans le fichier CSV',
+	'Consenti l''importazione del profilo senza titoli delle colonne del file CSV',
+	'Profielimport zonder CSV-kolomkoppen toestaan',
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.08.2023 13:05:03', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.preprocessing',
 	'Execute action before import starts',
@@ -9850,18 +7765,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.mailing.ai.content',
-	'Using AI for textgeneration',
-	'KI für Textgenerierung verwenden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.09.2023 10:56:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('25.09.2023 10:56:59', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.attachment.personalize',
 	'Personalized attachments',
@@ -9901,7 +7804,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.can_send_always',
 	'Can send without approval',
-	'Mailing-Versand ohne Freigabe erlauben',
+	'Kann Mailing ohne Freigabe versenden',
 	'Puede enviar mailing sin autorización',
 	'Peut expédier un envoi sans validation',
 	'Può inviare mailing senza autorizzazione',
@@ -9909,7 +7812,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:19:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('01.09.2022 09:51:41', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.change',
 	'Edit mailing',
@@ -9925,7 +7828,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.classic',
 	'Create standard mailings',
-	'Mailing-Erstellung mit Standard-Methode erlauben',
+	'Standard-Mailing erstellen',
 	NULL,
 	NULL,
 	NULL,
@@ -9933,7 +7836,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('31.03.2022 11:41:39', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:43:27', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('31.03.2022 11:41:39', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.components.change',
 	'Edit images in mailings (upload, edit, delete)',
@@ -9981,7 +7884,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('07.07.2022 17:34:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.content.change.always',
 	'Mailing settings and mailing content can be changed after sending.',
@@ -10033,7 +7936,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.content.showExcludedTargetgroups',
 	'Show target groups excluded for mailing content block',
-	'Ausgeschlossene Zielgruppen bei Inhaltsbausteinen anzeigen',
+	'Zeige ausgeschlossene Zielgruppen bei Inhaltsbausteinen',
 	NULL,
 	'Afficher les groupes cibles exclus dans les modules de contenu',
 	NULL,
@@ -10041,7 +7944,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:05:10', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.content.type.multi',
 	'Use multiple reference tables in EMC mailing',
@@ -10080,8 +7983,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.editor.extended',
-	'Use WYSIWYG editor with extended functionality',
-	'WYSIWYG-Editor mit erweiterter Funktionalität verwenden',
+	'Use WYSIWYG editor extended',
+	'Erweiterter WYSIWYG-Editor',
 	NULL,
 	NULL,
 	NULL,
@@ -10089,7 +7992,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('07.07.2022 17:34:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.02.2024 09:29:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.editor.hide',
 	'Hide WYSIWYG editor',
@@ -10127,18 +8030,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.mailing.emc',
-	'Allow creation of EMC Mailings',
-	'EMC-Mailing erstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.12.2023 12:21:17', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 12:21:17', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.encrypted.send',
 	'Allow encrypted sending',
 	'Verschlüsselten Versand erlauben',
@@ -10153,7 +8044,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.envelope_address',
 	'Allow to insert an envelope address',
-	'Eintragen einer Envelope-Adresse erlauben',
+	'Das Eintragen einer Envelope-Adresse ermöglichen',
 	'Posibilitar la introducción de una dirección postal',
 	'Permettre d''insérer une adresse enveloppe',
 	'Consentire l''inserimento di un envelope address',
@@ -10161,7 +8052,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:57:06', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.04.2022 12:17:29', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.expire',
 	'set hold-back time for mailings and recipients',
@@ -10177,7 +8068,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.export',
 	'Export mailing/template',
-	'Mailing/Schablone im JSON-Format exportieren',
+	'Mailing/Schablone exportieren',
 	NULL,
 	'Exporter le mailing',
 	NULL,
@@ -10185,11 +8076,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:48:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.04.2022 10:59:24', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.extend_trackable_links',
 	'Extend links',
-	'Linkerweiterung erlauben',
+	'Links erweitern',
 	'Ampliar enlaces',
 	'Étendre les liens',
 	'Estendi link',
@@ -10197,7 +8088,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:04:38', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.followup',
 	'Create followup mailing',
@@ -10225,7 +8116,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.interval',
 	'Create interval-based mailing',
-	'Intervall-Mailing erstellen',
+	'Intervall-Mailing anlegen',
 	'Crear mailing por intervalos',
 	'Créer un envoi basé sur un intervalle',
 	'Crea mailing inviato a determinati intervalli di tempo',
@@ -10233,7 +8124,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:56:02', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.interval.short',
 	'Option 10 minutes for interval-based mailings',
@@ -10321,7 +8212,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.send.admin.options',
 	'Show parameters for throttling of delivery speed',
-	'Maximale Versandmenge/Stunde einstellen',
+	'Stepping und Blocksize-Parameter anzeigen',
 	'Mostrar parámetros intermedios y tamaño bloque',
 	'Afficher les paramètres de limitation de la vitesse d''expédition',
 	'Visualizza stepping e parametri blocksize',
@@ -10329,11 +8220,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:19:06', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.send.admin.target',
-	'Selective delivery to admin and test recipients via target group',
-	'Selektiver Versand an Admin- und Testempfänger per Zielgruppe',
+	'Selective delivery to admin and test recipients',
+	'Selektiver Versand an Admin- und Testempfänger',
 	'Envío selectivo a destinatarios admin y test',
 	'Expédition sélective aux destinataires admin et de test',
 	'Invio selettivo a destinatari Admin e Test',
@@ -10341,7 +8232,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('10.05.2023 09:16:29', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.send.optimizedMailGeneration',
 	'Optimize time of delivery',
@@ -10369,7 +8260,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.send.world',
 	'Send mailing to all recipients',
-	'Mailing-Versand an alle Empfänger einstellen',
+	'Mailing an alle Empfänger schicken',
 	'Enviar e-mails para todos los destinatarios',
 	'Expédier l''envoi à tous les destinataires',
 	'Invia mailing a tutti i destinatari',
@@ -10377,11 +8268,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Enviar e-mails para todos os destinatários',
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:16:24', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.setmaxrecipients',
 	'Set maximum number of recipients for a mailing',
-	'Maximalversandzahl einstellen',
+	'Maximale Empfängeranzahl für ein Mailing einstellen.',
 	'Configurar número máximo de destinatarios para un mailing.',
 	'Définir le nombre maximal de destinataires d''un envoi.',
 	'Impostare il numero massimo di destinatari per un mailing.',
@@ -10389,7 +8280,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:17:18', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.settings.hide',
 	'Hide general settings for existing mailings and templates',
@@ -10547,18 +8438,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.mailinglists.addresses',
-	'Set addresses on mailinglist',
-	'Adressen an Mailinglisten hinterlegen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailloop.change',
 	'Change response processing',
 	'Response-Verarbeitung ändern',
@@ -10715,18 +8594,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.master.permission.migration.show',
-	'Show migration user permissions',
-	'Migrationsrechte anzeigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('24.03.2023 13:58:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('24.03.2023 13:58:10', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.master.show',
 	'Show master menu points',
 	'Master-Menüpunkte anzeigen',
@@ -10753,7 +8620,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.media.change',
 	'Add files to mediapool',
-	'Dateien hinzufügen und bearbeiten',
+	'Dateien zum Medienpool hinzufügen',
 	NULL,
 	'Ajouter des fichiers au pool de médias',
 	NULL,
@@ -10761,11 +8628,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:06:30', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.media.delete',
 	'Delete files from mediapool',
-	'Dateien löschen',
+	'Dateien aus dem Medienpool löschen',
 	NULL,
 	'Supprimer des fichiers du pool de médias',
 	NULL,
@@ -10773,11 +8640,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:08:02', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.media.extended',
 	'Mediapool (fonts, PDF files, videos)',
-	'Schriftarten, PDF-Dateien, Videos verwenden',
+	'Medienpool (Schriftarten, PDF-Dateien, Videos)',
 	NULL,
 	NULL,
 	NULL,
@@ -10785,7 +8652,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('31.03.2022 11:41:39', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:09:11', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('07.04.2022 13:19:41', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.media.show',
 	'Show Mediapool',
@@ -10919,21 +8786,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('24.01.2022 14:00:43', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('24.01.2022 14:00:43', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.premium.features.show',
-	'Show premium features page',
-	'Premium-Funktionen Seite anzeigen',
-	'Mostrar la página de funciones premium',
-	'Afficher la page des fonctionnalités premium',
-	'Mostra pagina delle funzionalità premium',
-	'Toon premium functies pagina',
-	'Mostrar página de recursos premium',
-	0,
-	STR_TO_DATE('17.01.2024 16:46:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:48', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.profileField.show',
 	'Edit fields in profile DB',
-	'Profilfelder anzeigen und bearbeiten',
+	'Felder in der Profil-Datenbank bearbeiten',
 	'Editar campos en la base de datos de perfil',
 	'Éditer les champs dans la base de données de profils',
 	'Modifica campi nel database dei profili',
@@ -10941,7 +8796,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Alterar campos do perfil BD',
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:22:28', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.profileField.visible',
 	'Set field setting "Hide fields"',
@@ -11101,7 +8956,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.recipient.analysis.duplicate',
 	'Recipients duplicate analysis',
-	'Dubletten-Analyse der Empfänger anzeigen',
+	'Dubletten-Analyse der Empfänger',
 	NULL,
 	NULL,
 	NULL,
@@ -11109,7 +8964,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:21:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.recipient.change',
 	'Edit single recipients',
@@ -11268,8 +9123,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.recipient.gender.extended',
-	'Allow gender forms with more than three alternatives',
-	'Anredearten mit mehr als drei Alternativen erlauben',
+	'Allow extended genders',
+	'Erweiterte Anreden verwenden',
 	NULL,
 	'Utiliser les salutations étendues',
 	NULL,
@@ -11277,7 +9132,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.02.2024 09:32:57', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.recipient.history',
 	'Show recipient history',
@@ -11423,6 +9278,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'UserRight.recipient.tracking.veto',
+	'Show tracking veto settings',
+	'Tracking-Widerspruch-Einstellungen anzeigen',
+	NULL,
+	'Afficher les réglages d’opposition au tracking',
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
+	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.reference.import.encrypted',
 	'Import of encrypted data to reference tables',
 	'Import verschlüsselter Daten in Referenztabellen',
@@ -11557,7 +9424,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.salutation.change',
 	'Edit salutation settings',
-	'Anredearten bearbeiten',
+	'Anredearten ändern',
 	NULL,
 	'Modifier les types de salutations',
 	NULL,
@@ -11565,7 +9432,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 12:20:32', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.salutation.delete',
 	'Delete salutation settings',
@@ -11603,18 +9470,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.settings.extended',
-	'Extended settings',
-	'Erweiterte Einstellungen',
-	'Ajustes avanzados',
-	'Paramètres avancés',
-	'Impostazioni avanzate',
-	'Geavanceerde instellingen',
-	'Definições avançadas',
-	0,
-	STR_TO_DATE('13.06.2023 16:46:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.06.2023 16:46:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.statistic.benchmark.show',
 	'Show benchmark statistics',
 	'Benchmark-Statistik anzeigen',
@@ -11626,42 +9481,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.statistic.recipient.doi',
-	'Show DOI statistics',
-	'DOI-Statistik anzeigen',
-	NULL,
-	'Afficher les statistiques DOI',
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.statistic.recipient.optin',
-	'Show opt-in statistics',
-	'Anmelder-Statistik anzeigen',
-	NULL,
-	'Afficher les statistiques des demandeurs',
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.statistic.recipient.optout',
-	'Show opt-out statistics',
-	'Abmelder-Statistik anzeigen',
-	NULL,
-	'Afficher les statistiques de désinscription',
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.statistic.softbounces.show',
 	'Show number of softbounces continuously',
@@ -11754,6 +9573,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Afficher les statistiques',
 	NULL,
 	'Statistieken weergeven',
+	NULL,
+	0,
+	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
+	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'UserRight.stats.social',
+	'Show social network statistics',
+	'Statistik für soziale Netzwerke anzeigen',
+	NULL,
+	'Afficher les statistiques d''réseaux sociaux',
+	NULL,
+	NULL,
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
@@ -12001,7 +9832,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.upload.show',
 	'Display list of uploaded files',
-	'Upload-Bereich für Dateien anzeigen',
+	'Zeigt die Liste der hochgeladenen Dateien im EMM-Upload-Feature an',
 	'Muestra la lista de archivos subidos en la función de subida EMM',
 	'Affiche la liste des données téléchargées avec la fonction de téléchargement EMM',
 	'Visualizza l''''elenco dei file caricati nella feature EMM upload',
@@ -12009,7 +9840,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:04:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.05.2020 18:25:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.use.content.source',
 	'Allow user to use XML content sources in mailing',
@@ -12046,18 +9877,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('07.05.2021 14:27:05', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('07.05.2021 14:27:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.webhooks.enable',
-	'Enable webhooks interface',
-	'Webhook-Schnittstelle aktivieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('09.11.2023 11:45:09', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 11:45:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.webservice.user.change',
 	'Edit user of webservice',
@@ -12117,7 +9936,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.wizard.importclassic',
 	'Import wizard',
@@ -12240,7 +10059,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Userlogs',
-	'Activity log',
+	'User Log',
 	'Aktivitätsprotokoll',
 	'Registro de actividad',
 	'Journal d''activité',
@@ -12249,7 +10068,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.09.2023 08:43:43', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'Value',
 	'Value',
@@ -12539,33 +10358,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('07.05.2018 13:44:25', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'action.delete',
-	'Delete trigger',
-	'Trigger löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'action.delete.question',
-	'Do you really want to delete the trigger <b>{0}</b>?',
-	'Wollen Sie den Trigger <b{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'action.deleteQuestion',
 	'Do you really want to delete this trigger?',
-	'Wollen Sie diesen Trigger wirklich löschen?',
+	'Möchten Sie diesen Trigger wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta optimización automática?',
 	'Voulez-vous vraiment supprimer cette action ?',
 	'Vuoi davvero eliminare questa azione?',
@@ -12573,7 +10368,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta acção?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:21:55', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('18.10.2021 08:59:31', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'action.getcustomer.loadalways',
 	'Load even if customer is not an active subscriber',
@@ -12765,7 +10560,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'action.op.GetCustomer',
 	'Load recipient data',
@@ -13068,7 +10863,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('07.10.2021 12:52:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'adminMail',
-	'Admin mailing',
+	'Admin-Mailing',
 	'Admin-Mailing',
 	'Admin-Mailing',
 	'Envoi administratif',
@@ -13077,7 +10872,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Admin-Mailing',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.09.2023 08:05:45', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('10.08.2018 11:19:24', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'administration.shop',
 	'Saturn administration',
@@ -13211,21 +11006,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'autoExport.delete',
-	'Delete auto export',
-	'Auto-Export löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoExport.delete.question',
 	'Do you really want to delete this auto export?',
-	'Wollen Sie diesen Auto-Export wirklich löschen?',
+	'Möchten Sie diesen Auto-Export wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta exportación automática?',
 	'Voulez-vous vraiment supprimer cette auto-exportation ?',
 	'Vuoi davvero eliminare questa esportazione automatica?',
@@ -13233,19 +11016,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'autoExport.delete.question2',
-	'Do you really want to delete the auto export <b>{0}</b>?',
-	'WWollen Sie den Auto-Export <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoExport.error.noCsvExportProfile',
 	'Please indicate a CSV profile.',
@@ -13272,16 +11043,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2020 07:54:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoExport.error.noExportProfile',
-	'No export profile given',
-	'Kein Exportprofil angegeben',
+	'Please indicate an export profile.',
+	'Bitte geben Sie ein Exportprofil an.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('22.12.2022 10:58:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoExport.fileNamePattern',
 	'Export filename pattern',
@@ -13427,18 +11198,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'autoImport.delete',
-	'Delete auto import',
-	'Auto-Import löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoImport.delete.question',
 	'Do you really want to delete this Auto Import?',
 	'Wollen Sie diesen Auto-Import wirklich löschen?',
@@ -13450,18 +11209,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'autoImport.delete.question2',
-	'Do you really want to delete the auto import <b>{0}</b>?',
-	'Wollen Sie den Auto-Import <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoImport.emptyFileAllowed',
 	'Allow empty files',
@@ -13656,16 +11403,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoImport.error.profileDoesntMatchCSV',
-	'Import profile does not match file: {0}',
-	'Importprofil passt nicht zur Datei: {0}',
-	'El perfil de importación no coincide con el archivo: {0}',
-	'Le profil d''importation ne correspond pas au fichier: {0}',
-	'Profilo di importazione non adatto al file: {0}',
-	'Importprofiel past niet bij bestand: {0}',
+	'Import profile does not match csv file: {0}',
+	'Importprofil passt nicht zur CSV-Datei: {0}',
+	'El perfil de importación no coincide con el archivo CSV: {0}',
+	'Le profil d''importation ne correspond pas au fichier CSV : {0}',
+	'Profilo di importazione non adatto al file CSV: {0}',
+	'Importprofiel past niet bij CSV-bestand: {0}',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.08.2023 13:05:32', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoImport.error.reason',
 	'Auto import failed due to following error:',
@@ -13905,7 +11652,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'autoexport.sucessfully_completed',
 	'Auto export successfully completed. Export file: "{0}" Exported lines: {1}',
@@ -14194,18 +11941,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'beta.feature',
-	'BETA-Feature',
-	'BETA-Feature',
-	NULL,
-	'BETA-Feature',
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:04:12', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'birt.Firstname',
 	'First name',
@@ -14556,8 +12291,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'blacklist.mailinglists.hint',
-	'Please note: By enabling mailing lists the recipient is not automatically subscribed!',
-	'Bitte beachten Sie: Durch Freigabe für die Mailing-Listen wird der Empfänger nicht automatisch angemeldet!',
+	'Note: With this selection, the recipient will not be logged in automatically!',
+	'Hinweis: Mit dieser Auswahl wird der Empfänger nicht automatisch angemeldet!',
 	'Advertencia: ¡Con esta selección el destinatario no es inscrito automáticamente!',
 	'Remarque : avec cette sélection, le destinataire ne sera pas connecté automatiquement !',
 	'Nota: con questa selezione il destinatario non sarà iscritto automaticamente!',
@@ -14565,7 +12300,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.11.2023 13:28:19', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'blacklist.reason',
 	'Reason',
@@ -14759,18 +12494,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulk.mailing.restore',
-	'Restore selected mailings',
-	'Gewählte Mailings wiederherstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction',
 	'Bulk action',
 	'Sammelaktion',
@@ -14869,7 +12592,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.action.question',
 	'Do you really want to delete all selected trigger?',
-	'Wollen Sie die ausgewählten Trigger wirklich löschen?',
+	'Möchten Sie die ausgewählten Trigger wirklich löschen?',
 	'¿Está seguro de que quiere borrar las acciones seleccionadas?',
 	'Voulez-vous vraiment supprimer les actions sélectionnées ?',
 	'Vuoi davvero eliminare le azioni selezionate?',
@@ -14877,19 +12600,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:05', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.delete.audio',
-	'Delete selected audios',
-	'Ausgewählte Audiodateien löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('18.10.2021 08:46:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmodule',
 	'Delete selected modules',
@@ -14905,7 +12616,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmodule.question',
 	'Do you really want to delete all selected modules?',
-	'Wollen Sie die ausgewählten Module wirklich löschen?',
+	'Möchten Sie die ausgewählten Module wirklich löschen?',
 	'¿Está seguro de que quiere borrar los módulos seleccionados?',
 	'Voulez-vous vraiment supprimer les modules sélectionnés ?',
 	'Vuoi davvero eliminare i moduli selezionati?',
@@ -14913,7 +12624,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:11', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmodulecat',
 	'Delete selected module categories',
@@ -14929,7 +12640,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmodulecat.question',
 	'Do you really want to delete all selected module categories?',
-	'Wollen Sie die ausgewählten Modulkategorien wirklich löschen?',
+	'Möchten Sie die ausgewählten Modulkategorien wirklich löschen?',
 	'¿Está seguro de que quiere borrar las categorías de módulos seleccionadas?',
 	'Voulez-vous vraiment supprimer les catégories de modules sélectionnées ?',
 	'Vuoi davvero eliminare le categorie di moduli selezionate?',
@@ -14937,7 +12648,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:18', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmoduletype',
 	'Delete selected module types',
@@ -14953,7 +12664,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmmoduletype.question',
 	'Do you really want to delete all selected module types?',
-	'Wollen Sie die ausgewählten Modultypen wirklich löschen?',
+	'Möchten Sie die ausgewählten Modultypen wirklich löschen?',
 	'¿Está seguro de que quiere borrar tipos de módulos seleccionados?',
 	'Voulez-vous vraiment supprimer les types de module sélectionnés ?',
 	'Vuoi davvero eliminare i tipi di moduli selezionati?',
@@ -14961,7 +12672,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:23', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmtemplate',
 	'Delete selected CM templates',
@@ -14977,7 +12688,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.cmtemplate.question',
 	'Do you really want to delete all selected CM templates?',
-	'Wollen Sie die ausgewählten CM Schablonen wirklich löschen?',
+	'Möchten Sie die ausgewählten CM Schablonen wirklich löschen?',
 	'¿Está seguro de que quiere borrar las plantillas CM seleccionadas?',
 	'Voulez-vous vraiment supprimer les modèles CM sélectionnés ?',
 	'Vuoi davvero eliminare i template CM selezionati?',
@@ -14985,7 +12696,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:27', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.csvColumn',
 	'Delete selected CSV columns',
@@ -15073,7 +12784,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.image.question',
 	'Do you really want to delete all selected images?',
-	'Wollen Sie die ausgewählten Bilder wirklich löschen?',
+	'Möchten Sie die ausgewählten Bilder wirklich löschen?',
 	'¿Está seguro de que quiere borrar las imágenes seleccionadas?',
 	'Voulez-vous vraiment supprimer les images sélectionnées ?',
 	'Vuoi davvero eliminare le immagini selezionate?',
@@ -15081,7 +12792,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:33', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mailing',
 	'Delete selected mailings',
@@ -15097,7 +12808,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mailing.question',
 	'Do you really want to delete all selected mailings?',
-	'Wollen Sie die ausgewählten Mailings wirklich löschen?',
+	'Möchten Sie die ausgewählten Mailings wirklich löschen?',
 	'¿Está seguro de que quiere borrar los mailings seleccionados?',
 	'Voulez-vous vraiment supprimer les envois sélectionnés ?',
 	'Vuoi davvero eliminare i mailing selezionati?',
@@ -15105,7 +12816,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:38', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mailinglist',
 	'Delete selected mailing lists',
@@ -15121,7 +12832,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mailinglist.question',
 	'Do you really want to delete all selected mailing lists?',
-	'Wollen Sie die ausgewählten Mailing-Listen wirklich löschen?',
+	'Möchten Sie die ausgewählten Mailing-Listen wirklich löschen?',
 	'¿Está seguro de que quiere borrar las listas mailing seleccionadas?',
 	'Voulez-vous vraiment supprimer les listes de diffusion sélectionnées ?',
 	'Vuoi davvero eliminare le mailing-list selezionate?',
@@ -15129,7 +12840,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:44', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mediapool.category',
 	'Delete selected categories',
@@ -15145,7 +12856,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.mediapool.category.question',
 	'Do you really want to delete all selected categories?',
-	'Wollen Sie wirklich alle ausgewählten Kategorien löschen?',
+	'Möchten Sie wirklich alle ausgewählten Kategorien löschen?',
 	'¿Está seguro de que quiere borrar todas las categorías seleccionadas?',
 	'Voulez-vous vraiment supprimer toutes les catégories sélectionnées ?',
 	'Vuoi davvero eliminare tutte le categorie selezionate?',
@@ -15153,7 +12864,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:23:22', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.message',
 	'Delete selected messages ',
@@ -15193,7 +12904,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.push.question',
 	'Do you really want to delete all selected messages?',
-	'Wollen Sie wirklich die ausgewählten Push-Nachrichten löschen?',
+	'Möchten Sie wirklich die ausgewählten Nachrichten löschen?',
 	'¿Está seguro de que quiere borrar las noticias seleccionadas?',
 	'Voulez-vous vraiment supprimer les notifications sélectionnées ?',
 	'Vuoi davvero eliminare i messaggi selezionati?',
@@ -15201,23 +12912,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 12:00:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.delete.question',
-	'Do you really want to delete all selected items?',
-	'Wollen Sie die ausgewählten Elemente wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.recipient',
 	'Delete selected recipient',
-	'Ausgewählte Empfänger löschen',
+	'Ausgewählten Empfänger löschen',
 	NULL,
 	NULL,
 	NULL,
@@ -15225,11 +12924,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 12:03:11', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.recipient.question',
 	'Do you really want to delete all selected recipients?',
-	'Wollen Sie die ausgewählten Empfänger wirklich löschen?',
+	'Möchten Sie die ausgewählten Empfänger wirklich löschen?',
 	'¿Está seguro de que quiere borrar los destinatarios seleccionados?',
 	'Voulez-vous vraiment supprimer les destinataires sélectionnés ?',
 	'Vuoi davvero eliminare i destinatari selezionati?',
@@ -15237,7 +12936,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:22:49', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.recipients',
 	'Delete selected recipients',
@@ -15265,7 +12964,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.target.question',
 	'Do you really want to delete all selected target groups?',
-	'Wollen Sie die ausgewählten Zielgruppen wirklich löschen?',
+	'Möchten Sie die ausgewählten Zielgruppen wirklich löschen?',
 	'¿Está seguro de que quiere borrar los grupos destinatarios seleccionados?',
 	'Voulez-vous vraiment supprimer les groupes cibles sélectionnés ?',
 	'Vuoi davvero eliminare i gruppi target selezionati?',
@@ -15273,7 +12972,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:23:48', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.template',
 	'Delete selected templates',
@@ -15289,7 +12988,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.template.question',
 	'Do you really want to delete all selected templates?',
-	'Wollen Sie die ausgewählten Schablonen wirklich löschen?',
+	'Möchten Sie die ausgewählten Schablonen wirklich löschen?',
 	'¿Está seguro de que quiere borrar las plantillas seleccionadas?',
 	'Voulez-vous vraiment supprimer les modèles sélectionnés ?',
 	'Vuoi davvero eliminare i template selezionati?',
@@ -15297,11 +12996,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:23:52', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.trackablelink.extension.question',
 	'Do you really want to clear extensions of selected trackable links?',
-	'Wollen Sie alle Linkerweiterungen wirklich löschen?',
+	'Möchten Sie alle Linkerweiterungen wirklich löschen?',
 	NULL,
 	NULL,
 	NULL,
@@ -15309,7 +13008,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('15.02.2021 11:58:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:23:56', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.02.2021 11:58:26', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.userform',
 	'Delete selected forms',
@@ -15325,7 +13024,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.userform.question',
 	'Do you really want to delete all selected forms?',
-	'Wollen Sie die ausgewählten Formulare wirklich löschen?',
+	'Möchten Sie die ausgewählten Formulare wirklich löschen?',
 	'¿Está seguro de que quiere borrar los formularios seleccionados?',
 	'Voulez-vous vraiment supprimer les formulaires sélectionnés ?',
 	'Vuoi davvero eliminare i moduli selezionati?',
@@ -15333,31 +13032,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.delete.usergroup',
-	'Delete selected user groups',
-	'Gewählte Benutzergruppen löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.delete.usergroup.question',
-	'Do you really want to delete all selected user groups?',
-	'Wollen Sie die ausgewählten Benutzergruppen wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:05', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.delete.video',
 	'Delete selected videos',
@@ -15394,54 +13069,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.download.audio.all',
-	'Download all audios',
-	'Alle Audiodateien herunterladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.download.audio.selected',
-	'Download selected audios',
-	'Ausgewählte Audiodateien herunterladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.download.files.all',
-	'Download all files',
-	'Alle Dateien herunterladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.download.files.selected',
-	'Download selected files',
-	'Gewählte Dateien herunterladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'bulkAction.download.font.all',
 	'Download all fonts',
@@ -15719,18 +13346,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'bulkAction.settings.mailloop.delete',
-	'Do you really want to delete all selected response processings?',
-	'Wollen Sie die gewählten Response-Verarbeitungen wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('24.11.2023 16:16:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Activate',
 	'Activate',
 	'Aktivieren',
@@ -15766,18 +13381,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.Assume',
-	'Assume',
-	'Übernehmen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Back',
 	'Back',
@@ -15937,7 +13540,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Download',
 	'Download',
-	'Herunterladen',
+	'Download',
 	'Download',
 	'Download',
 	NULL,
@@ -15945,7 +13548,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Download',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.01.2024 08:22:50', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Edit',
 	'Edit',
@@ -15982,18 +13585,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.Generate',
-	'Generate text',
-	'Text generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Hide',
 	'Hide',
@@ -16067,18 +13658,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.Pause',
-	'Pause',
-	'Pause',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Previous',
 	'Previous',
 	'Vorheriges',
@@ -16115,18 +13694,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.Regenerate',
-	'Regenerate text',
-	'Text neu generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Replace',
 	'Replace',
 	'Ersetzen',
@@ -16138,18 +13705,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('09.08.2018 09:19:48', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.08.2018 09:19:48', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.Reset',
-	'Reset',
-	'Zurücksetzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.Save',
 	'Save',
@@ -16356,7 +13911,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.configure',
-	'Configure sending',
+	'Configure',
 	'Einstellen',
 	'Configurar',
 	'Paramétrer',
@@ -16365,31 +13920,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.configure.activate',
-	'Configure and activate',
-	'Einstellen und aktivieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.05.2023 11:56:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.05.2023 11:56:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.continue.workflow',
-	'Continue campaign',
-	'Kampagne fortsetzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.create.recipient',
 	'Create recipient',
@@ -16402,18 +13933,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.dashboard.change',
-	'Edit dashboard',
-	'Dashboard bearbeiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.empty.table',
 	'Empty table',
@@ -16438,30 +13957,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.filter.apply',
-	'Apply filter',
-	'Filter anwenden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.generate.pdf',
-	'Generate PDF Report',
-	'PDF Report generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.grid.CreateGrid',
 	'Create grid',
@@ -16523,30 +14018,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.02.2021 17:14:17', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('12.02.2021 17:14:17', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.mailing.send.today',
-	'Send today',
-	'Heute versenden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.mailing.send.tomorrow',
-	'Send tomorrow',
-	'Morgen versenden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.multiupload.select',
 	'Select files',
 	'Dateien auswählen',
@@ -16558,18 +14029,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'button.recipient.search.filter',
-	'Set filter',
-	'Filter setzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'button.save.evaluate',
 	'Save and evaluate',
@@ -17423,18 +14882,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'campaign.delete.question',
-	'Do you really want to delete the archive <b>{0}</b>?',
-	'Wollen Sie das Archiv <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'campaign.grid.show',
 	'Show grid',
 	'Raster anzeigen',
@@ -17532,8 +14979,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('16.01.2023 01:02:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'cleanup.recipients.inactive',
-	'Recipients pseudonymisation',
-	'Empfänger-Pseudonymisierung',
+	'Recipients anonymization',
+	'Empfänger-Anonymisierung',
 	NULL,
 	NULL,
 	NULL,
@@ -17541,7 +14988,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.05.2019 08:33:43', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.03.2023 14:07:43', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('17.05.2019 08:33:43', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'cleanup.recipients.tracking',
 	'Cleanup of tracking data',
@@ -17614,42 +15061,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'clients.teaser.description',
-	'With the client configuration page you can further customise your OpenEMM to your needs and configure basic settings.',
-	'Mit der Mandanten-Konfigurationsseite können Sie Ihren OpenEMM noch weiter an Ihre Bedürfnisse anpassen und grundlegende Einstellungen vornehmen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'clients.teaser.headline',
-	'Individual client configuration from security to mailing settings.',
-	'Individuelle Mandanten-Konfiguration von Sicherheits- bis hin zu Versandeinstellungen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 14:25:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'clients.teaser.upgradeInfo',
-	'Unfortunately, the clients page is not available for the OpenEMM. To benefit from the full scope of the EMM and also use the configuration, an upgrade is necessary.',
-	'Leider ist die Seite Mandanten nicht für den OpenEMM verfügbar. Um vom vollen Umfang des EMM profitieren und auch die Konfiguration nutzen zu können, ist ein Upgrade nötig.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'close',
 	'Close',
@@ -17758,6 +15169,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'company.DeleteRecipients',
+	'Deletion of recipients',
+	'Löschung der Empfänger',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('06.05.2022 13:04:22', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.DeleteSuccessfullyImportedFiles',
 	'Delete successfully (auto-)imported files',
@@ -17927,18 +15350,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 12:51:04', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.RegenerateTargetSqlOnce',
-	'Regenerate all targetgroup definitions once',
-	'Alle Zielgruppendefinitionen einmalig neu generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 15:46:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 15:46:04', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.SendPasswordChangedNotification',
 	'Send notifications on password changes',
 	'Nachrichten bei Passwortänderungen senden',
@@ -17973,7 +15384,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.authentication.2way',
 	'2 factor authentication',
@@ -18073,7 +15484,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.delete.question',
 	'Do you really want to delete this client?',
-	'Wollen Sie diesen Mandanten wirklich löschen?',
+	'Möchten Sie diesen Mandanten wirklich löschen?',
 	'¿Está seguro de que quiere borrar este cliente?',
 	'Voulez-vous vraiment supprimer ce client ?',
 	'Vuoi davvero eliminare questo mandante?',
@@ -18081,7 +15492,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:17', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.deleted.since',
 	'Deleted since {0}',
@@ -18094,18 +15505,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.10.2020 09:28:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('08.10.2020 09:28:07', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.favorite.target.user',
-	'Set target group favourites per user',
-	'Zielgruppenfavoriten pro Benutzer einstellbar',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 12:00:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 12:00:04', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.force.sending',
 	'Force sending',
@@ -18157,7 +15556,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.lock.question',
 	'Do you really want to lock this client?',
-	'Wollen Sie diesen Mandanten wirklich sperren?',
+	'Möchten Sie diesen Mandanten wirklich sperren?',
 	NULL,
 	NULL,
 	NULL,
@@ -18165,19 +15564,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('28.10.2019 12:07:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:20', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.locked',
-	'Locked',
-	'Gesperrt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.10.2019 12:07:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.locked.since',
 	'Locked since {0}',
@@ -18239,18 +15626,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('29.04.2020 13:34:21', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('29.04.2020 13:34:21', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.mailing.test.default',
-	'Default setting for Test run',
-	'Standardeinstellung für Testversand',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.09.2023 09:33:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.mailtracking.0',
 	'Mail tracking (part of Automation Package) is deactivated.',
 	'Mail-Tracking (Teil des Automation Package) ist deaktiviert.',
@@ -18276,7 +15651,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.maxFields',
-	'Maximum number of profilefields',
+	'Maxmimum number of profilefields',
 	'Maximale Anzahl an Profilfeldern',
 	NULL,
 	NULL,
@@ -18285,7 +15660,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('24.08.2022 16:23:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.02.2024 16:15:24', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('21.02.2023 08:53:31', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.maxadminmails',
 	'Maximum number for test mailings',
@@ -18335,18 +15710,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('29.04.2020 13:34:21', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('29.04.2020 13:34:21', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.recipient.filter.default',
-	'Filter recipient overview for active recipients',
-	'Empfängerübersicht auf aktive Empfänger filtern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.samples.delete',
 	'Delete samples',
 	'Vorlagen löschen',
@@ -18361,7 +15724,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.samples.delete.question',
 	'Do you really want to delete samples of this client?',
-	'Wollen Sie die Vorlagen dieses Mandanten wirklich löschen?',
+	'Möchten Sie die Vorlagen dieses Mandanten wirklich löschen?',
 	NULL,
 	NULL,
 	NULL,
@@ -18369,7 +15732,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('13.08.2020 09:17:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:25', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('13.08.2020 09:17:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.sector',
 	'Sector',
@@ -18575,66 +15938,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('19.10.2021 16:56:05', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.10.2021 16:56:05', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.settings.post.city',
-	'City',
-	'Stadt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.settings.post.code',
-	'Postal code',
-	'Postleitzahl',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.settings.post.country',
-	'Country',
-	'Land',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.settings.post.default',
-	'Default address fields for post sendings',
-	'Standard-Adressfelder für Postversand',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.01.2024 15:38:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('25.01.2024 15:38:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.settings.post.street',
-	'Street',
-	'Straße',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'company.settings.security',
 	'Security',
 	'Sicherheit',
@@ -18769,7 +16072,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'contentsource.delete.question',
 	'Do you really want to delete this content source?',
-	'Wollen Sie diese Inhaltsquelle wirklich löschen?',
+	'Möchten Sie diese Inhaltsquelle wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta fuente de contenido?',
 	'Voulez-vous vraiment supprimer cette source de contenu ?',
 	'Vuoi davvero eliminare questa sorgente del contenuto?',
@@ -18777,7 +16080,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:29', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.04.2022 11:06:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'countUniqueLinks',
 	'Count same link targets as different link targets?',
@@ -18889,7 +16192,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'csv.alwaysQuote',
 	'Text marking',
-	'Textmarkierung',
+	'Text Markierung',
 	NULL,
 	'Marquage texte',
 	NULL,
@@ -18897,7 +16200,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.10.2023 12:46:30', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'csv.import.file',
 	'Choose CSV file',
@@ -19054,30 +16357,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'dashboard.layout.change',
-	'Change layout',
-	'Layout ändern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'dashboard.layout.select',
-	'Select layout',
-	'Layout wählen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'dashboard.mailing.details',
 	'Mailing details',
@@ -19294,42 +16573,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'dashboard.tile.add',
-	'Add tile',
-	'Kacheln hinzufügen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'dashboard.tile.import.export',
-	'Imports & Exports',
-	'Importe & Exporte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'dashboard.tile.planning',
-	'Planning',
-	'Planung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'date.expiry',
 	'Date of expiry',
@@ -19787,30 +17030,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'deeptracking.trackpoint.delete',
-	'Delete tracking point',
-	'Messpunkt löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'deeptracking.trackpoint.delete.question',
-	'Do you really want to delete the tracking point <b>{0}</b>?',
-	'Wollen Sie den Messpunkt <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'deeptracking.trackpoint.gross',
 	'Tracking points: gross values',
 	'Messpunkte: brutto',
@@ -19958,14 +17177,14 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'default.CompanyID',
 	'CompanyID',
 	'CompanyID',
-	'CompanyID',
-	'CompanyID',
+	'COMPANY_ID',
+	'COMPANY_ID',
 	NULL,
-	'CompanyID',
-	'CompanyID',
+	'COMPANY_ID',
+	'COMPANY_ID',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.10.2023 10:33:19', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.Content',
 	'Content',
@@ -20316,7 +17535,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.changeDate',
-	'Changed on',
+	'changed on',
 	'Geändert am',
 	'Modificado el',
 	'modifié le',
@@ -20325,7 +17544,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 12:50:35', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.changes_saved',
 	'Changes saved.',
@@ -20458,18 +17677,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.date.time',
-	'Date & Time',
-	'Datum & Uhrzeit',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.description',
 	'Description (optional)',
@@ -20927,18 +18134,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.list.show.max',
-	'Show max.',
-	'Zeige max.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.loading',
 	'Loading content',
 	'Lade Inhalte',
@@ -21023,18 +18218,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.max',
-	'Max',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.message',
 	'Message',
 	'Nachricht',
@@ -21046,18 +18229,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.min',
-	'Min',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.minutes.10',
 	'10 min',
@@ -21226,18 +18397,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.restore',
-	'Restore',
-	'Wiederherstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.salutation.description',
 	'New salutation description',
@@ -21443,66 +18602,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.02.2021 15:56:02', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('17.02.2021 15:56:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.tile.add',
-	'Add new tile',
-	'Kachel hinzufügen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.tile.hide',
-	'Hide tile from view',
-	'Kachel verstecken',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.tile.main',
-	'Tile can not be hidden',
-	'Kachel kann nicht versteckt werden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.tile.remove',
-	'Remove tile',
-	'Kachel entfernen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.tile.show',
-	'Show tile in view',
-	'Kachel anzeigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.time.min',
 	'min',
 	'Min',
@@ -21526,18 +18625,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.unknown.source',
-	'Unknown source',
-	'Unbekannte Quelle',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.unlock',
 	'Approve',
@@ -21587,30 +18674,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('09.09.2021 12:07:05', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.09.2021 12:07:05', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.view.edit',
-	'Edit view',
-	'Ansicht ändern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.view.save',
-	'Save view',
-	'Ansicht speichern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.views',
 	'Views',
 	'Ansichten',
@@ -21634,18 +18697,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('09.08.2018 09:19:48', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.08.2018 09:19:48', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'default.window.open',
-	'Open in new window',
-	'Im neuen Fenster öffnen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'default.year',
 	'Year',
@@ -22140,8 +19191,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('28.02.2022 11:48:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.action.dbAccess',
-	'Internal error: DB access failed',
-	'Interner Fehler: DB Zugriff ist fehlgeschlagen',
+	'Internal error: DB access',
+	'Interner Fehler: DB Zugriff',
 	'Error interno: Acceso DB',
 	'Erreur interne : accès à la base de données',
 	'Errore interno: accesso DB',
@@ -22149,7 +19200,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.06.2023 10:26:15', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.action.illegal_directive',
 	'Action contains illegal directive {0}.',
@@ -22209,7 +19260,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('13.03.2020 13:09:34', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.admin.different_passwords',
 	'Please use matching passwords.',
@@ -23016,7 +20067,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('09.01.2019 12:42:44', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.autoopt.mailing_double',
-	'Please choose different Test mailings!',
+	'Please choose different Test-Mailings!',
 	'Bitte wählen Sie unterschiedliche Test-Mailings!',
 	'¡Por favor, seleccione diferentes test-mailings!',
 	'Veuillez choisir des envois de test différents !',
@@ -23025,7 +20076,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.09.2023 08:06:08', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.autoopt.too_few_groups',
 	'Please select at least two unsent mailings in the campaign for the optimization!',
@@ -23459,18 +20510,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 13:42:01', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.csrf',
-	'Your request was blocked due to a CSRF token validation issue.',
-	'Ihre Anfrage wurde aufgrund eines CSRF-Token-Validierungsproblems blockiert.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.csvContainsInvalidColumn',
 	'Column headers of file contain invalid column name {0}',
 	'Überschriften in erster Zeile der Datei enthalten ungültige Spalten {0}',
@@ -23494,18 +20533,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.dashboard.tile.space',
-	'Not enough space for this tile. Please rearrange the tiles',
-	'Zu wenig Platz für diese Kachel. Bitte ordnen Sie die Kacheln neu an. ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.data.size',
 	'Data is too big for database storage. Please check database configuration value ''max_allowed_packet''.',
@@ -23545,7 +20572,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.date.range.exceeded.4weeks',
 	'A period between start and end must not exceed 28 days',
-	'Der Zeitraum zwischen Start und Ende darf nicht größer als 28 Tage sein.',
+	'Der Zeitraum zwischen Start und Ende darf nicht grö0uuDFer als 28 Tage sein.',
 	NULL,
 	'La période entre le début et la fin de doit pas dépasser 28 jours.',
 	NULL,
@@ -23553,7 +20580,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('16.10.2018 12:01:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.03.2023 15:07:24', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.10.2018 12:01:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.dateRangeExceedsTwoMonths',
 	'A period between start and end must not exceed two months.',
@@ -23723,18 +20750,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 13:44:27', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.domain.address.invalid',
-	'Address name invalid',
-	'Name der Adresse ist ungültig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.domain.exist',
 	'The domain with the specified name has already been created. Please use the search to use the previously created domain.',
 	'Die Domain mit dem angegebenen Namen wurde bereits erstellt. Bitte verwenden Sie die Suche, um die zuvor erstellte Domain zu verwenden.',
@@ -23758,30 +20773,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.domain.used',
-	'This domain is used by {0}.',
-	'Diese Domain wird von {0} verwendet.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.domain.used.more',
-	'Company domain is used by {0} and {1} more objects.',
-	'Diese Domain wird von {0} und {1} weiteren Elementen verwendet.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.duplicate.csvcolumn',
 	'A duplicate CSV column was found: {0}',
@@ -24129,7 +21120,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.firstname.blank',
 	'Please enter a first name.',
@@ -24576,8 +21567,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.group.delete.hasAdmins',
-	'User group cannot be deleted because it is in use by users. Please assign another user group to the users. Users within this group: {0}',
-	'Benutzergruppe kann nicht gelöscht werden, da sie Benutzern zugewiesen ist. Bitte geben Sie diesen Benutzern eine andere Gruppe. Benutzer mit dieser Gruppe: {0}',
+	'User group cannot be deleted. Users within this group: {0}',
+	'Benutzergruppe kann nicht gelöscht werden. Benutzer in dieser Gruppe: {0}',
 	NULL,
 	'Le groupe d’utilisateurs ne peut pas être supprimé. Les utilisateurs dans ce groupe : {0}',
 	NULL,
@@ -24585,19 +21576,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('04.06.2018 14:36:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.09.2023 08:28:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.group.delete.hasGroups',
-	'User group cannot be deleted because it is in use by user groups. Please remove this user group from the user groups. User groups within this group: {0}',
-	'Benutzergruppe kann nicht gelöscht werden, da sie Benutzergruppen zugewiesen ist. Bitte entfernen Sie diese Benutzergruppe aus dene anderen Benutzergruppen. Benutzergruppen mit dieser Gruppe: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.09.2023 10:56:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('25.09.2023 10:56:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.html.MissingClosingTag',
 	'Missing expected closing tag &lt;/{0}&gt;.',
@@ -24983,18 +21962,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.data.header',
-	'Importdata contains data in a column without any header name: column {0}, row {1}. Please remove this data or define a header and a profile field for importing this data.',
-	'Importdaten enthalten Daten in einer Spalte ohne Überschrift: Spalte {0}, Zeile {1}. Bitte entfernen Sie diese Daten oder ergänzen eine Überschrift und ein Profilfeld um die Daten zu importieren.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.data.invalid',
 	'All import data was invalid',
 	'Alle zu importierenden Daten waren ungültig',
@@ -25187,7 +22154,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('18.06.2021 14:15:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:45', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.file',
 	'Error when reading file: {0}',
@@ -25200,30 +22167,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.file.linebreak',
-	'File contains break inside the cell by index: {0} at line: {1}.',
-	'Die Datei enthählt einen Umbruch in: {0} Zeile: {1}.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.file.reason',
-	'Cannot read content of import file: {0}',
-	'Inhalt der Importdatei kann nicht gelesen werden: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.functions',
 	'Allowed values: sysdate, current_timestamp, today',
@@ -25272,18 +22215,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.invalid.settings',
-	'All of your import data was invalid. Please check if settings for datastructure, separators and date time formats fit your import data.',
-	'Alle Ihre Importdaten waren ungültig. Bitte überprüfen Sie, ob die Einstellungen für Datenstruktur, Trennzeichen sowie die Datums- und Uhrzeitformate zu ihren Importdaten passen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.invalidDataForField',
 	'Invalid data for field ''{0}''',
@@ -25369,18 +22300,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 14:23:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.lineQuotaExceeded',
-	'Import limit exceeded',
-	'Import-Limit erreicht',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.mailinglists.one',
 	'Please choose only one mailing list.',
 	'Bitte wählen Sie nur eine Mailing-Liste aus.',
@@ -25392,18 +22311,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('05.01.2021 16:17:47', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('01.09.2021 12:26:41', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.mappeddata.missing',
-	'The import file is missing data that was specified in the settings: {0}',
-	'In der Importdatei fehlen Daten, die in den Einstellungen angegeben wurden: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.maxCount',
 	'The maximum number of records has been reached.',
@@ -25440,18 +22347,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.maximum_filesize_exceeded_withsizehint',
-	'Maximum file size for imports was exceeded ({0}). Please also be aware that there is a limit of {1} lines per file.',
-	'Die maximale Dateigröße für Imports wurde überschritten ({0}). Bitte beachten sie auch die maximale Anzahl von {1} Zeilen je Datei.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.maxlinesexceeded',
 	'Maximum number of lines in a single import file was exceeded. Lines found: {0} Allowed maximum: {1}',
@@ -25657,18 +22552,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('15.03.2021 11:47:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.separator.mismatch',
-	'The file uses a different separator than the one configured in the import profile. Please used configured separator.',
-	'Ihre Datei verwendet einen anderen Separator als im Importprofil angegeben. Bitte verwenden Sie den konfigurierten Separator.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.12.2023 12:21:17', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 12:21:17', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.import.separator_or_textrecognition_is_wrong',
 	'Separator or text recognition is wrong.',
 	'Das Trenn- oder Texterkennungszeichen ist falsch.',
@@ -25799,7 +22682,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('12.03.2020 10:32:34', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.insufficient_permissions',
 	'Insufficient permissions! Please contact your responsible administrator.',
@@ -25862,8 +22745,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('15.09.2021 09:44:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.interval.weekday.empty',
-	'Please select a "weekday of the month".',
-	'Bitte wählen Sie einen "Wochentag des Monats" für das Intervall-Mailing aus.',
+	'Please select the weekday ordinal.',
+	'Bitte wählen Sie einen Wochentag für das Intervall-Mailing aus.',
 	NULL,
 	NULL,
 	NULL,
@@ -25871,7 +22754,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('01.08.2022 15:43:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.05.2023 07:40:31', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('01.08.2022 15:43:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.invalid.companyname',
 	'Name is already in use, please choose another one.',
@@ -25898,16 +22781,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.invalid.csvfile.noheaders',
-	'file has no headers',
-	'Datei enthält keine Überschriften',
-	'El archivo no tiene títulos',
-	'Le fichier ne contient pas d''en-têtes',
-	'Il file non contiene titoli',
-	'Bestand bevat geen koppen',
+	'CSV file has no headers',
+	'CSV-Datei enthält keine Überschriften',
+	'El archivo CSV no tiene títulos',
+	'Le fichier CSV ne contient pas d''en-têtes',
+	'Il file CSV non contiene titoli',
+	'CSV-bestand bevat geen koppen',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.08.2023 13:06:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.invalid.dbcolumn',
 	'Invalid database column: {0}',
@@ -26031,7 +22914,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.invalid.maxFields',
 	'Invalid value for maxmimum number of profilefields',
-	'Ungültiger Wert für die maximale Anzahl an Profilfeldern',
+	'Ungültiger Wert für die maximale Anzahl an Profilefeldern',
 	NULL,
 	NULL,
 	NULL,
@@ -26039,7 +22922,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('24.08.2022 16:23:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.02.2024 13:45:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('24.08.2022 16:23:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.invalid.passwordExpireDays',
 	'Invalid settings for password expiration.',
@@ -26233,18 +23116,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.license.outoflimits',
-	'The update of your license is limited up to version ''{0}''. The currently installed version is ''{1}''. Please contact {2}.'',',
-	'Die Aktualisierung ihrer Lizenz ist limitiert bis Version ''{0}''. Die aktuell installierte Version ist ''{1}''. Bitte kontaktieren Sie {2}.'',',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.licenseError',
 	'License error: {0}',
 	'Lizenz-Fehler: {0}',
@@ -26328,18 +23199,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('28.06.2018 15:14:58', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.mailgeneration.resumeByCopy.generic',
-	'Copying cancelled mailing not longer possible.',
-	'Kopieren eines abgebrochenen Mailings nicht mehr möglich.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.07.2023 12:07:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.08.2023 10:08:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.agntags',
 	'Error in agn-tag {0}, reason: {1}',
@@ -26568,18 +23427,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 14:44:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.mailing.contentblock.empty',
-	'Content block was not selected',
-	'Inhaltsbaustein wurde nicht ausgewählt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.05.2023 12:26:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.05.2023 12:26:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.create',
 	'Error while creating mailing.',
@@ -26843,7 +23690,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.noMailinglist',
 	'There is no mailing list yet! Please create a corresponding list.',
@@ -26870,8 +23717,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.no_html_template',
-	'Please add an HTML template in the template tab to complete the mailing',
-	'Bitte ergänzen Sie im Schabonen-Reiter eine HTML-Schablone, um das Mailing zu vervollständigen',
+	'Error: No HTML template present!',
+	'Fehler: Keine HTML-Schablone vorhanden!',
 	'¡Error: No existe ninguna plantilla HTML!',
 	'Erreur : Aucun modèle HTML présent !',
 	'Errore: nessun template HTML presente!',
@@ -26879,11 +23726,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Error: No atual Template-HTML disponível!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.06.2023 10:22:33', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.no_html_version',
-	'Please add an HTML version in the content tab to complete the mailing',
-	'Bitte ergänzen Sie im Inhalts-Reiter eine HTML-Version, um das Mailing zu vervollständigen',
+	'Error: No HTML version available!',
+	'Fehler: Keine HTML-Version vorhanden!',
 	'¡Error: No existe ninguna versión HTML !',
 	'Erreur : Pas de version HTML disponible!',
 	'Errore: nessuna versione HTML presente!',
@@ -26891,7 +23738,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Error: No atual Version-HTML disponível!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.06.2023 10:23:59', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.no_subscribers',
 	'Number of recipients is zero! Please select corresponding recipients.',
@@ -26906,8 +23753,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('05.01.2023 14:47:30', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.no_text_template',
-	'Please add a text template in the templates tab to complete the mailing.',
-	'Bitte ergänzen Sie im Schablonen-Reiter eine Text-Schablone, um das Mailing zu vervollständigen.',
+	'Error: No Text-Template available',
+	'Fehler: Keine Text-Schablone vorhanden!',
 	'¡Error: No existe ninguna plantilla de texto!',
 	'Erreur : Pas de modèle de texte disponible !',
 	'Errore: nessun template di testo presente!',
@@ -26915,19 +23762,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Error: No atual Template-Text disponível!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.06.2023 10:25:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.no_text_version',
-	'Please add a text version in the content tab to complete the mailing.',
-	'Bitte ergänzen Sie im Inhalts-Reiter eine Text-Version, um das Mailing zu vervollständigen.',
-	'Añada una versión de texto en la pestaña de contenido para completar el mailing.',
-	'Veuillez ajouter une version texte dans l''onglet contenu pour compléter le mailing.',
-	'Aggiungete una versione di testo nella scheda del contenuto per completare il mailing.',
-	'Voeg een tekstversie toe op het tabblad Inhoud om de mailing te voltooien.',
-	'Adicione uma versão de texto no separador de conteúdo para completar o mailing.',
+	'Error: No Plain-Text-Version available!',
+	'Fehler: Keine Text-Version vorhanden!',
+	'¡Error: No existe ninguna versión de texto!',
+	'Erreur : Pas de version texte disponible !',
+	'Errore: nessuna versione di testo presente!',
+	'Fout: Geen tekstversie beschikbaar!',
+	'Error: No Plain-Text-Version disponível!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.06.2023 09:52:47', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.notexist',
 	'The requested mailing does not exist.',
@@ -27027,7 +23874,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.reply_adress',
 	'Error in reply-to address!',
-	'Fehler in Antwortadresse!',
+	'Fehler in Antwort-Adresse!',
 	'¡Error en la dirección de respuesta!',
 	'Erreur dans l''adresse de réponse !',
 	'Errore nell''indirizzo della risposta!',
@@ -27035,7 +23882,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:36:56', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.rulebased_without_target',
 	'Please choose a target group!',
@@ -27087,7 +23934,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.sender_adress',
 	'Error in sender address!',
-	'Fehler in Absenderadresse!',
+	'Fehler in Absender-Adresse!',
 	'¡Error en la dirección del remitente!',
 	'Erreur dans l''adresse de l''expéditeur !',
 	'Errore nell''indirizzo del mittente!',
@@ -27095,7 +23942,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Erro no endereço remetente!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:36:26', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailing.size.large',
 	'The max size of your mailing exceeds a limit ({0}). Please reduce the number of images or the size of the files.',
@@ -27313,18 +24160,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.mailinglist.delete.last',
-	'It is not possible to delete the last available mailinglist.',
-	'Es ist nicht möglich die letzte verfügbare Mailingliste zu löschen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailinglist.duplicate',
 	'Mailing list {0} already exists.',
 	'Mailing-Liste {0} existiert bereits.',
@@ -27360,18 +24195,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('02.12.2019 13:44:40', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 14:50:40', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.mailloop.delete.used',
-	'This response processing could not be deleted, because it is used in domain address "{0}".',
-	'Diese Respone-Verarbeitung kann nicht gelöscht werden, da sie noch in der Domain "{0}" verwendet wird.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mailtype.invalid',
 	'Invalid mailtype',
@@ -27504,18 +24327,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('09.10.2020 10:00:19', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.10.2020 10:00:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.mediapool.overwrite',
-	'File ''{0}'' cannot be uploaded because the overwrite slider is inactive. Set this slider to active or select another filename.',
-	'Die Datei {0} kann nicht hochgeladen werden, weil das ìberschreiben ausgeschaltet ist. Setzen Sie diesen Schalter aktiv oder verwenden Sie einen anderen Dateinamen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.mediapool.size_exceeded',
 	'The maximum size of mediapool was already exceeded. Current size: {0}, Maximum size: {1}',
@@ -27850,8 +24661,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.numberOfCompaniesExceeded',
 	'Maximum number of clients exceeded ({0}).',
@@ -28333,30 +25144,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('05.01.2023 15:19:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.preview.recipient.missing',
-	'Preview cannot be created, because there are no recipients for mailinglist {0}. Please create a recipient and add a binding to this mailinglist.',
-	'Die Vorschau kann nicht erzeugt werden, da kein Empfänger für die Mailingliste {0} vorliegt. Bitte erstellen Sie einen Empfänger und weisen ihn der Mailingliste zu.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.preview.recipient.test.missing',
-	'Preview cannot be created, because there are no test recipients for mailinglist {0}. Please create a test recipient and add a binding to this mailinglist.',
-	'Die Vorschau kann nicht erzeugt werden, da kein Testempfänger für die Mailingliste {0} vorliegt. Bitte erstellen Sie einen Testempfänger und weisen ihn der Mailingliste zu.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.profileField.rename',
 	'Profile field cannot be renamed because it is used by: {0}',
 	'Das Profilfeld kann nicht umbenannt werden, da es von {0} verwendet wird.',
@@ -28500,30 +25287,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.profiledb.export.used',
-	'The profilefield ''{0}'' cannot be deleted, because it is in use by export profile ''{1}'' (ID: {2}).',
-	'Das Profilfeld ''{0}'' kann nicht gelöscht werden, da es im Exportprofil ''{1}'' (ID: {2}) verwendet wird.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.profiledb.import.used',
-	'The profilefield ''{0}'' cannot be deleted, because it is in use by import profile ''{1}'' (ID: {2}).',
-	'Das Profilfeld ''{0}'' kann nicht gelöscht werden, da es im Importprofil ''{1}'' (ID: {2}) verwendet wird.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.profiledb.insert_in_db_error',
 	'The field could not be created. Please check the values you entered.',
@@ -28695,7 +25458,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.profilefield.name.invalid',
 	'Field name in database ''{0}'' is invalid.',
-	'Der Feldname ''{0}'' ist ungültig',
+	'=Der Feldname ''{0}'' ist ungültig',
 	NULL,
 	NULL,
 	NULL,
@@ -28943,7 +25706,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('26.04.2021 13:44:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.recipient.firstname.tooLong',
 	'Please select a first name that has no more than 100 characters.',
@@ -29533,18 +26296,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.sent.mailing.change.denied',
-	'Only name, description and archive setting may be changed for sent mailings',
-	'Für versendete Mailings dürfen nur der Name, die Beschreibung und die Archiveinstellungen verändert werden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('24.03.2023 13:58:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('24.03.2023 13:58:10', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.settings.supervisor.grantLoginPermissionBySupervisor',
 	'Supervisor are not allowed to grant login permissions!',
 	'Supervisor dürfen keine Login-Berechtigungen erteilen!',
@@ -29761,18 +26512,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.string.html.notAllowed',
-	'HTML content is not allowed',
-	'HTML Inhalt ist nicht zulässig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.07.2023 11:26:45', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.subjectToLong',
 	'Please select a shorter Subject.',
 	'Bitte wählen Sie einen kürzeren Betreff.',
@@ -29856,30 +26595,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.target.content.incompatible.limit',
-	'The new rules for this target group cannot be used in content blocks. This target group is currently used in content blocks of the following mailings  <ul>{0}</ul>',
-	'Die neuen Regeln dieser Zielgruppe können nicht in Inhaltsbausteinen verwendet werden. Diese Zielgruppe wird aktuell in Inhaltsbausteinen von folgenden Mailings verwendet: <ul>{0}</ul>',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.target.content.incompatible.limit.more',
-	'The new rules for this target group cannot be used in content blocks. This target group is currently used in content blocks of the following mailings <ul>{0}</ul> and {1} more.',
-	'Die neuen Regeln dieser Zielgruppe können nicht in Inhaltsbausteinen verwendet werden. Diese Zielgruppe wird aktuell in Inhaltsbausteinen von folgenden Mailings verwendet: <ul>{0}</ul> und {1} mehr.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.target.definition',
 	'Error in target group definition.',
@@ -30024,18 +26739,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('19.03.2019 17:07:46', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.03.2019 17:07:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.target.eql.syntax.char',
-	'Missing {3} near &quot;{2}&quot; in line {0}, column {1}',
-	'Fehlendes Zeichen {3} bei &quot;{2}&quot; in Zeile {0}, Spalte {1}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.target.eql.unknownLinkId',
 	'Unknown link ID {3} for mailing {2} in line {0}, column {1}',
@@ -30457,18 +27160,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.tile.remove',
-	'Tile cannot be removed. One tile needs to be shown.',
-	'Es muss mindestens eine Kachel angezeigt werden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.time.missing',
 	'Please specify a time.',
 	'Bitte wählen Sie eine Zeit aus.',
@@ -30684,18 +27375,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('22.01.2021 11:00:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.upload.image',
-	'Image could not be uploaded, please check your image and try again.',
-	'Das Bild konnte nicht hochgeladen werden, bitte überprüfen Sie es auf Fehler und versuchen Sie es erneut.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.upload.name',
 	'The "Name" field is mandatory. Please fill in.',
@@ -30996,18 +27675,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.value.unallowedHtml',
-	'Value for key ''{0}'' contains unallowed HTML tags',
-	'Der Wert für den Schlüssel ''{0}'' enthält unerlaubte HTML Tags',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.08.2023 13:08:34', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.08.2023 13:08:34', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.value.unknownReason',
 	'Unknown reason',
@@ -31357,18 +28024,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('19.07.2018 11:07:53', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.07.2018 11:07:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.workflow.autoopt.time.short',
-	'Auto-Optimization decision date has to be at least 2 hours after defined time in start icon',
-	'Der Entscheidungszeitpunkt für die Auto-Optimierung muss mindestens 2 Stunden nach der im Startsymbol festgelegten Zeit liegen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:31', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.workflow.baseMailingAtFirst',
 	'The campaign cannot be activated since the sending date of the followup mailing <b>{0}</b> has to be terminated after the base mailing.',
 	'Die Kampagne kann nicht aktiviert werden, weil das Versanddatum des Followup-Mailings <b>{0}</b> nach dem Versanddatum des Basis-Mailings liegen muss.',
@@ -31536,18 +28191,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('19.07.2018 11:07:53', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.07.2018 11:07:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.workflow.decision.auto.optimisation',
-	'Please note that in a campaign a "start event" cannot be combined with the "auto-optimization" option.',
-	'Bitte beachten Sie, dass in einer Kampagne ein "Startereignis" nicht mit der Option "Auto-Optimierung" kombiniert werden kann.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.workflow.decision.requiresMailingBefore',
 	'The sending of the mailing <b>{0}</b> has to happen before a decision.',
@@ -31933,18 +28576,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.workflow.pause.change',
-	'Only mailings and stop icons can be changed during pause.',
-	'In pausierten Kampagnen können nur Mailinginhalte und das Stop-Icon verändert werden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.workflow.profiledb.missingColumnsForConditions',
 	'Missing required profile fields: {0}',
 	'Das benötigte Profilfeld {0} fehlt.',
@@ -32005,21 +28636,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.workflow.start.one',
-	'Campaign should not have more then one start icon.',
-	'Kampagnen dürfen nur ein Start-Icon haben.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.workflow.targets.invalid',
-	'Campaign contains invalid target groups ({0}). Please replace these target groups.',
-	'Die Kampagne enthält ungültige Zielgruppen ({0}). Bitte ersetzen Sie diese Zielgruppen.',
+	'Campaign contains invalid target groups({0}). Please replace these target groups.',
+	'Die Kampagne enthält ungültige Zielgruppen({0}). Bitte ersetzen Sie diese Zielgruppen.',
 	NULL,
 	NULL,
 	NULL,
@@ -32027,7 +28646,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('16.11.2020 09:36:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 12:20:54', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('22.12.2022 09:18:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.workflow.trackingRequired',
 	'Sequenced and followup mailings require the Automation Package to be enabled. Please contact your key account manager.',
@@ -32186,16 +28805,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export',
-	'Export profile',
-	'Exportprofil',
-	'Perfil de exportación',
-	'Profil d''exportation',
-	'Profilo di esportazione',
-	'Exportprofiel',
-	'Perfil de exportação',
+	'Export',
+	'Export',
+	'Exportar',
+	'Exporter',
+	NULL,
+	'Exporteren',
+	'Exportar',
 	0,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.Column_Name',
 	'Column name',
@@ -32343,7 +28962,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.WizardDeleteQuestion',
 	'Do you really want to delete this export definition?',
-	'Wollen Sie diese Export-Definition wirklich löschen?',
+	'Möchten Sie diese Export-Definition wirklich löschen?',
 	'¿Está seguro que quiere borrar esta definición de exportación?',
 	'Voulez-vous vraiment supprimer cette définition d''exportation ?',
 	'Vuoi davvero eliminare questa definizione di esportazione?',
@@ -32351,7 +28970,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta definição exportação?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:33', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.category.softbounces',
 	'Soft bounces (undeliverable)',
@@ -32496,30 +29115,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'export.decode.values',
-	'Export decoded values',
-	'Volltext-Werte exportieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('09.10.2023 11:11:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.10.2023 11:11:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'export.delete.question',
-	'Do you really want to delete the export profile <b>{0}</b>?',
-	'Wollen Sie die Exportdefinition <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.fields.explanation',
 	'Here you may select additional fields from the recipient profile which will be included in the export file.',
@@ -32666,7 +29261,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('15.11.2022 11:52:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.reactionAndStatus.info',
-	'The values in the Event Types column have the following meaning:<br>1&nbsp;=&nbsp;subscription | 2&nbsp;=&nbsp;unsubscribe by admin | 3&nbsp;=&nbsp;unsubscribe by recipient | 4&nbsp;=&nbsp;successful&nbsp;blocklisted | 5&nbsp;=&nbsp;soft&nbsp;successful mail delivery | 6&nbsp;=&nbsp;softbounce | 7&nbsp;=&nbsp;hardbounce | 8&nbsp;=&nbsp;mail opened | 9&nbsp;=&nbsp;click | 10&nbsp;=&nbsp;revenue',
+	'The values in the Event Types column have the following meaning:<br>1&nbsp;=&nbsp;subscription | 2&nbsp;=&nbsp;unsubscribe by admin | 3&nbsp;=&nbsp;unsubscribe by recipient | 4&nbsp;=&nbsp;successful&nbsp;blocklisted | 5&nbsp;=&nbsp;soft&nbsp;successful mail delivery | 6&nbsp;=&nbsp;hard&nbsp;softbounce | 7&nbsp;=&nbsp;hardbounce | 8&nbsp;=&nbsp;mail opened | 9&nbsp;=&nbsp;click | 10&nbsp;=&nbsp;revenue',
 	'Die Werte in der Spalte Ereignistypen haben folgende Bedeutung:<br>1&nbsp;=&nbsp;Anmeldung | 2&nbsp;=&nbsp;Abmeldung durch Admin | 3&nbsp;=&nbsp;Abmeldung durch Empfänger | 4&nbsp;=&nbsp;Blocklisted | 5&nbsp;=&nbsp;Erfolgreiche Mail Zustellung | 6&nbsp;=&nbsp;Softbounce | 7&nbsp;=&nbsp;Hardbounce | 8&nbsp;=&nbsp;Mail Öffnung | 9&nbsp;=&nbsp;Linkklick | 10&nbsp;=&nbsp;Umsatzmessung',
 	NULL,
 	NULL,
@@ -32674,8 +29269,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:28:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:32:28', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.01.2023 01:02:18', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('16.01.2023 01:02:18', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'export.result.error',
 	'An error occurred while exporting data: {0}',
@@ -32762,7 +29357,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'externalEditor',
-	'Create and personalize the contents of the mailing in the editor of our partner, Deutsche Post.',
+	'Die Inhalte des Mailings im Editor unseres Partners Deutsche Post erstellen und personalisieren.',
 	'Die Inhalte des Mailings im Editor unseres Partners Deutsche Post erstellen und personalisieren.',
 	NULL,
 	NULL,
@@ -32771,7 +29366,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('30.03.2020 10:37:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 14:11:41', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('30.03.2020 10:37:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'facebook.leadAds',
 	'Facebook Lead Ads',
@@ -32846,7 +29441,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('27.10.2020 12:18:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'facebook.leadAds.login.title',
-	'Login to Facebook',
+	'Login with Facebook',
 	'Anmeldung bei Facebook',
 	NULL,
 	NULL,
@@ -32855,7 +29450,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('27.10.2020 12:18:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 11:32:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.10.2020 12:18:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'facebook.leadAds.mailinglist',
 	'Mailing list for leads',
@@ -32868,18 +29463,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.11.2020 13:58:41', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'facebook.leadAds.page.connect',
-	'Connect page',
-	'Seite verbinden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'facebook.leadAds.renewedPageAccessTokens',
 	'Renewed {0} page access tokens',
@@ -33025,30 +29608,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'file.delete',
-	'Delete file',
-	'Datei löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'file.delete.question',
-	'Do you really want to delete the file <b>{0}</b>?',
-	'Wollen Sie die Datei <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'file.not.available',
 	'File not available',
 	'Datei noch nicht verfügbar',
@@ -33060,18 +29619,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'files.temp',
-	'Temporary files',
-	'Temporäre Dateien',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'filter.reset',
 	'Reset filter',
@@ -33147,7 +29694,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'font.delete.question',
 	'Do you really want to delete this font?',
-	'Wollen Sie diesen Font wirklich löschen?',
+	'Möchten Sie diesen Font wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta fuente?',
 	'Voulez-vous vraiment supprimer cette police ?',
 	'Vuoi davvero eliminare questo font?',
@@ -33155,7 +29702,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:37', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'font.file',
 	'Font file',
@@ -33387,7 +29934,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'form.delete.question',
 	'Do you really want to delete this form?',
-	'Wollen Sie dieses Formular wirklich löschen?',
+	'Möchten Sie dieses Formular wirklich löschen?',
 	'¿Usted realmente desea excluir este formulario?',
 	'Voulez-vous vraiment supprimer ce formulaire ?',
 	'Vuoi davvero eliminare questo modulo?',
@@ -33395,7 +29942,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este formulário?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:43', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'form.error_url',
 	'Error URL',
@@ -33468,18 +30015,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'frequency.counter.setup',
-	'Frequency counter setup',
-	'Frequenzzähler einrichten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'function',
 	'Function',
@@ -33926,16 +30461,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('30.11.2022 15:33:05', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.div.container.fix',
-	'Content and position',
-	'Inhalt und Position',
+	'Fixed',
+	'Fix',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('13.10.2022 15:05:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('13.10.2022 15:05:16', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.div.container.isHidden',
 	'is hidden',
@@ -34079,43 +30614,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.div.container.type.multi',
-	'Repeating Module',
-	'Wiederholungsbaustein',
+	'multi',
+	'multi',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'grid.div.container.type.multi.limit',
-	'Maximum number of elements',
-	'Maximale Anzahl der Elemente',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'grid.div.reference.all',
-	'All reference tables',
-	'Alle Referenztabellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.09.2021 16:59:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('14.09.2021 16:59:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.divchild.delete.question',
 	'This post is being used in the templates. <br>Do you really want to delete this post?',
@@ -34597,18 +31108,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('26.07.2019 12:53:59', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'grid.mediapool.audio_files',
-	'Audio files',
-	'Audio-Dateien',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.05.2023 11:56:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.05.2023 11:56:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.mediapool.background_images',
 	'Background images',
 	'Hintergrundbilder',
@@ -34947,7 +31446,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.mediapool.image.delete',
 	'Do you really want to delete this image?',
-	'Wollen Sie dieses Bild wirklich löschen?',
+	'Möchten Sie dieses Bild wirklich löschen?',
 	NULL,
 	'Voulez-vous vraiment supprimer cette image ?',
 	'Vuoi davvero eliminare questa immagine?',
@@ -34955,7 +31454,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:46', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.mediapool.image.expire.image',
 	'Default expire image',
@@ -35583,7 +32082,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.clone.question',
 	'Do you want to create and use a copy instead?',
-	'Wollen Sie eine Kopie erstellen und diese verwenden?',
+	'Möchten Sie eine Kopie erstellen und diese verwenden?',
 	'¿Quiere crear una copia y emplearla?',
 	'Voulez-vous créer une copie et utiliser celle-ci ?',
 	'Vuoi creare una copia e utilizzarla?',
@@ -35591,7 +32090,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:52', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.colorpicker.colorsAreSimilar',
 	'Color of Div-Container background must not be equal to color of font',
@@ -35643,7 +32142,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.delete',
 	'Do you really want to delete this layout?',
-	'Wollen Sie dieses Layout wirklich löschen?',
+	'Möchten Sie dieses Layout wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta plantilla?',
 	'Voulez-vous vraiment supprimer ce modèle ?',
 	'Vuoi davvero eliminare questo modello?',
@@ -35651,7 +32150,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:24:59', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.download.css',
 	'Download CSS',
@@ -35918,7 +32417,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.orientation.center',
-	'centred',
+	'center',
 	'zentriert',
 	'centrado',
 	'centré',
@@ -35927,7 +32426,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'centrar',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 10:36:49', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'grid.template.orientation.left',
 	'left',
@@ -36002,8 +32501,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'help.report.problem',
-	'Request support',
-	'Unterstützung anfordern',
+	'Report a problem',
+	'Problem melden',
 	NULL,
 	NULL,
 	NULL,
@@ -36011,7 +32510,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.12.2023 12:56:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'help.suggest.feature',
 	'Suggest a feature',
@@ -36049,18 +32548,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('19.09.2019 10:28:08', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.09.2019 10:28:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'hint.import.manage.fields.save',
-	'The option to manage fields is available after saving the import profile.',
-	'Die Option zur Verwaltung der Felder wird nach dem Speichern des Importprofiles zur Verfügung stehen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'hint.workflow.followup.trackingveto',
 	'Due to the tracking veto in your client, no followup campaigns are possible.',
 	'Aufgrund des Tracking-Vetos in Ihrem Mandanten, sind keine Followup-Kampagnen möglich.',
@@ -36072,42 +32559,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('14.03.2022 13:03:32', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('14.03.2022 13:03:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'honeypot.link.confirm',
-	'Follow link',
-	'Link folgen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'honeypot.link.confirm.follow',
-	'Yes, I want to follow this link',
-	'Ja, ich möchte diesem Link folgen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'honeypot.link.confirm.long',
-	'Do you want to follow this link?',
-	'Möchten Sie diesem Link folgen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'hours',
 	'hours',
@@ -36637,138 +33088,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.description.default',
-	'Please describe your desired image in detail',
-	'Bitte beschreiben Sie Ihr gewünschtes Bild genau',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.format.landscape',
-	'16:9 Landscape',
-	'16:9 Querformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.format.portrait',
-	'9:16 Portrait',
-	'9:16 Hochformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.format.square',
-	'1:1 Square',
-	'1:1 Quadrat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.generated.images',
-	'AI generated images',
-	'KI generierte Bilder',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.generated.preview',
-	'Here you will be shown a preview of your AI-generated images after they have been generated.',
-	'Hier sehen Sie eine Vorschau Ihrer KI-generierten Bilder, nachdem sie generiert wurden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.generation',
-	'AI image generation',
-	'KI Bildgenerierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.quota',
-	'You can still create {0} images. For more images, please contact your account manager.',
-	'Sie können noch {0} Bilder erstellen. Für weitere Bilder wenden Sie sich an Ihren Kundenbetreuer.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.ai.quota.exceeded',
-	'To create additional images, please contact your account manager.',
-	'Für die Erstellung weitere Bilder wenden Sie sich an Ihren Kundenbetreuer.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.delete.question',
-	'Do you really want to delete the image <b>{0}</b>?',
-	'Wollen Sie das Bild <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'image.description',
-	'Image description',
-	'Bildbeschreibung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'image.editor.crop',
 	'Crop',
 	'Zuschneiden',
@@ -36950,7 +33269,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.RecipientsAllreadyinDB',
-	'Recipients from import data file already in database',
+	'Recipients from CSV file already in database',
 	'Empfänger, die schon in der Datenbank eingetragen sind',
 	'Destinatarios que ya están registrados en la base de datos',
 	'Destinataires qui sont déjà dans la base de données',
@@ -36959,7 +33278,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Destinatários da CSV lidos em BD',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.Separator',
 	'Separator',
@@ -37298,16 +33617,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.csv_errors_double',
-	'Duplicate records in the import data file',
-	'Doppelte Datensätze innerhalb der Importdaten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	'Duplicate records in the CSV file',
+	'Doppelte Datensätze innerhalb der CSV-Daten',
+	'Registros duplicados de datos dentro de los datos CSV',
+	'Enregistrement répété dans le fichier CSV',
+	'Doppi record all''interno dei dati del file CSV',
+	'Dubbele records in het CSV-bestand',
+	'Registros duplicados en arquivo CSV',
 	0,
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 12:55:01', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.csv_errors_email',
 	'Errors in e-mail addresses',
@@ -37706,8 +34025,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.dont_ignore_null_values',
-	'overwrite existing values in the profile field',
-	'überschreiben vorhandene Werte im Profilfeld',
+	'overwrite values in the profile field',
+	'überschreiben Werte im Profilfeld',
 	'Sobrescribir los registros existentes con valores cero',
 	'Écraser les données existantes avec des valeurs null',
 	'Sovrascrivi i dati esistenti con valori zero',
@@ -37715,7 +34034,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Sobrescrever os registros existentes com valores nulos',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 08:52:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('03.02.2021 13:40:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.doublechecking',
 	'Check for duplicate records',
@@ -37874,8 +34193,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('22.04.2021 13:51:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.ignore_null_values',
-	'keep existing values in profile fields',
-	'lassen vorhandene Werte im Profilfeld unverändert',
+	'ignore',
+	'ignorieren',
 	'ignore',
 	'ignorer',
 	'ignora',
@@ -37883,7 +34202,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'ignore',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('20.12.2023 12:36:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('03.02.2021 13:42:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.keycolumn',
 	'Key column for duplicate-check and updates',
@@ -37898,7 +34217,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.mailinglists.all',
-	'All mailing lists',
+	'All maling lists',
 	'Alle Mailing-Listen',
 	NULL,
 	NULL,
@@ -37907,7 +34226,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('02.11.2020 14:53:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 13:58:41', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('20.11.2020 13:58:53', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.maximumRetries',
 	'Number of retries',
@@ -37958,8 +34277,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.mode.add_update_exclusive',
-	'Add new recipients and update existing recipients. Subscribe included recipients (incl Bounces). Unsubscribe not included recipients.',
-	'Neue Empfänger hinzufügen und bestehende aktualisieren. Enthaltene Empfänger anmelden (inkl Bounces). Nicht enthaltene Empfänger abmelden.',
+	'Add new recipients and update existing recipients. Subscribe included recipients. Unsubscribe not included recipients.',
+	'Neue Empfänger hinzufügen und bestehende aktualisieren. Enthaltene Empfänger anmelden. Nicht enthaltene Empfänger abmelden.',
 	NULL,
 	'Ajouter de nouveaux destinataires et actualiser ceux existants. Abonner les destinataires inclus. Désabonner les destinataires non inclus.',
 	NULL,
@@ -37967,7 +34286,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.03.2023 14:22:10', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.11.2022 11:52:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.mode.add_update_forced',
 	'Add new recipients and update existing recipients. Subscribe unsubscribers.',
@@ -38028,6 +34347,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'import.mode.globus_special',
+	'Special Globus Import Mode',
+	'Spezieller Globus Importmodus',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('31.01.2022 16:51:55', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('31.01.2022 16:51:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.mode.only_update',
 	'Update only existing recipients',
@@ -38185,41 +34516,17 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'import.profile.delete',
-	'Delete import profile',
-	'Importprofil löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('15.01.2024 01:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.01.2024 01:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'import.profile.delete.question',
-	'Do you really want to delete the import profile <b>{0}<b>?',
-	'Wollen Sie das Importprofil <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.profile.file.settings',
-	'import file settings',
-	'Import-Datei-Einstellungen',
-	'Ajustes archivo',
-	'Paramètres du fichier',
-	'Impostazioni file',
-	'Instellingen voor import-bestand',
+	'CSV file settings',
+	'CSV-Datei-Einstellungen',
+	'Ajustes archivo CSV',
+	'Paramètres du fichier CSV',
+	'Impostazioni file CSV',
+	'Instellingen voor CSV-bestand',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.08.2023 13:06:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.profile.gender.int',
 	'internal value in EMM',
@@ -38234,16 +34541,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.02.2021 13:48:35', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.profile.gender.settings',
-	'Gender settings',
+	'Import gender settings',
 	'Einstellungen für Geschlecht',
-	'Configuración género',
-	'Paramètres de sexe',
+	'Importando configuración género',
+	'Paramètres de sexe importés',
 	'Importazione delle impostazioni relative al sesso',
 	'Bezig met importeren van geslachtinstellingen',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 14:39:12', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('13.01.2020 12:30:34', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.profile.gender.string',
 	'Value of import file',
@@ -38761,18 +35068,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'import.result.mailinglist.data',
-	'Imported data per mailinglist',
-	'Importierte Daten pro Mailingliste',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.09.2023 14:24:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.09.2023 14:24:38', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.result.subscribersAdded',
 	'Recipients added',
 	'Empfänger hinzugefügt',
@@ -39050,16 +35345,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.wizard.uploadCsvFile',
-	'Use uploaded file',
-	'Hochgeladene Datei verwenden',
-	'Emplear archivo descargado',
-	'Utiliser le fichier téléchargé',
-	'Utilizza file caricato',
-	'Geüpload bestand gebruiken',
+	'Use uploaded CSV',
+	'Hochgeladene CSV-Datei verwenden',
+	'Emplear archivo CSV descargado',
+	'Utiliser le fichier CSV téléchargé',
+	'Utilizza file CSV caricato',
+	'Geüpload CSV-bestand gebruiken',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.08.2023 13:07:20', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'import.wizard.uploadFile',
 	'Use uploaded import file',
@@ -39193,54 +35488,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.dashboard.empty',
-	'The dashboard is empty, because no tiles were added. To add new tiles, enter the <a href=''#'' data-action=''edit-dashboard'' style=''color:#0071B9''>edit mode</a>.',
-	'Das Dashboard ist leer, weil noch keine Kacheln hinzugefügt wurden. Um Kacheln hinzuzufügen in den <a href=''#'' data-action=''edit-dashboard'' style=''color:#0071B9''>Bearbeitungsmodus</a> wechseln',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.emc.template.approved.change',
-	'Please note that approved templates cannot be changed.',
-	'Bitte beachten Sie, dass freigegebene Vorlagen nicht geändert werden können.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.facebook.leadAds.login',
-	'No entries available. Please log in to facebook.',
-	'Keine Einträge verfügbar, Bitte loggen Sie sich bei Facebook ein.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.manual.agnTags',
-	'Find instructions for use with examples in the <a href="#" data-popup="{0}">manual</a>.',
-	'Hinweise zur Anwendung mit Beispielen finden Sie im <a href="#" data-popup="{0}">Handbuch</a>.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'info.password.reset.email',
 	'If the e-mail address entered matches an address stored with us, a password reset e-mail has been triggered.',
 	'Sofern die eingegebene E-Mail-Adresse mit einer bei uns hinterlegten Adresse übereinstimmt, wurde eine E-Mail zum Zurücksetzen des Passworts ausgelöst.',
@@ -39253,18 +35500,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('29.09.2022 11:19:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('29.09.2022 11:19:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.recipient.data.retention',
-	'The retention period for the data in the contact history is {0} days. The extended delivery information is stored for {1} days.',
-	'Die Vorhaltezeit der Daten in der Kontakthistorie sind beträgt {0} Tage. Die erweiterten Zustellinformationen werden {1} Tage vorgehalten.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.02.2024 12:30:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'info.recipients.choose',
 	'Please choose the recipients you want to show!',
 	'Wählen Sie zuerst die Empfänger, die Sie anzeigen möchten!',
@@ -39276,30 +35511,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.03.2022 08:13:44', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('08.03.2022 08:13:44', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.referencetable.import.mapping',
-	'A mapping must be created before importing of the file will be possible.',
-	'Bevor die Datei importiert werden kann, muss ein Mapping erstellt werden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'info.save.overwrite',
-	'Please note that by "Save" the generated text is taken over and existing texts can be overwritten.',
-	'Bitte beachten Sie, dass durch "Speichern" der generierte Text übernommen wird und bestehende Texte überschrieben werden.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'info.statistics.endDeviceAndModels',
 	'Because OpenEMM does not detect end device types and models, all mail openings and clicks are automatically assigned to device type "PC".',
@@ -40515,7 +36726,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'loginmanager.unlockMessage',
 	'Do you really want to unlock this IP address?',
-	'Wollen Sie die Login-Sperre für diese IP-Adresse wirklich aufheben?',
+	'Möchten Sie die Login-Sperre für diese IP-Adresse wirklich aufheben?',
 	'¿Está seguro de que quiere eliminar el bloqueo de inicio para esta dirección IP?',
 	'Voulez-vous vraiment débloquer cette adresse IP ?',
 	'Vuoi davvero rimuovere il blocco del login per questo indirizzo IP?',
@@ -40523,7 +36734,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:25:03', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.error.hostauth.empty_code',
 	'Please enter your security code here.',
@@ -40754,28 +36965,28 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('18.12.2019 16:57:18', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.offline.versionHeadline',
-	'Version: Helix (EMM Inhouse 23.10)',
-	'Version: Helix (EMM Inhouse 23.10)',
+	'Version: Pluto (22.10)',
+	'Version: Pluto (22.10)',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('15.01.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.01.2024 01:02:27', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.offline.versionText',
-	'The Helix Nebula is not only a breathtaking spectacle in the night sky, but also has important scientific significance. It allows researchers to understand more about the final phases of stars and the formation of planetary systems. This fascinating object in the universe reminds us of the beauty and mysteries of the universe.',
-	'Der Helixnebel ist nicht nur ein atemberaubendes Schauspiel am Nachthimmel, sondern hat auch eine wichtige wissenschaftliche Bedeutung. Er ermöglicht Forschern, mehr über die Endphasen der Sterne und die Entstehung von Planetensystemen zu verstehen. Dieses faszinierende Objekt im Universum erinnert uns an die Schönheit und Geheimnisse des Weltalls.',
+	'Although Pluto was downgraded to a dwarf planet in 2006, it was considered the outermost planet of our solar system for 76 years. It is located in the Kuiper belt and 4.9 billion kilometers from Earth. It takes Pluto 248 years to orbit the sun.',
+	'Zwar wurde Pluto 2006 zum Zwergplaneten herabgestuft, doch für 76 Jahre galt er als äußerster Planet unseres Sonnensystems. Er ist im Kuipergürtel zu Hause und 4,9 Mrd. Kilometer von der Erde entfernt. Für eine Sonnenumrundung benötigt Pluto 248 Jahre.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('15.01.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.01.2024 01:02:27', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:14', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('22.12.2022 11:41:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.password',
 	'Password',
@@ -40788,18 +36999,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'logon.password.forgotten',
-	'Forgot password?',
-	'Passwort vergessen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.password_reset',
 	'Reset password',
@@ -40897,42 +37096,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'logon.totp.code',
-	'Authentication code',
-	'Authentifizierungscode',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'logon.totp.codeApp',
-	'QR-code for authenticator app',
-	'QR-Code för Authenticator-App',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'logon.totp.codeSetup',
-	'Authentication code for verification',
-	'Authentifizierungscode zur Verifikation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:34:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'logon.totp.send',
 	'Send code',
 	'Code absenden',
@@ -40981,17 +37144,17 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing-trackablelinks.show.deleted',
-	'Show deleted links',
-	'Gelöschte Links anzeigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	'mailSettings',
+	'Mail settings',
+	'Mail Einstellungen',
+	'Ajustes mail',
+	'Paramètres d''e-mail',
+	'Impostazioni mail',
+	'Mailinstellingen',
 	NULL,
 	0,
-	STR_TO_DATE('11.05.2023 12:26:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.05.2023 12:26:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Attachment',
 	'Attachment',
@@ -41103,7 +37266,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Delete_Template_Question',
 	'Do you really want to delete this template?',
-	'Wollen Sie diese Schablone wirklich löschen?',
+	'Möchten Sie diese Schablone wirklich löschen?',
 	'¿Está seguro que quiere borrar esta plantilla?',
 	'Voulez-vous vraiment supprimer ce modèle ?',
 	'Vuoi davvero eliminare questo template?',
@@ -41111,7 +37274,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este modelo?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:25:06', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Delivery',
 	'Delivery',
@@ -41367,7 +37530,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Graphics_Component.deleteConfirmation',
 	'Do you really want to delete this image?',
-	'Wollen Sie dieses Bild wirklich löschen?',
+	'Möchten Sie dieses Bild wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta imagen?',
 	'Voulez-vous vraiment supprimer cette image ?',
 	'Vuoi davvero eliminare questa immagine?',
@@ -41375,7 +37538,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:25:33', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Graphics_Component.imageUpload',
 	'Image upload',
@@ -41583,7 +37746,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MailingDeleteQuestion',
 	'Do you really want to delete this mailing?',
-	'Wollen Sie dieses Mailing wirklich löschen?',
+	'Möchten Sie dieses Mailing wirklich löschen?',
 	'¿Usted realmente desea excluir este mailing?',
 	'Voulez-vous vraiment supprimer cet envoi ?',
 	'Vuoi davvero eliminare questo mailing?',
@@ -41591,7 +37754,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este mailing?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:15', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MailingEdit',
 	'Edit mailing',
@@ -41727,7 +37890,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MailingUndoQuestion',
 	'Do you really want to undo your last changes?',
-	'Wollen Sie den aktuellen Bearbeitungsschritt wirklich zurücknehmen?',
+	'Möchten Sie den aktuellen Bearbeitungsschritt wirklich zurücknehmen?',
 	'¿Está seguro que quiere retirar el paso de edición actual?',
 	'Voulez-vous vraiment annuler vos dernières modifications ?',
 	'Vuoi davvero annullare l’ultima fase di modifica?',
@@ -41735,7 +37898,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:19', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MailingWizard',
 	'Mailing wizard',
@@ -41883,7 +38046,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MediaType.post',
 	'Post',
-	'Post',
+	'Beitrag',
 	NULL,
 	NULL,
 	NULL,
@@ -41891,7 +38054,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('11.02.2020 15:32:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2023 09:22:17', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('21.02.2023 08:39:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MediaType.sms',
 	'SMS',
@@ -42279,7 +38442,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.ReplyFullName',
 	'Reply-to full name',
-	'Antwortname',
+	'Antwort-Name',
 	'Nombre para respuesta',
 	'Nom de réponse',
 	'Nome risposta',
@@ -42287,7 +38450,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Nom para resposta',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:37:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.ResumeDelivery',
 	'Continue delivery',
@@ -42387,7 +38550,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.SendAddressMsg',
 	'Please enter the sender address:',
-	'Bitte geben Sie die Absenderadresse ein:',
+	'Bitte geben Sie die Absender-Adresse ein:',
 	'Por favor, introduzca la dirección del remitente:',
 	'Entrez l''adresse de l''expéditeur :',
 	'Immettere l''indirizzo del mittente:',
@@ -42395,7 +38558,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Digite o endereço do remetente',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:36:37', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.SendPreviewMessage',
 	'Preview of mailing',
@@ -42459,7 +38622,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.SenderFullname',
 	'Sender full name',
-	'Absendername',
+	'Absender-Name',
 	'Nombre de remitente',
 	'Nom de l''expéditeur',
 	'Nome mittente',
@@ -42467,19 +38630,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Nome completo envio',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:35:57', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Sender_Adress',
-	'SMS Sender address',
-	'SMS-Absenderadresse',
-	'SMS Dirección de remitente',
-	'SMS Adresse de l''expéditeur',
-	'SMS Indirizzo mittente',
-	'SMS Adres afzender',
-	'SMS Endereço envio',
+	'Sender address',
+	'Absender-Adresse',
+	'Dirección de remitente',
+	'Adresse de l''expéditeur',
+	'Indirizzo mittente',
+	'Adres afzender',
+	'Endereço envio',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 08:12:24', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.SendingTime',
 	'Delivery time',
@@ -42699,7 +38862,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Undo_Template_Question',
 	'Do you really want to undo your last changes?',
-	'Wollen Sie den aktuellen Bearbeitungsschritt wirklich zurücknehmen?',
+	'Möchten Sie den aktuellen Bearbeitungsschritt wirklich zurücknehmen?',
 	'¿Está seguro que quiere retirar el paso de edición actual?',
 	'Voulez-vous vraiment annuler vos dernières modifications ?',
 	'Vuoi davvero annullare l’ultima fase di modifica?',
@@ -42707,7 +38870,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:22', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.Wizard',
 	'Wizard',
@@ -42769,18 +38932,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('26.07.2022 12:20:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('26.07.2022 12:20:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.activate.confirm.question',
-	'This mailing has already been sent today. Would you still like to send it again today at {0} o''clock or schedule the next sending for tomorrow?',
-	'Dieses Mailing wurde heute bereits versendet. Wollen Sie es noch heute um {0} Uhr erneut versenden oder den nächsten Versand für morgen planen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.activate.deleted_target_groups',
 	'Cannot activate mailing. It contains deleted target groups.',
 	'Mailing kann nicht aktiviert werden. Mailing verwendet gelöschte Zielgruppen.',
@@ -42816,294 +38967,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.number',
-	'Number of words',
-	'Anzahl Worte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.basic',
-	'Please create a marketing text for the key words: {0}.',
-	'Bitte erzeuge einen Marketing Text zu den Schlüsselwörtern: {0}.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.language',
-	'Please answer in {0}.',
-	'Bitte antworte auf {0}.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.committed',
-	'Please answer in a committed way.',
-	'Bitte antworte auf eine engagierte Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.dynamic',
-	'Please answer in a dynamic way.',
-	'Bitte antworte auf eine dynamische Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.factual',
-	'Please answer in a factual way.',
-	'Bitte antworte auf eine sachliche Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.fun',
-	'Please answer in a funny way.',
-	'Bitte antworte auf eine lustige Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.modern',
-	'Please answer in a modern way.',
-	'Bitte antworte auf eine moderne Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.relaxed',
-	'Please answer in a relaxed way.',
-	'Bitte antworte auf eine entspannte Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.tonality.serious',
-	'Please answer in a serious way.',
-	'Bitte antworte auf eine ernste Art.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.06.2023 12:47:18', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.prompt.words',
-	'Please answer in less than {0} words.'',',
-	'Bitte antworte in weniger als {0} Worten.'',',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.07.2023 11:26:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.07.2023 11:26:12', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.text.generated',
-	'Generated text',
-	'Generierter Text',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.text.generation',
-	'AI text generation',
-	'KI Textgenerierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality',
-	'Tonality',
-	'Tonalität',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.committed',
-	'Committed',
-	'Engagiert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.dynamic',
-	'Dynamic',
-	'Dynamisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.factual',
-	'Factual',
-	'Sachlich',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.fun',
-	'Fun',
-	'Lustig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.modern',
-	'Modern',
-	'Modern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.none',
-	'Without predefined tonality',
-	'Ohne vorgegebene Tonalität',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.relaxed',
-	'Relaxed',
-	'Locker',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.ai.tonality.serious',
-	'Serious',
-	'Ernst',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.06.2023 09:19:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.approval.success',
-	'Mailing <b>{0}</b> has been approved.',
-	'Das Mailing <b>{0}</b> wurde freigegeben.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.approved',
-	'Mailing approved',
-	'Mailing freigegeben',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.archive',
 	'Archive',
@@ -43165,21 +39028,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.attachment.delete.question',
-	'Do you really want to delete the attachment <b>{0}</b>?',
-	'Wollen Sie den Anhang <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.01.2024 15:21:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.attachment.deleteConfirmation',
 	'Do you really want to delete this attachment?',
-	'Wollen Sie diesen Anhang wirklich löschen?',
+	'Möchten Sie diesen Anhang wirklich löschen?',
 	'¿Está seguro de que quiere borrar este anexo?',
 	'Voulez-vous vraiment supprimer cette pièce jointe ?',
 	'Vuoi davvero eliminare questo allegato?',
@@ -43187,7 +39038,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:32', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.attachment.name',
 	'Attachment name',
@@ -43246,8 +39097,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.autooptimization',
 	'Auto-Optimization',
@@ -43275,7 +39126,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.autooptimization.delete.question',
 	'Do you really want to delete this Auto-Optimization?',
-	'Wollen Sie diese Auto-Optimierung wirklich löschen?',
+	'Möchten Sie diese Auto-Optimierung wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta fuente de contenido?',
 	'Voulez-vous vraiment supprimer cette auto-optimisation ?',
 	'Vuoi davvero eliminare questa ottimizzazione automatica?',
@@ -43283,7 +39134,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:36', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.autooptimization.edit',
 	'Edit Auto-Optimization',
@@ -43705,18 +39556,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.content.description',
-	'Content description',
-	'Inhaltsbeschreibung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.content.hidepreview',
 	'Hide preview',
 	'Vorschau ausblenden',
@@ -43957,18 +39796,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('16.05.2018 15:43:32', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.contentpool',
-	'Contentpool',
-	'Inhaltspool',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.create',
 	'Create mailing',
 	'Mailing erstellen',
@@ -44029,42 +39856,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('26.07.2022 12:20:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('26.07.2022 12:20:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.delete.question',
-	'Do you really want to delete the mailing <b>{0}</b>?',
-	'Wollen Sie das Mailing <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.deleted',
-	'Deleted mailings',
-	'Gelöschte Mailings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.delivery.cleanup',
-	'Cleanup admin and test activities ',
-	'Admin- und Testempfänger-Aktivitäten bereinigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.dynamic_template',
 	'Update mailing when template is modified',
 	'Mailing aktualisieren, wenn Schablone geändert wird',
@@ -44088,18 +39879,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.encrypted.send',
-	'Only allow sending with encrypted delivery',
-	'Versand nur bei verschlüsselter Zustellung erlauben',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.error.invalidLinkTarget',
 	'Please change the link destinations of the following images as they are invalid: {0}',
@@ -44341,18 +40120,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.frame.edit',
-	'Edit frame content',
-	'Rahmeninhalt bearbeiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.02.2024 11:59:20', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.frequency.counter',
 	'Deactivate frequency counter',
 	'Frequenz-Zählung ausschalten',
@@ -44427,7 +40194,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.generation.resume.question',
 	'Do you want to continue mail generation?',
-	'Wollen Sie die Mailgenerierung fortsetzen?',
+	'Möchten Sie die Mailgenerierung fortsetzen?',
 	NULL,
 	'Voulez-vous continuer à générer du envoi?',
 	NULL,
@@ -44435,11 +40202,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('12.12.2019 10:18:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:41', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('07.01.2020 13:08:30', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.generation.resumeByCopy.question',
 	'Do you want to copy this mailing?',
-	'Wollen Sie dieses Mailing kopieren?',
+	'Möchten Sie dieses Mailing kopieren?',
 	NULL,
 	'Voulez-vous copier ce envoi ?',
 	NULL,
@@ -44447,7 +40214,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('13.12.2019 10:45:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:45', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.grid.GridMailing',
 	'E-Mail Creator',
@@ -44568,18 +40335,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.interval.month.day',
-	'Day of the month',
-	'Tag des Monats',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.interval.weekdaily',
 	'weekdaily',
@@ -44751,7 +40506,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.links.extension.bulk.change',
 	'Extensions for selected links',
-	'Erweiterung für ausgewählte Links',
+	'Erweiterung v ausgewählte Links',
 	NULL,
 	NULL,
 	NULL,
@@ -44759,7 +40514,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('26.09.2022 12:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 08:46:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('26.09.2022 12:44:15', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.listsplit',
 	'Split-Mailing',
@@ -44895,7 +40650,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.open_preview',
 	'Open preview in new window',
-	'Vorschau im neuen Fenster öffnen',
+	'Vorschau in neuem Fenster öffnen',
 	'Abrir vista previa en una nueva ventana',
 	'Ouvrir l''aperçu dans une nouvelle fenêtre',
 	'Apri anteprima in una nuova finestra',
@@ -44903,7 +40658,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 10:40:10', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.openrate.bottom',
 	'at bottom of e-mail',
@@ -45015,7 +40770,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.parameter.confirmDelete',
 	'Do you really want to delete this mailing parameter?',
-	'Wollen Sie diesen Mailing-Parameter wirklich löschen?',
+	'Möchten Sie diesen Mailing-Parameter wirklich löschen?',
 	NULL,
 	'Voulez-vous vraiment supprimer ces paramètres d''envoi ?',
 	'Vuoi davvero eliminare questi parametri del mailing?',
@@ -45023,43 +40778,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.parameter.delete',
-	'Delete mailing parameter',
-	'Maling-Parameter löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.parameter.delete.question',
-	'Do you really want to delete the mailing parameter <b>{0}</b>?',
-	'Wollen Sie den Mailing-Parameter <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.plan.date',
-	'Plan date',
-	'Planungsdatum',
-	'Fecha del plan',
-	'Date du plan',
-	'Data del piano',
-	'Plan datum',
-	'Data do plano',
+	'planned for',
+	'geplant für',
+	'previsto para',
+	'planifié pour',
+	'programmato per',
+	'gepland voor',
+	NULL,
 	0,
-	STR_TO_DATE('28.11.2023 15:32:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:32:29', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.post.deliveryHint',
 	'Bitte beachten Sie, der Versand des Mailings findet nur statt, wenn das Mailing im Editor der Post den Status "freigegeben" hat. Eine Prüfung des Status ist hier leider nicht möglich, wechseln Sie dazu bitte in den externen Editor.<br />Zum eingestellten Termin beginnt die Datenübertragung an den Partner. Die Zustellung ist von der gewählten Versandstrategie abhängig. Bei schneller Versand ist das Mailing regulär innerhalb von w - x Tagen und bei günstiger Versand innerhalb von y - z Tagen beim Empfänger.',
@@ -45086,7 +40817,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('28.04.2020 01:02:59', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.post.fieldselection',
-	'Choose profile fields for creating the external mailing',
+	'Profilfelder zur Erstellung des externen Mailings auswählen',
 	'Profilfelder zur Erstellung des externen Mailings auswählen',
 	NULL,
 	NULL,
@@ -45095,7 +40826,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.07.2020 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 14:10:52', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.07.2020 01:03:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.post.fieldselection.help',
 	'Initial müssen Sie alle Profilfelder zur Personalisierung des Print-Mailings an unseren Partner Deutsche Post übertragen. Sollten Sie nachträglich neue Profilfelder übermitteln wollen, können Sie das einfach mit der Funktion "Post-Mailing updaten" durchführen.',
@@ -45110,7 +40841,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('30.03.2020 10:37:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.post.fieldselection.reference',
-	'Select additional data from reference tables for transfer.',
+	'Ergänzende Daten aus Referenztabellen zur Übertragung auswählen',
 	'Ergänzende Daten aus Referenztabellen zur Übertragung auswählen',
 	NULL,
 	NULL,
@@ -45119,7 +40850,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('01.04.2020 17:54:42', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 14:10:11', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('01.04.2020 17:54:42', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.post.init_post_campaign',
 	'Create postal mailing',
@@ -45156,18 +40887,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('27.10.2020 12:18:25', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('27.10.2020 12:18:25', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.preheader',
-	'Pre header',
-	'Pre-Header',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.preview.input',
 	'Input',
@@ -45229,32 +40948,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.preview.source',
-	'Choose recipient for preview',
-	'Empfänger für Vorschau wählen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.priorisation.set',
-	'Set priorisation',
-	'Priorisierung einstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.02.2024 11:25:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.priority',
-	'Mailing Priority',
+	'Mailing priority',
 	'Mailing-Priorisierung',
 	NULL,
 	'Priorisation de mailings',
@@ -45263,10 +40958,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('19.07.2018 11:07:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.01.2024 16:08:51', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.priority.disabled',
-	'Send mailing independent of prioritisation',
+	'Send mailing independent of prioritization',
 	'Mailversand unabhängig von der Priorisierung',
 	NULL,
 	'Envoi d''un mailing indépendamment de la hiérarchisation des priorités',
@@ -45275,7 +40970,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('22.10.2018 15:08:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.05.2023 14:37:16', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.01.2019 01:01:31', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.priority.maxMails',
 	'Max. mails/day',
@@ -45302,7 +40997,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('10.01.2019 16:56:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.priority.prioritisation.non',
-	'Without prioritisation',
+	'Without prioritization',
 	'Ohne Priorisierung',
 	NULL,
 	'Sans priorisation',
@@ -45311,7 +41006,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('10.01.2019 16:56:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.05.2023 14:37:22', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('10.01.2019 16:56:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.provider.preview',
 	'Inbox Preview',
@@ -45494,7 +41189,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.searchName',
-	'Mailing name',
+	'Mailing title',
 	'Mailing-Name',
 	'Nombre mailing',
 	'Titre de l''envoi',
@@ -45503,7 +41198,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.12.2023 12:33:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.select',
 	'Select a mailing',
@@ -45577,6 +41272,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'mailing.send.admin.target.to',
+	'Testrun',
+	'Testlauf',
+	'Envío a',
+	'Expédition à',
+	'Invio a',
+	'Verzending aan',
+	NULL,
+	0,
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.send.admin.test',
 	'The mailing is sent to admin recipients and test recipients.',
 	'Das Mailing wird an Admin-Empfänger und Test-Empfänger versendet.',
@@ -45600,18 +41307,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.send.approval',
-	'Request approval',
-	'Freigabe einfordern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:52', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.send.confirm.ml',
 	'Please check before sending if the data for your mailing <b>{0}</b> are correct:<br><br>Subject: <b>{1}</b><br>Recipients: <b>{2}</b><br>Mailing list: <b>{6}</b><br>Dispatch: <b>{3}</b> at <b>{4}</b><br>Size: approx. <b>{5}</b>',
@@ -45769,18 +41464,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.send.information',
-	'Sending information',
-	'Versandinformationen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.send.otherRecipients',
 	'Other recipients',
 	'Sonstige Empfänger',
@@ -45874,8 +41557,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.07.2023 11:28:44', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.12.2022 11:37:13', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.12.2022 11:37:13', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.send.report.mailing.sendingTime',
 	'at sending time',
@@ -45937,18 +41620,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.send.test.address',
-	'Testmailing sent to {0}',
-	'Testmailing wurde an {0} versendet',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.send.threshold',
 	'Maximum number of recipients',
 	'Max Empfängeranzahl',
@@ -45959,7 +41630,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('18.11.2021 10:00:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.sendStatus.ended',
 	'End time',
@@ -46021,18 +41692,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.settings.content',
-	'Content settings',
-	'Inhaltseinstellungen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 08:58:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.settings.expanded',
 	'expanded',
 	'ausgeklappt',
@@ -46044,30 +41703,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.settings.sender',
-	'Sender settings',
-	'Absendereinstellungen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.settings.target',
-	'Targeting settings',
-	'Empfängerkreis',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.sftp',
 	'SFTP',
@@ -46190,7 +41825,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.status.canceled',
-	'cancelled',
+	'canceled',
 	'abgebrochen',
 	'cancelado',
 	'annulé',
@@ -46199,10 +41834,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 15:07:43', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.status.canceledAndCopied',
-	'cancelled and copied',
+	'canceled and copied',
 	'abgebrochen und kopiert',
 	NULL,
 	NULL,
@@ -46211,7 +41846,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('18.07.2022 01:02:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 15:07:49', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('18.07.2022 01:02:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.status.disable',
 	'disabled',
@@ -46417,18 +42052,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('21.03.2019 12:57:24', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('21.03.2019 12:57:24', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.test.recipient.add',
-	'Add to test run',
-	'zum Test hinzufügen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 12:17:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.test.recipient.single',
 	'single recipient',
 	'einzelne Empfänger',
@@ -46440,18 +42063,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('05.07.2018 11:37:55', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.test.user',
-	'Send only to me',
-	'Nur an mich senden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.testrun',
 	'Test run',
@@ -46467,7 +42078,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.text.generate.question',
 	'Do you want to automatically generate text version out of HTML?',
-	'Wollen Sie aus dem HTML automatisch die Text-Version generieren?',
+	'Möchten Sie aus dem HTML automatisch die Text-Version generieren?',
 	NULL,
 	'Souhaitez-vous générer automatiquement la version texte à partir du HTML?',
 	NULL,
@@ -46475,7 +42086,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('09.01.2019 08:35:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:53', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('24.09.2019 13:54:35', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.textversion.default',
 	'The content of this e-mail is only available in HTML format. Unfortunately, your e-mail client cannot display the HTML format. To display the e-mail in your browser, please click here: [agnFORM name="fullview"]',
@@ -46502,28 +42113,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.11.2018 13:54:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.trackablelinks.clearPropertiesTable',
-	'Remove all entries',
-	'Alle Einträge entfernen',
+	'Remove entries',
+	'Einträge entfernen',
 	'Eliminar entradas',
-	'Supprimer tout les entrées',
+	'Supprimer les entrées',
 	'Rimuovi voci',
 	'Gegevens verwijderen',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 08:37:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.trackablelinks.extensions.add',
-	'Add link extensions',
-	'Linkerweiterung hinzufügen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 11:37:03', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.trackablelinks.extensions.change',
 	'Extensions for all links',
@@ -46644,18 +42243,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.version.sms',
-	'SMS version',
-	'SMS-Version',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.wizard.ChooseTemplateMsg',
 	'You can choose a predefined mailing template<br>for your mailing',
@@ -46945,6 +42532,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'mailingParameter.MailingParameterDeleteQuestion',
+	'Do you really want to delete this mailing parameter?',
+	'Möchten Sie diesen Mailing-Parameter wirklich löschen?',
+	'¿Está seguro de que quiere borrar parámetro mailing?',
+	'Voulez-vous vraiment supprimer ces paramètres d''envoi ?',
+	'Vuoi davvero eliminare questi parametri del mailing?',
+	'Wilt u deze mailingparameter echt verwijderen?',
+	NULL,
+	0,
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailinglist',
 	'Mailing list',
 	'Mailing-Liste',
@@ -46983,7 +42582,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailinglist.delete.question',
 	'Do you really want to delete this mailing list?<br>Caution: permission information will be lost!',
-	'Wollen Sie diese Mailing-Liste wirklich löschen?<br>Achtung: Permission-Informationen werden bei diesem Vorgang ebenfalls gelöscht!',
+	'Möchten Sie diese Mailing-Liste wirklich löschen?<br>Achtung: Permission-Informationen werden bei diesem Vorgang ebenfalls gelöscht!',
 	'¿Está seguro que quiere borrar esta lista mailing?<br>¡Cuidado: la información de permisos también se borrará con este proceso!',
 	'Voulez-vous vraiment supprimer cette liste de diffusion ?<br>Attention: Les informations de permission seront perdues !',
 	'Vuoi davvero eliminare questa mailing-list?<br>Attenzione: con questa operazione saranno eliminate anche le informazioni sulle autorizzazioni!',
@@ -46991,7 +42590,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta lista?<br>Cuidado: permissão informações serão perdidos!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:16', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailinglist.delete.recipients',
 	'Delete recipients of this mailing list',
@@ -47051,7 +42650,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailinglist.error.affectedMailings',
 	'The following mailings and templates use this mailing list:',
@@ -47375,7 +42974,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('17.02.2020 14:09:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'manual.differentiatedTargetGroup',
 	'Differentiated Target Group Approach',
@@ -47675,7 +43274,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('24.02.2020 13:43:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'manual.webhooks',
 	'EMM Webhooks Documentation',
@@ -47821,42 +43420,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.category.delete.question',
-	'Do you really want to delete the category <b>{0}</b>?',
-	'Wollen Sie die Kategorie <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.file',
-	'File',
-	'Datei',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.file.edit',
-	'Edit file',
-	'Datei bearbeiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('09.10.2023 11:11:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.10.2023 11:11:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mediapool.fileextenion.allowed',
 	'The following formats are accepted by Mediapool:<br><br><b>Images</b>: gif, jpg, jpeg, png, svg<br><b>PDF</b>: pdf<br><b>Fonts</b>: eot, otf, ttf, woff, woff2<br><b>Videos</b>: 3g2, 3gp, avi, flv, mp4, mpg, mov, webm, wmv',
 	'Folgende Formate werden vom Medienpool akzeptiert:<br><br><b>Bilder</b>: gif, jpg, jpeg, png, svg<br><b>PDF</b>: pdf<br><b>Schriften</b>: eot, otf, ttf, woff, woff2<br><b>Videos</b>: 3g2, 3gp, avi, flv, mp4, mpg, mov, webm, wmv',
@@ -47880,66 +43443,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('17.02.2021 15:56:02', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('17.02.2021 15:56:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.image.flip.horizontal',
-	'Flip horizontally',
-	'Horizontal spiegeln',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.image.flip.vertical',
-	'Flip vertically',
-	'Vertikal spiegeln',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.image.replace',
-	'Replace image',
-	'Bild ersetzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.image.rotate.clockwise',
-	'Rotate clockwise',
-	'Im Uhrzeigersinn drehen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.image.rotate.counterclockwise',
-	'Rotate counterclockwise',
-	'Gegen Uhrzeigersinn drehen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mediapool.search.images.max',
 	'The option you selected is too large to be displayed completely. Please limit your selection to reduce the amount of images (the limit is 50 images).',
@@ -47988,18 +43491,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('02.12.2019 13:44:39', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('02.12.2019 13:44:39', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mediapool.upload.info',
-	'You can configure the initial settings for your uploaded files here. Please upload files using the upload function.',
-	'Hier können Sie die initialesn Einstellungen für Ihre hochzuladenden Dateien konfigurieren. Bitte laden Sie Dateien über die Upload-Funktion hoch.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mediatype',
 	'Media type',
@@ -49069,30 +44560,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'news.editor.delete',
-	'Delete news',
-	'Nachricht löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'news.editor.delete.question',
-	'Do you really want to delete the news <b>{0}</b>?',
-	'Wollen Sie die Nachricht <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'news.title.MESSAGE',
 	'Important messages',
 	'Wichtige Mitteilungen',
@@ -49190,7 +44657,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'noPostalPreview.html',
-	'The EMM cannot generate a preview for the print mailing.<br />Please use the external editor provided by Deutsche Post for testing.',
+	'Der EMM kann keine Vorschau für das Print-Mailing generieren.<br />Zum Testen verwenden Sie bitte den externen Editor der Deutschen Post.',
 	'Der EMM kann keine Vorschau für das Print-Mailing generieren.<br />Zum Testen verwenden Sie bitte den externen Editor der Deutschen Post.',
 	NULL,
 	NULL,
@@ -49199,7 +44666,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('30.03.2020 10:37:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 14:12:51', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('30.03.2020 10:37:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'noResultsFound',
 	'Nothing found to display.',
@@ -49296,30 +44763,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'notification.delete',
-	'Delete push notification',
-	'Push-Nachricht löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'notification.delete.question',
-	'Do you really want to delete the push notification <b>{0}</b>?',
-	'Wollen Sie die Push-Nachricht <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'notification.preview.disabled',
 	'Preview not available. Browser does not support notifications or notifications rejected.',
@@ -49683,7 +45126,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'optimization.delete.question',
 	'Do you really want to delete this Auto-Optimization?',
-	'Wollen Sie diese Auto-Optimierung wirklich löschen?',
+	'Möchten Sie diese Auto-Optimierung wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta fuente de contenido?',
 	'Voulez-vous vraiment supprimer cette auto-optimisation ?',
 	'Vuoi davvero eliminare questa ottimizzazione automatica?',
@@ -49691,7 +45134,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:20', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'optimization.new',
 	'New Auto-Optimization',
@@ -49752,30 +45195,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'package.ai.features',
-	'AI Package',
-	'KI Package',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'package.ai.features.explanation',
-	'With the AI Package, you can generate personalized mailing content using artificial intelligence.',
-	'Mit dem KI-Paket können Sie personalisierte Mailing-Inhalte mithilfe von künstlicher Intelligenz generieren.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.analytics',
 	'Analytics Package',
@@ -49923,7 +45342,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.autoimpot.autoexport',
 	'Import and Export package',
-	'Import und Export Paket',
+	'Import unnd Export Paket',
 	NULL,
 	NULL,
 	NULL,
@@ -49931,7 +45350,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('16.09.2020 15:55:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.08.2023 13:18:02', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.09.2020 15:55:44', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.automation',
 	'Automation Package',
@@ -50330,16 +45749,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('30.01.2020 10:16:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.delivery.encrypted',
-	'Delivery Package PLUS: extended encryption',
-	'Delivery Package PLUS: erweiterte Verschlüsselung',
+	'Delivery Encrypted Package',
+	'Delivery Encrypted Package',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('08.12.2022 13:44:54', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.delivery.encrypted.component.0',
 	'Recipient-check whether encrypted reception is possible',
@@ -50378,16 +45797,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('22.02.2023 15:15:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.delivery.encrypted.explanation',
-	'With the Delivery Package PLUS: extended encryption, you have the option of only sending to mailboxes that support end-to-end encryption (TLS protocol). In this way, you can also send personal data in mailings without hesitation.',
-	'Mit dem Delivery Package PLUS: erweiterte Verschlüsselung haben Sie beim Versand die Möglichkeit, ausschließlich Postfächer anzuschreiben, die eine End-to-End-Verschlüsselung (TLS Protokoll) unterstützen. Auf diese Weise können Sie auch bedenkenlos personenbezogene Daten in Mailings versenden.',
+	'With the Delivery Encrypted Package, you have the option of only sending to mailboxes that support end-to-end encryption (TLS protocol). In this way, you can also send personal data in mailings without hesitation.',
+	'Mit dem Delivery Encrypted Package haben Sie beim Versand die Möglichkeit, ausschließlich Postfächer anzuschreiben, die eine End-to-End-Verschlüsselung (TLS Protokoll) unterstützen. Auf diese Weise können Sie auch bedenkenlos personenbezogene Daten in Mailings versenden.',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('24.02.2023 13:41:04', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('24.02.2023 13:41:04', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.delivery.explanation',
 	'You can use the Delivery Package to control the dispatch time of your mailings at recipient level. You determine the maximum number of mailings your recipients can receive per day and define the priority of the mailings. You can use the AHV to check and reactivate hardbounces automatically. Feedback loops with e-mail providers improve server reputation.',
@@ -50460,18 +45879,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('12.08.2021 08:39:36', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('12.08.2021 08:39:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'package.frequencycounter',
-	'Frequency Counter Package',
-	'Frequenz-Zähler Package',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.inbox',
 	'Inbox preview',
@@ -50832,30 +46239,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('20.05.2021 17:43:25', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.02.2023 12:00:01', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'package.webhooks',
-	'Webhooks Package',
-	'Webhooks Package',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'package.webhooks.explanation',
-	'-',
-	'-',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'package.webpush',
 	'WebPush',
@@ -51962,28 +47345,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'predelivery.web',
-	'Edge',
-	'Edge',
-	'Edge',
-	'Edge',
-	'Edge',
-	'Edge',
-	'Edge',
+	'Internet Explorer',
+	'Internet Explorer',
+	'Internet Explorer',
+	'Envoi basé sur un intervalle',
+	'Mailing basato su intervallo',
+	'Op interval gebaseerde mailing',
+	'Internet Explorer',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 08:16:12', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'predelivery.web.chrome',
-	'Chrome',
-	'Chrome',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'predelivery.web.chrome_short',
 	'GC',
@@ -51998,16 +47369,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'predelivery.web.ff',
-	'Firefox',
-	'Firefox',
-	'Firefox',
-	'Firefox',
-	'Firefox',
-	'Firefox',
-	'Firefox',
+	'Mozilla Firefox',
+	'Mozilla Firefox',
+	'Mozilla Firefox',
+	'selon le type d''appareil',
+	'per tipo di terminale',
+	'Mozilla Firefox',
+	'Mozilla Firefox',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 08:14:24', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'predelivery.web.ff_short',
 	'FF',
@@ -52289,13 +47660,13 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Google Chrome and derivates',
 	'Google Chrome und Derivate',
 	NULL,
-	'Google Chrome et dérivàts',
+	'Google Chrome et dérivés',
 	NULL,
 	'Google Chrome en derivaten',
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 08:13:39', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'push.browser.type.EDGE',
 	'Microsoft Edge',
@@ -52970,8 +48341,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('24.09.2019 13:54:35', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.AdvancedSearch',
-	'Advanced filter',
-	'Erweiterter Filter',
+	'Advanced search',
+	'Erweiterte Suche',
 	'Búsqueda avanzada',
 	'Recherche avancée',
 	'Ricerca avanzata',
@@ -52979,7 +48350,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.11.2023 12:48:55', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.AllMailinglists',
 	'All Mailing lists',
@@ -53078,8 +48449,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('22.01.2021 11:00:44', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.Mailing.deliveries',
-	'Deliveries',
-	'Zustellungen',
+	'Number of deliveries',
+	'Anzahl Zustellungen',
 	NULL,
 	NULL,
 	NULL,
@@ -53087,7 +48458,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('15.11.2022 11:52:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.12.2023 12:29:26', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('15.11.2022 11:52:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.MailingState1',
 	'Active',
@@ -53115,7 +48486,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.MailingState3',
 	'Opt-out by admin',
-	'Abmeldung durch Admin',
+	'Opt-out durch Admin',
 	'Opt-out por administrador',
 	'Désabonné par l''admin',
 	'Opt-out da Admin',
@@ -53123,7 +48494,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Out-Out por administrador',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.10.2023 14:46:06', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.MailingState4',
 	'Opt-out by recipient',
@@ -53474,16 +48845,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.Remark',
-	'Status info',
-	'Status-Info',
-	'Información de estado',
-	'Infos sur le statut',
-	'Info sullo stato',
-	'Statusinfo',
-	'Informação de estado',
+	'Remark',
+	'Bemerkung',
+	'Observación',
+	'Remarque',
+	'Osservazioni',
+	'Opmerking',
+	'Observação',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.10.2023 11:30:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.Salutation',
 	'Salutation',
@@ -53629,18 +49000,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('20.09.2018 10:08:21', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('28.02.2022 11:51:58', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.casesensitive',
-	'Case sensitive',
-	'Groß- und Kleinschreibung beachten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.change.bulk',
 	'Edit field content',
 	'Feldinhalte bearbeiten',
@@ -53679,7 +49038,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.csa.optout.remark',
 	'Opt-out by mandatory CSA link',
-	'Abmeldung durch CSA-Pflichtlink',
+	'Opt-out durch CSA-Pflichtlink',
 	'Opt-out mediante enlace obligatorio CSA',
 	'Désabonné par le lien CSA obligatoire',
 	'Opt-out da link obbligatorio CSA',
@@ -53687,7 +49046,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.10.2023 14:40:34', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.customer.insights',
 	'Customer Insights',
@@ -53712,18 +49071,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('26.11.2018 13:38:41', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('26.11.2018 13:38:41', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.delete.question',
-	'Do you really want to delete the recipient <b>{0}</b>?',
-	'Wollen Sie den Empfänger <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.deletion.off',
 	'No deletion of recipients',
@@ -53774,16 +49121,16 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.device.reaction',
-	'Reaction devices',
-	'Reaktions-Endgeräte',
+	'Devices, led to reactions',
+	'Endgeräte, die zu Reaktionen geführt haben',
 	NULL,
+	'Appareils ayant entraîné des réactions',
 	NULL,
-	NULL,
-	NULL,
+	'Eindapparaten die tot reacties hebben geleid',
 	NULL,
 	0,
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('10.09.2018 10:13:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.deviceHistory',
 	'End device history',
@@ -54083,7 +49430,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('30.03.2020 10:37:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.history.fieldname',
 	'Field name/Mailing List',
@@ -54108,42 +49455,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('29.06.2020 16:41:10', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('08.07.2020 01:03:11', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.history.mailing.feedback.no',
-	'no feedback',
-	'keine Rückmeldung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.history.mailing.link',
-	'Link clicks information for mailing: {0}',
-	'Linkklickinformationen für Mailing: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.history.mailing.link.timestamp',
-	'Last click timestamp',
-	'Zeitpunkt letzter Klick',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.history.mailingid',
 	'Change of status by Mailing ID',
@@ -54240,18 +49551,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.imports',
-	'Imports',
-	'Importe',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.insights',
 	'Insights',
@@ -54841,18 +50140,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipient.state.user',
-	'By user',
-	'von EMM-Benutzer',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipient.status.optout',
 	'Opt-out',
 	'Abgemeldet',
@@ -54901,21 +50188,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'recipients.allowHtmlContent',
-	'Allow HTML in profile fields',
-	'HTML in Profilfeldern erlauben',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('24.07.2023 11:01:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.07.2023 07:32:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipients.anonymize.off',
-	'No recipients pseudonymisation',
-	'Keine Empfänger-Pseudonymisierung',
+	'No recipients anonymization',
+	'Keine Empfänger-Anonymisierung',
 	NULL,
 	NULL,
 	NULL,
@@ -54923,7 +50198,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('25.05.2021 13:51:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('15.03.2023 14:08:01', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('25.05.2021 13:51:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipients.anonymizeTrackingVetoStatistics',
 	'Anonymisation of old tracking data in case of tracking objection',
@@ -55045,42 +50320,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'redesign.switch.classic',
-	'Switch to classic design',
-	'Zum klassischen Design',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'redesign.switch.new',
-	'Switch to new design',
-	'Zum neuen Design',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.07.2023 09:50:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'reference.table.delete.question',
-	'Do you really want to delete the reference table <b>{0}</b>?',
-	'Wollen Sie die Referenztabelle <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:57', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'referenceTables.teaser.header',
 	'More than just recipient data: products, voucher codes, purchase data and more',
 	'Mehr als nur Empfängerdaten: Produkte, Gutscheincodes, Kaufdaten und mehr nutzen',
@@ -55105,18 +50344,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('12.10.2020 10:04:14', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('12.10.2020 10:04:14', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'referencetable.import.mapping.created',
-	'Column mapping created.',
-	'Mapping wurde erstellt.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'referencingObject.MAILING',
 	'Mailing ''{0}''',
 	'Mailing ''{0}''',
@@ -55140,18 +50367,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('19.08.2021 13:01:34', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('19.08.2021 13:01:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'referencingObject.WORKFLOW',
-	'Campaign ''{0}''',
-	'Kampagne ''{0}''',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'remember.choice',
 	'Remember decision',
@@ -55743,7 +50958,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'report.delete.question',
 	'Do you really want to delete this report?',
-	'Wollen Sie diesen Report wirklich löschen?',
+	'Möchten Sie diesen Report wirklich löschen?',
 	'¿Está seguro de que quiere borrar este informe?',
 	'Voulez-vous vraiment supprimer ce rapport ?',
 	'Vuoi davvero eliminare questo report?',
@@ -55751,7 +50966,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:23', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'report.deliveredMails',
 	'E-mails sent',
@@ -55848,18 +51063,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('09.10.2020 10:00:18', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.10.2020 10:00:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'report.download.csv',
-	'Download statistics as CSV',
-	'Statistik als CSV herunterladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.12.2023 12:52:51', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'report.edit',
 	'Edit Report',
@@ -57373,18 +52576,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'report.send.to',
-	'Send report to',
-	'Report senden an',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:45', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'report.sendingFinished',
 	'Sending finished',
 	'Versand beendet',
@@ -57637,54 +52828,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'reports.teaser.description',
-	'With the individual reports, you can have automated PDF reports sent to yourself and your colleagues. Simply combine the key figures and information you need at regular intervals and keep track of everything without having to log in.',
-	'Mit den individuellen Reports können Sie automatisierte PDF-Reports an sich selbst und an Ihre Kollegen zusenden lassen. Klicken Sie genau die Kennzahlen und Informationen zusammen, die Sie in regelmäßigen Abständen benötigen und Sie behalten die Übersicht, ohne sich einloggen zu müssen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'reports.teaser.headline',
-	'Keep an eye on your recipients, mailings and campaigns.',
-	'Behalten Sie Ihre Empfänger, Mailings und Kampagnen im Blick.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'reports.teaser.upgradeInfo',
-	'Unfortunately, reports are not available for the OpenEMM. To benefit from the full scope of the EMM and also to use the reports, an upgrade is necessary.',
-	'Leider sind Reports nicht für den OpenEMM verfügbar. Um vom vollen Umfang des EMM profitieren und auch die Reports nutzen zu können, ist ein Upgrade nötig.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'response.address.individual',
-	'Set individual filter address',
-	'Individuelle Filteradresse setzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'restful.user',
 	'Restful user',
 	'Restful-Benutzer',
@@ -57699,7 +52842,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'restore.confirm.question',
 	'There are some unsaved changes (since {0}) available for this page. Would you like to restore?',
-	'Für diese Seite sind einige ungespeicherte Änderungen verfügbar (seit {0}). Wollen Sie diese wiederherstellen?',
+	'Für diese Seite sind einige ungespeicherte Änderungen verfügbar (seit {0}). Möchten Sie diese wiederherstellen?',
 	NULL,
 	'Certaines modifications non enregistrées sont disponibles pour cette page (depuis {0}). Souhaitez-vous les rétablir ?',
 	NULL,
@@ -57707,7 +52850,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:29', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'restore.confirm.success',
 	'Unsaved changes have been restored on the page.',
@@ -57780,30 +52923,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'salutation.delete',
-	'Delete form of salutation',
-	'Anredeart löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'salutation.delete.question',
-	'Do you really want to delete the form of salutation <b>{0}</b>?',
-	'Wollen Sie die Anredeart <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'saturday',
 	'Saturday',
@@ -58179,7 +53298,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'serverStatus.killImports.Xplain2',
 	'Do you still wish to proceed?',
-	'Wollen Sie trotzdem fortfahren?',
+	'Möchten Sie trotzdem fortfahren?',
 	NULL,
 	NULL,
 	NULL,
@@ -58187,7 +53306,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('10.01.2020 12:40:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('10.01.2020 12:40:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'serverStatus.status.dbConnection',
 	'DB Connection Status',
@@ -58272,306 +53391,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('23.08.2021 11:55:11', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('23.08.2021 11:55:11', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbconnection',
-	'Database connection',
-	'Datenbank Verbindung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbconnection.error',
-	'The database is currently unavailable. The functionality of the EMM could be significantly affected.',
-	'Die Datenbank ist momentan nicht erreichbar. Die Funktionalität des EMM könnte wesentlich beinträchtigt sein.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbconnection.success',
-	'The EMM has a stable connection to the database.',
-	'Der EMM hat momentan eine stabile Verbindung zur Datenbank.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbstatus',
-	'Database status',
-	'Datenbank Status',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbstatus.error',
-	'There are currently problems with the database.The functionality of the EMM may be affected by this.',
-	'Es wurden Probleme mit der Datenbank festgestellt. Die Funktionalität des EMM könnte beinträchtig sein.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.dbstatus.success',
-	'The database is currently up-to-date.',
-	'Die Datenbank ist momentan auf dem aktuellsten Stand.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.button',
-	'Email support',
-	'E-Mail support',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.button.link',
-	'mailto:support@agnitas.de',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.button.link.openemm',
-	'https://www.agnitas.de/e-marketing-manager/email-marketing-software/openemm/#support',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.button.openemm',
-	'See Commercial Services',
-	'Commercial Services ansehen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.headline',
-	'Do you have questions regarding our systems?',
-	'Haben Sie Fragen bezüglich unserer Systeme? ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.headline.openemm',
-	'Do you need assistance?',
-	'Benötigen Sie Hilfe?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.subline',
-	'Our support team can help you.',
-	'Unser Support Team kann Ihnen weiterhelfen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.footer.subline.openemm',
-	'Take advantage of our Commercial Services.',
-	'Nehmen Sie unsere Commercial Services in Anspruch.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.10.2023 10:01:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.imports',
-	'Automated imports',
-	'Automatisierte Importe',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.imports.error',
-	'You may experience problems with automated imports at the moment.',
-	'Es können Probleme mit automatisierten Importen auftreten.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.imports.success',
-	'There are no known issues with automated imports.',
-	'Die automatisierten Importe funktionieren einwandfrei.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.jobqueue',
-	'Automated processes',
-	'Automatisierte Prozesse',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.jobqueue.error',
-	'There may be problems with automated processes.',
-	'Es können Probleme mit automatisierten Prozessen auftreten.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.jobqueue.success',
-	'All automated processes are running smoothly.',
-	'Die automatisierten Prozesse funktionieren einwandfrei.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.overall.success',
-	'No problems detected',
-	'Es wurden keine Probleme gefunden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.overall.warning',
-	'You may experience some problems',
-	'Es können Probleme auftreten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.reports',
-	'Automated reports',
-	'Automatisierte Reporte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.reports.error',
-	'You may experience problems with automated reports at the moment.',
-	'Es können Probleme mit automatisierten Reporte auftreten.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'serverStatus.statusExternal.reports.success',
-	'There are no known issues with automated reports.',
-	'Die automatisierten Reporte funktionieren einwandfrei.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.06.2023 11:57:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'session.timer.expired',
 	'Session expired',
@@ -58659,7 +53478,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.AdminDeleteQuestion',
 	'Do you really want to delete this user?',
-	'Wollen Sie den Benutzer wirklich löschen?',
+	'Möchten Sie den Benutzer wirklich löschen?',
 	'¿Está seguro que quiere borrar este usuario?',
 	'Voulez-vous vraiment supprimer cet utilisateur ?',
 	'Vuoi davvero eliminare l''utente?',
@@ -58667,7 +53486,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este administrador?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.AdminGroupDeleteQuestion',
 	'Do you really want to delete this user group?',
@@ -58791,7 +53610,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.DeleteSalutationQuestion',
 	'Do you really want to delete this form of salutation?',
-	'Wollen Sie diese Anredeart wirklich löschen?',
+	'Möchten Sie diese Anredeart wirklich löschen?',
 	'¿Está seguro de que quiere eliminar este archivo?',
 	'Voulez-vous vraiment supprimer cette forme de salutation ?',
 	'Vuoi davvero eliminare questo tipo di titolo?',
@@ -58799,7 +53618,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta forma de saudaçãe?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:42', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.Dutch',
 	'Dutch',
@@ -59233,6 +54052,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('25.10.2021 13:57:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('25.10.2021 13:57:07', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'settings.RestfulUser.Confirm',
+	'Confirm password',
+	'Passwort bestätigen',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	0,
+	STR_TO_DATE('28.10.2021 17:53:15', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.10.2021 17:53:15', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.RestfulUser.ban.tooltip',
 	'The password of the restful user has expired. It is no longer possible to log in.',
 	'Das Passwort des Restful Users ist abgelaufen. Ein Einloggen ist nicht mehr möglich.',
@@ -59307,7 +54138,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.RestfulUserDeleteQuestion',
 	'Do you really want to delete this restful user?',
-	'Wollen Sie den Restful Benutzer wirklich löschen?',
+	'Möchten Sie den Restful Benutzer wirklich löschen?',
 	NULL,
 	NULL,
 	NULL,
@@ -59315,7 +54146,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('28.10.2021 17:53:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.10.2021 17:53:15', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.Selfservice',
 	'Self-service',
@@ -59461,18 +54292,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.admin.delete.question',
-	'Do you really want to delete the user ''{0}''?',
-	'Wollen Sie den Benutzer ''{0}'' wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.09.2023 12:32:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.admin.edit',
 	'Edit user',
 	'Benutzer bearbeiten',
@@ -59533,18 +54352,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.company.deeptracking',
-	'Activate cookie tracking for links by default',
-	'Cookietracking für Links aktivieren',
-	NULL,
-	'Activer le suivi des comportements par défaut',
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.company.delete',
 	'Delete client',
 	'Mandant löschen',
@@ -59568,30 +54375,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.company.id',
-	'Client ID',
-	'Mandanten-ID',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('19.10.2023 11:54:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('19.10.2023 11:54:41', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.contentsource.delete.question',
-	'Do you really want to delete the content source <b>{0}</b>?',
-	'Wollen Sie die Inhaltsquelle <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.diagnosis.send',
 	'Send diagnostic information',
@@ -59629,90 +54412,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('09.01.2023 15:39:10', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.01.2023 15:39:10', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.edit',
-	'Edit address',
-	'Adresse bearbeiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.forward',
-	'Forward address',
-	'Weiterleitungsadresse',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.forward.nonfilter',
-	'Forward non-filtered emails',
-	'nicht gefilterte E-Mails weiterleiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.name',
-	'Sender address',
-	'Absenderadresse',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.11.2023 14:35:06', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.new',
-	'New address',
-	'Neue Adresse',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.address.number',
-	'Number of addresses',
-	'Anzahl von Adressen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.delete',
-	'Delete domain',
-	'Domain löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.domain.delete.question',
 	'Do you really want to delete this domain?',
 	'Wollen Sie diese Domain wirklich löschen?',
@@ -59725,30 +54424,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.delete.question2',
-	'Do you really want to delete the domain <b>{0}</b>?',
-	'Wollen Sie die Domain <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.dkim',
-	'DKIM key',
-	'DKIM-Key',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.domain.edit',
 	'Edit domain',
 	'Domain bearbeiten',
@@ -59760,18 +54435,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.mx',
-	'MX entry',
-	'MX-Eintrag',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.domain.name',
 	'Domain name',
@@ -59796,30 +54459,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('03.01.2023 11:32:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.responder.auto',
-	'Send auto responder email',
-	'Autoresponder versenden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.domain.spf',
-	'SPF entry',
-	'SPF-Eintrag',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.domains',
 	'Domains',
@@ -60027,7 +54666,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.form.delete.question',
 	'Do you really want to delete this form?',
-	'Wollen Sie dieses Formular wirklich löschen?',
+	'Möchten Sie dieses Formular wirklich löschen?',
 	'¿Está seguro que quiere borrar este formulario?',
 	'Voulez-vous vraiment supprimer ce formulaire ?',
 	'Vuoi davvero eliminare questo modulo?',
@@ -60035,7 +54674,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este formulário?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:28:57', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.form.edit',
 	'Edit form',
@@ -60171,7 +54810,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.mailinglist.delete.question',
 	'Do you really want to delete this mailing list?<br>Caution: permission information will be lost!',
-	'Wollen Sie diese Mailing-Liste wirklich löschen?<br>Achtung: Permission-Informationen werden bei diesem Vorgang ebenfalls gelöscht!',
+	'Möchten Sie diese Mailing-Liste wirklich löschen?<br>Achtung: Permission-Informationen werden bei diesem Vorgang ebenfalls gelöscht!',
 	'¿Está seguro que quiere borrar esta lista mailing?<br>¡Cuidado: la información de permisos también se borrará con este proceso!',
 	'Voulez-vous vraiment supprimer cette liste de diffusion ?<br>Attention: Les informations de permission seront perdues !',
 	'Vuoi davvero eliminare questa mailing-list?<br>Attenzione: con questa operazione saranno eliminate anche le informazioni sulle autorizzazioni!',
@@ -60179,7 +54818,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta lista?<br>Cuidado: permissão informações serão perdidos!',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:01', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.mailinglist.edit',
 	'Edit mailing list',
@@ -60195,7 +54834,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.mailloop.delete',
 	'Do you really want to delete this response processing',
-	'Wollen Sie diese Response-Verarbeitung wirklich löschen?',
+	'Möchten Sie diese Response-Verarbeitung wirklich löschen?',
 	'¿Está seguro de que quiere borrar este filtro de rebote?',
 	'Voulez-vous vraiment supprimer ce filtre de rebond ?',
 	'Vuoi davvero eliminare questo filtro di rimbalzo?',
@@ -60203,19 +54842,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta rejeição-Filtro?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:05', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.mailloop.delete.question',
-	'Do you really want to delete the response processing <b>{0}</b>?',
-	'Wollen Sie die Response-Verarbeitung <b>{0}</b> wirklich löschen? ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.03.2024 01:02:32', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('16.01.2023 01:02:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.mailloop.forward',
 	'Forward filtered e-mails',
@@ -60398,8 +55025,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('20.10.2022 14:03:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.permission.type',
-	'State',
-	'Status',
+	'User right type',
+	'Rechtstyp',
 	NULL,
 	NULL,
 	NULL,
@@ -60407,7 +55034,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('20.10.2022 14:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.08.2023 14:21:18', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('20.10.2022 14:03:08', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.pluginmanager',
 	'Plugin Manager',
@@ -60456,18 +55083,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.profile.field.delete.question',
-	'Do you really want to delete the profile field <b>{0}</b>?',
-	'Wollen Sie das Profilfeld <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.profile.hint',
 	'0 for numeric fields means default length of 32 bit - not changeable',
@@ -60600,18 +55215,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('29.11.2018 09:35:56', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('29.11.2018 09:35:56', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.supervisor.delete.question2',
-	'Do you really want to delete the supervisor <b>{0}</b>?',
-	'Wollen Sie den Supervisor <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.supervisor.edit',
 	'Edit supervisor user',
@@ -60783,7 +55386,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.table.delete.import.question',
 	'Do you really want to delete this import?',
-	'Wollen Sie diesen Import wirklich löschen?',
+	'Möchten Sie diesen Import wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta importación?',
 	'Voulez-vous vraiment supprimer cette importation ?',
 	'Vuoi davvero eliminare questa importazione?',
@@ -60791,7 +55394,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:10', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.table.edit',
 	'Edit table',
@@ -60807,7 +55410,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.table.field.delete.question',
 	'Do you really want to delete this table field?',
-	'Wollen Sie dieses Tabellenfeld wirklich löschen?',
+	'Möchten Sie dieses Tabellenfeld wirklich löschen?',
 	'¿Está seguro de que quiere borrar campo de tablas?',
 	'Voulez-vous vraiment supprimer ce champ de tableau ?',
 	'Vuoi davvero eliminare questo campo di tabella?',
@@ -60815,7 +55418,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:13', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.table.new',
 	'New table',
@@ -60841,30 +55444,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.table.voucher',
-	'Voucher code table',
-	'Gutscheintabelle',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.01.2024 15:23:32', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.table.voucher.status',
-	'Status (unassigned / overall)',
-	'Status (nicht zugewiesen / insgesamt)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.01.2024 15:53:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.testmail.send',
 	'Send test mails',
 	'Testmails senden',
@@ -60877,18 +55456,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('27.12.2018 14:02:07', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('09.01.2019 08:35:59', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.userform.delete.question',
-	'Do you really want to delete the form <b>{0}</b>?',
-	'Wollen Sie das Formular <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.usergroup.delete',
 	'Delete user group',
 	'Benutzergruppe löschen',
@@ -60900,18 +55467,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.usergroup.delete.question',
-	'Do you really want to delete the user group <b>{0}</b>?',
-	'Wollen Sie die Benutzergruppe <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'settings.usergroup.edit',
 	'Edit user group',
@@ -60961,42 +55516,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('24.01.2019 08:07:08', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('12.10.2022 14:39:12', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.webservice.user.create',
-	'Create new SOAP user',
-	'Neuen SOAP-Benutzer erstellen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.webservice.user.edit',
-	'Edit SOAP User',
-	'SOAP-Benutzer bearbeiten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.webservice.user.new',
-	'New SOAP user',
-	'Neuer SOAP-Benutzer',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('02.11.2023 15:52:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'setup.company',
 	'Client setup',
 	'Mandanten-Einrichtung',
@@ -61011,7 +55530,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'shop.reset.question',
 	'Do You really want to reset this market?',
-	'Wollen Sie diesen Markt wirklich zurücksetzen?',
+	'Möchten Sie diesen Markt wirklich zurücksetzen?',
 	'¿Está seguro de que quiere deshacer este mercado?',
 	'Voulez-vous vraiment réinitialiser ce marché ?',
 	'Vuoi davvero resettare questo mercato?',
@@ -61019,7 +55538,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:18', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'showDate',
 	'Show date',
@@ -61993,6 +56512,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'statistic.SocialNetworks',
+	'Social Networks',
+	'Soziale Netzwerke',
+	'Redes sociales',
+	'Réseaux sociaux',
+	'Social network',
+	'Sociale netwerken',
+	NULL,
+	0,
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.TopDomains',
 	'Top Domains',
 	'Top Domains',
@@ -62521,18 +57052,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.extended',
-	'Extended statistics',
-	'Erweiterte Statistik',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.01.2024 15:38:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('25.01.2024 15:38:46', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.formats',
 	'Formats',
 	'Formate',
@@ -62568,18 +57087,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.mailing.recipient.received',
-	'Received',
-	'Erhalten',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.mails.delivered',
 	'E-mails accepted',
@@ -62821,18 +57328,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('07.11.2018 09:26:25', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.optin.ahv',
-	'Reactivated Hardbounce',
-	'reaktivierter Hardbounce',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('06.11.2023 14:03:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.pc',
 	'PC',
 	'PC',
@@ -62917,90 +57412,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.doi.total',
-	'Number of DOIs of the month',
-	'Anzahl der DOIs des Monats',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.individual',
-	'WS / individual',
-	'WS / individuell',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('09.10.2023 11:11:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.10.2023 11:11:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.optin.detail',
-	'Opt-ins - Detail',
-	'Anmeldungen - Details',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.optout.detail',
-	'Opt-outs - Detail',
-	'Abmeldungen - Details',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.10.2023 14:44:12', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.status.confirmed',
-	'Confirmed',
-	'Bestätigt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.status.confirmed.inactive',
-	'Confirmed, but no longer active (optout/ bounced / blacklisted meanwhile)',
-	'Bestätigt, aber jetzt inaktiv (abgemeldet, gebounced, blockiert)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.recipient.status.unconfirmed.deleted',
-	'Not confirmed and deleted after retention period',
-	'Unbestätigt und nach Vorhaltezeitraum gelöscht',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.09.2023 10:26:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.reports.delete',
 	'Delete report',
 	'Report löschen',
@@ -63012,18 +57423,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.reports.delete.question',
-	'Do you really want to delete the report <b>{0}</b>?',
-	'Wollen Sie den Report <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistic.reports.edit',
 	'Edit report',
@@ -63265,18 +57664,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('20.07.2020 13:08:46', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('23.07.2020 16:52:31', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.workflow',
-	'Campaign statistics',
-	'Kampagnen-Statistik',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'statistics.clickshare',
 	'Click share',
 	'Klickanteil',
@@ -63386,8 +57773,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'stats.mailcontent.part1',
-	'Dear User,<br><br>one of your mailings in your E-Marketing Manager client "',
-	'Sehr geehrter Nutzer,<br><br>bei einem Mailing in Ihrem E-Marketing Manager Mandant "',
+	'Dear User,<br><br>one of your mailings in your E-Marketing Manager account "',
+	'Sehr geehrter Nutzer,<br><br>bei einem Mailing in Ihrem E-Marketing Manager Account "',
 	'Estimado usuario,<br><br>en un mailing en su cuenta de E-Marketing Manager "',
 	'Cher utilisateur,<br><br>concernant un envoi dans votre compte E-Marketing Manager "',
 	'Gentile utente,<br><br>in un mailing del suo account E-Marketing Manager "',
@@ -63395,7 +57782,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('05.02.2024 10:54:12', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('13.11.2020 10:30:37', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'stats.mailcontent.part2',
 	'" has reached its maximum storage time. Therefore the relevant mailing "',
@@ -63625,18 +58012,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'support.tpye',
-	'Type of issue',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('25.07.2023 12:07:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('25.07.2023 12:07:45', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'table.delete.question',
 	'Do you really want to delete this table?',
 	'Wollen Sie diese Tabelle wirklich löschen?',
@@ -63843,7 +58218,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'target.delete.question',
 	'Do you really want to delete this target group?',
-	'Wollen Sie diese Zielgruppe wirklich löschen?',
+	'Möchten Sie diese Zielgruppe wirklich löschen?',
 	'¿Está seguro que quiere borrar este grupo destinatario?',
 	'Voulez-vous vraiment supprimer ce sous-groupe cible ?',
 	'Vuoi davvero eliminare questo gruppo target?',
@@ -63851,19 +58226,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir este grupo-alvo?',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:23', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'target.delete.question2',
-	'Do you really want to delete the target group <b>{0}</b>?',
-	'Wollen Sie die Zielgruppe <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'target.delete.recipients',
 	'Delete recipients of this target group',
@@ -63879,7 +58242,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'target.delete.recipients.question',
 	'This target group includes {0} recipients. Do you really want to delete these recipients from database?',
-	'Diese Zielgruppe umfasst {0} Empfänger. Wollen Sie diese Empfänger wirklich aus der Datenbank löschen?',
+	'Diese Zielgruppe umfasst {0} Empfänger. Möchten Sie diese Empfänger wirklich aus der Datenbank löschen?',
 	NULL,
 	'Ce groupe cible comprend {0} destinataires. Souhaitez-vous vraiment supprimer ces destinataires de la banque de données ?',
 	NULL,
@@ -63887,11 +58250,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:29:28', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'target.delete.recipients.question.first',
 	'Do you really want to delete?',
-	'Wollen Sie wirklich löschen?',
+	'Möchten Sie wirklich löschen?',
 	'¿Está seguro que quiere borrar?',
 	'Voulez-vous vraiment supprimer ?',
 	'Vuoi davvero eliminare?',
@@ -63899,7 +58262,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir',
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:27:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'target.delete.recipients.question.last',
 	'recipients to delete',
@@ -64513,18 +58876,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'template.delete.question',
-	'Do you really want to delete the template <b>{0}</b>?',
-	'Wollen Sie die Schablone <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('14.12.2023 11:09:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'template.edit',
 	'Edit template',
 	'Schablone bearbeiten',
@@ -64682,7 +59033,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'testMail',
-	'Test mailing',
+	'Test-Mailing',
 	'Test-Mailing',
 	'Test mailing',
 	'Envoi de test',
@@ -64691,7 +59042,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.09.2023 08:05:59', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'third',
 	'before previous',
@@ -65187,7 +59538,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'trackpoint.delete.question',
 	'Do you really want to delete this tracking point?',
-	'Wollen Sie diesen Messpunkt wirklich löschen?',
+	'Möchten Sie diesen Messpunkt wirklich löschen?',
 	'¿Está seguro de que quiere borrar este punto de medición?',
 	'Voulez-vous vraiment supprimer ce point de mesure ?',
 	'Vuoi davvero eliminare questo punto di misurazione?',
@@ -65195,7 +59546,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:47', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'trackpoint.float',
 	'Floating point',
@@ -65463,7 +59814,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'upload.deleteConfirmation',
 	'Do you really want to delete this file?',
-	'Wollen Sie diese Datei wirklich löschen?',
+	'Möchten Sie diese Datei wirklich löschen?',
 	'¿Está seguro de que quiere activar esta campaña?',
 	'Voulez-vous vraiment supprimer ce fichier ?',
 	'Vuoi davvero eliminare questo file?',
@@ -65471,19 +59822,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:43', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'upload.files',
-	'Upload files',
-	'Dateien hochladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:46', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'upload.for',
 	'Upload for',
@@ -65557,17 +59896,17 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'upload.manual',
-	'Manual upload',
-	'Manuell hochladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	'upload.newFile.title',
+	'Upload new file',
+	'Neue Datei hochladen',
+	'Subir archivo nuevo',
+	'Télécharger un nouveau fichier',
+	'Carica nuovo file',
+	'Nieuw bestand uploaden',
 	NULL,
 	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'upload.overview.AvailableTo',
 	'Available until',
@@ -65628,18 +59967,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'upload.sftp',
-	'SFTP upload',
-	'Via SFTP hochladen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'upload.view.body',
 	'Use this page for uploading new files. All fields are mandatory.',
@@ -65821,30 +60148,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'user.password.reminder',
-	'E-mail reminder to change password',
-	'E-Mail-Reminder zur Passwortänderung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('22.01.2024 15:13:56', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.01.2024 15:13:56', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'user.permission',
-	'User right',
-	'Benutzerrecht',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('09.10.2023 11:11:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('09.10.2023 11:11:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'user.welcome.mail.body.html',
 	'Your username is {0}<br /><br />Please open the following link in your favorite browser to set your password<br /><br /><a href="{1}">{1}</a><br /><br />Have fun',
 	'Ihr Benutzername ist {0}<br /><br />Zum Setzen Ihres Passwortes öffnen Sie bitte folgenden Link in Ihrem bevorzugten Browser<br /><br /><a href="{1}">{1}</a><br /><br />Viel Spaß',
@@ -65892,18 +60195,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'userform.activate',
-	'Activate form',
-	'Formular aktivieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'userform.builder',
 	'Form builder',
@@ -65989,18 +60280,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('15.04.2021 01:02:06', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('15.04.2021 01:02:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'userform.content',
-	'Form content',
-	'Formularinhalt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'userform.imported',
 	'Userform sucessfully imported',
 	'Formular erfolgreich importiert',
@@ -66026,8 +60305,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('17.02.2021 15:56:03', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'userform.test',
-	'Test form',
-	'Formular testen',
+	'Test web form',
+	'Webformular testen',
 	NULL,
 	NULL,
 	NULL,
@@ -66035,19 +60314,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('09.10.2020 10:00:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('13.02.2024 12:59:21', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'userform.test.activate.question',
-	'Only active forms can be tested. Would you like to activate the form now?',
-	'Es können nur aktvie Formulare getestet werden. Wollen Sie das Formular jetzt aktvieren?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.01.2024 16:46:47', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('09.10.2020 10:00:19', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'userform.test.withoutRecipient',
 	'Test form without recipient',
@@ -66241,30 +60508,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.campaign.delete.autoopt',
-	'You can''t delete this archive!<br>Auto-Optimization defined for it.',
-	'Sie können dieses Archive nicht löschen!<br>Eine Auto-Optimierung wurde dafür definiert.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.campaign.delete.mailing',
-	'You can''t delete this archive!<br>There are mailings assigned to it.',
-	'Sie können dieses Archiv nicht löschen<br>Es gibt davon abhängende Maillings.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.02.2023 13:44:11', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.component.size',
 	'A file you just uploaded is bigger than {0}. This might be too much for an e-mail.',
 	'Sie haben eine Datei hochgeladen, die größer als {0} und damit für eine E-Mail möglicher Weise zu groß ist.',
@@ -66276,42 +60519,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('04.04.2022 10:59:23', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('04.04.2022 10:59:23', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.domain.address.exist',
-	'The domain address with the specified name has already been created. Please use the previously created domain address.',
-	'Eine Domain-Adresse mit diesem Namen wurde bereits erstellt. Bitte verwenden sie die zuvor erstellte Domain-Adresse. ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:30', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.domain.mx.invalid',
-	'MX Entry of the domain is invalid.',
-	'Der MX-Eintrag der Domain ist ungültig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.domain.spf.invalid',
-	'SPF Entry of the domain is invalid.',
-	'Der SPF-Eintrag der Domain ist ungültig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('26.05.2023 16:05:29', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.execution.noDaySelected',
 	'For activation please select at least one day to execute.',
@@ -66469,18 +60676,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('26.07.2019 12:53:59', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('01.08.2019 11:58:02', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.import.canceled',
-	'Import was cancelled',
-	'Import wurde abgebrochen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 15:08:17', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.import.keyColumn.index',
 	'The key column for import has no index in database, so the import process will take a long time.',
 	'Die Schlüsselspalte besitzt keinen Index in der Datenbank, daher kann der Import sehr lang dauern.',
@@ -66492,18 +60687,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.import.lineQuota',
-	'Import limit soon reached ({1} of {0} lines)',
-	'Import-Limit bald erreicht ({1} von {0} Zeilen)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.11.2023 15:32:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('28.11.2023 15:32:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.import.maxCount',
 	'The maximum number of records will soon be reached.',
@@ -66541,18 +60724,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('24.10.2019 09:11:04', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('24.10.2019 09:11:04', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.mailing.addresses.changed',
-	'Sender email and reply email were changed.',
-	'Absender- und Antwortadresse wurden geändert.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.agntag.deprecated',
 	'The agnTAG {0} is deprecated and should be replaced. More information can be found in the manual Appendix A.',
 	'Das agnTAG {0} ist veraltet und sollte ersetzt werden. Nähere Informationen finden Sie im Handbuch Anhang A.',
@@ -66579,7 +60750,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.altg',
 	'Please check the ALTG in the mailing.',
-	'Bitte prüfen Sie die ALTG-Einstellung am Mailing.',
+	'Bitte prﳾn Sie die ALTG-Einstellung am Mailing.',
 	NULL,
 	NULL,
 	NULL,
@@ -66587,10 +60758,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.03.2022 08:13:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.08.2023 11:41:16', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('08.03.2022 08:13:44', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.delete.followup.target',
-	'There are followup mailings depending on this mailing. Their delivery will be cancelled, too.',
+	'There are followup mailings depending on this mailing. Their delivery will be canceled, too.',
 	'Von dem zu löschenden Mailing sind Followup Mailings abhängig. Der Versand dieser wird abgebrochen und die Verknüpfung aufgehoben.',
 	'Del mailing pendiente de ser borrado dependen mailings de seguimiento. El envío de este queda interrumpido y el enlace es cancelado',
 	'Des envois de suivi dépendent de cet envoi. Leur expédition sera également annulée.',
@@ -66599,7 +60770,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 15:08:26', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.followup.basemail_was_not_sent',
 	'The base mailing for this followup mail has not yet been sent.',
@@ -66614,7 +60785,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.followup.unschedule',
-	'There are followup mailings depending on this mailing. Their delivery will be cancelled, too.',
+	'There are followup mailings depending on this mailing. Their delivery will be canceled, too.',
 	'Von dem zu löschenden Mailing sind Followup Mailings abhängig. Der Versand dieser wird abgebrochen und die Verknüpfung aufgehoben.',
 	'Del mailing pendiente de ser borrado dependen mailings de seguimiento. El envío de este queda interrumpido y el enlace es cancelado',
 	'Des envois de suivi dépendent de cet envoi. Leur expédition sera également annulée.',
@@ -66623,7 +60794,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.07.2023 15:08:31', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.import.action',
 	'Usage of an open-, click- or link-trigger in import file detected, which is not available in the current account. Please check actions in the mailing.',
@@ -66673,18 +60844,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.mailing.import.targetgroupInvalid',
-	'Removed invalid target group &quot;{1}&quot; (id: {0}) from imported mailing.',
-	'Ungültige Zielgruppe &quot;{1}&quot; (id: {0}) wurde vom importierten Mailing entfernt.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('27.07.2023 15:33:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('27.07.2023 15:33:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.items.refencetable.missing',
 	'There are no reference tables available, please consider creating one under Administration > Manage Tables.',
 	'Es sind keine Referenz-Tabellen verfügbar. Bitte erstellen Sie eine unter Verwaltung > Tabellen verwalten.',
@@ -66707,7 +60866,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.link.encoded',
 	'Attention: You are using encoded links of EMM. Please check the content (content block: {0} line: {1}).',
@@ -66817,18 +60976,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.mailing.reply.changed',
-	'Reply email was changed.',
-	'Antwortadresse wurde  geändert.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.rulebased_without_target',
 	'You have to choose a target group to send the mailing to.',
 	'Sie müssen zuerst eine Zielgruppe für den Versand auswählen.',
@@ -66840,18 +60987,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'warning.mailing.sender.changed',
-	'Sender email was changed.',
-	'Absenderadresse wurde geändert.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('11.09.2023 14:02:28', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'warning.mailing.size.large',
 	'Attention: Your mailing is larger than {0}. This may result in some e-mail service provider not accepting your email. In addition, this can lead to long loading times, which can cause problems on mobile devices. We strongly recommend that you reduce the number of images or the size of the files.',
@@ -67141,18 +61276,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'webhooks.enable',
-	'Enable webhooks interface',
-	'Webhooks-Schnittstelle aktivieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('29.02.2024 10:08:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.02.2024 10:08:53', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'webhooks.event',
 	'Event',
 	'Ereignis',
@@ -67174,8 +61297,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	0,
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'webhooks.event.HARD_BOUNCE.label',
 	'Hard bounce',
@@ -67236,18 +61359,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'webhooks.interface',
-	'Webhooks interface',
-	'Webhooks-Schnittstelle',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('07.02.2024 09:40:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('07.02.2024 09:40:45', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'webhooks.profilefields',
 	'Include profile fields',
@@ -67403,7 +61514,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('26.10.2020 10:14:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.05.2023 01:02:48', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('27.02.2023 01:02:33', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'webservice.permission.AddSubscribers',
 	'Add new subscribers (webservice endpoint: {0})',
@@ -68679,7 +62790,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.activating.question',
 	'Do you really want to activate this campaign?',
-	'Wollen Sie diese Kampagne wirklich aktivieren?',
+	'Möchten Sie diese Kampagne wirklich aktivieren?',
 	'¿Está seguro de que quiere activar esta campaña?',
 	'Voulez-vous vraiment activer cette campagne ?',
 	'Vuoi davvero attivare questa campagna?',
@@ -68687,7 +62798,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:39', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.activating.title',
 	'Activate campaign',
@@ -68715,7 +62826,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.confirmDelete',
 	'Do you really want to delete this campaign?',
-	'Wollen Sie diese Kampagne wirklich löschen?',
+	'Möchten Sie diese Kampagne wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta campaña?',
 	'Voulez-vous vraiment supprimer cette campagne ?',
 	'Vuoi davvero eliminare questa campagna?',
@@ -68723,7 +62834,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:35', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.connect',
 	'Connect',
@@ -68736,18 +62847,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.continue.question',
-	'Do you really want to continue this campaign?',
-	'Wollen Sie diese Kampagne wirklich fortsetzen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:27', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.copy.btn.onlyChain',
 	'Copy chain without content',
@@ -68905,21 +63004,9 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.delete',
-	'Delete campaign',
-	'Kampagne löschen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:50', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.delete.question',
 	'Do you really want to delete this campaign?',
-	'Wollen Sie diese Kampagne wirklich löschen?',
+	'Möchten Sie diese Kampagne wirklich löschen?',
 	'¿Está seguro de que quiere borrar esta campaña?',
 	'Voulez-vous vraiment supprimer cette campagne ?',
 	'Vuoi davvero eliminare questa campagna?',
@@ -68927,19 +63014,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:23', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.delete.question.new',
-	'Do you really want to delete the campaign <b>{0}</b>?',
-	'Wollen Sie die Kampagne <b>{0}</b> wirklich löschen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('12.12.2023 15:24:51', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.disconnect',
 	'Disconnect all',
@@ -69447,7 +63522,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.mailing.copyQuestion',
 	'Would you like to create a copy of this mailing because it is already used in another campaign?',
-	'Wollen Sie das Mailing kopieren, da es bereits Teil einer anderen Kampagne ist?',
+	'Möchten Sie das Mailing kopieren, da es bereits Teil einer anderen Kampagne ist?',
 	'¿Desea copiar el mailing, dado que ya es parte de otra campaña?',
 	'Voulez-vous créer une copie de cet envoi car il est déjà utilisé dans une autre campagne ?',
 	'Vuoi copiare il mailing perché fa già parte di un''altra campagna?',
@@ -69455,19 +63530,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:20', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.mailing.editMailingLink',
-	'to mailing',
-	'zum Mailing',
-	'al mailing',
-	'vers le mailing',
-	'alls mailing.',
-	'naar de mailing',
-	'para o mailing',
+	'You can edit the mailing here.',
+	'Sie können das Mailing hier bearbeiten.',
+	'Aquí puede editar el mailing.',
+	'Vous pouvez éditer l''envoi ici.',
+	'Qui puoi modificare il mailing.',
+	'U kunt de mailing hier bewerken.',
+	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.08.2023 09:54:26', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.mailing.oneMailinglistWarning',
 	'A campaign can only have one mailing list. The settings of the first recipient icon will overwrite the mailing list in this mailing.',
@@ -69543,7 +63618,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.mailingTypesFix.question',
 	'Mailing types will be changed to fit start type. Do you want to proceed?',
-	'Mailing-Typen werden geändert, damit sie zum Starttyp passen. Wollen Sie fortfahren?',
+	'Mailing-Typen werden geändert, damit sie zum Starttyp passen. Möchten Sie fortfahren?',
 	NULL,
 	'Les types de mailing ont été modifiés pour correspondre au type de départ. Souhaitez-vous continuer ?',
 	NULL,
@@ -69551,7 +63626,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('02.07.2018 09:23:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('06.08.2018 16:52:06', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.mailinglist.short',
 	'ML',
@@ -69603,7 +63678,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.ownWorkflow.copyWorkflowQuestion',
 	'Do you want to edit the original campaign or copy it and edit then?',
-	'Wollen Sie die Original-Kampagne bearbeiten oder eine Kopie erstellen und bearbeiten?',
+	'Möchten Sie die Original-Kampagne bearbeiten oder eine Kopie erstellen und bearbeiten?',
 	'¿Quiere editar la campaña original o crear y editar una copia?',
 	'Voulez-vous vraiment éditer l''original de la campagne, ou créer une copie à éditer ?',
 	'Vuoi modificare la campagna originale oppure creare una copia e modificarla?',
@@ -69611,7 +63686,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:09', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.ownWorkflow.copyWorkflowTitle',
 	'Copy campaign',
@@ -69745,30 +63820,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.pause.reactivation',
-	'Automatic reactivation',
-	'Automatische Reaktivierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.pause.timer',
-	'Remaining time until automatic reactivation',
-	'Verbleibende Zeit bis zu automatischen Reaktivierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('08.05.2023 12:00:05', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.pdf.saveCampaign',
 	'Save campaign?',
 	'Kampagne speichern?',
@@ -69783,7 +63834,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.pdf.saveModifiedCampaign',
 	'The campaign has been modified. Would you like to save before exporting to PDF?',
-	'Die Kampagne wurde verändert. Wollen Sie diese vor dem PDF-Export speichern?',
+	'Die Kampagne wurde verändert. Möchten Sie vor dem PDF-Export speichern?',
 	'La campaña ha sido modificada. ¿Desea guardar antes de la exportación del PDF?',
 	'La campagne a été modifiée. Souhaitez-vous l''enregistrer avant de l''exporter au format PDF ?',
 	'La campagna è stata modificata. Vuoi salvare prima dell''esportazione PDF?',
@@ -69791,11 +63842,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:26:04', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.pdf.saveNewCampaign',
 	'The campaign has to be saved before you can export as a PDF. Would you like to save now?',
-	'Die Kampagne muss vor dem PDF-Export gespeichert werden. Wollen Sie diese jetzt speichern?',
+	'Die Kampagne muss vor dem PDF-Export gespeichert werden. Möchten Sie jetzt speichern?',
 	'La campaña debe ser guardada antes de la exportación del PDF. ¿Desea guardar ahora?',
 	'La campagne doit être enregistrée avant d''être exportée au format PDF. Souhaitez-vous l''enregistrer maintenant ?',
 	'La campagna deve essere salvata prima dell''esportazione PDF. Vuoi salvare ora?',
@@ -69803,7 +63854,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('04.12.2023 13:25:53', '%d.%m.%Y %H:%i:%s'));
+	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.pdf.tooltip',
 	'PDF export',
@@ -70405,18 +64456,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.status.change',
-	'Change status',
-	'Status ändern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('21.03.2023 11:12:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('21.03.2023 11:12:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.stop.AutomaticEnd',
 	'Automatic end',
 	'Automatisches Ende',
@@ -70705,18 +64744,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'workflow.view.status.paused',
-	'Paused',
-	'Pausiert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	0,
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('16.03.2023 15:15:55', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'workflow.view.status.tested',
 	'Tested',
 	'Getestet',
@@ -70800,3 +64827,4 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	0,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
+COMMIT;

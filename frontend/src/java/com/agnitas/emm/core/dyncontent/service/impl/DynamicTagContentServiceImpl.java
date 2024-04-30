@@ -295,7 +295,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
     public int addContent(ContentModel model, List<UserAction> userActions) {
 	    contentModelValidator.assertIsValidToAdd(model);
         int contentId = addContentImpl(model, userActions);
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+        mailingDao.updateStatus(model.getMailingId(), MailingStatus.EDIT);
         return contentId;
     }
 
@@ -304,7 +304,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	public boolean deleteContent(ContentModel model, List<UserAction> userActions) {
 	    contentModelValidator.assertIsValidToGetOrDelete(model);
 		boolean res = deleteContentImpl(model, userActions);
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+        mailingDao.updateStatus(model.getMailingId(), MailingStatus.EDIT);
         return res;
 	}
 
@@ -313,7 +313,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	public void updateContent(ContentModel model, List<UserAction> userActions) {
 	    contentModelValidator.assertIsValidToUpdate(model);
 		updateContentImpl(model, userActions);
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+        mailingDao.updateStatus(model.getMailingId(), MailingStatus.EDIT);
 	}
 
 	@Override

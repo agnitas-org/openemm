@@ -37,15 +37,6 @@
             return this.editors[name] = editor;
         };
 
-        this.isPausedWorkflow = function() {
-            return $('#workflow-status').val() === Def.constants.statusPaused;
-        }
-
-        this._notAllowedToChangeDuringPause = function(node) {
-            return this.isPausedWorkflow()
-                && !_.union(Def.NODE_TYPES_MAILING, [Def.NODE_TYPE_STOP]).includes(node.getType());
-        }
-
         this.showEditDialog = function(node, isActivatedWorkflow) {
             var self = this;
             var nodeType = node.getType();
@@ -74,7 +65,7 @@
                         $datepicker.set('select', $datepicker.get('select'));
                     });
 
-                    if (isActivatedWorkflow || self._notAllowedToChangeDuringPause(self.curEditingNode)) {
+                    if (isActivatedWorkflow) {
                         disableDialogItems($(event.target));
                     }
                 },
@@ -210,6 +201,10 @@
         this.modify = function(node, callback) {
             options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node));
             callback(node);
+
+            if (options.supplement) {
+                options.supplement(node);
+            }
 
             if (options.onChange) {
                 options.onChange(node);

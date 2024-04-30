@@ -1,5 +1,7 @@
 <%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <c:set var="companyID" value="<%= AgnUtils.getCompanyID(request) %>" />
@@ -7,13 +9,12 @@
 <c:url var="agnitasEmmLogoPngLink" value="/layout/${companyID}/logo.png" />
 
 <div class="l-logo">
-    <a href="<c:url value="/dashboard.action" />" class="logo">
+    <html:link page="/dashboard.action" styleClass="logo">
         <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
 
-        <p class="headline"><mvc:message code="default.EMM" /></p>
-        <p class="version"><mvc:message code="default.version" /></p>
-    </a>
-
+        <p class="headline"><bean:message key="default.EMM" /></p>
+        <p class="version"><bean:message key="default.version" /></p>
+    </html:link>
     <a href="#" class="menu-close">
         <i class="icon icon-close"></i>
     </a>

@@ -10,11 +10,11 @@
 
 package com.agnitas.rdir.processing;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 
 public interface SubstituteLinkRdirPostProcessor {
 
-	SubstituteLinkResult createSubstituteLink(final TrackableLink currentTrackableLink, final String currentFullUrl, final ComExtensibleUID currentUid);
+	SubstituteLinkResult createSubstituteLink(final ComTrackableLink currentTrackableLink, final String currentFullUrl, final ComExtensibleUID currentUid);
 
 }

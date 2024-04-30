@@ -1,4 +1,0 @@
-<HelpBalloon>
-		<title><![CDATA[At sending time]]></title>
-		<content><![CDATA[If you select the option "at the time of dispatch" for the auto-export of your mailing recipients, then the export is always generated at the next full hour. For example, if the dispatch of your mailing is between 09:00 and 9:59, then the corresponding auto-export will be carried out at 10:00.]]></content>
-	</HelpBalloon>

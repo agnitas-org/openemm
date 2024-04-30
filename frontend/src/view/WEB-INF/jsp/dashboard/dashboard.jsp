@@ -1,14 +1,20 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@ page import="org.agnitas.web.ExportWizardAction" %>
+<%@ page import="org.agnitas.web.ProfileImportAction" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 
 <%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
 <%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="worldmailinglist" type="java.utils.List<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
+
+<c:set var="ACTION_IMPORT_RECIPIENT" value="<%= ProfileImportAction.ACTION_START %>" scope="request"/>
+<c:set var="ACTION_EXPORT_RECIPIENT" value="<%= ExportWizardAction.ACTION_LIST %>" scope="request"/>
 
 <div data-controller="dashboard">
     <div class="row" data-equalizer="max" data-equalizer-max="400">
@@ -41,19 +47,17 @@
                         </ul>
 
                         <emm:ShowByPermission token="mailing.change">
-                            <emm:HideByPermission token="mailing.content.readonly">
-                                    <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-                                <ul class="tile-header-actions">
-                                    <li>
-                                        <a href="${mailingCreateLink}" class="btn btn-primary btn-regular">
-                                            <i class="icon icon-plus"></i>
-                                            <span class="text">
-                                                <mvc:message code="New"/>
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </emm:HideByPermission>
+                                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                            <ul class="tile-header-actions">
+                                <li>
+                                    <a href="${mailingCreateLink}" class="btn btn-primary btn-regular">
+                                        <i class="icon icon-plus"></i>
+                                        <span class="text">
+                                            <mvc:message code="New"/>
+                                        </span>
+                                    </a>
+                                </li>
+                            </ul>
                         </emm:ShowByPermission>
                     </div>
 
@@ -110,11 +114,9 @@
                                             </div>
                                             <div class="btn-group recently-used-mailing-btn-group" data-mailing-id="${mailing.mailingid}">
                                                 <emm:ShowByPermission token="mailing.change">
-                                                    <emm:HideByPermission token="mailing.content.readonly">
-                                                        <button class="btn btn-regular" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
-                                                            <i class="icon icon-copy"></i>
-                                                        </button>
-                                                    </emm:HideByPermission>
+                                                    <button class="btn btn-regular" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                        <i class="icon icon-copy"></i>
+                                                    </button>
                                                 </emm:ShowByPermission>
                                                 <button class="btn btn-regular" data-action="edit-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingEdit"/>">
                                                     <i class="icon icon-pencil"></i>
@@ -298,4 +300,4 @@
     <jsp:include page="../calendar/calendar-view.jsp" />
 </emm:ShowByPermission>
 
-<%@include file="fragments/dashboard-news.jspf" %>
+<emm:include page="fragments/dashboard-news.jsp"/>

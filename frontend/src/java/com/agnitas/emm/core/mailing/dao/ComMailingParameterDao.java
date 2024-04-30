@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 
 import com.agnitas.beans.IntEnum;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
 
@@ -74,7 +73,7 @@ public interface ComMailingParameterDao {
 
     List<ComMailingParameter> getMailingParameters(int companyID, int mailingID);
 
-    List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith, DateRange changeDate);
+    List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith);
 
     ComMailingParameter getParameter(int mailingInfoID);
 

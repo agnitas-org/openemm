@@ -13,7 +13,7 @@ package com.agnitas.emm.core.hashtag;
 import java.util.Collections;
 import java.util.Map;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 
 /**
  * Context providing common data used for processing hash tags.
@@ -24,7 +24,7 @@ public final class HashTagContext {
 	private final int customerID;
 	
 	/** The current trackable link. */
-	private final TrackableLink link;
+	private final ComTrackableLink link;
 
 	// TODO: Not sure, what this is, but this data is provided by the method head and used by some tags.
 	/** Original UID. */
@@ -45,7 +45,7 @@ public final class HashTagContext {
 	 * @param referenceTableRecordSelector selector for a record in reference table with 1:n relations
 	 * @param staticValueMapOrNull map containing static values used by hashtag substitution
 	 */
-	public HashTagContext(final TrackableLink link, final int customerID, final String originalUID, final String referenceTableRecordSelector, final Map<String, Object> staticValueMapOrNull) {
+	public HashTagContext(final ComTrackableLink link, final int customerID, final String originalUID, final String referenceTableRecordSelector, final Map<String, Object> staticValueMapOrNull) {
 		this.customerID = customerID;
 		this.originalUID = originalUID;
 		this.referenceTableRecordSelector = referenceTableRecordSelector;
@@ -67,7 +67,7 @@ public final class HashTagContext {
 	 * 
 	 * @return current trackable link
 	 */
-	public final TrackableLink getCurrentTrackableLink() {
+	public final ComTrackableLink getCurrentTrackableLink() {
 		return this.link;
 	}
 

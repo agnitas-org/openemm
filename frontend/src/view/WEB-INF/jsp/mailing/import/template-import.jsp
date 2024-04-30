@@ -1,7 +1,6 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
@@ -33,26 +32,24 @@
 						</div>
 					</div>
 				</div>
-                <emm:ShowByPermission token="settings.extended">
-                    <div class="col-sm-4">
-                        <table>
-                            <tr>
-                                <td>
-                                    <label data-form-change class="toggle">
-                                        <mvc:checkbox id="import_duplicates" path="overwriteTemplate"/>
-                                        <div class="toggle-control"></div>
-                                    </label>
-                                </td>
-                                <td>
-                                    <label class="control-label" style="margin-left: 7px;">
-                                        <mvc:message code="import.template.overwrite" />
-                                        <button type="button" class="icon icon-help" data-help="help_${helplanguage}/mailing/OverwriteTemplate.xml"></button>
-                                    </label>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </emm:ShowByPermission>
+				<div class="col-sm-4">
+					<table>
+						<tr>
+							<td>
+								<label data-form-change class="toggle">
+									<mvc:checkbox id="import_duplicates" path="overwriteTemplate"/>
+									<div class="toggle-control"></div>
+								</label>
+							</td>
+							<td>
+								<label class="control-label" style="margin-left: 7px;">
+									<mvc:message code="import.template.overwrite" />
+									<button type="button" class="icon icon-help" data-help="help_${helplanguage}/mailing/OverwriteTemplate.xml"></button>
+								</label>
+							</td>
+						</tr>
+					</table>
+				</div>
 			</div>
 		</div>
 	</div>

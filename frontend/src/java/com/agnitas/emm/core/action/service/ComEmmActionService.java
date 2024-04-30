@@ -17,11 +17,8 @@ import java.util.Set;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
-import net.sf.json.JSONArray;
+import com.agnitas.beans.Admin;
 
 
 public interface ComEmmActionService extends EmmActionService {
@@ -36,13 +33,6 @@ public interface ComEmmActionService extends EmmActionService {
 
     List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive);
     
-    boolean isReadonlyOperationRecipientField(ProfileField field);
-    
-    boolean containsReadonlyOperations(int actionId, Admin admin);
-
-    boolean isReadonlyOperation(AbstractActionOperationParameters operation, Admin admin);
-
-    List<String> getActionsNames(Set<Integer> bulkIds, int companyID);
-
-    JSONArray getDependencies(int actionId, int companyId);
+    boolean canUserSaveAction(final Admin admin, final int actionId);
+    boolean canUserSaveAction(final Admin admin, final EmmAction action);
 }

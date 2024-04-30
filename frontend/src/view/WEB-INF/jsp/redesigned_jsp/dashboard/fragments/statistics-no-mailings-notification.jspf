@@ -1,5 +1,0 @@
-
-<div class="notification-simple">
-    <i class="icon icon-info-circle"></i>
-    <span><mvc:message code="dashboard.mailing.noMailings" /></span>
-</div>

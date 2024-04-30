@@ -50,16 +50,29 @@
     bulkDelete($e, false);
   });
 
-  function bulkDelete($e) {
+  $(document).on('click', '.js-data-table-bulk-delete-struts', function(e) {
+    var $e = $(this);
+    bulkDelete($e, true);
+  });
+
+  function bulkDelete($e, struts) {
     var field = $e.data('bulk-field') || 'id';
-    var requestField = $e.data('bulk-request-field') || 'bulkIds';
+    var requestField = $e.data('bulk-request-field') || (struts ? 'bulkID' : 'bulkIds');
 
     var api = Table.get($e).api;
     var rows = api.getSelectedRows();
     var ids = rows.map(function(row) { return row[field]; });
 
     var data = {};
-    data[requestField] = ids;
+    if (struts) {
+      data[requestField] = {};
+      for (var index in ids) {
+        var id = ids[index];
+        data[requestField][id] = 'on';
+      }
+    } else {
+      data[requestField] = ids;
+    }
 
     requestBulkDelete(ids, $e.data('bulk-url'), data).done(function() {
       api.updateRowData({remove: rows});

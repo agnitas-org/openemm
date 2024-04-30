@@ -8,7 +8,7 @@
 
 <c:forEach var="field" items="${fieldsMap}">
     <c:set var="column" value="${field.key}"/>
-    <c:if test="${listForm.isSelectedColumn(column)}">
+    <c:if test="${form.isSelectedColumn(column)}">
 
         <%--@elvariable id="recipient" type="com.agnitas.emm.core.recipient.dto.RecipientDto"--%>
         <c:set var="value" value="${recipient.getValue(column)}"/>
@@ -33,7 +33,7 @@
                                 headerClass="js-table-sort"
                                 title="${title}"
                                 sortable="true" sortProperty="${column}">
-                    ${fn:escapeXml(formattedValue)}
+                    ${formattedValue}
                 </display:column>
             </c:otherwise>
         </c:choose>

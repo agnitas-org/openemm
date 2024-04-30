@@ -8,7 +8,7 @@
         </div>
         <div class="col-sm-8">
             <label class="toggle">
-                <input type="checkbox" name="modifyAllLinksExtensions" id="settings_modifyLinkExtensions" ${isSettingsReadonly ? 'disabled' : ''}/>
+                <input type="checkbox" name="modifyAllLinksExtensions" id="settings_modifyLinkExtensions"/>
                 <div class="toggle-control"></div>
             </label>
         </div>

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -14,7 +14,7 @@
 <c:set var="agnHighlightKey" 		value="default.usedIn" 						scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 								scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="TriggerManagement" 					scope="request" />
-
+<c:set var="agnHelpKey" 			value="formView" 							scope="request" />
 <c:set var="agnHelpKey" 			value="newAction" 							scope="request" />
 
 

@@ -1,4 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Anonymize tracking data of all recipients]]></title>
-    <content><![CDATA[ATTENTION: Please note that if you activate the setting "Anonymize tracking data of all recipients", numerous functions in the EMM will no longer be available. This affects not only the statistical analysis of openings and clicks, but also campaigns and mailings that are based on recipient behavior, as it is no longer possible to track which recipient has opened or clicked, for example. If the tracking data has been anonymized, it is also no longer producible.]]></content>
-</HelpBalloon>

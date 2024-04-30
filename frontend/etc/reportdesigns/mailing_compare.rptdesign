@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -120,16 +120,21 @@ if (params["selectedTargets"] != null ) {
 }
 
 mailingCompareDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingCompareDataSet();
-tempTableIds = mailingCompareDataSet.prepareReport(selectedMailings, params["companyID"]);
-reportContext.setPersistentGlobalVariable("tempTableIds", tempTableIds);
+tempTableID = mailingCompareDataSet.prepareReport(selectedMailings, params["companyID"], selectedTargets, params["recipientsType"]);
+reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
 
 reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
+
+targetNum = 0;
 
 heightPerTG = 24;
 baseHeight = 27;
 if(reportContext.getOutputFormat() == "pdf") {
 	heightPerTG = 29;
-} 
+}
+ 
+targetNum = targetNum + mailingCompareDataSet.getTargetNum(selectedTargets);
+reportContext.setPersistentGlobalVariable("CHART_HEIGHT", ((targetNum) * heightPerTG + baseHeight) + "");
 
 if(reportContext.getOutputFormat() != "pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
@@ -258,7 +263,7 @@ reportContext.setGlobalVariable("tr", tr);
 reportContext.setGlobalVariable("getCategoryNameByKeyFunction", getCategoryNameByKey);
 reportContext.setGlobalVariable("formatPercentFunction", formatPercent);
 reportContext.setGlobalVariable("mailingInfo", mailingInfo);]]></method>
-    <method name="afterRender"><![CDATA[mailingCompareDataSet.dropTempTables(reportContext.getPersistentGlobalVariable("tempTableIds"));
+    <method name="afterRender"><![CDATA[mailingCompareDataSet.dropTempTable(reportContext.getPersistentGlobalVariable("tempTableID"));
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
@@ -636,7 +641,7 @@ return false;]]></method>
             <property name="dataSource">DummyDataSource</property>
             <method name="open"><![CDATA[if(reportContext.getOutputFormat() == "csv" ) {
 	mailingCompareCsvDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingCompareDataSet();
-	mailingCompareCsvData = mailingCompareCsvDataSet.getCsvSummaryData(reportContext.getPersistentGlobalVariable("tempTableIds"));
+	mailingCompareCsvData = mailingCompareCsvDataSet.getCsvSummaryData(reportContext.getPersistentGlobalVariable("tempTableID"), reportContext.getLocale());
 	currentrow = 0;
 }
 ]]></method>
@@ -648,11 +653,7 @@ return false;]]></method>
 	row["mailing_id"] = mailingCompareCsvData.get(currentrow).getMailingId();
 	row["mailing_name"] = mailingCompareCsvData.get(currentrow).getMailingNameFull();
 	row["target_id"] = mailingCompareCsvData.get(currentrow).getTargetGroupId();
-	if (mailingCompareCsvData.get(currentrow).getTargetGroupIndex() == 1 || mailingCompareCsvData.get(currentrow).getTargetGroupName() == "statistic.all_subscribers") {
-		row["target_name"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
-	} else {
-		row["target_name"] = mailingCompareCsvData.get(currentrow).getTargetGroupName();
-	}
+	row["target_name"] = mailingCompareCsvData.get(currentrow).getTargetGroupName();
 	row["sent_value"] = mailingCompareCsvData.get(currentrow).getEmailsSentCount();
 	row["delivered_value"] = mailingCompareCsvData.get(currentrow).getEmailsDeliveredCount();
 	row["openers_value"] = mailingCompareCsvData.get(currentrow).getOpenersCount();
@@ -924,7 +925,7 @@ return true;
             </structure>
             <property name="dataSource">DummyDataSource</property>
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
-mailingsSummaryData = mailingCompareDataSet.getData(reportContext.getPersistentGlobalVariable("tempTableIds"));
+mailingsSummaryData = mailingCompareDataSet.getData(selectedMailings, params["companyID"]);
 currentrow = 0;
 
 max = 0;
@@ -3336,7 +3337,7 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
             <row id="687">
                 <cell id="688">
                     <text-data id="690">
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale())</expression>
                     </text-data>
                 </cell>
                 <cell id="689">
@@ -3457,81 +3458,140 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
             <header>
                 <row id="2659">
                     <cell id="2660">
-                        <text-data id="8793">
-                            <expression name="valueExpr">tr("Mailing")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2672">
+                            <property name="style">blueHeadline</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailing", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2661">
-                        <text-data id="8792">
-                            <expression name="valueExpr">tr("birt.Target")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2683">
+                            <property name="style">blueHeadline</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.Target", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2662">
-                        <text-data id="8788">
-                            <expression name="valueExpr">tr("report.deliveredMails")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2673">
+                            <property name="style">blueHeadline</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.deliveredMails", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2825">
-                        <text-data id="8787">
-                            <expression name="valueExpr">tr("statistic.mails.delivered")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2831">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.mails.delivered", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2663">
-                        <text-data id="8785">
-                            <expression name="valueExpr">tr("birt.report.opens")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2674">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.report.opens", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2664">
-                        <text-data id="8786">
-                            <expression name="valueExpr">tr("birt.report.opens") + ' %'</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2675">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.report.opens", reportContext.getLocale())</expression>
                         </text-data>
+                        <label id="2684">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <text-property name="text"> %</text-property>
+                        </label>
                     </cell>
                     <cell id="2665">
-                        <text-data id="8783">
-                            <expression name="valueExpr">tr("statistic.clicker")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2676">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2666">
-                        <text-data id="8784">
-                            <expression name="valueExpr">tr("statistic.clicker") + ' %'</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2677">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
                         </text-data>
+                        <label id="2685">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <text-property name="text"> %</text-property>
+                        </label>
                     </cell>
                     <cell id="2667">
-                        <text-data id="8782">
-                            <expression name="valueExpr">tr("statistic.Opt_Outs")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2678">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Opt_Outs", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2668">
-                        <text-data id="8781">
-                            <expression name="valueExpr">tr("statistic.Opt_Outs") + ' %'</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2679">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Opt_Outs", reportContext.getLocale())</expression>
                         </text-data>
+                        <label id="2686">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <text-property name="text"> %</text-property>
+                        </label>
                     </cell>
                     <cell id="2669">
-                        <text-data id="8779">
-                            <expression name="valueExpr">tr("statistic.Bounces")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2680">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Bounces", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="2670">
-                        <text-data id="8780">
-                            <expression name="valueExpr">tr("statistic.Bounces") + ' %'</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2681">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3pt</property>
+                            <property name="marginBottom">3pt</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Bounces", reportContext.getLocale())</expression>
                         </text-data>
+                        <label id="2687">
+                            <property name="style">blueHeadline</property>
+                            <property name="marginTop">3px</property>
+                            <property name="marginBottom">3px</property>
+                            <property name="textAlign">center</property>
+                            <text-property name="text"> %</text-property>
+                        </label>
                     </cell>
                     <cell id="2671">
-                        <text-data id="8778">
-                            <expression name="valueExpr">tr("Revenue")</expression>
-                            <property name="contentType">auto</property>
+                        <text-data id="2682">
+                            <property name="style">blueHeadline</property>
+                            <property name="textAlign">center</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Revenue", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                 </row>

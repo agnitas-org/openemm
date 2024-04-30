@@ -11,14 +11,8 @@
 package com.agnitas.emm.core.components.service.impl;
 
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
 import com.agnitas.emm.core.components.service.MailingRecipientsService;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.dao.MailingRecipientsDao;
-import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.SqlPreparedStatementManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,14 +22,10 @@ import java.util.ArrayList;
 public class MailingRecipientsServiceImpl implements MailingRecipientsService {
 
     private final ComMailingDao mailingDao;
-    private final MailingRecipientsDao mailingRecipientsDao;
-    private final ComCompanyService companyService;
 
     @Autowired
-    public MailingRecipientsServiceImpl(ComMailingDao mailingDao, MailingRecipientsDao mailingRecipientsDao, ComCompanyService companyService) {
+    public MailingRecipientsServiceImpl(ComMailingDao mailingDao) {
         this.mailingDao = mailingDao;
-        this.mailingRecipientsDao = mailingRecipientsDao;
-        this.companyService = companyService;
     }
 
     @Override
@@ -69,16 +59,5 @@ public class MailingRecipientsServiceImpl implements MailingRecipientsService {
         }
 
         return status;
-    }
-
-    @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) throws Exception {
-        int maxRecipients = companyService.getCompany(companyId).getMaxRecipients();
-        return mailingRecipientsDao.getMailingRecipients(filter, maxRecipients, mailingId, companyId);
-    }
-
-    @Override
-    public SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) {
-        return mailingRecipientsDao.prepareSqlStatement(filter, mailingId, companyId);
     }
 }

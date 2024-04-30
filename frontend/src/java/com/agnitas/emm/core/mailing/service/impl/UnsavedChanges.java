@@ -36,8 +36,7 @@ public class UnsavedChanges implements CalculationRecipients<CalculationRecipien
         if (config.getFollowUpMailing() > 0) {
             String sqlTargetExpression = targetService.getSQLFromTargetExpression(TargetExpressionUtils.makeTargetExpression(config.getTargetGroupIds(), config.isConjunction()), config.getSplitId(), config.getCompanyId());
             return mailingStatisticsDao.getFollowUpStat(config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), sqlTargetExpression);
-        } else {
-        	return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingId(), config.getMailingListId(), config.getSplitId(), config.getAltgIds(), config.getTargetGroupIds(), config.isConjunction());
         }
+        return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingListId(), config.getSplitId(), config.getAltgIds(), config.getTargetGroupIds(), config.isConjunction());
     }
 }

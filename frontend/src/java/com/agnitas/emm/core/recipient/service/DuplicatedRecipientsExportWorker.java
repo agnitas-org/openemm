@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import javax.sql.DataSource;
 
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.service.GenericExportWorker;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientQueryBuilder;
@@ -29,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.messages.I18nString;
 
 public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
@@ -78,21 +78,28 @@ public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
     private static List<String> prepareHeaders(List<String> selectedColumns, Map<String, String> fieldsNames, Locale locale){
         final List<String> headers = new ArrayList<>();
         for(String columnKey : selectedColumns) {
-			if (columnKey.equals(RecipientStandardField.Email.getColumnName())) {
-				headers.add(I18nString.getLocaleString("mailing.MediaType.0", locale));
-			} else if (columnKey.equals(RecipientStandardField.ChangeDate.getColumnName())) {
-				headers.add(I18nString.getLocaleString("recipient.Timestamp", locale));
-			} else if (columnKey.equals(RecipientStandardField.Gender.getColumnName())) {
-				headers.add(I18nString.getLocaleString("recipient.Salutation", locale));
-			} else if (columnKey.equals(RecipientStandardField.Firstname.getColumnName())) {
-				headers.add(I18nString.getLocaleString("Firstname", locale));
-			} else if (columnKey.equals(RecipientStandardField.Lastname.getColumnName())) {
-				headers.add(I18nString.getLocaleString("Lastname", locale));
-			} else if (columnKey.equals(RecipientStandardField.CreationDate.getColumnName())) {
-				headers.add(I18nString.getLocaleString("default.creationDate", locale));
-			} else {
-				headers.add(fieldsNames.get(columnKey));
-			}
+            switch (columnKey) {
+                case RecipientUtils.COLUMN_EMAIL:
+                    headers.add(I18nString.getLocaleString("mailing.MediaType.0", locale));
+                    break;
+                case RecipientUtils.COLUMN_TIMESTAMP:
+                    headers.add(I18nString.getLocaleString("recipient.Timestamp", locale));
+                    break;
+                case RecipientUtils.COLUMN_GENDER:
+                    headers.add(I18nString.getLocaleString("recipient.Salutation", locale));
+                    break;
+                case RecipientUtils.COLUMN_FIRSTNAME:
+                    headers.add(I18nString.getLocaleString("Firstname", locale));
+                    break;
+                case RecipientUtils.COLUMN_LASTNAME:
+                    headers.add(I18nString.getLocaleString("Lastname", locale));
+                    break;
+                case RecipientUtils.COLUMN_CREATION_DATE:
+                    headers.add(I18nString.getLocaleString("default.creationDate", locale));
+                    break;
+                default:
+                    headers.add(fieldsNames.get(columnKey));
+            }
         }
         return headers;
     }

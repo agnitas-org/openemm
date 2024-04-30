@@ -18,16 +18,12 @@ import org.springframework.core.convert.TypeDescriptor;
 
 public interface ExtendedConversionService extends ConversionService {
     default <S, T> List<T> convert(List<S> collection, Class<S> sourceType, Class<T> targetType) {
-        try {
-			TypeDescriptor sourceTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(sourceType));
-			TypeDescriptor targetTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(targetType));
+        TypeDescriptor sourceTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(sourceType));
+        TypeDescriptor targetTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(targetType));
 
-			@SuppressWarnings("unchecked")
-			List<T> returnList = (List<T>) convert(collection, sourceTypeDesc, targetTypeDesc);
-			return returnList;
-		} catch (Exception e) {
-			throw e;
-		}
+        @SuppressWarnings("unchecked")
+        List<T> returnList = (List<T>) convert(collection, sourceTypeDesc, targetTypeDesc);
+        return returnList;
     }
 
     default <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType) {

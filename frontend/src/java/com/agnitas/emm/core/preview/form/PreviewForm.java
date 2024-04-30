@@ -30,13 +30,11 @@ public class PreviewForm {
     private int size = Preview.Size.DESKTOP.getValue();
     private ModeType modeType = ModeType.RECIPIENT;
     private String subject;
-    private String preHeader;
     private String senderEmail;
-    private String smsAddress;
     private int customerID;
     private int customerATID;
     private String customerEmail;
-    private boolean useCustomerEmail; // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    private boolean useCustomerEmail;
     private boolean noImages;
     private boolean pure;
     private int targetGroupId;
@@ -44,9 +42,7 @@ public class PreviewForm {
     private int emailFormat;
     private boolean reload;
     private String mediaQuery;
-    private String width;
-    private boolean anon;
-    private boolean onAnonPreserveLinks;
+    private int width;
     private List<String> personalizedTestRunRecipients;
 
     public int getMailingId() {
@@ -101,7 +97,6 @@ public class PreviewForm {
         return modeType != null ? modeType.getCode() : 0;
     }
 
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public void setModeTypeId(int modeTypeId) {
         setModeType(ModeType.getByCode(modeTypeId));
     }
@@ -174,11 +169,11 @@ public class PreviewForm {
         this.noImages = noImages;
     }
 
-    public String getWidth() {
+    public int getWidth() {
         return width;
     }
 
-    public void setWidth(String width) {
+    public void setWidth(int width) {
         this.width = width;
     }
 
@@ -265,44 +260,13 @@ public class PreviewForm {
     public void setWorkflowId(int workflowId) {
         this.workflowId = workflowId;
     }
-
-    public String getPreHeader() {
-        return preHeader;
-    }
-
-    public void setPreHeader(String preHeader) {
-        this.preHeader = preHeader;
-    }
-
-    public boolean isAnon() {
-        return anon;
-    }
-
-    public void setAnon(boolean anon) {
-        this.anon = anon;
-    }
-
-    public boolean isOnAnonPreserveLinks() {
-        return onAnonPreserveLinks;
-    }
-
-    public void setOnAnonPreserveLinks(boolean onAnonPreserveLinks) {
-        this.onAnonPreserveLinks = onAnonPreserveLinks;
-    }
-
+    
+    
     public List<String> getPersonalizedTestRunRecipients() {
         return personalizedTestRunRecipients;
     }
 
     public void setPersonalizedTestRunRecipients(List<String> personalizedTestRunRecipients) {
         this.personalizedTestRunRecipients = personalizedTestRunRecipients;
-    }
-
-    public String getSmsAddress() {
-        return smsAddress;
-    }
-
-    public void setSmsAddress(String smsAddress) {
-        this.smsAddress = smsAddress;
     }
 }

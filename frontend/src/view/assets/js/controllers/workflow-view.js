@@ -54,10 +54,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
             editor.updateNodeTitles();
             editor.updateFootnotes();
-
-            if (Def.workflowId === 0) {
-                Def.intialSchema = editor.serializeIcons();
-            }
         });
 
         editor.setMinimapEnabled(config.isMinimapEnabled !== false);
@@ -183,8 +179,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
             fillEditor: function(node) {
                 var $form = $('form[name="' + this.formName + '"]');
-                Select.get($form.find('select[name=value]')).setOptions(editor.getParametersOptions(node));
-
                 var data = node.getData();
 
                 $form.submit(false);
@@ -469,6 +463,76 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
         controller.addAction({click: 'archive-editor-new'}, function() {
             nodeEditor.createNewArchive();
+        });
+    });
+
+    this.addDomInitializer('report-editor-initializer', function() {
+        var nodeEditor = EditorsHelper.registerEditor('report', {
+            safeToSave: true,
+
+            getTitle: function() {
+                return t('report');
+            },
+
+            createNewReport: function() {
+                EditorsHelper.processForward(Def.constants.forwardReportCreate, '#reportSelector', submitWorkflowForm);
+            },
+
+            editReport: function(reportId) {
+                $('#forwardTargetItemId').val(reportId);
+                EditorsHelper.processForward(Def.constants.forwardReportEdit, '#reportSelector', submitWorkflowForm);
+            },
+
+            fillEditor: function(node) {
+                var data = node.getData();
+                var $select = $('#reportSelect');
+
+                //set option selected by default
+                EditorsHelper.initSelectWithFirstValue($select);
+
+                $('#report-editor .editor-error-messages').css('display', 'none');
+                $select.select2('val', data.reports);
+
+                $select.select2({
+                    formatSelection: function(report) {
+                        return '<a href="#" class="btn-link-light" data-action="report-editor-change" data-report-id="' + report.id + '">' + report.text + '</a>';
+                    }
+                });
+            },
+
+            validateEditor: function() {
+                var selectedReports = $('#reportSelect').val();
+                if (selectedReports && selectedReports.length > 0) {
+                    EditorsHelper.saveCurrentEditorWithUndo();
+                } else {
+                    var $message = $('#report-editor').find('.editor-error-messages');
+                    $message.html(t('workflow.report.error.no_report'));
+                    $message.css('display', 'block');
+                }
+            },
+
+            saveEditor: function() {
+                return {
+                    reports: $('#reportSelect').val()
+                };
+            },
+
+            isSetFilledAllowed: function() {
+                var selectedReports = $('#reportSelect').val();
+                return selectedReports && selectedReports.length > 0;
+            }
+        });
+
+        controller.addAction({click: 'report-editor-change'}, function() {
+            nodeEditor.editReport(this.el.data('report-id'));
+        });
+
+        controller.addAction({click: 'report-editor-new'}, function() {
+            nodeEditor.createNewReport();
+        });
+
+        controller.addAction({click: 'report-editor-save'}, function() {
+            nodeEditor.validateEditor();
         });
     });
 
@@ -1700,11 +1764,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
                     this.rulesNumber = data.rules.length;
                 }
                 $form.get(0).reset();
-
-                if (data.profileField) {
-                    data.profileField = data.profileField.toLowerCase();
-                }
-
                 EditorsHelper.fillFormFromObject('decisionForm', data, '');
 
                 decisionMailingSelector.setMailingId(data.mailingId);
@@ -2924,7 +2983,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
     });
 
     this.addAction({click: 'workflow-save'}, function() {
-        saveWorkflowFormData(true, {})
+        submitWorkflowForm(true);
     });
 
     this.addAction({click: 'workflow-copy'}, function () {
@@ -3002,22 +3061,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
           });
     });
 
-    this.addAction({click: 'workflow-pause'}, function () {
-        saveWorkflowFormData(true, {'status': Def.constants.statusPaused});
-    });
-
-    this.addAction({click: 'workflow-unpause'}, function() {
-        unpause(true, {'status': Def.constants.statusActive});
-    });
-
-    this.addAction({click: 'workflow-activate'}, function() {
-        activate(true, {'status': Def.constants.statusActive});
-    });
-
-    this.addAction({click: 'workflow-deactivate'}, function() {
-        deactivate(true, {'status': Def.constants.statusInactive});
-    });
-
     $(window).on('resize viewportChanged', function() {
         if (editor) {
             editor.updateMinimap();
@@ -3075,7 +3118,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
         var inactivating = initialWorkflowStatus === Def.constants.statusActive && !isActiveChecked;
         var activating = initialWorkflowStatus !== Def.constants.statusActive && isActiveChecked;
 
-        if (inactivating || !Utils.checkActivation(true)) {
+        if (inactivating || !Utils.checkActivation()) {
             if (activating) {
                 activate(validate, options);
             } else if (inactivating) {
@@ -3092,10 +3135,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 saveWorkflowFormData(validate, options);
             },
             getMailingNames().join('<br/>'));
-    }
-
-    function unpause(validate, options) {
-        Dialogs.Activation(function() {saveWorkflowFormData(validate, options)}, {}, true);
     }
 
     function deactivate(validate, options) {

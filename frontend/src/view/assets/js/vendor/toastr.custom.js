@@ -34,7 +34,8 @@
                 subscribe: subscribe,
                 success: success,
                 version: '2.0.3',
-                warning: warning
+                warning: warning,
+                warning_permanent: warning
             };
 
             return toastr;

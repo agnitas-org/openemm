@@ -1,8 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="_navigation_isHighlightKey" type="java.lang.Boolean"--%>
 <%--@elvariable id="_navigation_conditionSatisfied" type="java.lang.Boolean"--%>
@@ -61,7 +63,9 @@
             </emm:ShowByPermission>
         </c:if>
 
-        <mvc:message var="linkMsg" code="${_navigation_navMsg}"/>
+        <c:set var="linkMsg">
+            <bean:message key="${_navigation_navMsg}"/>
+        </c:set>
 
         <c:set var="navigationLink" value="${_navigation_href.concat(agnNavHrefAppend)}"/>
         <c:if test="${empty agnNavHrefAppend or not empty agnNavHrefParams}">
@@ -74,11 +78,12 @@
 
         <c:if test="${showTabsItem}">
             <li class="${_navigation_isHighlightKey ? 'active' : ''}">
+
                 <c:if test="${_navigation_isHighlightKey}">
-                    <a href="<c:url value="${navigationLink}"/>">${linkMsg}</a>
+                    <html:link page="${navigationLink}">${linkMsg}</html:link>
                 </c:if>
                 <c:if test="${not _navigation_isHighlightKey}">
-                    <a href="<c:url value="${navigationLink}"/>" class="">${linkMsg}</a>
+                    <html:link styleClass="" page="${navigationLink}">${linkMsg}</html:link>
                 </c:if>
             </li>
         </c:if>
@@ -93,9 +98,9 @@
             </c:url>
 
             <li class="${_navigation_isHighlightKey ? 'active' : ''}">
-                <a href="${upsellingLink}" title="<mvc:message code="default.forbidden.tab.premium.feature"/>">
+                <html:link  styleClass="" href="${upsellingLink}" titleKey="default.forbidden.tab.premium.feature">
                     ${linkMsg}
-                </a>
+                </html:link>
             </li>
         </c:if>
     </emm:ShowNavigation>

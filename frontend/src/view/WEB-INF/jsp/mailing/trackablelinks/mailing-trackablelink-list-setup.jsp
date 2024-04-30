@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core"%>
@@ -125,16 +125,14 @@
         <jsp:param name="isMailingUndoAvailable" value="${isMailingUndoAvailable}"/>
     </jsp:include>
 
-    <c:if test="${not isSettingsReadonly}">
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
+    <emm:instantiate var="element" type="java.util.LinkedHashMap">
+        <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
-            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#trackableLinkForm' data-form-set='everyPositionLink: false' data-action='save'"/>
-            <c:set target="${element}" property="iconBefore" value="icon-save"/>
-            <c:set target="${element}" property="name">
-                <mvc:message code="button.Save"/>
-            </c:set>
-        </emm:instantiate>
-    </c:if>
+        <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+        <c:set target="${element}" property="extraAttributes" value="data-form-target='#trackableLinkForm' data-form-set='everyPositionLink: false' data-action='save'"/>
+        <c:set target="${element}" property="iconBefore" value="icon-save"/>
+        <c:set target="${element}" property="name">
+            <mvc:message code="button.Save"/>
+        </c:set>
+    </emm:instantiate>
 </emm:instantiate>

@@ -103,9 +103,9 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 	
 	@Override
 	public boolean deleteMaildropStatusByCompany(int companyID) {
-		update(logger, "DELETE FROM mailing_account_tbl WHERE company_id = ?", companyID);
+		update(logger, "DELETE FROM mailing_account_tbl WHERE maildrop_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
 		update(logger, "DELETE FROM mailing_backend_log_tbl WHERE status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
-		update(logger, "DELETE FROM mailtrack_" + companyID + "_tbl");
+		update(logger, "DELETE FROM mailtrack_" + companyID + "_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
 		update(logger, "DELETE FROM test_recipients_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
 		update(logger, "DELETE FROM mailing_import_lock_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
 		update(logger, "DELETE FROM maildrop_status_tbl WHERE company_id = ?", companyID);

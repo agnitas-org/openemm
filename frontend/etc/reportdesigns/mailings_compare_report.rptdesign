@@ -1677,72 +1677,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                     </structure>
                                 </list-property>
                             </structure>
-                            <structure>
-                                <property name="name">clicker_anonymous_value</property>
-                                <expression name="expression" type="javascript">if (row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX) {row["value"]} else {0}</expression>
-                                <property name="dataType">float</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">clicker_anonymous_value_</property>
-                                <property name="dataType">float</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>group_rowIndex_mailingId</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">MAX</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">row["clicker_anonymous_value"]</expression>
-                                    </structure>
-                                </list-property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">openers_anonymous_name_</property>
-                                <property name="dataType">string</property>
-                                <property name="aggregateFunction">MAX</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX) {row["category"]} else {""}</expression>
-                                    </structure>
-                                </list-property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">openers_anonymous_value</property>
-                                <expression name="expression" type="javascript">if (row["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX) {row["value"]} else {0}</expression>
-                                <property name="dataType">float</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">openers_anonymous_value_</property>
-                                <property name="dataType">float</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>group_rowIndex_mailingId</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">MAX</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">row["openers_anonymous_value"]</expression>
-                                    </structure>
-                                </list-property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">clicker_anonymous_name_</property>
-                                <property name="dataType">string</property>
-                                <property name="aggregateFunction">MAX</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX) {row["category"]} else {""}</expression>
-                                    </structure>
-                                </list-property>
-                                <property name="allowExport">true</property>
-                            </structure>
                         </list-property>
                         <method name="onPrepare"><![CDATA[titleCount1 = 0;]]></method>
                         <property name="repeatHeader">true</property>
@@ -1767,20 +1701,17 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                     <value>CommonKeys.HARD_BOUNCES_INDEX</value>
                                     <value>CommonKeys.REVENUE_INDEX</value>
                                     <value>CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX</value>
-                                    <value>CommonKeys.CLICKS_ANONYMOUS_INDEX</value>
-                                    <value>CommonKeys.OPENINGS_ANONYMOUS_INDEX</value>
                                 </simple-property-list>
-                                <property name="updateAggregation">true</property>
                             </structure>
                         </list-property>
                         <column id="5614">
-                            <property name="width">15pt</property>
+                            <property name="width">20pt</property>
                         </column>
                         <column id="6033">
                             <property name="width">50pt</property>
                         </column>
                         <column id="5833">
-                            <property name="width">100pt</property>
+                            <property name="width">130pt</property>
                         </column>
                         <column id="5616">
                             <property name="width">70pt</property>
@@ -1795,27 +1726,11 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 </structure>
                             </list-property>
                         </column>
-                        <column id="7774">
-                            <list-property name="visibility">
-                                <structure>
-                                    <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("anonymous_openings_show") == "false"</expression>
-                                </structure>
-                            </list-property>
-                        </column>
                         <column id="5622">
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
                                     <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("clickers_total_show") == "false"</expression>
-                                </structure>
-                            </list-property>
-                        </column>
-                        <column id="7754">
-                            <list-property name="visibility">
-                                <structure>
-                                    <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("anonymous_clicks_show") == "false"</expression>
                                 </structure>
                             </list-property>
                         </column>
@@ -1826,6 +1741,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                     <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("hardbounces_show") == "false"</expression>
                                 </structure>
                             </list-property>
+                            <property name="width">65pt</property>
                         </column>
                         <column id="5910">
                             <list-property name="visibility">
@@ -1834,6 +1750,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                     <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("signed_off_show") == "false"</expression>
                                 </structure>
                             </list-property>
+                            <property name="width">65pt</property>
                         </column>
                         <group id="5692">
                             <property name="groupName">group1_targetId</property>
@@ -1849,7 +1766,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             <header>
                                 <row id="6170">
                                     <cell id="6171">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                         <text-data id="5547">
                                             <property name="style">birt-report-headline</property>
@@ -1876,7 +1793,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                         </structure>
                                     </list-property>
                                     <cell id="7399">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                         <text-data id="7409">
                                             <expression name="valueExpr">"&lt;b>" + row["mailingFilterTitle"] + ": " + "&lt;/b>" + reportContext.getPersistentGlobalVariable("predefineMailingName")</expression>
@@ -1886,7 +1803,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 </row>
                                 <row id="5693">
                                     <cell id="5694">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                         <text-data id="7397">
                                             <expression name="valueExpr">"&lt;b>" + Packages.com.agnitas.messages.I18nString.getLocaleString("target.Target", reportContext.getLocale()) + ": " + "&lt;/b>" + row["targetgroup_name"]</expression>
@@ -1897,7 +1814,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <row id="6034">
                                     <property name="height">0.2in</property>
                                     <cell id="6035">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                     </cell>
                                 </row>
@@ -2040,23 +1957,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             <property name="resultSetColumn">openers_total_name_</property>
                                         </data>
                                     </cell>
-                                    <cell id="7768">
-                                        <property name="borderBottomColor">#727272</property>
-                                        <property name="borderBottomStyle">solid</property>
-                                        <property name="borderBottomWidth">thin</property>
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderTopColor">#727272</property>
-                                        <property name="borderTopStyle">solid</property>
-                                        <property name="borderTopWidth">thin</property>
-                                        <data id="7777">
-                                            <property name="resultSetColumn">openers_anonymous_name_</property>
-                                        </data>
-                                    </cell>
                                     <cell id="5724">
                                         <property name="colSpan">1</property>
                                         <property name="rowSpan">1</property>
@@ -2074,23 +1974,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                         <property name="borderTopWidth">thin</property>
                                         <data id="5571">
                                             <property name="resultSetColumn">clicker_name_</property>
-                                        </data>
-                                    </cell>
-                                    <cell id="7748">
-                                        <property name="borderBottomColor">#727272</property>
-                                        <property name="borderBottomStyle">solid</property>
-                                        <property name="borderBottomWidth">thin</property>
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderTopColor">#727272</property>
-                                        <property name="borderTopStyle">solid</property>
-                                        <property name="borderTopWidth">thin</property>
-                                        <data id="7784">
-                                            <property name="resultSetColumn">clicker_anonymous_name_</property>
                                         </data>
                                     </cell>
                                     <cell id="5886">
@@ -2246,23 +2129,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             <property name="resultSetColumn">openers_total_name_</property>
                                         </data>
                                     </cell>
-                                    <cell id="7769">
-                                        <property name="borderBottomColor">#727272</property>
-                                        <property name="borderBottomStyle">solid</property>
-                                        <property name="borderBottomWidth">thin</property>
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderTopColor">#727272</property>
-                                        <property name="borderTopStyle">solid</property>
-                                        <property name="borderTopWidth">thin</property>
-                                        <data id="7778">
-                                            <property name="resultSetColumn">openers_anonymous_name_</property>
-                                        </data>
-                                    </cell>
                                     <cell id="7306">
                                         <property name="borderBottomColor">#727272</property>
                                         <property name="borderBottomStyle">solid</property>
@@ -2278,23 +2144,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                         <property name="borderTopWidth">thin</property>
                                         <data id="7313">
                                             <property name="resultSetColumn">clicker_name_</property>
-                                        </data>
-                                    </cell>
-                                    <cell id="7749">
-                                        <property name="borderBottomColor">#727272</property>
-                                        <property name="borderBottomStyle">solid</property>
-                                        <property name="borderBottomWidth">thin</property>
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderTopColor">#727272</property>
-                                        <property name="borderTopStyle">solid</property>
-                                        <property name="borderTopWidth">thin</property>
-                                        <data id="7785">
-                                            <property name="resultSetColumn">clicker_anonymous_name_</property>
                                         </data>
                                     </cell>
                                     <cell id="7307">
@@ -2338,7 +2187,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                             <footer>
                                 <row id="7349">
                                     <cell id="7350">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                         <property name="borderTopColor">#727272</property>
                                         <property name="borderTopStyle">solid</property>
@@ -2348,7 +2197,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                 <row id="7476">
                                     <property name="height">0.2in</property>
                                     <cell id="7477">
-                                        <property name="colSpan">12</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                     </cell>
                                 </row>
@@ -2522,17 +2371,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             <property name="resultSetColumn">openers_total_rate_</property>
                                         </data>
                                     </cell>
-                                    <cell id="7770">
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <data id="7781">
-                                            <property name="resultSetColumn">openers_anonymous_value_</property>
-                                        </data>
-                                    </cell>
                                     <cell id="5590">
                                         <property name="colSpan">1</property>
                                         <property name="rowSpan">1</property>
@@ -2557,17 +2395,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             </structure>
                                             <property name="textAlign">right</property>
                                             <property name="resultSetColumn">clicker_rate_</property>
-                                        </data>
-                                    </cell>
-                                    <cell id="7750">
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <data id="7761">
-                                            <property name="resultSetColumn">clicker_anonymous_value_</property>
                                         </data>
                                     </cell>
                                     <cell id="5887">
@@ -2711,17 +2538,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             <property name="resultSetColumn">openers_total_value_</property>
                                         </data>
                                     </cell>
-                                    <cell id="7771">
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <data id="7783">
-                                            <property name="resultSetColumn">openers_anonymous_value_</property>
-                                        </data>
-                                    </cell>
                                     <cell id="7287">
                                         <property name="borderLeftColor">#727272</property>
                                         <property name="borderLeftStyle">solid</property>
@@ -2736,17 +2552,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                             </structure>
                                             <property name="textAlign">right</property>
                                             <property name="resultSetColumn">clicker_value_</property>
-                                        </data>
-                                    </cell>
-                                    <cell id="7751">
-                                        <property name="borderLeftColor">#727272</property>
-                                        <property name="borderLeftStyle">solid</property>
-                                        <property name="borderLeftWidth">thin</property>
-                                        <property name="borderRightColor">#727272</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <data id="7763">
-                                            <property name="resultSetColumn">clicker_anonymous_value_</property>
                                         </data>
                                     </cell>
                                     <cell id="7288">

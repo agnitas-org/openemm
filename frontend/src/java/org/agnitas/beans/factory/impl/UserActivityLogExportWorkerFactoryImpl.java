@@ -10,11 +10,11 @@
 
 package org.agnitas.beans.factory.impl;
 
-import com.agnitas.dao.impl.DaoLookupFactory;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
-import org.agnitas.service.ActivityLogExportWorker;
 import org.agnitas.service.UserActivityLogExportWorker;
 import org.springframework.stereotype.Component;
+
+import com.agnitas.dao.impl.DaoLookupFactory;
 
 @Component("userActivityLogExportWorkerFactory")
 public class UserActivityLogExportWorkerFactoryImpl implements UserActivityLogExportWorkerFactory {
@@ -27,10 +27,5 @@ public class UserActivityLogExportWorkerFactoryImpl implements UserActivityLogEx
 	@Override
     public UserActivityLogExportWorker.Builder getBuilderInstance() {
         return UserActivityLogExportWorker.getBuilder(daoLookupFactory.getBeanDataSource());
-    }
-
-    @Override
-    public ActivityLogExportWorker.Builder getBuilderInstanceRedesigned() {
-        return ActivityLogExportWorker.getBuilder(daoLookupFactory.getBeanDataSource());
     }
 }

@@ -13,11 +13,7 @@ package com.agnitas.emm.core.useractivitylog.web;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
-import com.agnitas.http.HttpRequest;
-import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -26,20 +22,18 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -48,36 +42,16 @@ import java.util.List;
 @Controller
 @RequestMapping("/administration/restful-user/activitylog")
 @PermissionMapping("restful.user.activity.log")
-@SessionAttributes(types = RestfulUserActivityLogSearchParams.class)
-public class RestfulUserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
+public class RestfulUserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
 
     protected RestfulUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
                                                UserActivityLogExportWorkerFactory exportWorkerFactory) {
         super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
     }
 
-    @Override
-    protected List<AdminEntry> getAdminEntries(Admin admin) {
-        return adminService.getAdminEntriesForUserActivityLog(admin, UserActivityLogService.UserType.REST);
-    }
-
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
     public Pollable<ModelAndView> list(@ModelAttribute("form") UserActivityLogForm listForm, Admin admin, Model model, HttpSession session) {
         return getList(admin, listForm, model, session);
-    }
-
-    @RequestMapping(value = "/listRedesigned.action", method = {RequestMethod.GET, RequestMethod.POST})
-    @PermissionMapping("list")
-    public Pollable<ModelAndView> listRedesigned(@ModelAttribute("filter") RestfulUserActivityLogFilter filter, @ModelAttribute RestfulUserActivityLogSearchParams searchParams,
-                                                 Admin admin, Model model, HttpSession session) {
-        FormUtils.syncSearchParams(searchParams, filter, true);
-        return getListRedesigned(admin, filter, model, session);
-    }
-
-    @Override
-    protected void prepareModelAttributesForListPage(Model model, Admin admin) {
-        super.prepareModelAttributesForListPage(model, admin);
-        model.addAttribute("httpMethods", HttpRequest.HttpMethod.values());
     }
 
     @Override
@@ -113,19 +87,8 @@ public class RestfulUserActivityLogController extends AbstractUserActivityLogCon
     }
 
     @Override
-    protected PaginatedListImpl<?> preparePaginatedListRedesigned(UserActivityLogFilterBase filter, List<AdminEntry> admins, Admin admin) {
-        final RestfulUserActivityLogFilter restfulFilter = (RestfulUserActivityLogFilter) filter;
-        return userActivityLogService.getRestfulUserActivityLogByFilterRedesigned(restfulFilter, admins, admin);
-    }
-
-    @Override
     protected String redirectToListPage() {
         return "redirect:/administration/restful-user/activitylog/list.action";
-    }
-
-    @Override
-    protected String redirectToRedesignedListPage() {
-        return "redirect:/administration/restful-user/activitylog/listRedesigned.action";
     }
 
     @Override
@@ -136,25 +99,5 @@ public class RestfulUserActivityLogController extends AbstractUserActivityLogCon
     @PostMapping(value = "/download.action")
     public ResponseEntity<StreamingResponseBody> download(Admin admin, UserActivityLogForm form) throws Exception {
         return downloadLogs(admin, form, UserActivityLogService.UserType.REST);
-    }
-
-    @GetMapping(value = "/downloadRedesigned.action")
-    @PermissionMapping("download")
-    public ResponseEntity<StreamingResponseBody> downloadRedesigned(Admin admin, RestfulUserActivityLogFilter filter) throws Exception {
-        filter.setCompanyId(admin.getCompanyID());
-        return downloadLogsRedesigned(admin, filter, UserActivityLogService.UserType.REST);
-    }
-
-    @GetMapping("/search.action")
-    public String search(@ModelAttribute RestfulUserActivityLogFilter filter, @ModelAttribute RestfulUserActivityLogSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
-        model.addFlashAttribute("filter", filter);
-
-        return redirectToRedesignedListPage();
-    }
-
-    @ModelAttribute
-    public RestfulUserActivityLogSearchParams getSearchParams() {
-        return new RestfulUserActivityLogSearchParams();
     }
 }

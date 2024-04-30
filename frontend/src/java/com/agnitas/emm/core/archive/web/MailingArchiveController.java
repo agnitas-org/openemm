@@ -14,19 +14,17 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.CampaignImpl;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.archive.forms.MailingArchiveForm;
 import com.agnitas.emm.core.archive.forms.MailingArchiveSimpleActionForm;
 import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.util.MvcUtils;
+import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
@@ -37,15 +35,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import static com.agnitas.service.WebStorage.ARCHIVE_MAILINGS_OVERVIEW;
-import static com.agnitas.service.WebStorage.ARCHIVE_OVERVIEW;
+import static org.agnitas.service.WebStorage.ARCHIVE_OVERVIEW;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
@@ -69,13 +64,14 @@ public class MailingArchiveController implements XssCheckAware {
     @RequestMapping(value = "/list.action")
     public String list(Admin admin, Model model, @ModelAttribute("form") PaginationForm form) {
         FormUtils.syncNumberOfRows(webStorage, ARCHIVE_OVERVIEW, form);
-        model.addAttribute("campaignList", campaignService.getOverview(admin, form));
+
+        model.addAttribute("campaignList", campaignService.getPaginatedList(admin, form));
 
         return "archive_list";
     }
 
     @GetMapping("/{id:\\d+}/view.action")
-    public String view(@PathVariable(name = "id") int id, @ModelAttribute("form") MailingArchiveForm archiveForm, Admin admin, Model model) {
+    public String view(Admin admin, Model model, @PathVariable(name = "id") int id) {
         Campaign campaign = campaignService.getCampaign(id, admin.getCompanyID());
 
         if (campaign == null) {
@@ -83,11 +79,18 @@ public class MailingArchiveController implements XssCheckAware {
             return "redirect:/mailing/archive/create.action";
         }
 
-        archiveForm.setShortname(campaign.getShortname());
-        archiveForm.setDescription(campaign.getDescription());
+        if (!model.containsAttribute("form")) {
+            MailingArchiveForm archiveForm = new MailingArchiveForm();
+            archiveForm.setId(id);
+            archiveForm.setShortname(campaign.getShortname());
+            archiveForm.setDescription(campaign.getDescription());
 
-        FormUtils.syncNumberOfRows(webStorage, ARCHIVE_MAILINGS_OVERVIEW, archiveForm);
-        model.addAttribute("mailingsList", campaignService.getCampaignMailings(id, archiveForm, admin));
+            model.addAttribute("form", archiveForm);
+        } else {
+            model.addAttribute("originalName", campaign.getShortname());
+        }
+
+        model.addAttribute("mailingsList", campaignService.getCampaignMailings(id, admin));
         return "archive_view";
     }
 
@@ -99,18 +102,9 @@ public class MailingArchiveController implements XssCheckAware {
 
     @RequestMapping("/save.action")
     public String save(Admin admin, @ModelAttribute("form") MailingArchiveForm archiveForm, Popups popups, HttpSession session, RedirectAttributes ra) {
-        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
-
         if (!validate(archiveForm, popups)) {
-            if (isRedesignedUiUsed(admin)) {
-                return MESSAGES_VIEW;
-            } else {
-                if (archiveForm.getId() > 0) {
-                    return MESSAGES_VIEW;
-                }
-                ra.addFlashAttribute("form", archiveForm);
-                return redirectToViewPage(archiveForm.getId());
-            }
+            ra.addFlashAttribute("form", archiveForm);
+            return redirectToViewPage(archiveForm.getId());
         }
 
         Campaign campaign = campaignService.getCampaign(archiveForm.getId(), admin.getCompanyID());
@@ -124,6 +118,7 @@ public class MailingArchiveController implements XssCheckAware {
         campaign.setDescription(archiveForm.getDescription());
 
         int campaignId = campaignService.save(campaign);
+        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
 
         if (workflowId != 0) {
             WorkflowParametersHelper.addEditedElemRedirectAttrs(ra, session, campaignId);
@@ -131,15 +126,10 @@ public class MailingArchiveController implements XssCheckAware {
         }
 
         popups.success(CHANGES_SAVED_MSG);
-        return isRedesignedUiUsed(admin) ? "redirect:/mailing/archive/list.action" : redirectToViewPage(campaignId);
-    }
-
-    private static boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.ARCHIVE_UI_MIGRATION);
+        return redirectToViewPage(campaignId);
     }
 
     @RequestMapping("/{campaignId:\\d+}/mailing/{mailingId:\\d+}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public String confirmMailingDelete(Admin admin, @PathVariable(name = "mailingId") int mailingID, @PathVariable(name = "campaignId") int campaignID,
                                        @ModelAttribute("form") MailingArchiveSimpleActionForm form) {
         Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingID);
@@ -153,30 +143,7 @@ public class MailingArchiveController implements XssCheckAware {
         return "archive_delete_ajax";
     }
 
-    @PermissionMapping("confirmDelete")
-    @GetMapping(value = "/{id:\\d+}/delete.action")
-    public String confirmDeleteRedesigned(@PathVariable("id") int id, Model model, Admin admin, Popups popups) {
-        if (cantBeDeleted(admin, id, popups)) {
-            return MESSAGES_VIEW;
-        }
-
-        Campaign campaign = campaignService.getCampaign(id, admin.getCompanyID());
-        MvcUtils.addDeleteAttrs(model, campaign.getShortname(), "campaign.Delete", "campaign.delete.question");
-        return DELETE_VIEW;
-    }
-
-    @PostMapping(value = "/{id:\\d+}/delete.action")
-    @PermissionMapping("delete")
-    public String deleteRedesigned(@PathVariable("id") int id, Popups popups, Admin admin) {
-        Campaign campaign = campaignService.getCampaign(id, admin.getCompanyID());
-        campaignService.delete(campaign);
-        popups.success(SELECTION_DELETED_MSG);
-
-        return "redirect:/mailing/archive/list.action";
-    }
-
     @RequestMapping("/{id:\\d+}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public String confirmDelete(Admin admin, @PathVariable(name = "id") int id, @ModelAttribute("form") MailingArchiveSimpleActionForm form, Popups popups) {
         if (cantBeDeleted(admin, id, popups)) {
             return MESSAGES_VIEW;
@@ -192,7 +159,6 @@ public class MailingArchiveController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.DELETE, RequestMethod.POST})
-    // TODO: EMMGUI-714: remove when old design will be removed
     public String delete(Admin admin, @ModelAttribute MailingArchiveSimpleActionForm form, Popups popups) {
         if (form.isIsCampaign()) {
             if (form.getCampaignId() > 0) {

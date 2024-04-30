@@ -31,7 +31,7 @@
 
         this.layers.forEach(function(layer) {
             // Align every layer with all the others (including layers of other groups).
-            var startY = Math.max(Math.round(Def.AUTO_ALIGN_STEP_Y * (maxHeight - layer.length) / 2), 1);
+            var startY = Math.round(Def.AUTO_ALIGN_STEP_Y * (maxHeight - layer.length) / 2);
 
             if (previousLayer) {
                 // To prevent a mess add extra space if nodes number in adjacent layers changes by more than 1.

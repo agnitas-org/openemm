@@ -52,13 +52,6 @@ public class MailinglistRowMapper extends AbstractBaseRowMapper<Mailinglist> {
             mailinglist.setFrequencyCounterEnabled(getValue("freq_counter_enabled", s -> resultSet.getInt(s) > 0));
         }
 
-        if (columnNames.contains("sender_email")) {
-            mailinglist.setSenderEmail(getValue("sender_email", resultSet::getString));
-        }
-        if (columnNames.contains("reply_email")) {
-            mailinglist.setReplyEmail(getValue("reply_email", resultSet::getString));
-        }
-
         return mailinglist;
 
     }

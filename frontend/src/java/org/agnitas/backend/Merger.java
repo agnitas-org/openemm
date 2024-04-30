@@ -27,6 +27,7 @@ public class Merger {
 	 */
 	public Merger() {
 		log = new Log("merger", Log.DEBUG, 0);
+		log.setPrinter(System.out);
 	}
 
 	/**

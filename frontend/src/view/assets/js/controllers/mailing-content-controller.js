@@ -7,7 +7,6 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   var preparedTableEntryTemplate;
   var isMailingExclusiveLockingAcquired;
   var isEditableMailing;
-  var isContentGenerationAllowed;
   var templateId;
 
   var $tableBody;
@@ -18,7 +17,6 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
     isMailingExclusiveLockingAcquired = this.config.isMailingExclusiveLockingAcquired;
     isEditableMailing = this.config.isEditableMailing;
-    isContentGenerationAllowed = this.config.isContentGenerationAllowed;
     const dynTagsMap = this.config.dynTagsMap;
     const targetGroups = this.config.targetGroupList;
     const interestGroups = this.config.interestGroupList;
@@ -33,7 +31,6 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     $tableBody = $('#textModulesTable');
     templateId = this.config.templateId;
     isEditableMailing = true;
-    isContentGenerationAllowed = this.config.isContentGenerationAllowed;
     isMailingExclusiveLockingAcquired = true;
     preparedTableEntryTemplate = Template.prepare('gridTemplate-textContent-tableRow-template');
     mailingContent = new MailingContent(this.config.dynTags, this.config.targets, [], []);
@@ -60,8 +57,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
             DynTagObject: DynTag,
             isFullHtmlTags: dynTag.name == 'HTML-Version',
             showHTMLEditor: isHtmlContentBlock,
-            isEditableMailing: isEditableMailing,
-            isContentGenerationAllowed: isContentGenerationAllowed
+            isEditableMailing: isEditableMailing
           }, 'content-editor-template');
 
           promise.done(function(dynBlock) {
@@ -99,8 +95,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
             DynTagObject: DynTag,
             isFullHtmlTags: dynTag.name == 'HTML-Version',
             showHTMLEditor: isHtmlContentBlock,
-            isEditableMailing: isEditableMailing,
-            isContentGenerationAllowed: isContentGenerationAllowed
+            isEditableMailing: isEditableMailing
           }, 'content-editor-template');
 
           promise.done(function(dynBlock) {

@@ -23,8 +23,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 
 public class MailingResponseBuilder {
-
-	private static final Logger logger = LogManager.getLogger(MailingResponseBuilder.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingResponseBuilder.class);
 
 	public org.agnitas.emm.springws.jaxb.Mailing createResponse(Mailing mailing) {
 		org.agnitas.emm.springws.jaxb.Mailing responseMailing = new org.agnitas.emm.springws.jaxb.Mailing();
@@ -70,8 +69,7 @@ public class MailingResponseBuilder {
 			responseMailing.setOnePixel(emailParam.getOnepixel());
 		}
 		responseMailing.setAutoUpdate(mailing.getUseDynamicTemplate());
-		responseMailing.setPlannedDate(mailing.getPlanDate());
-
+		
 		return responseMailing;
 	}
 

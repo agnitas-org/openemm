@@ -19,7 +19,6 @@ import com.agnitas.emm.core.mailing.bean.MailingDependentType;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -37,14 +36,13 @@ public class MailingDependencyServiceImpl implements MailingDependencyService {
     private final EmmActionService actionService;
 
     @Autowired
-    public MailingDependencyServiceImpl(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, ComWorkflowService workflowService, EmmActionService actionService) {
+    public MailingDependencyServiceImpl(BounceFilterService bounceFilterService, ComWorkflowService workflowService, EmmActionService actionService) {
         this.bounceFilterService = bounceFilterService;
         this.workflowService = workflowService;
         this.actionService = actionService;
     }
 
     @Override
-    // TODO: EMMGUI-714: remove when old design will be removed
     public List<MailingDependentType> detectActiveFilters(String[] selectedFilters, MailingDependentType... types) {
         if (ArrayUtils.isEmpty(selectedFilters)) {
             return Arrays.asList(types);

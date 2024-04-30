@@ -18,20 +18,20 @@
     </div>
 
     <div class="tile-content tile-content-forms" id="tile-recipient-autoimport-mailinglists">
-        <c:if test="${isAllMailinglistsAllowed}">
+        <emm:ShowByPermission token="import.mailinglists.all">
             <div class="form-group" id="all-mailinglists-wrapper"
                     data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
                 <div class="col-sm-4">
                     <label class="control-label checkbox-control-label" for="allMalinglistsCheckbox"><mvc:message code="import.mailinglists.all"/></label>
                 </div>
                 <div class="col-sm-8">
-                    <label class="toggle" data-tooltip="${isAllowedToShowMailinglists ? '' : notAllowedMsg}">
-                        <mvc:checkbox id="allMalinglistsCheckbox" path="mailinglistsAll" data-action="allMailinglists-checkbox" disabled="${!isAllowedToShowMailinglists}" />
+                    <label class="toggle" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
+                        <mvc:checkbox id="allMalinglistsCheckbox" path="mailinglistsAll" data-action="allMailinglists-checkbox" disabled="${!mailinglistShowPermissionAllowed}" />
                         <div class="toggle-control"></div>
                     </label>
                 </div>
             </div>
-        </c:if>
+        </emm:ShowByPermission>
 
         <div class="form-group">
             <div class="col-sm-4">
@@ -41,11 +41,11 @@
             </div>
 
             <div class="col-sm-8 ${isMailingListSelectionEditable ? '' : 'hidden'}" id="mailinglists">
-                <ul class="list-group" data-tooltip="${isAllowedToShowMailinglists ? '' : notAllowedMsg}">
+                <ul class="list-group" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
                     <c:forEach var="mailinglist" items="${availableMailinglists}">
                         <li class="list-group-item">
                             <label class="checkbox-inline">
-                                <mvc:checkbox path="mailinglist[${mailinglist.id}]" disabled="${!isAllowedToShowMailinglists}" value="true" />
+                                <mvc:checkbox path="mailinglist[${mailinglist.id}]" disabled="${!mailinglistShowPermissionAllowed}" value="true" />
                                 ${fn:escapeXml(mailinglist.shortname)}
                             </label>
                         </li>

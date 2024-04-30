@@ -12,7 +12,6 @@ package com.agnitas.emm.core.archive.forms;
 
 import org.agnitas.web.forms.SimpleActionForm;
 
-// TODO: EMMGUI-714: remove when old design will be removed
 public class MailingArchiveSimpleActionForm extends SimpleActionForm {
 
     private boolean isCampaign;

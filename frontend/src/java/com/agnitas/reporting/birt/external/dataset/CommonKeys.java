@@ -142,18 +142,6 @@ public interface CommonKeys {
 	int SCHEDULED_SEND_TIME_INDEX = 1002;
 	String SCHEDULED_SEND_TIME = "statistic.ScheduledSendTime";
 
-	int CONFIRMED_DOI_INDEX = 78;
-	String CONFIRMED_DOI = "statistic.recipient.status.confirmed";
-
-	int NOT_CONFIRMED_DOI_INDEX = 79;
-	String NOT_CONFIRMED_DOI = "birt.recipient.notConfirmed";
-	int NOT_CONFIRMED_AND_DELETED_DOI_INDEX = 80;
-	String NOT_CONFIRMED_AND_DELETED_DOI = "statistic.recipient.status.unconfirmed.deleted";
-	int CONFIRMED_AND_NOT_ACTIVE_DOI_INDEX = 81;
-	String CONFIRMED_AND_NOT_ACTIVE_DOI = "statistic.recipient.status.confirmed.inactive";
-	int TOTAL_DOI_INDEX = 82;
-	String TOTAL_DOI = "recipient.DOI";
-
 	String ALL_MAILINGLISTS = "statistic.All_Mailinglists";
 
     List<DeviceClass> AVAILABLE_DEVICECLASSES = Arrays.asList(DeviceClass.DESKTOP, DeviceClass.MOBILE, DeviceClass.TABLET, DeviceClass.SMARTTV);

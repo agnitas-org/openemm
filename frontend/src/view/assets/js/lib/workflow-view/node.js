@@ -350,6 +350,10 @@
                 data.value = 0;
                 break;
 
+            case 'report':
+                data.reports = [];
+                break;
+
             case 'recipient':
                 node.setDependent(false);
                 data.mailinglistId = 0;
@@ -376,8 +380,6 @@
 
             case 'actionbased_mailing':
             case 'datebased_mailing':
-            case 'mailing_mediatype_sms':
-            case 'mailing_mediatype_post':
                 data.mailingId = 0;
                 break;
 
@@ -826,10 +828,6 @@
 
     NodePopover.prototype.initPopover = function() {
         var self = this;
-
-        self.deferred = false;
-        self.content = null;
-
         var popover = Popover.new(self.node.get$(), {
             trigger: 'manual',
             html: true,
@@ -865,7 +863,6 @@
     };
 
     NodePopover.prototype.getPopoverContent = function() {
-        const self = this;
         var node = this.node;
 
         var content = '';
@@ -879,71 +876,7 @@
           content += '<div>' + node.getComment() + '</div>';
         }
 
-        if (content && self.deferred === false) {
-            this.deferred = $.Deferred();
-
-            var $container = $('<div></div>');
-            $container.css({
-                position: 'fixed',
-                visibility: 'hidden'
-            });
-            $container.html(content);
-            $elements = $container.children();
-
-            // Workaround for some browsers setting wrong img.complete when an image element is not attached to a document
-            $(document.body).append($container);
-
-            this.deferred.done(function() {
-                $elements.detach();
-                $container.remove();
-                self.content = $elements;
-            });
-
-            var images = $elements.find('img')
-              .add($elements.filter('img'))
-              .filter(function() {
-                  return this.complete ? null : this;
-              });
-
-            if (images.length > 0) {
-                self.deferred.done(function() {
-                    if (self.popover) {
-                        self.popover.setContent();
-                        if (node.get$().is(':hover')) {
-                            self._showPopover();
-                        }
-                    }
-                });
-
-                var checkLoadingComplete = function() {
-                    var complete = true;
-                    for (var i = 0; i < images.length; i++) {
-                        var image = images[i];
-                        if (image) {
-                            if (image.complete) {
-                                $(image).off('load error');
-                                images[i] = null;
-                            } else {
-                                complete = false;
-                            }
-                        }
-                    }
-                    return complete;
-                };
-
-                for (var i = 0; i < images.length; i++) {
-                    $(images[i]).on('load error', function() {
-                        if (checkLoadingComplete()) {
-                            self.deferred.resolve();
-                        }
-                    });
-                }
-            } else {
-                self.deferred.resolve();
-            }
-        }
-
-        return this.content;
+        return content;
     };
 
     NodePopover.getThumbnail = function(node) {

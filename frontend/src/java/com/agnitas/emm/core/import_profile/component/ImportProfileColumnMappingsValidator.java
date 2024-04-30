@@ -10,8 +10,21 @@
 
 package com.agnitas.emm.core.import_profile.component;
 
-import static org.agnitas.util.DateUtilities.DD_MM_YYYY;
-import static org.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.web.mvc.Popups;
+import org.agnitas.beans.ColumnMapping;
+import org.agnitas.beans.ImportProfile;
+import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.service.ImportProfileService;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbUtilities;
+import org.agnitas.util.ImportUtils;
+import org.agnitas.util.importvalues.ImportMode;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,36 +33,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.importvalues.ImportMode;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.web.mvc.Popups;
+import static com.agnitas.dao.impl.ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
+import static org.agnitas.util.DateUtilities.DD_MM_YYYY;
+import static org.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
 
 @Component
 public class ImportProfileColumnMappingsValidator {
 
     private final ImportRecipientsDao importRecipientsDao;
-    private final RecipientFieldService recipientFieldService;
+    private final ProfileFieldDao profileFieldDao;
     private final ImportProfileService importProfileService;
 
     @Autowired
-    public ImportProfileColumnMappingsValidator(ImportRecipientsDao importRecipientsDao, RecipientFieldService recipientFieldService, ImportProfileService importProfileService) {
+    public ImportProfileColumnMappingsValidator(ImportRecipientsDao importRecipientsDao, ProfileFieldDao profileFieldDao, ImportProfileService importProfileService) {
         this.importRecipientsDao = importRecipientsDao;
-        this.recipientFieldService = recipientFieldService;
+        this.profileFieldDao = profileFieldDao;
         this.importProfileService = importProfileService;
     }
 
@@ -98,15 +99,15 @@ public class ImportProfileColumnMappingsValidator {
         return false;
     }
 
-    private boolean existsNotAllowedDefaultValue(List<ColumnMapping> mappings, Admin admin, Popups popups) throws Exception {
+    private boolean existsNotAllowedDefaultValue(List<ColumnMapping> mappings, Admin admin, Popups popups) {
         for (ColumnMapping mapping : mappings) {
             String dbColumnName = mapping.getDatabaseColumn();
             if (isStringEscaped(mapping.getDefaultValue()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(dbColumnName)) {
                 String defaultValue = unescapeString(mapping.getDefaultValue());
 
-                RecipientFieldDescription recipientFieldDescription = recipientFieldService.getRecipientField(admin.getCompanyID(), dbColumnName);
-                String dateFormat = DbColumnType.SimpleDataType.DateTime.equals(recipientFieldDescription.getSimpleDataType()) ? DD_MM_YYYY_HH_MM : DD_MM_YYYY;
-                if (!DbUtilities.checkAllowedDefaultValue(recipientFieldDescription.getDatabaseDataType(), defaultValue, new SimpleDateFormat(dateFormat))) {
+                DbColumnType dbColumnType = profileFieldDao.getColumnType(admin.getCompanyID(), dbColumnName);
+                String dateFormat = DbColumnType.SimpleDataType.DateTime.equals(dbColumnType.getSimpleDataType()) ? DD_MM_YYYY_HH_MM : DD_MM_YYYY;
+                if (!DbUtilities.checkAllowedDefaultValue(dbColumnType.getTypeName(), defaultValue, new SimpleDateFormat(dateFormat))) {
                     popups.alert("error.import.invalidDataForField", dbColumnName);
                     return true;
                 }
@@ -117,12 +118,12 @@ public class ImportProfileColumnMappingsValidator {
     }
 
     private boolean existsForbiddenMappings(List<ColumnMapping> mappings, ImportProfile profile, Admin admin, Popups popups) {
-        for (String hiddenColumn : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
+        for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
             for (ColumnMapping mapping : mappings) {
                 if (mapping.getDatabaseColumn().equalsIgnoreCase(hiddenColumn)) {
-                    if (RecipientStandardField.CustomerID.getColumnName().equalsIgnoreCase(hiddenColumn) && profile.getId() > 0) {
+                    if (COLUMN_CUSTOMER_ID.equalsIgnoreCase(hiddenColumn) && profile.getId() > 0) {
                         // if customer_id was configured in the mapping by some other user, it is allowed to keep it now
-                        ColumnMapping existingCustomerIdMapping = importProfileService.findColumnMappingByDbColumn(RecipientStandardField.CustomerID.getColumnName(), profile.getColumnMapping());
+                        ColumnMapping existingCustomerIdMapping = importProfileService.findColumnMappingByDbColumn(COLUMN_CUSTOMER_ID, profile.getColumnMapping());
 
                         if (existingCustomerIdMapping == null || !existingCustomerIdMapping.getFileColumn().equals(mapping.getFileColumn())) {
                             popups.alert("error.import.column.invalid", hiddenColumn);
@@ -166,14 +167,14 @@ public class ImportProfileColumnMappingsValidator {
         }
 
         for (ColumnMapping mapping : mappings) {
-            if (RecipientStandardField.Gender.getColumnName().equalsIgnoreCase(mapping.getDatabaseColumn())) {
+            if (COLUMN_GENDER.equalsIgnoreCase(mapping.getDatabaseColumn())) {
                 if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
-                    popups.alert("error.import.missingNotNullableColumnInMapping", RecipientStandardField.Gender.getColumnName());
+                    popups.alert("error.import.missingNotNullableColumnInMapping", COLUMN_GENDER);
                     return false;
                 }
-            } else if (RecipientStandardField.Mailtype.getColumnName().equalsIgnoreCase(mapping.getDatabaseColumn())) {
+            } else if (COLUMN_MAILTYPE.equalsIgnoreCase(mapping.getDatabaseColumn())) {
                 if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
-                    popups.alert("error.import.missingNotNullableColumnInMapping", RecipientStandardField.Mailtype.getColumnName());
+                    popups.alert("error.import.missingNotNullableColumnInMapping", COLUMN_MAILTYPE);
                     return false;
                 }
             }
@@ -212,10 +213,10 @@ public class ImportProfileColumnMappingsValidator {
     private boolean isNotNullableColumn(Map.Entry<String, DbColumnType> columnEntry, int companyId) throws Exception {
         return !columnEntry.getValue().isNullable()
                 && DbUtilities.getColumnDefaultValue(importRecipientsDao.getDataSource(), "customer_" + companyId + "_tbl", columnEntry.getKey()) == null
-                && !RecipientStandardField.CustomerID.getColumnName().equalsIgnoreCase(columnEntry.getKey())
-                && !RecipientStandardField.Gender.getColumnName().equalsIgnoreCase(columnEntry.getKey())
-                && !RecipientStandardField.Mailtype.getColumnName().equalsIgnoreCase(columnEntry.getKey())
-                && !RecipientStandardField.Bounceload.getColumnName().equalsIgnoreCase(columnEntry.getKey());
+                && !COLUMN_CUSTOMER_ID.equalsIgnoreCase(columnEntry.getKey())
+                && !COLUMN_GENDER.equalsIgnoreCase(columnEntry.getKey())
+                && !COLUMN_MAILTYPE.equalsIgnoreCase(columnEntry.getKey())
+                && !STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(columnEntry.getKey());
     }
 
     private boolean isImportModeHasAdding(int importMode) {

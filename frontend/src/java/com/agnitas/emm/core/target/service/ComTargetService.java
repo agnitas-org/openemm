@@ -16,15 +16,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.UserActivityLog;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
@@ -54,7 +55,11 @@ public interface ComTargetService {
 	
 	boolean deleteTargetGroupByCompanyID(int companyID);
 
+    int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+
 	int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws Exception;
+
+	TargetSavingAndAnalysisResult saveTargetWithAnalysis(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
 	int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception;
 
@@ -128,8 +133,6 @@ public interface ComTargetService {
 
 	String getTargetName(int targetId, int companyId);
 
-	List<String> getTargetNames(Collection<Integer> ids, int companyId);
-
     String getTargetName(int targetId, int companyId, boolean includeDeleted);
 
 	boolean checkIfTargetNameAlreadyExists(int companyID, String targetName, int targetID);
@@ -161,8 +164,8 @@ public interface ComTargetService {
 	List<TargetLight> getTargetLights(Admin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
-
-	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexityGrade);
+	
+	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options);
 
 	/**
 	 * Get all the valid list split targets represented as {@link com.agnitas.beans.ListSplit}.

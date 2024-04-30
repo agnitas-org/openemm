@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <Configuration name="EMM" packages="">
-	<!-- log4j2-emm.xml -->
 	<Appenders>
 		<Console name="ROOT_CONSOLE" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
@@ -91,30 +90,6 @@
 			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
 			<TimeBasedTriggeringPolicy />
 		</RollingFile>
-		
-		<RollingFile name="REDIS" fileName="${sys:user.home}/logs/webapps/redis.log" filePattern="${sys:user.home}/logs/webapps/redis.log.%d{yyyy-MM-dd}">
-			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
-			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
-			<TimeBasedTriggeringPolicy />
-		</RollingFile>
-		
-		<RollingFile name="UMLAUT_CHECK_LOG" fileName="${sys:user.home}/logs/webapps/redis.log" filePattern="${sys:user.home}/logs/webapps/umlautcheck.log.%d{yyyy-MM-dd}">
-			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
-			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
-			<TimeBasedTriggeringPolicy />
-		</RollingFile>
-		
-		<RollingFile name="HONEYPOT_PAGE_LOG" fileName="${sys:user.home}/logs/webapps/honeypot-page.log" filePattern="${sys:user.home}/logs/webapps/honeypot-page.log.%d{yyyy-MM-dd}">
-			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
-			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
-			<TimeBasedTriggeringPolicy />
-		</RollingFile>
-		
-		<RollingFile name="TOTP_LOG" fileName="${sys:user.home}/logs/webapps/totp.log" filePattern="${sys:user.home}/logs/webapps/totp.log.%d{yyyy-MM-dd}">
-			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
-			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
-			<TimeBasedTriggeringPolicy />
-		</RollingFile>
 	</Appenders>
 	
 	<Loggers>
@@ -180,21 +155,13 @@
 
 		<Logger name="com.agnitas.reporting.birt.external.scheduler.service.ReportSendWorker" level="debug">
 			<AppenderRef ref="BIRT_REPORTING" />			
-		</Logger>
+		</Logger>		
 
 		<Logger name="com.agnitas.emm.facebook" level="debug">
 			<AppenderRef ref="FACEBOOKLOG" />
-		</Logger>
+		</Logger>		
 		
-		<Logger name="com.agnitas.dao.impl.DBCleanerDaoImpl" level="debug">
-			<AppenderRef ref="CLEANLOG" />
-		</Logger>
-		
-		<Logger name="org.agnitas.util.quartz.DBCleanerJobWorkerWithServicer" level="debug">
-			<AppenderRef ref="CLEANLOG" />
-		</Logger>
-		
-		<Logger name="org.agnitas.util.quartz.DBCleanerCompanyCleaningSubWorker" level="debug">
+		<Logger name="com.agnitas.dao.impl.CleanDBDaoImpl" level="debug">
 			<AppenderRef ref="CLEANLOG" />
 		</Logger>
 		
@@ -220,29 +187,5 @@
 			<AppenderRef ref="APPLICATIONERRORLOGFILE" />
 		</Logger>
 		
-		<Logger name="com.agnitas.rdir.redis.RedisCompanyDaoCacheImpl" level="debug">
-			<AppenderRef ref="REDIS" />
-		</Logger>
-		
-		<Logger name="com.agnitas.service.job.UmlautChecker" level="debug">
-			<AppenderRef ref="UMLAUT_CHECK_LOG" />
-		</Logger>
-		
-		<Logger name="net.htmlparser.jericho" level="OFF">
-		</Logger>
-		
-		<Logger name="com.agnitas.honeypot.web.HoneypotLinkConfirmController" level="info">
-			<AppenderRef ref="HONEYPOT_PAGE_LOG" />
-		</Logger>
-
-<!--  BEGIN: TOTP loggin -->		
-		<Logger name="com.agnitas.emm.core.logon.web.LogonControllerExtended" level="info">
-			<AppenderRef ref="TOTP_LOG" />
-		</Logger>
-		
-		<Logger name="com.agnitas.emm.core.logon.totp.service.TotpTrustDeviceServiceImpl" level="info">
-			<AppenderRef ref="TOTP_LOG" />
-		</Logger>
-<!--  END: TOTP loggin -->		
 	</Loggers>
 </Configuration>

@@ -13,7 +13,6 @@ package com.agnitas.emm.core.admin.form;
 import java.util.List;
 
 import com.agnitas.beans.Company;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.web.forms.PaginationForm;
@@ -31,9 +30,6 @@ public class AdminListForm extends PaginationForm {
     private Integer filterMailinglistId;
     private Integer filterAdminGroupId;
     private String filterLanguage;
-    private String filterUsername;
-    private DateRange filterCreationDate = new DateRange();
-    private DateRange filterLastLoginDate = new DateRange();
 
     public List<Company> getCompanies() {
         return companies;
@@ -121,29 +117,5 @@ public class AdminListForm extends PaginationForm {
 
     public void setFilterLanguage(String filterLanguage) {
         this.filterLanguage = filterLanguage;
-    }
-
-    public String getFilterUsername() {
-        return filterUsername;
-    }
-
-    public void setFilterUsername(String filterUsername) {
-        this.filterUsername = filterUsername;
-    }
-
-    public DateRange getFilterCreationDate() {
-        return filterCreationDate;
-    }
-
-    public void setFilterCreationDate(DateRange filterCreationDate) {
-        this.filterCreationDate = filterCreationDate;
-    }
-
-    public DateRange getFilterLastLoginDate() {
-        return filterLastLoginDate;
-    }
-
-    public void setFilterLastLoginDate(DateRange filterLastLoginDate) {
-        this.filterLastLoginDate = filterLastLoginDate;
     }
 }

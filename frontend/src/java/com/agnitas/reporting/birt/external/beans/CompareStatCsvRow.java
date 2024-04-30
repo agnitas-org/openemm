@@ -15,7 +15,6 @@ public class CompareStatCsvRow {
 	private int mailingId;
     private String mailingNameFull;
     private int targetGroupId;
-    private int targetGroupIndex;
     private String targetGroupName;
 	private int emailsSentCount;
 	private int emailsDeliveredCount;
@@ -29,10 +28,9 @@ public class CompareStatCsvRow {
 	private double bouncesRate;
     private int revenueCount;
 
-    public CompareStatCsvRow(int mailingId, int targetGroupId, int targetGroupIndex){
+    public CompareStatCsvRow(int mailingId, int targetGroupId){
         this.mailingId = mailingId;
         this.targetGroupId = targetGroupId;
-        this.targetGroupIndex = targetGroupIndex;
     }
 
     public int getMailingId() {
@@ -153,9 +151,5 @@ public class CompareStatCsvRow {
 
     public void setRevenueCount(int revenueCount) {
         this.revenueCount = revenueCount;
-    }
-
-    public int getTargetGroupIndex() {
-        return targetGroupIndex;
     }
 }

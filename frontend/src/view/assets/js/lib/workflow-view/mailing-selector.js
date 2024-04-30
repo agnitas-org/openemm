@@ -65,7 +65,7 @@
             }
             mailingsList.attr('readonly', 'readonly');
             $.ajax({
-                type: 'GET',
+                type: 'POST',
                 url: AGN.url('/workflow/getAllMailingSorted.action'),
                 data: {
                     sortField: field,

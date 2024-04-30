@@ -236,7 +236,7 @@ public class WorkflowForm {
         STATUS_TESTED(6, true, "workflow.view.status.tested", "tested"),
         STATUS_FAILED(7, true, "FAILED", "failed"),
         STATUS_TESTING_FAILED(8, true, "workflow.view.status.testing.failed", "testing_failed"),
-        STATUS_PAUSED(9, true, "workflow.view.status.paused", "paused");
+        STATUS_PAUSED(9, true, "GWUA.workflow.view.status.paused", "paused");
 
         private final int id;
         private final boolean changeable;

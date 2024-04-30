@@ -10,10 +10,25 @@
 
 package org.agnitas.ecs.backend.dao;
 
+import java.util.List;
+
+import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.ecs.backend.beans.ClickStatInfo;
 
 
+/**
+ * Dao for accessing <code>click_stat_colors_tbl</code> - the table that
+ * stores color values for percent ranges for differnet companies
+ */
 public interface EmbeddedClickStatDao {
+
+	/**
+	 * Method gets collection of color values for company id
+	 *
+	 * @param companyId id of company
+	 * @return collection of {@link ClickStatColor} beans for companyId
+	 */
+	List<ClickStatColor> getClickStatColors(int companyId);
 
 	/**
 	 * Gets click statistics for the mailing for certain ecs mode

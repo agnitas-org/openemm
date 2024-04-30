@@ -1,7 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="agn"     uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -147,18 +148,19 @@
                                     name="additionalFields" data-action="change-columns-to-show" style="padding: 5px"
                                     title="additional fields">
                                 <c:forEach var="availableField" items="${availableAdditionalFields}">
-                                    <c:if test="${availableField != 'CHANGE_DATE' and availableField != 'ARCHIVE' and availableField != 'PLAN_DATE'}">
-                                        <c:set var="selected" value=""/>
-                                        <c:forEach var="additionalField" items="${mailingStatatisticListForm.additionalFields}"
-                                                   varStatus="rowCounter">
-                                            <c:if test="${availableField.sortColumn == additionalField}">
-                                                <c:set var="selected" value="selected"/>
-                                            </c:if>
-                                        </c:forEach>
+                                    <c:if test="${availableField != 'CHANGE_DATE' and availableField != 'ARCHIVE'}">
+                                    <c:set var="selected" value=""/>
+                                    <c:forEach var="additionalField" items="${mailingStatatisticListForm.additionalFields}"
+                                               varStatus="rowCounter">
+                                        <c:if test="${availableField.sortColumn == additionalField}">
+                                            <c:set var="selected" value="selected"/>
+                                        </c:if>
+                                    </c:forEach>
 
-                                        <option title="${availableField.messageKey}" value="${availableField.sortColumn}" ${selected}>
-                                            <mvc:message code="${availableField.messageKey}"/>
-                                        </option>
+                                    <option title="${availableField.messageKey}"
+                                            value="${availableField.sortColumn}" ${selected}>
+                                        <mvc:message code="${availableField.messageKey}"/>
+                                    </option>
                                     </c:if>
                                 </c:forEach>
                             </select>

@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Type d'envoi</title>
+	<content><![CDATA[Le param&egrave;tre Normal Mailing permet de cr&eacute;er une newsletter simple. D'autres types d&eacute;crivent le chapitre Mailings - Envoi d'une lettre d'information. Il s'agit, en bref, d'un mailing dat&eacute; qui sera envoy&eacute; &agrave; une date donn&eacute;e, par exemple l'anniversaire de l'abonn&eacute;. Un mailing bas&eacute; sur une action sera envoy&eacute; pour une action sp&eacute;cifique, par exemple lorsque l'abonn&eacute; clique sur un lien sp&eacute;cial dans le mailing. Un mailing de suivi sera envoy&eacute; pour une r&eacute;action d&eacute;finie des abonn&eacute;s, par exemple lorsque l'abonn&eacute; n'ouvre pas le mailing.]]></content>
+</HelpBalloon>

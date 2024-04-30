@@ -10,31 +10,22 @@
 
 package com.agnitas.emm.core.support.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.web.UserFormSupportForm;
-import com.agnitas.web.dto.DataResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.Anonymous;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.web.UserFormSupportForm;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.web.bind.annotation.PostMapping;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class SupportController implements XssCheckAware {
@@ -55,19 +46,6 @@ public class SupportController implements XssCheckAware {
         this.formNotFoundUrlParameterTemplate = formNotFoundUrlParameterTemplate;
     }
 
-    @GetMapping("/help-center.action")
-    public String helpCenter(@RequestParam(name = "helpKey", required = false) String helpKey, Model model) {
-        model.addAttribute("helpKey", helpKey);
-        return "help_center";
-    }
-
-    @PostMapping("/sendMessage.action")
-    public ResponseEntity<DataResponseDto<String>> sendSupportMessage(@RequestParam String content, Admin admin, Popups popups) throws InterruptedException {
-        String answer = RandomStringUtils.randomAlphabetic(5, 250);
-        return ResponseEntity.ok(new DataResponseDto<>(answer, popups, true));
-    }
-
-    @Anonymous
     @PostMapping("/sendFormReport.action")
     public String sendFormReport(UserFormSupportForm supportForm, Popups popups) {
         String supportAddress = configService.getValue(ConfigValue.Mailaddress_Support);

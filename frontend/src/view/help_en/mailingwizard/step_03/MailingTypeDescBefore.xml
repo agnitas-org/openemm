@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Type of mailing</title>
+	<content><![CDATA[The setting Normal Mailing creates a simple newsletter. Further types describes the chapter Mailings - Sending out Newsletter. They are, in short: A date-based mailing will be sent on a particular date, for instance the subscriber's birthday. An action-based mailing will be sent for a specific action, for instance when the subscriber clicks on a special link in the mailing. A follow-um mailing will be sent for a defined subscribers reaction, for instance when the subscriber doesn't open the mailing.]]></content>
+</HelpBalloon>

@@ -19,8 +19,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
 
 public class ActionOperationGetArchiveMailingDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationGetArchiveMailingParameters> {
-
-	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveMailingDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ActionOperationGetArchiveMailingDaoImpl.class);
 	
 	@Override
 	protected void processGetOperation(ActionOperationGetArchiveMailingParameters operation) {

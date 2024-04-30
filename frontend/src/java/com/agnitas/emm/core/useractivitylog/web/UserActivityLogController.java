@@ -10,70 +10,50 @@
 
 package com.agnitas.emm.core.useractivitylog.web;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import jakarta.servlet.http.HttpSession;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 @Controller
 @RequestMapping("/administration/useractivitylog")
 @PermissionMapping("user.activity.log")
-@SessionAttributes(types = UserActivityLogSearchParams.class)
-public class UserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
+public class UserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
 
     protected UserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
                                         UserActivityLogExportWorkerFactory exportWorkerFactory) {
         super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
     }
 
-    @Override
-    protected List<AdminEntry> getAdminEntries(Admin admin) {
-        return adminService.getAdminEntriesForUserActivityLog(admin, UserActivityLogService.UserType.GUI);
-    }
-
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
     public Pollable<ModelAndView> list(Admin admin, @ModelAttribute("form") UserActivityLogForm listForm, Model model, HttpSession session) {
         return getList(admin, listForm, model, session);
-    }
-
-    @RequestMapping(value = "/listRedesigned.action", method = {RequestMethod.GET, RequestMethod.POST})
-    @PermissionMapping("list")
-    public Pollable<ModelAndView> listRedesigned(Admin admin, @ModelAttribute("filter") UserActivityLogFilter filter, @ModelAttribute UserActivityLogSearchParams searchParams, Model model, HttpSession session) {
-        FormUtils.syncSearchParams(searchParams, filter, true);
-        return getListRedesigned(admin, filter, model, session);
     }
 
     @Override
@@ -89,11 +69,6 @@ public class UserActivityLogController extends AbstractUserActivityLogController
     @Override
     protected String redirectToListPage() {
         return "redirect:/administration/useractivitylog/list.action";
-    }
-
-    @Override
-    protected String redirectToRedesignedListPage() {
-        return "redirect:/administration/useractivitylog/listRedesigned.action";
     }
 
     @Override
@@ -130,33 +105,8 @@ public class UserActivityLogController extends AbstractUserActivityLogController
         );
     }
 
-    @Override
-    protected PaginatedListImpl<?> preparePaginatedListRedesigned(UserActivityLogFilterBase filter, List<AdminEntry> admins, Admin admin) throws Exception {
-        final UserActivityLogFilter ualFilter = (UserActivityLogFilter) filter;
-        return userActivityLogService.getUserActivityLogByFilterRedesigned(ualFilter, admins, admin);
-    }
-
     @PostMapping(value = "/download.action")
     public ResponseEntity<StreamingResponseBody> download(Admin admin, UserActivityLogForm form) throws Exception {
         return downloadLogs(admin, form, UserActivityLogService.UserType.GUI);
-    }
-
-    @GetMapping(value = "/downloadRedesigned.action")
-    @PermissionMapping("download")
-    public ResponseEntity<StreamingResponseBody> downloadRedesigned(Admin admin, UserActivityLogFilter filter) throws Exception {
-        return downloadLogsRedesigned(admin, filter, UserActivityLogService.UserType.GUI);
-    }
-
-    @GetMapping("/search.action")
-    public String search(@ModelAttribute UserActivityLogFilter filter, @ModelAttribute UserActivityLogSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
-        model.addFlashAttribute("filter", filter);
-
-        return redirectToRedesignedListPage();
-    }
-
-    @ModelAttribute
-    public UserActivityLogSearchParams getSearchParams() {
-        return new UserActivityLogSearchParams();
     }
 }

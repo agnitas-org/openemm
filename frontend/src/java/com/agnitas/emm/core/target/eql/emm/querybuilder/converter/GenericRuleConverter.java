@@ -29,6 +29,8 @@ public abstract class GenericRuleConverter implements RuleConverter {
 
     private static final Logger logger = LogManager.getLogger(GenericRuleConverter.class);
 
+    private static final String SINGLE_QUOTES = "'";
+
     private EmmProfileFieldResolverFactory profileFieldResolverFactory;
 
     @Override

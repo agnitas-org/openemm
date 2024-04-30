@@ -10,7 +10,9 @@
 
 package com.agnitas.emm.core.workflow.beans;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 public class ComWorkflowReaction {
@@ -27,6 +29,8 @@ public class ComWorkflowReaction {
 	private WorkflowReactionType reactionType;
 	private String profileColumn;
 	private String rulesSQL;
+	private List<Integer> mailingsToSend = new ArrayList<>();
+	private boolean isLegacyMode;
 
 	public int getReactionId() {
 		return reactionId;
@@ -124,6 +128,16 @@ public class ComWorkflowReaction {
 		this.rulesSQL = rulesSQL;
 	}
 
+	@Deprecated
+	public List<Integer> getMailingsToSend() {
+		return mailingsToSend;
+	}
+
+	@Deprecated
+	public void setMailingsToSend(List<Integer> mailingsToSend) {
+		this.mailingsToSend = mailingsToSend;
+	}
+
     public int getTriggerLinkId() {
         return triggerLinkId;
     }
@@ -132,4 +146,11 @@ public class ComWorkflowReaction {
         this.triggerLinkId = triggerLinkId;
     }
 
+	public boolean isLegacyMode() {
+		return isLegacyMode;
+	}
+
+	public void setLegacyMode(boolean isLegacyMode) {
+		this.isLegacyMode = isLegacyMode;
+	}
 }

@@ -12,16 +12,10 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Set;
 
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.emm.core.bounce.util.BounceUtils;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.MailloopEntryImpl;
@@ -29,9 +23,7 @@ import org.agnitas.beans.impl.MailloopImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,61 +33,21 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao {
 	
-	private static final Logger logger = LogManager.getLogger(ComMailloopDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComMailloopDaoImpl.class);
 
-    private static final String FILTER_ADDRESS_COL = "filter_address";
-    private static final String DESCRIPTION_COL = "description";
-    private static final String SHORTNAME_COL = "shortname";
-
-    @Override
+	@Override
 	public PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(int companyId, String sortColumn, String direction, int pageNumber, int pageSize) {
 		String selectStatement = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ?";
 
 		return selectPaginatedList(logger, selectStatement,"mailloop_tbl",
-				StringUtils.defaultIfEmpty(sortColumn, SHORTNAME_COL),
+				StringUtils.defaultIfEmpty(sortColumn, "shortname"),
 				AgnUtils.sortingDirectionToBoolean(direction, true),
 				pageNumber,
 				pageSize,
 				new MailloopEntry_RowMapper(),
 				companyId);
 	}
-
-    @Override
-   	public PaginatedListImpl<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter) {
-        StringBuilder sql = new StringBuilder("SELECT rid, description, shortname, ")
-                .append(getFilterAddressOverviewQuery(filter.getCompanyDomain())).append(" filter_address")
-                .append(" FROM mailloop_tbl ");
-        List<Object> params = applyOverviewFilter(filter, sql);
-
-        return selectPaginatedList(logger, sql.toString(), "mailloop_tbl",
-                filter.getSortOrDefault(SHORTNAME_COL), filter.ascending(), filter.getPage(),
-   				filter.getNumberOfRows(), new BounceFilterDtoRowMapper(), params.toArray());
-   	}
-
-    private static String getFilterAddressOverviewQuery(String companyDomain) {
-        return String.format("COALESCE(filter_address, CONCAT(CONCAT('%s', rid), '%s'))",
-                BounceUtils.EMAIL_PREFIX + "_", "@" + companyDomain);
-    }
-
-    private List<Object> applyOverviewFilter(BounceFilterListForm filter, StringBuilder sql) {
-        int companyId = filter.getCompanyId();
-        sql.append(" WHERE company_id = ?");
-        List<Object> params = new ArrayList<>(List.of(companyId));
-
-        if (StringUtils.isNotBlank(filter.getName())) {
-            sql.append(getPartialSearchFilterWithAnd(SHORTNAME_COL));
-            params.add(filter.getName());
-        }
-        if (StringUtils.isNotBlank(filter.getDescription())) {
-            sql.append(getPartialSearchFilterWithAnd(DESCRIPTION_COL));
-            params.add(filter.getDescription());
-        }
-        if (StringUtils.isNotBlank(filter.getFilterAddress())) {
-            sql.append(getPartialSearchFilterWithAnd(getFilterAddressOverviewQuery(filter.getCompanyDomain())));
-            params.add(filter.getFilterAddress());
-        }
-        return params;
-    }
 
 	@Override
 	public Mailloop getMailloop(int mailloopId, int companyId) {
@@ -212,30 +164,20 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 		update(logger, "DELETE FROM mailloop_tbl WHERE company_id = ?", companyId);
 		return selectInt(logger, "SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ?", companyId) == 0;
 	}
+	
 
 	protected class MailloopEntry_RowMapper implements RowMapper<MailloopEntry> {
 		@Override
 		public MailloopEntry mapRow(ResultSet resultSet, int row) throws SQLException {
 			int id = resultSet.getInt("rid");
-			String description = resultSet.getString(DESCRIPTION_COL);
-			String shortname = resultSet.getString(SHORTNAME_COL);
-			String filterEmail = resultSet.getString(FILTER_ADDRESS_COL);
+			String description = resultSet.getString("description");
+			String shortname = resultSet.getString("shortname");
+			String filterEmail = resultSet.getString("filter_address");
 			MailloopEntry readMailloopEntry = new MailloopEntryImpl(id, description, shortname, filterEmail);
 			return readMailloopEntry;
 		}
 	}
-
-    private static class BounceFilterDtoRowMapper implements RowMapper<BounceFilterDto> {
-   		@Override
-   		public BounceFilterDto mapRow(ResultSet resultSet, int row) throws SQLException {
-            BounceFilterDto dto = new BounceFilterDto();
-            dto.setId(resultSet.getInt("rid"));
-            dto.setShortName(resultSet.getString(SHORTNAME_COL));
-            dto.setFilterEmail(resultSet.getString(FILTER_ADDRESS_COL));
-            dto.setDescription(resultSet.getString(DESCRIPTION_COL));
-   			return dto;
-   		}
-   	}
+	
 
 	protected class Mailloop_RowMapper implements RowMapper<Mailloop> {
 		@Override
@@ -244,10 +186,10 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			
 			readMailloop.setId(resultSet.getInt("rid"));
 			readMailloop.setCompanyID(resultSet.getInt("company_id"));
-			readMailloop.setDescription(resultSet.getString(DESCRIPTION_COL));
-			readMailloop.setShortname(resultSet.getString(SHORTNAME_COL));
+			readMailloop.setDescription(resultSet.getString("description"));
+			readMailloop.setShortname(resultSet.getString("shortname"));
 			readMailloop.setForwardEmail(resultSet.getString("forward"));
-			readMailloop.setFilterEmail(resultSet.getString(FILTER_ADDRESS_COL));
+			readMailloop.setFilterEmail(resultSet.getString("filter_address"));
 			readMailloop.setDoForward(resultSet.getInt("forward_enable") > 0);
 			readMailloop.setDoAutoresponder(resultSet.getInt("ar_enable") > 0);
 			readMailloop.setChangedate(resultSet.getTimestamp("timestamp"));
@@ -274,20 +216,14 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 		String query = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ? AND ar_enable=1 AND autoresponder_mailing_id = ?";
 		return select(logger, query, new MailloopEntry_RowMapper(), companyId, mailingId);
 	}
-
+    
     @Override
-    public boolean isAddressInUse(String filterAddress) {
-        return selectInt(logger, "SELECT COUNT(*) FROM mailloop_tbl WHERE filter_address = ?", filterAddress) > 0;
-    }
-
-    @Override
-    public List<String> getBounceFilterNames(Set<Integer> ids, int companyId) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
-        }
-        List<Object> params = new ArrayList<>(ids);
-        params.add(companyId);
-        return select(logger, "SELECT shortname FROM mailloop_tbl WHERE rid IN (" + AgnUtils.csvQMark(ids.size()) + ")"
-                + " AND company_id = ?", StringRowMapper.INSTANCE, params.toArray());
+    public boolean isAddressInUse(String filterAddress, boolean isNew) {
+    	String query = "SELECT COUNT(*) FROM mailloop_tbl WHERE filter_address = ?";
+    	if (isNew) {
+    		return selectInt(logger, query, filterAddress) > 0;
+    	} else {
+    		return selectInt(logger, query, filterAddress) > 1;
+    	}
     }
 }

@@ -13,7 +13,7 @@
 		<param-name>contextConfigLocation</param-name>
 		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-actions-basic.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
 	</context-param>
-
+	
 	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
 	<filter>
 		<filter-name>charsetFilter</filter-name>
@@ -51,7 +51,7 @@
 	<filter-mapping>
     	<filter-name>MultipartFilter</filter-name>
     	<url-pattern>*.action</url-pattern>
-	</filter-mapping>
+	</filter-mapping>	
 
 	<!-- Filter to redirect invalid sessions to active node -->
 	<filter>
@@ -78,14 +78,14 @@
     	<filter-name>springSecurityFilterChain</filter-name>
     	<url-pattern>*.action</url-pattern>
 	</filter-mapping>
-
+	
 	<!-- HTTP Security Header -->
-	<!--
+	<!-- 
 	<filter>
 		<filter-name>HttpSecurityHeaderFilter</filter-name>
 		<filter-class>com.agnitas.web.filter.HttpSecurityHeaderFilter</filter-class>
 		<async-supported>true</async-supported>
-
+		
 		<init-param>
 			<param-name>hsts.enable</param-name>
 			<param-value>true</param-value>
@@ -94,12 +94,12 @@
 			<param-name>hsts.maxAge</param-name>
 			<param-value>15768000</param-value>
 		</init-param>
-
+		
 		<init-param>
 			<param-name>referrer-policy.enable</param-name>
 			<param-value>true</param-value>
 		</init-param>
-
+		
 		<init-param>
 			<param-name>referrer-policy.policy</param-name>
 			<param-value>no-referrer</param-value>
@@ -110,16 +110,20 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	-->
-
+	
 	<!--  Generic replacement for HttpSecurityHeaderFilter -->
 	<filter>
 		<filter-name>HttpResponseHeaderFilter</filter-name>
-		<filter-class>com.agnitas.emm.responseheaders.web.HttpResponseHeadersFilter</filter-class>
+		<filter-class>com.agnitas.web.filter.responseheaders.HttpResponseHeadersFilter</filter-class>
 		<async-supported>true</async-supported>
-
+		
 		<init-param>
-			<param-name>headerapplier.bean-name</param-name>
-			<param-value>HttpResponseHeaderApplier</param-value>
+			<param-name>cache.period-millis</param-name>
+			<param-value>60000</param-value>	<!--  Reload settings every 60 seconds -->
+		</init-param>
+		<init-param>
+			<param-name>source.classname</param-name>
+			<param-value>com.agnitas.web.filter.responseheaders.DatabaseHeaderConfigSource</param-value>
 		</init-param>
 	</filter>
 	<filter-mapping>
@@ -170,6 +174,21 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
+	<!-- Filter to protect Struts 1 application against classloader manipulation (CVE-2014-0114) -->
+	<filter>
+		<filter-name>Struts1SecurityFilter</filter-name>
+		<filter-class>com.agnitas.web.filter.Struts1SecurityFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>excludeParams</param-name>
+			<param-value>(.*\.|^|.*|\[('|"))(c|C)lass(\.|('|")]|\[).*</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>Struts1SecurityFilter</filter-name>
+		<servlet-name>action</servlet-name>
+	</filter-mapping>
+
 	<!-- EMM Listeners -->
 
 	<!-- load Spring applicationContext -->
@@ -196,7 +215,7 @@
 	<listener>
 		<listener-class>com.agnitas.util.ResetJobQueueContextListener</listener-class>
 	</listener>
-
+	
 	<!-- listener for resetting old server command entries on host startup -->
 	<listener>
 		<listener-class>com.agnitas.util.ResetServerCommandsContextListener</listener-class>
@@ -216,11 +235,42 @@
 	<listener>
 		<listener-class>com.agnitas.web.ExecutorShutdownListener</listener-class>
 	</listener>
-
+	
 	<!-- Listener for execution of startup jobs -->
 	<listener>
 		<listener-class>com.agnitas.startuplistener.web.StartUpExecutionListener</listener-class>
 	</listener>
+
+	<!-- Struts Action servlet -->
+	<servlet>
+		<servlet-name>action</servlet-name>
+		<servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
+		<init-param>
+			<param-name>config</param-name>
+			<param-value>/WEB-INF/struts-config.xml</param-value>
+		</init-param>
+		<init-param>
+			<param-name>debug</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>detail</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>validate</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<init-param>
+			<param-name>chainConfig</param-name>
+			<param-value>org/apache/struts/tiles/chain-config.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>action</servlet-name>
+		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>spring-mvc</servlet-name>
@@ -231,10 +281,6 @@
 	<servlet-mapping>
 		<servlet-name>spring-mvc</servlet-name>
 		<url-pattern>*.action</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>spring-mvc</servlet-name>
-		<url-pattern>*.do</url-pattern>
 	</servlet-mapping>
 
 	<!-- servlets to show components and images -->
@@ -256,7 +302,7 @@
 		<url-pattern>/image</url-pattern>
 		<url-pattern>/image/*</url-pattern>
 	</servlet-mapping>
-
+	
 	<servlet>
 		<servlet-name>CssServlet</servlet-name>
 		<servlet-class>com.agnitas.web.CssServlet</servlet-class>
@@ -284,24 +330,6 @@
 	<servlet-mapping>
 		<servlet-name>ShowDynamicImage</servlet-name>
 		<url-pattern>/dyn_image/*</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>ShowDynamicMediapoolImage</servlet-name>
-		<servlet-class>com.agnitas.web.ShowDynamicMediapoolImage</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ShowDynamicMediapoolImage</servlet-name>
-		<url-pattern>/dyn_mediapool_element/*</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>ShowDynamicExternImage</servlet-name>
-		<servlet-class>com.agnitas.web.ShowDynamicExternImage</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ShowDynamicExternImage</servlet-name>
-		<url-pattern>/dyn_extern/*</url-pattern>
 	</servlet-mapping>
 
 	<servlet>
@@ -409,6 +437,16 @@
 		<servlet-name>UnsubscribeServlet</servlet-name>
 		<url-pattern>/uq/*</url-pattern>
 	</servlet-mapping>
+	
+	<!-- text download servlet -->
+	<servlet>
+		<servlet-name>TextFileDownload</servlet-name>
+		<servlet-class>org.agnitas.web.TextFileDownload</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>TextFileDownload</servlet-name>
+		<url-pattern>/file_download</url-pattern>
+	</servlet-mapping>
 
 	<!-- SWYN servlet -->
 	<servlet>
@@ -424,7 +462,7 @@
 		<url-pattern>/v.html</url-pattern>
 	</servlet-mapping>
 
-	<!-- File download
+	<!-- File download -->
 	<servlet>
 		<servlet-name>FileDownloadServlet</servlet-name>
 		<servlet-class>org.agnitas.emm.core.download.web.FileDownloadServlet</servlet-class>
@@ -433,12 +471,31 @@
 		<servlet-name>FileDownloadServlet</servlet-name>
 		<url-pattern>/download</url-pattern>
 	</servlet-mapping>
-	-->
+
+	<!-- trackable link servlet to shorten loading time of target group editor -->
+	<servlet>
+		<servlet-name>GetMailingTrackableLinks</servlet-name>
+		<servlet-class>com.agnitas.web.ajax.GetMailingTrackableLinks</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>GetMailingTrackableLinks</servlet-name>
+		<url-pattern>/GetMailingTrackableLinks.do</url-pattern>
+	</servlet-mapping>
 
 	<!-- Welcome File -->
 	<welcome-file-list>
 		<welcome-file>/WEB-INF/jsp/login.jsp</welcome-file>
 	</welcome-file-list>
+
+	<!--for JS file with translations-->
+	<servlet>
+		<servlet-name>jsLocalize</servlet-name>
+		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>jsLocalize</servlet-name>
+		<url-pattern>/assets/translation.js</url-pattern>
+	</servlet-mapping>
 
 	<!-- For JS file that contains some data from static context -->
 	<servlet>
@@ -449,7 +506,7 @@
 		<servlet-name>jsConfig</servlet-name>
 		<url-pattern>/assets/config.js</url-pattern>
 	</servlet-mapping>
-
+	
 	<servlet>
 		<servlet-name>LandingpageServlet</servlet-name>
 		<servlet-class>com.agnitas.emm.landingpage.web.LandingpageServlet</servlet-class>
@@ -462,11 +519,11 @@
 	<!-- Error Pages -->
 	<error-page>
 		<exception-type>jakarta.servlet.ServletException</exception-type>
-		<location>/error.action?allowRedesigned=true</location>
+		<location>/error.do</location>
 	</error-page>
 	<error-page>
 		<exception-type>java.lang.Exception</exception-type>
-		<location>/error.action?allowRedesigned=true</location>
+		<location>/error.do</location>
 	</error-page>
 	<error-page>
 		<error-code>404</error-code>
@@ -482,5 +539,5 @@
 			<transport-guarantee>NONE</transport-guarantee>
 		</user-data-constraint>
 	</security-constraint>
-
+	
 </web-app>

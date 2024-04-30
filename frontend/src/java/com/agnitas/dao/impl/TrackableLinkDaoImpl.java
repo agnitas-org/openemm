@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.TrackableLinkListItemRowMapper;
@@ -40,16 +41,15 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TrackableLinkListItem;
-import com.agnitas.beans.impl.TrackableLinkImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDao {
@@ -65,7 +65,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 
 	@Override
-    public final TrackableLink getTrackableLink(final int linkID, final int companyID, final boolean includeDeleted) {
+    public final ComTrackableLink getTrackableLink(final int linkID, final int companyID, final boolean includeDeleted) {
 		if (linkID <= 0 || companyID <= 0) {
 			return null;
 		} else {
@@ -74,11 +74,11 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 					? "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ?"
 					: "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ? AND deleted <= 0";
 			
-			final List<TrackableLink> linkList = select(logger, sql, new TrackableLink_RowMapper(), linkID, companyID);
+			final List<ComTrackableLink> linkList = select(logger, sql, new ComTrackableLink_RowMapper(), linkID, companyID);
 			if (linkList == null || linkList.size() < 1) {
 				return null;
 			} else {
-				TrackableLink link = linkList.get(0);
+				ComTrackableLink link = linkList.get(0);
 				link.setProperties(getLinkProperties(link));
 				return link;
 			}
@@ -86,22 +86,22 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 
 	@Override
-	public TrackableLink getTrackableLink(int linkID, int companyID) {
+	public ComTrackableLink getTrackableLink(int linkID, int companyID) {
 		return getTrackableLink(linkID, companyID, false);
 	}
 
 	@Override
-	public TrackableLink getTrackableLink(String url, int companyID, int mailingID) {
+	public ComTrackableLink getTrackableLink(String url, int companyID, int mailingID) {
 		if (StringUtils.isBlank(url) || companyID <= 0 || mailingID <= 0) {
 			return null;
 		} else {
 			//keep SELECT * because "usage" is a reserved word on mariaDB
 			String sql = "SELECT * FROM rdir_url_tbl WHERE full_url = ? AND company_id = ? AND mailing_id = ? AND deleted <= 0";
-			List<TrackableLink> linkList = select(logger, sql, new TrackableLink_RowMapper(), url, companyID, mailingID);
+			List<ComTrackableLink> linkList = select(logger, sql, new ComTrackableLink_RowMapper(), url, companyID, mailingID);
 			if (linkList == null || linkList.size() < 1) {
 				return null;
 			} else {
-				TrackableLink link = linkList.get(0);
+				ComTrackableLink link = linkList.get(0);
 				link.setProperties(getLinkProperties(link));
 				return link;
 			}
@@ -109,70 +109,30 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 
 	@Override
-    public List<TrackableLink> getTrackableLinks(int companyID, int mailingID) {
-	    return getTrackableLinks(mailingID, companyID, false);
-    }
-
-    @Override
-    public Map<String, TrackableLink> getTrackableLinksMap(int mailingId, int companyId, boolean includeDeleted) {
-        final List<TrackableLink> trackableLinks = getTrackableLinks(mailingId, companyId, includeDeleted);
-        final Map<String, TrackableLink> map = new HashMap<>(trackableLinks.size());
-
-        for (final TrackableLink trackableLink : trackableLinks) {
-            map.put(trackableLink.getFullUrl(), trackableLink);
-        }
-        return map;
-    }
-
-    @Override
-    public List<TrackableLink> getTrackableLinks(int mailingId, int companyId, boolean includeDeleted) {
-    	if (companyId <= 0 || mailingId <= 0) {
+    public List<ComTrackableLink> getTrackableLinks(int companyID, int mailingID) {
+    	if (companyID <= 0 || mailingID <= 0) {
 			return Collections.emptyList();
 		} else {
-	        //keep SELECT * because "usage" is a reserved word on mariaDB
-			List<TrackableLink> links = select(logger, "SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?" + (includeDeleted ? "" : " AND deleted <= 0"), new TrackableLink_RowMapper(), companyId, mailingId);
-			
-			String sql = "SELECT url_id, param_type, param_key, param_value FROM rdir_url_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = ?) ORDER BY url_id, param_type, param_key, param_value";
-			List<Map<String, Object>> allLinkParamsResult = select(logger, sql, mailingId);
-			Map<Integer, List<LinkProperty>> allLinkParams = new HashMap<>();
-			for (Map<String, Object> linkParamWithUrlID : allLinkParamsResult) {
-				int linkID = ((Number) linkParamWithUrlID.get("url_id")).intValue();
-				
-				PropertyType type;
-				try {
-					type = PropertyType.parseString((String) linkParamWithUrlID.get("param_type"));
-				} catch (Exception e) {
-					throw new RuntimeException("Error when reading link properties param_type", e);
-				}
-				String paramKey = (String) linkParamWithUrlID.get("param_key");
-				String paramValue = (String) linkParamWithUrlID.get("param_value");
-				LinkProperty linkProperty = new LinkProperty(type, paramKey, paramValue);
-				
-				List<LinkProperty> linkProperties = allLinkParams.get(linkID);
-				if (linkProperties == null) {
-					linkProperties = new ArrayList<>();
-				}
-				linkProperties.add(linkProperty);
-				
-				allLinkParams.put(linkID, linkProperties);
-			}
-			
-			for (TrackableLink link : links) {
-				List<LinkProperty> linkProperties = allLinkParams.get(link.getId());
-				if (linkProperties != null) {
-					link.setProperties(linkProperties);
-				}
-			}
-			
-			return links;
+			//keep SELECT * because "usage" is a reserved word on mariaDB
+	    	String sql = "SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? AND deleted <= 0";
+
+			return getTrackableLinks(sql, companyID, mailingID);
 		}
     }
 
-    /**
-     * Legacy for EMM-7037: To be removed in near future
-     */
-    private List<TrackableLink> getTrackableLinks(String sql, Object ... params) {
-		List<TrackableLink> links = select(logger, sql, new TrackableLink_RowMapper(), params);
+    @Override
+    public List<ComTrackableLink> getTrackableLinks(int companyID, List<Integer> urlIds) {
+        if (CollectionUtils.isEmpty(urlIds)) {
+			return new ArrayList<>();
+		}
+        
+        //keep SELECT * because "usage" is a reserved word on mariaDB
+		String sql = "SELECT * FROM rdir_url_tbl WHERE " + makeBulkInClauseForInteger("url_id", urlIds) + " AND company_id = ? AND deleted <= 0";
+		return getTrackableLinks(sql, companyID);
+    }
+
+    private List<ComTrackableLink> getTrackableLinks(String sql, Object ... params) {
+		List<ComTrackableLink> links = select(logger, sql, new ComTrackableLink_RowMapper(), params);
 		links.forEach(link -> link.setProperties(getLinkProperties(link)));
 
 		return links;
@@ -180,14 +140,14 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
     @Override
 	@DaoUpdateReturnValueCheck
-	public int saveTrackableLink(TrackableLink comLink) {
+	public int saveTrackableLink(ComTrackableLink comLink) {
 		if (comLink == null || comLink.getCompanyID() <= 0) {
 			return 0;
 		}
 		
 		if (comLink.getFullUrl() != null && comLink.getFullUrl().contains("##")) {
 			// Links with Hash tags must be measurable
-			comLink.setUsage(LinkTrackingMode.TEXT_AND_HTML.getMode());
+			comLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
 		}
 		
 		if (comLink.getId() != 0) {
@@ -282,8 +242,8 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 	
 	@Override
-	public void batchSaveTrackableLinks(int companyID, int mailingId, Map<String, TrackableLink> trackableLinkMap, boolean removeUnusedLinks) {
-		List<TrackableLink> trackableLinks = retrieveNonNullLinks(trackableLinkMap.values());
+	public void batchSaveTrackableLinks(int companyID, int mailingId, Map<String, ComTrackableLink> trackableLinkMap, boolean removeUnusedLinks) {
+		List<ComTrackableLink> trackableLinks = retrieveNonNullLinks(trackableLinkMap.values());
 
 		Set<Integer> trackableLinkIdsInUse = batchSaveTrackableLinks(companyID, mailingId, trackableLinks);
 
@@ -373,12 +333,21 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void deleteAdminAndTestClicks(int mailingID, int companyID) {
-		String sqlClicks = "DELETE FROM rdirlog_" + companyID + "_tbl"
-			+ " WHERE mailing_id = ?"
-				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
-					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
-		update(logger, sqlClicks, mailingID, mailingID);
+    public void deleteAdminAndTestClicks(int mailingId, int companyId) {
+        String rdirlogTable = "rdirlog_" + companyId + "_tbl";
+
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("DELETE FROM ");
+        queryBuilder.append(rdirlogTable);
+        queryBuilder.append(" WHERE ");
+        queryBuilder.append(rdirlogTable);
+        queryBuilder.append(".mailing_id = ? AND EXISTS (SELECT 1 FROM customer_");
+        queryBuilder.append(companyId);
+        queryBuilder.append("_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND ");
+        queryBuilder.append(rdirlogTable);
+        queryBuilder.append(".customer_id = bind.customer_id AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))");
+
+        update(logger, queryBuilder.toString(), mailingId, mailingId);
     }
 
 	@Override
@@ -406,7 +375,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 
 	@Override
-	public List<LinkProperty> getLinkProperties(TrackableLink link) {
+	public List<LinkProperty> getLinkProperties(ComTrackableLink link) {
 		String sql = "SELECT param_type, param_key, param_value FROM rdir_url_param_tbl WHERE url_id = ? ORDER BY param_type, param_key, param_value";
 		return select(logger, sql, new TrackableLinkProperty_RowMapper(), link.getId());
 	}
@@ -419,10 +388,10 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		return affectedRows > 0;
 	}
 
-	private class TrackableLink_RowMapper implements RowMapper<TrackableLink> {
+	private class ComTrackableLink_RowMapper implements RowMapper<ComTrackableLink> {
 		@Override
-		public TrackableLink mapRow(ResultSet resultSet, int row) throws SQLException {
-			final TrackableLink trackableLink = new TrackableLinkImpl();
+		public ComTrackableLink mapRow(ResultSet resultSet, int row) throws SQLException {
+			final ComTrackableLink trackableLink = new ComTrackableLinkImpl();
 			trackableLink.setId(resultSet.getInt("url_id"));
 			trackableLink.setCompanyID(resultSet.getInt("company_id"));
 			trackableLink.setMailingID(resultSet.getInt("mailing_id"));
@@ -567,23 +536,23 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 	
 	@Override
-	public final Optional<TrackableLink> findLinkByFullUrl(final String fullUrl, final int mailingID, final int companyID) {
+	public final Optional<ComTrackableLink> findLinkByFullUrl(final String fullUrl, final int mailingID, final int companyID) {
 		final String sql = "SELECT * FROM rdir_url_tbl WHERE company_id=? AND mailing_id=? AND full_url=?";
 
-		final List<TrackableLink> result = select(logger, sql, new TrackableLink_RowMapper(), companyID, mailingID, fullUrl);
+		final List<ComTrackableLink> result = select(logger, sql, new ComTrackableLink_RowMapper(), companyID, mailingID, fullUrl);
 		
 		return result.isEmpty()
 				? Optional.empty()
 				: Optional.of(result.get(0));
 	}
 
-	private List<TrackableLink> retrieveNonNullLinks(Collection<TrackableLink> inputLinks) {
+	private List<ComTrackableLink> retrieveNonNullLinks(Collection<ComTrackableLink> inputLinks) {
 		return inputLinks.stream()
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 	}
 
-	private Set<Integer> batchSaveTrackableLinks(int companyId, int mailingId, List<TrackableLink> trackableLinks) {
+	private Set<Integer> batchSaveTrackableLinks(int companyId, int mailingId, List<ComTrackableLink> trackableLinks) {
 		Set<Integer> trackableLinkIdsInUse = new HashSet<>();
 
 		if (trackableLinks.isEmpty()) {
@@ -593,8 +562,8 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		List<Integer> existingLinkIds = select(logger,
 				"SELECT DISTINCT url_id FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?", IntegerRowMapper.INSTANCE, companyId, mailingId);
 		
-		List<TrackableLink> update = new ArrayList<>();
-		List<TrackableLink> create = new ArrayList<>();
+		List<ComTrackableLink> update = new ArrayList<>();
+		List<ComTrackableLink> create = new ArrayList<>();
 		
 		trackableLinks
 				.forEach(comLink -> {
@@ -610,7 +579,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		return trackableLinkIdsInUse;
 	}
 
-	private void distributeTrackableLink(TrackableLink link, List<TrackableLink> listForUpdate, List<TrackableLink> listForCreate, List<Integer> existingLinkIds) {
+	private void distributeTrackableLink(ComTrackableLink link, List<ComTrackableLink> listForUpdate, List<ComTrackableLink> listForCreate, List<Integer> existingLinkIds) {
 		if (link.getId() > 0 && existingLinkIds.contains(link.getId())) {
 			listForUpdate.add(link);
 		} else {
@@ -619,7 +588,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		}
 	}
 
-	private void updateTrackableLinks(int companyId, int mailingId, List<TrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
+	private void updateTrackableLinks(int companyId, int mailingId, List<ComTrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
 		if (trackableLinks.isEmpty()) {
 			return;
 		}
@@ -630,7 +599,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 				"admin_link = ?, extend_url = ?, static_value= ?, measured_separately = ?, create_substitute_link = ? WHERE company_id = ? AND url_id = ? AND mailing_id = ?";
 
 		List<Object[]> paramsList = new ArrayList<>();
-		for (TrackableLink comLink : trackableLinks) {
+		for (ComTrackableLink comLink : trackableLinks) {
 			validateLinkShortname(comLink.getShortname());
 
 			paramsList.add(new Object[] {
@@ -661,7 +630,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		});
 	}
 
-	private void insertTrackableLinks(int companyId, int mailingId, final List<TrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
+	private void insertTrackableLinks(int companyId, int mailingId, final List<ComTrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
 		if (trackableLinks.isEmpty()) {
 			return;
 		}
@@ -669,27 +638,27 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		// Try to reactivate an existing link that was signed as deleted
 		Map<String, Integer> reactivatedLinks = reactivateLinks(companyId, mailingId, trackableLinks);
 
-		List<TrackableLink> linksForInsertion = new ArrayList<>();
+		List<ComTrackableLink> linksForInsertion = new ArrayList<>();
 
-		for (TrackableLink link : trackableLinks) {
+		for (ComTrackableLink link : trackableLinks) {
 			tryReactivateLink(reactivatedLinks, linksForInsertion, link);
 
 			if (link.getFullUrl() != null && link.getFullUrl().contains("##")) {
 				// Links with Hash tags must be measurable
-				link.setUsage(LinkTrackingMode.TEXT_AND_HTML.getMode());
+				link.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
 			}
 		}
 
 		if (isOracleDB()) {
 			String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link, deleted, mailing_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)";
 
-			for (TrackableLink link: linksForInsertion) {
+			for (ComTrackableLink link: linksForInsertion) {
 				int linkId = selectInt(logger, "SELECT rdir_url_tbl_seq.NEXTVAL FROM DUAL");
 				link.setId(linkId);
 			}
 
 			List<Object[]> paramsList = new ArrayList<>();
-			for (TrackableLink link : linksForInsertion) {
+			for (ComTrackableLink link : linksForInsertion) {
 				validateLinkShortname(link.getShortname());
 
 				paramsList.add(new Object[] {
@@ -715,7 +684,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		} else {
 			String insertStatement = "INSERT INTO rdir_url_tbl (company_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link, deleted, mailing_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)";
 
-			for (TrackableLink link: linksForInsertion) {
+			for (ComTrackableLink link: linksForInsertion) {
 				validateLinkShortname(link.getShortname());
 
 				Object[] paramsWithNext = new Object[] {
@@ -746,7 +715,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		});
 	}
 
-	private void tryReactivateLink(Map<String, Integer> reactivatedLinks, List<TrackableLink> linksForInsertion, TrackableLink link) {
+	private void tryReactivateLink(Map<String, Integer> reactivatedLinks, List<ComTrackableLink> linksForInsertion, ComTrackableLink link) {
 		int reactivatedId = reactivatedLinks.getOrDefault(link.getFullUrl(), 0);
 		if (reactivatedId == 0) {
 			linksForInsertion.add(link);
@@ -761,7 +730,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		}
 	}
 
-	private Map<String, Integer> reactivateLinks(int companyId, int mailingId, final List<TrackableLink> trackableLinks) {
+	private Map<String, Integer> reactivateLinks(int companyId, int mailingId, final List<ComTrackableLink> trackableLinks) {
 		String sql = "SELECT MAX(url_id) AS max_url_id, full_url FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? GROUP BY full_url";
 		
 		Map<String, Integer> existingLinksMap = new HashMap<>();
@@ -769,7 +738,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		
 		Map<String, Integer> linksForReActivation = new HashMap<>();
 		
-		for (TrackableLink link : trackableLinks) {
+		for (ComTrackableLink link : trackableLinks) {
 			int id = existingLinksMap.getOrDefault(link.getFullUrl(), 0);
 			if (id > 0) {
 				linksForReActivation.put(link.getFullUrl(), id);
@@ -836,7 +805,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
     }
 
 	@Override
-	public final void reactivateLink(final TrackableLink link) {
+	public final void reactivateLink(final ComTrackableLink link) {
 		final String sql = "UPDATE rdir_url_tbl SET deleted = 0 WHERE url_id = ? AND company_id = ?";
 		
 		this.update(logger, sql, link.getId(), link.getCompanyID());

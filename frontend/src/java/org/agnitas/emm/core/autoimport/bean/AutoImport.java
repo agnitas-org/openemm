@@ -69,6 +69,7 @@ public class AutoImport extends AutoImportLight {
 	}
 	
 	private AutoImportType type = AutoImportType.Recipient;
+	private int adminId;
 	private int importProfileId;
 	private int importCsvDescriptionID;
 	private int importReferenceTableID;
@@ -87,8 +88,8 @@ public class AutoImport extends AutoImportLight {
 	private Date laststart;
 	private boolean running;
 	private String lastresult;
-	private int recipientsReportId;
-	private Boolean isSuccessful;
+	private int lastresultID;
+	private boolean error;
 	private String intervalpattern;
 	private String intervalAsJson;
 	private Date nextStart;
@@ -100,7 +101,7 @@ public class AutoImport extends AutoImportLight {
 	private String timeZone;
 	private int mailingID;
 	private int contentSourceID;
-	private ContentSourceType contentSourceType;
+	private ContentSourceType contentSourceType = ContentSourceType.HTML;
 
 	private List<Integer> mailinglists = new ArrayList<>();
 	
@@ -116,6 +117,14 @@ public class AutoImport extends AutoImportLight {
 	private Locale reportLocale = new Locale("en", "US");
 	private String reportTimezone = "Europe/Berlin";
 	
+	public int getAdminId() {
+		return adminId;
+	}
+
+	public void setAdminId(int adminId) {
+		this.adminId = adminId;
+	}
+
 	public int getImportProfileId() {
 		return importProfileId;
 	}
@@ -138,7 +147,7 @@ public class AutoImport extends AutoImportLight {
 
 	public String getFileServerWithoutCredentials() {
 		if (StringUtils.isNotBlank(fileServer) && fileServer.contains("@")) {
-			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.lastIndexOf("@") + 1));
+			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.indexOf("@") + 1));
 		} else {
 			return StringEscapeUtils.escapeHtml4(fileServer);
 		}
@@ -284,20 +293,20 @@ public class AutoImport extends AutoImportLight {
 		this.lastresult = lastresult;
 	}
 
-	public int getRecipientsReportId() {
-		return recipientsReportId;
+	public int getLastresultID() {
+		return lastresultID;
 	}
 
-	public void setRecipientsReportId(int recipientsReportId) {
-		this.recipientsReportId = recipientsReportId;
+	public void setLastresultID(int lastresultID) {
+		this.lastresultID = lastresultID;
 	}
 
-	public Boolean getSuccessful() {
-		return isSuccessful;
+	public void setIsError(boolean error) {
+		this.error = error;
 	}
 
-	public void setSuccessful(Boolean successful) {
-		isSuccessful = successful;
+	public boolean isError() {
+		return error;
 	}
 
 	public String getIntervalpattern() {

@@ -203,11 +203,11 @@ public class Column {
 		return qname;
 	}
 
-	public void isnull(boolean nIsnull) {
+	public void setIsnull(boolean nIsnull) {
 		isnull = nIsnull;
 	}
 
-	public boolean isnull() {
+	public boolean getIsnull() {
 		return isOverwritten ? overwritten == null : isnull;
 	}
 
@@ -258,7 +258,7 @@ public class Column {
 	 */
 	public void clr() {
 		value = null;
-		isnull (true);
+		isnull = true;
 		switch (type) {
 			default:
 				break;
@@ -383,12 +383,12 @@ public class Column {
 				break;
 		}
 		try {
-			isnull (rset.wasNull());
-			if (isnull () && (value != null)) {
+			isnull = rset.wasNull();
+			if (isnull && (value != null)) {
 				value = null;
 			}
 		} catch (SQLException e) {
-			isnull (false);
+			isnull = false;
 		}
 	}
 
@@ -404,11 +404,13 @@ public class Column {
 	public String get(Expression expression) {
 		String str;
 
-		if (isnull ()) {
-			return "";
-		} else if (isOverwritten) {
+		if (isOverwritten) {
 			return overwritten == null ? "" : overwritten;
 		}
+		if (isnull) {
+			return "";
+		}
+
 		switch (type) {
 			case Types.DECIMAL:
 			case Types.NUMERIC:
@@ -456,9 +458,7 @@ public class Column {
 	public String get(Format format, Expression expression) {
 		String rc = null;
 
-		if (isnull ()) {
-			rc = "";
-		} else if (isOverwritten) {
+		if (isOverwritten) {
 			rc = format.format(overwritten == null ? "" : overwritten);
 		} else {
 			switch (type) {
@@ -518,7 +518,7 @@ public class Column {
 
 	private double calc(Expression expression, double valueParameter) {
 		try {
-			return expression == null || isnull () ? valueParameter : expression.setVariable("value", valueParameter).setVariable(name, valueParameter).setVariable(qname, valueParameter).evaluate();
+			return expression == null || isnull ? valueParameter : expression.setVariable("value", valueParameter).setVariable(name, valueParameter).setVariable(qname, valueParameter).evaluate();
 		} catch (Exception e) {
 			return valueParameter;
 		}
@@ -529,7 +529,7 @@ public class Column {
 	}
 
 	private String calc(Expression expression, String valueParameter) {
-		if ((expression != null) && (valueParameter != null) && (!isnull ())) {
+		if ((expression != null) && (valueParameter != null) && (!isnull)) {
 			String tempvalue = valueParameter.trim();
 
 			try {
@@ -546,7 +546,7 @@ public class Column {
 	}
 
 	private Date calc(Expression expression, Date valueParameter) {
-		if ((expression != null) && (valueParameter != null) && (!isnull ())) {
+		if ((expression != null) && (valueParameter != null) && (!isnull)) {
 			Instant i = valueParameter.toInstant();
 			double day = 24 * 60 * 60;
 			double epoch = i.getEpochSecond() / day;

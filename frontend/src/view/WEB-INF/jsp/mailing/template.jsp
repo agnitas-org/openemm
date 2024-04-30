@@ -1,4 +1,4 @@
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isMailingGrid" type="java.lang.Boolean"--%>
@@ -11,7 +11,7 @@
     <c:when test="${isMailingGrid}">
         <div class="tile" data-sizing="container">
             <div class="tile-header" data-sizing="top">
-                <tiles:insertAttribute name="header"/>
+                <tiles:insert attribute="header"/>
             </div>
 
             <div id="gt-wrapper" class="tile-content"
@@ -19,7 +19,7 @@
                  data-sizing="scroll" data-scroll-retain=""
                  </c:if>
             >
-                <tiles:insertAttribute name="content"/>
+                <tiles:insert attribute="content"/>
             </div>
 
             <c:if test="${not empty footerItems}">
@@ -35,6 +35,6 @@
     </c:when>
 
     <c:otherwise>
-        <tiles:insertAttribute name="content"/>
+        <tiles:insert attribute="content"/>
     </c:otherwise>
 </c:choose>

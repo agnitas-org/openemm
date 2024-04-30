@@ -18,16 +18,34 @@ import org.agnitas.ecs.backend.beans.ClickStatColor;
  */
 public class ClickStatColorImpl implements ClickStatColor {
 
+	private int id;
+
+	private int companyId;
+
 	private String color;
 
 	private double rangeStart;
 
 	private double rangeEnd;
 
-	public ClickStatColorImpl(double rangeStart, double rangeEnd, String color) {
-		this.color = color;
-		this.rangeStart = rangeStart;
-		this.rangeEnd = rangeEnd;
+	@Override
+	public int getId() {
+		return id;
+	}
+
+	@Override
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	@Override
+	public int getCompanyId() {
+		return companyId;
+	}
+
+	@Override
+	public void setCompanyId(int companyId) {
+		this.companyId = companyId;
 	}
 
 	@Override
@@ -36,8 +54,18 @@ public class ClickStatColorImpl implements ClickStatColor {
 	}
 
 	@Override
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	@Override
 	public double getRangeStart() {
 		return rangeStart;
+	}
+
+	@Override
+	public void setRangeStart(double rangeStart) {
+		this.rangeStart = rangeStart;
 	}
 
 	@Override
@@ -45,4 +73,8 @@ public class ClickStatColorImpl implements ClickStatColor {
 		return rangeEnd;
 	}
 
+	@Override
+	public void setRangeEnd(double rangeEnd) {
+		this.rangeEnd = rangeEnd;
+	}
 }

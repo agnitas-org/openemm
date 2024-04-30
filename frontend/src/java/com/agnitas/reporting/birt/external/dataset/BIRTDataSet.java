@@ -694,37 +694,49 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		
         		if (numberSentMailingsByMailTrack == 0 && !useTargetGroup) {
         			// Fallback for newly activated automation package with newly created and therefore empty mailtrack table
-					return getNumberOfSentMailingsFromMailingAccount(mailingID, recipientsType, startDate, endDate);
+        			StringBuilder queryBuilderMailingAccount = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
+            		List<Object> parametersMailingAccount = new ArrayList<>();
+            		parametersMailingAccount.add(mailingID);
+
+					if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
+						queryBuilderMailingAccount.append(" AND status_field IN ('A', 'T')");
+					} else {
+						queryBuilderMailingAccount.append(" AND status_field NOT IN ('A', 'T', 'V')");
+					}
+
+                	if (startDate != null && endDate != null) {
+                		queryBuilderMailingAccount.append(" AND (? <= timestamp AND timestamp < ?)");
+                		parametersMailingAccount.add(startDate);
+                		parametersMailingAccount.add(endDate);
+            		}
+              
+            		return selectIntWithDefaultValue(logger, queryBuilderMailingAccount.toString(), 0, parametersMailingAccount.toArray(new Object[0]));
         		} else {
         			return numberSentMailingsByMailTrack;
         		}
         	} else if (!useTargetGroup) {
-        		// mailing_account_tbl has no customer ids and therefore cannot be used for target group specific numbers
-        		return getNumberOfSentMailingsFromMailingAccount(mailingID, recipientsType, startDate, endDate);
+        		// mailing_account_tbl has no customerids and therefor cannot be used for targetgroup specific numbers
+                StringBuilder queryBuilder = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
+        		List<Object> parameters = new ArrayList<>();
+        		parameters.add(mailingID);
+
+				if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
+					queryBuilder.append(" AND status_field IN ('A', 'T')");
+				} else {
+					queryBuilder.append(" AND status_field NOT IN ('A', 'T', 'V')");
+				}
+
+            	if (startDate != null && endDate != null) {
+        			queryBuilder.append(" AND (? <= timestamp AND timestamp < ?)");
+    				parameters.add(startDate);
+    				parameters.add(endDate);
+        		}
+          
+        		return selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         	} else {
         		return -1;
         	}
         }
-	}
-
-	private int getNumberOfSentMailingsFromMailingAccount(int mailingID, String recipientsType, Date startDate, Date endDate) {
-		StringBuilder queryBuilder = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
-		List<Object> parameters = new ArrayList<>();
-		parameters.add(mailingID);
-
-		if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-			queryBuilder.append(" AND status_field IN ('A', 'T')");
-		} else {
-			queryBuilder.append(" AND status_field NOT IN ('A', 'T', 'V')");
-		}
-
-		if (startDate != null && endDate != null) {
-			queryBuilder.append(" AND (? <= timestamp AND timestamp < ?)");
-			parameters.add(startDate);
-			parameters.add(endDate);
-		}
-
-		return selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
 	}
 	
 	private Date parseStatisticDate(String dateString) throws ParseException {

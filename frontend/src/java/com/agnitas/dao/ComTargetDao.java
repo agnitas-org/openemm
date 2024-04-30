@@ -15,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
@@ -223,6 +223,8 @@ public interface ComTargetDao {
 	Map<Integer, TargetLight> getAllowedTargetLights(int companyID);
 
     Set<Integer> getInvalidTargets(int companyId, Set<Integer> targets);
+
+    boolean isOracle();
 
 	/**
 	 * Lists all (non-deleted) of a company with ID, name and EQL.

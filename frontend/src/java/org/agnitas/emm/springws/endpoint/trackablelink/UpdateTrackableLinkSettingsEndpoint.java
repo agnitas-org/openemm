@@ -30,16 +30,16 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.TrackableLinkModel;
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
 @Endpoint
 public class UpdateTrackableLinkSettingsEndpoint extends BaseEndpoint {
 
-    private final TrackableLinkService trackableLinkService;
+    private final ComTrackableLinkService trackableLinkService;
     private final MailingEditableCheck mailingEditableCheck;
     private final SecurityContextAccess securityContextAccess;
 
-    public UpdateTrackableLinkSettingsEndpoint(TrackableLinkService trackableLinkService, final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
+    public UpdateTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService, final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
         this.trackableLinkService = Objects.requireNonNull(trackableLinkService, "trackableLinkService");
         this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");

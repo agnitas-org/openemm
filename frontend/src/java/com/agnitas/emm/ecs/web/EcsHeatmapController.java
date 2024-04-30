@@ -11,7 +11,6 @@
 package com.agnitas.emm.ecs.web;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -151,7 +150,7 @@ public class EcsHeatmapController implements XssCheckAware {
     }
 
     @PostMapping("/mailing/{mailingId:\\d+}/heatmap/export.action")
-    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) throws IOException {
+    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) {
         String mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
         String previewHeatmapUrl = getHeatmapPreviewUrl(mailingId, form);
         File file = ecsService.generatePDF(admin, previewHeatmapUrl, mailingName);

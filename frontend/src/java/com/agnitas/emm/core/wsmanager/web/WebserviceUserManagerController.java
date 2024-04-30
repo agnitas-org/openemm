@@ -10,25 +10,9 @@
 
 package com.agnitas.emm.core.wsmanager.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserFormSearchParams;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroups;
-import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
-import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
-import com.agnitas.emm.wsmanager.service.WebservicePermissionGroupService;
-import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
-import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
-import com.agnitas.emm.wsmanager.service.WebserviceUserService;
-import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
+import java.util.Objects;
+
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
@@ -38,6 +22,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,22 +36,33 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Objects;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroups;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
+import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
+import com.agnitas.emm.wsmanager.service.WebservicePermissionGroupService;
+import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
+import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
+import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping(value = "/administration/wsmanager")
 @PermissionMapping(value = "webservice.manager.user")
-@SessionAttributes(types = WebserviceUserFormSearchParams.class)
 public class WebserviceUserManagerController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(WebserviceUserManagerController.class);
-
+    
     private static final String PASSWORD_STR = "password";
 
     private final ConfigService configService;
@@ -77,7 +73,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
     private final UserActivityLogService userActivityLogService;
     private final WebservicePermissionService webservicePermissionService;
     private final WebservicePermissionGroupService webservicePermissionGroupService;
-
+    
     private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
 
     public WebserviceUserManagerController(final ConfigService configService,
@@ -98,14 +94,9 @@ public class WebserviceUserManagerController implements XssCheckAware {
         this.webservicePermissionGroupService = Objects.requireNonNull(webservicePermissionGroupService, "Webservice permission group service is null");
     }
 
-    @ModelAttribute
-    public WebserviceUserFormSearchParams getSearchParams() {
-        return new WebserviceUserFormSearchParams();
-    }
-
     @RequestMapping(value = "/users.action")
     public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.WS_MANAGER_OVERVIEW, userListForm);
+        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WS_MANAGER_OVERVIEW, userListForm);
 
         model.addAttribute("webserviceUserList",
                 webserviceUserService.getPaginatedWSUserList(admin.getCompanyID(),
@@ -123,62 +114,31 @@ public class WebserviceUserManagerController implements XssCheckAware {
         return "webserviceuser_list";
     }
 
-    @RequestMapping(value = "/usersRedesigned.action")
-    @PermissionMapping("list")
-    public String listRedesigned(Admin admin, @ModelAttribute("filter") WebserviceUserOverviewFilter filter, @ModelAttribute WebserviceUserFormSearchParams searchParams, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
-        FormUtils.syncSearchParams(searchParams, filter, true);
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.WS_MANAGER_OVERVIEW, filter);
-
-        model.addAttribute("webserviceUserList", webserviceUserService.getPaginatedWSUserList(filter, admin));
-        model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID(), true));
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-
-        writeUserActivityLog(admin, "webservice manager", "active tab - manage webservice user");
-
-        return "webserviceuser_list";
-    }
-
-    @GetMapping("/search.action")
-    public String search(@ModelAttribute WebserviceUserOverviewFilter filter, @ModelAttribute WebserviceUserFormSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
-        model.addFlashAttribute("filter", filter);
-
-        return "redirect:/administration/wsmanager/usersRedesigned.action";
-    }
-
     @PostMapping(value = "/user/new.action")
     public String create(Admin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups, final Model model) {
         processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
-                return isRedesign(admin)
-                        ? "redirect:/administration/wsmanager/usersRedesigned.action"
-                        : "redirect:/administration/wsmanager/users.action";
+                return "redirect:/administration/wsmanager/users.action";
             }
         }
-
+        
         model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-
+    
         popups.alert("error.webserviceuser.cannot_create");
-        return isRedesign(admin)
-                ? "redirect:/administration/wsmanager/usersRedesigned.action"
-                : "redirect:/administration/wsmanager/users.action";
+        return "forward:/administration/wsmanager/users.action";
     }
 
     @PostMapping(value = "/user/update.action")
     public String update(Admin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups) {
         if (editingValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, false, userForm, popups)) {
-                return "redirect:/administration/wsmanager/users" + (isRedesign(admin) ? "Redesigned" : "") + ".action";
+                return "redirect:/administration/wsmanager/users.action";
             }
         }
-
+        
         popups.alert("error.webserviceuser.cannot_update");
         return MESSAGES_VIEW;
-    }
-
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.USERS_UI_MIGRATION);
     }
 
     private void processCompanyId(final Admin admin, final WebserviceUserForm userForm) {
@@ -186,7 +146,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
             userForm.setCompanyId(admin.getCompanyID());
         }
     }
-
+    
     private boolean validateMaxNumberWSUsers(int companyID, Popups popups) {
         int currentNumberOfWebserviceUsers = webserviceUserService.getNumberOfWebserviceUsers(companyID);
         int maxNumberWSUsers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfWebserviceUsers, companyID);
@@ -194,59 +154,59 @@ public class WebserviceUserManagerController implements XssCheckAware {
         	popups.alert("error.numberOfWebserviceUsersExceeded", currentNumberOfWebserviceUsers);
         	return false;
         }
-
+        
         return true;
     }
-
+    
     private boolean creationValidation(WebserviceUserForm userForm, Popups popups) {
         boolean valid = true;
         if (StringUtils.isBlank(userForm.getUserName())) {
             popups.field("userName", "error.webserviceuser.no_username");
             valid = false;
         }
-
-        String email = userForm.getEmail();
-        if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
-            popups.fieldError("email", "error.email.invalid");
-            valid = false;
-        }
-
-        if (StringUtils.isBlank(userForm.getPassword())) {
-            popups.field(PASSWORD_STR, "error.password.missing");
-            valid = false;
-        }
-
-        if (!passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, PASSWORD_STR))) {
-        	valid = false;
-        }
-
-        if (userForm.getCompanyId() <= 0) {
-            popups.field("company", "error.webserviceuser.no_company");
-            valid = false;
-        }
-
-        if (!validateMaxNumberWSUsers(userForm.getCompanyId(), popups)) {
-            valid = false;
-        }
-
-        return valid;
-    }
-
-    private boolean editingValidation(WebserviceUserForm userForm, Popups popups) {
-        boolean valid = true;
-
+        
         String email = userForm.getEmail();
         if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
             popups.field("email", "error.email.invalid");
             valid = false;
         }
-
+        
+        if (StringUtils.isBlank(userForm.getPassword())) {
+            popups.field(PASSWORD_STR, "error.password.missing");
+            valid = false;
+        }
+        
+        if (!passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, PASSWORD_STR))) {
+        	valid = false;
+        }
+        
+        if (userForm.getCompanyId() <= 0) {
+            popups.field("company", "error.webserviceuser.no_company");
+            valid = false;
+        }
+        
+        if (!validateMaxNumberWSUsers(userForm.getCompanyId(), popups)) {
+            valid = false;
+        }
+        
+        return valid;
+    }
+    
+    private boolean editingValidation(WebserviceUserForm userForm, Popups popups) {
+        boolean valid = true;
+        
+        String email = userForm.getEmail();
+        if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
+            popups.field("email", "error.email.invalid");
+            valid = false;
+        }
+        
         if (!validateMaxNumberWSUsers(userForm.getCompanyId(), popups)) {
             valid = false;
         }
         return valid;
     }
-
+    
     private boolean saveWebserviceUser(Admin admin, boolean isNew, WebserviceUserForm userForm, Popups popups) {
         try {
             webserviceUserService.saveWebServiceUser(admin, conversionService.convert(userForm, WebserviceUserDto.class), isNew);
@@ -254,7 +214,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
             popups.success(CHANGES_SAVED_MSG);
 
             writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "webservice user", getWsUserDescription(userForm));
-
+            
         	return true;
         } catch (WebserviceUserAlreadyExistsException e) {
             logger.error("Cannot create webservice user. {}", e.getMessage());
@@ -266,7 +226,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
             logger.error("Cannot create webservice user. {}", e.getMessage());
             popups.alert("error.default.message");
         }
-
+        
         return false;
     }
 
@@ -275,7 +235,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         try {
         	final WebserviceUserDto webserviceUser = webserviceUserService.getWebserviceUserByUserName(username);
         	final WebserviceUserForm userForm = conversionService.convert(webserviceUser, WebserviceUserForm.class);
-
+        	
             model.addAttribute("webserviceUserForm", userForm);
             model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
@@ -285,7 +245,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
                 // show permissions only if WS permissions are enabled for company of webservice user!
                 final WebservicePermissions permissions = webservicePermissionService.listAllPermissions();
             	final WebservicePermissionGroups permissionGroups = webservicePermissionGroupService.listAllPermissionGroups();
-
+           	
 	            model.addAttribute("PERMISSIONS", permissions);
 	            model.addAttribute("PERMISSION_GROUPS", permissionGroups);
             }

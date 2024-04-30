@@ -16,7 +16,6 @@ import com.agnitas.emm.core.useractivitylog.dao.impl.UserActivityLogDaoBaseImpl;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.UserActivityLogActions;
 import org.apache.commons.lang3.StringUtils;
@@ -77,13 +76,8 @@ public class ComUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
     @Override
     public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description) throws Exception {
 		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT logtime, username, supervisor_name, action, description FROM userlog_tbl");
-
-		if (from != null) {
-			sqlPreparedStatementManager.addWhereClause("logtime >= ?", from);
-		}
-		if (to != null) {
-			sqlPreparedStatementManager.addWhereClause("logtime < ?", DateUtilities.addDaysToDate(to, 1));
-		}
+		sqlPreparedStatementManager.addWhereClause("logtime >= ?", from);
+		sqlPreparedStatementManager.addWhereClause("logtime <= ?", to);
 
 		//  If set, any of the visible admins must match
 		if (visibleAdmins != null && !visibleAdmins.isEmpty()) {

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -71,9 +71,9 @@
                 </label>
             </div>
             <div class="col-md-12">
-                <mvc:select path="filterUserTypes" cssClass="form-control js-select"
+                <mvc:select path="filterUserType" cssClass="form-control js-select"
                             id="search_recipient_type${advancedSuffix}" size="1"
-                            data-form-change="0" multiple="false">
+                            data-form-change="0">
                     <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
                     <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
                     <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>

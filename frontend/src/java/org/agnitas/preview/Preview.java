@@ -88,10 +88,6 @@ public interface Preview {
 	 * The ID for the HTML part
 	 */
 	String ID_HTML = "__html__";
-	/**
-	 * The ID for the final pre header construct
-	 */
-	String ID_HTML_PREHEADER = "__preheader__";
 	
 	final String ID_SMS = "__sms__";
 	
@@ -154,11 +150,11 @@ public interface Preview {
 
 	Page makePreview(long mailingID, long customerID, boolean cachable, long sendDate);
 
-	Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile, boolean anon, boolean onAnonPreserveLinks);
+	Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile);
 
 	Page makePreview(long mailingID, long customerID, long targetID);
 
-	Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile, boolean anon, boolean onAnonPreserveLinks);
+	Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile);
 
 	String makePreview(long mailingID, long customerID, String text, boolean cachable);
 

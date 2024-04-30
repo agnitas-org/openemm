@@ -57,7 +57,7 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
 			    sortColumn = "timestamp";
             }
 
-			SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForDownload(
+			SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForEntriesRetrieving(
                 filterAdmins,
                 filterAdminUserName,
                 filterAction,

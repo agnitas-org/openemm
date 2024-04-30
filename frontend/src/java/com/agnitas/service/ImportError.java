@@ -32,8 +32,7 @@ public class ImportError extends RuntimeException {
 		csvContainsInvalidColumn("error.csvContainsInvalidColumn"),
 		cannotReadImportFile("error.cannotReadImportFile"),
 		emptyImportFile("error.emptyImportFile"),
-		missingMandatoryColumn("error.missingMandatoryColumn"),
-		cannotReadImportFileWithReason("error.import.file.reason");
+		missingMandatoryColumn("error.missingMandatoryColumn");
 		
 		/**
 		  * Instantiates a new error key.

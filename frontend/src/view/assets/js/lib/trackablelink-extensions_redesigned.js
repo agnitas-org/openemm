@@ -1,1 +1,0 @@
-// stub for redesign. new file created in initializers

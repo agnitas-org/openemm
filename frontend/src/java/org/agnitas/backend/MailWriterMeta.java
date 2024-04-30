@@ -19,23 +19,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.agnitas.backend.dao.MailkeyDAO;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 import org.agnitas.util.Systemconfig;
+import org.agnitas.util.XMLRPCClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -81,9 +79,7 @@ public class MailWriterMeta extends MailWriter {
 	 * if we should keep admin/test mails for debug purpose
 	 */
 	private boolean keepATmails;
-	private boolean keepPreviewMails;
 	private List<Reference> multi;
-	private List <MailkeyDAO.Mailkey> mailkeys;
 
 	/**
 	 * Constructor
@@ -111,11 +107,9 @@ public class MailWriterMeta extends MailWriter {
 		}
 		blockID = 1;
 		multi = null;
-		mailkeys = null;
 		setup();
 
 		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
-		keepPreviewMails = Str.atob (data.company.info ("keep-preview-files"), false);
 	}
 
 	/**
@@ -146,9 +140,7 @@ public class MailWriterMeta extends MailWriter {
 				String opts = previewOutputOptions(path);
 				String error = null;
 
-				if (! keepPreviewMails) {
-					data.markToRemove(pathname);
-				}
+				data.markToRemove(pathname);
 				data.markToRemove(path);
 				try {
 					List<String> options = new ArrayList<>();
@@ -194,10 +186,8 @@ public class MailWriterMeta extends MailWriter {
 				if ((new File(path)).delete()) {
 					data.unmarkToRemove(path);
 				}
-				if (! keepPreviewMails) {
-					if ((new File(pathname)).delete()) {
-						data.unmarkToRemove(pathname);
-					}
+				if ((new File(pathname)).delete()) {
+					data.unmarkToRemove(pathname);
 				}
 			}
 		} else if (fname != null) {
@@ -210,6 +200,16 @@ public class MailWriterMeta extends MailWriter {
 				}
 			} catch (FileNotFoundException e) {
 				throw new IOException("Unable to write final stamp file " + fname + ".final: " + e.toString(), e);
+			}
+		}
+		if (data.isDirect() && (fname != null)) {
+			try {
+				boolean ok;
+
+				ok = (Boolean) XMLRPCClient.invoke(Data.syscfg.get ("direct-path-server", "localhost"), Data.syscfg.get ("direct-path-port", 9400), 2000, "unpack", fname);
+				data.logging(Log.DEBUG, "trigger", "Trigger direct path " + (ok ? "succeeded" : "failed"));
+			} catch (Exception e) {
+				data.logging(Log.DEBUG, "trigger", "Trigger direct path not reachable");
 			}
 		}
 	}
@@ -339,26 +339,21 @@ public class MailWriterMeta extends MailWriter {
 
 				if (b.isEmailPlaintext() && (data.lineLength > 0)) {
 					c.add("linelength", data.lineLength);
-				} else if (b.isEmailHTML()) {
-					if (data.onepixlog != Data.OPL_NONE) {
-						String opl;
+				} else if (b.isEmailHTML() && (data.onepixlog != Data.OPL_NONE)) {
+					String opl;
 
-						switch (data.onepixlog) {
-							default:
-								opl = null;
-								break;
-							case Data.OPL_TOP:
-								opl = "top";
-								break;
-							case Data.OPL_BOTTOM:
-								opl = "bottom";
-								break;
-						}
-						c.add("onepixlog", opl);
+					switch (data.onepixlog) {
+						default:
+							opl = null;
+							break;
+						case Data.OPL_TOP:
+							opl = "top";
+							break;
+						case Data.OPL_BOTTOM:
+							opl = "bottom";
+							break;
 					}
-					if (data.requiresClearance && data.maildropStatus.isTestMailing ()) {
-						c.add ("clearance", "true");
-					}
+					c.add("onepixlog", opl);
 				}
 				writer.opennode(c);
 				if (b.comptype == 0) {
@@ -440,7 +435,7 @@ public class MailWriterMeta extends MailWriter {
 						writer.data ("--" + attachBoundary + "--\n\n");
 						writer.close ("fixdata");
 						writer.close ("postfix");
-					} else if (b.type == BlockData.HTML) {
+					} else {
 						writer.opennode("prefix");
 						writer.opennode("fixdata", "valid", "all");
 						if (n == 1) {
@@ -627,11 +622,8 @@ public class MailWriterMeta extends MailWriter {
 	 * @param tagNamesParameter the available tags
 	 */
 	@Override
-	public void writeMail(Custinfo cinfo,
-			      int mcount, int mailtype, long icustomer_id,
-			      String mediatypes, String userStatuses, Map<String,
-			      EMMTag> tagNamesParameter) throws Exception {
-		super.writeMail(cinfo, mcount, mailtype, icustomer_id, mediatypes, userStatuses, tagNamesParameter);
+	public void writeMail(Custinfo cinfo, int mcount, int mailtype, long icustomer_id, String mediatypes, Map<String, EMMTag> tagNamesParameter) throws Exception {
+		super.writeMail(cinfo, mcount, mailtype, icustomer_id, mediatypes, tagNamesParameter);
 		if ((mailCount % 100) == 0) {
 			data.logging(Log.VERBOSE, "writer/meta", "Currently at " + mailCount + " mails (in block " + blockCount + ": " + inBlockCount + ", records: " + inRecordCount + ") ");
 		}
@@ -648,7 +640,6 @@ public class MailWriterMeta extends MailWriter {
 		getMediaInformation(cinfo, c);
 		c.add("mailtype", mailtype);
 		c.add("mediatypes", mediatypes);
-		c.add("user_status", userStatuses);
 
 		if (icustomer_id > 0) {
 			//
@@ -866,13 +857,10 @@ public class MailWriterMeta extends MailWriter {
 
 	private void addGenerateMediaOptions(List<String> opts, String mta) {
 		opts.add("media=email");
-		if ((mta != null) && "spool".equals (mta)) {
-			opts.add("path=" + data.mailing.outputDirectoryForCompany ("mailer"));
-		} else {
-			if ((mta != null) && (! "postfix".equals (mta))) {
-				data.logging(Log.WARNING, "writer/meta", "Unsupported MTA \"" + mta + "\", will use default behaviour using sendmail like calling interface");
-			}
+		if ((mta != null) && mta.equals("postfix")) {
 			opts.add("inject=/usr/sbin/sendmail -NNEVER -f %(sender) -- %(recipient)");
+		} else {
+			opts.add("path=" + data.mailing.outputDirectoryForCompany("mail"));
 		}
 		for (Media m : data.media()) {
 			if ((m.type != Media.TYPE_EMAIL) && Bit.isset(data.availableMedias, m.type)) {
@@ -1123,9 +1111,6 @@ public class MailWriterMeta extends MailWriter {
 		if (token != null) {
 			c.add ("token", token);
 		}
-		if (data.company.allowUnnormalizedEmails ()) {
-			c.add ("allow_unnormalized_emails", "true");
-		}
 		if (data.company.infoAvailable ()) {
 			writer.opennode (c);
 			for (String name : data.company.infoKeys()) {
@@ -1142,35 +1127,6 @@ public class MailWriterMeta extends MailWriter {
 		Date sendDate = data.genericSendDate();
 
 		writer.openclose("send", "date", fmt.format(sendDate), "epoch", (sendDate.getTime () / 1000));
-
-		try {
-			if (mailkeys == null) {
-				mailkeys = (new MailkeyDAO (
-							    data.dbase, data.company.id (),
-							    Str.atob (data.company.info ("dkim-extended", data.mailing.id ()), false) && (data.dkimAvailable != null) && (data.dkimAvailable.size () > 0) ? data.dkimAvailable : null
-				)).mailkeys ();
-			}
-			if ((mailkeys != null) && (mailkeys.size () > 0)) {
-				writer.opennode ("mailkeys");
-				for (int state = 0; state < 2; ++state) {
-					boolean	local = state == 0;
-
-					for (MailkeyDAO.Mailkey mailkey : mailkeys) {
-						if (mailkey.local () == local) {
-							XMLWriter.Creator	cr = writer.create ("key", "id", mailkey.id (), "method", mailkey.method ());
-						
-							for (Entry <String, String> entry : mailkey.parameter ().entrySet ()) {
-								cr.add (entry.getKey (), entry.getValue ());
-							}
-							writer.single (cr, mailkey.key ());    
-						}
-					}
-				}
-				writer.close ("mailkeys");
-			}
-		} catch (SQLException e) {
-			data.logging (Log.ERROR, "writer/meta", "Failed to retrieve keys: " + e.toString ());
-		}
 	}
 
 	protected void mailingInfo() {
@@ -1183,9 +1139,6 @@ public class MailWriterMeta extends MailWriter {
 				writer.single("info", value, "name", name);
 			}
 			writer.close("mailing");
-		}
-		if (data.mailing.description () != null) {
-			writer.single ("mailing-description", data.mailing.description ());
 		}
 		writer.openclose("maildrop", "status_id", data.maildropStatus.id());
 		writer.openclose("status", "field", data.maildropStatus.statusField());
@@ -1209,9 +1162,6 @@ public class MailWriterMeta extends MailWriter {
 	private void generalURLs() {
 		writer.single("auto_url", data.autoURL);
 		writer.single("onepixel_url", data.onePixelURL);
-		if (data.honeyPotURL != null) {
-			writer.single("honeypot_url", data.honeyPotURL);
-		}
 		writer.single("anon_url", data.anonURL);
 	}
 
@@ -1330,9 +1280,9 @@ public class MailWriterMeta extends MailWriter {
 	}
 
 	private void urls() throws IOException {
-		if ((data.URLlist != null) && (data.URLlist.size () > 0)) {
-			writer.opennode("urls", "count", data.URLlist.size ());
-			for (int n = 0; n < data.URLlist.size (); ++n) {
+		if (data.urlcount > 0) {
+			writer.opennode("urls", "count", data.urlcount);
+			for (int n = 0; n < data.urlcount; ++n) {
 				URL url = data.URLlist.get(n);
 				XMLWriter.Creator cr = writer.create("url", "id", url.getId(), "destination", url.getUrl(), "usage", url.getUsage());
 
@@ -1390,7 +1340,7 @@ public class MailWriterMeta extends MailWriter {
 			for (Reference r : multi) {
 				int index = r.getIdIndex();
 
-				if ((index != -1) && (!rmap[index].isnull())) {
+				if ((index != -1) && (!rmap[index].getIsnull())) {
 					c.add(r.name(), rmap[index].get());
 				}
 			}

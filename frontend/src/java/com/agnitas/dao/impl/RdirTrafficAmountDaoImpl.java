@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTrafficAmountDao {
-
-	private static final Logger logger = LogManager.getLogger(RdirTrafficAmountDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(RdirTrafficAmountDaoImpl.class);
 
 	@Override
     public void save(int companyID, int mailingID, String contentName, int contentSize) {

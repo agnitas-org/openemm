@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkWarning;
 
@@ -23,7 +23,7 @@ final class LinkScanContext {
 	private final int start;
 	private final int end;
 	
-	private final List<TrackableLink> foundTrackableLinks;
+	private final List<ComTrackableLink> foundTrackableLinks;
 	private final List<String> foundImages;
 	private final List<String> foundNotTrackableLinks;
 	private final List<ErroneousLink> foundErroneousLinks;
@@ -37,7 +37,7 @@ final class LinkScanContext {
 	private boolean protocolSchemaPresent;
 	private String protocolSchema;
 	
-	public LinkScanContext(final String fullText, final String fullTextWithReplacedTags, final int start, final int end, final List<TrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErroneousLink> foundErroneousLinks, final List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+	public LinkScanContext(final String fullText, final String fullTextWithReplacedTags, final int start, final int end, final List<ComTrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErroneousLink> foundErroneousLinks, final List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
 		assert fullTextWithReplacedTags == null || fullText.length() == fullTextWithReplacedTags.length();
 		
 		this.fullText = Objects.requireNonNull(fullText);
@@ -61,7 +61,7 @@ final class LinkScanContext {
 		return this.start;
 	}
 	
-	public final List<TrackableLink> getFoundTrackableLinks() {
+	public final List<ComTrackableLink> getFoundTrackableLinks() {
 		return foundTrackableLinks;
 	}
 

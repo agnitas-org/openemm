@@ -10,13 +10,8 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
-import java.util.Locale;
-
 import com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm;
-import com.agnitas.messages.I18nString;
-import jakarta.servlet.http.HttpServletRequest;
 import org.displaytag.decorator.TableDecorator;
-import org.springframework.web.servlet.support.RequestContextUtils;
 
 public class TrackableLinkListDecorator extends TableDecorator {
 
@@ -28,13 +23,5 @@ public class TrackableLinkListDecorator extends TableDecorator {
         }
 
         return "link-" + linkId;
-    }
-
-    @Override
-    public String addRowClass() {
-        Locale locale = RequestContextUtils.getLocale((HttpServletRequest) getPageContext().getRequest());
-        return ((TrackableLinkForm) getCurrentRowObject()).isDeleted()
-                ? "disabled\" data-tooltip=\"" + I18nString.getLocaleString("target.Deleted", locale)
-                : "";
     }
 }

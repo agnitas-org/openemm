@@ -1690,10 +1690,7 @@ body.dark-theme label {
   .control-label {
     text-align: right;
     margin-bottom: 0;
-    padding-top: 5px; }
-  .checkbox-control-label {
-    width: auto;
-    float: right; } }
+    padding-top: 5px; } }
 
 @media (min-width: 768px) {
   .control-label-left .control-label {
@@ -2452,38 +2449,6 @@ body.dark-theme .filter-active .btn-filter {
 
 .btn-group .btn + .btn {
   margin-left: 5px; }
-
-.btn-workflow-state {
-  padding: 2px;
-  border-color: transparent; }
-
-body.dark-theme .btn-workflow-state {
-  color: #b7b7b7;
-  background-color: #303030;
-  border-color: transparent; }
-  body.dark-theme .btn-workflow-state:hover {
-    color: #b7b7b7;
-    background-color: #171616;
-    border-color: rgba(0, 0, 0, 0); }
-  body.dark-theme .btn-workflow-state:active, body.dark-theme .btn-workflow-state.is-active, body.dark-theme .btn-workflow-state.active,
-  .open > body.dark-theme .btn-workflow-state.dropdown-toggle {
-    color: #b7b7b7;
-    background-image: none;
-    background-color: #0a0a0a;
-    border-color: rgba(0, 0, 0, 0); }
-  body.dark-theme .btn-workflow-state.disabled, body.dark-theme .btn-workflow-state.disabled:hover, body.dark-theme .btn-workflow-state.disabled:focus, body.dark-theme .btn-workflow-state.disabled:active, body.dark-theme .btn-workflow-state.disabled.active, body.dark-theme .btn-workflow-state.disabled.is-active, body.dark-theme .btn-workflow-state[disabled], body.dark-theme .btn-workflow-state[disabled]:hover, body.dark-theme .btn-workflow-state[disabled]:focus, body.dark-theme .btn-workflow-state[disabled]:active, body.dark-theme .btn-workflow-state[disabled].active, body.dark-theme .btn-workflow-state[disabled].is-active,
-  fieldset[disabled] body.dark-theme .btn-workflow-state,
-  fieldset[disabled] body.dark-theme .btn-workflow-state:hover,
-  fieldset[disabled] body.dark-theme .btn-workflow-state:focus,
-  fieldset[disabled] body.dark-theme .btn-workflow-state:active,
-  fieldset[disabled] body.dark-theme .btn-workflow-state.active,
-  fieldset[disabled] body.dark-theme .btn-workflow-state.is-active {
-    color: #b7b7b7;
-    background-color: #303030;
-    border-color: transparent; }
-  body.dark-theme .btn-workflow-state .badge {
-    color: #303030;
-    background-color: #b7b7b7; }
 
 /*! normalize.css v3.0.1 | MIT License | git.io/normalize */
 /**

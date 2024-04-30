@@ -11,28 +11,23 @@
 package org.agnitas.service.impl;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.service.ImportProfileService;
-import org.agnitas.util.importvalues.CheckForDuplicates;
-import org.agnitas.util.importvalues.ImportMode;
+import org.agnitas.util.ImportUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class ImportProfileServiceImpl implements ImportProfileService {
 
@@ -41,6 +36,22 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     private RecipientService recipientService;
     private ImportProfileDao importProfileDao;
 
+    @Override
+    @Transactional
+    public void saveImportProfile(ImportProfile profile) {
+        ImportProfile oldProfile;
+        List<ColumnMapping> oldColumnMappings = Collections.emptyList();
+        if (profile.getId() != 0) {
+            oldProfile = importProfileDao.getImportProfileById(profile.getId());
+            oldColumnMappings = oldProfile.getColumnMapping();
+        }
+        saveImportProfileWithoutColumnMappings(profile);
+        List<ColumnMapping> columnMapping = profile.getColumnMapping();
+        columnMapping.forEach(item -> item.setProfileId(profile.getId()));
+        importProfileDao.deleteColumnMappings(getColumnIdsForRemove(columnMapping, oldColumnMappings));
+        importProfileDao.insertColumnMappings(columnMapping.stream().filter(item -> item.getId() == 0).collect(Collectors.toList()));
+        importProfileDao.updateColumnMappings(columnMapping.stream().filter(item -> item.getId() != 0).collect(Collectors.toList()));
+    }
     @Override
     public ColumnMapping findColumnMappingByDbColumn(String dbColumnName, List<ColumnMapping> mappings) {
         for (ColumnMapping mapping : mappings) {
@@ -62,7 +73,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
             columnsForRemove = getColumnIdsForRemove(columnMappings, profile.getColumnMapping());
         }
 
-        List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
+        List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
 
         for (ColumnMapping mapping : columnMappings) {
             mapping.setProfileId(profileId);
@@ -85,11 +96,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     }
 
     @Override
-    public void saveImportProfileWithoutColumnMappings(ImportProfile profile, Admin admin) {
-        if (!isManageAllowed(profile, admin)) {
-            throw new UnsupportedOperationException();
-        }
-
+    public void saveImportProfileWithoutColumnMappings(ImportProfile profile) {
         try {
             if (profile.getId() == 0) {
                 importProfileDao.insertImportProfile(profile);
@@ -112,15 +119,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     }
 
     @Override
-    public List<ImportProfile> getAvailableImportProfiles(Admin admin) {
-        return importProfileDao.getImportProfilesByCompanyId(admin.getCompanyID())
-                .stream()
-                .filter(p -> isManageAllowed(p, admin))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ImportProfile> getAvailableImportProfiles(int companyId) {
+    public List<ImportProfile> getImportProfilesByCompanyId(int companyId) {
         return importProfileDao.getImportProfilesByCompanyId(companyId);
     }
 
@@ -141,6 +140,40 @@ public class ImportProfileServiceImpl implements ImportProfileService {
         oldIds.removeAll(newIds);
         return oldIds;
     }
+
+	@Override
+	public Map<String, Integer> getImportProfileGenderMapping(int id) {
+		return importProfileDao.getImportProfileGenderMapping(id);
+	}
+
+	@Override
+	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
+		importProfileDao.saveImportProfileGenderMapping(id, genderMapping);
+	}
+
+	@Override
+	public boolean addImportProfileGenderMapping(int profileId, String addedGender, int addedGenderInt) {
+		Map<String, Integer> genderMapping = getImportProfileGenderMapping(profileId);
+		String[] genderTokens = addedGender.split(",");
+		boolean alreadyContained = false;
+		for (String genderToken : genderTokens) {
+			if (StringUtils.isNotBlank(genderToken) && genderMapping.containsKey(genderToken.trim())) {
+				alreadyContained = true;
+				break;
+			}
+		}
+		if (!alreadyContained) {
+			for (String genderToken : genderTokens) {
+				if (StringUtils.isNotBlank(genderToken)) {
+					genderMapping.put(genderToken.trim(), addedGenderInt);
+				}
+			}
+			saveImportProfileGenderMapping(profileId, genderMapping);
+        	return true;
+		} else {
+			return false;
+		}
+	}
 
     @Override
     public boolean isKeyColumnsIndexed(ImportProfile profile) {
@@ -167,93 +200,6 @@ public class ImportProfileServiceImpl implements ImportProfileService {
         }
 
         return importProfileDao.isColumnWasImported(columnName, id);
-    }
-
-    @Override
-    public boolean isCheckForDuplicatesAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.IMPORT_MODE_DOUBLECHECKING);
-    }
-
-    @Override
-    public boolean isUpdateDuplicatesChangeAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.IMPORT_MODE_DUPLICATES);
-    }
-
-    @Override
-    public boolean isPreprocessingAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.IMPORT_PREPROCESSING);
-    }
-
-    @Override
-    public boolean isAllMailinglistsAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.IMPORT_MAILINGLISTS_ALL);
-    }
-
-    @Override
-    public boolean isCustomerIdImportAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.IMPORT_CUSTOMERID);
-    }
-
-    @Override
-    public boolean isAllowedToShowMailinglists(Admin admin) {
-        return admin.permissionAllowed(Permission.MAILINGLIST_SHOW);
-    }
-
-    @Override
-    public boolean isImportModeAllowed(int mode, Admin admin) {
-        try {
-            String token = ImportMode.getFromInt(mode).getMessageKey();
-            return admin.permissionAllowed(Permission.getPermissionByToken(token));
-        } catch (Exception e) {
-            logger.error("Error when get import mode! Mode = {}", mode);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean isEcryptedImportAllowed(Admin admin) {
-        return admin.permissionAllowed(Permission.RECIPIENT_IMPORT_ENCRYPTED);
-    }
-
-    @Override
-    public Set<ImportMode> getAvailableImportModes(Admin admin) {
-        return ImportMode.values().stream()
-                .filter(mode -> isImportModeAllowed(mode.getIntValue(), admin))
-                .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparingInt(ImportMode::getIntValue))));
-    }
-
-    @Override
-    public boolean isManageAllowed(ImportProfile profile, Admin admin) {
-        if (CheckForDuplicates.COMPLETE.getIntValue() == profile.getCheckForDuplicates() && !isCheckForDuplicatesAllowed(admin)) {
-            return false;
-        }
-
-        if (!profile.getUpdateAllDuplicates() && !isUpdateDuplicatesChangeAllowed(admin)) {
-            return false;
-        }
-
-        if (profile.getImportProcessActionID() > 0 && !isPreprocessingAllowed(admin)) {
-            return false;
-        }
-
-        if (profile.isMailinglistsAll() && (!isAllMailinglistsAllowed(admin) || !isAllowedToShowMailinglists(admin))) {
-            return false;
-        }
-
-        if (RecipientStandardField.CustomerID.getColumnName().equalsIgnoreCase(profile.getFirstKeyColumn()) && !isCustomerIdImportAllowed(admin)) {
-            return false;
-        }
-
-        if (!isImportModeAllowed(profile.getImportMode(), admin)) {
-            return false;
-        }
-
-        if (!profile.getMailinglistIds().isEmpty() && !isAllowedToShowMailinglists(admin)) {
-            return false;
-        }
-
-        boolean encryptedMappingExists = profile.getColumnMapping().stream().anyMatch(m -> m.isEncrypted());
-        return !encryptedMappingExists || isEcryptedImportAllowed(admin);
     }
 
     @Required

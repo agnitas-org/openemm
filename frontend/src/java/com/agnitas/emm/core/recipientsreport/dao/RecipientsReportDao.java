@@ -12,28 +12,18 @@ package com.agnitas.emm.core.recipientsreport.dao;
 
 import java.io.File;
 import java.util.Date;
-import java.util.List;
 
-import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
-import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 
 public interface RecipientsReportDao {
 
-    List<DashboardRecipientReport> getReportsForDashboard(int companyId);
-
-    @Deprecated
     void createReport(int companyId, RecipientsReport report, String fileContent) throws Exception;
-
-    void createNewReport(int companyId, RecipientsReport report, String fileContent) throws Exception;
 
     String getReportTextContent(int companyId, int reportId);
 
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
-
-    PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
 
     RecipientsReport getReport(int companyId, int reportId);
 
@@ -41,10 +31,7 @@ public interface RecipientsReportDao {
     
     boolean deleteReportsByCompany(int companyId);
 
-    @Deprecated
 	void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
-
-	void createNewSupplementalReport(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
 
 	byte[] getReportFileData(int companyId, int reportId) throws Exception;
     

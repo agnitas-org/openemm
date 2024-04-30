@@ -599,7 +599,7 @@ body.dark-theme .table-bordered {
 // Default zebra-stripe styles (alternating gray and transparent backgrounds)
 
 .table-striped:not(.disabled) {
-  > tbody > tr:nth-child(even):not(.error-row):not(.disabled) {
+  > tbody > tr:nth-child(even):not(.error-row) {
     > td,
     > th {
       background-color: $c-gray-02;
@@ -608,7 +608,7 @@ body.dark-theme .table-bordered {
 }
 
 body.dark-theme .table-striped:not(.disabled) {
-   > tbody > tr:nth-child(even):not(.error-row):not(.disabled) {
+   > tbody > tr:nth-child(even):not(.error-row) {
     > td,
     > th {
       background-color: lighten($c-dt-table-background, 5%);
@@ -621,7 +621,7 @@ body.dark-theme .table-striped:not(.disabled) {
 // Placed here since it has to come after the potential zebra striping
 
 .table-hover:not(.disabled) {
-  > tbody > tr:hover:not(.error-row):not(.disabled) {
+  > tbody > tr:hover:not(.error-row) {
     > td,
     > th {
       background-color: $c-blue-03;

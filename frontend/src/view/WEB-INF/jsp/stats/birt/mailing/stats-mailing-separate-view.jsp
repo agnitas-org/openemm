@@ -1,8 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do"%>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://tiles.apache.org/tags-tiles"    prefix="tiles" %>
+<%@ taglib uri="http://struts.apache.org/tags-tiles"    prefix="tiles" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 
@@ -33,14 +34,14 @@
     <c:set var="isReportCanBeShown" value="false"/>
 </c:if>
 
-<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
-    <tiles:putAttribute name="header" type="string">
+<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:put name="header" type="string">
         <ul class="tile-header-nav">
-            <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+            <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
         </ul>
-    </tiles:putAttribute>
+    </tiles:put>
 
-    <tiles:putAttribute name="content" type="string">
+    <tiles:put name="content" type="string">
             <div class="${isMailingGrid ? "tile-content-padded" : "row"}" id="main-content">
                 <div class="col-xs-12">
                     <mvc:form servletRelativeAction="/statistics/mailing/${mailingStatisticForm.mailingID}/view.action"
@@ -424,5 +425,5 @@
 
                 </div>
             </div>
-    </tiles:putAttribute>
-</tiles:insertTemplate>
+    </tiles:put>
+</tiles:insert>

@@ -10,28 +10,31 @@
 
 package com.agnitas.web.filter;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.imports.web.RecipientImportController;
+import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
+import com.agnitas.util.FutureHolderMap;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
-
 import org.agnitas.emm.core.download.service.DownloadService;
 import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.web.ProfileImportAction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
-import com.agnitas.util.FutureHolderMap;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Cleanup session data when user logs out or session is destroyed (after inactivity timeout or user closed browser)
  */
 public class HttpSessionCleanUpListener implements HttpSessionListener {
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(HttpSessionCleanUpListener.class);
 	
 	@Override
 	public void sessionCreated(HttpSessionEvent httpSessionEvent) {
@@ -55,25 +58,30 @@ public class HttpSessionCleanUpListener implements HttpSessionListener {
 		for (String removeMe : keysToRemove) {
 			futureHolder.remove(removeMe);
 		}
-
-		// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
-		if (applicationContext.containsBean("DownloadService")) {
-			// Remove all download data and associated files
-			DownloadService downloadService = (DownloadService) applicationContext.getBean("DownloadService");
-			downloadService.removeAllDownloadData(session);
-		}
+		
+		// Remove all download data and associated files
+		DownloadService downloadService = (DownloadService) applicationContext.getBean("DownloadService");
+		downloadService.removeAllDownloadData(session);
 		
 		// Cleanup grid recycle bin
 		Admin admin = (Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN);
-        if (admin != null && applicationContext.containsBean("GridTemplateService")) {
+        if (admin != null) {
             ComGridTemplateService gridTemplateService = applicationContext.getBean("GridTemplateService", ComGridTemplateService.class);
             gridTemplateService.deleteRecycledChildren(admin.getCompanyID());
         }
-
-		// Cleanup waiting interactive imports
-		ProfileImportWorker profileImportWorker = (ProfileImportWorker) session.getAttribute(RecipientImportController.SESSION_WORKER_KEY);
+        
+        // Cleanup waiting interactive imports
+        ProfileImportWorker profileImportWorker = (ProfileImportWorker) session.getAttribute(ProfileImportAction.PROFILEIMPORTWORKER_SESSIONKEY);
 		if (profileImportWorker != null && profileImportWorker.isWaitingForInteraction()) {
 			profileImportWorker.cleanUp();
+			session.removeAttribute(ProfileImportAction.PROFILEIMPORTWORKER_SESSIONKEY);
+			logger.info("Canceled interactively waiting ProfileImport for session: " + sessionID + " " + (admin != null ? "admin: " + admin.getUsername() : ""));
+		}
+
+		// Cleanup waiting interactive imports
+		ProfileImportWorker profileImportWorker1 = (ProfileImportWorker) session.getAttribute(RecipientImportController.SESSION_WORKER_KEY);
+		if (profileImportWorker1 != null && profileImportWorker1.isWaitingForInteraction()) {
+			profileImportWorker1.cleanUp();
 		}
 	}
 }

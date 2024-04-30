@@ -19,8 +19,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationExecuteScriptParameters;
 
 public class ActionOperationExecuteScriptDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationExecuteScriptParameters> {
-
-	private static final Logger logger = LogManager.getLogger(ActionOperationExecuteScriptDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ActionOperationExecuteScriptDaoImpl.class);
 
 	@Override
 	protected void processGetOperation(ActionOperationExecuteScriptParameters operation) {

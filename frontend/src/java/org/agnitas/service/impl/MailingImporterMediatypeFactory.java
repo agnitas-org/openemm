@@ -28,10 +28,6 @@ public class MailingImporterMediatypeFactory {
 		case EMAIL: {
 			final MediatypeEmailImpl emailType = new MediatypeEmailImpl();
 			emailType.setSubject((String) mediatypeJsonObject.get("subject"));
-
-			if (mediatypeJsonObject.containsPropertyKey("preHeader")) {
-				emailType.setPreHeader((String) mediatypeJsonObject.get("preHeader"));
-			}
 			emailType.setFromEmail((String) mediatypeJsonObject.get("from_address"));
 			emailType.setFromFullname((String) mediatypeJsonObject.get("from_fullname"));
 			emailType.setReplyEmail((String) mediatypeJsonObject.get("reply_address"));

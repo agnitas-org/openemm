@@ -1,5 +1,8 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -14,21 +17,21 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="settings_general_campaign" class="control-label">
-                        <mvc:message code="mailing.archive"/>
+                        <bean:message key="mailing.archive"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
                     <div class="input-group">
                         <div class="input-group-controls">
                             <select id="settings_general_campaign" class="form-control js-select" name="campaignId">
-                                <c:forEach var="campaign" items="${campaigns}">
+                                <logic:iterate id="campaign" collection="${campaigns}" length="500">
                                     <option value="${campaign.id}">${campaign.shortname}</option>
-                                </c:forEach>
+                                </logic:iterate>
                             </select>
                         </div>
                         <div class="input-group-btn">
                             <a class="btn btn-regular settings_campaign_in_archive disable-for-active" href="#" data-action="archive-editor-new">
-                                <mvc:message code="archive.new"/>
+                                <bean:message key="archive.new"/>
                             </a>
                         </div>
                     </div>
@@ -41,7 +44,7 @@
             <div class="col-sm-8 col-sm-push-4">
                 <label class="checkbox-inline">
                     <input type="checkbox" id="settings_general_in_archiv" name="archived" value="true"/>
-                    <mvc:message code="mailing.archived"/>
+                    <bean:message key="mailing.archived"/>
                 </label>
             </div>
         </div>
@@ -51,10 +54,10 @@
             <div class="col-xs-12">
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                        <span><mvc:message code="button.Cancel"/></span>
+                        <span><bean:message key="button.Cancel"/></span>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="editor-save-current">
-                        <span><mvc:message code="button.Apply"/></span>
+                        <span><bean:message key="button.Apply"/></span>
                     </a>
                 </div>
             </div>

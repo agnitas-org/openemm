@@ -45,6 +45,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MailingSummaryStatisticResultResponse }
+     * 
+     */
+    public MailingSummaryStatisticResultResponse createMailingSummaryStatisticResultResponse() {
+        return new MailingSummaryStatisticResultResponse();
+    }
+
+    /**
      * Create an instance of {@link GetMailingContentResponse }
      * 
      */
@@ -77,6 +85,38 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MailingSummaryStatisticJobRequest }
+     * 
+     */
+    public MailingSummaryStatisticJobRequest createMailingSummaryStatisticJobRequest() {
+        return new MailingSummaryStatisticJobRequest();
+    }
+
+    /**
+     * Create an instance of {@link MailingSummaryStatisticJobResponse }
+     * 
+     */
+    public MailingSummaryStatisticJobResponse createMailingSummaryStatisticJobResponse() {
+        return new MailingSummaryStatisticJobResponse();
+    }
+
+    /**
+     * Create an instance of {@link MailingSummaryStatisticResultRequest }
+     * 
+     */
+    public MailingSummaryStatisticResultRequest createMailingSummaryStatisticResultRequest() {
+        return new MailingSummaryStatisticResultRequest();
+    }
+
+    /**
+     * Create an instance of {@link MailingSummaryStatisticResultResponse.Items }
+     * 
+     */
+    public MailingSummaryStatisticResultResponse.Items createMailingSummaryStatisticResultResponseItems() {
+        return new MailingSummaryStatisticResultResponse.Items();
+    }
+
+    /**
      * Create an instance of {@link GetMailingContentRequest }
      * 
      */
@@ -106,6 +146,22 @@ public class ObjectFactory {
      */
     public UpdateMailingContentResponse createUpdateMailingContentResponse() {
         return new UpdateMailingContentResponse();
+    }
+
+    /**
+     * Create an instance of {@link CreateDataSourceRequest }
+     * 
+     */
+    public CreateDataSourceRequest createCreateDataSourceRequest() {
+        return new CreateDataSourceRequest();
+    }
+
+    /**
+     * Create an instance of {@link CreateDataSourceResponse }
+     * 
+     */
+    public CreateDataSourceResponse createCreateDataSourceResponse() {
+        return new CreateDataSourceResponse();
     }
 
     /**
@@ -170,6 +226,22 @@ public class ObjectFactory {
      */
     public AddTargetGroupResponse createAddTargetGroupResponse() {
         return new AddTargetGroupResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetFullviewUrlRequest }
+     * 
+     */
+    public GetFullviewUrlRequest createGetFullviewUrlRequest() {
+        return new GetFullviewUrlRequest();
+    }
+
+    /**
+     * Create an instance of {@link GetFullviewUrlResponse }
+     * 
+     */
+    public GetFullviewUrlResponse createGetFullviewUrlResponse() {
+        return new GetFullviewUrlResponse();
     }
 
     /**

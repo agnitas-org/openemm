@@ -39,8 +39,8 @@ public class MaildropServiceImpl implements MaildropService {
 
 	private SteppingAndBlocksizeComputer steppingAndBlocksizeComputer;
 	
-	protected ComMailingDao mailingDao;
-	protected MaildropStatusDao maildropStatusDao;
+	private ComMailingDao mailingDao;
+	private MaildropStatusDao maildropStatusDao;
 	
 	@Required
 	public void setMailingDao(final ComMailingDao dao) {
@@ -125,10 +125,11 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public boolean isActiveMailing(final int mailingID, final int companyID) {
+	public final boolean isActiveMailing(final int mailingID, final int companyID) {
 		if (hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD)) {
 			return true;
 		}
+
 		return mailingDao.isActiveIntervalMailing(companyID, mailingID);
 	}
 

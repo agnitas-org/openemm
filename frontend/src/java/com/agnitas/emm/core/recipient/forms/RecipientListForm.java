@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.core.recipient.forms;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.agnitas.dao.UserStatus;
+import org.apache.commons.lang.StringUtils;
 
 public class RecipientListForm extends RecipientListBaseForm {
     private static final String DEFAULT_FIELD = "email";
@@ -23,18 +24,13 @@ public class RecipientListForm extends RecipientListBaseForm {
     private int filterMailinglistId;
     private int filterTargetId;
     private int filterAltgId;
-    private int filterUserStatus;
-    private List<String> filterUserTypes;
+    private int filterUserStatus = UserStatus.Active.getStatusCode();
+    private String filterUserType;
     private String searchFirstName;
-    private Integer filterGender;
     private String searchLastName;
     private String searchEmail;
     private String searchQueryBuilderRules = "[]";
     private String eql;
-
-    public RecipientListForm(Integer filterUserStatus) {
-        this.filterUserStatus = filterUserStatus == null ? 0 : filterUserStatus;
-    }
 
     public int getFilterMailinglistId() {
         return filterMailinglistId;
@@ -68,12 +64,12 @@ public class RecipientListForm extends RecipientListBaseForm {
         this.filterUserStatus = filterUserStatus;
     }
 
-    public List<String> getFilterUserTypes() {
-        return filterUserTypes;
+    public String getFilterUserType() {
+        return filterUserType;
     }
 
-    public void setFilterUserTypes(List<String> filterUserTypes) {
-        this.filterUserTypes = filterUserTypes;
+    public void setFilterUserType(String filterUserType) {
+        this.filterUserType = filterUserType;
     }
 
     public String getSearchFirstName() {
@@ -82,14 +78,6 @@ public class RecipientListForm extends RecipientListBaseForm {
 
     public void setSearchFirstName(String searchFirstName) {
         this.searchFirstName = searchFirstName;
-    }
-
-    public Integer getFilterGender() {
-        return filterGender;
-    }
-
-    public void setFilterGender(Integer filterGender) {
-        this.filterGender = filterGender;
     }
 
     public String getSearchLastName() {
@@ -141,9 +129,8 @@ public class RecipientListForm extends RecipientListBaseForm {
         map.put("filterTargetId", filterTargetId);
         map.put("filterAltgId", filterAltgId);
         map.put("filterUserStatus", filterUserStatus);
-        map.put("filterUserTypes", filterUserTypes);
+        map.put("filterUserType", filterUserType);
         map.put("searchFirstName", searchFirstName);
-        map.put("searchGender", filterGender);
         map.put("searchLastName", searchLastName);
         map.put("searchEmail", searchEmail);
         map.put("searchQueryBuilderRules", searchQueryBuilderRules);
@@ -155,7 +142,7 @@ public class RecipientListForm extends RecipientListBaseForm {
     @Override
     public Object[] toArray() {
         // Each filter's name and value + all pagination parameters.
-        List<Object> objects = new ArrayList<>(selectedFields.size() + 13);
+        List<Object> objects = new ArrayList<>(selectedFields.size() + 12);
 
         objects.add(getSort());
         objects.add(getOrder());
@@ -164,9 +151,8 @@ public class RecipientListForm extends RecipientListBaseForm {
         objects.add(filterMailinglistId);
         objects.add(filterTargetId);
         objects.add(filterUserStatus);
-        objects.add(filterUserTypes);
+        objects.add(filterUserType);
         objects.add(searchFirstName);
-        objects.add(filterGender);
         objects.add(searchLastName);
         objects.add(searchEmail);
         objects.add(searchQueryBuilderRules);

@@ -19,7 +19,6 @@ public class WebserviceUserEntryDto {
     private  int dataSourceId;
 
     boolean active;
-    private String clientName;
 
     public String getUserName() {
         return userName;
@@ -51,13 +50,5 @@ public class WebserviceUserEntryDto {
 
     public void setActive(boolean active) {
         this.active = active;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
     }
 }

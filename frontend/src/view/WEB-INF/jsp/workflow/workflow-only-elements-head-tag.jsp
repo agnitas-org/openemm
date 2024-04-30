@@ -1,7 +1,8 @@
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="agnRefresh" type="java.lang.String"--%>
 <%--@elvariable id="agnTitleKey" type="java.lang.String"--%>
@@ -21,17 +22,17 @@
     <meta http-equiv="pragma" content="no-cache">
     <meta http-equiv="expires" content="0">
 
-    <tiles:insertAttribute name="head-extra-meta-tags"/>
+    <tiles:insert attribute="head-extra-meta-tags"/>
 
 
-    <c:set var="title" scope="page"><mvc:message code="default.A_EMM"/></c:set>
+    <c:set var="title" scope="page"><bean:message key="default.A_EMM"/></c:set>
     <c:set var="subtitle" value="" scope="page"/>
 
     <c:if test="${not empty agnTitleKey}">
-        <c:set var="title"><mvc:message code="${agnTitleKey}"/></c:set>
+        <c:set var="title"><bean:message key="${agnTitleKey}"/></c:set>
     </c:if>
     <c:if test="${not empty agnHighlightKey}">
-        <c:set var="subtitle"><mvc:message code="${agnHighlightKey}"/></c:set>
+        <c:set var="subtitle"><bean:message key="${agnHighlightKey}"/></c:set>
     </c:if>
 
     <c:choose>
@@ -49,10 +50,10 @@
     <script src="${pageContext.request.contextPath}/js/lib/workflow/es5-shim-4.5.15.min.js"></script>
     <script src="${pageContext.request.contextPath}/js/lib/workflow/polyfill-7.12.1.min.js"></script>
 
-    <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
+    <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
 
     <%--here you should put extra css/js links needed for your page--%>
-    <tiles:insertAttribute name="head-extra-links"/>
+    <tiles:insert attribute="head-extra-links"/>
 
     <script>
         jQuery.isFunction = function(obj) {

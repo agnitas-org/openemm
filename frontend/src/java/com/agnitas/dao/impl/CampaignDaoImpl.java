@@ -14,31 +14,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.factory.CampaignStatEntryFactory;
-import org.agnitas.beans.impl.MailingBaseImpl;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.stat.CampaignStatEntry;
-import org.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.CampaignStats;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.impl.CampaignImpl;
 import com.agnitas.dao.CampaignDao;
@@ -47,10 +31,23 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.messages.I18nString;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.MailingBase;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.factory.CampaignStatEntryFactory;
+import org.agnitas.beans.impl.MailingBaseImpl;
+import org.agnitas.beans.impl.MailinglistImpl;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.stat.CampaignStatEntry;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
 
-public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao {
-
-	private static final Logger logger = LogManager.getLogger(CampaignDaoImpl.class);
+public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(CampaignDaoImpl.class);
 	
 	protected CampaignStatEntryFactory campaignStatEntryFactory;
 	
@@ -64,12 +61,6 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 		
 		String query = "SELECT campaign_id, company_id, shortname, description FROM campaign_tbl WHERE campaign_id = ? AND company_id = ?";
 		return selectObjectDefaultNull(logger, query, new ComCampaignRowMapper(), campaignID, companyID);
-	}
-	
-	@Override
-	public List<Campaign> getCampaigns(int companyID) {
-		String query = "SELECT campaign_id, company_id, shortname, description FROM campaign_tbl WHERE company_id = ?";
-		return select(logger, query, new ComCampaignRowMapper(), companyID);
 	}
 	
 	@Override
@@ -176,28 +167,34 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 	}
 	
 	@Override
-	public PaginatedListImpl<MailingBase> getCampaignMailings(int campaignID, PaginationForm form, Admin admin) {
+	public List<MailingBase> getCampaignMailings(int campaignID, Admin admin) {
         List<Object> params = new ArrayList<>();
         params.add(MaildropStatus.WORLD.getCodeString());
         params.add(admin.getCompanyID());
         params.add(campaignID);
-		String sql = "SELECT a.mailing_id, a.shortname AS mailing_name, a.description AS mailing_description, b.shortname AS listname, (SELECT min(c.timestamp)"
+		String sql = "SELECT a.mailing_id, a.shortname, a.description, b.shortname AS listname, (SELECT min(c.timestamp)"
 				+ " FROM mailing_account_tbl c WHERE a.mailing_id = c.mailing_id AND c.status_field = ?) AS senddate FROM mailing_tbl a, mailinglist_tbl b WHERE a.company_id = ?"
 				+ " AND a.campaign_id = ? AND b.deleted = 0 AND a.deleted = 0 AND a.is_template = 0 AND a.mailinglist_id = b.mailinglist_id " + 
-                getTargetRestrictions(admin, params, "a");
+                getTargetRestrictions(admin, params, "a") + " ORDER BY senddate DESC, mailing_id DESC";
 
-		String sortClause = "ORDER BY senddate DESC, mailing_id DESC";
-		if (StringUtils.isNotBlank(form.getSort())) {
-			if (!form.getSort().equals("senddate")) {
-				sortClause = "ORDER BY " + form.getSort();
-			} else {
-				sortClause = "ORDER BY LOWER(" + form.getSort() + ")";
-			}
+		List<Map<String, Object>> tmpList = select(logger, sql, params.toArray());
+		List<MailingBase> result = new ArrayList<>();
 
-			sortClause += " " + (form.ascending() ? "asc" : "desc");
+		for (Map<String, Object> row : tmpList) {
+			MailingBase newBean = new MailingBaseImpl();
+			int mailingID = ((Number) row.get("mailing_id")).intValue();
+			newBean.setId(mailingID);
+			newBean.setShortname((String) row.get("shortname"));
+			newBean.setDescription((String) row.get("description"));
+			Mailinglist mailinglist = new MailinglistImpl();
+			mailinglist.setShortname((String) row.get("listname"));
+			newBean.setMailinglist(mailinglist);
+			newBean.setSenddate((Date) row.get("senddate"));
+
+			result.add(newBean);
 		}
 
-		return selectPaginatedListWithSortClause(logger, sql, sortClause, form.getSort(), form.ascending(), form.getPage(), form.getNumberOfRows(), new ArchiveMailingRowMapper(), params.toArray());
+		return result;
 	}
 
 	@Override
@@ -235,12 +232,6 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 
 		}
 		return result;
-	}
-
-	@Override
-	public PaginatedListImpl<Campaign> getOverview(int companyId, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) {
-		String query = "SELECT campaign_id, shortname, description, company_id FROM campaign_tbl WHERE company_id = ?";
-		return selectPaginatedList(logger, query, "campaign_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new ComCampaignRowMapper(), companyId);
 	}
 
 	@Override
@@ -586,31 +577,22 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 			return campaign;
 		}
 	}
-
-	private class ArchiveMailingRowMapper implements RowMapper<MailingBase> {
-		@Override
-		public MailingBase mapRow(ResultSet resultSet, int row) throws SQLException {
-			MailingBase newBean = new MailingBaseImpl();
-			newBean.setId(resultSet.getInt("mailing_id"));
-			newBean.setShortname(resultSet.getString("mailing_name"));
-			newBean.setDescription(resultSet.getString("mailing_description"));
-			newBean.setSenddate(resultSet.getTimestamp("senddate"));
-
-			Mailinglist mailinglist = new MailinglistImpl();
-			mailinglist.setShortname(resultSet.getString("listname"));
-			newBean.setMailinglist(mailinglist);
-
-			return newBean;
-		}
-	}
 	
 	public void setCampaignStatEntryFactory(CampaignStatEntryFactory campaignStatEntryFactory) {
 		this.campaignStatEntryFactory = campaignStatEntryFactory;
 	}
 	
-	@Override
-	public List<Integer> getSampleCampaignIDs(int companyID) {
-		return select(logger, "SELECT campaign_id FROM campaign_tbl WHERE company_id = ? AND (LOWER(shortname) LIKE '%sample%' OR LOWER(shortname) LIKE '%example%' OR LOWER(shortname) LIKE '%muster%' OR LOWER(shortname) LIKE '%beispiel%')",
-			IntegerRowMapper.INSTANCE, companyID);
+	public class CampaignRowMapper implements RowMapper<Campaign> {
+		@Override
+		public Campaign mapRow(ResultSet resultSet, int row) throws SQLException {
+			Campaign campaign = new CampaignImpl();
+			
+			campaign.setId(resultSet.getInt("campaign_id"));
+			campaign.setCompanyID(resultSet.getInt("company_id"));
+			campaign.setDescription(resultSet.getString("description"));
+			campaign.setShortname(resultSet.getString("shortname"));
+			
+			return campaign;
+		}
 	}
 }

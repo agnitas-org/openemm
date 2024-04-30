@@ -30,7 +30,7 @@ public enum PermissionType {
 	System,
 	
 	/**
-	 * For migration permissions or temporary permissions. 
+	 * Only for "*.migration" and "*.rollback" permissions. 
 	 * Not visible to users, but may be granted to any user.
 	 * Entry in license is not needed.
 	 * Entry in company_permission_tbl is not needed

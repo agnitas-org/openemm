@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -320,7 +319,6 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
             }
 
             return images.stream()
-                    .filter(Objects::nonNull)
                     .map(String::trim)
                     .collect(Collectors.toList());
         }

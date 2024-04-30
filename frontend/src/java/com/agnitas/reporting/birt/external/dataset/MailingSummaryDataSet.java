@@ -27,7 +27,6 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
@@ -51,11 +50,6 @@ import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     private static final Logger logger = LogManager.getLogger(MailingSummaryDataSet.class);
     private static final int APPLE_PROXY_DEVICE_ID = 1484;
-    private static final int YAHOO_PROXY_DEVICE_ID = 1703;
-    private static final int[] PROXY_DEVICE_IDS = new int[]{
-	    APPLE_PROXY_DEVICE_ID,
-	    YAHOO_PROXY_DEVICE_ID
-    };
 
     private static class TempRow {
         private String category;
@@ -329,8 +323,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
 
             int totalOpeners = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate(), null);
-            
-            int proxyOpenersCount = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate(), PROXY_DEVICE_IDS);
+            int proxyOpenersCount = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate(), APPLE_PROXY_DEVICE_ID);
 
             TempRow allSubscribersRow = new TempRow();
             allSubscribersRow.setCategory(target.getId() == CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID && !readForAllDeviceClasses ? CommonKeys.OPENERS : CommonKeys.OPENERS_MEASURED);
@@ -1066,7 +1059,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     @DaoUpdateReturnValueCheck
     private void insertSoftbouncesUndeliverable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType, boolean showSoftbounces) throws Exception {
-        if (!successTableActivated(companyID) || !showSoftbounces || isMailTrackingExpired(companyID, mailingID)) {
+        if (!successTableActivated(companyID) || !showSoftbounces) {
             return;
         }
 
@@ -1449,7 +1442,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return returnMap;
     }
 
-    protected int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString, int[] deviceIDs) throws Exception {
+    protected int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString, Integer deviceId) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
         List<Object> parameters = new ArrayList<>();
 
@@ -1465,8 +1458,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
-        if (deviceIDs != null) {
-            queryBuilder.append(" AND device_id IN (" + StringUtils.join(ArrayUtils.toObject(deviceIDs), ", ") + ")");
+        if (deviceId != null) {
+            queryBuilder.append(" AND device_id = ?");
+            parameters.add(deviceId);
         }
 
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {

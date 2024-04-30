@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
@@ -37,11 +36,13 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComMailingDao extends MailingDao {
 
-    Mailing getMailing(int mailingId, int companyId, boolean includeDependencies);
+	Mailing getMailingWithDeletedDynTags(int mailingID, int companyID);
 
-    Mailing getMailingWithDeletedDynTags(int mailingID, int companyID);
+	boolean updateStatus(Mailing mailing, MailingStatus mailingStatus);
+
+	boolean updateStatus(int mailingID, MailingStatus mailingStatus);
 	
-	boolean updateStatus(int companyID, int mailingID, MailingStatus mailingStatus, Date sendDate);
+	boolean updateStatus(int mailingID, MailingStatus mailingStatus, Date sendDate);
 	
 	// returns all Mailings in a linked List.
 	List<Integer> getAllMailings(int companyID);
@@ -91,6 +92,8 @@ public interface ComMailingDao extends MailingDao {
 
     int saveUndoMailing(int mailingId, int adminId);
 
+    boolean isMailingMarkedDeleted(int mailingID, int companyID);
+
 	/**
 	 * returns the type of a Followup Mailing as String.
 	 * The String can be fount in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER)
@@ -138,13 +141,7 @@ public interface ComMailingDao extends MailingDao {
 
 	List<Map<String, Object>> getSentAndScheduled(Admin admin, Date startDate, Date endDate);
 
-    List<Map<String, Object>> getSentAndScheduledRedesigned(Admin admin, Date startDate, Date endDate);
-
-	List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate);
-
 	List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate);
-
-    List<Map<String, Object>> getPlannedMailingsRedesigned(Admin admin, Date startDate, Date endDate);
 
 	Map<Integer, Integer> getOpeners(int companyId, List<Integer> mailingsId);
 
@@ -215,7 +212,7 @@ public interface ComMailingDao extends MailingDao {
 
     void cleanTestDataInSuccessTbl(int mailingId, int companyId);
 
-    MailingStatus getStatus(int companyID, int mailingID);
+    String getWorkStatus(int companyID, int mailingID);
     
 	List<Integer> getMailingIdsForIntervalSend();
 
@@ -321,25 +318,15 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean isApproved(int mailingId, int companyId);
 
-	void restoreMailing(int mailingId, int companyId);
-
-	void restoreMailings(Collection<Integer> mailingIds, int companyID);
-
 	List<Map<String, Object>> getMailingsMarkedAsDeleted(int companyID, Date deletedMailingExpire);
 
-	void deleteOutdatedMailingData(int companyID, int mailingID);
+	void deleteOutdatedMailingData(int mailingID);
 
 	void markMailingAsDataDeleted(int mailingID);
 
-	boolean isDateBasedMailingWasSentToday(int mailingId);
-
-    void allowDateBasedMailingResending(int mailingId);
-
+	/**
+	 * Only store changed shortname, description an archiveid.
+	 * Those are the values that are allowed for change even after a mailing was delievered
+	 */
 	boolean saveMailingDescriptiveData(Mailing mailing);
-
-    List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
-
-	List<LightweightMailing> getMailingTemplates(int companyID);
-
-	void deleteMailtrackDataForMailing(int companyID, int mailingID);
 }

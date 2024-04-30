@@ -13,9 +13,6 @@ package org.agnitas.web.forms;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-
 public class PaginationForm {
     private String sort = "";
     private String order = "";
@@ -62,13 +59,6 @@ public class PaginationForm {
         this.order = order;
     }
 
-    public String getSortOrDefault(String defVal) {
-        return StringUtils.isBlank(getSort()) ? defVal : getSort();
-    }
-
-    public boolean ascending() {
-        return AgnUtils.sortingDirectionToBoolean(getOrder(), true);
-    }
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
 

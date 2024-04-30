@@ -5,9 +5,10 @@
 <%@page import="org.apache.logging.log4j.Logger"%>
 <%@page import="org.apache.logging.log4j.LogManager"%>
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" import="org.springframework.web.context.support.WebApplicationContextUtils" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%
     Logger logger = LogManager.getLogger("error.jsp");
@@ -38,35 +39,32 @@
     logger.error(errorBuilder.toString(), exception);
 %>
 
-<html>
+<html:html>
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <sec:csrfMetaTags />
 
-    <title><mvc:message code="error.global.title"/></title>
-    <jsp:include page="/WEB-INF/jsp/assets.jsp"/>
+    <title><bean:message key="error.global.title"/></title>
+    <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
 
 </head>
 <body class="systempage">
 
-    <c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500.svg"/>
-    <c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500.png"/>
-
     <div class="msg-tile msg-tile-error">
         <div class="msg-tile-header">
-            <img alt="" src="${errorSvgSrc}" onerror="this.onerror=null; this.src='${errorPngSrc}'">
-            <h1><strong>500</strong> <mvc:message code="error.global.title"/></h1>
+            <img alt="" src="assets/core/images/facelift/errors_error-500.svg" onerror="this.onerror=null; this.src='assets/core/images/facelift/errors_error-500.png'">
+            <h1><strong>500</strong> <bean:message key="error.global.title"/></h1>
         </div>
         <div class="msg-tile-content">
-            <h2><mvc:message code="error.global.headline"/></h2>
+            <h2><bean:message key="error.global.headline"/></h2>
             <p><%= MessageFormat.format(I18nString.getLocaleString("error.global.message", request.getLocale()), configService.getValue(ConfigValue.SupportEmergencyUrl)) %></p>
 
             <div class="btn-group">
                 <a href="#" class="btn btn-regular btn-primary" onclick="window.history.back(); return false;">
                     <i class="icon icon-angle-left"></i>
-                    <span class="text"> <mvc:message code="button.Back"/></span>
+                    <span class="text"> <bean:message key="button.Back"/></span>
                 </a>
             </div>
         </div>
@@ -79,17 +77,17 @@
                 <div class="notification-header">
                     <p class="headline">
                         <i class="icon icon-state-alert"></i>
-                        <span class="text"><mvc:message code="error.global.headline"/></span>
+                        <span class="text"><bean:message key="error.global.headline"/></span>
                         <i class="icon icon-times-circle close-icon js-close-error"></i>
                     </p>
                 </div>
 
                 <div class="notification-content">
-					<p><mvc:message code="error.global.headline" arguments="<%= configService.getValue(ConfigValue.SupportEmergencyUrl) %>"/></p>
+					<p><bean:message key="error.global.headline" arg0="<%= configService.getValue(ConfigValue.SupportEmergencyUrl) %>"/></p>
 
                     <a href="#" class="btn btn-regular btn-primary vspace-top-10" onclick="location.reload();">
                         <i class="icon icon-repeat"></i>
-                        <span class="text"><mvc:message code="error.reload"/></span>
+                        <span class="text"><bean:message key="error.reload"/></span>
                     </a>
                 </div>
             </div>
@@ -97,4 +95,4 @@
     </script>
 
 </body>
-</html>
+</html:html>

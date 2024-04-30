@@ -13,8 +13,6 @@ package com.agnitas.dao;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
-import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
@@ -27,8 +25,6 @@ public interface AdminGroupDao {
      */
 	AdminGroup getAdminGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor);
 
-    AdminGroup getUserGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor);
-
     /**
      * Loads list of AdminGroups for specified company id
      * @param companyId
@@ -39,9 +35,7 @@ public interface AdminGroupDao {
 
 	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, List<Integer> additionalAdminGroupIds);
 
-    PaginatedListImpl<UserGroupDto> getAdminGroupsByCompanyIdInclCreator(UserGroupOverviewFilter filter);
-
-    PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sort, String direction, int page, int rownums);
+	PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sort, String direction, int page, int rownums);
     
     int saveAdminGroup(AdminGroup adminGroup) throws Exception;
     

@@ -24,12 +24,11 @@ public class RecipientListFormToRecipientSearchParamsDtoConverter implements Con
         dto.setMailingListId(form.getFilterMailinglistId());
         dto.setTargetGroupId(form.getFilterTargetId());
         dto.setUserStatus(form.getFilterUserStatus());
-        dto.setUserTypes(form.getFilterUserTypes());
+        dto.setUserType(form.getFilterUserType());
         dto.setFirstName(form.getSearchFirstName());
         dto.setLastName(form.getSearchLastName());
         dto.setAltgId(form.getFilterAltgId());
         dto.setEmail(form.getSearchEmail());
-        dto.setGender(form.getFilterGender());
         dto.setEql(form.getEql());
 
         return dto;

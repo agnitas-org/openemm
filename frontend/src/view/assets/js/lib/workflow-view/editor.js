@@ -562,14 +562,6 @@
         return chains;
     };
 
-    Editor.prototype.getFirstOutgoingChain = function(node) {
-        const chains = this.getNodeOutgoingChains(node);
-        if (chains.length) {
-            return chains[0];
-        }
-        return [];
-    };
-
     Editor.prototype.getFirstIncomingChain = function(node) {
         var chains = this.getNodeIncomingChains(node);
         if (chains.length) {
@@ -667,20 +659,12 @@
                     case Def.NODE_TYPE_SC_ABTEST:
                     case Def.NODE_TYPE_SC_BIRTHDAY:
                     case Def.NODE_TYPE_SC_DOI:
-                        if(Def.workflowId === 0 && this._isInInitialState()) {
-                            this.deleteAllNodes();
-                        }
-
                         this.newSnippetFromSample(type, position);
                         break;
 
                     case Def.NODE_TYPE_OWN_WORKFLOW:
                         Dialogs.confirmOwnWorkflowExpanding()
                             .done(function(params) {
-                                if (Def.workflowId === 0 && self._isInInitialState()) {
-                                    self.deleteAllNodes();
-                                }
-
                                 self.newSnippetFromOwnWorkflow(params.workflowId, params.copyContent, position);
                             });
                         break;
@@ -703,10 +687,6 @@
             }
         }
     };
-
-    Editor.prototype._isInInitialState = function () {
-        return Def.intialSchema === this.serializeIcons();
-    }
 
     Editor.prototype.newSnippetFromSample = function(type, position) {
         var self = this;
@@ -1325,10 +1305,10 @@
             dblclick: function() {
                 self.editIcon(node);
             },
-            mouseenter: function() {
+            mouseover: function() {
                 node.setHovered(true);
             },
-            mouseleave: function() {
+            mouseout: function() {
                 node.setHovered(false);
             }
         });
@@ -1342,12 +1322,7 @@
         var self = this;
 
         if (node.isFilled()) {
-            if (Def.NODE_TYPES_MAILING.includes(node.getType()) && !EditorsHelper.isPausedWorkflow()) {
-                const finalParameterNode = this._findFinalParameterNode(node);
-                if (finalParameterNode) {
-                    this._fillOptimizationFinalMailingIfPossible(finalParameterNode);
-                }
-
+            if (Def.NODE_TYPES_MAILING.includes(node.getType())) {
                 mailingEditorBase.trySupplementChain(this.getFirstIncomingChain(node), mailingContent, function(chain) {
                     self.batch(function() {
                         // First delete connections between node pairs that now have new nodes inserted in between.
@@ -1396,23 +1371,58 @@
                 this.autoConvertMailingNodesTypeIfPossible();
             } else if (Def.NODE_TYPE_RECIPIENT == node.getType()) {
                 this.processRecipientsChains();
-            } else if (Def.NODE_TYPE_PARAMETER === node.getType()) {
-                const finalParameterNode = self._findFinalParameterNode(node);
-
-                if (finalParameterNode) {
-                    const optimizationParameterNodes = self._findTestMailingsParamsNodes(finalParameterNode);
-
-                    const parameterValue = node.getData().value;
-                    self._setParameterNodesValue(optimizationParameterNodes, parameterValue);
-
-                    const parametersSum = parameterValue * optimizationParameterNodes.length;
-
-                    EditorsHelper.modify(finalParameterNode, function(n) {
-                        n.setFilled(true);
-                        n.setEditable(false);
-                        n.getData().value = 100 - parametersSum;
+            } else if (Def.NODE_TYPE_PARAMETER == node.getType()) {
+                this.getNodeOutgoingChains(node).forEach(function(outgoingChain) {
+                    // Find non-editable parameter node in the outgoing chain (it represents a final send out of A/B test).
+                    var dependentParameterNode = outgoingChain.find(function(nextNode, index) {
+                        return index > 0 && Def.NODE_TYPE_PARAMETER == nextNode.getType() && !nextNode.isEditable();
                     });
-                }
+
+                    if (dependentParameterNode) {
+                        var optimizationParameterNodes = [];
+
+                        // Find all parameter nodes in all incoming chains (their sum must be lest that 100%).
+                        self.getNodeIncomingChains(dependentParameterNode).forEach(function(incomingChain) {
+                            var optimizationParameterNode = incomingChain.find(function(previousNode, index) {
+                                return index > 0 && Def.NODE_TYPE_PARAMETER == previousNode.getType();
+                            });
+
+                            if (optimizationParameterNode) {
+                                optimizationParameterNodes.push(optimizationParameterNode);
+                            }
+                        });
+
+                        var canDependentParameterBeInferred;
+                        var sum = 0;
+
+                        if (optimizationParameterNodes.length) {
+                            canDependentParameterBeInferred = true;
+
+                            for (var index = 0; index < optimizationParameterNodes.length; index++) {
+                                var optimizationParameterNode = optimizationParameterNodes[index];
+                                if (optimizationParameterNode.isFilled()) {
+                                    sum += parseInt(optimizationParameterNode.getData().value);
+                                } else {
+                                    canDependentParameterBeInferred = false;
+                                    break;
+                                }
+                            }
+                        } else {
+                            // There are no parameters in incoming chains so the value of dependent parameter cannot be inferred.
+                            canDependentParameterBeInferred = false;
+                        }
+
+                        EditorsHelper.modify(dependentParameterNode, function(n) {
+                            if (canDependentParameterBeInferred) {
+                                n.setFilled(sum > 0 && sum < 100);
+                                n.getData().value = 100 - sum;
+                            } else {
+                                n.setFilled(false);
+                                n.getData().value = 0;
+                            }
+                        });
+                    }
+                });
             } else if (Def.NODE_TYPE_START == node.getType()) {
                 this.autofillStopNodesIfPossible();
                 this.autoConvertMailingNodesTypeIfPossible();
@@ -1435,152 +1445,6 @@
             }
         }
     };
-
-    Editor.prototype.isAutoOptimizationWorkflow = function (startNode) {
-        const finalParameterNode = this._findFinalParameterNode(startNode);
-        if (!finalParameterNode) {
-            return false;
-        }
-
-        const finalMailingNode = this._findOptimizationFinalMailingNode(finalParameterNode);
-        if (!finalMailingNode) {
-            return false;
-        }
-
-        const decisionNode = this.getFirstIncomingChain(finalParameterNode).find(function (node) {
-            return node.getType() === Def.NODE_TYPE_DECISION;
-        })
-
-        return !!decisionNode && decisionNode.data.decisionType === Def.constants.decisionTypeAutoOptimization;
-    }
-
-    /**
-     * Prepare list of available options for select with split value depending on count of test mailings.
-     * For example:
-     *  1) If A/B campaign has 2 test mailings, that max split value can be 33%
-     *  2) If A/B campaign has 3 test mailings, that max split value can be 25%
-     * @param node that will be configured
-     * @returns list of options for select element, in format {id: value, text: value}
-     */
-    Editor.prototype.getParametersOptions = function (node) {
-        const finalParameterNode = this._findFinalParameterNode(node);
-
-        var splitValues = Def.SPLIT_DEFAULT_PARAMETERS;
-
-        if (finalParameterNode) {
-            const optimizationParameterNodes = this._findTestMailingsParamsNodes(finalParameterNode);
-            const paramsNodesCount = optimizationParameterNodes.length + 1; // + final parameter node
-
-            const maxSplitValue = Math.floor(100 / paramsNodesCount);
-
-            splitValues = splitValues.filter(function (value) {
-               return value <= maxSplitValue;
-            });
-        }
-
-        return splitValues.map(function (value) {
-           return {id: value, text: value};
-        });
-    }
-
-    /**
-     * If all of the test mailing of A/B campaign is filled, than it make final mailing icon active.
-     * @param finalParameterNode - node of final parameter of A/B campaign
-     */
-    Editor.prototype._fillOptimizationFinalMailingIfPossible = function (finalParameterNode) {
-        if (!this._isAllOptimizationTestMailingsFilled(finalParameterNode)) {
-            return;
-        }
-
-        const finalMailingNode = this._findOptimizationFinalMailingNode(finalParameterNode);
-        const title = finalMailingNode.getTitle();
-
-        EditorsHelper.modify(finalMailingNode, function(n) {
-            n.setFilled(true);
-        });
-
-        finalMailingNode.setTitle(title);
-    }
-
-    Editor.prototype._findFinalParameterNode = function (node) {
-        const outgoingChains = this.getNodeOutgoingChains(node);
-
-        for (var i = 0; i < outgoingChains.length; i++) {
-            const chain = outgoingChains[i];
-
-            const finalParameterNode = chain.find(function (_node, index) {
-                return index > 0 && Def.NODE_TYPE_PARAMETER === _node.getType();
-            });
-
-            if (finalParameterNode) {
-                return finalParameterNode;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Finds all parameters nodes of test mailings of A/B campaign.
-     * @param finalParameterNode - parameter node of final mailing
-     */
-    Editor.prototype._findTestMailingsParamsNodes = function(finalParameterNode) {
-        const optimizationParameterNodes = [];
-
-        this.getNodeIncomingChains(finalParameterNode).forEach(function(incomingChain) {
-            const optimizationParameterNode = incomingChain.find(function (node, index) {
-                return index > 0 && Def.NODE_TYPE_PARAMETER === node.getType();
-            });
-
-            if (optimizationParameterNode) {
-                optimizationParameterNodes.push(optimizationParameterNode);
-            }
-        });
-
-        return optimizationParameterNodes;
-    }
-
-    Editor.prototype._findOptimizationFinalMailingNode = function (finalParameterNode) {
-        const outgoingChain = this.getFirstOutgoingChain(finalParameterNode);
-
-        return outgoingChain.find(function (node) {
-            return node.getType() === Def.NODE_TYPE_MAILING && !node.isEditable();
-        })
-    }
-
-    /**
-     * Checks if all of the test mailings of A/B campaign was filled.
-     * @param finalParameterNode - parameter node of final mailing
-     */
-    Editor.prototype._isAllOptimizationTestMailingsFilled = function(finalParameterNode) {
-        const testMailingParametersNodes = this._findTestMailingsParamsNodes(finalParameterNode);
-
-        for (var i = 0; i < testMailingParametersNodes.length; i++) {
-            const parameterNode = testMailingParametersNodes[i];
-
-            const outgoingChain = this.getFirstOutgoingChain(parameterNode);
-
-            if (outgoingChain.length <= 1) {
-                return false;
-            }
-
-            const nextNode = outgoingChain[1];
-            if (nextNode.getType() !== Def.NODE_TYPE_MAILING || !nextNode.isFilled() || !nextNode.isEditable()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    Editor.prototype._setParameterNodesValue = function (parameterNodes, value) {
-        parameterNodes.forEach(function (optimizationNode) {
-            EditorsHelper.modify(optimizationNode, function(node) {
-                node.setFilled(true);
-                node.getData().value = value;
-            });
-        });
-    }
 
     Editor.prototype.processRecipientsChains = _.debounce(function() {
         var initialRecipientsNodes = this._findInitialRecipientsNodes();
@@ -1884,10 +1748,6 @@
         }
     };
 
-    Editor.prototype.deleteAllNodes = function() {
-        this.deleteNodes(this.getNodes());
-    };
-
     Editor.prototype.deleteNodes = function(nodes) {
         var self = this;
 
@@ -2087,11 +1947,67 @@
         this.adaptToNewDragMode();
     }
 
+    Editor.prototype.isAutoOptimizationWorkflow = function (startNode) {
+        const finalParameterNode = this._findFinalParameterNode(startNode);
+        if (!finalParameterNode) {
+            return false;
+        }
+
+        const finalMailingNode = this._findOptimizationFinalMailingNode(finalParameterNode);
+        if (!finalMailingNode) {
+            return false;
+        }
+
+        const decisionNode = this.getFirstIncomingChain(finalParameterNode).find(function (node) {
+            return node.getType() === Def.NODE_TYPE_DECISION;
+        })
+
+        return !!decisionNode && decisionNode.data.decisionType === Def.constants.decisionTypeAutoOptimization;
+    }
+
+    Editor.prototype._findFinalParameterNode = function (node) {
+        const outgoingChains = this.getNodeOutgoingChains(node);
+
+        for (var i = 0; i < outgoingChains.length; i++) {
+            const chain = outgoingChains[i];
+
+            const finalParameterNode = chain.find(function (_node, index) {
+                return index > 0 && Def.NODE_TYPE_PARAMETER === _node.getType() && !_node.isEditable();
+            });
+
+            if (finalParameterNode) {
+                return finalParameterNode;
+            }
+        }
+
+        return null;
+    }
+
+    Editor.prototype._findOptimizationFinalMailingNode = function (finalParameterNode) {
+        const outgoingChain = this.getFirstOutgoingChain(finalParameterNode);
+
+        return outgoingChain.find(function (node) {
+            return node.getType() === Def.NODE_TYPE_MAILING && !node.isEditable();
+        })
+    }
+
+    Editor.prototype.getFirstOutgoingChain = function(node) {
+        const chains = this.getNodeOutgoingChains(node);
+        if (chains.length) {
+            return chains[0];
+        }
+        return [];
+    };
+
     /**
      * Hides the grid background if it is already displayed, or displays it if is hidden
      */
     Editor.prototype.changeGridBackgroundVisibility = function () {
-        this.$gridBackground.toggleClass('hidden');
+        if (this.isGridDisplayed()) {
+            this.$gridBackground.addClass('hidden');
+        } else {
+            this.$gridBackground.removeClass('hidden');
+        }
     };
 
     Editor.prototype.convertNodeCoordinates = function (node) {
@@ -2336,14 +2252,13 @@
             if (node) {
                 if(node.editable) {
                     this.deselectAll();
-                    EditorsHelper.showEditDialog(node, Utils.checkActivation(!Node.isMailingNode(node)));
+                    EditorsHelper.showEditDialog(node, Utils.checkActivation());
                 }
             } else {
                 var $nodes = this.getSelection();
                 if ($nodes.length == 1) {
                     this.deselectAll();
-                    const node = Node.get($nodes[0]);
-                    EditorsHelper.showEditDialog(node, Utils.checkActivation(!Node.isMailingNode(node)));
+                    EditorsHelper.showEditDialog(Node.get($nodes[0]), Utils.checkActivation());
                 }
             }
         }

@@ -1,7 +1,6 @@
 AGN.Lib.Controller.new('reference-content-settings', function() {
   var Template = AGN.Lib.Template;
   var isAvailable = false;
-  var disable = false;
   var createItemHtml;
   var items = [];
   var initialItems = [];
@@ -19,7 +18,7 @@ AGN.Lib.Controller.new('reference-content-settings', function() {
   }
 
   function createItem(index, value) {
-    return $(createItemHtml({name: 'Item' + index, value: value, disable: disable}));
+    return $(createItemHtml({name: 'Item' + index, value: value}));
   }
 
   function addItem(value) {
@@ -34,7 +33,6 @@ AGN.Lib.Controller.new('reference-content-settings', function() {
 
     createItemHtml = Template.prepare('mailing-reference-content-item');
     isAvailable = this.config.isAvailable;
-    disable = this.config.disable;
     items = [];
 
     if (isAvailable) {

@@ -1,4 +1,3 @@
-// TODO: EMMGUI-714: CHECK USAGE and remove when old design will be removed
 AGN.Lib.Controller.new('preview-header-new', function() {
     var self = this;
 

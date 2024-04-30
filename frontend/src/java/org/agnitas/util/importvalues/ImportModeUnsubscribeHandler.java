@@ -27,9 +27,9 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class ImportModeUnsubscribeHandler implements ImportModeHandler {
     
@@ -62,7 +62,7 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 					&& !"customer_id".equalsIgnoreCase(columnEntry.getKey())
 					&& !"gender".equalsIgnoreCase(columnEntry.getKey())
 					&& !"mailtype".equalsIgnoreCase(columnEntry.getKey())
-					&& !RecipientStandardField.Bounceload.getColumnName().equalsIgnoreCase(columnEntry.getKey())) {
+					&& !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(columnEntry.getKey())) {
 				boolean notNullColumnIsSet = false;
 				for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 					if (columnEntry.getKey().equalsIgnoreCase(mapping.getDatabaseColumn()) && (mapping.getFileColumn() != null || mapping.getDefaultValue() != null)) {
@@ -105,15 +105,15 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Update customer data
 		if (importProfile.getUpdateAllDuplicates()) {
 			// Update all existing customer identified by keycolumns
-			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumnImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumn(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
 			status.setUpdated(updatedEntries);
 		} else {
 			// Update the first existing customer only
-			int updatedEntries = importRecipientsDao.updateFirstExistingCustomersImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateFirstExistingCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
 			status.setUpdated(updatedEntries);
 		}
 	}

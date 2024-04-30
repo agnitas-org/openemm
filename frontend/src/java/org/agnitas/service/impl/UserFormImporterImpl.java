@@ -31,8 +31,6 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
@@ -90,22 +88,8 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			}
 
 			UserForm userForm = new UserFormImpl();
-			
 			String userFormName = StringUtils.defaultIfEmpty(formName, (String) jsonObject.get("formname"));
-			// Check for unallowed html tags
-			try {
-				HtmlChecker.checkForUnallowedHtmlTags(userFormName, false);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-				throw new Exception("Invalid userform data containing HTML for field: " + "formname");
-			}
-			
 			description = StringUtils.defaultIfEmpty(description, (String) jsonObject.get("description"));
-			// Check for unallowed html tags
-			try {
-				HtmlChecker.checkForUnallowedHtmlTags(description, false);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-				throw new Exception("Invalid userform data containing HTML for field: " + "description");
-			}
 
 			FormImportResult.Builder importResult = FormImportResult.builder();
 
@@ -156,15 +140,7 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 		for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 			JsonObject linkJsonObject = (JsonObject) linkObject;
 			ComTrackableUserFormLink trackableLink = new ComTrackableUserFormLinkImpl();
-			
 			trackableLink.setShortname((String) linkJsonObject.get("name"));
-			// Check for unallowed html tags
-			try {
-				HtmlChecker.checkForUnallowedHtmlTags(trackableLink.getShortname(), false);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-				throw new Exception("Link name contains unallowed HTML tags");
-			}
-			
 			trackableLink.setFullUrl((String) linkJsonObject.get("url"));
 
 			if (linkJsonObject.containsPropertyKey("deep_tracking")) {
@@ -184,12 +160,6 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 				for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
 					JsonObject propertyJsonObject = (JsonObject) propertyObject;
 					String propertyName = (String) propertyJsonObject.get("name");
-					// Check for unallowed html tags
-					try {
-						HtmlChecker.checkForUnallowedHtmlTags(propertyName, false);
-					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-						throw new Exception("Link property name contains unallowed HTML tags");
-					}
 					if (propertyName == null) {
 						propertyName = "";
 					}

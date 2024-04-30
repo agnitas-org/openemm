@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,46 +54,31 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith, DateRange changeDate) {
-		final List<Object> parameters = new ArrayList<>();
-		parameters.add(companyID);
+	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith) {
+		final String escapedParameterSearchQuery = "%" + getEscapedValue(StringUtils.defaultString(searchQuery)) + "%";
+		final String mailingSearchQuery = "%" + (mailingIdStartsWith > 0 ? mailingIdStartsWith : "") + "%";
+
+		// search rules.
+		StringBuilder searchRulesSubQuery = new StringBuilder();
+		searchRulesSubQuery.append("(info.name IS NOT NULL AND LOWER(info.name) LIKE LOWER(?) ESCAPE '!')");
+		searchRulesSubQuery.append(" OR (info.description IS NOT NULL AND LOWER(info.description) LIKE LOWER(?) ESCAPE '!')");
 
 		// whole query.
 		StringBuilder selectBySearchQuery = new StringBuilder();
 		selectBySearchQuery.append("SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl info");
 		selectBySearchQuery.append(" WHERE info.company_id = ?");
-
-		if (StringUtils.isNotBlank(searchQuery)) {
-			final String escapedParameterSearchQuery = "%" + getEscapedValue(StringUtils.defaultString(searchQuery)) + "%";
-
-			// search rules.
-			StringBuilder searchRulesSubQuery = new StringBuilder();
-			searchRulesSubQuery.append("(info.name IS NOT NULL AND LOWER(info.name) LIKE LOWER(?) ESCAPE '!')");
-			searchRulesSubQuery.append(" OR (info.description IS NOT NULL AND LOWER(info.description) LIKE LOWER(?) ESCAPE '!')");
-
-			selectBySearchQuery.append(" AND (").append(searchRulesSubQuery).append(")");
-
-			parameters.add(escapedParameterSearchQuery);
-			parameters.add(escapedParameterSearchQuery);
-		}
-
-		if (mailingIdStartsWith > 0) {
-			selectBySearchQuery.append(" AND (info.mailing_id IS NOT NULL AND CAST(info.mailing_id AS CHAR(15)) LIKE ?)");
-			parameters.add("%" + mailingIdStartsWith + "%");
-		}
-
-		if (changeDate.getFrom() != null) {
-			selectBySearchQuery.append(" AND info.change_date >= ?");
-			parameters.add(changeDate.getFrom());
-		}
-		if (changeDate.getTo() != null) {
-			selectBySearchQuery.append(" AND info.change_date < ?");
-			parameters.add(DateUtilities.addDaysToDate(changeDate.getTo(), 1));
-		}
-
+		selectBySearchQuery.append(" AND (").append(searchRulesSubQuery).append(")");
+		selectBySearchQuery.append(" AND (info.mailing_id IS NOT NULL AND CAST(info.mailing_id AS CHAR(15)) LIKE ?)");
 		selectBySearchQuery.append(" ORDER BY creation_date DESC");
 
 		logDebugStmt(selectBySearchQuery.toString());
+
+		List<Object> parameters = new ArrayList<>();
+		parameters.add(companyID);
+		parameters.add(escapedParameterSearchQuery);
+		parameters.add(escapedParameterSearchQuery);
+		parameters.add(mailingSearchQuery);
+
 		return select(logger, selectBySearchQuery.toString(), new ComMailingParameter_RowMapper(), parameters.toArray());
 	}
 

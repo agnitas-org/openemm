@@ -46,8 +46,6 @@ public interface ComLogonService {
 	 */
 	Admin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException;
 
-	Admin getAdminByUsername(String username);
-
 	ServiceResult<Admin> authenticate(String username, String password, String clientIp);
 
 	SimpleServiceResult checkDatabase();

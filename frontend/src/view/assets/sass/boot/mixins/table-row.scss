@@ -27,25 +27,3 @@
     }
   }
 }
-
-.table {
-  tbody > tr.disabled {
-    text-decoration: none;
-    background-color: #ebebe4;
-
-    td {
-      cursor: default;
-    }
-
-    .form-control {
-      pointer-events: none;
-      background-color: transparent;
-    }
-  }
-}
-
-body.dark-theme .table {
-  tbody > tr.disabled {
-    background-color: $c-dt-table-disabled-background;
-  }
-}

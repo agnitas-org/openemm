@@ -237,9 +237,7 @@ public class ComOnePixelCount extends HttpServlet {
 									logger.info("OnepixelLog: cust: " + uid.getCustomerID() + " mi: " + uid.getMailingID() + " ci: " + uid.getCompanyID());
 								}
 							} else {
-								if(logger.isInfoEnabled()) {
-									logger.info(String.format("Counting tracking pixel disabled by request parameter (customer id: %d, mailing id: %d, company id: %d)", uid.getCustomerID(), uid.getMailingID(), uid.getCompanyID()));
-								}
+								logger.error("OnepixelLog error: cust: " + uid.getCustomerID() + " mi: " + uid.getMailingID() + " ci: " + uid.getCompanyID());
 							}
 						}
 

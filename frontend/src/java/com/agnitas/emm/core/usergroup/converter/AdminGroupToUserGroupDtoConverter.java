@@ -30,8 +30,7 @@ public class AdminGroupToUserGroupDtoConverter implements Converter<AdminGroup, 
         userGroup.setCompanyId(source.getCompanyID());
         userGroup.setShortname(source.getShortname());
         userGroup.setDescription(source.getDescription());
-        userGroup.setCompanyDescr(source.getCompanyName() + " (" + source.getCompanyID() + ")");
-
+        
         if (source.getParentGroupIds() != null) {
             List<String> adminGroupIds = new ArrayList<>();
             for (int adminGroupId : source.getParentGroupIds()) {

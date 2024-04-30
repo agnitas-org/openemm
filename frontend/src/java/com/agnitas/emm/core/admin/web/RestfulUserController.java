@@ -14,15 +14,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 
-import com.agnitas.emm.core.Permission;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.company.service.CompanyService;
@@ -33,7 +30,7 @@ import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
+import org.agnitas.service.WebStorage;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormSearchParams;
@@ -41,16 +38,12 @@ import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,9 +64,9 @@ import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.web.LogonController;
+import com.agnitas.emm.core.logon.web.LogonControllerBasic;
 import com.agnitas.service.ComCSVService;
-import com.agnitas.service.PdfService;
+import com.agnitas.service.ComPDFService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
@@ -103,7 +96,7 @@ public class RestfulUserController implements XssCheckAware {
     private final AdminChangesLogService adminChangesLogService;
     private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
     private final ComCSVService csvService;
-    private final PdfService pdfService;
+    private final ComPDFService pdfService;
     private final ConversionService conversionService;
 
     protected static final String FUTURE_TASK = "GET_ADMIN_LIST";
@@ -114,7 +107,7 @@ public class RestfulUserController implements XssCheckAware {
 			AdminGroupService adminGroupService, WebStorage webStorage,
 			UserActivityLogService userActivityLogService,
 			AdminChangesLogService adminChangesLogService,
-			ComCSVService csvService, PdfService pdfService,
+			ComCSVService csvService, ComPDFService pdfService,
 			ConversionService conversionService,
 			ComLogonService logonService) {
         this.configService = configService;
@@ -130,11 +123,6 @@ public class RestfulUserController implements XssCheckAware {
         this.logonService = logonService;
     }
 
-    @InitBinder
-    public void initBinder(WebDataBinder binder, Admin admin) {
-        binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
-    }
-
     @RequestMapping("/list.action")
     public Pollable<ModelAndView> list(final Admin admin, final AdminListForm form,
                                        final Model model, final HttpSession session,
@@ -145,12 +133,12 @@ public class RestfulUserController implements XssCheckAware {
         if (resetSearchParams) {
             FormUtils.resetSearchParams(adminListSearchParams, form);
         } else {
-            FormUtils.syncSearchParams(adminListSearchParams, form, restoreSearchParams || isUiRedesign(admin));
+            FormUtils.syncSearchParams(adminListSearchParams, form, restoreSearchParams);
         }
         model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<>());
         int companyID = admin.getCompanyID();
 
-        PollingUid pollingUid = PollingUid.builder(session.getId(), "restful" + ADMIN_ENTRIES_KEY)
+        PollingUid pollingUid = PollingUid.builder(session.getId(), ADMIN_ENTRIES_KEY)
                 .arguments(form.toArray())
                 .build();
 
@@ -165,14 +153,6 @@ public class RestfulUserController implements XssCheckAware {
         ModelAndView modelAndView = new ModelAndView(REDIRECT_TO_LIST, form.toMap());
 
         return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
-    }
-
-    @GetMapping("/search.action")
-    public String search(AdminListForm form, @ModelAttribute AdminListFormSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, form, false);
-        model.addFlashAttribute("adminListForm", form);
-
-        return REDIRECT_TO_LIST;
     }
 
     @RequestMapping("/{adminID}/view.action")
@@ -198,24 +178,16 @@ public class RestfulUserController implements XssCheckAware {
         loadDataForViewPage(admin, adminToEdit, model);
         model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
-        if (isUiRedesign(admin)) {
-            model.addAttribute("isRestfulUser", true);
-            return "user_view";
-        }
         return "settings_restfuluser_view";
     }
-
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.USERS_UI_MIGRATION);
-    }
-
+    
     @RequestMapping("/{adminID}/welcome.action")
     public String sendWelcome(final Admin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
     	String clientIp = request.getRemoteAddr();
     	final int adminIdToEdit = form.getAdminID();
     	final int companyID = admin.getCompanyID();
     	final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
-    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonController.PASSWORD_RESET_LINK_PATTERN);
+    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonControllerBasic.PASSWORD_RESET_LINK_PATTERN);
     	popups.success("admin.password.sent");
     	return MESSAGES_VIEW;
     }
@@ -231,12 +203,12 @@ public class RestfulUserController implements XssCheckAware {
 
         prepareRightsViewPageData(admin, form, model, adminToEdit);
 
-        return isUiRedesign(admin) ? "user_permissions" : "settings_restfuluser_permissions";
+        return "settings_restfuluser_permissions";
     }
 
     @PostMapping(value = "/{adminID}/save.action")
     public String save(final Admin admin, final AdminForm form, final Popups popups) {
-        if (!AdminFormValidator.validate(form, popups)) {
+        if (!AdminFormValidator.validate(form, popups)){
         	popups.alert("error.admin.save");
         	return redirectToView(form.getAdminID());
         } else if (adminUsernameChangedToExisting(form)) {
@@ -278,12 +250,9 @@ public class RestfulUserController implements XssCheckAware {
         return "redirect:/restfulUser/" + adminId + "/view.action";
     }
 
-    @RequestMapping("/create.action")
+   @RequestMapping("/create.action")
     public String create(final Admin admin, AdminForm form, final Model model) {
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-        if (isUiRedesign(admin)) {
-            model.addAttribute("isRestfulUser", true);
-        }
+       	model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
         loadDataForViewPage(admin, null, model);
 
@@ -298,10 +267,6 @@ public class RestfulUserController implements XssCheckAware {
             return MESSAGES_VIEW;
         }
         form.setAdminID(0);
-        if (!AdminFormValidator.validate(form, popups)) {
-        	popups.alert("error.admin.save");
-        	return MESSAGES_VIEW;
-        }
         if (StringUtils.isBlank(form.getPassword())) {
             popups.alert("error.password.missing");
             return MESSAGES_VIEW;
@@ -444,9 +409,6 @@ public class RestfulUserController implements XssCheckAware {
                 form.getFilterAdminGroupId(),
                 form.getFilterMailinglistId(),
                 form.getFilterLanguage(),
-                form.getFilterCreationDate(),
-                form.getFilterLastLoginDate(),
-                form.getFilterUsername(),
                 form.getSort(),
                 form.getDir(),
                 form.getPage(),
@@ -546,9 +508,8 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     private boolean saveAdminRightsAndWriteToActivityLog(Admin admin, AdminRightsForm aForm, Popups popups) {
-        Set<String> userRights = isUiRedesign(admin) ? aForm.getGrantedPermissions() : aForm.getUserRights();
         Tuple<List<String>, List<String>> changes = adminService.saveAdminPermissions(admin.getCompanyID(),
-                aForm.getAdminID(), userRights, admin.getAdminID());
+                aForm.getAdminID(), aForm.getUserRights(), admin.getAdminID());
 
         if (changes == null) {
             popups.alert("error.admin.change.permission");

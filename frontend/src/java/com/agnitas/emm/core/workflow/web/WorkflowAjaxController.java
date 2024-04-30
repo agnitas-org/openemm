@@ -74,7 +74,7 @@ public class WorkflowAjaxController implements XssCheckAware {
             return new HashMap<>();
         }
 
-        return autoExportService.getAutoExports(admin).stream()
+        return autoExportService.getAutoExportsOverview(admin).stream()
                 .collect(Collectors.toMap(AutoExport::getAutoExportId, AutoExport::getShortname));
     }
 
@@ -112,5 +112,12 @@ public class WorkflowAjaxController implements XssCheckAware {
     Map<Integer, String> getTargetNames(Admin admin) {
         return workflowService.getAllTargets(admin.getCompanyID()).stream()
                 .collect(Collectors.toMap(TargetLight::getId, TargetLight::getTargetName));
+    }
+
+    @GetMapping("/getReportNames.action")
+    @PermissionMapping("view")
+    public @ResponseBody
+    Map<Integer, String> getReportNames(Admin admin) {
+        return workflowService.getAllReports(admin.getCompanyID());
     }
 }

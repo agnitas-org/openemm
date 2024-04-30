@@ -15,7 +15,6 @@ public abstract class MediatypeForm {
     private int priority;
     private String textTemplate;
     private boolean active;
-    private boolean readonly;
     
     public int getPriority() {
         return priority;
@@ -39,13 +38,5 @@ public abstract class MediatypeForm {
 
     public void setActive(boolean active) {
         this.active = active;
-    }
-
-    public boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
     }
 }

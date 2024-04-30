@@ -74,10 +74,6 @@ public interface AdminGroup {
      */
     void setCompanyID(int id);
 
-    void setCompanyName(String companyName);
-
-    String getCompanyName();
-
     /**
      * Setter for property description.
      * 

@@ -1,41 +1,5 @@
 AGN.Lib.Controller.new('auto-import-export', function() {
 
-    var checkConnectionUrl;
-    var isWorkflowDriven;
-
-    this.addDomInitializer('auto-export', function () {
-        checkConnectionUrl = this.config.urls.checkConnection;
-        displayProperExportProfileBtn();
-    });
-
-    function displayProperExportProfileBtn() {
-        const $editProfileBtn = $('#edit-profile-btn');
-        const $addProfileBtn = $('#add-profile-btn');
-
-        const selectedProfile = $('#export-profile').val();
-        const profileSelected = parseInt(selectedProfile) > 0;
-
-        $addProfileBtn.toggle(!profileSelected);
-        $editProfileBtn.toggle(profileSelected).attr('href', AGN.url('/export/' + selectedProfile + '/view.action'));
-    }
-
-    this.addDomInitializer('auto-import', function () {
-        checkConnectionUrl = this.config.urls.checkConnection;
-        isWorkflowDriven = this.config.isWorkflowDriven;
-
-        if (contentSourceTypeExists()) {
-            selectContentSource(this.config.contentSourceIdentifier);
-        }
-    });
-
-    function selectContentSource(identifier) {
-        const contentSourceSelect = AGN.Lib.Select.get($('#contentSourceId'));
-
-        if (contentSourceSelect.hasOption(identifier)) {
-            contentSourceSelect.selectValue(identifier);
-        }
-    }
-
     this.addInitializer('optionsChangeable', function () {
         if ($('#recipient-autoimport-csvdescription').length) {
             $('[data-action="options-availability"][value="ReferenceTable"]').prop('disabled', false);
@@ -51,72 +15,52 @@ AGN.Lib.Controller.new('auto-import-export', function() {
         $('#selectedProfileFields').select2('val', $('#modalSelectedProfileFields').val());
     });
 
-    this.addAction({change: 'select-export-profile'}, function() {
-        displayProperExportProfileBtn();
-    });
-
-    this.addAction({click: 'check-connection'}, function() {
-        const form = AGN.Lib.Form.get(this.el);
-
-        $.ajax(checkConnectionUrl, {
-            type: 'POST',
-            dataType: 'html',
-            enctype: 'multipart/form-data',
-            processData: false,
-            contentType: false,
-            data: form.data()
-        }).done(function (resp) {
-            AGN.Lib.Page.render(resp);
-        });
-    });
-
     var profileMailinglists = {},
-        isAutoImportNew = false;
+      isAutoImportNew = false;
 
     this.addDomInitializer('import-profile-mailing-lists', function() {
-        const profileConfig = this.config;
+        var profileConfig = this.config;
         isAutoImportNew = profileConfig.isAutoImportNew;
         profileMailinglists = profileConfig.profileMailinglists;
-        const currentProfileId = $('[name="importProfileId"]').val();
+        var currentProfileId = $('[name="' + profileConfig.profileIdPropertyName + '"]').val();
         setMailinglists(currentProfileId, isAutoImportNew);
     });
 
     this.addAction({'change': 'change-import-profile'}, function() {
-        const selectedProfile = AGN.Lib.Select.get($(this.el)).getSelectedValue();
+        var selectedProfile = AGN.Lib.Select.get($(this.el)).getSelectedValue();
         setMailinglists(selectedProfile, isAutoImportNew);
     });
 
-    const setMailinglists = function(profileId, isNew) {
-        if (isNew) {
-            const mailingLists = profileMailinglists[profileId];
-            $('input[type=checkbox][name^="mailinglists"]').prop('checked', false);
+    var setMailinglists = function(profileId, isNew) {
+        if(isNew) {
+            var mailingLists = profileMailinglists[profileId];
+            $('input[type=checkbox][name^="mailinglist"]').prop('checked', false);
             _.each(mailingLists, function (id) {
-                $('input[type=checkbox][name="mailinglists[' + id + ']"]').prop('checked', true);
+                $('input[type=checkbox][name="mailinglist[' + id + ']"]').prop('checked', true);
             });
         }
     };
 
     //----------------------------- Auto Import/Export schedule table
-    const ScheduleTimeTable = AGN.Lib.ScheduleTimeTable,
-        DayRow = AGN.Lib.ScheduleTimeTable.DayRow;
+    var ScheduleTimeTable = AGN.Lib.ScheduleTimeTable,
+      DayRow = AGN.Lib.ScheduleTimeTable.DayRow;
 
     function getScheduleTimeTable($el) {
-        const $controller = $el.closest('[data-controller]');
+        var $controller = $el.closest('[data-controller]');
         return $controller.data('_schedule_table');
     }
 
     function setScheduleTimeTable($el, scheduleTable) {
-        const $controller = $el.closest('[data-controller]');
+        var $controller = $el.closest('[data-controller]');
         $controller.data('_schedule_table', scheduleTable);
     }
 
     this.addDomInitializer('auto-import-export-scheduler', function () {
-        const $el = $(this.el);
-        const config = this.config;
-        const data = config.intervalAsJson || [];
+        var $el = $(this.el);
+        var config = this.config;
+        var data = config.intervalAsJson || [];
 
-        const $scheduleTimeContainer = $('#tile-importexport-schedule-time');
-        const scheduleTable = new ScheduleTimeTable($scheduleTimeContainer);
+        var scheduleTable = new ScheduleTimeTable($('#tile-importexport-schedule-time'));
         setScheduleTimeTable($el, scheduleTable);
 
         var period = [];
@@ -134,13 +78,8 @@ AGN.Lib.Controller.new('auto-import-export', function() {
             scheduleTable.addEmptyDayRow();
         }
 
-        const form = AGN.Lib.Form.get($el);
+        var form = AGN.Lib.Form.get($el);
         form.initFields();
-
-        if (!form.editable) {
-            $scheduleTimeContainer.find(':input, button').prop('disabled', true);
-            $scheduleTimeContainer.find('a').attr('disabled', 'disabled');
-        }
     });
 
     this.addAction({click: 'add-day'}, function() {
@@ -148,7 +87,7 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     });
 
     this.addAction({click: 'remove-day'}, function() {
-        const $el = $(this.el);
+        var $el = $(this.el);
         getScheduleTimeTable($el).deleteRow(DayRow.get($(this.el)));
     });
 
@@ -161,19 +100,19 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     });
 
     this.addAction({click: 'time-checkbox-toggle'}, function() {
-        const $toggle = $(this.el);
-        const row = DayRow.get($toggle);
+        var $toggle = $(this.el);
+        var row = DayRow.get($toggle);
         row.timeCheckboxToggle($toggle);
     });
 
     this.addAction({click: 'hour-checkbox-toggle'}, function() {
-        const $toggle = $(this.el);
-        const row = DayRow.get($toggle);
+        var $toggle = $(this.el);
+        var row = DayRow.get($toggle);
         row.hourCheckboxToggle($toggle);
     });
     this.addAction({change: 'validate-changes'}, function () {
-        const $el = $(this.el);
-        const row = DayRow.get($el);
+        var $el = $(this.el);
+        var row = DayRow.get($el);
 
         validateRow(row);
     });
@@ -189,79 +128,31 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     }
 
     this.addAction({submission: 'save-scheduler-data'}, function () {
-        const $el = $(this.el);
-        const scheduleTable = getScheduleTimeTable($el);
-        const valid = scheduleTable.getAllDayRows().every(function(row) {
-            return validateRow(row)
-        });
+        var $el = $(this.el);
+        var scheduleTable = getScheduleTimeTable($el);
+        var valid = scheduleTable.getAllDayRows().every(function(row) {return validateRow(row)});
 
         if (valid) {
-            const form = AGN.Lib.Form.get($(this.el));
+            var form = AGN.Lib.Form.get($(this.el));
             form.setValueOnce("intervalAsJson", scheduleTable.getSubmissionJson('day'));
             form.submit();
         }
     });
 
-    this.addAction({click: 'save-auto-import'}, function() {
-        const $form = $('#recipient-autoimport-form');
-
-        const scheduleTable = getScheduleTimeTable($form);
-        const valid = scheduleTable.getAllDayRows().every(function(row) {
-            return validateRow(row)
-        });
-
-        if (valid) {
-            const form = AGN.Lib.Form.get($form);
-            const intervalJson = scheduleTable.getSubmissionJson('day');
-            var contentSourceDataParts = getContentSourceDataParts();
-
-            if (isWorkflowDriven) {
-                form.setValue("intervalAsJson", intervalJson);
-
-                if (contentSourceDataParts.length) {
-                    form.setValue('contentSourceID', contentSourceDataParts[0]);
-                    form.setValue('contentSourceType', contentSourceDataParts[1]);
-                }
-            } else {
-                form.setValueOnce("intervalAsJson", intervalJson);
-
-                if (contentSourceDataParts.length) {
-                    form.setValueOnce('contentSourceID', contentSourceDataParts[0]);
-                    form.setValueOnce('contentSourceType', contentSourceDataParts[1]);
-                }
-            }
-
-            form.submit();
-        }
-    });
-
-    function getContentSourceDataParts() {
-        if (contentSourceTypeExists()) {
-            return $('#contentSourceId').val().split('/');
-        }
-
-        return [];
-    }
-
-    function contentSourceTypeExists() {
-        const $contentSourceId = $('#contentSourceId');
-        return $contentSourceId.exists();
-    }
-
 
     //------------------------ Auto Export mailing options resolver
     function getExportTypeHandler($el) {
-        const $controller = $el.closest('[data-controller]');
+        var $controller = $el.closest('[data-controller]');
         return $controller.data('_export_type_handler');
     }
 
     function setExportTypeHandler($el, handler) {
-        const $controller = $el.closest('[data-controller]');
+        var $controller = $el.closest('[data-controller]');
         $controller.data('_export_type_handler', handler);
     }
 
     this.addDomInitializer('mailing-options-attribute-resolver', function () {
-        const $el = $(this.el);
+        var $el = $(this.el);
         setExportTypeHandler($el, new ExportTypeHandler($el, this.config));
     });
 
@@ -274,7 +165,7 @@ AGN.Lib.Controller.new('auto-import-export', function() {
 
         this.exportType = options.exportType || '';
         this.mailingType = options.mailingType || -1;
-        const $oneTimeCheckbox = $('input[name="' + options.oneTimeOption + '"]');
+        var $oneTimeCheckbox = $('input[name="' + options.oneTimeOption + '"]');
         this.$oneTimeCheckbox = $oneTimeCheckbox;
         this.initialOneTimeValues = {
             checked: $oneTimeCheckbox.is(':checked'),
@@ -295,19 +186,19 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     };
 
     ExportTypeHandler.prototype.toggleOneTimeCheckbox = function() {
-        const isAfterMailingDeliveryType = this.isAfterMailingDeliveryType();
-        const checked = this.initialOneTimeValues.checked;
-        const disabled = this.initialOneTimeValues.disabled;
+        var isAfterMailingDeliveryType = this.isAfterMailingDeliveryType();
+        var checked = this.initialOneTimeValues.checked;
+        var disabled = this.initialOneTimeValues.disabled;
 
         this.$oneTimeCheckbox.prop('checked', isAfterMailingDeliveryType || checked);
         this.$oneTimeCheckbox.prop('disabled', isAfterMailingDeliveryType || disabled);
     };
 
     this.addAction({change : 'change-mailing-type'}, function() {
-        const $el = $(this.el);
-        const mailingType = AGN.Lib.Select.get($el).getSelectedValue();
+        var $el = $(this.el);
+        var mailingType = AGN.Lib.Select.get($el).getSelectedValue();
         var exportType;
-        if ($('#exportType').is("select")) {
+        if ($('#exportType').is("select")) { 
             exportType = AGN.Lib.Select.get($('#exportType select')).getSelectedValue();
         } else {
             exportType = $('#exportType [type=radio]:checked').val();
@@ -316,14 +207,14 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     });
 
     this.addAction({change : 'export-type-resolver'}, function() {
-        const $el = $(this.el);
+        var $el = $(this.el);
         var exportType;
-        if ($('#exportType').is("select")) {
+        if ($('#exportType').is("select")) { 
             exportType = AGN.Lib.Select.get($('#exportType select')).getSelectedValue();
         } else {
             exportType = $el.find("[type=radio]:checked").val();
         }
-        const mailingType = AGN.Lib.Select.get($('#exportMailing select')).getSelectedValue();
+        var mailingType = AGN.Lib.Select.get($('#exportMailing select')).getSelectedValue();
         getExportTypeHandler($el).resolve(exportType, mailingType);
 
     });

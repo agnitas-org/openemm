@@ -17,7 +17,6 @@ import java.util.Objects;
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +33,6 @@ import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.service.RecipientFieldService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -46,7 +44,6 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 
 	private ComCompanyDao companyDao;
 	private RecipientService recipientService;
-	private RecipientFieldService recipientFieldService;
 	private ExtensibleUIDService uidService;
 
 	private BeanLookupFactory beanLookupFactory;
@@ -66,12 +63,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 		@SuppressWarnings("unchecked")
 		CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters"));
         aCust.setCompanyID(companyID);
-        
-        if (configService.getBooleanValue(ConfigValue.UseRecipientFieldService, companyID)) {
-        	aCust.setCustDBStructure(recipientFieldService.getRecipientDBStructure(companyID));
-		} else {
-			aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
-		}
+        aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
 
         keyVal=(String) reqParams.get(keyColumn.toUpperCase());
 
@@ -158,8 +150,4 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
     public void setRecipientService(RecipientService recipientService) {
         this.recipientService = recipientService;
     }
-	
-	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
-		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
-	}
 }

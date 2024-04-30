@@ -16,14 +16,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
+
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 import com.agnitas.util.Caret;
 
 public interface LinkService {
-	String personalizeLink(TrackableLink link, String orgUID, int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encodedStaticValueMap);
+	String personalizeLink(ComTrackableLink link, String orgUID, int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encodedStaticValueMap);
 
 	void findAllLinks(String text, BiConsumer<Integer, Integer> consumer);
 
@@ -55,7 +56,7 @@ public interface LinkService {
 
 	String createDeepTrackingUID(int companyID, int mailingID, int linkID, int customerID);
 
-	Integer getLineNumberOfFirstRdirLink(final String rdirDomain, String text);
+	Integer getLineNumberOfFirstRdirLink(final int companyID, String text);
 	
 	/**
 	 * Return number of line with invalid link
@@ -71,8 +72,8 @@ public interface LinkService {
 	List<LinkProperty> getDefaultExtensions(int companyId);
 
     void assertChangedOrDeletedLinksNotDepended(
-            Collection<TrackableLink> oldLinks,
-            Collection<TrackableLink> newLinks) throws DependentTrackableLinkException;
+            Collection<ComTrackableLink> oldLinks,
+            Collection<ComTrackableLink> newLinks) throws DependentTrackableLinkException;
 
 	class ParseLinkException extends Exception implements ErrorLinkStorage {
 		private static final long serialVersionUID = -4821051425601251856L;
@@ -147,7 +148,7 @@ public interface LinkService {
 	}
 	
 	class LinkScanResult {
-		private final List<TrackableLink> trackableLinks;
+		private final List<ComTrackableLink> trackableLinks;
 		private final List<String> imageLinks;
 		private final List<String> notTrackableLinks;
 		private final List<ErroneousLink> erroneousLinks;
@@ -159,7 +160,7 @@ public interface LinkService {
 			this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 		}
 		
-		public LinkScanResult(List<TrackableLink> trackableLinks, List<String> imageLinks, List<String> notTrackableLinks, List<ErroneousLink> erroneousLinks, List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+		public LinkScanResult(List<ComTrackableLink> trackableLinks, List<String> imageLinks, List<String> notTrackableLinks, List<ErroneousLink> erroneousLinks, List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
 			this.trackableLinks = trackableLinks;
 			this.imageLinks = imageLinks;
 			this.notTrackableLinks = notTrackableLinks;
@@ -168,7 +169,7 @@ public interface LinkService {
 			this.linkWarnings = linkWarnings;
 		}
 
-		public List<TrackableLink> getTrackableLinks() {
+		public List<ComTrackableLink> getTrackableLinks() {
 			return trackableLinks;
 		}
 		
@@ -241,6 +242,4 @@ public interface LinkService {
 		}
 		
 	}
-
-	String getRdirDomain(int companyID);
 }

@@ -30,8 +30,6 @@ import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingImporter;
@@ -48,6 +46,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -55,24 +54,20 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.beans.impl.MediatypeEmailImpl;
-import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
-import com.agnitas.util.LinkUtils;
 
 import jakarta.annotation.Resource;
 
@@ -100,9 +95,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	
 	@Resource(name="MailingImporterMediatypeFactory")
 	protected MailingImporterMediatypeFactory mediatypeFactory;
-
-	@Resource(name="ConfigService")
-	protected ConfigService configService;
 	
 	private ApplicationContext applicationContext;
 
@@ -215,20 +207,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		mailing.setCompanyID(companyID);
 		
 		mailing.setShortname(StringUtils.defaultString(shortName, (String) jsonObject.get("shortname")));
-		// Check for unallowed html tags
-		try {
-			HtmlChecker.checkForUnallowedHtmlTags(mailing.getShortname(), false);
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-			throw new Exception("Invalid mailing data containing HTML for field: " + "shortname");
-		}
-		
 		mailing.setDescription(StringUtils.defaultString(description, (String) jsonObject.get("description")));
-		// Check for unallowed html tags
-		try {
-			HtmlChecker.checkForUnallowedHtmlTags(mailing.getDescription(), false);
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-			throw new Exception("Invalid mailing data containing HTML for field: " + "description");
-		}
 		
 		mailing.setIsTemplate(importAsTemplate);
 
@@ -298,12 +277,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				JsonObject parameterJsonObject = (JsonObject) parameterObject;
 				ComMailingParameter mailingParameter = new ComMailingParameter();
 				mailingParameter.setName((String) parameterJsonObject.get("name"));
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForUnallowedHtmlTags(mailingParameter.getName(), false);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Mailing parameter name contains unallowed HTML tags");
-				}
 				mailingParameter.setValue((String) parameterJsonObject.get("value"));
 				mailingParameter.setDescription((String) parameterJsonObject.get("description"));
 				parameters.add(mailingParameter);
@@ -316,23 +289,8 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			for (Object componentObject : (JsonArray) jsonObject.get("components")) {
 				JsonObject componentJsonObject = (JsonObject) componentObject;
 				MailingComponent mailingComponent = new MailingComponentImpl();
-				
 				mailingComponent.setComponentName((String) componentJsonObject.get("name"));
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Component name contains unallowed HTML tags");
-				}
-				
 				mailingComponent.setDescription((String) componentJsonObject.get("description"));
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Component description contains unallowed HTML tags");
-				}
-				
 				if (!componentJsonObject.containsPropertyKey("type")) {
 					// Default value is Template
 					mailingComponent.setType(MailingComponentType.Template);
@@ -353,15 +311,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						mailingComponent.setEmmBlock(emmBlock, (String) componentJsonObject.get("mimetype"));
 					} else {
 						mailingComponent.setEmmBlock(emmBlock, "text/html");
-					}
-
-					mailingComponent.setDescription((String) componentJsonObject.get("description"));
-					
-					// Check for unallowed html tags
-					try {
-						HtmlChecker.checkForUnallowedHtmlTags(emmBlock, true);
-					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-						throw new Exception("Component contains unallowed HTML tags");
 					}
 				}
 				if (componentJsonObject.containsPropertyKey("target_id")) {
@@ -389,15 +338,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			for (Object contentObject : (JsonArray) jsonObject.get("contents")) {
 				JsonObject contentJsonObject = (JsonObject) contentObject;
 				DynamicTag dynamicTag = new DynamicTagImpl();
-				
 				dynamicTag.setDynName((String) contentJsonObject.get("name"));
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForNoHtmlTags(dynamicTag.getDynName());
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Mailing content name contains unallowed HTML tags");
-				}
-				
 				if (contentJsonObject.containsPropertyKey("disableLinkExtension")) {
 					dynamicTag.setDisableLinkExtension((Boolean) contentJsonObject.get("disableLinkExtension"));
 				}
@@ -413,14 +354,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						} else {
 							contentText = contentText.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyID);
 						}
-						
-						// Check for unallowed html tags
-						try {
-							HtmlChecker.checkForUnallowedHtmlTags(contentText, true);
-						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-							throw new Exception("Mailing content contains unallowed HTML tags");
-						}
-						
 						dynamicTagContent.setDynContent(contentText);
 						if (dynContentJsonObject.containsPropertyKey("target_id")) {
 							dynamicTagContent.setTargetID(targetIdMappings.get(dynContentJsonObject.get("target_id")));
@@ -434,20 +367,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 
 		if (jsonObject.containsPropertyKey("links")) {
-			String defaultLinkExtension = configService.getValue(ConfigValue.DefaultLinkExtension, companyID);
-			
-			Map<String, TrackableLink> trackableLinks = new HashMap<>();
+			Map<String, ComTrackableLink> trackableLinks = new HashMap<>();
 			for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 				JsonObject linkJsonObject = (JsonObject) linkObject;
-				TrackableLink trackableLink = new TrackableLinkImpl();
-				
+				ComTrackableLink trackableLink = new ComTrackableLinkImpl();
 				trackableLink.setShortname((String) linkJsonObject.get("name"));
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForUnallowedHtmlTags(trackableLink.getShortname(), false);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Link name contains unallowed HTML tags");
-				}
 				
 				String fullUrl = (String) linkJsonObject.get("url");
 				fullUrl = fullUrl .replace("[COMPANY_ID]", Integer.toString(companyID)) .replace("[RDIR_DOMAIN]", rdirDomain);
@@ -487,12 +411,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
 						JsonObject propertyJsonObject = (JsonObject) propertyObject;
 						String propertyName = (String) propertyJsonObject.get("name");
-						// Check for unallowed html tags
-						try {
-							HtmlChecker.checkForUnallowedHtmlTags(propertyName, false);
-						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-							throw new Exception("Link property name contains unallowed HTML tags");
-						}
 						if (propertyName == null) {
 							propertyName = "";
 						}
@@ -506,10 +424,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						}
 					}
 					trackableLink.setProperties(linkProperties);
-				}
-				
-				if (StringUtils.isNotBlank(defaultLinkExtension)) {
-					LinkUtils.extendTrackableLink(trackableLink, defaultLinkExtension);
 				}
 
 				trackableLinks.put(trackableLink.getFullUrl(), trackableLink);
@@ -541,13 +455,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				int targetID = 0;
 				
 				String targetName = (String) targetJsonObject.get("name");
-				// Check for unallowed html tags
-				try {
-					HtmlChecker.checkForUnallowedHtmlTags(targetName, false);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new RuntimeException("Target name contains unallowed HTML tags");
-				}
-				
 				String targetSQL = (String) targetJsonObject.get("sql");
 				String targetEQL = (String) targetJsonObject.get("eql");
 				boolean isAccessLimitation = targetJsonObject.containsPropertyKey("access_limiting") && (Boolean) targetJsonObject.get("access_limiting");
@@ -613,7 +520,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mediatype.setSubject("Subject text");
 			mediatype.setFromEmail("sender@example.com");
 			mediatype.setFromFullname(null);
-			mediatype.setPreHeader(null);
 			mediatype.setReplyEmail("replyto@example.com");
 			mediatype.setReplyFullname(null);
 			mediatype.setCharset("UTF-8");

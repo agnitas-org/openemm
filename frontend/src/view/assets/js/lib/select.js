@@ -44,24 +44,9 @@
     });
   };
 
-  Select.prototype.hasOption = function (value) {
-    const values = this.values();
-    return values.indexOf(value) !== -1;
-  }
-
   Select.prototype.clear = function() {
     this.api('val', "");
   };
-
-  Select.prototype.selectNext = function () {
-    const values = this.values();
-    const selectedValue = this.getSelectedValue();
-    const nextIndex = values.indexOf(selectedValue) + 1;
-
-    if (nextIndex < values.length) {
-      this.selectValue(values[nextIndex]);
-    }
-  }
 
   Select.prototype.selectValue = function(val) {
     this.api('val', val);
@@ -74,6 +59,11 @@
   Select.prototype.selectFirstValue = function() {
     this.api('val', this.getFirstValue());
   };
+
+  Select.prototype.hasOption = function (value) {
+    const values = this.values();
+    return values.indexOf(value) !== -1;
+  }
 
   Select.prototype.selectValueOrSelectFirst = function(values) {
     var allValuesFound  = false,

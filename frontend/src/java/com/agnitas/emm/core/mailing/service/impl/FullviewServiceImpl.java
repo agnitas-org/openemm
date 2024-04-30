@@ -36,6 +36,7 @@ import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.mailing.service.FullviewException;
 import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.recipient.UnknownRecipientIdException;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
 import com.agnitas.userform.bean.UserForm;
@@ -55,7 +56,7 @@ public final class FullviewServiceImpl implements FullviewService {
 	private CompanyTokenService companyTokenService;
 	
 	@Override
-	public final String getFullviewUrl(final int companyID, final int mailingID, final int customerID, final String formNameOrNull) throws UnknownCompanyIdException, UnknownMailingIdException, FormNotFoundException, FullviewException {
+	public final String getFullviewUrl(final int companyID, final int mailingID, final int customerID, final String formNameOrNull) throws UnknownCompanyIdException, UnknownMailingIdException, UnknownRecipientIdException, FormNotFoundException, FullviewException {
 		if(logger.isInfoEnabled()) {
 			logger.info(String.format("Creating personalized fullview URL (company ID %d, mailing ID %d, customer ID %d)", companyID, mailingID, customerID));
 		}

@@ -10,20 +10,26 @@
 
 package com.agnitas.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
+import java.io.IOException;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts.Globals;
+import org.apache.struts.config.impl.ModuleConfigImpl;
+import org.apache.struts.upload.CommonsMultipartRequestHandler;
+import org.apache.struts.upload.MultipartRequestHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import java.io.IOException;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
 
 public abstract class ComAjaxServletBase extends HttpServlet {
 	private static final long serialVersionUID = -2027880269232397616L;
@@ -41,11 +47,13 @@ public abstract class ComAjaxServletBase extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        setMultipartHandlerClass(request, CommonsMultipartRequestHandler.class);
         processRequestSecured(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        setMultipartHandlerClass(request, CommonsMultipartRequestHandler.class);
         processRequestSecured(request, response);
     }
 
@@ -127,5 +135,10 @@ public abstract class ComAjaxServletBase extends HttpServlet {
             applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         }
         return applicationContext;
+    }
+
+    private void setMultipartHandlerClass(HttpServletRequest request, Class<? extends MultipartRequestHandler> cls) {
+        request.setAttribute(Globals.MODULE_KEY, new ModuleConfigImpl());
+        request.setAttribute(Globals.MULTIPART_KEY, cls.getName());
     }
 }

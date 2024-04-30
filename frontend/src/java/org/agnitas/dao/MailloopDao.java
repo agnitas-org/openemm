@@ -11,10 +11,7 @@
 package org.agnitas.dao;
 
 import java.util.List;
-import java.util.Set;
 
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -79,13 +76,9 @@ public interface MailloopDao {
      */
     PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(int companyId, String sortColumn, String direction, int pageNumber, int pageSize);
 
-    PaginatedListImpl<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter);
-
     boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     
     List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId);
     
-    boolean isAddressInUse(String filterAddress);
-
-    List<String> getBounceFilterNames(Set<Integer> ids, int companyId);
+    boolean isAddressInUse(String filterAddress, boolean isNew);
 }

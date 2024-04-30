@@ -1,2 +1,0 @@
-1) regular.scss
-- 'Font Awesome 5 Free' -> 'Font Awesome 5 Regular Free' fixed naming between regular and solid icons (both required)

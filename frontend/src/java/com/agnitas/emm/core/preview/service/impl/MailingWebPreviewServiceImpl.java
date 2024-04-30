@@ -52,12 +52,13 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     private TAGCheckFactory tagCheckFactory;
 
     @Override
-    public String getPreviewWidth(Preview.Size size) {
+    public int getPreviewWidth(Preview.Size size) {
         int width;
 
         switch (size) {
             case DESKTOP:
-                return "100%";
+                width = 1022;
+                break;
             case MOBILE_PORTRAIT:
                 width = 320;
                 break;
@@ -75,7 +76,7 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
                 break;
         }
 
-        return width + 2 + "px";
+        return width + 2;
     }
 
     @Override
@@ -145,6 +146,14 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     }
 
     @Override
+    public String getMailingHtml(int mailingId, boolean mobile, boolean noImages) {
+        Preview preview = previewFactory.createPreview();
+        Page output = preview.makeAnonPreview(mailingId, mobile);
+        preview.done();
+        return noImages ? output.getStrippedHTML() : output.getHTML();
+    }
+
+    @Override
     public Page generateBackEndPreview(PreviewForm previewForm) {
         Preview.Size size = Preview.Size.getSizeById(previewForm.getSize());
         boolean isMobileView = size == Preview.Size.MOBILE_PORTRAIT || size == Preview.Size.MOBILE_LANDSCAPE;
@@ -153,12 +162,11 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         Page output;
         switch (previewForm.getModeType()) {
             case TARGET_GROUP:
-                output = preview.makePreview(previewForm.getMailingId(), 0, previewForm.getTargetGroupId(), isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
+                output = preview.makePreview(previewForm.getMailingId(), 0, previewForm.getTargetGroupId(), isMobileView);
                 break;
             case RECIPIENT:
-            case MANUAL:
             default:
-                output = preview.makePreview(previewForm.getMailingId(), previewForm.getCustomerID(), false, isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
+                output = preview.makePreview(previewForm.getMailingId(), previewForm.getCustomerID(), false, isMobileView);
                 break;
         }
 

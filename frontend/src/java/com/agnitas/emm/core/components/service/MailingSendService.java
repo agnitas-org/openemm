@@ -20,7 +20,6 @@ import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
 import java.util.Date;
-import java.util.List;
 import java.util.TimeZone;
 
 public interface MailingSendService {
@@ -33,19 +32,17 @@ public interface MailingSendService {
 
     int FAIRNESS_PERIOD_IN_MINUTES = 5;
 
-    SimpleServiceResult isRequiredDataAndComponentsExists(Mailing mailing);
-
     ServiceResult<UserAction> sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin) throws Exception;
 
     ServiceResult<UserAction> sendWorldMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) throws Exception;
 
     ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions) throws Exception;
 
-    ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
+    ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
 
     ServiceResult<UserAction> activateActionBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
 
-    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int requiredAutoImportId, int mailingId, Admin admin);
+    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int mailingId, Admin admin);
 
     boolean isLimitationForSendExists(int companyId);
 
@@ -57,8 +54,6 @@ public interface MailingSendService {
 
     void deactivateIntervalMailing(int mailingId, Admin admin);
 
-    boolean deactivateIntervalMailing(Mailing mailing);
-        
     boolean canSendOrActivateMailing(Admin admin, Mailing mailing) throws Exception;
 
     boolean isMailingActiveOrSent(Mailing mailing) throws Exception;
@@ -69,9 +64,4 @@ public interface MailingSendService {
 
     void checkIfMailingCanBeSend(Mailing mailing, Date sendDate, TimeZone timeZone) throws Exception;
 
-    List<Integer> getAvailableSendingSpeedOptions(int companyID);
-
-	void clearTestActionsData(int mailingID, int companyID);
-
-    void validateForTestRun(MailingTestSendForm form, int mailingId, int companyId);
 }

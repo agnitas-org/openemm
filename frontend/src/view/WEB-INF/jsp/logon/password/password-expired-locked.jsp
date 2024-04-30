@@ -1,5 +1,5 @@
-<%@ page contentType="text/html;charset=UTF-8" errorPage="/error.action" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ page contentType="text/html;charset=UTF-8" errorPage="/error.do" %>
+<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -10,7 +10,7 @@
 <%--@elvariable id="isSupervisor" type="java.lang.Boolean"--%>
 
 <div class="system-tile-header">
-    <tiles:insertAttribute name="header"/>
+    <tiles:insert attribute="header"/>
 </div>
 
 <div class="system-tile-content">

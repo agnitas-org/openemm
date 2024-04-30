@@ -17,7 +17,6 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
@@ -438,7 +437,7 @@ public class RecipientExportReporter {
 		}
 	}
 	
-	public void createAndSaveExportReport(RecipientExportWorker exportWorker, Admin admin, boolean isError) throws Exception {
+	public void createAndSaveExportReport(RecipientExportWorker exportWorker, int adminID, boolean isError) throws Exception {
 		String fileToShow;
 		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
 			// Remote file on ftp or sftp server
@@ -447,28 +446,7 @@ public class RecipientExportReporter {
 			//Local exported File
 			fileToShow = exportWorker.getExportFile();
 		}
-
-		if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, exportWorker.getExportProfile().getCompanyID())) {
-			boolean isAutoExport = exportWorker.getAutoExport() != null;
-
-			RecipientsReport report = new RecipientsReport();
-			report.setFilename(fileToShow);
-			report.setReportDate(exportWorker.getEndTime());
-			report.setIsError(isError);
-
-			report.setEntityId(isAutoExport
-					? exportWorker.getAutoExport().getAutoExportId()
-					: exportWorker.getExportProfile().getId()
-			);
-
-			report.setEntityType(RecipientsReport.EntityType.EXPORT);
-			report.setEntityExecution(isAutoExport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
-			report.setEntityData(RecipientsReport.EntityData.PROFILE);
-
-			recipientsReportService.saveNewReport(admin, exportWorker.getExportProfile().getCompanyID(), report, generateLocalizedExportHtmlReport(exportWorker));
-		} else {
-			recipientsReportService.createAndSaveExportReport(exportWorker.getExportProfile().getCompanyID(), admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker), isError);
-		}
+		recipientsReportService.createAndSaveExportReport(exportWorker.getExportProfile().getCompanyID(), adminID, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker), isError);
 	}
 }
 

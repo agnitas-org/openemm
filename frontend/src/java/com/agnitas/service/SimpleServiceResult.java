@@ -18,11 +18,7 @@ import com.agnitas.messages.Message;
 public class SimpleServiceResult extends ServiceResult<Void> {
 
     public SimpleServiceResult(final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
-        this(success, successMessages, warningMessages, errorMessages, null);
-    }
-
-    public SimpleServiceResult(final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages, final List<Message> infoMessages) {
-        super(null, success, successMessages, warningMessages, errorMessages, infoMessages);
+        super(null, success, successMessages, warningMessages, errorMessages);
     }
     public SimpleServiceResult(boolean success, Message... messages) {
         super(null, success, messages);
@@ -41,11 +37,7 @@ public class SimpleServiceResult extends ServiceResult<Void> {
     }
 
     public static SimpleServiceResult simpleWarning(final List<Message> warningMessages) {
-        return simpleWarning(true, warningMessages);
-    }
-
-    public static SimpleServiceResult simpleWarning(boolean success, final List<Message> warningMessages) {
-        return new SimpleServiceResult(success, null, warningMessages, null);
+        return new SimpleServiceResult(true, null, warningMessages, null);
     }
 
     public static SimpleServiceResult simpleError(final Message... errorMessages) {
@@ -54,9 +46,5 @@ public class SimpleServiceResult extends ServiceResult<Void> {
 
     public static SimpleServiceResult simpleError(final List<Message> errorMessages) {
         return new SimpleServiceResult(false, null, null, errorMessages);
-    }
-
-    public static SimpleServiceResult simpleInfo(boolean success, Message ... messages) {
-        return new SimpleServiceResult(success, null, null, null, Arrays.asList(messages));
     }
 }

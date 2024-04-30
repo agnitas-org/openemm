@@ -79,6 +79,7 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -89,7 +90,6 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 
@@ -759,7 +759,7 @@ public class ScriptHelper {
 			}
 			
 			if (datasourceDescriptionId != null) {
-				rcp.getCustParameters().put(RecipientStandardField.LatestDatasourceID.getColumnName(), datasourceDescriptionId);
+				rcp.getCustParameters().put(ComCompanyDaoImpl.STANDARD_FIELD_LATEST_DATASOURCE_ID, datasourceDescriptionId);
 			}
 		} catch (Exception e) {
 			logger.error("Cannot set velocity datasource_id in recipient for company " + companyID, e);

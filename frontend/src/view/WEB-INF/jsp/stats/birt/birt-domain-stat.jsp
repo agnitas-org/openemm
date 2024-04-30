@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -54,9 +54,6 @@
                         <mvc:option value="5" label="5"/>
                         <mvc:option value="10" label="10"/>
                         <mvc:option value="15" label="15"/>
-                        <mvc:option value="20" label="20"/>
-                        <mvc:option value="25" label="25"/>
-                        <mvc:option value="50" label="50"/>
                     </mvc:select>
                 </div>
             </div>

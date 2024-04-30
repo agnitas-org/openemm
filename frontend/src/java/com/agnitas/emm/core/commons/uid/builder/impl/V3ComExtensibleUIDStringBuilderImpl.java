@@ -13,6 +13,7 @@ package com.agnitas.emm.core.commons.uid.builder.impl;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.Company;
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
@@ -32,9 +34,7 @@ import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
 import com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache;
-import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
 public class V3ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuilder {
 
@@ -46,29 +46,29 @@ public class V3ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringB
 	// ---------------------------------------------------- Dependency Injection
 	
 	private ComRdirMailingDataDaoCache mailingDataDaoCache;
-	private CompanyUidDataDaoCache companyUidDataCache;
+	private CompanyDaoCache companyDaoCache;
 	
 	private ComMailingDao mailingDao;
 	
 	private ConfigService configService;
 	
 	@Required
-	public final void setRdirMailingDataDaoCache(final ComRdirMailingDataDaoCache cache) { // TODO Replace by constructor injection
+	public final void setRdirMailingDataDaoCache(final ComRdirMailingDataDaoCache cache) {
 		this.mailingDataDaoCache = Objects.requireNonNull(cache, "Cache cannot be null");
 	}
 	
 	@Required
-	public final void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache cache) { // TODO Replace by constructor injection
-		this.companyUidDataCache = Objects.requireNonNull(cache, "Cache canno tbe null");
+	public final void setCompanyDaoCache(final CompanyDaoCache cache) {
+		this.companyDaoCache = Objects.requireNonNull(cache, "Cache cannot be null");
 	}
 
 	@Required
-	public final void setMailingDao(final ComMailingDao dao) { // TODO Replace by constructor injection
+	public final void setMailingDao(final ComMailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 
 	@Required
-	public final void setConfigService(final ConfigService service) { // TODO Replace by constructor injection
+	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
 	
@@ -95,10 +95,10 @@ public class V3ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringB
 		final ComExtensibleUID uid = workaroundMissingMailingId(extensibleUID);
 
 		final ComRdirMailingData mailingData = this.mailingDataDaoCache.getItem(uid.getMailingID());
-		final CompanyUidData companyUidData = this.companyUidDataCache.getItem(mailingData != null ? mailingData.getCompanyID() : 0);
+		final Company company = this.companyDaoCache.getItem(mailingData != null ? mailingData.getCompanyID() : 0);
 		
-		if (companyUidData.getSecretKey() != null && !companyUidData.getSecretKey().equals("")) {
-			return makeBaseUID(uid) + SEPARATOR + getSignature(uid, companyUidData.getSecretKey());
+		if (company.getSecretKey() != null && !company.getSecretKey().equals("")) {
+			return makeBaseUID(uid) + SEPARATOR + getSignature(uid, company.getSecretKey());
 		} else
 			throw new RequiredInformationMissingException("secret key");
 	}

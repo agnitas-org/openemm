@@ -103,13 +103,9 @@ Request-Response Cycle:
     if (confirm) {
       var $saveChoice = confirm.$modal.find('[name="confirm-save-choice"]');
       if ($form.exists()) {
-        const form = Form.get($form);
-        if ($this.is('[data-url]')) {
-          form.setActionOnce($this.data('url'));
-        }
-
         // get the ajax handle for the confirmation form
-        form.jqxhr()
+        Form.get($form)
+          .jqxhr()
           .done(function(resp) {
             // run positive callbacks
             confirm.positive(resp);

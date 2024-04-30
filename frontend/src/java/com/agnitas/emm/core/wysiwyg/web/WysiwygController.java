@@ -10,18 +10,22 @@
 
 package com.agnitas.emm.core.wysiwyg.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
-import com.agnitas.service.AgnTagService;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import net.sf.json.JSONObject;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
+import com.agnitas.service.AgnTagService;
+
+import net.sf.json.JSONObject;
+
+@Controller
+@RequestMapping("/wysiwyg")
 public class WysiwygController implements XssCheckAware {
 
     private final AgnTagService agnTagService;
@@ -33,15 +37,8 @@ public class WysiwygController implements XssCheckAware {
     }
 
     @RequestMapping("/dialogs/agn-tags.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public ModelAndView showAgnTags(Admin admin) {
         return new ModelAndView("wysiwyg_agn_tags_dialog", "tags", agnTagService.getSupportedAgnTags(admin));
-    }
-
-    @RequestMapping("/dialogs/agn-tagsRedesigned.action")
-    @PermissionMapping("showAgnTags")
-    public ModelAndView showAgnTagsRedesigned(Admin admin) {
-        return new ModelAndView("wysiwyg_agn_tags_modal", "tags", agnTagService.getSupportedAgnTags(admin));
     }
 
     @RequestMapping("/images/names-urls.action")
@@ -51,22 +48,9 @@ public class WysiwygController implements XssCheckAware {
     }
 
     @RequestMapping("/image-browser.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public String imageBrowser(Admin admin, Model model) {
         model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
         model.addAttribute("companyId", admin.getCompanyID());
         return "wysiwyg_agn_tags_window";
-    }
-
-    @RequestMapping("/image-browserRedesigned.action")
-    @PermissionMapping("imageBrowser")
-    public String imageBrowserRedesigned(Admin admin, Model model) {
-        addAttributesForImageBrowser(admin, model);
-        return "wysiwyg_image_browser_window";
-    }
-
-    protected void addAttributesForImageBrowser(Admin admin, Model model) {
-        model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
-        model.addAttribute("companyId", admin.getCompanyID());
     }
 }

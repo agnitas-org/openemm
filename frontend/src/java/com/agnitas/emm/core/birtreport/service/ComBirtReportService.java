@@ -10,23 +10,9 @@
 
 package com.agnitas.emm.core.birtreport.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Campaign;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.bean.ReportEntry;
-import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
-import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
-import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+
+import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 
 public interface ComBirtReportService {
     boolean insert(ComBirtReport report) throws Exception;
@@ -42,37 +28,4 @@ public interface ComBirtReportService {
 	int getRunningReportsByHost(String hostName);
 
 	List<ComBirtReport> getReportsToSend(int maximumNumberOfReports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
-
-	BirtReportDto getBirtReport(Admin admin, int reportId);
-
-	BirtReportDownload evaluate(Admin admin, BirtReportForm form) throws Exception;
-
-	boolean deleteReport(int companyId, int reportId);
-
-	PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String sortOrder, int page, int rownums);
-	PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
-
-	List<Campaign> getCampaignList(int companyId);
-
-	Map<String, LocalDate> getDatesRestrictionMap(Admin admin, ReportSettingsType type, SimpleDateFormat dateFormatPattern, Map<String, Object> settings);
-
-	String getReportName(int companyId, int reportId);
-
-	boolean isReportExist(int companyId, int reportId);
-
-	List<MailingBase> getFilteredMailings(Admin admin, int filterType, int filterValue, MailingType mailingType);
-
-	int saveBirtReport(Admin admin, BirtReportDto birtReport) throws Exception;
-
-	boolean isReportEnabled(Admin admin, BirtReportDto birtReport);
-
-	void preloadMailingsByRestriction(Admin admin, ReportSettingsType type, Map<String, Object> settingsByType, Map<String, LocalDate> dateRestrictions);
-
-	void deactivateAllDeliveries(int reportId);
-
-	boolean hasActiveDelivery(int reportId);
-
-	BirtReportDto createSingleMailingStatisticsReport(int mailingId, Admin admin) throws Exception;
-
-	void copySampleReports(int toCompanyId, int fromCompanyId) throws Exception;
 }

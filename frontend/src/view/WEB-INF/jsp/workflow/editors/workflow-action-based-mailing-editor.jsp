@@ -1,9 +1,11 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="MAILING_TYPE_ACTIONBASED" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page"/>
 
@@ -33,10 +35,10 @@
             <div class="col-xs-12">
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                        <mvc:message code="button.Cancel"/>
+                        <bean:message key="button.Cancel"/>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="action-mailing-editor-save">
-                        <mvc:message code="button.Apply"/>
+                        <bean:message key="button.Apply"/>
                     </a>
                 </div>
             </div>
@@ -49,7 +51,7 @@
         "mailingType": "${MAILING_TYPE_ACTIONBASED}",
         "selectName": "mailingId",
         "mailingStatus": "mailings_status",
-        "showCreateEditLinks": ${not emm:permissionAllowed('mailing.content.readonly', pageContext.request)},
+        "showCreateEditLinks": "true",
         "mailingTypesForLoading": ["${MAILING_TYPE_ACTIONBASED}"],
         "defaultMailingsSort": "active_sort_status asc, shortname",
         "defaultMailingsOrder": "asc"

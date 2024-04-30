@@ -31,8 +31,4 @@
     });
   }
 
-  // May not work with inline elements
-  $.expr[':'].truncated = function(el) {
-    return el.clientWidth < el.scrollWidth;
-  }
 })(jQuery);

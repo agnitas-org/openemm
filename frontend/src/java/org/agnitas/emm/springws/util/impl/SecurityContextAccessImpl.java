@@ -15,9 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.agnitas.emm.springws.WebserviceUserDetails;
-import org.springframework.stereotype.Component;
 
-@Component("securityContextAccess")
 public final class SecurityContextAccessImpl implements SecurityContextAccess {
 	
 	@Override

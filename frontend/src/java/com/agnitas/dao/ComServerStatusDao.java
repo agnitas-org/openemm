@@ -42,7 +42,7 @@ public interface ComServerStatusDao {
 
 	String getDbVersion() throws Exception;
 
-	List<String> getErroneousImports(int maxUserImportDurationMinutes);
+	List<String> getErroneousImports();
 
 	List<String> getErroneousExports();
 }

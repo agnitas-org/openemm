@@ -27,9 +27,6 @@
     <cache:annotation-driven />
     <cache:annotation-driven cache-manager="requestCacheManager" />
 
-	<bean id="messageSource" class="com.agnitas.messages.DBMessageSource" lazy-init="false"/>
-	<bean id="localeResolver" class="com.agnitas.web.mvc.AdminLocaleResolver" lazy-init="false"/>
-
     <bean id="cacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager"/>
 	<bean id="requestCacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager" scope="request">
 		<aop:scoped-proxy/>

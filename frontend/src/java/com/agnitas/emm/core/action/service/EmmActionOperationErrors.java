@@ -48,8 +48,17 @@ public final class EmmActionOperationErrors {
 		/** A hugh number of requests are detected, request got blocked. */
 		FLOODING,
 		
+		/** No customer ID given or ID 0 given. */
+		MISSING_CUSTOMER_ID,
+		
+		/** No mailing ID given or ID 0 given. */
+		MISSING_MAILING_ID,
+		
 		/** No profile fields have been read. */
 		NO_RECIPIENT_PROFILE_FIELDS_READ,
+		
+		/** Not an active recipient. */
+		RECIPIENT_NOT_ACTIVE,
 		
 		/** Address of mail receiver blacklisted. */
 		RECEIVER_ADDRESS_BLACKLISTED,
@@ -63,48 +72,26 @@ public final class EmmActionOperationErrors {
 		/** Sending service mail blocked by request parameter. */
 		SERVICE_MAIL_MANUALLY_BLOCKED,
 		
+		/** No recipient for given ID. */
+		UNKNOWN_RECIPIENT,
+		
 		/** No sender address given. */
 		NO_SENDER_ADDRESS,
 		
 		/** Subscriber limit exceeded. */
 		SUBSCRIBER_LIMIT_EXCEEDED, 
 		
-		/** Access to different company denied. */
-		ACCESS_TO_COMPANY_DENIED,
-		
-
-
-		// ------------------------------------------------------------------------------------------------------- Subscriber related errors
 		/** Invalid customer ID. */
 		INVALID_CUSTOMER_ID, 
-		
-		/** No recipient for given ID. */
-		UNKNOWN_RECIPIENT,
-		
-		/** Not an active recipient. */
-		RECIPIENT_NOT_ACTIVE,
-		
-		/** No customer ID given or ID 0 given. */
-		MISSING_CUSTOMER_ID,
-
-		// ------------------------------------------------------------------------------------------------------- Company related errors
-		/** Unknown company ID. */
-		UNKNOWN_COMPANY_ID, 
-
-		// ------------------------------------------------------------------------------------------------------- Mailinglist related errors
-		/** Invalid mailinglist ID. */
-		INVALID_MAILINGLIST_ID,
-
-		// ------------------------------------------------------------------------------------------------------- Mailing related errors
-		/** No mailing ID given or ID 0 given. */
-		MISSING_MAILING_ID,
 		
 		/** Unknown mailing ID. */
 		MAILING_NOT_FOUND,
 		
-		/** Invalid mailing ID. */
-		INVALID_MAILING_ID
+		/** Unknown company ID. */
+		UNKNOWN_COMPANY_ID, 
 		
+		/** Access to different company denied. */
+		ACCESS_TO_COMPANY_DENIED
 	}
 	
 	/** Set of codes representing errors occurred during processing. */

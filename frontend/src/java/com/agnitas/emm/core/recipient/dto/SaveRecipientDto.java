@@ -10,6 +10,16 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DO_NOT_TRACK;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
+
 import java.util.Map;
 
 import org.agnitas.util.importvalues.Gender;
@@ -17,8 +27,6 @@ import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class SaveRecipientDto {
 
@@ -64,38 +72,38 @@ public class SaveRecipientDto {
     }
 
     public String getEmail() {
-        return getStringValue(RecipientStandardField.Email.getColumnName());
+        return getStringValue(COLUMN_EMAIL);
     }
 
     public int getGender() {
-        return getIntValue(RecipientStandardField.Gender.getColumnName(), Gender.UNKNOWN.getStorageValue());
+        return getIntValue(COLUMN_GENDER, Gender.UNKNOWN.getStorageValue());
     }
 
     public String getTitle() {
-        return getStringValue(RecipientStandardField.Title.getColumnName());
+        return getStringValue(COLUMN_TITLE);
     }
 
     public String getFirstname() {
-        return getStringValue(RecipientStandardField.Firstname.getColumnName());
+        return getStringValue(COLUMN_FIRSTNAME);
     }
 
     public String getLastname() {
-        return getStringValue(RecipientStandardField.Lastname.getColumnName());
+        return getStringValue(COLUMN_LASTNAME);
     }
 
     public int getMailtype() {
-        return getIntValue(RecipientStandardField.Mailtype.getColumnName(), MailType.HTML.getIntValue());
+        return getIntValue(COLUMN_MAILTYPE, MailType.HTML.getIntValue());
     }
 
     public boolean isTrackingVeto() {
-        return BooleanUtils.toBoolean(getIntValue(RecipientStandardField.DoNotTrack.getColumnName()));
+        return BooleanUtils.toBoolean(getIntValue(COLUMN_DO_NOT_TRACK));
     }
 
     public int getLatestDataSourceId() {
-        return getIntValue(RecipientStandardField.LatestDatasourceID.getColumnName());
+        return getIntValue(COLUMN_LATEST_DATASOURCE_ID);
     }
 
     public int getDataSourceId() {
-        return getIntValue(RecipientStandardField.DatasourceID.getColumnName());
+        return getIntValue(COLUMN_DATASOURCE_ID);
     }
 }

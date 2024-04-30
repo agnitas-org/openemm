@@ -30,10 +30,12 @@ public class UpsellingController implements XssCheckAware {
 
     private static final String[] CUSTOM_VIEWS = new String[]{
             "grid_template_upselling",
+            "notification_upselling",
             "mailing_predelivery_upselling",
             "auto_export_upselling",
             "auto_import_upselling",
             "manage_tables_upselling",
+            "notification_upselling",
             "mediapool_upselling",
             "common_upselling"
     };
@@ -57,9 +59,9 @@ public class UpsellingController implements XssCheckAware {
 
         String messageKey = featureNameToMessageKey(StringUtils.defaultString(featureName));
         if (StringUtils.isNotBlank(messageKey)) {
-            model.addAttribute("headlineKey", String.format("%s.teaser.headline", messageKey));
-            model.addAttribute("descriptionKey", String.format("%s.teaser.description", messageKey));
-            model.addAttribute("upgradeInfoKey", String.format("%s.teaser.upgradeInfo", messageKey));
+            model.addAttribute("headlineKey", String.format("GWUA.%s.teaser.headline", messageKey));
+            model.addAttribute("descriptionKey", String.format("GWUA.%s.teaser.description", messageKey));
+            model.addAttribute("upgradeInfoKey", String.format("GWUA.%s.teaser.upgradeInfo", messageKey));
         }
 
         return getView(form);

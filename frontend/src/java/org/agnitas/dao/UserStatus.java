@@ -18,14 +18,13 @@ import java.util.stream.Collectors;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 
 public enum UserStatus {
-
-	Active(1, "active", "recipient.MailingState1"),
-	Bounce(2, "bounce", "recipient.MailingState2"),
-	AdminOut(3, "opt_out", "recipient.OptOutAdmin"),	// Same webhook identifier as UserOut. Distinguished in webhook messge by a separate flag
-	UserOut(4, "opt_out", "recipient.OptOutUser"),	// Same webhook identifier as AdminOut. Distinguished in webhook messge by a separate flag
-	WaitForConfirm(5, "wait_for_confirm", "recipient.MailingState5"),
-	Blacklisted(6, "blacklisted", "recipient.MailingState6"),
-	Suspend(7, "suspended", "recipient.MailingState7"); // Sometimes also referred to as status "supended" or "pending"
+	Active(1, "active"),
+	Bounce(2, "bounce"),
+	AdminOut(3, "opt_out"),	// Same webhook identifier as UserOut. Distinguished in webhook messge by a separate flag
+	UserOut(4, "out_out"),	// Same webhook identifier as AdminOut. Distinguished in webhook messge by a separate flag
+	WaitForConfirm(5, "wait_for_confirm"),
+	Blacklisted(6, "blacklisted"),
+	Suspend(7, "suspended"); // Sometimes also referred to as status "supended" or "pending"
 	
 	/*
 	 *  Status 7 is used for single test delivery, when
@@ -38,22 +37,16 @@ public enum UserStatus {
 	
 	/** Identifier used in webhook messages. */
 	private final String webhookIdentifier;
-	private final String messageKey;
 	
-	UserStatus(int statusCode, final String webhookIdentifier, final String messageKey) {
+	UserStatus(int statusCode, final String webhookIdentifier) {
 		this.statusCode = statusCode;
 		this.webhookIdentifier = Objects.requireNonNull(webhookIdentifier);
-		this.messageKey = messageKey;
 	}
 	
 	public int getStatusCode() {
 		return statusCode;
 	}
-
-	public String getMessageKey() {
-		return messageKey;
-	}
-
+	
 	public static UserStatus getUserStatusByID(int id) throws UnknownUserStatusException {
 		for (UserStatus userStatus : UserStatus.values()) {
 			if (userStatus.statusCode == id) {

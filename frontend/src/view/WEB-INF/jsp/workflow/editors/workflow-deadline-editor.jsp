@@ -1,7 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline.WorkflowDeadlineType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline.WorkflowDeadlineTimeUnit" %>
 
+<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="html"    uri="http://struts.apache.org/tags-html" %>
+<%@ taglib prefix="logic"   uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -30,11 +33,11 @@
             <div class="col-sm-8 col-sm-push-4">
                 <label class="radio-inline">
                     <input type="radio" name="deadlineType" id="typeDelay" data-action="deadline-editor-update" checked="checked" value="${TYPE_DELAY}">
-                    <mvc:message code="Delay"/>
+                    <bean:message key="Delay"/>
                 </label>
                 <label class="radio-inline">
                     <input type="radio" name="deadlineType" id="typeFixedDeadline" data-action="deadline-editor-update" class="decision-type-radio" value="${TYPE_FIXED_DEADLINE}">
-                    <mvc:message code="workflow.deadline.FixedDeadline"/>
+                    <bean:message key="workflow.deadline.FixedDeadline"/>
                 </label>
             </div>
         </div>
@@ -43,7 +46,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
-                        <mvc:message code="Date"/>
+                        <bean:message key="settings.fieldType.DATE"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -65,16 +68,16 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label">
-                        <mvc:message code="workflow.deadline.TimeUnit"/>
+                        <bean:message key="workflow.deadline.TimeUnit"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
                     <select name="timeUnit" class="form-control" data-action="deadline-editor-update">
-                        <option value="${TIME_UNIT_MINUTE}"><mvc:message code="workflow.deadline.Minutes"/></option>
-                        <option value="${TIME_UNIT_HOUR}"><mvc:message code="Hours"/></option>
-                        <option value="${TIME_UNIT_DAY}"><mvc:message code="Days"/></option>
-                        <option value="${TIME_UNIT_WEEK}"><mvc:message code="default.weeks"/></option>
-                        <option value="${TIME_UNIT_MONTH}"><mvc:message code="default.months"/></option>
+                        <option value="${TIME_UNIT_MINUTE}"><bean:message key="workflow.deadline.Minutes"/></option>
+                        <option value="${TIME_UNIT_HOUR}"><bean:message key="Hours"/></option>
+                        <option value="${TIME_UNIT_DAY}"><bean:message key="Days"/></option>
+                        <option value="${TIME_UNIT_WEEK}"><bean:message key="default.weeks"/></option>
+                        <option value="${TIME_UNIT_MONTH}"><bean:message key="default.months"/></option>
                     </select>
                 </div>
             </div>
@@ -83,14 +86,14 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="minutesPeriod">
-                            <mvc:message code="workflow.deadline.Minutes"/>
+                            <bean:message key="workflow.deadline.Minutes"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                     <select class="form-control" data-action="deadline-editor-update" id="minutesPeriod">
                             <c:forEach var="minute" begin="5" end="55" step="5">
                                 <option value="${minute}">
-                                    ${minute} <mvc:message code="workflow.deadline.Minutes"/>
+                                    ${minute} <bean:message key="workflow.deadline.Minutes"/>
                                 </option>
                             </c:forEach>
                         </select>
@@ -102,17 +105,17 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="hoursPeriod">
-                            <mvc:message code="Hours"/>
+                            <bean:message key="Hours"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                         <select class="form-control" data-action="deadline-editor-update" id="hoursPeriod">
                             <option value="1">
-                                1 <mvc:message code="Hour"/>
+                                1 <bean:message key="Hour"/>
                             </option>
                             <c:forEach var="hour" begin="2" end="24" step="1">
                                 <option value="${hour}">
-                                    ${hour} <mvc:message code="Hours"/>
+                                    ${hour} <bean:message key="Hours"/>
                                 </option>
                             </c:forEach>
                         </select>
@@ -124,17 +127,17 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="daysPeriod">
-                            <mvc:message code="Days"/>
+                            <bean:message key="Days"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                         <select class="form-control" data-action="deadline-editor-update" id="daysPeriod">
                             <option value="1">
-                                1 <mvc:message code="Day"/>
+                                1 <bean:message key="Day"/>
                             </option>
                             <c:forEach var="day" begin="2" end="30" step="1">
                                 <option value="${day}">
-                                    ${day} <mvc:message code="Days"/>
+                                    ${day} <bean:message key="Days"/>
                                 </option>
                             </c:forEach>
                         </select>
@@ -146,17 +149,17 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="weeksPeriod">
-                                <mvc:message code="default.weeks"/>
+                                <bean:message key="default.weeks"/>
                             </label>
                         </div>
                         <div class="col-sm-8">
                             <select class="form-control" data-action="deadline-editor-update" id="weeksPeriod">
                                 <option value="1">
-                                    1 <mvc:message code="Week"/>
+                                    1 <bean:message key="Week"/>
                                 </option>
                                 <c:forEach var="week" begin="2" end="6" step="1">
                                     <option value="${week}">
-                                            ${week} <mvc:message code="default.weeks"/>
+                                            ${week} <bean:message key="default.weeks"/>
                                     </option>
                                 </c:forEach>
                             </select>
@@ -168,17 +171,17 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="monthsPeriod">
-                                <mvc:message code="default.months"/>
+                                <bean:message key="default.months"/>
                             </label>
                         </div>
                         <div class="col-sm-8">
                             <select class="form-control" data-action="deadline-editor-update" id="monthsPeriod">
                                 <option value="1">
-                                    1 <mvc:message code="Month"/> (30 <mvc:message code="days"/> )
+                                    1 <bean:message key="Month"/> (30 <bean:message key="days"/> )
                                 </option>
                                 <c:forEach var="month" begin="2" end="12" step="1">
                                     <option value="${month}">
-                                            ${month} <mvc:message code="default.months"/> (${month * 30} <mvc:message code="days"/>)
+                                            ${month} <bean:message key="default.months"/> (${month * 30} <bean:message key="days"/>)
                                     </option>
                                 </c:forEach>
                             </select>
@@ -192,7 +195,7 @@
                 <div class="col-sm-4">
                     <label class="control-label">
                         <input type="checkbox" name="useTime" value="true"/>
-                        <mvc:message code="Time"/>
+                        <bean:message key="Time"/>
                         <button id="deadlineTimeHelp" type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/workflow/DeadlineTime.xml"></button>
                     </label>
                 </div>
@@ -217,10 +220,10 @@
             <div class="col-xs-12">
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                        <mvc:message code="button.Cancel"/>
+                        <bean:message key="button.Cancel"/>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="deadline-editor-save">
-                        <mvc:message code="button.Apply"/>
+                        <bean:message key="button.Apply"/>
                     </a>
                 </div>
             </div>

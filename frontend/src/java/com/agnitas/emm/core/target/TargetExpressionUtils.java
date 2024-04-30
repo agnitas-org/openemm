@@ -53,7 +53,7 @@ public class TargetExpressionUtils {
      * @return a composed target expression or an empty string.
      */
     public static String makeTargetExpression(Collection<Integer> targetGroupIds, boolean conjunction) {
-        if (CollectionUtils.isEmpty(targetGroupIds)) {
+    	if (CollectionUtils.isEmpty(targetGroupIds)) {
             return "";
         } else {
 	        return targetGroupIds.stream()

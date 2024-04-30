@@ -11,18 +11,12 @@
 package com.agnitas.service;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
-import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.ExportPredef;
 
 import com.agnitas.beans.Admin;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.service.RecipientExportWorker;
-import org.agnitas.util.importvalues.Charset;
 
 public interface ExportPredefService {
 
@@ -30,7 +24,9 @@ public interface ExportPredefService {
 
     String findName(int id, int companyId);
 
-    int save(ExportPredef src, Admin admin) throws Exception;
+    ExportPredef create(int companyId);
+
+    int save(ExportPredef src);
 
     List<ExportPredef> getExportProfiles(Admin admin);
 
@@ -44,11 +40,6 @@ public interface ExportPredefService {
 
     ServiceResult<File> getExportFileToDownload(String exportFileName, Admin admin);
 
-    Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) throws Exception;
+    String getExportDownloadZipName(Admin admin);
 
-    Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException;
-
-    EnumSet<BindingEntry.UserType> getAvailableUserTypeOptionsForDisplay(Admin admin, ExportPredef export) throws Exception;
-
-    boolean isManageAllowed(ExportPredef export, Admin admin) throws Exception;
 }

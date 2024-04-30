@@ -10,16 +10,13 @@
 
 package com.agnitas.emm.core.birtreport.dao;
 
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.bean.ReportEntry;
-import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+
+import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 
 public interface ComBirtReportDao {
     boolean insert(ComBirtReport report) throws Exception;
@@ -31,8 +28,6 @@ public interface ComBirtReportDao {
     List<ComLightweightBirtReport> getLightweightBirtReportList(int companyID);
 
     void deactivateReportSettings(int reportId, Collection<Integer> settingsTypes);
-
-    boolean hasActiveDelivery(int reportId, Collection<Integer> settingsTypes);
 
     void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds);
 
@@ -55,25 +50,4 @@ public interface ComBirtReportDao {
 	void deactivateBirtReport(int reportID);
 
 	List<ComBirtReport> selectErroneousReports();
-
-    ComBirtReport get(int id, int companyID);
-
-    boolean delete(ComBirtReport report);
-
-    Date getReportActivationDay(int companyId, int reportId);
-
-    List<ComBirtReport> getReportsByIds(List<Integer> reportIds);
-
-    PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String order, int pageNumber, int rownums);
-    PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
-
-    List<ComBirtReport> getAllReportsByCompanyID(int companyId);
-
-    String getReportName(int companyId, int reportId);
-
-    boolean isReportExist(int companyId, int reportId);
-
-    boolean deleteReport(int companyId, int reportId);
-
-    List<Integer> getSampleReportIds(int companyId);
 }

@@ -37,7 +37,6 @@ public class MailingDAO {
 	private boolean isTemplate;
 	private boolean deleted;
 	private String shortName;
-	private String description;
 	private Timestamp creationDate;
 	private String targetExpression;
 	private long splitID;
@@ -74,7 +73,6 @@ public class MailingDAO {
 				isTemplate = dbase.asInt(row.get("is_template")) > 0;
 				deleted = dbase.asInt(row.get("deleted")) > 0;
 				shortName = dbase.asString(row.get("shortname"));
-				description = dbase.asString(row.get("description"));
 				creationDate = dbase.asTimestamp(row.get("creation_date"));
 				targetExpression = dbase.asString(row.get("target_expression"));
 				splitID = dbase.asLong(row.get("split_id"));
@@ -215,10 +213,6 @@ public class MailingDAO {
 
 	public String shortName() {
 		return shortName;
-	}
-	
-	public String description() {
-		return description;
 	}
 
 	public Timestamp creationDate() {

@@ -19,6 +19,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -27,20 +29,19 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.service.FileCompressionType;
 import org.agnitas.service.ImportException;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 import jakarta.servlet.http.HttpServletRequest;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ImportUtils {
 
@@ -164,9 +165,31 @@ public class ImportUtils {
 	}
 
 	public static void removeHiddenColumns(Map<String, CsvColInfo> dbColumns, Admin admin) {
-		for (String hiddenColumn : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
+		for (String hiddenColumn : getHiddenColumns(admin)) {
 			dbColumns.remove(hiddenColumn);
 		}
+	}
+
+	public static List<String> getHiddenColumns(Admin admin) {
+		List<String> hiddenColumns = new ArrayList<>();
+		hiddenColumns.add("change_date");
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_TIMESTAMP);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CREATION_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_DATASOURCE_ID);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LATEST_DATASOURCE_ID);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LASTOPEN_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LASTCLICK_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LASTSEND_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_ENCRYPTED_SENDING);
+		if (!admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)) {
+			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CUSTOMER_ID);
+		}
+		if (!admin.permissionAllowed(Permission.RECIPIENT_TRACKING_VETO)) {
+			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
+		}
+		return Collections.unmodifiableList(hiddenColumns);
 	}
 
 	public static boolean checkIfImportFileHasData(File importFile, String optionalZipPassword) throws IOException {
@@ -220,16 +243,8 @@ public class ImportUtils {
 	public static File createTempImportFile(MultipartFile uploadedFile, Admin admin) throws IOException {
 		String fileName = String.format("uploaded_recipient_import_file_%d_%d.csv", admin.getCompanyID(), admin.getAdminID());
 
-		String fileExtension = ".tmp";
-		if (uploadedFile.getOriginalFilename() != null && uploadedFile.getOriginalFilename().contains(".")) {
-			FileCompressionType fileCompressionType = FileCompressionType.getFileCompressionTypeFromFileName(uploadedFile.getOriginalFilename());
-			if (fileCompressionType != null) {
-				fileExtension = "." + fileCompressionType.getDefaultFileExtension();
-			}
-		}
-		
 		Path path = Files.createTempFile(AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY).toPath(), fileName, null);
-		Path targetPath = path.resolveSibling(fileName + fileExtension);
+		Path targetPath = path.resolveSibling(fileName);
 
 		Files.deleteIfExists(targetPath);
 		path = Files.move(path, targetPath);

@@ -10,17 +10,14 @@
 
 package com.agnitas.emm.core.dashboard.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
-import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
-import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import com.agnitas.beans.Admin;
+import org.agnitas.beans.impl.PaginatedListImpl;
+
+import net.sf.json.JSONObject;
 
 public interface DashboardService {
 
@@ -29,10 +26,4 @@ public interface DashboardService {
     List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums);
 
     JSONObject getStatisticsInfo(int mailingId, Locale locale, int companyId) throws Exception;
-
-    List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate);
-
-    List<DashboardWorkflow> getWorkflows(Admin admin);
-
-    List<DashboardRecipientReport> getRecipientReports(Admin admin);
 }

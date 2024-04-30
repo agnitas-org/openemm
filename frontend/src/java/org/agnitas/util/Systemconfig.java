@@ -167,22 +167,29 @@ public class Systemconfig {
 		
 	private Map <String, String>	cfg;
 	private String			path;
-	private String			customPath;
-	private String			localPath;
-	private String			customContent;
 	private long			lastModified;
 	private Selection		selection;
 
 	private Systemconfig () {
+		String	content = System.getenv (SYSTEM_CONFIG_ENV);
+		
 		cfg = new HashMap <> ();
-		customContent = System.getenv (SYSTEM_CONFIG_ENV);
-		if (customContent != null) {
-			parseSystemconfig (customContent);
+		if (content != null) {
+			parseSystemconfig (content);
 		} else {
-			path = null;
-			customPath = System.getenv (SYSTEM_CONFIG_PATH_ENV);
-			localPath = Str.makePath ("$home", "etc", "system.cfg");
-			check ();
+			path = System.getenv (SYSTEM_CONFIG_PATH_ENV);
+			if (path == null) {
+				path = SYSTEM_CONFIG_PATH;
+				if ((! fileExists (path)) && fileExists (SYSTEM_CONFIG_LEGACY_PATH)) {
+					path = SYSTEM_CONFIG_LEGACY_PATH;
+				}
+			}
+			if (path.equals ("-")) {
+				path = null;
+			} else {
+				lastModified = 0;
+				check ();
+			}
 		}
 		selection = selection ();
 	}
@@ -253,43 +260,21 @@ public class Systemconfig {
 	}
 
 	private synchronized void check () {
-		if (customContent == null) {
-			if ((path == null) || (! fileExists (path))) {
-				if (customPath != null) {
-					path = customPath;
-				} else {
-					path = localPath;
-					if (! fileExists (path)) {
-						path = SYSTEM_CONFIG_PATH;
-						if (! fileExists (path)) {
-							if (fileExists (SYSTEM_CONFIG_LEGACY_PATH)) {
-								path = SYSTEM_CONFIG_LEGACY_PATH;
-							} else {
-								path = null;
-							}
-						}
-					}
-				}
-				lastModified = 0;
-			}
-			if (path != null) {
-				File	file = new File (path);
+		if (path != null) {
+			File	file = new File (path);
 			
-				if (file.exists ()) {
-					if ((lastModified == 0) || (file.lastModified () > lastModified)) {
-						try (InputStream fd = new FileInputStream (file)) {
-							byte[]	buffer = new byte[(int) file.length ()];
+			if (file.exists ()) {
+				if ((lastModified == 0) || (file.lastModified () > lastModified)) {
+					try (InputStream fd = new FileInputStream (file)) {
+						byte[]	buffer = new byte[(int) file.length ()];
 					
-							if (fd.read (buffer) == file.length ()) {
-								parseSystemconfig (new String (buffer, Charset.forName ("UTF-8")));
-							}
-							lastModified = file.lastModified ();
-						} catch (IOException e) {
-							cfg.clear ();
+						if (fd.read (buffer) == file.length ()) {
+							parseSystemconfig (new String (buffer, Charset.forName ("UTF-8")));
 						}
+						lastModified = file.lastModified ();
+					} catch (IOException e) {
+						cfg.clear ();
 					}
-				} else {
-					cfg.clear ();
 				}
 			} else {
 				cfg.clear ();

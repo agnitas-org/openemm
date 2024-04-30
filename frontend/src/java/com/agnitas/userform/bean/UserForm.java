@@ -250,6 +250,4 @@ public interface UserForm {
 	String getErrorFormBuilderJson();
 
 	void setErrorFormBuilderJson(String json);
-	
-	String evaluateErrorForm(ApplicationContext con, Map<String, Object> params, EmmActionOperationErrors errors);
 }

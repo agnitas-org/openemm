@@ -17,9 +17,6 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.Tuple;
@@ -57,9 +54,6 @@ public interface AdminDao {
     	Integer filterAdminGroupId,
 		Integer filterMailinglistId,
     	String filterLanguage,
-		DateRange creationDate,
-		DateRange lastLoginDate,
-		String username,
     	String sort,
     	String direction,
     	int pageNumber,
@@ -100,13 +94,9 @@ public interface AdminDao {
 	
 	boolean delete(final int adminID, final int companyID);
 
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	List<AdminEntry> getAllAdminsByCompanyId(int companyID);
-	List<AdminEntry> getAllAdminsByCompanyId(boolean restful, int companyID);
+	List<AdminEntry> getAllAdminsByCompanyId( int companyID);
 
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	List<AdminEntry> getAllAdmins();
-	List<AdminEntry> getAllAdmins(boolean restful);
 
 	List<AdminEntry> getAllWsAdminsByCompanyId( int companyID);			// TODO Move to webservice related class
 
@@ -135,11 +125,6 @@ public interface AdminDao {
      */
     int saveAdminRights(int adminID, Set<String> userRights);
 
-    boolean isPermissionGranted(int adminId, Permission permission);
-    void grantPermission(int adminId, Permission permission);
-
-    void revokePermission(int adminId, Permission permission);
-
     Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
     String getAdminName(int adminID, int companyID);
 
@@ -164,23 +149,13 @@ public interface AdminDao {
 
 	List<Admin> getAdmins(int companyID, boolean restful);
 
+	boolean isDisabledMailingListsSupported();
+
 	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
 
 	int getSecurityCodeMailingId(String language);
 
-	int getOpenEmmDemoAccountWaitingMailingID(String language);
-
-	int getOpenEmmDemoAccountDataMailingID(String language);
-
 	void deleteAdminPermissionsForCompany(int companyID);
 
 	List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
-
-    void saveDashboardLayout(String layout, int adminId);
-
-	String getDashboardLayout(int adminId);
-
-    int getPasswordExpirationMailingId(String language);
-
-    void setPasswordReminderState(int adminId, PasswordReminderState state);
 }

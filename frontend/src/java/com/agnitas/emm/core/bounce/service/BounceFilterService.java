@@ -11,12 +11,10 @@
 package com.agnitas.emm.core.bounce.service;
 
 import java.util.List;
-import java.util.Set;
 import java.util.TimeZone;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 public interface BounceFilterService {
@@ -24,23 +22,15 @@ public interface BounceFilterService {
 
     PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int page, int rownums);
 
-    PaginatedListImpl<BounceFilterDto> overview(BounceFilterListForm filter);
-
 	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
     BounceFilterDto getBounceFilter(int companyId, int filterId);
 
     boolean deleteBounceFilter(int filterId, int companyId);
 
-    void delete(Set<Integer> ids, int companyId);
-
-    void validateDeletion(Set<Integer> ids);
-
     boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     
     List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId);
 
     String getBounceFilterNames(List<BounceFilterDto> filters);
-
-    List<String> getBounceFilterNames(Set<Integer> ids, int companyId);
 }

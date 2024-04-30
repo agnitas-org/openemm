@@ -82,9 +82,6 @@ public class Mailing {
 	 * the subject for this mailing
 	 */
 	private String subject;
-
-	private String preHeader;
-
 	/**
 	 * the sender address for this mailing
 	 */
@@ -169,7 +166,6 @@ public class Mailing {
 		outputDirectories.put ("meta", spool ("META"));
 		outputDirectories.put ("direct", spool ("DIRECT"));
 		outputDirectories.put ("mail", spool ("mailer"));
-		outputDirectories.put ("deleted", spool ("DELETED"));
 	}
 	
 	public Mailing done() {
@@ -214,10 +210,6 @@ public class Mailing {
 
 	public String name() {
 		return exists() ? mailing.shortName() : null;
-	}
-	
-	public String description() {
-		return exists() ? mailing.description() : null;
 	}
 
 	public Timestamp creationDate() {
@@ -364,14 +356,6 @@ public class Mailing {
 
 	public void subject(String nSubject) {
 		subject = nSubject;
-	}
-
-	public void setPreHeader(String preHeader) {
-		this.preHeader = preHeader;
-	}
-
-	public String getPreHeader() {
-		return preHeader;
 	}
 
 	public EMail fromEmail() {
@@ -634,7 +618,6 @@ public class Mailing {
 			data.logging(Log.DEBUG, "init", "\tmailing.isTemplate = " + mailing.isTemplate());
 			data.logging(Log.DEBUG, "init", "\tmailing.deleted = " + mailing.deleted());
 			data.logging(Log.DEBUG, "init", "\tmailing.name = " + mailing.shortName());
-			data.logging(Log.DEBUG, "init", "\tmailing.description = " + mailing.description());
 			data.logging(Log.DEBUG, "init", "\tmailing.creationDate = " + mailing.creationDate());
 			data.logging(Log.DEBUG, "init", "\tmailing.targetExpression = " + mailing.targetExpression());
 			data.logging(Log.DEBUG, "init", "\tmailing.splitID = " + mailing.splitID());
@@ -661,7 +644,6 @@ public class Mailing {
 		data.logging(Log.DEBUG, "init", "\tmailing.startBlockForStep = " + startBlockForStep);
 		data.logging(Log.DEBUG, "init", "\tmailing.maxBytesPerOutputFile = " + maxBytesPerOutputFile);
 		data.logging(Log.DEBUG, "init", "\tmailing.subject = " + (subject == null ? "*not set*" : subject));
-		data.logging(Log.DEBUG, "init", "\tmailing.preHeader = " + (preHeader == null ? "*not set*" : preHeader));
 		data.logging(Log.DEBUG, "init", "\tmailing.fromEmail = " + (fromEmail == null ? "*not set*" : fromEmail.toString()));
 		data.logging(Log.DEBUG, "init", "\tmailing.replyTo = " + (replyTo == null ? "*not set*" : replyTo.toString()));
 		data.logging(Log.DEBUG, "init", "\tmailing.envelopeFrom = " + (envelopeFrom == null ? "*not set*" : envelopeFrom.toString()));

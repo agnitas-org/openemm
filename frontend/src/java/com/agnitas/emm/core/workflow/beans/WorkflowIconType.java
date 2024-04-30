@@ -19,6 +19,7 @@ public enum WorkflowIconType implements IntEnum {
     DECISION(Constants.DECISION_VALUE, Constants.DECISION_ID),
     DEADLINE(Constants.DEADLINE_VALUE, Constants.DEADLINE_ID),
     PARAMETER(Constants.PARAMETER_VALUE, Constants.PARAMETER_ID),
+    REPORT(Constants.REPORT_VALUE, Constants.REPORT_ID),
     RECIPIENT(Constants.RECIPIENT_VALUE, Constants.RECIPIENT_ID),
     ARCHIVE(Constants.ARCHIVE_VALUE, Constants.ARCHIVE_ID),
     FORM(Constants.FORM_VALUE, Constants.FORM_ID),
@@ -63,6 +64,7 @@ public enum WorkflowIconType implements IntEnum {
         public static final String DECISION_VALUE  = "decision";
         public static final String DEADLINE_VALUE  = "deadline";
         public static final String PARAMETER_VALUE = "parameter";
+		public static final String REPORT_VALUE    = "report";
 		public static final String RECIPIENT_VALUE = "recipient";
         public static final String ARCHIVE_VALUE   = "archive";
         public static final String FORM_VALUE = "form";
@@ -84,6 +86,7 @@ public enum WorkflowIconType implements IntEnum {
         public static final int DECISION_ID     = 2;
         public static final int DEADLINE_ID     = 3;
         public static final int PARAMETER_ID    = 4;
+        public static final int REPORT_ID       = 5;
         public static final int RECIPIENT_ID    = 6;
         public static final int ARCHIVE_ID      = 7;
         public static final int FORM_ID         = 8;

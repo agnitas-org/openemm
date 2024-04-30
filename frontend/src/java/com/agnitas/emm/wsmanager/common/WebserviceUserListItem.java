@@ -52,7 +52,5 @@ public interface WebserviceUserListItem {
 	 * @return <i>active</i>-flag of the webservice user
 	 */
 	boolean isActive();
-
-	String getClientName();
 	
 }

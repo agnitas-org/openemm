@@ -155,18 +155,6 @@ public class RecipientFieldDescription {
 			return ProfileFieldMode.Editable;
 		}
 	}
-	
-	public ProfileFieldMode getAdminPermission(int adminID) {
-		if (permissions == null || permissions.size() == 0) {
-			return ProfileFieldMode.Editable;
-		} else if (permissions.containsKey(adminID)) {
-			return permissions.get(adminID);
-		} else if (permissions.containsKey(0)) {
-			return permissions.get(0);
-		} else {
-			return ProfileFieldMode.Editable;
-		}
-	}
 
 	public RecipientFieldDescription setDefaultPermission(ProfileFieldMode permission) {
 		permissions.put(0, permission);

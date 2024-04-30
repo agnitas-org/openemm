@@ -16,7 +16,7 @@ public enum TestRunOption implements IntEnum {
     NO_LIMITATION(0, "mailing.send.adminOrTest"),
     TARGET(1, "Target"),
     RECIPIENT(2, "mailing.test.recipient.single"),
-    SEND_TO_SELF(3, "mailing.test.user");
+    SEND_TO_SELF(3, "GWUA.send.to.me");
 
     private final int id;
     private final String messageKey;

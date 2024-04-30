@@ -12,8 +12,6 @@ package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
 
-import org.agnitas.web.forms.WorkflowParameters;
-
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 
 public class MailingSettingsOptions {
@@ -25,14 +23,12 @@ public class MailingSettingsOptions {
     private int workflowId;
     private int gridTemplateId;
     private boolean isNew;
-    private boolean activeOrSent;
+    private boolean editable;
     private boolean forCopy;
     private boolean isTemplate;
     private boolean forFollowUp;
     private boolean worldSend;
-    private String sessionId;
     private List<ComMailingParameter> mailingParams;
-    private WorkflowParameters workflowParams;
 
     public static Builder builder() {
         return new Builder();
@@ -66,8 +62,8 @@ public class MailingSettingsOptions {
         return isNew;
     }
 
-    public boolean isActiveOrSent() {
-        return activeOrSent;
+    public boolean isEditable() {
+        return editable;
     }
 
     public boolean isTemplate() {
@@ -88,14 +84,6 @@ public class MailingSettingsOptions {
 
     public List<ComMailingParameter> getMailingParams() {
         return mailingParams;
-    }
-
-    public WorkflowParameters getWorkflowParams() {
-        return workflowParams;
-    }
-
-    public String getSessionId() {
-        return sessionId;
     }
 
     public static class Builder {
@@ -131,8 +119,8 @@ public class MailingSettingsOptions {
             return this;
         }
 
-        public Builder setActiveOrSent(boolean activeOrSent) {
-            options.activeOrSent = activeOrSent;
+        public Builder setEditable(boolean editable) {
+            options.editable = editable;
             return this;
         }
 
@@ -163,16 +151,6 @@ public class MailingSettingsOptions {
         
         public Builder setMailingParams(List<ComMailingParameter> mailingParams) {
             options.mailingParams = mailingParams;
-            return this;
-        }
-
-        public Builder setSessionId(String sessionId) {
-            options.sessionId = sessionId;
-            return this;
-        }
-
-        public Builder setWorkflowParams(WorkflowParameters workflowParams) {
-            options.workflowParams = workflowParams;
             return this;
         }
         

@@ -23,21 +23,19 @@ public class BackendLogDAO {
 	private long mailingID;
 	private boolean isWorldMailing;
 
-	public BackendLogDAO(DBase dbase, long forStatusID, long forMailingID, boolean nIsWorldMailing, boolean reset) throws SQLException {
+	public BackendLogDAO(DBase dbase, long forStatusID, long forMailingID, boolean nIsWorldMailing) throws SQLException {
 		statusID = forStatusID;
 		mailingID = forMailingID;
 		isWorldMailing = nIsWorldMailing;
 		try (DBase.With with = dbase.with ()) {
-			if ((! reset) || (! resetMailing (dbase, with))) {
-				dbase.update (with.cursor (),
-					      "INSERT INTO mailing_backend_log_tbl " +
-					      "            (status_id, mailing_id, current_mails, total_mails, timestamp, creation_date) " +
-					      "VALUES " +
-					      "            (:statusID, :mailingID, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-					      "statusID", statusID,
-					      "mailingID", mailingID
-				);
-			}
+			dbase.update (with.cursor (),
+				      "INSERT INTO mailing_backend_log_tbl " +
+				      "            (status_id, mailing_id, current_mails, total_mails, timestamp, creation_date) " +
+				      "VALUES " +
+				      "            (:statusID, :mailingID, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+				      "statusID", statusID,
+				      "mailingID", mailingID
+			);
 			dbase.logging (Log.VERBOSE, "backendLog", "Setup of mailing backend log done");
 		} catch (SQLException e) {
 			dbase.logging(Log.ERROR, "backendLog", "Failed to setup mailing backend log", e);
@@ -96,14 +94,5 @@ public class BackendLogDAO {
 			dbase.logging(Log.ERROR, "backendLog", "Failed to freeze mailing backend log to " + totalCount, e);
 			throw e;
 		}
-	}
-
-	private boolean resetMailing (DBase dbase, DBase.With with) throws SQLException {
-		return dbase.update (with.cursor (),
-				     "UPDATE mailing_backend_log_tbl " +
-				     "SET current_mails = 0, total_mails = 0, timestamp = CURRENT_TIMESTAMP " +
-				     "WHERE status_id = :statusID AND mailing_id = :mailingID",
-				     "statusID", statusID,
-				     "mailingID", mailingID) > 0;
 	}
 }	

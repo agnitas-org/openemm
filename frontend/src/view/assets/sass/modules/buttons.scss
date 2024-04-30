@@ -405,12 +405,3 @@ body.dark-theme {
     margin-left: 5px;
   }
 }
-
-.btn-workflow-state {
-  padding: 2px;
-  border-color: transparent;
-}
-
-body.dark-theme .btn-workflow-state {
-  @include button-variant(#b7b7b7, $c-gray-80, transparent, false);
-}

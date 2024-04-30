@@ -37,7 +37,7 @@ public class BirtMessagesPropertiesContextListener implements ServletContextList
     @Override
     public void contextInitialized(ServletContextEvent event) {
         try {
-        	// Birt must generate messages in here, because it has no some dependencies like EMM
+        	// Birt must generate messages in here, because it has no struts like EMM
         	// Messages are then available via I18nString
         	DBMessagesResource dbMessagesResource = new DBMessagesResource();
     		dbMessagesResource.init();

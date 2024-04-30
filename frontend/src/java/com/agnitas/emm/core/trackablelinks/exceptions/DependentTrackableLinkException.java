@@ -13,9 +13,10 @@ package com.agnitas.emm.core.trackablelinks.exceptions;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 
 public class DependentTrackableLinkException extends Exception {
 
@@ -38,13 +39,13 @@ public class DependentTrackableLinkException extends Exception {
         }
     }    
     
-    public void toMessages(List<Message> errors) {
+    public void toActionMessages(ActionMessages errors) {
         if (CollectionUtils.isNotEmpty(usedInActiveWorkflowLinks)) {
-            errors.add(Message.of("error.mailing.link.used.workflow",
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.link.used.workflow",
                     linksToHtmlList(usedInActiveWorkflowLinks)));
         }
         if (CollectionUtils.isNotEmpty(usedInTargetLinks)) {
-            errors.add(Message.of("error.mailing.link.used.target",
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.link.used.target",
                     linksToHtmlList(usedInTargetLinks)));
         }
     }

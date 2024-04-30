@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ page import="org.agnitas.target.ConditionalOperator" %>
@@ -13,8 +13,10 @@
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
 
-<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -64,6 +66,12 @@
     </c:forEach>
 </emm:instantiate>
 
+<emm:instantiate var="reports" type="java.util.LinkedHashMap">
+    <c:forEach var="report" items="${allReports}">
+        <c:set target="${reports}" property="${report.key}" value="${fn:escapeXml(report.value)}"/>
+    </c:forEach>
+</emm:instantiate>
+
 <emm:instantiate var="allForms" type="java.util.LinkedHashMap">
     <c:set target="${allForms}" property="0" value=""/>
     <c:forEach var="userForm" items="${allUserForms}">
@@ -92,11 +100,11 @@
     </c:forEach>
 </emm:instantiate>
 
-<tiles:insertAttribute name="page-setup"/>
+<tiles:insert attribute="page-setup"/>
 
 <html>
 
-<tiles:insertAttribute name="head-tag"/>
+<tiles:insert attribute="head-tag"/>
 <body style="background-color: #fff">
 
 <div class="emm-container" data-controller="workflow-view">
@@ -163,6 +171,8 @@
 	            "forwardMailingCopy": "<%= WorkflowController.FORWARD_MAILING_COPY %>",
 	            "forwardUserFormCreate": "<%= WorkflowController.FORWARD_USERFORM_CREATE %>",
 	            "forwardUserFormEdit": "<%= WorkflowController.FORWARD_USERFORM_EDIT %>",
+	            "forwardReportCreate": "<%= WorkflowController.FORWARD_REPORT_CREATE %>",
+	            "forwardReportEdit": "<%= WorkflowController.FORWARD_REPORT_EDIT %>",
 	            "forwardAutoExportCreate": "<%= WorkflowController.FORWARD_AUTOEXPORT_CREATE %>",
 	            "forwardAutoExportEdit": "<%= WorkflowController.FORWARD_AUTOEXPORT_EDIT %>",
 	            "forwardAutoImportCreate": "<%= WorkflowController.FORWARD_AUTOIMPORT_CREATE %>",
@@ -182,8 +192,8 @@
 	                "<%= WorkflowRecipient.WorkflowTargetOption.ONE_TARGET_REQUIRED %>": "∪"
 	            },
 	            "chainOperatorOptions": {
-	                "<%= ChainOperator.AND.getOperatorCode() %>": "<mvc:message code="default.and"/>",
-	                "<%= ChainOperator.OR.getOperatorCode() %>": "<mvc:message code="default.or"/>"
+	                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
+	                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
 	            },
 	            "operators": [
 	                 <c:forEach items="${operators}"  var="operator" varStatus="index">

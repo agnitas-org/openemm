@@ -12,6 +12,7 @@ package com.agnitas.emm.core.userform.service.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -32,6 +33,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts.action.ActionErrors;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -95,21 +97,15 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 
 		final int clientID = clientService.getClientId(request.getHeader("User-Agent"));
 		final UserForm userForm = loadUserForm(formName, companyID);
-		final EmmActionOperationErrors actionOperationErrors = populateEmmActionErrorsAsVelocityParameters(params);
+
+		final ComExtensibleUID uid = processUID(companyID, request, params, useSession);
 		
-		try {
-			final ComExtensibleUID uid = processUID(companyID, request, params, useSession);
-			
-			logFormAccess(userForm, uid, request.getRemoteAddr(), deviceID, deviceClass, clientID);
-			
-			populateFormPropertiesAsVelocityParameters(userForm, params);
-	
-			return doExecuteForm(userForm, actionOperationErrors, params, request);
-		} catch(Exception e) {
-			logger.error(String.format("Showing error form due to exception (comapny %d, form: %s)", companyID, formName), e);
-			
-			return doExecuteErrorForm(userForm, actionOperationErrors, params, request);
-		}
+		logFormAccess(userForm, uid, request.getRemoteAddr(), deviceID, deviceClass, clientID);
+		
+		final EmmActionOperationErrors actionOperationErrors = populateEmmActionErrorsAsVelocityParameters(params);
+		populateFormPropertiesAsVelocityParameters(userForm, params);
+
+		return doExecuteForm(userForm, actionOperationErrors, params, request);
 	}
 
 	private void populateFormPropertiesAsVelocityParameters(UserForm userForm, CaseInsensitiveMap<String, Object> params) {
@@ -131,9 +127,9 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @param useSession also store the result in the session if this is not 0.
 	 */
 	@SuppressWarnings("unchecked")
-	private final ComExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
+	private final ComExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) {
 		String uidString = getUidStringFromRequest(req);
-		ComExtensibleUID uidObject = decodeUidStringWithException(uidString);
+		ComExtensibleUID uidObject = decodeUidString(uidString);
 
 		if (Objects.nonNull(uidObject)) {
 			if (companyIdRequestParam == uidObject.getCompanyID()) {
@@ -170,29 +166,24 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @return the resulting UID or NULL in case of some problem during parsing.
 	 */
 	private ComExtensibleUID decodeUidString(String uidString) {
-		try {
-			return decodeUidStringWithException(uidString);
-		} catch (DeprecatedUIDVersionException e) {
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format("Deprecated UID version of UID: %s", uidString), e);
-			}
-		} catch (UIDParseException e) {
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format("Error parsing UID: %s", uidString), e);
-			}
-		} catch (InvalidUIDException e) {
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format("Invalid UID: %s", uidString), e);
+		if (StringUtils.isNotBlank(uidString)) {
+			try {
+				return extensibleUIDService.parse(uidString);
+			} catch (DeprecatedUIDVersionException e) {
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Deprecated UID version of UID: %s", uidString), e);
+				}
+			} catch (UIDParseException e) {
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Error parsing UID: %s", uidString), e);
+				}
+			} catch (InvalidUIDException e) {
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Invalid UID: %s", uidString), e);
+				}
 			}
 		}
-		
 		return null;
-	}
-
-	private ComExtensibleUID decodeUidStringWithException(String uidString) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
-		return StringUtils.isNotBlank(uidString)
-				? extensibleUIDService.parse(uidString)
-				: null;
 	}
 
 	private String getUidStringFromRequest(HttpServletRequest req) {
@@ -307,16 +298,6 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return new UserFormExecutionResult(userForm.getId(), responseContent, responseMimeType);
 	}
 	
-	private UserFormExecutionResult doExecuteErrorForm(final UserForm userForm, final EmmActionOperationErrors actionOperationErrors, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) throws Exception {
-		String responseContent = userForm.evaluateErrorForm(applicationContext, params, actionOperationErrors);
-		String responseMimeType = userForm.getErrorMimetype();
-
-		final String uidString = (String) params.get("agnUID");
-		responseContent = addRedirectLinks(responseContent, uidString, userForm);
-		
-		return new UserFormExecutionResult(userForm.getId(), responseContent, responseMimeType);
-	}
-	
 	private String determineSuccessResponseMimeType(final UserForm userForm, final CaseInsensitiveMap<String, Object> params) {
 		final String formMimeType = (String)params.get(FORM_MIMETYPE_PARAM_NAME);
 	
@@ -412,7 +393,17 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 			responseContent += "<br/><br/>";
 			responseContent += params.get("velocity_error");
 		}
-
+		
+		if (params.get("errors") != null) {
+			responseContent += "<br/>";
+			ActionErrors velocityErrors = ((ActionErrors) params.get("errors"));
+			@SuppressWarnings("rawtypes")
+			Iterator it = velocityErrors.get();
+			while (it.hasNext()) {
+				responseContent += "<br/>" + it.next();
+			}
+		}
+		
 		return responseContent;
 	}
 
