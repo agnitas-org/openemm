@@ -39,6 +39,14 @@ use_block (block_t *block, links_t *links) /*{{{*/
 static bool_t
 match_block (blockmail_t *blockmail, block_t *block, receiver_t *rec) /*{{{*/
 {
+	if (blockmail -> target_ids) {
+		int	n;
+		
+		for (n = 0; n < blockmail -> target_ids_count; ++n)
+			if (blockmail -> target_ids[n] == block -> target_id)
+				return true;
+		return ! block -> target_id;
+	}
 	return block_match (block, blockmail -> eval, rec);
 }/*}}}*/
 static const xmlChar *

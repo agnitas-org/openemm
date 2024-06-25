@@ -95,6 +95,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> purl = NULL;
 		b -> html = NULL;
 		b -> cvt = NULL;
+		b -> target_ids = NULL;
+		b -> target_ids_count = 0;
 		b -> tracker = NULL;
 
 		b -> raw = false;

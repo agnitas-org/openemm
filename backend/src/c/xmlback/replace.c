@@ -191,9 +191,24 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 					sp = tp;
 				if (sp && IS_DYNAMIC (sp -> type) && sp -> tname) {
 					root = find_dynamic (blockmail, rec, sp -> tname);
-					for (dyn = root; dyn; dyn = dyn -> sibling)
-						if (dyn_match (dyn, blockmail -> eval, rec))
-							break;
+					if (blockmail -> target_ids) {
+						const dyn_t	*all_recipients = NULL;
+						
+						for (dyn = root; dyn; dyn = dyn -> sibling) {
+							for (n = 0; n < blockmail -> target_ids_count; ++n)
+								if (blockmail -> target_ids[n] == dyn -> target_id)
+									break;
+							if (n < blockmail -> target_ids_count)
+								break;
+							if (! dyn -> target_id)
+								all_recipients = dyn;
+						}
+						if (! dyn)
+							dyn = all_recipients;
+					} else
+						for (dyn = root; dyn; dyn = dyn -> sibling)
+							if (dyn_match (dyn, blockmail -> eval, rec))
+								break;
 					if (dyn && dyn_match_selector (root, selector)) {
 						block_t	*use;
 						int	*indexes;

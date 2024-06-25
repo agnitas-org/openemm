@@ -144,6 +144,8 @@ main (int argc, char **argv) /*{{{*/
 	FILE		*errfp;
 	FILE		*devnull;
 	bool_t		st, dst;
+	long		*target_ids;
+	int		target_ids_count, target_ids_size;
 	
 	quiet = false;
 	error_file = NULL;
@@ -160,6 +162,9 @@ main (int argc, char **argv) /*{{{*/
 	fqdn = NULL;
 	level = NULL;
 	pointintime = 0;
+	target_ids = NULL;
+	target_ids_count = 0;
+	target_ids_size = 0;
 	setlocale (LC_ALL, "");
 	xmlInitParser ();
 	xmlInitializePredefinedEntities ();
@@ -219,6 +224,20 @@ main (int argc, char **argv) /*{{{*/
 			fqdn = strdup (optarg);
 			break;
 		case 't':
+			for (ptr = optarg; ptr; ) {
+				const char	*cur = ptr;
+				
+				if (ptr = strchr (ptr, ','))
+					++ptr;
+				if (target_ids_count >= target_ids_size) {
+					target_ids_size += 16;
+					if (! (target_ids = (long *) realloc (target_ids, (target_ids_size + 1) * sizeof (long)))) {
+						fprintf (stderr, "%s: failed to parse target_ids: %m", optarg);
+						return 1;
+					}
+				}
+				target_ids[target_ids_count++] = atol (cur);
+			}
 			break;
 		case 'o':
 			if (ptr = strchr (optarg, ':')) {
@@ -334,6 +353,8 @@ main (int argc, char **argv) /*{{{*/
 			blockmail -> convert_to_entities = convert_to_entities;
 			blockmail -> fqdn = fqdn;
 			blockmail -> pointintime = pointintime;
+			blockmail -> target_ids = target_ids;
+			blockmail -> target_ids_count = target_ids_count;
 			log_idclr (lg);
 			if (! blockmail -> outputdata)
 				log_out (lg, LV_ERROR, "Unable to initialize output method %s for %s", out -> name, argv[n]);
@@ -368,6 +389,8 @@ main (int argc, char **argv) /*{{{*/
 	log_free (lg);
 	if (pparm)
 		var_free_all (pparm);
+	if (target_ids)
+		free (target_ids);
 	xmlCleanupCharEncodingHandlers ();
 	xmlCleanupPredefinedEntities ();
 	xmlCleanupParser ();

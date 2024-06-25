@@ -439,6 +439,8 @@ struct blockmail { /*{{{*/
 	purl_t		*purl;		/* scratch buffer for URL build	*/
 	html_t		*html;		/* scratch HTML element parsing */
 	cvt_t		*cvt;		/* generalized charset convert	*/
+	const long	*target_ids;	/* list of true targets		*/
+	int		target_ids_count;	/* # of elements	*/
 	/* output related data */
 	bool_t		raw;		/* just generate raw output	*/
 	output_t	*output;	/* output information		*/
