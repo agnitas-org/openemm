@@ -10,21 +10,21 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
 import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Required;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ComMailingParameterServiceImpl implements ComMailingParameterService {
 	
@@ -59,10 +59,10 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId) {
-		if (companyID > 0 && (StringUtils.isNotBlank(searchQuery) || StringUtils.isNotBlank(mailingId))) {
+	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId, DateRange changeDate) {
+		if (companyID > 0) {
 		    int mailingIdStartsWith = NumberUtils.toInt(mailingId);
-            return mailingParameterDao.getParametersBySearchQuery(companyID, searchQuery, mailingIdStartsWith);
+            return mailingParameterDao.getParametersBySearchQuery(companyID, searchQuery, mailingIdStartsWith, changeDate);
 		}
 
 		return Collections.emptyList();

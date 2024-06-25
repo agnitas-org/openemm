@@ -22,14 +22,16 @@ public class BlockData implements Comparable<BlockData> {
 	 */
 	public static final int HEADER = 0;
 	public static final int TEXT = 1;
-	public static final int HTML = 2;
-	public static final int RELATED_TEXT = 3;
-	public static final int RELATED_BINARY = 4;
-	public static final int ATTACHMENT_TEXT = 5;
-	public static final int ATTACHMENT_BINARY = 6;
-	public final static int FONT = 7;
-	public final static int PDF = 8;
-	public final static int SMS = 10;
+	public static final int HTML_PREHEADER = 2;
+	public static final int HTML_CLEARANCE = 3;
+	public static final int HTML = 4;
+	public static final int RELATED_TEXT = 5;
+	public static final int RELATED_BINARY = 6;
+	public static final int ATTACHMENT_TEXT = 7;
+	public static final int ATTACHMENT_BINARY = 8;
+	public final static int FONT = 9;
+	public final static int PDF = 10;
+	public final static int SMS = 11;
 
 	/**
 	 * The index in the array in BlockCollection
@@ -265,6 +267,7 @@ public class BlockData implements Comparable<BlockData> {
 	}
 		
 	private Set <Character> lowerAscii = Set.of ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+	@SuppressWarnings("fallthrough")
 	public boolean getTemplateColumns (Set <String> usedColumns) {
 		if (content == null) {
 			return false;
@@ -277,7 +280,7 @@ public class BlockData implements Comparable<BlockData> {
 		String	quote = "";
 		int	matchedQuoteLength = 0;
 		String	column = null;
-		
+
 		for (char ch : content.toCharArray ()) {
 			switch (state) {
 			default:
@@ -327,6 +330,18 @@ public class BlockData implements Comparable<BlockData> {
 					}
 				}
 				break;
+			case BuildQuote:
+				if ((ch == '=') || (ch == '[')) {
+					if (ch == '=') {
+						quote += "=";
+					} else {
+						quote += "]";
+						state = State.InString;
+					}
+					break;
+				}
+				state = State.TemplateContent;
+				/* Fall through . . . */
 			case TemplateContent:
 				if (column != null) {
 					if ((ch == '.') || (ch == '_') || Character.isLetterOrDigit (ch)) {
@@ -358,16 +373,6 @@ public class BlockData implements Comparable<BlockData> {
 				break;
 			case TemplateEscape:
 				state = State.TemplateContent;
-				break;
-			case BuildQuote:
-				if (ch == '=') {
-					quote += "=";
-				} else if (ch == '[') {
-					quote += "]";
-					state = State.InString;
-				} else {
-					state = State.TemplateContent;
-				}
 				break;
 			case InString:
 				if (ch == '\\') {
@@ -514,11 +519,19 @@ public class BlockData implements Comparable<BlockData> {
 	}
 
 	public boolean isEmailHTML() {
-		return ((comptype == 0) && (type == HTML));
+		return (comptype == 0) && (type == HTML);
+	}
+	
+	public boolean isEmailPreheader() {
+		return (comptype == 0) && (type == HTML_PREHEADER);
+	}
+	
+	public boolean isEmailClearance () {
+		return (comptype == 0) && (type == HTML_CLEARANCE);
 	}
 
 	public boolean isEmailText() {
-		return isEmailHeader() || isEmailPlaintext() || isEmailHTML();
+		return isEmailHeader() || isEmailPlaintext() || isEmailHTML() || isEmailPreheader () || isEmailClearance ();
 	}
 
 	public boolean isEmailAttachment() {

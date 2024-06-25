@@ -36,6 +36,12 @@
         <property name="securityContextAccess" ref="securityContextAccess" />
     </bean>
 
+	<bean id="schemaValidatingInterceptor" class="org.springframework.ws.soap.server.endpoint.interceptor.PayloadValidatingInterceptor">
+	    <property name="xsdSchemaCollection" ref="xsdSchema" />
+    	<property name="validateRequest" value="true" />
+    	<property name="validateResponse" value="true" />
+	</bean>
+
 	<!--  Security interceptor without login tracking. -->
 	<!-- 
 	<bean id="wsSecurityInterceptor"

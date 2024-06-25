@@ -1,0 +1,12 @@
+
+#emm-action-view {
+  display: flex;
+
+  #steps-tile {
+    flex: 1;
+  }
+
+  #settings-tile {
+    flex: 1 0 min-content;
+  }
+}

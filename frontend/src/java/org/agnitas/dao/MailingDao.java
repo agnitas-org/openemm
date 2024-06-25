@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -269,7 +270,7 @@ public interface MailingDao {
      * @param admin current user
 	 * @return  List of MailingBase bean objects
      */
-	List<MailingBase> getMailingsForComparation(Admin admin);
+	PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
 
     /**
      * Loads list of templates of certain company

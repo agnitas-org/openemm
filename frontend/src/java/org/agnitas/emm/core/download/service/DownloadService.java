@@ -18,6 +18,7 @@ import org.agnitas.emm.core.download.model.FileData;
 /**
  * Service dealing with download data.
  */
+// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
 public interface DownloadService {
 
 	/**

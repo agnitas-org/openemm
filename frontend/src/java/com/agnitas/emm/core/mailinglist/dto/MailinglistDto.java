@@ -31,6 +31,8 @@ public class MailinglistDto {
 	private int targetId;
 
 	private boolean frequencyCounterEnabled;
+	private String senderEmail;
+	private String replyEmail;
 	
 	private Set<MediaTypes> mediatypes = new HashSet<>();
 	
@@ -96,5 +98,21 @@ public class MailinglistDto {
 
 	public void setMediatypes(Set<MediaTypes> mediatypes) {
 		this.mediatypes = mediatypes;
+	}
+
+	public String getSenderEmail() {
+		return senderEmail;
+	}
+
+	public void setSenderEmail(String senderEmail) {
+		this.senderEmail = senderEmail;
+	}
+
+	public String getReplyEmail() {
+		return replyEmail;
+	}
+
+	public void setReplyEmail(String replyEmail) {
+		this.replyEmail = replyEmail;
 	}
 }

@@ -13,6 +13,7 @@ package org.agnitas.emm.core.download.service;
 /**
  * Exception indication an unknown download ID:
  */
+// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
 public class DownloadIdNotFoundException extends Exception {
 
 	/** Serial version UID. */

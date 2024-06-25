@@ -36,7 +36,8 @@ import org.aspectj.lang.annotation.Before;
 
 @Aspect
 public class ModelValidator {
-	private final static Logger logger = LogManager.getLogger(ModelValidator.class);
+
+	private static final Logger logger = LogManager.getLogger(ModelValidator.class);
 	
     private ResourceBundle messagesBundle;
 

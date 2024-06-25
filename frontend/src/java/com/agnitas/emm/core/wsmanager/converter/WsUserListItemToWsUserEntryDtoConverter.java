@@ -26,6 +26,7 @@ public class WsUserListItemToWsUserEntryDtoConverter implements Converter<Webser
         wsUserDto.setCompanyId(wsListItem.getCompanyID());
         wsUserDto.setDataSourceId(wsListItem.getDefaultDatasourceID());
         wsUserDto.setActive(wsListItem.isActive());
+        wsUserDto.setClientName(wsListItem.getClientName());
         return wsUserDto;
     }
 }

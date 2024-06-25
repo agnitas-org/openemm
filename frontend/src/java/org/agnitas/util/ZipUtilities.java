@@ -8,7 +8,6 @@
 
 */
 
-
 package org.agnitas.util;
 
 import java.io.BufferedInputStream;
@@ -17,11 +16,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,12 +40,46 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import net.lingala.zip4j.model.FileHeader;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.CompressionLevel;
 import net.lingala.zip4j.model.enums.CompressionMethod;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
 
 public class ZipUtilities {
+	public static boolean isZipArchiveFile(final File potentialZipFile) throws FileNotFoundException, IOException {
+		try (FileInputStream inputStream = new FileInputStream(potentialZipFile)) {
+			final byte[] magicBytes = new byte[4];
+			final int readBytes = inputStream.read(magicBytes);
+			return readBytes == 4 && magicBytes[0] == 0x50 && magicBytes[1] == 0x4B && magicBytes[2] == 0x03 && magicBytes[3] == 0x04;
+		}
+	}
+
+	public static List<String> getZipFileEntries(final File file) throws ZipException, IOException {
+		try (ZipFile zipFile = new ZipFile(file)) {
+			final Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			final List<String> entryList = new ArrayList<>();
+			while (entries.hasMoreElements()) {
+				final ZipEntry entry = entries.nextElement();
+				entryList.add(entry.getName());
+			}
+			return entryList;
+		}
+	}
+	
+	public static List<String> getZipFileEntries(final File file, final char[] zipPassword) throws ZipException, IOException {
+		final List<String> entries = new ArrayList<>();
+		try (net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(file, zipPassword)) {
+			final List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+			if (fileHeaders != null) {
+				for (final FileHeader fileHeader : fileHeaders) {
+					entries.add(fileHeader.getFileName());
+				}
+			}
+		}
+		return entries;
+	}
+	
 	/**
 	 * Zip a bytearray
 	 * 
@@ -240,7 +276,7 @@ public class ZipUtilities {
 			if (zipOutputStream != null) {
 				try {
 					zipOutputStream.close();
-				} catch (Exception e) {
+				} catch (@SuppressWarnings("unused") Exception e) {
 					// nothing to do
 				}
 				zipOutputStream = null;
@@ -327,7 +363,7 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileToExistingzipFile(File sourceFile, File zipFile) throws IOException {
-		try(ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
+		try (ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
 			addFileToOpenZipFileStream(sourceFile, zipOutputStream);
 		}
 	}
@@ -341,7 +377,7 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileToExistingzipFile(List<File> sourceFiles, File zipFile) throws IOException {
-		try(final ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
+		try (final ZipOutputStream zipOutputStream = openExistingZipFileForExtension(zipFile)) {
 			for (File file : sourceFiles) {
 				addFileToOpenZipFileStream(file, zipOutputStream);
 			}
@@ -392,8 +428,9 @@ public class ZipUtilities {
 		File originalFileTemp = new File(zipFile.getParentFile().getAbsolutePath() + "/" + String.valueOf(System.currentTimeMillis()));
 		zipFile.renameTo(originalFileTemp);
 		
-		final ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
+		ZipOutputStream zipOutputStream = null;
 		try {
+			zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
 			try (ZipFile sourceZipFile = new ZipFile(originalFileTemp)) {
 				// copy entries
 				Enumeration<? extends ZipEntry> srcEntries = sourceZipFile.entries();
@@ -421,7 +458,7 @@ public class ZipUtilities {
 			} catch (IOException e) {
 				try {
 					zipOutputStream.close();
-				} catch (Exception ex) {
+				} catch (@SuppressWarnings("unused") Exception ex) {
 					// nothing to do
 				}
 
@@ -584,6 +621,270 @@ public class ZipUtilities {
 			if (dataInputStream != null) {
 				dataInputStream.close();
 				dataInputStream = null;
+			}
+			throw e;
+		}
+	}
+
+	public static File unzipFile(final File zipFile, final File destinationFilePath, Charset fileNameEncodingCharset, final String filePathInZipFile) throws Exception {
+		if (!zipFile.exists()) {
+			throw new IOException("ZipFile '" + zipFile.getAbsolutePath() + "' does not exist");
+		} else if (!zipFile.isFile()) {
+			throw new IOException("ZipFile '" + zipFile.getAbsolutePath() + "' is not a file");
+		} else if (destinationFilePath.exists()) {
+			throw new IOException("Destination file '" + destinationFilePath.getAbsolutePath() + "' already exists");
+		}
+
+		if (fileNameEncodingCharset == null) {
+			fileNameEncodingCharset = Charset.forName("Cp437");
+		}
+
+		final byte[] buffer = new byte[1024];
+		try (final InputStream inputStream = new FileInputStream(zipFile);
+				final ZipInputStream zis = new ZipInputStream(inputStream, fileNameEncodingCharset)) {
+			ZipEntry zipEntry = zis.getNextEntry();
+			while (zipEntry != null) {
+				if (zipEntry.getName().equals(filePathInZipFile)) {
+					final File destFile = destinationFilePath;
+
+					final File parentDirectory = destFile.getParentFile();
+					if (!parentDirectory.exists()) {
+						throw new IOException(
+								"Destination directory does not exist: " + parentDirectory.getAbsolutePath());
+					} else if (!parentDirectory.isDirectory()) {
+						throw new IOException("Destination directory exists but is not a directory: "
+								+ parentDirectory.getAbsolutePath());
+					}
+
+					try (final FileOutputStream fos = new FileOutputStream(destFile)) {
+						int len;
+						while ((len = zis.read(buffer)) > 0) {
+							fos.write(buffer, 0, len);
+						}
+					}
+
+					return destFile;
+				}
+				zis.closeEntry();
+				zipEntry = zis.getNextEntry();
+			}
+		}
+		throw new Exception("File not found in zipfile");
+	}
+
+	public static void unzipFile(final File zipFile, final File destinationDirectory, Charset fileNameEncodingCharset) throws IOException {
+		if (!zipFile.exists()) {
+			throw new IOException("ZipFile '" + zipFile.getAbsolutePath() + "' does not exist");
+		} else if (!zipFile.isFile()) {
+			throw new IOException("ZipFile '" + zipFile.getAbsolutePath() + "' is not a file");
+		} else if (!destinationDirectory.exists()) {
+			throw new IOException(
+					"Destination directory '" + destinationDirectory.getAbsolutePath() + "' does not exist");
+		} else if (!destinationDirectory.isDirectory()) {
+			throw new IOException(
+					"Destination directory '" + destinationDirectory.getAbsolutePath() + "' is not a directory");
+		}
+
+		if (fileNameEncodingCharset == null) {
+			fileNameEncodingCharset = Charset.forName("Cp437");
+		}
+
+		final String destinationDirectoryPath = destinationDirectory.getCanonicalPath();
+		final byte[] buffer = new byte[1024];
+		try (final InputStream inputStream = new FileInputStream(zipFile);
+				final ZipInputStream zis = new ZipInputStream(inputStream, fileNameEncodingCharset)) {
+			ZipEntry zipEntry = zis.getNextEntry();
+			while (zipEntry != null) {
+				if (zipEntry.getName().endsWith("/")) {
+					final File newDirectory = new File(destinationDirectory, zipEntry.getName());
+					final String newDirectoryPath = newDirectory.getCanonicalPath();
+					if (!newDirectoryPath.startsWith(destinationDirectoryPath + File.separator)) {
+						throw new IOException(
+								"ZipEntry is outside of the destination directory: " + zipEntry.getName());
+					}
+
+					if (!newDirectory.exists()) {
+						newDirectory.mkdirs();
+					} else if (!newDirectory.isDirectory()) {
+						throw new IOException("Destination directory exists but is not a directory: "
+								+ newDirectory.getAbsolutePath());
+					}
+				} else {
+					final File destFile = new File(destinationDirectory, zipEntry.getName());
+					final String destFilePath = destFile.getCanonicalPath();
+					if (!destFilePath.startsWith(destinationDirectoryPath + File.separator)) {
+						throw new IOException(
+								"ZipEntry is outside of the destination directory: " + zipEntry.getName());
+					}
+
+					final File parentDirectory = destFile.getParentFile();
+					if (!parentDirectory.exists()) {
+						parentDirectory.mkdirs();
+					} else if (!parentDirectory.isDirectory()) {
+						throw new IOException("Destination directory exists but is not a directory: "
+								+ parentDirectory.getAbsolutePath());
+					}
+
+					try (final FileOutputStream fos = new FileOutputStream(destFile)) {
+						int len;
+						while ((len = zis.read(buffer)) > 0) {
+							fos.write(buffer, 0, len);
+						}
+					}
+				}
+				zis.closeEntry();
+				zipEntry = zis.getNextEntry();
+			}
+		}
+	}
+
+	public static long getDataSizeUncompressed(final File zippedFile) throws ZipException, IOException {
+		try (final ZipFile zipFile = new ZipFile(zippedFile)) {
+			long uncompressedSize = 0;
+			final Enumeration<? extends ZipEntry> e = zipFile.entries();
+			while (e.hasMoreElements()) {
+				final ZipEntry entry = e.nextElement();
+				final long originalSize = entry.getSize();
+				if (originalSize >= 0) {
+					uncompressedSize += originalSize;
+				} else {
+					// -1 indicates, that size is unknown
+					return originalSize;
+				}
+			}
+			return uncompressedSize;
+		}
+	}
+
+	public static long getUncompressedSize(final File zipFilePath, final char[] zipPassword) throws IOException {
+		try (final net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(zipFilePath, zipPassword)) {
+			final List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+			long uncompressedSize = 0;
+			for (final FileHeader fileHeader : fileHeaders) {
+				final long originalSize = fileHeader.getUncompressedSize();
+				if (originalSize >= 0) {
+					uncompressedSize += originalSize;
+				} else {
+					// -1 indicates, that size is unknown
+					uncompressedSize = originalSize;
+					break;
+				}
+			}
+			return uncompressedSize;
+		}
+	}
+
+	public static InputStreamWithOtherItemsToClose openPasswordSecuredZipFile(final String importFilePathOrData, final char[] zipPassword) throws Exception {
+		return openPasswordSecuredZipFile(importFilePathOrData, zipPassword, null);
+	}
+
+	@SuppressWarnings("resource")
+	public static InputStreamWithOtherItemsToClose openPasswordSecuredZipFile(final String importFilePathOrData, final char[] zipPassword, final String zippedFilePathAndName) throws Exception {
+		net.lingala.zip4j.ZipFile zipFile = null;
+		try {
+			zipFile = new net.lingala.zip4j.ZipFile(importFilePathOrData, zipPassword);
+			final List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+			FileHeader selectedFileHeader = null;
+
+			if (fileHeaders != null && fileHeaders.size() >= 0) {
+				if (StringUtils.isBlank(zippedFilePathAndName)) {
+					if (fileHeaders.size() == 1 && !fileHeaders.get(0).isDirectory()) {
+						return new InputStreamWithOtherItemsToClose(zipFile.getInputStream(fileHeaders.get(0)), fileHeaders.get(0).getFileName(), zipFile);
+					} else {
+						throw new Exception("Zip file '" + importFilePathOrData + "' contains more than one file");
+					}
+				} else {
+					for (final FileHeader fileHeader : fileHeaders) {
+						if (!fileHeader.isDirectory() && fileHeader.getFileName().equals(zippedFilePathAndName)) {
+							selectedFileHeader = fileHeader;
+							break;
+						}
+					}
+					if (selectedFileHeader != null) {
+						return new InputStreamWithOtherItemsToClose(zipFile.getInputStream(selectedFileHeader), selectedFileHeader.getFileName(), zipFile);
+					} else {
+						throw new Exception("Zip file '" + importFilePathOrData + "' does not include defined zipped file '" + zippedFilePathAndName + "'");
+					}
+				}
+			} else {
+				throw new Exception("Zip file '" + importFilePathOrData + "' is empty");
+			}
+		} catch (final Exception e) {
+			try {
+				if (zipFile != null) {
+					zipFile.close();
+				}
+			} catch (@SuppressWarnings("unused") final IOException e1) {
+				// Do nothing
+			}
+			throw e;
+		}
+	}
+	
+	public static ZipOutputStream openNewZipOutputStream(final File destinationZipFile, Charset fileNameEncodingCharset)
+			throws IOException {
+		if (destinationZipFile.exists()) {
+			throw new IOException("DestinationFile already exists");
+		} else if (!destinationZipFile.getParentFile().exists()) {
+			throw new IOException("DestinationDirectory does not exist");
+		}
+
+		if (fileNameEncodingCharset == null) {
+			fileNameEncodingCharset = Charset.forName("Cp437");
+		}
+
+		try {
+			return new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(destinationZipFile)));
+		} catch (final IOException e) {
+			if (destinationZipFile.exists()) {
+				destinationZipFile.delete();
+			}
+			throw e;
+		}
+	}
+
+	public static InputStreamWithOtherItemsToClose openZipFile(final String importFilePathOrData) throws Exception {
+		return openZipFile(importFilePathOrData, null);
+	}
+
+	@SuppressWarnings("resource")
+	public static InputStreamWithOtherItemsToClose openZipFile(final String importFilePathOrData, final String zippedFilePathAndName) throws Exception {
+		ZipFile zipFile = null;
+		try {
+			zipFile = new ZipFile(importFilePathOrData);
+			final List<? extends ZipEntry> fileHeaders = Collections.list(zipFile.entries());
+			ZipEntry selectedFileHeader = null;
+
+			if (fileHeaders != null && fileHeaders.size() >= 0) {
+				if (StringUtils.isBlank(zippedFilePathAndName)) {
+					if (fileHeaders.size() == 1 && !fileHeaders.get(0).isDirectory()) {
+						return new InputStreamWithOtherItemsToClose(zipFile.getInputStream(fileHeaders.get(0)), fileHeaders.get(0).getName(), zipFile);
+					} else {
+						throw new Exception("Zip file '" + importFilePathOrData + "' contains more than one file");
+					}
+				} else {
+					for (final ZipEntry fileHeader : fileHeaders) {
+						if (!fileHeader.isDirectory() && fileHeader.getName().equals(zippedFilePathAndName)) {
+							selectedFileHeader = fileHeader;
+							break;
+						}
+					}
+					if (selectedFileHeader != null) {
+						return new InputStreamWithOtherItemsToClose(zipFile.getInputStream(selectedFileHeader), selectedFileHeader.getName(), zipFile);
+					} else {
+						throw new Exception("Zip file '" + importFilePathOrData + "' does not include defined zipped file '" + zippedFilePathAndName + "'");
+					}
+				}
+			} else {
+				throw new Exception("Zip file '" + importFilePathOrData + "' is empty");
+			}
+		} catch (final Exception e) {
+			try {
+				if (zipFile != null) {
+					zipFile.close();
+				}
+			} catch (@SuppressWarnings("unused") final IOException e1) {
+				// Do nothing
 			}
 			throw e;
 		}

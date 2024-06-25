@@ -42,7 +42,6 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationExecuteScriptParameters;
@@ -50,6 +49,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.util.ScriptHelper;
 
 public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
@@ -89,8 +89,8 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 			}
 			
 			if (datasourceDescriptionId != null) {
-				cust.getCustParameters().put(ComCompanyDaoImpl.STANDARD_FIELD_DATASOURCE_ID, datasourceDescriptionId);
-				cust.getCustParameters().put(ComCompanyDaoImpl.STANDARD_FIELD_LATEST_DATASOURCE_ID, datasourceDescriptionId);
+				cust.getCustParameters().put(RecipientStandardField.DatasourceID.getColumnName(), datasourceDescriptionId);
+				cust.getCustParameters().put(RecipientStandardField.LatestDatasourceID.getColumnName(), datasourceDescriptionId);
 			}
 		} catch (Exception e) {
 			logger.error("Cannot set velocity datasource_id in recipient for company " + companyID, e);
@@ -153,7 +153,7 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 			final VelocityResult velocityResult = velocity.evaluate( params, script, aWriter, 0, op.getActionId());
 
             if (velocityResult.hasErrors()) {
-				final Iterator<?> it = velocityResult.getErrors().get();
+				final Iterator<String> it = velocityResult.getErrorMessages().iterator();
             	while (it.hasNext()) {
             		logger.warn("Error in velocity script action " + operation.getCompanyId() + "/" + operation.getActionId()+ ": " + it.next());
             	}

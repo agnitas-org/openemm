@@ -31,6 +31,8 @@ import javax.net.ssl.SSLContext;
 
 import org.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import org.agnitas.util.NetworkUtil;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -42,6 +44,7 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -198,6 +201,8 @@ public class LinkcheckWorker implements Runnable {
 	 * @throws KeyStoreException on errors setting up SSL context
 	 */
 	private final CloseableHttpClient createHttpClient() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		final CookieStore cookieStore =	new BasicCookieStore();
+		
 		final HostnameVerifier hostnameVerifier = NoopHostnameVerifier.INSTANCE;
 		final SSLContext sslContext = createSSLContext();
 		final SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
@@ -210,7 +215,8 @@ public class LinkcheckWorker implements Runnable {
 	    builder.setSSLContext(sslContext);	
 	    builder.setConnectionManager(new PoolingHttpClientConnectionManager(socketFactoryRegistry));
 	    builder.setDefaultRequestConfig(createRequestConfig());
-	    
+	    builder.setDefaultCookieStore(cookieStore);
+
 	    return builder.build();
 	}
 
@@ -229,6 +235,9 @@ public class LinkcheckWorker implements Runnable {
 	    final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT);
 	    configBuilder.setConnectTimeout(timeout);
 	    configBuilder.setSocketTimeout(timeout);
+	    configBuilder.setCookieSpec(CookieSpecs.STANDARD);
+	    configBuilder.setCircularRedirectsAllowed(true);
+
 		NetworkUtil.setHttpClientProxyFromSystem(configBuilder, linkToCheck);
 
 	    return configBuilder.build();

@@ -1,0 +1,59 @@
+
+@mixin panel-variant($state, $color) {
+  .panel--#{$state} {
+    color: $white;
+    background-color: $color;
+  }
+}
+
+.panel {
+  width: 100%;
+  @include flex-row($gap-sm);
+  align-items: center;
+  padding: $gap-sm;
+  font-size: 28px;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius;
+  line-height: 1;
+}
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include panel-variant($state, $color);
+}
+
+.panel--status {
+  padding: 1px 1px $gap-x-sm $gap-sm;
+  font-size: 22px;
+  @include flex-column($gap-x-sm);
+  font-weight: normal;
+
+  .panel-head {
+    width: 100%;
+    flex: 0 0 45px;
+    @include flex-row($gap-sm);
+    align-items: center;
+
+    .panel-title {
+      color: $black;
+      flex-grow: 1;
+      height: 100%;
+      background: var(--main-bg-color);
+      border-bottom-left-radius: $border-radius;
+      border-top-right-radius: $border-radius;
+      display: flex;
+      align-items: center;
+      padding-inline: $gap-sm;
+    }
+  }
+
+  .panel-body {
+    width: 100%;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    padding-block: $gap-x-sm - 1;
+    padding-right: $gap-sm;
+  }
+}

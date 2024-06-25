@@ -1,0 +1,6 @@
+<HelpBalloon>
+    <title><![CDATA[Adresse BCC statique]]></title>
+    <content><![CDATA[Saisissez une ou plusieurs adresses BCC (s&#xE9;par&#xE9;es par des virgules) qui recevront une copie en aveugle pour chaque envoi.
+            Cela vous permet d'archiver tous les e-mails envoy&#xE9;s &#xE0; vos destinataires, quel que soit le type d'envoi.]]></content>
+</HelpBalloon>
+    

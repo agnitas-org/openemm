@@ -378,7 +378,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	protected String getMailinglistSqlFieldsForSelect() {
-        final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date"};
+        final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date", "sender_email", "reply_email"};
         return StringUtils.join(fields, ", ");
     }
 
@@ -386,13 +386,16 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         final int newID = selectInt(logger, "SELECT mailinglist_tbl_seq.NEXTVAL FROM DUAL");
         final int touchedLines = update(
                 logger,
-                "INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date, sender_email, reply_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 newID,
                 companyId,
                 mailinglist.getShortname(),
                 mailinglist.getDescription(),
                 mailinglist.getCreationDate(),
-                mailinglist.getChangeDate());
+                mailinglist.getChangeDate(),
+				mailinglist.getSenderEmail(),
+				mailinglist.getReplyEmail()
+		);
 
         if (touchedLines == 1) {
             mailinglist.setId(newID);
@@ -402,13 +405,15 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
     }
 
     protected int performInsertForMySql(final int companyId, final Mailinglist mailinglist) {
-        final String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?)";
+        final String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date, sender_email, reply_email) VALUES (?, ?, ?, ?, ?, ?, ?)";
         final int newID = insertIntoAutoincrementMysqlTable(logger, "mailinglist_id", insertStatement,
                 companyId,
                 mailinglist.getShortname(),
                 mailinglist.getDescription(),
                 mailinglist.getCreationDate(),
-                mailinglist.getChangeDate());
+                mailinglist.getChangeDate(),
+				mailinglist.getSenderEmail(),
+				mailinglist.getReplyEmail());
         mailinglist.setId(newID);
         return mailinglist.getId();
     }
@@ -417,10 +422,12 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         //execute update
         final int touchedLines = update(
                 logger,
-                "UPDATE mailinglist_tbl SET shortname = ?, description = ?, change_date = ? WHERE mailinglist_id = ? AND deleted = 0 AND company_id = ?",
+                "UPDATE mailinglist_tbl SET shortname = ?, description = ?, change_date = ?, sender_email = ?, reply_email = ? WHERE mailinglist_id = ? AND deleted = 0 AND company_id = ?",
                 mailinglist.getShortname(),
                 mailinglist.getDescription(),
                 mailinglist.getChangeDate(),
+				mailinglist.getSenderEmail(),
+				mailinglist.getReplyEmail(),
                 mailinglist.getId(),
                 companyId
         );

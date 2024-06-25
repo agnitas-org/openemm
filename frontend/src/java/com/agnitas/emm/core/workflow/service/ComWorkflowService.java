@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.UserStatus;
@@ -44,6 +45,8 @@ import net.sf.json.JSONArray;
 
 public interface ComWorkflowService {
 
+    void saveWorkflow(Admin admin, Workflow workflow, List<WorkflowIcon> icons, boolean duringPause);
+
     void saveWorkflow(Admin admin, Workflow workflow, List<WorkflowIcon> icons);
 
     boolean existsAtLeastOneFilledMailingIcon(List<WorkflowIcon> icons);
@@ -51,6 +54,8 @@ public interface ComWorkflowService {
 	void saveWorkflow(Workflow workflow);
 
 	Workflow getWorkflow(int workflowId, int companyId);
+
+    List<String> getWorkflowNames(List<Integer> ids, int companyId);
 
     /**
      * Get object representation of workflow schema (icons and connections) or {@code null} if referenced workflow doesn't exist.
@@ -74,6 +79,8 @@ public interface ComWorkflowService {
      */
 	List<WorkflowIcon> getIconsForClone(Admin admin, int workflowId, boolean isWithContent);
 
+    List<WorkflowIcon> getIcons(String schema);
+
     /**
      * A shortcut for {@link com.agnitas.emm.core.workflow.dao.ComWorkflowDao#validateDependency(int, int, WorkflowDependency, boolean)} where
      * a {@code strict} argument will be determined by a type of given dependency (see {@link WorkflowDependency#getType()}).
@@ -89,6 +96,8 @@ public interface ComWorkflowService {
 
     List<Workflow> getWorkflowsOverview(Admin admin);
 
+    List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin);
+
 	List<LightweightMailing> getAllMailings(Admin admin);
 
     List<LightweightMailing> getAllMailingsSorted(Admin admin, String sortFiled, String sortDirection);
@@ -102,8 +111,6 @@ public interface ComWorkflowService {
     List<Map<String, Object>> getMailings(int companyId, String commaSeparatedMailingIds);
 
 	Map<Integer, String> getMailingLinks(int mailingId, int companyId);
-
-	Map<Integer, String> getAllReports(int companyId);
 
 	List<TargetLight> getAllTargets(int companyId);
 
@@ -142,6 +149,8 @@ public interface ComWorkflowService {
 	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) throws Exception;
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
+
+    List<Workflow> getWorkflowsToUnpause(CompaniesConstraints constraints);
 
     List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, int companyId);
 
@@ -240,18 +249,6 @@ public interface ComWorkflowService {
      */
     List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, List<WorkflowRule> rules);
 
-    /**
-     * Add a report referenced by {@code reportId} to an workflow's report icon referenced by {@code workflowId} and {@code iconId}.
-     * If report icon already contains {@code reportId} then no changes are made (to prevent duplication) but method returns {@code true} anyway.
-     *
-     * @param admin currently authorized admin.
-     * @param workflowId an identifier of a workflow to update.
-     * @param iconId an identifier of a report icon within a workflow.
-     * @param reportId an identifier of a report to add to report icon.
-     * @return {@code true} if succeeded or {@code false} if something went wrong (e.g. workflow or referenced icon doesn't exist).
-     */
-    boolean addReportToIcon(Admin admin, int workflowId, int iconId, int reportId);
-
     List<Campaign> getCampaignList(int companyId, String sort, int order);
     
     /**
@@ -275,5 +272,22 @@ public interface ComWorkflowService {
 
     JSONArray getWorkflowListJson(Admin admin);
 
-    boolean isLinkUsedInActiveWorkflow(ComTrackableLink linkId);
+    boolean isLinkUsedInActiveWorkflow(TrackableLink linkId);
+
+    String getSchemaBeforePause(int workflowId, int companyId);
+
+    Date getPauseDate(int workflowId, int companyId);
+
+    void deletePauseUndoEntry(int workflowId, int companyId);
+
+    Admin getPauseAdmin(int workflowId, int companyId);
+
+    void savePausedSchemaForUndo(Workflow workflow, int adminId);
+    void savePausedSchemaForUndo(Workflow workflow);
+
+    int getWorkflowSenderId(Workflow workflow);
+
+    String getInitialWorkflowSchema();
+
+    boolean adjustStartDateIfNeeded(WorkflowStatus newStatus, List<WorkflowIcon> icons, Admin admin);
 }

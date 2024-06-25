@@ -1,14 +1,13 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <div class="decision-type-container">
     <div class="form-group">
         <div class="col-sm-4">
             <label class="control-label">
-                <bean:message key="Mailing"/>
+                <mvc:message code="Mailing"/>
             </label>
         </div>
         <div class="col-sm-8">
@@ -16,19 +15,19 @@
                 <label class="radio-inline">
                     <input type="radio" name="${param.statusName}" id="mailings_status_all" value="all" checked="checked"
                            data-action="${param.baseMailingEditor}-status-change">
-                    <bean:message key="default.All"/>
+                    <mvc:message code="default.All"/>
                 </label>
             </c:if>
             <label class="radio-inline">
                 <input type="radio" name="${param.statusName}" id="mailings_status_${param.status1}" class="mailing-type-status-radio"
                 ${param.containerId == 'mailing-editor' ? 'checked="checked"' : ''}
                        value="${param.status1}" data-action="${param.baseMailingEditor}-status-change">
-                <bean:message key="${param.message1}"/>
+                <mvc:message code="${param.message1}"/>
             </label>
             <label class="radio-inline">
                 <input type="radio" name="${param.statusName}" id="mailings_status_${param.status2}" class="mailing-type-status-radio"
                value="${param.status2}" data-action="${param.baseMailingEditor}-status-change">
-                <bean:message key="${param.message2}"/>
+                <mvc:message code="${param.message2}"/>
             </label>
         </div>
     </div>
@@ -46,13 +45,13 @@
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">
-                    <bean:message key="workflow.mailing.sortBy"/>
+                    <mvc:message code="workflow.mailing.sortBy"/>
                 </label>
             </div>
             <div class="col-sm-4">
                 <div id="shortname_sort" class="sort sort-btn">
                     <div ${sortByNameOnClick} class="sort-icon unselectable" unselectable="on"
-                         data-tooltip='<bean:message key="workflow.mailing.SortAlphabetically"/>'>
+                         data-tooltip='<mvc:message code="workflow.mailing.SortAlphabetically"/>'>
                         A-Z
                     </div>
                     <div class="arrows">
@@ -64,7 +63,7 @@
             <div class="col-sm-4">
                 <div id="change_date_sort" class="sort">
                     <div ${sortByDateOnClick} class="sort-icon"
-                     data-tooltip='<bean:message key="workflow.mailing.SortByDate"/>'>
+                     data-tooltip='<mvc:message code="workflow.mailing.SortByDate"/>'>
                         <i class="icon icon-calendar-o"></i>
                     </div>
                     <div class="arrows">
@@ -80,7 +79,7 @@
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">
-                    <bean:message key="Mailing"/>
+                    <mvc:message code="Mailing"/>
                 </label>
             </div>
             <div class="col-sm-8">
@@ -96,7 +95,7 @@
             <div class="form-group">
                 <div class="col-sm-12">
                     <div class="well">
-                        <bean:message key="workflow.mailing.copyQuestion"/>
+                        <mvc:message code="workflow.mailing.copyQuestion"/>
                     </div>
                 </div>
             </div>
@@ -104,22 +103,22 @@
                 <div class="col-xs-12">
                     <div class="btn-group">
                         <a href="#" class="btn btn-regular" data-action="${param.baseMailingEditor}-secure-cancel">
-                            <bean:message key="button.Cancel"/>
+                            <mvc:message code="button.Cancel"/>
                         </a>
                         <a href="#" class="btn btn-regular btn-primary" data-action="mailing-editor-copy">
-                             <bean:message key="button.Copy"/> <bean:message key="and"/>  <bean:message key="button.Edit"/>
+                             <mvc:message code="button.Copy"/> <mvc:message code="and"/>  <mvc:message code="button.Edit"/>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <c:if test="${param.showMailingLinks}">
+    <c:if test="${param.showMailingLinks and not emm:permissionAllowed('mailing.content.readonly', pageContext.request)}">
         <div class="form-group">
             <div class="col-sm-push-4 col-sm-8">
                 <div id="mailing_create_edit_link" >
                     <a href="#" class="btn btn-regular" ${param.disabledSelection == 'true' ? 'data-action=\"mailing-editor-new\"' : ''}>
-                        <bean:message key="dashboard.mailing.new"/>
+                        <mvc:message code="dashboard.mailing.new"/>
                     </a>
                 </div>
             </div>

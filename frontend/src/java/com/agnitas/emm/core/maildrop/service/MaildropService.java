@@ -85,6 +85,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	/**
 	 * Returns <code>true</code> is world mailing is sent or scheduled to send or action-based/date-based mailing is activated.
 	 * @return
+	 * @throws Exception 
 	 */
 	boolean isActiveMailing(final int mailingID, final int companyID);
 

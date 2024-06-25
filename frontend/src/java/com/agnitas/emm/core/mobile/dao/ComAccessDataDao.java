@@ -13,5 +13,5 @@ package com.agnitas.emm.core.mobile.dao;
 import com.agnitas.emm.core.mobile.bean.ComAccessData;
 
 public interface ComAccessDataDao {
-	public void writeData(ComAccessData accessData);
+	void writeData(ComAccessData accessData);
 }

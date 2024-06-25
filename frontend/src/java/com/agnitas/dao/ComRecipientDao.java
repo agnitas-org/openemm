@@ -20,7 +20,6 @@ import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
-import com.agnitas.beans.Admin;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -31,17 +30,19 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.RecipientException;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
 
 public interface ComRecipientDao {
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT = "_FORMAT";
@@ -67,13 +68,11 @@ public interface ComRecipientDao {
 
     List<Integer> getAdminAndTestRecipientIds(int companyID, int mailinglistID);
 
-	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients);
-
-	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients, boolean shouldBeActive);
-
     boolean isMailtrackingEnabled(int companyID);
 
     List<ComRecipientHistory> getRecipientBindingHistory(int recipientID, int companyID);
+
+    List<Map<String, Object>> getRecipientClicksHistory(int recipientId, int mailingId, int companyId);
 
     List<ComRecipientHistory> getRecipientProfileHistory(int recipientID, int companyID);
 
@@ -85,6 +84,7 @@ public interface ComRecipientDao {
 
     PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
 
+    // TODO: EMMGUI-714: remove when old design will be removed
     PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
 
     int getNumberOfRecipients(int companyId);
@@ -359,7 +359,7 @@ public interface ComRecipientDao {
 	@Deprecated
     int getSizeOfCustomerDataFromDbList(int companyId, boolean matchAll, List<CriteriaEquals> criteriaEquals);
 
-    CaseInsensitiveMap<String, ProfileField> getAvailableProfileFields(int companyID) throws Exception;
+    CaseInsensitiveMap<String, RecipientFieldDescription> getAvailableProfileFields(int companyID) throws Exception;
 
 	List<WebtrackingHistoryEntry> getRecipientWebtrackingHistory(int companyID, int recipientID);
 
@@ -457,4 +457,14 @@ public interface ComRecipientDao {
 	int getSizeOfCustomerDataFromDbList(int companyId, String eql);
 
     int getOrCreateRecipientOfAdmin(Admin admin) throws Exception;
+
+	List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+
+	int countFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+
+    List<String> fetchRecipientNames(Set<Integer> ids, int companyID);
+
+    int getBounceDetail(int mailingId, int recipientId, int companyId);
+
+	int getNumberOfRecipients(int companyID, int mailinglistID, RecipientType... recipientTypes);
 }

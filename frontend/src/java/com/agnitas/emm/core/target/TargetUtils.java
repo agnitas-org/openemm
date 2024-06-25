@@ -13,11 +13,17 @@ package com.agnitas.emm.core.target;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.agnitas.emm.core.commons.dto.IntRange;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeProperties;
 
 public class TargetUtils {
+
+    public static int MIN_RECIPIENT_COUNT_CONDITION_THRESHOLD = 50_000;
+
     public static TargetComplexityGrade getComplexityGrade(int complexityIndex, int recipientsCount) {
         if (complexityIndex < 0) {
             return null;
@@ -25,29 +31,51 @@ public class TargetUtils {
 
         int complexity = getComplexity(complexityIndex, recipientsCount);
 
-        if (complexity < 10) {
+        if (complexity < TargetComplexityGrade.GREEN.getMaxThreshold()) {
             return TargetComplexityGrade.GREEN;
-        } else if (complexity < 18) {
+        } else if (complexity < TargetComplexityGrade.YELLOW.getMaxThreshold()) {
             return TargetComplexityGrade.YELLOW;
         } else {
             return TargetComplexityGrade.RED;
         }
     }
 
-    private static int getComplexity(int complexityIndex, int recipientsCount) {
-        if (recipientsCount < 50_000) {
-            return 0;
-        } else if (recipientsCount >= 3_000_000) {
-            return complexityIndex + 7;
-        } else if (recipientsCount >= 1_000_000) {
-            return complexityIndex + 5;
-        } else if (recipientsCount >= 500_000) {
-            return complexityIndex + 3;
-        } else if (recipientsCount >= 100_000) {
-            return complexityIndex + 1;
-        } else {
-            return complexityIndex;
+    public static IntRange getComplexityIndexesRange(TargetComplexityGrade complexityGrade) {
+        if (complexityGrade == null) {
+            return null;
         }
+
+        if (TargetComplexityGrade.GREEN.equals(complexityGrade)) {
+            return new IntRange(null, complexityGrade.getMaxThreshold());
+        }
+
+        if (TargetComplexityGrade.YELLOW.equals(complexityGrade)) {
+            return new IntRange(TargetComplexityGrade.GREEN.getMaxThreshold(), complexityGrade.getMaxThreshold());
+        }
+
+        return new IntRange(TargetComplexityGrade.YELLOW.getMaxThreshold(), null);
+    }
+
+    public static int getComplexityAdjustment(int recipientsCount) {
+        if (recipientsCount >= 3_000_000) {
+            return 7;
+        } else if (recipientsCount >= 1_000_000) {
+            return 5;
+        } else if (recipientsCount >= 500_000) {
+            return 3;
+        } else if (recipientsCount >= 100_000) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    private static int getComplexity(int complexityIndex, int recipientsCount) {
+        if (recipientsCount < MIN_RECIPIENT_COUNT_CONDITION_THRESHOLD) {
+            return 0;
+        }
+
+        return complexityIndex + getComplexityAdjustment(recipientsCount);
     }
 
 	public static List<Integer> getInvolvedTargetIds(String targetExpression) {
@@ -61,4 +89,25 @@ public class TargetUtils {
 		}
 		return returnList;
 	}
+	
+	/**
+	 * Checks if target group can be used in content blocks.
+	 * 
+	 * @param sqlCode SQL code of target group
+	 * 
+	 * @return <code>true</code> if target group can be used in content blocks
+	 */
+	public static boolean canBeUsedInContentBlocks(final SqlCode sqlCode) {
+		final SqlCodeProperties properties = sqlCode.getCodeProperties();
+
+		/*
+		 * Code is backend compatible if,
+		 * - no non-profile-tables are used
+		 * - no reference tables are used
+		 * - and generated SQL does not contain sub-selects
+		 */
+
+		return !properties.isUsingNonCustomerTables() && !properties.isUsingReferenceTables() && !properties.isUsingSubselects();
+	}
+
 }

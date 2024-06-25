@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
@@ -37,6 +38,7 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
+import com.agnitas.messages.I18nString;
 
 public class ComSampleWorkflowFactory {
 	public enum SampleWorkflowType {
@@ -55,7 +57,7 @@ public class ComSampleWorkflowFactory {
 		}
 	}
 
-	public static List<WorkflowIcon> createSampleWorkflow(String type, boolean gridEnabled) {
+	public static List<WorkflowIcon> createSampleWorkflow(String type, boolean gridEnabled, Admin admin) {
 		if (SampleWorkflowType.BIRTHDAY.getValue().equals(type)) {
 			return createSampleWorkflowBirthday(gridEnabled);
 		}
@@ -63,7 +65,7 @@ public class ComSampleWorkflowFactory {
 			return createSampleWorkflowDOI(gridEnabled);
 		}
 		if (SampleWorkflowType.AB_TEST.getValue().equals(type)) {
-			return createSampleWorkflowABTest(gridEnabled);
+			return createSampleWorkflowABTest(gridEnabled, admin);
 		}
 		return null;
 	}
@@ -97,7 +99,7 @@ public class ComSampleWorkflowFactory {
         return Arrays.asList(connect(start, recipient, actionMailing, stop));
 	}
 
-	private static List<WorkflowIcon> createSampleWorkflowABTest(boolean gridEnabled) {
+	private static List<WorkflowIcon> createSampleWorkflowABTest(boolean gridEnabled, Admin admin) {
 		WorkflowStart start = new WorkflowStartImpl();
 		start.setId(1);
 		start.setX(0);
@@ -150,7 +152,7 @@ public class ComSampleWorkflowFactory {
 
 		WorkflowMailingImpl mailing3 = new WorkflowMailingImpl();
 		mailing3.setId(10);
-		mailing3.setIconTitle("");
+		mailing3.setIconTitle(I18nString.getLocaleString("resultMailing", admin.getLocale()));
 		mailing3.setX(gridEnabled ? 16 : 28);
 		mailing3.setY(gridEnabled ? 2 : 3);
 		mailing3.setEditable(false);

@@ -94,16 +94,15 @@ public abstract class BaseDaoImpl {
 	private static String dbVendor = null;
 	
 	protected JavaMailService javaMailService;
+
+	public BaseDaoImpl(DataSource dataSource, JavaMailService javaMailService) {
+		this.dataSource = dataSource;
+		this.javaMailService = javaMailService;
+	}
 	
-	/**
-	 * Cache the existence state of table 'disabled_mailinglist_tbl'
-	 */
-	private Boolean isDisabledMailingListsSupported;
-	
-	/**
-	 * Cache the existence state of table 'dyn_target_tbl' and column 'is_access_limiting'
-	 */
-	private Boolean isAccessLimitingTargetgroupsSupported;
+	public BaseDaoImpl() {
+		// Nothing to do
+	}
 
 	/**
 	 * Dependency injection method
@@ -604,14 +603,14 @@ public abstract class BaseDaoImpl {
 		}
 	}
 
-	public void checkMaximumDataSize(long datasize) throws Exception {
+	protected void checkMaximumDataSize(long datasize) throws Exception {
 		if (!isOracleDB() && getMysqlMaxPacketSize() < datasize) {
 			// If MariaDB/MySQL's MaxPacketSize is to low for uploading this blob
 			throw new Exception("Data is to big for storage in your database. Please rise db configuration value 'max_allowed_packet'. Current value: " + getMysqlMaxPacketSize() + " bytes Datasize: " + datasize + " bytes");
 		}
 	}
 
-	public void updateClob(Logger logger, String statement, String clobData, final Object... parameter) throws Exception {
+	protected void updateClob(Logger logger, String statement, String clobData, final Object... parameter) throws Exception {
 		if (clobData == null) {
 			try {
 				validateStatement(statement);
@@ -660,7 +659,7 @@ public abstract class BaseDaoImpl {
 	 * Example: updateBlob(logger, "UPDATE tableName SET blobField = ? WHERE idField1 = ? AND idField2 = ?", blobDataArray, id1Object, id2Object);
 	 * 
 	 */
-	public void updateBlob(Logger logger, String statement, final byte[] blobData, final Object... parameter) throws Exception {
+	protected void updateBlob(Logger logger, String statement, final byte[] blobData, final Object... parameter) throws Exception {
 		if (blobData == null) {
 			updateBlob(logger, statement, (InputStream) null, parameter);
 		} else {
@@ -676,7 +675,7 @@ public abstract class BaseDaoImpl {
 	 * Example: updateBlob(logger, "UPDATE tableName SET blobField = ? WHERE idField1 = ? AND idField2 = ?", blobDataInputSTream, id1Object, id2Object);
 	 *
 	 */
-	public void updateBlob(Logger logger, String statement, final InputStream blobDataInputStream, final Object... parameter) throws Exception {
+	protected void updateBlob(Logger logger, String statement, final InputStream blobDataInputStream, final Object... parameter) throws Exception {
 		if (blobDataInputStream == null) {
 			try {
 				validateStatement(statement);
@@ -728,7 +727,7 @@ public abstract class BaseDaoImpl {
 	 * The selectBlobStatement must return a single column of type Blob.
 	 * 
 	 */
-	public void writeBlobInStream(Logger logger, String selectBlobStatement, OutputStream outputStream, final Object... parameter) throws Exception {
+	protected void writeBlobInStream(Logger logger, String selectBlobStatement, OutputStream outputStream, final Object... parameter) throws Exception {
 		try {
 			if (outputStream == null) {
 				throw new RuntimeException("outputStream is null");
@@ -754,7 +753,7 @@ public abstract class BaseDaoImpl {
 	 * Watch out: Oracle returns value -2 (= Statement.SUCCESS_NO_INFO) per line for success with no "lines touched" info<br />
 	 * 
 	 */
-	public int[] batchupdate(Logger logger, String statement, List<Object[]> values) {
+	protected int[] batchupdate(Logger logger, String statement, List<Object[]> values) {
 		try {
 			validateStatement(statement);
 			logSqlStatement(logger, statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
@@ -773,7 +772,7 @@ public abstract class BaseDaoImpl {
 		}
 	}
 	
-	public int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String insertStatement, List<Object[]> listOfValueArrays) throws Exception {
+	protected int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String insertStatement, List<Object[]> listOfValueArrays) throws Exception {
 		try {
 			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement, "BatchInsertParameterList(Size: " + listOfValueArrays.size() + ")");
@@ -808,7 +807,7 @@ public abstract class BaseDaoImpl {
 		}
 	}
 	
-	public int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, List<Object[]> parametersList) throws Exception {
+	protected int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, List<Object[]> parametersList) throws Exception {
 		try {
 			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement, "BatchInsertParameterList(Size: " + parametersList.size() + ")");
@@ -820,6 +819,11 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
+				} else if (parameter[i] instanceof Boolean) {
+					insertParameterTypes[i] = Types.INTEGER;
+					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
 				} else if (parameter[i] instanceof Double) {
 					insertParameterTypes[i] = Types.DOUBLE;
 				} else if (parameter[i] instanceof Float) {
@@ -893,6 +897,8 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
 				} else if (parameter[i] instanceof Boolean) {
 					insertParameterTypes[i] = Types.INTEGER;
 					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
@@ -954,6 +960,15 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
+				} else if (parameter[i] instanceof Boolean) {
+					insertParameterTypes[i] = Types.INTEGER;
+					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
+				} else if (parameter[i] instanceof Double) {
+					insertParameterTypes[i] = Types.DOUBLE;
+				} else if (parameter[i] instanceof Float) {
+					insertParameterTypes[i] = Types.FLOAT;
 				} else if (parameter[i] instanceof String) {
 					insertParameterTypes[i] = Types.VARCHAR;
 				} else if (parameter[i] instanceof Date) {
@@ -1128,32 +1143,23 @@ public abstract class BaseDaoImpl {
 		return AgnUtils.findUniqueCloneName(nameList, prefix);
 	}
 
-    protected String getContentSizeExpression() {
-        if (isOracleDB()) {
-            return "DBMS_LOB.GETLENGTH(content)";
-        } else {
-            return "OCTET_LENGTH(content)";
-        }
-    }
-    
-    protected boolean isDisabledMailingListsSupported() {
-		if (isDisabledMailingListsSupported == null) {
-			isDisabledMailingListsSupported = DbUtilities.checkIfTableExists(getDataSource(), "disabled_mailinglist_tbl");
-		}
-
-		return isDisabledMailingListsSupported;
+	protected String getPartialSearchFilterWithAnd(String searchIn) {
+		return getPartialSearchFilter(searchIn, true);
 	}
-    
-    protected boolean isAccessLimitingTargetgroupsSupported() {
-		if (isAccessLimitingTargetgroupsSupported == null) {
-			try {
-				isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(getDataSource(), "dyn_target_tbl", "is_access_limiting");
-			} catch (Exception e) {
-				e.printStackTrace();
-				isAccessLimitingTargetgroupsSupported = false;
-			}
-		}
 
-		return isAccessLimitingTargetgroupsSupported;
+    protected String getPartialSearchFilterWithAnd(String searchIn, int number, List<Object> params) {
+        params.add("%" + number + "%");
+   		return " AND (" + searchIn + " IS NOT NULL AND CAST(" + searchIn + " AS CHAR(15)) LIKE ?)";
+   	}
+
+	protected String getPartialSearchFilter(String searchIn) {
+		return getPartialSearchFilter(searchIn, false);
+	}
+
+	private String getPartialSearchFilter(String searchIn, boolean prependAnd) {
+		String filter = isOracleDB()
+				? "LOWER(" + searchIn + ") LIKE ('%' || LOWER(?) || '%')"
+				: searchIn + " LIKE CONCAT('%', ?, '%')";
+		return (prependAnd ? " AND " : " ") + filter;
 	}
 }

@@ -27,12 +27,14 @@ public class MailingSendFormToMailingSendOptionsConverter implements Converter<M
                 .setReportSendEmail(form.getReportSendEmail())
                 .setCheckForDuplicateRecords(form.isCheckForDuplicateRecords())
                 .setSkipWithEmptyTextContent(form.isSkipWithEmptyTextContent())
+                .setCleanupTestsBeforeDelivery(form.isCleanupTestsBeforeDelivery())
                 .setGenerationOptimization(form.getGenerationOptimization())
                 .setMaxRecipients(Integer.parseInt(form.getMaxRecipients()))
                 .setStepping(form.getStepping())
                 .setBlockSize(form.getBlocksize())
                 .setRequiredAutoImport(form.getAutoImportId())
                 .setDate(form.getDate())
+                .setActivateAgainToday(form.isActivateAgainToday())
                 .build();
     }
 }

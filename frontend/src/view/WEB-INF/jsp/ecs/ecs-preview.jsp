@@ -1,7 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 
 <%--@elvariable id="isEmptyParamsError" type="java.lang.Boolean"--%>
 <%--@elvariable id="isEmptyRecipientError" type="java.lang.Boolean"--%>

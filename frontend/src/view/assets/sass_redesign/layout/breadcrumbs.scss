@@ -1,0 +1,29 @@
+
+.breadcrumbs {
+  @include flex-wrap(nowrap);
+  min-width: 0;
+  margin: 0;
+  gap: $gap-sm;
+
+  color: var(--breadcrumbs-color);
+
+  li {
+    @extend .flex-center;
+    text-wrap: nowrap;
+
+    span, a {
+      @include font($font-size-md, $font-weight-semibold, initial);
+    }
+
+    &:last-child {
+      min-width: 0;
+      span {
+        @include text-truncate;
+      }
+    }
+  }
+
+  .arrow {
+    font-size: $font-size-sm;
+  }
+}

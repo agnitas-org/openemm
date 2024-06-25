@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -23,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.EmmActionDao;
@@ -51,7 +53,6 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
@@ -81,7 +82,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private ExtensibleUIDService uidService;
     private ComRecipientDao comRecipientDao;				// TODO Replace by RecipientService
     private ProfileFieldService profileFieldService;
-    private CompanyTokenService companyTokenService;
     private RecipientService recipentService;
 
     @Override
@@ -127,13 +127,13 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 
         // make certain forms active
         if (CollectionUtils.isNotEmpty(activeFormIds)) {
-            affectedRows += userFormDao.updateActiveness(companyId, activeFormIds, true);
+            affectedRows += updateActiveness(companyId, activeFormIds, true);
             description += "Made active: " + StringUtils.join(activeFormIds, ", ");
         }
 
         // make certain form inactive
         if (CollectionUtils.isNotEmpty(inactiveFormIds)) {
-            affectedRows +=  userFormDao.updateActiveness(companyId, inactiveFormIds, false);
+            affectedRows += updateActiveness(companyId, inactiveFormIds, false);
             description += StringUtils.isNotBlank(description) ? "\n" : "";
             description += "Made inactive: " + StringUtils.join(inactiveFormIds, ", ");
         }
@@ -143,6 +143,11 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         }
 
         return null;
+    }
+
+    @Override
+    public int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive) {
+        return userFormDao.updateActiveness(companyId, formIds, isActive);
     }
 
     @Override
@@ -368,6 +373,13 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
+    public List<String> getUserFormNames(Set<Integer> bulkIds, int companyID) {
+        return bulkIds.stream()
+                .map(id -> getUserFormName(id, companyID))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Map<String, String> getMediapoolImages(Admin admin) {
         return Collections.emptyMap();
     }
@@ -392,7 +404,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     
     private Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
-    		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
+    		return companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {
     		return Optional.empty();
     	}
@@ -431,11 +443,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     @Required
     public void setProfileFieldService(ProfileFieldService profileFieldService) {
         this.profileFieldService = profileFieldService;
-    }
-    
-    @Required
-    public final void setCompanyTokenService(final CompanyTokenService service) {
-    	this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
     }
 
     @Required

@@ -14,9 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.agnitas.util.GuiConstants;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.messages.Message;
 
@@ -26,6 +24,7 @@ public class ServiceResult<T> {
     private final List<Message> successMessages;
     private final List<Message> warningMessages;
     private final List<Message> errorMessages;
+    private final List<Message> infoMessages;
 
     public static <R> ServiceResult<R> success(final R result, final Message... successMessages) {
         return new ServiceResult<>(result, true, Arrays.asList(successMessages), null, null);
@@ -37,6 +36,10 @@ public class ServiceResult<T> {
 
     public static <R> ServiceResult<R> warning(final R result, final boolean success, final Message... warningMessages) {
         return new ServiceResult<>(result, success, null, Arrays.asList(warningMessages), null);
+    }
+
+    public static <R> ServiceResult<R> info(final R result, final boolean success, final Message... infoMessages) {
+        return new ServiceResult<>(result, success, null, null, null, Arrays.asList(infoMessages));
     }
 
     public static <R> ServiceResult<R> error(final Message... errorMessages) {
@@ -54,9 +57,11 @@ public class ServiceResult<T> {
             this.successMessages = Collections.unmodifiableList(Arrays.asList(messages));
             this.warningMessages = Collections.emptyList();
             this.errorMessages = Collections.emptyList();
+            this.infoMessages = Collections.emptyList();
         } else {
             this.successMessages = Collections.emptyList();
             this.warningMessages = Collections.emptyList();
+            this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.unmodifiableList(Arrays.asList(messages));
         }
     }
@@ -67,35 +72,47 @@ public class ServiceResult<T> {
         if(success) {
             this.successMessages = Collections.unmodifiableList(messages);
             this.warningMessages = Collections.emptyList();
+            this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.emptyList();
         } else {
             this.successMessages = Collections.emptyList();
             this.warningMessages = Collections.emptyList();
+            this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.unmodifiableList(messages);
         }
     }
 
     public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
+        this(result, success, successMessages, warningMessages, errorMessages, Collections.emptyList());
+    }
+
+    public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages, final List<Message> infoMessages) {
         this.result = result;
         this.success = success;
 
-		if (successMessages == null) {
-			this.successMessages = Collections.emptyList();
-		} else {
-			this.successMessages = Collections.unmodifiableList(successMessages);
-		}
-		
-		if (warningMessages == null) {
-			this.warningMessages = Collections.emptyList();
-		} else {
-			this.warningMessages = Collections.unmodifiableList(warningMessages);
-		}
-		
-		if (errorMessages == null) {
-			this.errorMessages = Collections.emptyList();
-		} else {
-			this.errorMessages = Collections.unmodifiableList(errorMessages);
-		}
+        if (successMessages == null) {
+            this.successMessages = Collections.emptyList();
+        } else {
+            this.successMessages = Collections.unmodifiableList(successMessages);
+        }
+
+        if (warningMessages == null) {
+            this.warningMessages = Collections.emptyList();
+        } else {
+            this.warningMessages = Collections.unmodifiableList(warningMessages);
+        }
+
+        if (errorMessages == null) {
+            this.errorMessages = Collections.emptyList();
+        } else {
+            this.errorMessages = Collections.unmodifiableList(errorMessages);
+        }
+
+        if (infoMessages == null) {
+            this.infoMessages = Collections.emptyList();
+        } else {
+            this.infoMessages = Collections.unmodifiableList(infoMessages);
+        }
     }
 
     public List<Message> getSuccessMessages() {
@@ -110,6 +127,10 @@ public class ServiceResult<T> {
         return errorMessages;
     }
 
+    public List<Message> getInfoMessages() {
+        return infoMessages;
+    }
+
     public boolean hasErrorMessages() {
         return CollectionUtils.isNotEmpty(errorMessages);
     }
@@ -122,17 +143,4 @@ public class ServiceResult<T> {
         return success;
     }
 
-    public void extractMessagesTo(ActionMessages messages, ActionMessages errors) {
-        for (Message msg : successMessages) {
-            messages.add(ActionMessages.GLOBAL_MESSAGE, msg.toStrutsMessage());
-        }
-
-        for (Message msg : warningMessages) {
-            messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, msg.toStrutsMessage());
-        }
-
-        for (Message msg : errorMessages) {
-            errors.add(ActionMessages.GLOBAL_MESSAGE, msg.toStrutsMessage());
-        }
-    }
 }

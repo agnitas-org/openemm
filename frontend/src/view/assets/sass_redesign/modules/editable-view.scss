@@ -1,0 +1,27 @@
+
+[data-editable-view], body {
+  &.edit-mode {
+    .tile {
+      border-color: transparent;
+
+      .tile-header, .tile-body {
+        filter: grayscale(1);
+      }
+    }
+
+    .tile-overlay {
+      visibility: visible;
+    }
+  }
+}
+
+[data-editable-view]:not(.edit-mode) {
+  .tile--hidden, .tile-container--hidden {
+    // NOTE: using display: none breaks the ':visible' selector checks on child elements.
+    // NOTE: since the logic in the JS code was based on the :visible selector, it was decided to use this approach for now so as not to break anything
+    position: absolute !important;
+    opacity: 0 !important;
+    @include size(0 !important);
+    border: none !important;
+  }
+}

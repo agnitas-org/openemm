@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.agnitas.emm.core.export.web.ExportController;
+import com.agnitas.emm.core.recipient.imports.wizard.web.RecipientImportWizardController;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
@@ -34,7 +35,7 @@ public class PollingServiceImpl implements PollingService {
     
     private static final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
-    private static final Set<String> LONG_RUNNING_TASKS = Set.of(ExportController.EXPORT_KEY);
+    private static final Set<String> LONG_RUNNING_TASKS = Set.of(ExportController.EXPORT_KEY, RecipientImportWizardController.RECIPIENTS_IMPORT_WIZARD_KEY);
 
     private Map<PollingUid, ListenableFuture<?>> pendingTasksMap = new ConcurrentHashMap<>();
     private ExecutorService workerExecutorService;

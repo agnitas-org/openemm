@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.useractivitylog.bean;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 
 public class RestfulUserActivityAction {
@@ -19,6 +21,7 @@ public class RestfulUserActivityAction {
     private String description;
     private String requestMethod;
     private String username;
+    private String supervisorName;
 
     public Date getTimestamp() {
         return timestamp;
@@ -58,5 +61,21 @@ public class RestfulUserActivityAction {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getSupervisorName() {
+        return supervisorName;
+    }
+
+    public void setSupervisorName(String supervisorName) {
+        this.supervisorName = supervisorName;
+    }
+
+    public String getDisplayName() {
+        if (StringUtils.isBlank(supervisorName)) {
+            return getUsername();
+        }
+
+        return getUsername() + " (" + supervisorName + ")";
     }
 }

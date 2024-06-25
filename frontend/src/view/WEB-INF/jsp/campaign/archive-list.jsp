@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.util.AgnUtils" errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.AgnUtils" errorPage="/error.action" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -89,7 +89,7 @@
                     </display:column>
 
                     <display:column class="table-actions">
-                        <emm:ShowByPermission token="campaign.change">
+                        <emm:ShowByPermission token="campaign.show">
                             <c:url var="viewLink" value="/mailing/archive/${campaign.id}/view.action"/>
                             <a href="${viewLink}" class="hidden js-row-show"></a>
                         </emm:ShowByPermission>

@@ -1,0 +1,9 @@
+
+@mixin hide-scroll() {
+  overflow-y: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;    /* Firefox */
+  &::-webkit-scrollbar {    /* WebKit */
+    display: none;
+  }
+}

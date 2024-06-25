@@ -120,8 +120,12 @@ abstract public class MailWriter {
 		this.allBlocks = allBlocks;
 
 		// setup billing interface
-		if (data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing() || data.maildropStatus.isWorldMailing()) {
-			backendLog = new BackendLogDAO(data.dbase, data.maildropStatus.id(), data.mailing.id(), data.maildropStatus.isWorldMailing());
+		if (data.maildropStatus.isAdminMailing() ||
+		    data.maildropStatus.isTestMailing() ||
+		    data.maildropStatus.isWorldMailing() ||
+		    data.maildropStatus.isRuleMailing() ||
+		    data.maildropStatus.isOnDemandMailing()) {
+			backendLog = new BackendLogDAO(data.dbase, data.maildropStatus.id(), data.mailing.id(), data.maildropStatus.isWorldMailing(), data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing ());
 		} else {
 			backendLog = null;
 		}
@@ -258,7 +262,8 @@ abstract public class MailWriter {
 	 */
 	public void writeMail (Custinfo cinfo,
 			       int mcount, int mailtype, long icustomer_id,
-			       String mediatypes, Map <String, EMMTag> tagNames) throws Exception {
+			       String mediatypes, String userStatuses,
+			       Map <String, EMMTag> tagNames) throws Exception {
 		writeMailDone ();
 		mailType = mailtype;
 		checkBlock(false);

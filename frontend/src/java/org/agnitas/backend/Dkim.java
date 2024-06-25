@@ -11,8 +11,10 @@
 package org.agnitas.backend;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import org.agnitas.backend.dao.DkimDAO;
+import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 
 /**
@@ -21,14 +23,20 @@ import org.agnitas.util.Str;
  */
 public class Dkim {
 	private Data data;
+	private DkimDAO dkimDAO;
 
 	/**
 	 * Constructor
 	 *
 	 * @param data the global configuration
 	 */
-	public Dkim(Data nData) {
+	public Dkim(Data nData) throws SQLException {
 		data = nData;
+		dkimDAO = new DkimDAO (data.dbase, data.company.id ());
+	}
+	
+	public List <DkimDAO.DKIM> dkims () {
+		return dkimDAO.dkims ();
 	}
 
 	/**
@@ -39,14 +47,15 @@ public class Dkim {
 	 * @param email the email to lookup the dkim key for
 	 * @return true if a dkim key was found, false otherwise
 	 */
-	public boolean check (EMail email) throws SQLException {
-		DkimDAO		dkimDAO = new DkimDAO (data.dbase, data.company.id ());
+	public boolean check (EMail email) {
 		DkimDAO.DKIM	dkim = dkimDAO.find (email,
 						     Str.atob (data.company.info ("dkim-local-key"), false),
 						     Str.atob (data.company.info ("dkim-global-key"), false));
 		if (dkim == null) {
+			data.logging (Log.INFO, "dkim", "No DKIM key found for email " + email);
 			return false;
 		}
+		data.logging (Log.INFO, "dkim", "Use " + dkim + " for email " + email);
 
 		data.company.infoAdd("_dkim_domain", dkim.domain());
 		data.company.infoAdd("_dkim_selector", dkim.selector());

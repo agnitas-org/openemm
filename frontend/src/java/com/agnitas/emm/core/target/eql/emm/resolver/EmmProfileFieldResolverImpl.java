@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldNameResolver;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
@@ -107,7 +108,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	}
 	
 	private static void registerInternalColumnNames(final Map<String, ColumnNameAndType> map) {
-		map.put("$tracking_veto", new ColumnNameAndType("sys_tracking_veto", DataType.NUMERIC));
+		map.put("$tracking_veto", new ColumnNameAndType(RecipientStandardField.DoNotTrack.getColumnName(), DataType.NUMERIC));
 	}
 
 	/**

@@ -2,7 +2,6 @@
 /* <%@ page import="org.agnitas.util.AgnUtils" %> */
 /* <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> */
 /* <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %> */
-/* <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %> */
 
 window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
   if (excludeSessionId === true) {
@@ -34,8 +33,16 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
 /*   </c:otherwise>
 </c:choose> */
 
-/* <c:set var="adminId" value="${agn:getAdminId(pageContext.request)}"/> */
+/* <c:set var="adminId" value="${emm:getAdminId(pageContext.request)}"/> */
         window.adminId = '${adminId}';
+
+/* <c:set var="companyId" value="${emm:getCompanyId(pageContext.request)}"/> */
+        window.companyId = '${companyId}';
+
+/* <c:set var="dateFormat" value="${emm:getDateFormat(pageContext.request)}"/> */
+        window.adminDateFormat = '${dateFormat}';
+/* <c:set var="dateTimeFormat" value="${emm:getDateTimeFormat(pageContext.request)}"/> */
+        window.adminDateTimeFormat = '${dateTimeFormat}';
 
 /* <c:set var="aceEditorPath" value="${emm:aceEditorPath(pageContext.request)}"/> */
         window.aceEditorPath = '${aceEditorPath}';

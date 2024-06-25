@@ -18,6 +18,8 @@ public class UserGroupDto {
     private int id;
     
     private int companyId;
+
+    private String companyDescr;
     
     private String shortname;
     
@@ -42,7 +44,15 @@ public class UserGroupDto {
     public void setCompanyId(int companyId) {
         this.companyId = companyId;
     }
-    
+
+    public String getCompanyDescr() {
+        return companyDescr;
+    }
+
+    public void setCompanyDescr(String companyDescr) {
+        this.companyDescr = companyDescr;
+    }
+
     public String getShortname() {
         return shortname;
     }

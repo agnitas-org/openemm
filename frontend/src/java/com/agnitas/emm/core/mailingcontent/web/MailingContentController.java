@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
@@ -45,16 +49,18 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.enums.ContentGenerationTonality;
 import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
-import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
+import com.agnitas.emm.core.mailingcontent.form.FrameContentForm;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingContentService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.MailingContentService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.dto.DataResponseDto;
@@ -70,8 +76,7 @@ public class MailingContentController implements XssCheckAware {
     protected final MailingService mailingService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final MaildropService maildropService;
-    private final ComMailingContentService comMailingContentService;
-    private final MailingContentService mailingContentService;
+    protected final MailingContentService mailingContentService;
     private final ComTargetService targetService;
     private final UserActivityLogService userActivityLogService;
     private final ProfileFieldDao profileFieldDao;
@@ -85,7 +90,7 @@ public class MailingContentController implements XssCheckAware {
     private final ExtendedConversionService extendedConversionService;
 
     public MailingContentController(MailinglistApprovalService mailinglistApprovalService, MailingService mailingService, MaildropService maildropService,
-                                    ComMailingContentService comMailingContentService, MailingContentService mailingContentService, ComTargetService targetService,
+                                    MailingContentService mailingContentService, ComTargetService targetService,
                                     UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
                                     ComMailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
                                     AgnTagService agnTagService, PreviewImageService previewImageService, DynTagChainValidator dynTagChainValidator,
@@ -93,7 +98,6 @@ public class MailingContentController implements XssCheckAware {
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.mailingService = mailingService;
         this.maildropService = maildropService;
-        this.comMailingContentService = comMailingContentService;
         this.mailingContentService = mailingContentService;
         this.targetService = targetService;
         this.userActivityLogService = userActivityLogService;
@@ -144,7 +148,7 @@ public class MailingContentController implements XssCheckAware {
 
         try {
             // editing or creating
-            ServiceResult<List<UserAction>> serviceResult = mailingContentService.updateDynContent(mailing, dynTagDto, admin);
+            ServiceResult<List<UserAction>> serviceResult = mailingContentService.updateDynContent(mailing, dynTagDto, admin, popups);
             if (!serviceResult.isSuccess()) {
                 popups.addPopups(serviceResult);
                 return new DataResponseDto<>(popups, false);
@@ -167,6 +171,18 @@ public class MailingContentController implements XssCheckAware {
 
         popups.success("default.changes_saved");
         return new DataResponseDto<>(dynTagDtoResponse, popups, true);
+    }
+
+    @PostMapping("/{mailingId:\\d+}/save.action")
+    public String saveRedesigned(@PathVariable int mailingId, Admin admin, HttpSession session,
+                                 @RequestBody List<DynTagDto> dynTags, Popups popups) {
+        mailingContentService.saveDynTags(mailingId, dynTags, admin, popups);
+        if (popups.hasAlertPopups()) {
+            return MESSAGES_VIEW;
+        }
+        previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
+        popups.success(CHANGES_SAVED_MSG);
+        return String.format("redirect:/mailing/content/%d/view.action", mailingId);
     }
 
     @GetMapping("/{mailingId:\\d+}/text-from-html/confirm.action")
@@ -218,7 +234,7 @@ public class MailingContentController implements XssCheckAware {
         int mailingId = mailing.getId();
 
         boolean isMailingExclusiveLockingAcquired = tryToLock(mailingId, admin, model);
-        boolean isTextGenerationEnabled = !mailing.isIsTemplate() && comMailingContentService.isGenerationAvailable(mailing);
+        boolean isTextGenerationEnabled = !mailing.isIsTemplate() && mailingContentService.isGenerationAvailable(mailing);
         boolean isWorldMailingSend = maildropService.isActiveMailing(mailingId, admin.getCompanyID());
         boolean isLimitedRecipientOverview = isWorldMailingSend &&
                 !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
@@ -228,7 +244,36 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("isTextGenerationEnabled", isTextGenerationEnabled);
         model.addAttribute("isMailingEditable", isMailingEditable(admin, mailingId));
         model.addAttribute("isMailingExclusiveLockingAcquired", isMailingExclusiveLockingAcquired);
+        model.addAttribute("contentGenerationTonalities", ContentGenerationTonality.values());
+        model.addAttribute("isContentGenerationAllowed", false);
+        if (isUiRedesign(admin)) {
+            model.addAttribute("mailFormat", mailing.getEmailParam().getMailFormat());
+            model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+            model.addAttribute("MAILING_EDITABLE", isMailingEditable(mailingId, admin));
+            model.addAttribute("showDynamicTemplateToggle", mailingService.isDynamicTemplateCheckboxVisible(mailing));
+            model.addAttribute("isEmailMediaTypeActive", getActiveMediaTypes(mailing).contains(MediaTypes.EMAIL));
+            model.addAttribute("frameContentForm", getFrameContentForm(mailing));
+        }
     }
+
+    protected static List<MediaTypes> getActiveMediaTypes(Mailing mailing) {
+        return mailing.getMediatypes().entrySet().stream()
+                .filter(entry -> entry.getValue().getStatus() == MediaTypeStatus.Active.getCode())
+                .map(entry -> MediaTypes.getMediaTypeForCode(entry.getKey()))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isMailingEditable(int mailingId, Admin admin) {
+        return !maildropService.isActiveMailing(mailingId, admin.getCompanyID());
+    }
+
+    private boolean isSettingsReadonly(Admin admin) {
+        return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY);
+    }
+
+    protected boolean isUiRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
+    }    
 
     private void prepareForm(Mailing mailing, MailingContentForm form, Admin admin) {
         int mailingId = mailing.getId();
@@ -243,10 +288,31 @@ public class MailingContentController implements XssCheckAware {
         form.setWorkflowId(mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
     }
 
+    protected FrameContentForm getFrameContentForm(Mailing mailing) {
+        FrameContentForm form = new FrameContentForm();
+        MailingComponent comp;
+        
+        comp = mailing.getTemplate(MediaTypes.EMAIL.getKey());
+        form.setTextTemplate(comp != null ? comp.getEmmBlock() : "");
+        comp = mailing.getHtmlTemplate();
+        form.setHtmlTemplate(comp != null ? comp.getEmmBlock() : "");
+        form.setUseDynamicTemplate(mailing.getUseDynamicTemplate());
+        return form;
+    }
+
     protected void loadAdditionalData(Mailing mailing, MailingContentForm form, Admin admin, Model model) {
         loadDynTags(mailing, form);
-        loadTargetGroups(form, admin);
+        if (isUiRedesign(admin)) {
+            loadTargets(admin, model);
+        } else {
+            loadTargetGroups(form, admin);
+        }
         loadAvailableInterestGroups(form, admin);
+    }
+
+    private void loadTargets(Admin admin, Model model) {
+        boolean showContentBlockTargetGroupsOnly = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
+        model.addAttribute("targets", targetService.getTargetLights(admin, false, true, false, showContentBlockTargetGroupsOnly));
     }
 
     private void loadDynTags(Mailing mailing, MailingContentForm form) {
@@ -286,7 +352,8 @@ public class MailingContentController implements XssCheckAware {
     }
 
     protected boolean isMailingEditable(Admin admin, int mailingId) {
-        return mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
+        return !admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY)
+                && mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
     }
 
     private void loadTargetGroups(MailingContentForm form, Admin admin) {

@@ -1,0 +1,17 @@
+<HelpBalloon>
+    <title><![CDATA[Contenu et position]]></title>
+    <content><![CDATA[Si certains contenus doivent toujours apparaître &agrave; la m&ecirc;me position dans vos mailings ou ne doivent pas &ecirc;tre modifi&eacute;s, vous pouvez travailler avec les options propos&eacute;es. Les options ont les caract&eacute;ristiques suivantes :
+    <br /><br />
+    <b>Librement &eacute;ditable:</b> <br />
+    L'utilisateur peut &agrave; tout moment modifier, d&eacute;placer ou m&ecirc;me supprimer compl&egrave;tement le module du publipostage.
+    <br /><br />
+    <b>Contenu fixe:</b> <br />
+    Le contenu du module est pr&eacute;d&eacute;fini dans l'onglet Contenu standard et ne peut pas &ecirc;tre modifi&eacute; dans le mailing ult&eacute;rieur. L'utilisateur peut toutefois repositionner ou supprimer le bloc dans le publipostage.
+    <br /><br />
+    <b>Ancr&eacute; dans le publipostage:</b> <br />
+    Le bloc est positionn&eacute; dans le gabarit et ne peut pas &ecirc;tre d&eacute;plac&eacute; ou supprim&eacute; dans le mailing ult&eacute;rieur. L'utilisateur peut toutefois modifier le contenu du bloc dans le publipostage.
+    <br /><br />
+    <b>Contenu fixe et ancr&eacute; dans le publipostage:</b> <br />
+    Le bloc est positionn&eacute; dans le gabarit et ne peut pas &ecirc;tre d&eacute;plac&eacute; ou supprim&eacute; dans le publipostage ult&eacute;rieur. Le contenu du bloc est pr&eacute;d&eacute;fini dans l'onglet Contenu standard et ne peut pas non plus &ecirc;tre modifi&eacute; dans le publipostage.]]>
+</content>
+</HelpBalloon>

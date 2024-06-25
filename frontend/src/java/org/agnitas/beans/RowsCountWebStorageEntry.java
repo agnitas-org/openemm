@@ -10,12 +10,11 @@
 
 package org.agnitas.beans;
 
-import org.agnitas.web.forms.StrutsFormBase;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RowsCountWebStorageEntry implements WebStorageEntry {
-    private static final int DEFAULT_ROWS_COUNT = StrutsFormBase.DEFAULT_NUMBER_OF_ROWS;
+
+    private static final int DEFAULT_ROWS_COUNT = 50;
 
     @JsonProperty("rows-count")
     private int rowsCount = DEFAULT_ROWS_COUNT;

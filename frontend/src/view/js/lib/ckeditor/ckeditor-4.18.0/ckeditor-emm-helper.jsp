@@ -1,7 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" import="java.util.Locale" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ page contentType="text/html; charset=utf-8" import="java.util.Locale" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -20,7 +17,10 @@
     }
 
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
-        const imageBrowserUrl = !!mailingId ? '<html:rewrite page="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
+        let imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
+        if (window.isRedesignedUI) {
+          imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browserRedesigned.action?mailingID="/>' + mailingId : '';
+        }
         if (!isEditorVisible(textAreaId)) {
 
             const config = {
@@ -29,11 +29,11 @@
                 toolbar: '${param.toolbarType}' ? '${param.toolbarType}' : 'EMM',
                 width: editorWidth,
                 height: editorHeight,
-                language: '<%= ((Locale)session.getAttribute(org.apache.struts.Globals.LOCALE_KEY)).getLanguage() %>',
+                language: '${emm:getLocale(pageContext.request).language}',
                 baseHref: '<c:url value="/${CKEDITOR_PATH}/"/>',
                 filebrowserImageBrowseUrl: imageBrowserUrl,
                 filebrowserImageBrowseLinkUrl: imageBrowserUrl,
-                filebrowserImageWindowWidth: '700',
+                filebrowserImageWindowWidth: window.isRedesignedUI ? '1200' : '700',
                 filebrowserImageWindowHeight: '600',
                 resize_enabled: !isResizeNotEnabled,
                 mailingId: mailingId,
@@ -77,7 +77,11 @@
                         event.editor.updateElement();
                     },
                     save: function(e) {
-                        $(document).trigger('ckeditor-save');
+                        if (window.isRedesignedUI) {
+                          $(e.sender.element.$).trigger('ckeditor-save');
+                        } else {
+                          $(document).trigger('ckeditor-save');
+                        }
                         e.cancel();
                     }
                 }

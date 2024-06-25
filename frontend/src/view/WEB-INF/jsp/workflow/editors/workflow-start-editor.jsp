@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType" %>
@@ -6,9 +6,6 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="org.agnitas.target.ConditionalOperator" %>
 <%@ page import="org.agnitas.target.ChainOperator" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
@@ -76,7 +73,7 @@
         <div id="startDatePanel">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="startDate" class="control-label"><bean:message key="settings.fieldType.DATE"/></label>
+                    <label for="startDate" class="control-label"><mvc:message code="Date"/></label>
                 </div>
                 <div class="col-sm-8">
                     <div class="input-group">
@@ -98,7 +95,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="startEvent" class="control-label">
-                        <bean:message key="workflow.start.Event"/>
+                        <mvc:message code="workflow.start.Event"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -113,29 +110,29 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="startReaction" class="control-label">
-                            <bean:message key="workflow.Reaction"/>
+                            <mvc:message code="workflow.Reaction"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                         <select id="startReaction" name="reaction" class="form-control"
                                 data-action="start-editor-reaction-changed">
-                            <option value="${REACTION_OPENED}"><bean:message key="statistic.opened"/></option>
-                            <%--<option value="${REACTION_NOT_OPENED}"><bean:message key="workflow.reaction.NotOpened"/></option>--%>
-                            <option value="${REACTION_CLICKED}"><bean:message key="default.clicked"/></option>
-                            <option value="${REACTION_CLICKED_LINK}"><bean:message key="workflow.reaction.ClickedOnLink"/></option>
-                            <%--<option value="${REACTION_NOT_CLICKED}"><bean:message key="workflow.reaction.NotClicked"/></option>--%>
+                            <option value="${REACTION_OPENED}"><mvc:message code="statistic.opened"/></option>
+                            <%--<option value="${REACTION_NOT_OPENED}"><mvc:message code="workflow.reaction.NotOpened"/></option>--%>
+                            <option value="${REACTION_CLICKED}"><mvc:message code="default.clicked"/></option>
+                            <option value="${REACTION_CLICKED_LINK}"><mvc:message code="workflow.reaction.ClickedOnLink"/></option>
+                            <%--<option value="${REACTION_NOT_CLICKED}"><mvc:message code="workflow.reaction.NotClicked"/></option>--%>
                             <%--<c:if test="${hasDeepTrackingTables}">--%>
-                            <%--<option value="${REACTION_BOUGHT}"><bean:message key="workflow.reaction.Bought"/></option>--%>
-                            <%--<option value="${REACTION_NOT_BOUGHT}"><bean:message key="workflow.reaction.NotBought"/></option>--%>
+                            <%--<option value="${REACTION_BOUGHT}"><mvc:message code="workflow.reaction.Bought"/></option>--%>
+                            <%--<option value="${REACTION_NOT_BOUGHT}"><mvc:message code="workflow.reaction.NotBought"/></option>--%>
                             <%--</c:if>--%>
-                            <%--<option value="${REACTION_DOWNLOAD}"><bean:message key="button.Download"/></option>--%>
+                            <%--<option value="${REACTION_DOWNLOAD}"><mvc:message code="button.Download"/></option>--%>
 
                             <c:if test="${isBigData}">
-                                <option value="${REACTION_CHANGE_OF_PROFILE}"><bean:message key="workflow.reaction.ChangeOfProfile"/></option>
+                                <option value="${REACTION_CHANGE_OF_PROFILE}"><mvc:message code="workflow.reaction.ChangeOfProfile"/></option>
                             </c:if>
-                            <option value="${REACTION_WAITING_FOR_CONFIRM}"><bean:message key="workflow.reaction.WaitingForConfirm"/></option>
-                            <option value="${REACTION_OPT_IN}"><bean:message key="workflow.reaction.OptIn"/></option>
-                            <option value="${REACTION_OPT_OUT}"><bean:message key="workflow.reaction.OptOut"/></option>
+                            <option value="${REACTION_WAITING_FOR_CONFIRM}"><mvc:message code="workflow.reaction.WaitingForConfirm"/></option>
+                            <option value="${REACTION_OPT_IN}"><mvc:message code="workflow.reaction.OptIn"/></option>
+                            <option value="${REACTION_OPT_OUT}"><mvc:message code="workflow.reaction.OptOut"/></option>
                         </select>
                     </div>
                 </div>
@@ -151,8 +148,7 @@
                 <div id="reactionStartMailingLink">
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label" for="startReactionMailingLink"><bean:message
-                                    key="workflow.decision.ChooseLink"/></label>
+                            <label class="control-label" for="startReactionMailingLink"><mvc:message code="workflow.decision.ChooseLink"/></label>
                         </div>
                         <div class="col-sm-8">
                             <select id="startReactionMailingLink" name="linkId" class="form-control">
@@ -167,16 +163,16 @@
                         <div class="form-group">
                             <div class="col-sm-4">
                                 <label for="startProfileField" class="control-label">
-                                    <bean:message key="workflow.start.ProfileField"/>
+                                    <mvc:message code="workflow.start.ProfileField"/>
                                 </label>
                             </div>
                             <div class="col-sm-8">
                                 <select id="startProfileField" name="profileField" class="form-control js-select"
                                        data-action="start-editor-profile-field-changed">
                                     <option value="">--</option>
-                                    <logic:iterate id="profileField" collection="${profileFieldsHistorized}">
+                                    <c:forEach var="profileField" items="${profileFieldsHistorized}">
                                         <option value="${profileField.column}">${profileField.shortname}</option>
-                                    </logic:iterate>
+                                    </c:forEach>
                                 </select>
                             </div>
                         </div>
@@ -187,13 +183,13 @@
                             <label class="radio-inline">
                                 <input type="radio" name="useRules" id="profileFieldRulesAny"
                                        data-action="start-editor-rule-changed" checked="checked" value="false">
-                                <bean:message key="workflow.start.rules.any"/>
+                                <mvc:message code="workflow.start.rules.any"/>
                             </label>
                             <label class="radio-inline">
                                 <input type="radio" name="useRules" id="profileFieldRulesExact"
                                        data-action="start-editor-rule-changed" class="start-type-event-radio"
                                        value="true">
-                                <bean:message key="workflow.start.rules.exact"/>
+                                <mvc:message code="workflow.start.rules.exact"/>
                             </label>
                         </div>
                     </div>
@@ -218,10 +214,8 @@
                                             <tr>
                                                 <td>
                                                     <select id="newRule_chainOperator" class="">
-                                                        <option value="${CHAIN_OPERATOR_AND}"><bean:message
-                                                                key="default.and"/></option>
-                                                        <option value="${CHAIN_OPERATOR_OR}"><bean:message
-                                                                key="default.or"/></option>
+                                                        <option value="${CHAIN_OPERATOR_AND}"><mvc:message code="default.and"/></option>
+                                                        <option value="${CHAIN_OPERATOR_OR}"><mvc:message code="default.or"/></option>
                                                     </select>
                                                 </td>
                                                 <td>
@@ -232,10 +226,10 @@
                                                 </td>
                                                 <td>
                                                     <select id="newRule_primaryOperator" class="primary-operator" data-action="start-rule-operator-change">
-                                                        <logic:iterate collection="${operators}" id="operator">
+                                                        <c:forEach var="operator" items="${operators}">
                                                             <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
                                                             <option data-types="${types}" value="${operator.operatorCode}">${operator.eqlSymbol}</option>
-                                                        </logic:iterate>
+                                                        </c:forEach>
                                                     </select>
                                                 </td>
                                                 <td>
@@ -251,7 +245,7 @@
                                                 <td>
                                                     <a class="btn btn-regular btn-secondary advanced_search_add add-rule disable-for-active"
                                                        data-action="start-editor-add-rule" href="#"
-                                                       data-tooltip="<bean:message key="button.Add"/>">
+                                                       data-tooltip="<mvc:message code="button.Add"/>">
                                                         <i class="icon icon-plus-circle"></i>
                                                     </a>
                                                 </td>
@@ -268,7 +262,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label">
-                            <bean:message key="workflow.start.execution"/>
+                            <mvc:message code="workflow.start.execution"/>
                             <button class="icon icon-help" data-help="help_${helplanguage}/workflow/start/Execution.xml" tabindex="-1" type="button"></button>
                         </label>
                     </div>
@@ -276,13 +270,13 @@
                         <label class="radio-inline">
                             <input type="radio" name="executeOnce" id="startExecuteOnce" data-action="start-editor-execution-changed"
                                    checked="checked" value="true">
-                            <bean:message key="workflow.start.execution.once"/>
+                            <mvc:message code="workflow.start.execution.once"/>
                         </label>
                         <label class="radio-inline">
                             <input type="radio" name="executeOnce" data-action="start-editor-execution-changed" id="startExecutePermanent"
                                    class="start-type-event-radio"
                                    value="false">
-                            <bean:message key="workflow.start.execution.permanent"/>
+                            <mvc:message code="workflow.start.execution.permanent"/>
                         </label>
                     </div>
                 </div>
@@ -292,17 +286,17 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="dateProfileField" class="control-label">
-                            <bean:message key="workflow.start.DateField"/>
+                            <mvc:message code="workflow.start.DateField"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                         <select id="dateProfileField" name="dateProfileField" class="form-control js-select">
                             <option value="">--</option>
-                            <logic:iterate id="profileField" collection="${profileFields}">
+                            <c:forEach var="profileField" items="${profileFields}">
                                 <c:if test="${profileField.dataType == 'DATE' or profileField.dataType == 'DATETIME'}">
                                     <option value="${profileField.column}">${profileField.shortname}</option>
                                 </c:if>
-                            </logic:iterate>
+                            </c:forEach>
                         </select>
                     </div>
                 </div>
@@ -311,7 +305,7 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label">
-                                <bean:message key="workflow.start.Rule"/>
+                                <mvc:message code="workflow.start.Rule"/>
                             </label>
                         </div>
                         <div class="col-sm-8">
@@ -333,14 +327,14 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label for="dateFormat" class="control-label">
-                                <bean:message key="import.dateFormat"/>
+                                <mvc:message code="import.dateFormat"/>
                             </label>
                         </div>
                         <div class="col-sm-8">
                             <select id="dateFormat" name="dateFormat" class="form-control js-select">
-                                <option value="mmdd"><bean:message key="default.date.format.MMDD"/></option>
-                                <option value="yyyymmdd"><bean:message key="default.date.format.YYYYMMDD"/></option>
-                                <option value="dd"><bean:message key="default.date.format.DD"/></option>
+                                <option value="mmdd"><mvc:message code="default.date.format.MMDD"/></option>
+                                <option value="yyyymmdd"><mvc:message code="default.date.format.YYYYMMDD"/></option>
+                                <option value="dd"><mvc:message code="default.date.format.DD"/></option>
                             </select>
                         </div>
                     </div>
@@ -352,10 +346,10 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="executionDate" id="executionDateLabel" class="control-label">
-                            <bean:message key="workflow.start.execution.schedule"/>
+                            <mvc:message code="workflow.start.execution.schedule"/>
                         </label>
                         <label for="executionDate" id="firstExecutionDateLabel" class="control-label">
-                            <bean:message key="workflow.start.execution.scheduleFirst"/>
+                            <mvc:message code="workflow.start.execution.scheduleFirst"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -381,7 +375,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="startTime" class="control-label">
-                        <bean:message key="Time"/>
+                        <mvc:message code="Time"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -407,7 +401,7 @@
                         <input type="checkbox" id="sendReminder" name="sendReminder" value="true"
                                data-action="start-editor-reminder-changed"/>
 
-                        <bean:message key="calendar.Notify"/>
+                        <mvc:message code="calendar.Notify"/>
                     </label>
                 </div>
             </div>
@@ -423,7 +417,7 @@
                                    data-field-vis-show="#emmUsers"
                                    checked="checked"
                             />
-                            <bean:message key="workflow.start.emmUsers"/>
+                            <mvc:message code="workflow.start.emmUsers"/>
                         </label>
                         <label class="radio-inline">
                             <input type="radio" value="${RECIPIENT_CUSTOM}"
@@ -432,7 +426,7 @@
                                    data-field-vis-hide="#emmUsers"
                                    data-field-vis-show="#customRecipients"
                             />
-                            <bean:message key="workflow.start.customRecipients"/>
+                            <mvc:message code="workflow.start.customRecipients"/>
                         </label>
                     </div>
                 </div>
@@ -440,9 +434,9 @@
                 <div class="form-group" id="emmUsers">
                     <div class="col-sm-8 col-sm-push-4">
                         <select id="remindAdminId" name="remindAdminId" class="form-control js-select">
-                            <logic:iterate id="admin" collection="${admins}">
+                            <c:forEach var="admin" items="${admins}">
                                 <option value="${admin.id}">${admin.username}</option>
-                            </logic:iterate>
+                            </c:forEach>
                         </select>
                     </div>
                 </div>
@@ -450,7 +444,7 @@
                 <div class="form-group" id="customRecipients">
                     <div class="col-sm-8 col-sm-push-4">
                         <input type="hidden" name="adminTimezone" value="${param.adminTimezone}"/>
-                        <c:set var="enterEmailAddresses"><bean:message key="enterEmailAddresses"/></c:set>
+                        <c:set var="enterEmailAddresses"><mvc:message code="enterEmailAddresses"/></c:set>
                         <textarea name="recipients" cols="32" rows="3" class="form-control"
                                   placeholder="${enterEmailAddresses}" style="resize: none;"></textarea>
                     </div>
@@ -459,7 +453,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="reminderComment">
-                            <bean:message key="calendar.Comment"/>
+                            <mvc:message code="calendar.Comment"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -470,7 +464,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label">
-                            <bean:message key="workflow.start.scheduleReminder"/>
+                            <mvc:message code="workflow.start.scheduleReminder"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -480,7 +474,7 @@
                         </label>
                         <label class="radio-inline">
                             <input type="radio" name="remindSpecificDate" value="true" data-action="start-editor-schedule-reminder-date-changed">
-                            <bean:message key="workflow.start.individualDate"/>
+                            <mvc:message code="workflow.start.individualDate"/>
                         </label>
                     </div>
                 </div>
@@ -489,7 +483,7 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="remindDate">
-                                <bean:message key="settings.fieldType.DATE"/>
+                                <mvc:message code="Date"/>
                             </label>
                         </div>
 
@@ -513,7 +507,7 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="remindTime">
-                                <bean:message key="Time"/>
+                                <mvc:message code="Time"/>
                             </label>
                         </div>
 
@@ -542,11 +536,11 @@
             <div class="form-group">
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                        <bean:message key="button.Cancel"/>
+                        <mvc:message code="button.Cancel"/>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active"
                       data-action="start-editor-validate">
-                        <bean:message key="button.Apply"/>
+                        <mvc:message code="button.Apply"/>
                     </a>
                 </div>
             </div>
@@ -577,13 +571,13 @@
         <label class="radio-inline">
             <input type="radio" name="startType" id="typeDate" data-action="start-editor-type-changed"
                    checked="checked" value="${TYPE_DATE}">
-            <span><bean:message key="workflow.start.StartDate"/></span>
+            <span><mvc:message code="workflow.start.StartDate"/></span>
         </label>
         {{ if(showStartEventTab) { }}
             <label class="radio-inline">
                 <input type="radio" name="startType" id="typeEvent" data-action="start-editor-type-changed"
                        class="start-type-event-radio" value="${TYPE_EVENT}">
-                <span><bean:message key="workflow.start.StartEvent"/></span>
+                <span><mvc:message code="workflow.start.StartEvent"/></span>
             </label>
         {{ } }}
     </div>

@@ -1,0 +1,67 @@
+
+<%--@elvariable id="summedRemarks" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="notSummedRemarks" type="net.sf.json.JSONArray"--%>
+
+<div class="row h-100">
+    <div class="col-6 js-data-table h-100" data-table="summed-remarks">
+        <div class="js-data-table-body">
+            <script id="summed-remarks" type="application/json">
+                {
+                    "columns": [
+                         {
+                            "field": "remark",
+                            "headerName": "<mvc:message code='recipient.Remark'/>",
+                            "filter": false,
+                            "cellStyle": {"user-select": "text"},
+                            "editable": false
+                        },
+                        {
+                            "field": "value",
+                            "headerName": "<mvc:message code="Value"/>",
+                            "filter": false,
+                            "cellStyle": {"user-select": "text"},
+                            "editable": false
+                        }
+                    ],
+                    "options": {
+                        "pagination": false,
+                        "showRecordsCount": false,
+                        "autoHeight": true
+                    },
+                    "data": ${summedRemarks}
+                }
+            </script>
+        </div>
+    </div>
+
+    <div class="col-6 js-data-table h-100" data-table="not-summed-remarks">
+        <div class="js-data-table-body">
+            <script id="not-summed-remarks" type="application/json">
+                {
+                    "columns": [
+                         {
+                            "field": "remark",
+                            "headerName": "<mvc:message code='recipient.Remark'/>",
+                            "filter": false,
+                            "cellStyle": {"user-select": "text"},
+                            "editable": false
+                        },
+                        {
+                            "field": "value",
+                            "headerName": "<mvc:message code='Value'/>",
+                            "filter": false,
+                            "cellStyle": {"user-select": "text"},
+                            "editable": false
+                        }
+                    ],
+                    "options": {
+                        "pagination": false,
+                        "showRecordsCount": false,
+                        "autoHeight": true
+                    },
+                    "data": ${notSummedRemarks}
+                }
+            </script>
+        </div>
+    </div>
+</div>

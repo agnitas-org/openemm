@@ -46,6 +46,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ServerCommand.Command;
 import org.agnitas.util.ServerCommand.Server;
 import org.agnitas.util.Systemconfig;
@@ -102,7 +103,6 @@ import jakarta.servlet.http.HttpServletRequest;
  * The value 0 means, there will be no buffering.
  */
 public class ConfigService {
-	
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ConfigService.class);
 
@@ -119,6 +119,16 @@ public class ConfigService {
     private static Date applicationVersionInstallationTime = null;
 
 	private static Server applicationType = null;
+	
+	/**
+	 * Cache the existence state of table 'disabled_mailinglist_tbl'
+	 */
+	private Boolean isDisabledMailingListsSupported;
+	
+	/**
+	 * Cache the existence state of table 'dyn_target_tbl' and column 'is_access_limiting'
+	 */
+	private Boolean isAccessLimitingTargetgroupsSupported;
     
     private static ConfigService instance;
     
@@ -372,7 +382,9 @@ public class ConfigService {
 				// On ConfigService startup read emm.properties file
 				EMM_PROPERTIES_VALUES = readEmmPropertiesFile();
 				try {
-					applicationVersion = new Version(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()).get(0));
+					if (EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()) != null) {
+						applicationVersion = new Version(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()).get(0));
+					}
 				} catch (Exception e) {
 					// The version sign is not valid. Maybe it is text like 'Unknown'.
 				}
@@ -386,6 +398,9 @@ public class ConfigService {
 			if (LICENSE_VALUES == null) {
 				// On ConfigService startup read license data and check licensefile signature
 				LICENSE_VALUES = readLicenseData();
+
+				// Because EMM may contain java code migrations in a former version of EMM which have to be started before this version
+				checkFormerVersionWasStarted();
 
 				// On ConfigService startup check licensefile data
 				checkLicenseData();
@@ -609,6 +624,32 @@ public class ConfigService {
 			throw new Exception("Missing license data");
 		}
 	}
+
+	/**
+	 * When this is EMM LTS ??.10.x, we check for a former startup of EMM LTS ??.04.x,
+	 * because EMM may contain java code migrations in a former version of EMM which have to be started before this version 
+	 */
+	private void checkFormerVersionWasStarted() {
+		if (applicationVersion != null && applicationType == Server.EMM) {
+			Version formerVersionToCheck = null;
+			if (applicationVersion.getMinorVersion() == 4 && applicationVersion.getMicroVersion() == 0) {
+				formerVersionToCheck = new Version(applicationVersion.getMajorVersion() - 1, 10, 0, 0);
+			} else if (applicationVersion.getMinorVersion() == 10 && applicationVersion.getMicroVersion() == 0) {
+				formerVersionToCheck = new Version(applicationVersion.getMajorVersion(), 4, 0, 0);
+			}
+			
+			if (formerVersionToCheck != null) {
+				// Only check this on the very first startup of this version, so we do not have to create a special entry in full_db.sql
+				if (configTableDao.getStartupCount() > 0 && configTableDao.getStartupCountOfLtsVersion(applicationVersion) < 1 && configTableDao.getStartupCountOfLtsVersion(formerVersionToCheck) < 1) {
+					RuntimeException startupError = new RuntimeException("***** EMM version " + formerVersionToCheck + " needs to be started first because of data migration issues. Please install and run EMM version " + formerVersionToCheck + " first before this EMM version " + applicationVersion);
+					System.out.println(startupError.getMessage());
+					startupError.printStackTrace();
+					System.exit(1);
+					throw startupError;
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Check validity of license data to current db data
@@ -616,98 +657,142 @@ public class ConfigService {
 	 * @return
 	 * @throws LicenseError
 	 */
-	public Message[] checkLicenseData() throws LicenseError {
-		if (applicationType == Server.STATISTICS) {
-			// Statistics server may start without license check
-			return null;
-		} else {
-			List<Message> licenseWarnings = new ArrayList<>();
-			
-			if (LICENSE_VALUES == null) {
-				throw new LicenseError("Missing License data");
-			}
-			
-			if (configTableDao != null) {
-				if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
-					// Check or set license ID in DB
+	public Message[] checkLicenseData() {
+		try {
+			if (applicationType == Server.STATISTICS) {
+				// Statistics server may start without license check
+				return null;
+			} else {
+				List<Message> licenseWarnings = new ArrayList<>();
+				
+				if (LICENSE_VALUES == null) {
+					throw new LicenseError("Missing License data");
+				}
+				
+				if (configTableDao != null) {
+					if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
+						// Check or set license ID in DB
+						try {
+							String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
+							if (StringUtils.isBlank(storedLicenseID)) {
+								configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
+								logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+							} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
+								throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+							}
+						} catch (Exception e) {
+							throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
+						}
+					
+						// Check license ID in licence.cfg file, if exists
+						String licenceCfgLicenseId = Systemconfig.create ().get ("licence");
+						
+						if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
+							throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+						}
+					}
+				}
+				
+				// Check validity time limit
+				Date validUntil;
+				if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
 					try {
-						String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
-						if (StringUtils.isBlank(storedLicenseID)) {
-							configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
-							logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
-						} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
-							throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+						validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
+					} catch (ParseException e) {
+						throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
+					}
+					if (new Date().after(validUntil)) {
+						throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), getMailaddressSupport());
+					}
+				}
+
+				String maximumLicensedVersionString = LICENSE_VALUES.get(ConfigValue.System_License_MaximumVersion.toString()) != null ? LICENSE_VALUES.get(ConfigValue.System_License_MaximumVersion.toString()).get(0) : "";
+				String installedVersionString = getValue(ConfigValue.ApplicationVersion);
+				// Make sure that the license is not invalid for this applications version.
+				if (StringUtils.isBlank(maximumLicensedVersionString)) {
+					throw new LicenseError("error.license.outoflimits", "<Undefined>", installedVersionString, getMailaddressSupport());
+				} else if (!"unlimited".equalsIgnoreCase(maximumLicensedVersionString.trim()) && !"-1".equalsIgnoreCase(maximumLicensedVersionString.trim())) {
+					try {
+						Version maximumLicensedVersion = new Version(maximumLicensedVersionString);
+						Version installedVersion = new Version(installedVersionString);
+						
+						if (maximumLicensedVersion.getMajorVersion() < installedVersion.getMajorVersion()
+							|| (maximumLicensedVersion.getMajorVersion() == installedVersion.getMajorVersion()
+								&& maximumLicensedVersion.getMinorVersion() < installedVersion.getMinorVersion())) {
+							throw new LicenseError("error.license.outoflimits", maximumLicensedVersionString, installedVersionString, getMailaddressSupport());
 						}
 					} catch (Exception e) {
-						throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
+						throw new LicenseError("Invalid license validity data: " + e.getMessage(), e);
 					}
+				}
+
+				if (companyDao != null) {
+					// Check maximum number of companies
+					int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
+					int gracefulExtension = 0;
+					if (LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful.toString()) != null) {
+						gracefulExtension = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful.toString()).get(0));
+					}
+					if (maximumNumberOfCompanies >= 0) {
+						int numberOfCompanies = companyDao.getNumberOfCompanies();
+						if (numberOfCompanies > maximumNumberOfCompanies) {
+							if (gracefulExtension > 0
+									&& numberOfCompanies <= maximumNumberOfCompanies + gracefulExtension) {
+								logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
+								licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, gracefulExtension));
+			    			} else {
+			    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+			    			}
+						}
+					}
+				}
+
+				if (supervisorDao != null) {
+					// Check maximum number of supervisors
+					int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
+					if (maximumNumberOfSupervisors >= 0) {
+						int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
+						if (numberOfSupervisors > maximumNumberOfSupervisors) {
+							throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
+						}
+					}
+				}
 				
-					// Check license ID in licence.cfg file, if exists
-					String licenceCfgLicenseId = Systemconfig.create ().get ("licence");
-					
-					if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
-						throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+				licenseOK = true;
+
+				if (companyDao != null) {
+					for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
+						checkCompany(activeCompany.getCompanyId());
 					}
 				}
-			}
-			
-			// Check validity time limit
-			Date validUntil;
-			if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
-				try {
-					validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
-				} catch (ParseException e) {
-					throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
-				}
-				if (new Date().after(validUntil)) {
-					throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()).get(0));
+
+				// Company 0 must be checked after the other existing companies because it may change those, too
+				checkCompany(0);
+				
+				if (licenseWarnings.size() > 0) {
+					return licenseWarnings.toArray(new Message[0]);
+				} else {
+					return null;
 				}
 			}
-	
-			if (companyDao != null) {
-				// Check maximum number of companies
-				int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
-				if (maximumNumberOfCompanies >= 0) {
-					int numberOfCompanies = companyDao.getNumberOfCompanies();
-					if (numberOfCompanies > maximumNumberOfCompanies) {
-						if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
-								&& numberOfCompanies <= maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
-							logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
-							licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()));
-		    			} else {
-		    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
-		    			}
-					}
-				}
-			}
-	
-			if (supervisorDao != null) {
-				// Check maximum number of supervisors
-				int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
-				if (maximumNumberOfSupervisors >= 0) {
-					int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
-					if (numberOfSupervisors > maximumNumberOfSupervisors) {
-						throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
-					}
-				}
-			}
-			
-			licenseOK = true;
-	
-			if (companyDao != null) {
-				for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
-					checkCompany(activeCompany.getCompanyId());
-				}
-			}
-	
-			// Company 0 must be checked after the other existing companies because it may change those, too
-			checkCompany(0);
-			
-			if (licenseWarnings.size() > 0) {
-				return licenseWarnings.toArray(new Message[0]);
+		} catch (LicenseError licenseError) {
+			System.out.println(licenseError.getMessage());
+			licenseError.printStackTrace();
+			System.exit(1);
+			throw licenseError;
+		}
+	}
+
+	private String getMailaddressSupport() {
+		if (EMM_PROPERTIES_VALUES != null) {
+			Map<Integer, String> mailaddressSupportValues = EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString());
+			if (mailaddressSupportValues != null && mailaddressSupportValues.size() > 0) {
+				return mailaddressSupportValues.get(0);
 			} else {
 				return null;
 			}
+		} else {
+			return null;
 		}
 	}
 	
@@ -754,16 +839,17 @@ public class ConfigService {
 			if (companyID > 0) {
 				// Check maximum number of customers
 				int maximumNumberOfCustomers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyID);
+				int gracefulExtensionCustomers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfCustomers_Graceful, companyID);
 				if (maximumNumberOfCustomers >= 0) {
 					int numberOfCustomers = companyDao.getNumberOfCustomers(companyID);
 					if (numberOfCustomers > maximumNumberOfCustomers) {
-						if (numberOfCustomers > maximumNumberOfCustomers + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension()) {
+						if (numberOfCustomers > maximumNumberOfCustomers + gracefulExtensionCustomers) {
 							throw new LicenseError("Invalid Number of customers of company " + companyID, maximumNumberOfCustomers, numberOfCustomers);
 						} else {
 							String licenseErrorText = "Invalid Number of customers of company " + companyID + "."
 									+ " Current number of customers: " + numberOfCustomers + "."
 									+ " Maximum number of customers: " + maximumNumberOfCustomers + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionCustomers;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -775,6 +861,7 @@ public class ConfigService {
 			
 				// Check maximum number of profile fields
 				int maximumNumberOfProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
+				int gracefulExtensionProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID);
 				if (maximumNumberOfProfileFields >= 0) {
 					int numberOfCompanySpecificProfileFields;
 					try {
@@ -783,13 +870,13 @@ public class ConfigService {
 						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
 					}
 					if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
-					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + gracefulExtensionProfileFields) {
 							throw new LicenseError("Invalid Number of profileFields of company " + companyID, maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
 						} else {
 							String licenseErrorText = "Invalid Number of profileFields of company " + companyID + "."
 									+ " Current number of profileFields: " + numberOfCompanySpecificProfileFields + "."
 									+ " Maximum number of profileFields: " + maximumNumberOfProfileFields + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionProfileFields;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -801,6 +888,7 @@ public class ConfigService {
 			
 				// Check maximum number of reference tables
 				int maximumNumberOfReferenceTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfReferenceTables, companyID);
+				int gracefulExtensionReferenceTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfReferenceTables_Graceful, companyID);
 				if (maximumNumberOfReferenceTables >= 0) {
 					int numberOfReferenceTables;
 					try {
@@ -809,13 +897,13 @@ public class ConfigService {
 						throw new LicenseError("Cannot detect number of reference tables of company " + companyID + ": " + e.getMessage(), e);
 					}
 					if (numberOfReferenceTables > maximumNumberOfReferenceTables) {
-					 	if (numberOfReferenceTables > maximumNumberOfReferenceTables + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension()) {
+					 	if (numberOfReferenceTables > maximumNumberOfReferenceTables + gracefulExtensionReferenceTables) {
 							throw new LicenseError("Invalid Number of reference tables of company " + companyID, maximumNumberOfReferenceTables, numberOfReferenceTables);
 						} else {
 							String licenseErrorText = "Invalid Number of reference tables of company " + companyID + "."
 									+ " Current number of reference tables: " + numberOfReferenceTables + "."
 									+ " Maximum number of reference tables: " + maximumNumberOfReferenceTables + "."
-									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension();
+									+ " Allowed by graceful limit extension: " + gracefulExtensionReferenceTables;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -828,14 +916,15 @@ public class ConfigService {
 				// Check maximum number of AccessLimitingMailingLists (ALML) per company
 				int numberOfAccessLimitingMailinglistsPerCompany = licenseDao.getNumberOfAccessLimitingMailinglists(companyID);
 				int licenseMaximumOfAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany, companyID);
+				int gracefulExtensionAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful, companyID);
 				if (licenseMaximumOfAccessLimitingMailinglists >= 0 && licenseMaximumOfAccessLimitingMailinglists < numberOfAccessLimitingMailinglistsPerCompany) {
-					if (numberOfAccessLimitingMailinglistsPerCompany > licenseMaximumOfAccessLimitingMailinglists + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension()) {
+					if (numberOfAccessLimitingMailinglistsPerCompany > licenseMaximumOfAccessLimitingMailinglists + gracefulExtensionAccessLimitingMailinglists) {
 						throw new LicenseError("Invalid Number of AccessLimitingMailingLists of company " + companyID + "", licenseMaximumOfAccessLimitingMailinglists, numberOfAccessLimitingMailinglistsPerCompany);
 					} else {
 						String licenseErrorText = "Invalid Number of AccessLimitingMailinglists of company " + companyID + "."
 								+ " Current number of AccessLimitingMailinglists: " + numberOfAccessLimitingMailinglistsPerCompany + "."
 								+ " Maximum number of AccessLimitingMailinglists: " + licenseMaximumOfAccessLimitingMailinglists + "."
-								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension();
+								+ " Allowed by graceful limit extension: " + gracefulExtensionAccessLimitingMailinglists;
 						logger.error(licenseErrorText);
 						if (javaMailService != null) {
 							javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -847,14 +936,15 @@ public class ConfigService {
 				// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
 				int numberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
 				int licenseMaximumOfAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany, companyID);
+				int gracefulExtensionAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany_Graceful, companyID);
 				if (licenseMaximumOfAccessLimitingTargetgroups >= 0 && licenseMaximumOfAccessLimitingTargetgroups < numberOfAccessLimitingTargetgroupsPerCompany) {
-					if (numberOfAccessLimitingTargetgroupsPerCompany > licenseMaximumOfAccessLimitingTargetgroups + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension()) {
+					if (numberOfAccessLimitingTargetgroupsPerCompany > licenseMaximumOfAccessLimitingTargetgroups + gracefulExtensionAccessLimitingTargetgroups) {
 						throw new LicenseError("Invalid Number of AccessLimitingTargetgroups of company " + companyID + "", licenseMaximumOfAccessLimitingTargetgroups, numberOfAccessLimitingTargetgroupsPerCompany);
 					} else {
 						String licenseErrorText = "Invalid Number of AccessLimitingTargetgroups of company " + companyID + "."
 								+ " Current number of AccessLimitingTargetgroups: " + numberOfAccessLimitingTargetgroupsPerCompany + "."
 								+ " Maximum number of AccessLimitingTargetgroups: " + licenseMaximumOfAccessLimitingTargetgroups + "."
-								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension();
+								+ " Allowed by graceful limit extension: " + gracefulExtensionAccessLimitingTargetgroups;
 						logger.error(licenseErrorText);
 						if (javaMailService != null) {
 							javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -864,13 +954,13 @@ public class ConfigService {
 				}
 			}
 			
-			// Also load extended Permissions if available (OpenEMM has no PermissionExtended class)
 			try {
+				// Also load extended Permissions if available (OpenEMM has no PermissionExtended class)
 				Class.forName("com.agnitas.emm.core.PermissionExtended");
-			} catch (ClassNotFoundException e) {
+			} catch (@SuppressWarnings("unused") ClassNotFoundException e) {
 				// do nothing
 			}
-			
+
 			if (getApplicationType() == Server.EMM) {
 				// Check allowed premium features on Frontend Servers only 
 				boolean companyHasOwnPremiumFeatures;
@@ -1149,43 +1239,75 @@ public class ConfigService {
 	 */
 	public int getIntegerValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
-		
-		return Integer.parseInt(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Integer.parseInt(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public int getIntegerValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
-		
-		return Integer.parseInt(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Integer.parseInt(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public long getLongValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 
 	public long getLongValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public long getLongValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
-		
-		return Long.parseLong(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Long.parseLong(value);
+		} else {
+			return 0;
+		}
 	}
 
 	public float getFloatValue(ConfigValue configurationValueID, int companyID){
 		String value = getValue(configurationValueID, companyID);
-
-		return Float.parseFloat(value);
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
+			return Float.parseFloat(value);
+		} else {
+			return 0;
+		}
 	}
 	
 	public int getIntegerValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		if (StringUtils.isNotEmpty(value)) {
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
 			return Integer.parseInt(value);
 		} else {
 			return 0;
@@ -1194,7 +1316,9 @@ public class ConfigService {
 
 	public float getFloatValue(ConfigValue configurationValueID) {
 		String value = getValue(configurationValueID);
-		if (StringUtils.isNotEmpty(value)) {
+		if ("unlimited".equalsIgnoreCase(value)) {
+			return -1;
+		} else if (StringUtils.isNotEmpty(value)) {
 			return Float.parseFloat(value);
 		} else {
 			return 0;
@@ -1506,5 +1630,40 @@ public class ConfigService {
 
 	public boolean isLicenseStatusOK() {
 		return licenseOK;
+	}
+	
+	public boolean isAutoDeeptracking(int companyID) {
+		return companyDao.checkDeeptrackingAutoActivate(companyID);
+	}
+    
+	public boolean isDisabledMailingListsSupported() {
+		if (isDisabledMailingListsSupported == null) {
+			isDisabledMailingListsSupported = DbUtilities.checkIfTableExists(configTableDao.getDataSource(), "disabled_mailinglist_tbl");
+		}
+
+		return isDisabledMailingListsSupported;
+	}
+    
+	public boolean isAccessLimitingTargetgroupsSupported() {
+		if (isAccessLimitingTargetgroupsSupported == null) {
+			try {
+				isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(configTableDao.getDataSource(), "dyn_target_tbl", "is_access_limiting");
+			} catch (Exception e) {
+				e.printStackTrace();
+				isAccessLimitingTargetgroupsSupported = false;
+			}
+		}
+
+		return isAccessLimitingTargetgroupsSupported;
+	}
+	
+	public final String getPreviewBaseUrl() {
+		String url = this.getValue(ConfigValue.PreviewUrl);
+		
+		if(StringUtils.isBlank(url)) {
+			url = this.getValue(ConfigValue.SystemUrl); 
+		}
+		
+		return url;
 	}
 }

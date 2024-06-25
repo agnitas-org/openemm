@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -9,14 +9,18 @@
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="undoAvailable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTemplate" type="java.lang.Boolean"--%>
+<%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}"/>
 
-<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action?restoreSort=true"/>
 
 <c:set var="mailingExists" value="${mailingId ne 0}"/>
+
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, workflowId)}" scope="request"/>
+<c:set var="workflowDriven" value="${workflowParams.workflowId gt 0}" scope="request" />
 
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
@@ -24,6 +28,7 @@
 <c:set var="agnBreadcrumbsRootUrl" 	value="${mailingsOverviewLink}"	scope="request" />
 
 <c:url var="templatesOverviewLink" value="/mailing/list.action">
+    <c:param name="restoreSort" value="true"/>
     <c:param name="forTemplates" value="true"/>
 </c:url>
 
@@ -229,18 +234,22 @@
 
                 <%-- Save button --%>
 
-                <emm:ShowByPermission token="${isTemplate ? 'template.change' : 'mailing.change'}">
+                <c:if test="${not isSettingsReadonly}">
+                    <c:set var="saveBtnExtraAttrs" value="disabled"/>
+                    <emm:ShowByPermission token="${isTemplate ? 'template.change' : 'mailing.change'}">
+                        <c:set var="saveBtnExtraAttrs" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-form-submit-event"/>
+                    </emm:ShowByPermission>
                     <emm:instantiate var="element" type="java.util.LinkedHashMap">
                         <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
                         <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-form-submit-event"/>
+                        <c:set target="${element}" property="extraAttributes" value="${saveBtnExtraAttrs}"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">
                             <mvc:message code="button.Save"/>
                         </c:set>
                     </emm:instantiate>
-                </emm:ShowByPermission>
+                </c:if>
             </c:when>
             <c:otherwise>
                 <c:set var="agnHelpKey"         value="mailingGeneralOptions" scope="request" />
@@ -272,18 +281,22 @@
 
                 <%-- Save button --%>
 
-                <emm:ShowByPermission token="mailing.change">
+                <c:if test="${not isSettingsReadonly}">
+                    <c:set var="saveBtnExtraAttrs" value="disabled"/>
+                    <emm:ShowByPermission token="mailing.change">
+                        <c:set var="saveBtnExtraAttrs" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
+                    </emm:ShowByPermission>
                     <emm:instantiate var="element" type="java.util.LinkedHashMap">
                         <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
                         <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
+                        <c:set target="${element}" property="extraAttributes" value="${saveBtnExtraAttrs}"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">
                             <mvc:message code="button.Save"/>
                         </c:set>
                     </emm:instantiate>
-                </emm:ShowByPermission>
+                </c:if>
             </c:when>
             <c:otherwise>
                 <%-- Generate (save new) button --%>

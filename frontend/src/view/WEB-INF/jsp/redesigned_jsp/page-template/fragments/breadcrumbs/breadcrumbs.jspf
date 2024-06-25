@@ -1,0 +1,53 @@
+<c:set var="isHeadLineShown" value="false"/>
+
+<emm:ShowNavigation navigation="sidemenu" highlightKey='${sidemenu_active}' redesigned="true">
+    <c:if test="${_navigation_navMsg == agnTitleKey or (isBreadcrumbsShown and _navigation_navMsg == agnBreadcrumbsRootKey)}">
+        <c:set var="isHeadLineReady" value="true" />
+        <c:set var="agnHeadLineIconClass" value="${_navigation_iconClass}"/>
+
+        <c:if test="${empty agnHeadLineFirstCrumb}">
+            <mvc:message var="agnHeadLineFirstCrumb" code="${_navigation_navMsg}" />
+        </c:if>
+    </c:if>
+</emm:ShowNavigation>
+
+<c:set var="crumbs" value="" scope="request"/>
+<c:set var="crumbSeparator" scope="request">
+    <li><i class="icon icon-caret-right arrow"></i></li>
+</c:set>
+
+<ul class="breadcrumbs">
+    <c:choose>
+        <c:when test="${isHeadLineReady and isBreadcrumbsShown}">
+            <c:set var="crumbs" scope="request">
+                <li><i class="icon icon-${agnHeadLineIconClass}"></i></li>
+            </c:set>
+            <c:choose>
+                <c:when test="${not empty agnBreadcrumbsRootUrl}">
+                    <c:set var="crumbs" scope="request">${crumbs}<li><a href="${agnBreadcrumbsRootUrl}">${fn:trim(agnHeadLineFirstCrumb)}</a></li></c:set>
+                </c:when>
+                <c:otherwise>
+                    <c:set var="crumbs" scope="request">${crumbs}<li><span>${fn:trim(agnHeadLineFirstCrumb)}</span></li></c:set>
+                </c:otherwise>
+            </c:choose>
+
+            <c:if test="${not empty agnBreadcrumbs}">
+                <%@ include file="breadcrumbs-build.jspf" %>
+            </c:if>
+
+            ${crumbs}
+        </c:when>
+        <c:when test="${isHeadLineReady}">
+            <li><i class="icon icon-${agnHeadLineIconClass}"></i></li>
+            ${crumbSeparator}
+            <li><span>${agnHeadLineFirstCrumb}</span></li>
+        </c:when>
+        <c:when test="${not empty agnBreadcrumbs}">
+            <%@ include file="breadcrumbs-build.jspf" %>
+            ${crumbs}
+        </c:when>
+        <c:otherwise>
+            ${agnSubtitleValue}
+        </c:otherwise>
+    </c:choose>
+</ul>

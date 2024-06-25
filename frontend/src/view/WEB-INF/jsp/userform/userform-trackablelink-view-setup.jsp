@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.trackablelinks.form.FormTrackableLinkForm"--%>
 <%--@elvariable id="userFormId" type="java.lang.Integer"--%>
@@ -17,6 +17,8 @@
 <c:set var="isBreadcrumbsShown" 	value="true" 										scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Forms" 										scope="request" />
 <c:set var="agnHelpKey" 			value="trackableLinkView" 							scope="request" />
+
+<c:url var="switchDesignUrl" value="/webform/${userFormId}/trackablelink/list.action" scope="request" />
 
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="user-form-id" value="${userFormId}"/>
@@ -76,7 +78,7 @@
             <c:set target="${element}" property="extraAttributes" value="data-form-target='#userFormTrackableLinkForm' data-form-submit-event=''"/>
             <c:set target="${element}" property="iconBefore" value="icon-save"/>
             <c:set target="${element}" property="name">
-                <bean:message key="button.Save"/>
+                <mvc:message code="button.Save"/>
             </c:set>
         </emm:instantiate>
 </emm:instantiate>

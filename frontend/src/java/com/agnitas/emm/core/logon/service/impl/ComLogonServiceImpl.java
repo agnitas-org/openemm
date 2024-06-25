@@ -10,8 +10,42 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import javax.sql.DataSource;
+
+import org.agnitas.emm.core.commons.password.PasswordCheck;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.preview.Page;
+import org.agnitas.preview.Preview;
+import org.agnitas.preview.PreviewFactory;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.dao.PasswordResetDao;
@@ -27,39 +61,7 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.LicenseError;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.EmmLayoutBase;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.struts.Globals;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-
-import javax.sql.DataSource;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import com.agnitas.util.Version;
 
 /**
  * Implementation of {@link com.agnitas.emm.core.logon.service.ComLogonService}.
@@ -84,6 +86,11 @@ public class ComLogonServiceImpl implements ComLogonService {
 	@Override
 	public Admin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException {
 		return doRegularLogin(username, password, hostIpAddress);
+	}
+	
+	@Override
+	public Admin getAdminByUsername(String username) {
+		return adminService.getAdminByName(username).orElseGet(null);
 	}
 
 	/**
@@ -239,7 +246,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 		if (admin == null) {
 			loginTrackService.trackLoginFailed(clientIp, username);
-			return new SimpleServiceResult(false, Message.of("info.password.reset.email"));
+			return SimpleServiceResult.simpleInfo(false, Message.of("info.password.reset.email"));
 		}
 
 		int adminId = admin.getAdminID();
@@ -257,7 +264,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 		sendPasswordResetMail(admin, passwordResetLink);
 
-		return new SimpleServiceResult(true);
+		return SimpleServiceResult.simpleInfo(true, Message.of("info.password.reset.email"));
 	}
 	
 	@Override
@@ -271,7 +278,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			
 			loginTrackService.trackLoginFailed(clientIp, username);
 			
-			return new ServiceResult<>(null, false, Message.of("info.password.reset.email"));
+			return ServiceResult.info(null, false, Message.of("info.password.reset.email"));
 		}
 		
 		final Admin admin = adminOptional.get();
@@ -402,6 +409,26 @@ public class ComLogonServiceImpl implements ComLogonService {
 				}
 			} catch (ParseException e) {
 				throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
+			}
+		}
+
+		String maximumLicensedVersionString = configService.getValue(ConfigValue.System_License_MaximumVersion);
+		String installedVersionString = configService.getValue(ConfigValue.ApplicationVersion);
+		// Make sure that the license is not invalid for this applications version.
+		if (StringUtils.isBlank(maximumLicensedVersionString)) {
+			throw new LicenseError("error.license.outoflimits", "<Undefined>", installedVersionString, configService.getValue(ConfigValue.Mailaddress_Support));
+		} else if (!"unlimited".equalsIgnoreCase(maximumLicensedVersionString.trim()) && !"-1".equalsIgnoreCase(maximumLicensedVersionString.trim())) {
+			try {
+				Version maximumLicensedVersion = new Version(maximumLicensedVersionString);
+				Version installedVersion = new Version(installedVersionString);
+				
+				if (maximumLicensedVersion.getMajorVersion() < installedVersion.getMajorVersion()
+					|| (maximumLicensedVersion.getMajorVersion() == installedVersion.getMajorVersion()
+						&& maximumLicensedVersion.getMinorVersion() < installedVersion.getMinorVersion())) {
+					throw new LicenseError("error.license.outoflimits", maximumLicensedVersionString, installedVersionString, configService.getValue(ConfigValue.Mailaddress_Support));
+				}
+			} catch (Exception e) {
+				throw new LicenseError("Invalid license validity data: " + e.getMessage(), e);
 			}
 		}
 	}
@@ -541,7 +568,6 @@ public class ComLogonServiceImpl implements ComLogonService {
 	@Override
 	public void updateSessionsLanguagesAttributes(final Admin admin) {
 		final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-		attributes.setAttribute(Globals.LOCALE_KEY, admin.getLocale(), RequestAttributes.SCOPE_SESSION);  // To be removed when Struts message tags are not in use anymore.
 		attributes.setAttribute("helplanguage", this.getHelpLanguage(admin), RequestAttributes.SCOPE_SESSION);
 	}
 }

@@ -81,6 +81,7 @@ public class HttpUtils {
 	public static final String IMAGE_PATH_ERROR_LINK = "/assets/core/images/grid_expire_image.png";
 
 	public static final String CONTENT_TYPE_JSON = "application/json";
+	public static final String CONTENT_TYPE_ZIP = "application/zip";
 	public static final String CONTENT_ENCODING = "UTF-8";
 	public static final String APPLICATION_JSON_UTF8 = CONTENT_TYPE_JSON + ";charset=" + CONTENT_ENCODING;
 
@@ -626,6 +627,16 @@ public class HttpUtils {
 
         return httpClient;
     }
+	
+	public static String getAuthorizationToken(HttpServletRequest request) {
+		String authorizationToken = request.getHeader("Authorization"); // like: "Bearer abc.abc123.signature"
+		if (StringUtils.isBlank(authorizationToken) || !authorizationToken.startsWith("Bearer ")) {
+			return null;
+		} else {
+			String bearerToken = authorizationToken.substring(7); // like: "abc.abc123.signature"
+			return bearerToken;
+		}
+	}
 	
 	public static String getBasicAuthenticationUsername(HttpServletRequest request) {
 		try {

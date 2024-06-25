@@ -430,6 +430,26 @@ reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(new Sim
                     <property name="name">countRecipientAsOf</property>
                     <property name="dataType">integer</property>
                 </structure>
+                <structure>
+                    <property name="position">26</property>
+                    <property name="name">confirmedDoiCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">27</property>
+                    <property name="name">notConfirmedDoiCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">28</property>
+                    <property name="name">notConfirmedAndDeletedDoiCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">29</property>
+                    <property name="name">confirmedAndNotActiveDoiCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -506,6 +526,18 @@ reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(new Sim
                 </structure>
                 <structure>
                     <property name="columnName">countRecipientAsOf</property>
+                </structure>
+                <structure>
+                    <property name="columnName">confirmedDoiCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">notConfirmedDoiCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">notConfirmedAndDeletedDoiCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">confirmedAndNotActiveDoiCount</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -635,6 +667,26 @@ reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(new Sim
                         <property name="name">countRecipientAsOf</property>
                         <property name="dataType">integer</property>
                     </structure>
+                    <structure>
+                        <property name="position">26</property>
+                        <property name="name">confirmedDoiCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">27</property>
+                        <property name="name">notConfirmedDoiCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">28</property>
+                        <property name="name">notConfirmedAndDeletedDoiCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">29</property>
+                        <property name="name">confirmedAndNotActiveDoiCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -670,6 +722,11 @@ row["countBlacklistedAsOf"] = statData.get(currentRow).getCountBlacklistedAsOf()
 row["countOptoutAsOf"] = statData.get(currentRow).getCountOptoutAsOf();
 row["countBouncedAsOf"] = statData.get(currentRow).getCountBouncedAsOf();
 row["countRecipientAsOf"] = statData.get(currentRow).getCountRecipientAsOf();
+
+row["confirmedDoiCount"] = statData.get(currentRow).getConfirmedDoiCount();
+row["confirmedAndNotActiveDoiCount"] = statData.get(currentRow).getConfirmedAndNotActiveDoiCount();
+row["notConfirmedDoiCount"] = statData.get(currentRow).getNotConfirmedDoiCount();
+row["notConfirmedAndDeletedDoiCount"] = statData.get(currentRow).getNotConfirmedAndDeletedDoiCount();
 
 // do some i18n stuff
 targetGroupID = statData.get(currentRow).getTargetGroupId();
@@ -2666,7 +2723,7 @@ return true;
                 </structure>
                 <structure>
                     <property name="name">dateGRDetailTitle</property>
-                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale());</expression>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale());</expression>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>
@@ -4607,6 +4664,246 @@ return true;
                                 <property name="pattern">0.00%</property>
                             </structure>
                             <property name="resultSetColumn">offlineHtmlRate_</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+        <grid id="7546">
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
+                </structure>
+            </list-property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">asOf-6</property>
+                    <text-property name="displayName">asOf-6</text-property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("report.label.asOf", reportContext.getLocale()) + ":"</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">asOfStopDate-6</property>
+                    <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("stopDateFormated")</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">doi</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("recipient.DOI", reportContext.getLocale());</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="7547"/>
+            <column id="7548"/>
+            <column id="7549"/>
+            <row id="7550">
+                <cell id="7551"/>
+                <cell id="7552"/>
+                <cell id="7553"/>
+            </row>
+            <row id="7554">
+                <cell id="7555"/>
+                <cell id="7556"/>
+                <cell id="7557"/>
+            </row>
+            <row id="7558">
+                <cell id="7559">
+                    <data id="7560">
+                        <property name="resultSetColumn">doi</property>
+                    </data>
+                </cell>
+                <cell id="7561">
+                    <data id="7562">
+                        <property name="resultSetColumn">asOf-6</property>
+                    </data>
+                </cell>
+                <cell id="7563">
+                    <data id="7564">
+                        <property name="resultSetColumn">asOfStopDate-6</property>
+                    </data>
+                </cell>
+            </row>
+            <row id="7565">
+                <cell id="7566"/>
+                <cell id="7567"/>
+                <cell id="7568"/>
+            </row>
+        </grid>
+        <table id="7569">
+            <property name="dataSet">RecipientsStatistic2</property>
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
+                </structure>
+            </list-property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">mailingListId</property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListId"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListGroupId</property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListGroupId"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupId</property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListName</property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupName</property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">countTargetGroup</property>
+                    <expression name="expression" type="javascript">dataSetRow["countTargetGroup"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListName_</property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListNameTitle</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailinglist", reportContext.getLocale());</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">confirmed_doi</property>
+                    <expression name="expression" type="javascript">dataSetRow["confirmedDoiCount"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">notConfirmedDoi_</property>
+                    <expression name="expression" type="javascript">dataSetRow["notConfirmedDoiCount"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">confirmedAndNotActiveDoi_</property>
+                    <expression name="expression" type="javascript">dataSetRow["confirmedAndNotActiveDoiCount"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">notConfirmedAndDeletedDoi_</property>
+                    <expression name="expression" type="javascript">dataSetRow["notConfirmedAndDeletedDoiCount"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">confirmedDoiTitle_</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.recipient.status.confirmed", reportContext.getLocale())</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">notConfirmedDoiTitle_</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.recipient.notConfirmed", reportContext.getLocale())</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">confirmedAndNotActiveDoiTitle_</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.recipient.status.confirmed.inactive", reportContext.getLocale())</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">notConfirmedAndDeletedDoiTitle_</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.recipient.status.unconfirmed.deleted", reportContext.getLocale())</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key" type="javascript">row["mailingListName"]</expression>
+                    <property name="direction">asc</property>
+                    <property name="strength">-1</property>
+                </structure>
+            </list-property>
+            <list-property name="filter">
+                <structure>
+                    <property name="operator">eq</property>
+                    <expression name="expr" type="javascript">row["targetGroupId"]</expression>
+                    <simple-property-list name="value1">
+                        <value>1</value>
+                    </simple-property-list>
+                    <property name="updateAggregation">true</property>
+                </structure>
+            </list-property>
+            <column id="7608"/>
+            <column id="7609"/>
+            <column id="7611"/>
+            <column id="7613"/>
+            <column id="7615"/>
+            <header>
+                <row id="7570">
+                    <cell id="7571">
+                        <data id="7572">
+                            <property name="resultSetColumn">mailingListNameTitle</property>
+                        </data>
+                    </cell>
+                    <cell id="7573">
+                        <data id="7574">
+                            <property name="resultSetColumn">confirmedDoiTitle_</property>
+                        </data>
+                    </cell>
+                    <cell id="7577">
+                        <data id="7578">
+                            <property name="resultSetColumn">notConfirmedDoiTitle_</property>
+                        </data>
+                    </cell>
+                    <cell id="7581">
+                        <data id="7582">
+                            <property name="resultSetColumn">confirmedAndNotActiveDoiTitle_</property>
+                        </data>
+                    </cell>
+                    <cell id="7585">
+                        <data id="7586">
+                            <property name="resultSetColumn">notConfirmedAndDeletedDoiTitle_</property>
+                        </data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="7589">
+                    <cell id="7590">
+                        <data id="7591">
+                            <property name="resultSetColumn">mailingListName_</property>
+                        </data>
+                    </cell>
+                    <cell id="7592">
+                        <data id="7593">
+                            <property name="resultSetColumn">confirmed_doi</property>
+                        </data>
+                    </cell>
+                    <cell id="7596">
+                        <data id="7597">
+                            <property name="resultSetColumn">notConfirmedDoi_</property>
+                        </data>
+                    </cell>
+                    <cell id="7600">
+                        <data id="7601">
+                            <property name="resultSetColumn">confirmedAndNotActiveDoi_</property>
+                        </data>
+                    </cell>
+                    <cell id="7604">
+                        <data id="7605">
+                            <property name="resultSetColumn">notConfirmedAndDeletedDoi_</property>
                         </data>
                     </cell>
                 </row>

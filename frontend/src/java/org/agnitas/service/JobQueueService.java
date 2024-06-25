@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
 import org.agnitas.dao.JobQueueDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -404,15 +405,15 @@ public class JobQueueService implements ApplicationContextAware {
 	}
 
 	public boolean isStatusOK() {
-		return jobQueueDao.selectErroneousJobs().size() == 0;
+		return jobQueueDao.selectCriticalErroneousJobs().size() == 0;
 	}
 
 	public boolean isJobQueueRunning() {
 		return lastCheckAndRunJobTime != null && (new Date().getTime() - lastCheckAndRunJobTime.getTime()) < 300000; // lastCheckAndRunJobTime was within last 5 minutes
 	}
 	
-	public List<JobDto> getAllActiveJobs() {
-		return jobQueueDao.getAllActiveJobs();
+	public List<JobDto> getOverview(JobQueueOverviewFilter filter) {
+		return jobQueueDao.getOverview(filter);
 	}
 
 	public List<JobDto> selectErroneousJobs() {

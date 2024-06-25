@@ -74,7 +74,7 @@ This option is even easier. You only need to add `data-copyable-value` attribute
       Clipboard.set(value, function(v, success) {
         if (success) {
           Tooltip.create($element, {
-            title: t('tooltip.copy.clipboard'),
+            title: t('clipboard.copied.tooltip'),
             trigger: 'manual'
           });
 

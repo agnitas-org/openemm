@@ -25,7 +25,6 @@ import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +36,6 @@ import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
@@ -47,16 +45,10 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     /** The logger. */
     private static final transient Logger logger = LogManager.getLogger(MailingStatisticsDaoImpl.class);
 
-	private final ConfigService configService;
     private final ComTargetService targetService;
     
-    @Deprecated(forRemoval = true)	// Use TargetService istead
-    private final ComTargetDao targetDao;
-    
-    public MailingStatisticsDaoImpl(final ConfigService configService, final ComTargetService targetService, @Deprecated final ComTargetDao targetDao) {
-    	this.configService = Objects.requireNonNull(configService);
+    public MailingStatisticsDaoImpl(final ComTargetService targetService) {
     	this.targetService = Objects.requireNonNull(targetService);
-    	this.targetDao = targetDao;
     }
 	
     /**

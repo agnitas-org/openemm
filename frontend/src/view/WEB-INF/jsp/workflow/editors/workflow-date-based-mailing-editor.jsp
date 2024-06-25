@@ -1,12 +1,10 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
 <c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
@@ -38,10 +36,10 @@
         <div class="col-xs-12">
             <div class="btn-group">
                 <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                    <bean:message key="button.Cancel"/>
+                    <mvc:message code="button.Cancel"/>
                 </a>
                 <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="date-mailing-editor-save">
-                    <bean:message key="button.Apply"/>
+                    <mvc:message code="button.Apply"/>
                 </a>
             </div>
         </div>
@@ -54,7 +52,7 @@
             "mailingType": "${MAILING_TYPE_DATEBASED}",
             "selectName": "mailingId",
             "mailingStatus": "mailings_status",
-            "showCreateEditLinks": "true",
+            "showCreateEditLinks": ${not emm:permissionAllowed('mailing.content.readonly', pageContext.request)},
             "mailingTypesForLoading": ["${MAILING_TYPE_DATEBASED}"],
             "defaultMailingsSort": "active_sort_status asc, shortname",
             "defaultMailingsOrder": "asc"

@@ -38,6 +38,7 @@ public class MediatypeFormToMediatypeConverter implements Converter<MediatypeFor
     protected MediatypeEmail convertFormToEmailMediatype(EmailMediatypeForm form) {
         MediatypeEmail mediatype = (MediatypeEmail) new MediatypeFactoryImpl().create(MediaTypes.EMAIL.getMediaCode());
         mediatype.setSubject(form.getSubject());
+        mediatype.setPreHeader(form.getPreHeader());
         mediatype.setCharset(form.getCharset());
         mediatype.setLinefeed(form.getLinefeed());
         mediatype.setOnepixel(form.getOnepixel());

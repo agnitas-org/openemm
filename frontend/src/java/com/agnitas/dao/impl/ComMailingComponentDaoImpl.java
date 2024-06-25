@@ -10,6 +10,36 @@
 
 package com.agnitas.dao.impl;
 
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.util.ImageUtils;
+import com.agnitas.web.CdnImage;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
+import org.agnitas.beans.factory.MailingComponentFactory;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.ResultSet;
@@ -25,32 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.factory.MailingComponentFactory;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.impl.ComTrackableLinkImpl;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.TrackableLinkDao;
-import com.agnitas.util.ImageUtils;
-import com.agnitas.web.CdnImage;
 
 public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailingComponentDao {
 
@@ -201,14 +205,31 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
 		int mailtemplateID = 0;
 		int comppresent = 1;
+		
+		// Check for unallowed html tags
+		try {
+			HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component name contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component description contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getEmmBlock(), true);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component description contains unallowed HTML tags");
+		}
 
 		try {
 			if (mailingComponent.getType() != MailingComponentType.Template && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
 				Set<String> existingLinkUrls = trackableLinkDao.getTrackableLinks(mailingComponent.getCompanyID(), mailingComponent.getMailingID())
-					.stream().map(ComTrackableLink::getFullUrl).collect(Collectors.toSet());
+					.stream().map(TrackableLink::getFullUrl).collect(Collectors.toSet());
 				// Only create new link if its url does not exist by now
 				if (!existingLinkUrls.contains(mailingComponent.getLink())) {
-					final ComTrackableLink newTrackableLink = new ComTrackableLinkImpl();
+					final TrackableLink newTrackableLink = new TrackableLinkImpl();
 					newTrackableLink.setCompanyID(mailingComponent.getCompanyID());
 					newTrackableLink.setFullUrl(mailingComponent.getLink());
 					newTrackableLink.setMailingID(mailingComponent.getMailingID());
@@ -217,7 +238,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 					trackableLinkDao.saveTrackableLink(newTrackableLink);
 					mailingComponent.setUrlID(newTrackableLink.getId());
 				} else {
-					final ComTrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
+					final TrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
 					mailingComponent.setUrlID(existingTrackableLink.getId());
 				}
 			}
@@ -451,7 +472,57 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		return update(logger, sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
 	}
 
-    @Override
+	@Override
+	public List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, int companyID) {
+		String query = "SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?) AND "
+				+ makeBulkInClauseForInteger("component_id", bulkIds);
+		return select(logger, query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
+	}
+
+	@Override
+	public List<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter) {
+		StringBuilder query = new StringBuilder("SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl");
+		List<Object> params = applyOverviewFilter(filter, mailingID, companyID, query);
+		query.append(" ORDER BY comptype DESC, compname ASC");
+
+		return select(logger, query.toString(), new MailingComponentRowMapper(), params.toArray());
+	}
+
+	private List<Object> applyOverviewFilter(MailingImagesOverviewFilter filter, int mailingId, int companyId, StringBuilder query) {
+		query.append(" WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)");
+		List<Object> params = new ArrayList<>(List.of(companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()));
+
+		if (StringUtils.isNotBlank(filter.getFileName())) {
+			query.append(getPartialSearchFilterWithAnd("compname"));
+			params.add(filter.getFileName());
+		}
+
+		if (filter.getUploadDate().getFrom() != null) {
+			query.append(" AND timestamp >= ?");
+			params.add(filter.getUploadDate().getFrom());
+		}
+		if (filter.getUploadDate().getTo() != null) {
+			query.append(" AND timestamp < ?");
+			params.add(DateUtilities.addDaysToDate(filter.getUploadDate().getTo(), 1));
+		}
+
+		if (CollectionUtils.isNotEmpty(filter.getMimetypes())) {
+			query.append(" AND mtype IN (").append(AgnUtils.csvQMark(filter.getMimetypes().size())).append(")");
+			params.addAll(filter.getMimetypes());
+		}
+
+		if (filter.getMobile() != null) {
+			query.append(" AND compname ");
+			if (!filter.getMobile()) {
+				query.append("NOT ");
+			}
+			query.append("LIKE '").append(ImageUtils.MOBILE_IMAGE_PREFIX).append("%'");
+		}
+
+		return params;
+	}
+
+	@Override
     public List<MailingComponent> getMailingComponentsByType(int companyID, int mailingID, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
 			return new ArrayList<>();

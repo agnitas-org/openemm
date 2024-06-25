@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 public class DbColumnType {
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";
 	public static final String GENERIC_TYPE_FLOAT = "FLOAT";
+	public static final String GENERIC_TYPE_DOUBLE = "DOUBLE";
 	public static final String GENERIC_TYPE_VARCHAR = "VARCHAR";
 	public static final String GENERIC_TYPE_VARCHAR2 = "VARCHAR2";
 	public static final String GENERIC_TYPE_DATE = "DATE";

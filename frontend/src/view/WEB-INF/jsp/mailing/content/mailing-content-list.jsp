@@ -1,13 +1,14 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
+<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.mailingcontent.form.MailingContentForm"--%>
 <%--@elvariable id="isMailingEditable" type="java.lang.Boolean"--%>
+<%--@elvariable id="isContentGenerationAllowed" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailingExclusiveLockingAcquired" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="anotherLockingUserName" type="java.lang.String"--%>
@@ -38,14 +39,14 @@
     </jsp:include>
 </emm:HideByPermission>
 
-<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
-    <tiles:put name="header" type="string">
+<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:putAttribute name="header" type="string">
         <ul class="tile-header-nav">
-            <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+            <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
         </ul>
-    </tiles:put>
+    </tiles:putAttribute>
 
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <c:if test="${isMailingGrid}">
             <div class="tile-content-padded">
         </c:if>
@@ -90,7 +91,8 @@
                                         "dynTagNames": ${emm:toJson(form.dynTagNames)},
                                         "dynTagsMap": ${emm:toJson(form.tags)},
                                         "isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired},
-                                        "isEditableMailing": ${isMailingEditable}
+                                        "isEditableMailing": ${isMailingEditable},
+                                        "isContentGenerationAllowed": ${isContentGenerationAllowed}
                                     }
                                 </script>
 
@@ -99,7 +101,8 @@
                                         "mailingId": ${form.mailingID},
                                         "isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired},
                                         "anotherLockingUserName": "${anotherLockingUserName}",
-                                        "isEditableMailing": ${isMailingEditable}
+                                        "isEditableMailing": ${isMailingEditable},
+                                        "isContentGenerationAllowed": ${isContentGenerationAllowed}
                                     }
                                 </script>
                             </div>
@@ -128,8 +131,8 @@
         <c:if test="${isMailingGrid}">
             </div>
         </c:if>
-    </tiles:put>
-</tiles:insert>
+    </tiles:putAttribute>
+</tiles:insertTemplate>
 
 <c:set var="mailingId" value="${form.mailingID}"/>
 

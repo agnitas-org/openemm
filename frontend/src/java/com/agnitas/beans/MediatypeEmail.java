@@ -99,6 +99,8 @@ public interface MediatypeEmail extends Mediatype {
      */
     String getSubject();
 
+    String getPreHeader();
+
     /**
      * Getter for property subject.
      * 
@@ -168,6 +170,8 @@ public interface MediatypeEmail extends Mediatype {
      * @param subject New value of property subject.
      */
     void setSubject(String subject);
+
+    void setPreHeader(String preHeader);
 
     /**
      * Setter for property subject.
@@ -274,5 +278,13 @@ public interface MediatypeEmail extends Mediatype {
 	void setMailFormat(MailType mailType);
     
     void deleteDateBasedParameters();
+
+	boolean isCleanupTestsBeforeDelivery();
+
+	void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery);
+
+    boolean isClearance();
+
+    void setClearance(boolean clearance);
 }
 

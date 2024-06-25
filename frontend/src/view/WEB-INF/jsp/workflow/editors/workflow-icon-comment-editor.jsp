@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <div id="icon-comment-editor" data-initializer="icon-comment-editor-initializer">
@@ -13,10 +12,10 @@
             <div class="col-xs-12">
                 <div class="btn-group">
                     <button type="button" class="btn btn-regular" data-action="icon-comment-editor-cancel">
-                        <bean:message key="button.Cancel"/>
+                        <mvc:message code="button.Cancel"/>
                     </button>
                     <button type="button" class="btn btn-regular btn-primary" data-action="icon-comment-editor-save">
-                        <bean:message key="button.Apply"/>
+                        <mvc:message code="button.Apply"/>
                     </button>
                 </div>
             </div>

@@ -90,6 +90,9 @@ public class ComponentDAO {
 						} else if (tmp.cid.equals(Const.Component.NAME_HTML)) {
 							tmp.type = BlockData.HTML;
 							tmp.media = Media.TYPE_EMAIL;
+						} else if (tmp.cid.equals(Const.Component.NAME_PREHEADER)) {
+							tmp.type = BlockData.HTML_PREHEADER;
+							tmp.media = Media.TYPE_EMAIL;
 						} else if (tmp.cid.equals(Const.Component.NAME_FAX)) {
 							tmp.type = BlockData.PDF;
 							tmp.media = Media.TYPE_FAX;

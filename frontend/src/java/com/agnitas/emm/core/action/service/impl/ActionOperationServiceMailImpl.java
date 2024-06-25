@@ -39,6 +39,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
+import com.agnitas.emm.core.service.RecipientFieldService;
 
 public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	/** The logger */
@@ -51,6 +52,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	
 	private BlacklistService blacklistService;
 	private RecipientService recipientService;
+	private RecipientFieldService recipientFieldService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
@@ -74,7 +76,12 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		if (getRequestParameter(params, "customerID") != null) {
 			fromCustomer = beanLookupFactory.getBeanRecipient();
 			fromCustomer.setCompanyID(companyID);
-			fromCustomer.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+			
+			if (configService.getBooleanValue(ConfigValue.UseRecipientFieldService, companyID)) {
+				fromCustomer.setCustDBStructure(recipientFieldService.getRecipientDBStructure(companyID));
+			} else {
+				fromCustomer.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+			}
 
 			Integer tmpNum = Integer.parseInt(getRequestParameter(params, "customerID"));
 			fromCustomer.setCustomerID(tmpNum.intValue());
@@ -201,7 +208,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			StringWriter emailTextWriter = new StringWriter();
 			VelocityResult velocityResult = velocity.evaluate(params, op.getTextMail(), emailTextWriter, 0, op.getActionId());
 			if (velocityResult.hasErrors()) {
-				logger.error("Velocity errors: " + velocityResult.getErrors());
+				logger.error("Velocity errors: " + velocityResult.getErrorMessages());
 				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
@@ -210,7 +217,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			StringWriter subjectWriter = new StringWriter();
 			velocityResult = velocity.evaluate(params, op.getSubjectLine(), subjectWriter, 0, op.getActionId());
 			if (velocityResult.hasErrors()) {
-				logger.error("Velocity errors: " + velocityResult.getErrors());
+				logger.error("Velocity errors: " + velocityResult.getErrorMessages());
 				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
@@ -221,7 +228,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				StringWriter emailHtmlWriter = new StringWriter();
 				velocityResult = velocity.evaluate(params, op.getHtmlMail(), emailHtmlWriter, 0, op.getActionId());
 				if (velocityResult.hasErrors()) {
-					logger.error("Velocity errors: " + velocityResult.getErrors());
+					logger.error("Velocity errors: " + velocityResult.getErrorMessages());
 					actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 					return false;
 				}
@@ -278,5 +285,9 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "ConfigService is null");
+	}
+	
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
 	}
 }

@@ -18,7 +18,6 @@ import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -163,17 +162,8 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		    			exclusionSqlCode.getSql(),
 		    			"Added by copying stopped mailing");
 		    	
-		    	if(configService.getBooleanValue(ConfigValue.Development.ChangeStatusOnCancelAndCopyMailing, companyId)) {
-		    		// Mark original mailing as canceled and copied
-		    		mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED_AND_COPIED);
-		    	} else {
-			    	// Delete original mailing
-			    	final MailingModel mailingToDelete = new MailingModel();
-			    	mailingToDelete.setCompanyId(companyId);
-			    	mailingToDelete.setMailingId(mailingID);
-			    	mailingToDelete.setTemplate(false);
-			    	mailingService.deleteMailing(mailingToDelete);
-		    	}		    	
+		    	// Mark original mailing as canceled and copied
+		    	mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED_AND_COPIED);
 		
 		    	return newMailingId;
 	    	} catch(final Exception e) {
@@ -206,8 +196,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		final boolean inProgress = this.maildropService.hasMaildropStatus(mailing.getMailingID(), mailing.getCompanyID(), MaildropStatus.WORLD)
 				&& !this.mailingService.isDeliveryComplete(mailing);
 		
-		return inProgress
-				&& !isStopped(mailing);
+		return inProgress && !isStopped(mailing);
 	}
 	
 	@Override

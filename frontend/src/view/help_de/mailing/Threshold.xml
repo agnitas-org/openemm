@@ -1,5 +1,5 @@
 <HelpBalloon>
 	<title><![CDATA[Schwellwert]]></title>
 	<content><![CDATA[Mit dem Schwellwert definieren Sie eine Sicherheitsgrenze, mit der Sie verhindern k&#xF6;nnen, dass das Mailing versehentlich an zu viele Empf&#xE4;nger versendet wird, z.B. weil die verwendete Zielgruppe nachtr&#xE4;glich ver&#xE4;ndert wurde.
-Wird der Schwellwert erreicht oder &#xFC;berschritten, wird das Mailing automatisch deaktiviert und muss manuell wieder für den Versand freigegeben werden. Der Statusmail-Empf&#xE4;nger erh&#xE4;lt eine Benachrichtigung, wenn dieser Fall eintritt. Der Schwellwert sollte jedoch auch nicht zu niedrig angesetzt werden, damit Ihr Mailversand nicht zu h&#xE4;ufig unterbrochen wird. Tipp: Werten Sie 5 Stichproben aus und planen einen Puffer von einigen Prozent auf die gr&#xF6;&#xDF;te Probe mit ein.]]></content>
+Wird der Schwellwert erreicht oder &#xFC;berschritten, wird das Mailing automatisch deaktiviert und muss manuell wieder f&#xFC;r den Versand freigegeben werden. Der Statusmail-Empf&#xE4;nger erh&#xE4;lt eine Benachrichtigung, wenn dieser Fall eintritt. Der Schwellwert sollte jedoch auch nicht zu niedrig angesetzt werden, damit Ihr Mailversand nicht zu h&#xE4;ufig unterbrochen wird. Tipp: Werten Sie 5 Stichproben aus und planen einen Puffer von einigen Prozent auf die gr&#xF6;&#xDF;te Probe mit ein.]]></content>
 </HelpBalloon>

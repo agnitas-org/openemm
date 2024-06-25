@@ -47,6 +47,8 @@ import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
 import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
 
+import jakarta.mail.internet.InternetAddress;
+
 public class MailingDataSet extends BIRTDataSet {
 
 	private static final Logger logger = LogManager.getLogger(MailingDataSet.class);
@@ -168,9 +170,11 @@ public class MailingDataSet extends BIRTDataSet {
 			data.replyName = locMessage;
             data.mailFormat = locMessage;
         } else {
+            InternetAddress replyAddr = new InternetAddress(com.agnitas.reporting.birt.external.utils.StringUtils.findParam("reply", mtParam));
+            InternetAddress fromAddr = new InternetAddress(com.agnitas.reporting.birt.external.utils.StringUtils.findParam("from", mtParam));
             data.subject = getSubject(mtParam);
-			data.senderName = com.agnitas.reporting.birt.external.utils.StringUtils.findParam("from", mtParam);
-			data.replyName = com.agnitas.reporting.birt.external.utils.StringUtils.findParam("reply", mtParam);
+            data.senderName = formatAddress(fromAddr);
+            data.replyName = formatAddress(replyAddr);
             try {
                 data.mailFormat = I18nString.getLocaleString("MailType."+getMailformat(mtParam), language);
             } catch (Exception ex) {
@@ -283,7 +287,16 @@ public class MailingDataSet extends BIRTDataSet {
         return Collections.singletonList(data);
 	}
 
-	private byte[] getThumbnailImage(int mailingId, int companyId) {
+    private String formatAddress(InternetAddress addr) {
+        String name = addr.getPersonal();
+        String address = addr.getAddress();
+        if (StringUtils.isNotBlank(name)) {
+            return String.format("%s <%s>", name, address);
+        }
+        return address;
+    }
+
+    private byte[] getThumbnailImage(int mailingId, int companyId) {
 		ComMailingComponentDaoImpl componentDao = new ComMailingComponentDaoImpl();
 		componentDao.setDataSource(getDataSource());
 		componentDao.setMailingComponentFactory(new MailingComponentFactoryImpl());

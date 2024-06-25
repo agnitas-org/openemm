@@ -45,13 +45,11 @@ import com.agnitas.emm.core.workflow.beans.WorkflowParameter;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowRecipient;
-import com.agnitas.emm.core.workflow.beans.WorkflowReport;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepDeclarationImpl;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowReportScheduleDao;
 import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
@@ -95,6 +93,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_ACTIVE;
 import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.resolveDeadline;
@@ -126,18 +125,16 @@ public class ComWorkflowActivationService {
 	private ComTargetDao targetDao;
 	private ComWorkflowReactionDao reactionDao;
 	private AdminService adminService;
-	private ComWorkflowReportScheduleDao reportScheduleDao;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
     private ComTargetService targetService;
 	private ComWorkflowEQLHelper eqlHelper;
 	private ComRecipientDao recipientDao;
 
-	public boolean activateWorkflow(int workflowId, Admin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	public boolean activateWorkflow(int workflowId, Admin admin, boolean testing, boolean unpausing, boolean afterPauseTimeout, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		int companyId = admin.getCompanyID();
 		Set<WorkflowNode> processedNodes = new HashSet<>();
 		Map<Integer, Mailing> mailingsToUpdate = new HashMap<>();
-		Map<Integer, Date> reportsSendDates = new HashMap<>();
 		Map<Integer, Date> optimizationsTestSendDates = new HashMap<>();
 	    Map<Integer, Date> importsActivationDates = new HashMap<>();
 	    Map<Integer, Date> exportsActivationDates = new HashMap<>();
@@ -173,21 +170,24 @@ public class ComWorkflowActivationService {
 
 			Map<Integer, Date> mailingsSendDates = new HashMap<>();
 			optimizationsTestSendDates.clear();
-			reportsSendDates.clear();
 			importsActivationDates.clear();
 			exportsActivationDates.clear();
 
 			Map<Integer, Integer> ruleStartMailingTargets = new HashMap<>();
 			// Any start-icon has start-date so we need to process it to apply it to mailings in campaign (paying
 			// attention to deadline icons which we can meet).
-			processStartDate(workflowGraph, mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startIcon, activationDate, testing, adminTimeZone);
+			processStartDate(workflowGraph, mailingsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startIcon, activationDate, testing, adminTimeZone);
 
 			if (startIcon.getStartType() == WorkflowStartType.EVENT) {
 				switch (startIcon.getEvent()) {
 					// The action-based campaign.
 					case EVENT_REACTION:
-						// create trigger for reaction that will send action-based mailing(s) when reaction takes place
-						processActionBasedStart(companyId, workflowGraph, startIcon, workflowId, activationDate, testing, adminTimeZone);
+					    if (unpausing) {
+					        unpauseActionBasedWorkflow(workflow, admin, !afterPauseTimeout);
+                        } else {
+                            // create trigger for reaction that will send action-based mailing(s) when reaction takes place
+                            processActionBasedStart(companyId, workflowGraph, startIcon, workflowId, activationDate, testing, adminTimeZone);
+						}
 						break;
 
 					// The rule-based (date-based) campaign.
@@ -225,7 +225,7 @@ public class ComWorkflowActivationService {
 			// Collect workflow target groups (sequential mailings dependencies, decisions) and associate with mailings.
 			// Sequential mailings dependencies: ensures that every mailing wont be sent until previous mailings are sent (guarantees that
 			// a mailings order is kept and a new subscriber wont receive intermediate mailing).
-			processMailingTargets(companyId, workflowId, workflowGraph, startIcon, workflowConditions, isMailTrackingAvailable);
+			processMailingTargets(admin, workflowId, workflowGraph, startIcon, workflowConditions, isMailTrackingAvailable);
 
 
 			// Attention: lazy calculation
@@ -331,13 +331,16 @@ public class ComWorkflowActivationService {
 				}
 			}
 
-			// send/schedule mailings and reports
-			sendMailings(workflowGraph, mailingsSendDates, admin, testing, warnings, errorsList, userActions);
-			sendReports(workflowGraph, companyId, workflowId, reportsSendDates);
+			// send/schedule mailings
+			sendMailings(workflowGraph, mailingsSendDates, admin, testing, unpausing, warnings, errorsList, userActions);
 
 			updateAutoImportActivationDate(admin, workflowGraph, importsActivationDates);
 			updateAutoExportActivationDate(companyId, workflowGraph, exportsActivationDates);
 		}
+
+		if (unpausing) {
+		    workflowService.deletePauseUndoEntry(workflowId, companyId);
+        }
 
 		errors.addAll(errorsList);
 
@@ -439,17 +442,7 @@ public class ComWorkflowActivationService {
 				});
 	}
 
-	private void sendReports(WorkflowGraph workflowGraph, int companyId, int workflowId, Map<Integer, Date> reportsSendDates) {
-		for (Entry<Integer, Date> entry : reportsSendDates.entrySet()) {
-			WorkflowReport reportIcon = (WorkflowReport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
-			List<Integer> reports = reportIcon.getReports();
-			for (Integer reportId : reports) {
-				reportScheduleDao.scheduleWorkflowReport(reportId, companyId, workflowId, entry.getValue());
-			}
-		}
-	}
-
-	private void sendMailings(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Admin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	private void sendMailings(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Admin admin, boolean testing, boolean unpausing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
 		List<Integer> lockedMailings = new ArrayList<>();
 
@@ -481,14 +474,18 @@ public class ComWorkflowActivationService {
 				// Send normal or follow-up mailing.
 				MailingSendOptions options = MailingSendOptions.builder()
 						.setDate(sendDate)
-						.setAdminId(admin.getAdminID())
 						.setMaxRecipients(workflowMailing.getMaxRecipients())
 						.setBlockSize(workflowMailing.getBlocksize())
 						.setDefaultStepping(DEFAULT_STEPPING)
 						.setFollowupFor(getBaseMailingId(icon))
 						.setCheckForDuplicateRecords(workflowMailing.isDoubleCheck())
 						.setSkipWithEmptyTextContent(workflowMailing.isSkipEmptyBlocks())
-						.setReportSendDayOffset(workflowMailing.getAutoReport())
+						.setCleanupTestsBeforeDelivery(true)
+						.setReportSendEmail(admin.getEmail())
+						.setReportSendAfter24h(workflowMailing.getAutoReport() == WorkflowMailing.AUTOMATIC_REPORT_1DAY)
+						.setReportSendAfter48h(workflowMailing.getAutoReport() == WorkflowMailing.AUTOMATIC_REPORT_2DAYS)
+						.setReportSendAfter1Week(workflowMailing.getAutoReport() == WorkflowMailing.AUTOMATIC_REPORT_7DAYS)
+						.setRequiredAutoImport(findRequiredAutoImportId(workflowGraph, workflowMailing))
 						.setFromWorkflow(true)
 						.setDeliveryType(deliveryType)
 						.build();
@@ -500,6 +497,12 @@ public class ComWorkflowActivationService {
 					continue;
 				}
 
+				if (unpausing) { // do not send already sent mailings while unpausing of the workflow
+                    MailingStatus mailingStatus = mailingDao.getStatus(admin.getCompanyID(), mailingId);
+                    if (List.of(MailingStatus.SENDING, MailingStatus.SENT).contains(mailingStatus)) {
+                        continue;
+                    }
+                }
 				ServiceResult<UserAction> result = mailingSendService.sendMailing(mailing, options, admin);
 
 				if (!result.isSuccess()) {
@@ -512,8 +515,8 @@ public class ComWorkflowActivationService {
 				// Send action-based or date-based mailing.
 				MailingSendOptions options = MailingSendOptions.builder()
 						.setDate(sendDate)
-						.setAdminId(admin.getAdminID())
 						.setDeliveryType(deliveryType)
+						.setRequiredAutoImport(findRequiredAutoImportId(workflowGraph, icon))
 						.setFromWorkflow(true)
 						.build();
 
@@ -524,6 +527,12 @@ public class ComWorkflowActivationService {
 					continue;
 				}
 
+                if (unpausing) { // do not send already sent mailings while unpausing of the workflow
+                    MailingStatus mailingStatus = mailingDao.getStatus(admin.getCompanyID(), mailingId);
+                    if (List.of(MailingStatus.SENDING, MailingStatus.SENT).contains(mailingStatus)) {
+                        continue;
+                    }
+                }
 				ServiceResult<UserAction> result = mailingSendService.sendMailing(mailing, options, admin);
 
 				if (!result.isSuccess()) {
@@ -534,7 +543,7 @@ public class ComWorkflowActivationService {
 				}
 
 				// Use "test" mailing status on workflow test run.
-				mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
+				mailingDao.updateStatus(admin.getCompanyID(), mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE, null);
 			}
 		}
 
@@ -547,6 +556,16 @@ public class ComWorkflowActivationService {
 
 			errors.add(Message.of("error.mailing.approval.missing", usedMailingsStr));
 		}
+	}
+
+	private int findRequiredAutoImportId(WorkflowGraph workflowGraph, WorkflowIcon workflowMailing) {
+		WorkflowIcon importIcon = workflowGraph.getPreviousIconByType(workflowMailing, WorkflowIconType.IMPORT.getId(), Collections.emptySet());
+		if (importIcon instanceof WorkflowImport) {
+			WorkflowImport autoImportIcon = ((WorkflowImport) importIcon);
+			return autoImportIcon.isErrorTolerant() ? 0 : autoImportIcon.getImportexportId();
+		}
+
+		return 0;
 	}
 
 	// Collect all the mailings used in campaign and create map (mailingId -> mailingIcon).
@@ -922,7 +941,7 @@ public class ComWorkflowActivationService {
     	return processor.process(companyId, workflowId, workflowGraph, startIcon);
 	}
 
-	private void processMailingTargets(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, ConditionGroup> workflowConditions, boolean isMailTrackingAvailable) {
+	private void processMailingTargets(Admin admin, int workflowId, WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, ConditionGroup> workflowConditions, boolean isMailTrackingAvailable) {
 		final Set<Integer> activeIconTypes = new HashSet<>();
 		activeIconTypes.add(WorkflowIconType.DECISION.getId());
 		activeIconTypes.add(WorkflowIconType.IMPORT.getId());
@@ -989,14 +1008,15 @@ public class ComWorkflowActivationService {
 			if (mailingId > 0) {
 				workflowConditions.put(mailingId, new ConditionGroup(false, true) {{
 					for (TargetCondition condition : immediateDependencies.getOrDefault(icon.getId(), Collections.emptyList())) {
-						add(composeCondition(companyId, workflowId, workflowGraph, immediateDependencies, cache, new HashSet<>(), condition.getTargetId(), condition.isPositive(), isMailTrackingAvailable));
+						add(composeCondition(admin, workflowId, workflowGraph, immediateDependencies, cache, new HashSet<>(), condition.getTargetId(), condition.isPositive(), isMailTrackingAvailable));
 					}
 				}});
 			}
 		}
 	}
 
-	private Condition composeCondition(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, List<TargetCondition>> dependencies, Map<CompositeKey, Condition> cache, Set<Integer> reactedMailings, int iconId, boolean positive, boolean isMailtrackingAvailable) {
+	private Condition composeCondition(Admin admin, int workflowId, WorkflowGraph workflowGraph, Map<Integer, List<TargetCondition>> dependencies, Map<CompositeKey, Condition> cache, Set<Integer> reactedMailings, int iconId, boolean positive, boolean isMailtrackingAvailable) {
+		int companyId = admin.getCompanyID();
 		WorkflowIcon icon = workflowGraph.getNodeByIconId(iconId).getNodeIcon();
 
 		// Use composite key to provide separate target groups for different decision branches.
@@ -1018,7 +1038,7 @@ public class ComWorkflowActivationService {
 				// AO final mailing
 				condition = new ConditionGroup(false) {{
 					for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-						add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+						add(composeCondition(admin, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 					}
 				}};
 			}
@@ -1055,7 +1075,7 @@ public class ComWorkflowActivationService {
 					}
 
 					for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-						add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+						add(composeCondition(admin, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 					}
 
 					if (excludeReactedMailing) {
@@ -1064,31 +1084,11 @@ public class ComWorkflowActivationService {
 				}});
 			}};
 		} else if (icon.getType() == WorkflowIconType.IMPORT.getId()) {
-			WorkflowImport autoImport = (WorkflowImport) icon;
-
-			ConditionGroup incomingConditions = new ConditionGroup(false, true) {{
+			return new ConditionGroup(false, true) {{
 				for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-					add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+					add(composeCondition(admin, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 				}
 			}};
-
-			if (autoImport.isErrorTolerant()) {
-				return incomingConditions;
-			} else {
-				if (condition == null) {
-					int autoImportTargetId = createImportTarget(companyId, workflowId, autoImport);
-					condition = new TargetCondition(autoImportTargetId);
-					cache.put(cacheKey, condition);
-				}
-
-				Condition importCondition = condition.clone();
-				importCondition.setPositive(positive);
-
-				return new ConditionGroup(true, true) {{
-					add(importCondition);
-					add(incomingConditions);
-				}};
-			}
 		}
 
 		if (condition == null) {
@@ -1118,7 +1118,6 @@ public class ComWorkflowActivationService {
 		reaction.setAdminTimezone(timezone);
 		reaction.setReactionType(startIcon.getReaction());
 		reaction.setOnce(startIcon.isExecuteOnce());
-		reaction.setMailingsToSend(Collections.emptyList());
 
 		reaction.setMailinglistId(getMailingListId(workflowGraph, startIcon));
 		reaction.setTriggerMailingId(startIcon.getMailingId());
@@ -1131,9 +1130,6 @@ public class ComWorkflowActivationService {
 			String sqlRules = eqlHelper.generateRuleSQL(companyId, startIcon.getRules(), startIcon.getProfileField(), startIcon.getDateFormat(), false);
 			reaction.setRulesSQL(sqlRules);
 		}
-
-		// Legacy mode should never be used for newly activated workflows.
-		reaction.setLegacyMode(false);
 
         reactionDao.saveReaction(reaction);
 
@@ -1291,26 +1287,15 @@ public class ComWorkflowActivationService {
 		return 0;
 	}
 
-	private int createImportTarget(int companyId, int workflowId, WorkflowImport importIcon) {
-		int autoImportId = importIcon.getImportexportId();
-
-    	if (autoImportId > 0) {
-			String eql = String.format("FINISHED AUTOIMPORT %d", autoImportId);
-			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "auto-import succeeded")).getId();
-		}
-
-		return 0;
-	}
-
-	private void processStartDate(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Map<Integer, Date> reportsSendDates, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, WorkflowStart startIcon, Date date, boolean testRun, TimeZone adminTimeZone) {
+	private void processStartDate(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, WorkflowStart startIcon, Date date, boolean testRun, TimeZone adminTimeZone) {
 		WorkflowNode startNode = workflowGraph.getNodeByIcon(startIcon);
 		if (!testRun) {
 			date = WorkflowUtils.getStartStopIconDate(startIcon, adminTimeZone);
 		}
-		processStartDate(mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startNode.getNextNodes(), date, testRun, adminTimeZone);
+		processStartDate(mailingsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startNode.getNextNodes(), date, testRun, adminTimeZone);
 	}
 
-	private void processStartDate(Map<Integer, Date> mailingsSendDates, Map<Integer, Date> reportsSendDates, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, List<WorkflowNode> nodes, Date date, boolean testRun, TimeZone adminTimeZone) {
+	private void processStartDate(Map<Integer, Date> mailingsSendDates,  Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, List<WorkflowNode> nodes, Date date, boolean testRun, TimeZone adminTimeZone) {
 		for (WorkflowNode node : nodes) {
 			WorkflowIcon icon = node.getNodeIcon();
 			int iconId = icon.getId();
@@ -1323,10 +1308,7 @@ public class ComWorkflowActivationService {
 					mailingsSendDates.put(mailingId, min(mailingsSendDates.get(mailingId), date));
 				}
 			}
-			// store report send date
-			else if (icon.getType() == WorkflowIconType.REPORT.getId()) {
-				reportsSendDates.put(iconId, min(reportsSendDates.get(iconId), date));
-			}
+
 			// store the date for send of optimization test mailings
 			else if (WorkflowUtils.isAutoOptimizationIcon(icon)) {
 				optimizationsTestSendDates.put(iconId, min(optimizationsTestSendDates.get(iconId), date));
@@ -1344,7 +1326,7 @@ public class ComWorkflowActivationService {
 				WorkflowDeadline deadline = (WorkflowDeadline) node.getNodeIcon();
 				nextDate = applyDeadline(date, deadline, testRun, adminTimeZone);
 			}
-			processStartDate(mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, node.getNextNodes(), nextDate, testRun, adminTimeZone);
+			processStartDate(mailingsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, node.getNextNodes(), nextDate, testRun, adminTimeZone);
 		}
 	}
 
@@ -1407,10 +1389,6 @@ public class ComWorkflowActivationService {
 		this.reactionDao = reactionDao;
 	}
 
-	public void setReportScheduleDao(ComWorkflowReportScheduleDao reportScheduleDao) {
-		this.reportScheduleDao = reportScheduleDao;
-	}
-
     public void setAutoImportService(AutoImportService autoImportService) {
         this.autoImportService = autoImportService;
     }
@@ -1451,6 +1429,53 @@ public class ComWorkflowActivationService {
 	public void setTargetService(ComTargetService targetService) {
 		this.targetService = targetService;
 	}
+
+    public ServiceResult<List<UserAction>> autoUnpauseWorkflow(Workflow workflow, Admin admin) throws Exception {
+        List<Message> errors = new ArrayList<>();
+        List<Message> warns = new ArrayList<>();
+        List<UserAction> userActions = new ArrayList<>();
+
+        restoreWorkflowBeforePause(workflow, admin);
+        boolean activated = activateWorkflow(workflow.getWorkflowId(), admin, false, true, true, warns, errors, userActions);
+        Workflow.WorkflowStatus newStatus = activated ? STATUS_ACTIVE : Workflow.WorkflowStatus.STATUS_FAILED;
+        workflowService.changeWorkflowStatus(workflow.getWorkflowId(), workflow.getCompanyId(), newStatus);
+
+        if (!errors.isEmpty()) {
+            return ServiceResult.error(errors);
+        }
+        return ServiceResult.warning(userActions, activated, warns.toArray(new Message[0]));
+    }
+
+    private void restoreWorkflowBeforePause(Workflow workflow, Admin pauseAdmin) {
+        String schema = workflowService.getSchemaBeforePause(workflow.getWorkflowId(), workflow.getCompanyId());
+        if (StringUtils.isBlank(schema)) {
+            return;
+        }
+        workflowService.saveWorkflow(pauseAdmin, workflow, workflowService.getIcons(schema));
+    }
+
+    private void unpauseActionBasedWorkflow(Workflow workflow, Admin admin, boolean updateDeclarations) {
+        if (updateDeclarations) {
+            updateStepsDeclarations(workflow, admin); // mailing icons can be changed during pause, so declarations update needed
+        }
+        reactionDao.activateWorkflowReactions(workflow.getWorkflowId(), admin.getCompanyID());
+    }
+
+    private void updateStepsDeclarations(Workflow workflow, Admin admin) {
+        int companyId = admin.getCompanyID();
+        int workflowId = workflow.getWorkflowId();
+        int reactionId = reactionDao.getReactionId(workflowId, companyId);
+        TimeZone adminTimeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
+        
+        WorkflowGraph workflowGraph = new WorkflowGraph(workflow.getWorkflowIcons());
+        WorkflowStart startIcon = (WorkflowStart) workflowGraph.getAllNodesByType(WorkflowIconType.START.getId()).get(0).getNodeIcon();
+        List<WorkflowReactionStepDeclaration> steps = processReactionSteps(companyId, workflowId, workflowGraph, startIcon, false, adminTimeZone);
+        
+        List<WorkflowReactionStepDeclaration> stepsDeclarations = steps.stream()
+                .filter(step -> step.getTargetId() > 0 || step.getMailingId() > 0) // mailing icons can be changed during pause
+                .collect(Collectors.toList());
+        reactionDao.updateStepsDeclarations(stepsDeclarations, reactionId, companyId);
+    }
 
 	private class ActionBasedCampaignProcessor {
 		private TimeZone timezone;

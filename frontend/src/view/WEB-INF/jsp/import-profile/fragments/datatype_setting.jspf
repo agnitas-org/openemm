@@ -1,1 +1,24 @@
-<%-- This file was left empty intentionally. --%>
+
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+
+<div class="form-group">
+	<div class="col-sm-4">
+		<label class="control-label">
+			<label for="recipient-import-format-separator">
+				<mvc:message code="import.datatype" />
+			</label>
+			<button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/Datatype.xml" tabindex="-1" type="button"></button>
+		</label>
+	</div>
+
+	<div class="col-sm-8">
+		<mvc:select id="recipient-import-format-separator" path="datatype" cssClass="form-control" data-field-vis="">
+			<mvc:option value="CSV" data-field-vis-show="#separator-input-group,#text-recognition-input-group,#no-headers-input-group">CSV</mvc:option>
+			<mvc:option value="XLS" data-field-vis-hide="#separator-input-group,#text-recognition-input-group,#no-headers-input-group">Excel</font></mvc:option>
+			<mvc:option value="ODS" data-field-vis-hide="#separator-input-group,#text-recognition-input-group,#no-headers-input-group">ODS</font></mvc:option>
+			<c:if test="${isJsonImportAllowed}">
+				<mvc:option value="JSON" data-field-vis-hide="#separator-input-group,#text-recognition-input-group,#no-headers-input-group">JSON</mvc:option>
+			</c:if>
+		</mvc:select>
+	</div>
+</div>

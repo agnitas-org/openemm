@@ -17,6 +17,8 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
+import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
 import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
@@ -445,8 +447,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
                 return "mailing_devices_overview.rptdesign";
             case TRACKING_POINT_WEEK_OVERVIEW:
                 return "mailing_tracking_point_week_overview.rptdesign";
-            case SOCIAL_NETWORKS:
-                return "mailing_social_networks.rptdesign";
             case SIMPLE_TRACKING_POINT:
                 return "mailing_simple_tracking_point.rptdesign";
             case NUM_TRACKING_POINT_WEEK_OVERVIEW:
@@ -658,6 +658,51 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setInternalAccess(false).build();
 
         return generateUrlWithParams(options, admin.getCompanyID());
+	}
+
+	@Override
+	public String getReportStatisticsUrl(Admin admin, BirtReportStatisticDto settings) throws Exception {
+		int companyId = admin.getCompanyID();
+		Map<String, Object> map = new HashMap<>();
+		map.put(REPORT_NAME, settings.getReportName());
+		map.put(COMPANY_ID, companyId);
+		map.put(ACCOUNT_ID, companyId);
+		map.put(REPORT_ID, settings.geReportId());
+
+		DateFormat dateFormat = admin.getDateFormat();
+		map.put(REPORT_CREATE_DATE, dateFormat.format(new Date()));
+		map.put(FORMAT, settings.getReportFormat());
+		map.putAll(settings.getReportUrlParameters());
+
+		BirtUrlOptions options;
+		if (configService.isExtendedAltgEnabled(admin.getCompanyID())) {
+			options = BirtUrlOptions.builder(configService, adminService)
+					.setAdmin(admin)
+					.setAltgMatcher(a -> false)
+					.setParameters(map)
+					.setInternalAccess(true)
+					.build();
+		} else {
+			options = BirtUrlOptions.builder(configService, adminService)
+					.setAdmin(admin)
+					.setAltgChecker((a) -> false)
+					.setParameters(map)
+					.setInternalAccess(true)
+					.build();
+		}
+
+		return generateUrlWithParams(options, companyId);
+	}
+
+	@Override
+	public File getBirtReportTmpFile(BirtReportDownload birtDownload, final int companyId) {
+		try {
+			int birtReportId = birtDownload.getReportId();
+			return exportBirtStatistic(String.format(BIRT_REPORT_TEMP_FILE_PATTERN, birtReportId), ".tmp", BIRT_REPORT_TEMP_DIR, birtDownload.getBirtFileUrl(), companyId);
+		} catch (Exception e) {
+			logger.error("Cannot get birt report file: " + e.getMessage());
+			return null;
+		}
 	}
 
 	/**

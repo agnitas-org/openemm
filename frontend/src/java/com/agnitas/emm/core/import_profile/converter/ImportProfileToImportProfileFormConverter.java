@@ -13,6 +13,7 @@ package com.agnitas.emm.core.import_profile.converter;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +37,7 @@ public class ImportProfileToImportProfileFormConverter implements Converter<Impo
         form.setZipPassword(importProfile.getZipPassword());
         form.setFirstKeyColumn(importProfile.getFirstKeyColumn());
         form.setCheckForDuplicates(importProfile.getCheckForDuplicates());
+        form.setShouldCheckForDuplicates(CheckForDuplicates.COMPLETE.equals(detectCheckForDuplicates(importProfile.getCheckForDuplicates())));
         form.setUpdateAllDuplicates(importProfile.getUpdateAllDuplicates());
         form.setDefaultMailType(importProfile.getDefaultMailType());
         form.setImportProcessActionID(importProfile.getImportProcessActionID());
@@ -52,8 +54,17 @@ public class ImportProfileToImportProfileFormConverter implements Converter<Impo
         form.setImportMode(importProfile.getImportMode());
         form.setReportLocale(localeAsStr(importProfile.getReportLocale()));
         form.setMediatypes(createMediatypesMap(importProfile));
+        form.setSelectedMediatypes(importProfile.getMediatypes());
 
         return form;
+    }
+
+    private CheckForDuplicates detectCheckForDuplicates(int code) {
+        try {
+            return CheckForDuplicates.getFromInt(code);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Map<Integer, String> createMediatypesMap(ImportProfile importProfile) {

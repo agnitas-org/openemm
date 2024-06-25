@@ -1,8 +1,28 @@
 AGN.Lib.Controller.new('mailing-overview', function() {
+  const Form = AGN.Lib.Form;
   var adminDateFormat = 'dd.MM.yyyy';
   
   this.addDomInitializer('mailing-overview', function() {
     adminDateFormat = this.config.adminDateFormat;
+  });
+
+  this.addAction({click: 'restore'}, function () {
+    const form = Form.get(this.el);
+
+    $.post(this.el.attr('href')).done(function (resp) {
+      form.updateHtml(resp);
+    });
+  });
+
+  this.addAction({click: 'bulk-restore'}, function () {
+    const form = Form.get(this.el);
+
+    $.ajax(AGN.url('/mailing/bulkRestore.action'), {
+      method: 'POST',
+      data: form.data()
+    }).done(function (resp) {
+      form.updateHtml(resp);
+    });
   });
 
   this.addAction({click: 'send-date-filter-period'}, function () {

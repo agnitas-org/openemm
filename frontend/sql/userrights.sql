@@ -116,7 +116,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailinglists.addresses' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 
 -- User/Admin: EMM-Master
-DELETE FROM admin_permission_tbl WHERE admin_id = 1;
+DELETE FROM admin_permission_tbl WHERE admin_id = 1 AND permission_name NOT LIKE '%.migration';
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'actions.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'actions.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'actions.show');

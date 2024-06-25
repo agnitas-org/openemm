@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.wsmanager.dao;
 
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
@@ -84,6 +85,8 @@ public interface WebserviceUserDao {
 	 */
 	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(int companyID, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
 	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserMasterList(String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
+
+	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(WebserviceUserOverviewFilter filter) throws WebserviceUserDaoException;
 
 	int getNumberOfWebserviceUsers(int companyID);
 

@@ -35,9 +35,9 @@ public class MailingBlockSizeServiceImpl implements MailingBlockSizeService {
     @Override
     public Tuple<Integer, Integer> calculateBlocksizeStepping(int companyId, int stepping, int blocksize) {
         try {
-            int defaultBlocksize = getDefaultBlocksize(companyId);
-            if (defaultBlocksize > 0) {
-                return AgnUtils.makeBlocksizeAndSteppingFromBlocksize(defaultBlocksize, DEFAULT_STEPPING);
+            int maxBlocksize = getMaxBlocksize(companyId, blocksize);
+            if (maxBlocksize != UNLIMITED_SPEED) {
+                return AgnUtils.makeBlocksizeAndSteppingFromBlocksize(maxBlocksize, DEFAULT_STEPPING);
             }
 
             if (stepping == DEFAULT_STEPPING) {
@@ -95,11 +95,12 @@ public class MailingBlockSizeServiceImpl implements MailingBlockSizeService {
         return blockSize;
     }
 
-    private int getDefaultBlocksize(int companyID) {
-        if (configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyID)) {
-            return configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyID);
+    private int getMaxBlocksize(int companyID, int blocksize) {
+        if (!configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyID)) {
+            return UNLIMITED_SPEED;
         }
 
-        return 0;
+        int maxBlocksize = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyID);
+        return blocksize > maxBlocksize ? maxBlocksize : blocksize;
     }
 }

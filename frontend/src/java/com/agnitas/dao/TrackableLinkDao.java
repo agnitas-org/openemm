@@ -16,9 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.agnitas.beans.TrackableLink;
-
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
@@ -36,7 +34,7 @@ public interface TrackableLinkDao {
      *
      * @return trackable link or <code>null</code>.
      */
-    ComTrackableLink getTrackableLink(final int linkID, final int companyID, final boolean includeDeleted);
+    TrackableLink getTrackableLink(final int linkID, final int companyID, final boolean includeDeleted);
  
 	/**
 	 * Do not use this method directly for click tracking!
@@ -48,15 +46,17 @@ public interface TrackableLinkDao {
 	 */
 	boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 	
-	List<LinkProperty> getLinkProperties(ComTrackableLink link);
+	List<LinkProperty> getLinkProperties(TrackableLink link);
 
 	boolean deleteRdirUrlsByMailing(int mailingID);
 
 	void storeLinkProperties(int linkId, List<LinkProperty> properties);
     
-    List<ComTrackableLink> getTrackableLinks(int companyID, int mailingID);
+    List<TrackableLink> getTrackableLinks(int companyID, int mailingID);
 
-    List<ComTrackableLink> getTrackableLinks(int companyID, List<Integer> urlIds);
+    Map<String, TrackableLink> getTrackableLinksMap(int mailingId, int companyId, boolean includeDeleted);
+
+    List<TrackableLink> getTrackableLinks(int companyId, int mailingId, boolean includeDeleted);
     
 	void deleteTrackableLinksExceptIds(int companyID, int mailingID, Collection<Integer> ids);
 
@@ -74,23 +74,23 @@ public interface TrackableLinkDao {
 
     void bulkClearExtensions(int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
 
-	Optional<ComTrackableLink> findLinkByFullUrl(String fullUrl, int mailingID, int companyID);
+	Optional<TrackableLink> findLinkByFullUrl(String fullUrl, int mailingID, int companyID);
 	
-	void reactivateLink(final ComTrackableLink link);
+	void reactivateLink(final TrackableLink link);
 	
 	/**
      * Getter for property trackableLink by link id and company id.
      *
      * @return Value of trackableLink.
      */
-    ComTrackableLink getTrackableLink(int linkID, int companyID);
+    TrackableLink getTrackableLink(int linkID, int companyID);
     
     /**
      * Getter for property trackableLink by link id and company id.
      *
      * @return Value of trackableLink.
      */
-    ComTrackableLink getTrackableLink(String url, int companyID, int mailingID);
+    TrackableLink getTrackableLink(String url, int companyID, int mailingID);
 
     /**
      * Saves trackableLink.
@@ -98,9 +98,9 @@ public interface TrackableLinkDao {
      * @return Saved trackableLink id.
      * @param link
      */
-    int saveTrackableLink(ComTrackableLink link);
+    int saveTrackableLink(TrackableLink link);
     
-    void batchSaveTrackableLinks(int companyID, int mailingId, Map<String, ComTrackableLink> trackableLinksMap, boolean removeUnusedLinks);
+    void batchSaveTrackableLinks(int companyID, int mailingId, Map<String, TrackableLink> trackableLinksMap, boolean removeUnusedLinks);
 
 	List<TrackableLinkListItem> listTrackableLinksForMailing(int companyID, int mailingID);
 

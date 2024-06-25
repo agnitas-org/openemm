@@ -1,0 +1,191 @@
+
+
+//.modal {
+  //  display:  none;
+  //  position: fixed;
+  //  left: 0;
+  //  right: 0;
+  //  top: 50%;
+  //  max-height: 100vh;
+  //
+  //  overflow:   auto;
+  //  z-index:    1003;
+  //
+  //  @include translate(0, -50%);
+//}
+
+
+.modal-content {
+  border: $border-default;
+  background-color: var(--main-bg-color);
+  overflow: hidden;
+}
+
+.modal-header {
+  @extend .tile-header;
+  border-bottom-color: transparent;
+  font-size: $font-size-lg;
+
+  .modal-title {
+    @extend .tile-title;
+    line-height: 26px;
+  }
+  .modal-controls {
+    @extend .tile-controls;
+  }
+  .modal-title-controls {
+    @extend .tile-title-controls;
+  }
+}
+
+.modal-body {
+  @include hide-scroll;
+  
+//  position: relative;
+  padding: $gap-md;
+//
+//  .modal-separator:last-child {
+//    display: none;
+//  }
+//
+//  &.ui-modal-loading {
+//    overflow: hidden;
+//  }
+}
+
+.modal-footer {
+  padding: $gap-md;
+  padding-top: 0;
+  gap: $gap-md;
+
+  border-top: none;
+  & > * {
+    margin: 0;
+  }
+}
+
+.modal-content {
+  color: var(--default-text-color);
+}
+
+@include media-breakpoint-down(lg) {
+  .modal-dialog {
+    padding: $gap-sm + $header-height $gap-sm $gap-sm $gap-sm;
+    
+    .modal-content {
+      border: $border-default;
+      border-radius: $border-radius;
+      height: auto;
+    }
+    
+    .modal-header {
+      padding: $gap-sm;
+      @include border-top-radius;
+    }
+    
+    .modal-body {
+      padding: $gap-sm;
+    }
+  }
+}
+
+.modal.modal-adaptive {
+  text-align: center;
+}
+
+.modal-adaptive {
+  overflow-x: auto;
+  .modal-dialog {
+    max-width: max-content;
+    display: inline-flex;
+    width: auto;
+    text-align: initial;
+  }
+}
+
+.modal-dialog-full-height {
+  @extend .modal-dialog-scrollable;
+
+  .modal-content {
+    height: 100%;
+  }
+}
+
+//@media (max-width: 440px) {
+//  .modal-dialog {
+//    margin-left: 10px;
+//    margin-right: 10px;
+//  }
+//
+//  .modal-header, .modal-body {
+//    padding-left: 15px;
+//    padding-right: 15px;
+//  }
+//
+//  .modal-separator {
+//    margin: 30px -15px;
+//  }
+//}
+
+//.modal-wide {
+//  .modal-dialog {
+//    @media screen and (min-width: 768px) {
+//      width: 740px;
+//    }
+//  }
+//}
+//
+//.modal-extra-wide {
+//  .modal-dialog {
+//    width: 80vw;
+//    max-width: 1200px;
+//  }
+//}
+
+[data-modal] {
+  cursor: pointer;
+}
+
+@mixin modal-variant($state, $color) {
+  .modal {
+    &-#{$state} {
+      .modal-content {
+        border-color: $color;
+      }
+
+      .modal-header {
+        color: $white;
+        background-color: $color;
+
+        .modal-title {
+          color: $white;
+          font-weight: $font-weight-semibold;
+        }
+
+        .btn-close {
+          color: $white;
+
+          &:hover, &:focus {
+            color: darken($color, 50%);
+          }
+        }
+      }
+    }
+  }
+}
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include modal-variant($state, $color);
+}
+
+.modal-editors-container {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: $gap-md;
+  width: 90vw;
+  height: calc(85vh - 120px); // 120px - modal except body
+}

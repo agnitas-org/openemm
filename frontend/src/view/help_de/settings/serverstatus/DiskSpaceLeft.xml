@@ -1,0 +1,4 @@
+<HelpBalloon>
+        <title><![CDATA[Verbleibender Festplattenspeicherplatz]]></title>
+        <content><![CDATA[Mit dieser Anzeige erhalten Sie eine &#xDC;bersicht zum aktuellen F&#xFC;llgrad Ihres Festplattenspeichers aufgrund der vom EMM generierten Log-Dateien. Die Anzeige ver&#xE4;ndert sich farblich mit steigendem F&#xFC;llgrad, <75%: Gr&#xFC;n, <90%: Gelb, >=90%: Rot, und dient Ihnen als Indikator um eine vollst&#xE4;ndige Auslastung des Speicherplatzes fr&#xFC;hzeitig zu erkennen.]]></content>
+</HelpBalloon>

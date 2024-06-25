@@ -10,16 +10,31 @@
 
 package com.agnitas.emm.restful.binding;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.service.RecipientType;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
+import com.agnitas.emm.restful.BaseRequestResponse;
+import com.agnitas.emm.restful.ErrorCode;
+import com.agnitas.emm.restful.JsonRequestResponse;
+import com.agnitas.emm.restful.ResponseType;
+import com.agnitas.emm.restful.RestfulClientException;
+import com.agnitas.emm.restful.RestfulNoDataFoundException;
+import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonArray;
+import com.agnitas.json.JsonDataType;
+import com.agnitas.json.JsonNode;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader.JsonToken;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.impl.BindingEntryImpl;
@@ -34,31 +49,14 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipient.service.RecipientType;
-import com.agnitas.emm.restful.BaseRequestResponse;
-import com.agnitas.emm.restful.ErrorCode;
-import com.agnitas.emm.restful.JsonRequestResponse;
-import com.agnitas.emm.restful.ResponseType;
-import com.agnitas.emm.restful.RestfulClientException;
-import com.agnitas.emm.restful.RestfulNoDataFoundException;
-import com.agnitas.emm.restful.RestfulServiceHandler;
-import com.agnitas.json.Json5Reader;
-import com.agnitas.json.JsonArray;
-import com.agnitas.json.JsonDataType;
-import com.agnitas.json.JsonNode;
-import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonReader.JsonToken;
-
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * This restful service is available at:
@@ -839,6 +837,10 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				} else if (customerIDs.size() > 0) {
 					int changedBindings = bindingEntryDao.bulkUpdateStatus(admin.getCompanyID(), mailinglistIds, null, userStatusToSet, userStatusToSet.name() + " by Admin via Restful API", customerIDs);
 					int createdBindings = bindingEntryDao.bulkCreate(admin.getCompanyID(), mailinglistIds, MediaTypes.EMAIL, userStatusToSet, userStatusToSet.name() + " by Admin via Restful API", customerIDs);
+
+					userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
+					writeActivityLog(StringUtils.join(customerIDs, ", "), request, admin);
+
 					return (createdBindings > 0 ? createdBindings + " binding entries created." : "")
 							+ (createdBindings > 0 && changedBindings > 0 ? " " : "")
 							+ (changedBindings > 0 ? changedBindings + " binding entries changed." : "");
@@ -989,11 +991,19 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			} else if (bindingEntryDao.exist(newBindingEntry.getCustomerID(), admin.getCompanyID(), newBindingEntry.getMailinglistID(), newBindingEntry.getMediaType())) {
 				if (actionID == null) {
 					bindingEntryDao.updateBinding(newBindingEntry, admin.getCompanyID());
+
+					userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
+					writeActivityLog(String.valueOf(requestedCustomerID), request, admin);
+
 					return "1 binding entry updated";
 				} else if (!emmActionService.actionExists(actionID, admin.getCompanyID())) {
 					throw new RestfulClientException("Invalid non-existent action_id: " + actionID);
 				} else {
 					bindingEntryDao.updateBinding(newBindingEntry, admin.getCompanyID());
+
+					userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
+					writeActivityLog(String.valueOf(requestedCustomerID), request, admin);
+
 					final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
 					
 					final Map<String, Object> params = new HashMap<>();
@@ -1027,11 +1037,19 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			} else {
 				if (actionID == null) {
 					bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+
+					userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
+					writeActivityLog(String.valueOf(requestedCustomerID), request, admin);
+
 					return "1 binding entry created";
 				} else if (!emmActionService.actionExists(actionID, admin.getCompanyID())) {
 					throw new RestfulClientException("Invalid non-existent action_id: " + actionID);
 				} else {
 					bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+
+					userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
+					writeActivityLog(String.valueOf(requestedCustomerID), request, admin);
+
 					final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
 					
 					final Map<String, Object> params = new HashMap<>();

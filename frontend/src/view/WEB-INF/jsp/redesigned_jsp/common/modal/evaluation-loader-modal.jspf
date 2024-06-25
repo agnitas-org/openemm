@@ -1,0 +1,17 @@
+
+<script id="evaluate-loader-template" type="text/x-mustache-template">
+    <div id="evaluate-loader-modal" class="modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <img alt="" src='<c:url value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>'>
+                    <p><mvc:message code="GWUA.pdf.report.generating"/></p>
+                </div>
+                <div class="modal-footer">
+                    <div id="progress-bar"></div>
+                    <strong id="progress-text">0 bytes</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

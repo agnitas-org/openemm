@@ -1,0 +1,30 @@
+
+<%--@elvariable id="worldmailinglist" type="java.util.List<java.util.Map<java.lang.String, java.lang.Object>"--%>
+
+<script id="dashboard-tile-statistics" type="text/x-mustache-template">
+    <c:set var="mailingsAvailable" value="${worldmailinglist.size() gt 0}" />
+
+    <div class="tile draggable-tile" id="dashboard-statistics">
+        <div class="tile-header">
+            <h1 class="tile-title">{{- tileName }}</h1>
+            <c:if test="${mailingsAvailable}">
+                <div class="tile-controls min-w-0">
+                    <%@ include file="../statistics-mailing-dropdown.jspf" %>
+                </div>
+            </c:if>
+        </div>
+        <div class="tile-body ${mailingsAvailable ? "has-chart" : ""}">
+            <c:choose>
+                <c:when test="${mailingsAvailable}">
+                    <canvas class="h-100 clickable" data-action="open-mailing-statistics">
+                        <%-- Loads by JS --%>
+                    </canvas>
+                </c:when>
+                <c:otherwise>
+                    <%@ include file="../statistics-no-mailings-notification.jspf" %>
+                </c:otherwise>
+            </c:choose>
+        </div>
+        {{= overlay }}
+    </div>
+</script>

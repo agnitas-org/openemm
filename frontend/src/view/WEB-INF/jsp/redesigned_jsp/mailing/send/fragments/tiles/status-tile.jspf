@@ -1,0 +1,90 @@
+
+<div id="status-tile" class="tile" data-editable-tile="">
+    <div class="tile-header">
+        <h1 class="tile-title"><mvc:message code="Status" /></h1>
+
+        <div class="tile-controls">
+            <c:set var="workstatusMsg" value="" />
+            <c:if test="${not empty form.workStatus}">
+                <mvc:message var="workstatusMsg" code="${form.workStatus}"/>
+            </c:if>
+            <span id="workstatus-icon" class="status-badge status-badge--lg ${form.workStatus}" data-tooltip="${workstatusMsg}"></span>
+        </div>
+    </div>
+
+    <div class="tile-body js-scrollable">
+        <div class="row g-3">
+            <c:if test="${not empty deliveryInfoBlock}">
+                <div class="col-12">${deliveryInfoBlock}</div>
+            </c:if>
+
+            <c:if test="${canLoadStatusBox}">
+                <c:url var="deliveryStatisticsBoxLink" value="/mailing/send/${tmpMailingID}/delivery-status-box/load.action"/>
+                <div id="delivery-status-box" class="col-12" data-load="${deliveryStatisticsBoxLink}" data-load-interval="50000"></div>
+            </c:if>
+        </div>
+    </div>
+</div>
+
+<c:if test="${not isTemplate && canLoadStatusBox}">
+    <script id="delivery-status-buttons" type="text/x-mustache-template">
+        <c:url var="confirmResumeLink" value="/mailing/send/${tmpMailingID}/confirm-resume.action"/>
+        <c:url var="confirmCancelLink" value="/mailing/send/${tmpMailingID}/confirm-cancel.action"/>
+        <c:url var="resumeByCopyLink" value="/mailing/send/${tmpMailingID}/confirm-resume-by-copy.action"/>
+
+        {{ if (cancelable) { }}
+            <li class="delivery-status-action">
+                <a href="${confirmCancelLink}" class="btn" data-confirm="">
+                    <i class="icon icon-ban"></i>
+                    <span class="text">
+                            {{ if (deliveryStatus === 3 || deliveryStatus === 4) { }}
+                                <mvc:message code="mailing.PauseDelivery"/>
+                            {{ } else { }}
+                                <mvc:message code="mailing.CancelGeneration"/>
+                            {{ } }}
+                        </span>
+                </a>
+            </li>
+        {{ } }}
+        <emm:ShowByPermission token="mailing.resume.world">
+            {{ if (stopped) { }}
+                <li class="delivery-status-action">
+                    {{ if (resumable) { }}
+                        <a href="${confirmResumeLink}" class="btn" data-confirm="">
+                            <i class="icon icon-paper-plane"></i>
+                            <span class="text">
+                                {{ if (deliveryStatus === 3 || deliveryStatus === 4 || deliveryStatus === 8) { }}
+                                    <mvc:message code="mailing.ResumeDelivery"/>
+                                {{ } else { }}
+                                    <mvc:message code="mailing.ResumeGeneration"/>
+                                {{ } }}
+                            </span>
+                        </a>
+                    {{ } else { }}
+                        <span data-tooltip="<mvc:message code="error.mailing.delivery.resuming.impossible" arguments="48"/>">
+                            <a href="#" class="btn disabled">
+                                <i class="icon icon-paper-plane"></i>
+                                <span class="text"><mvc:message code="mailing.ResumeDelivery"/></span>
+                            </a>
+                        </span>
+                    {{ } }}
+                </li>
+
+                {{ if (copyCancelledMailingEnabled) { }}
+                    <li class="delivery-status-action">
+                        <a href="${resumeByCopyLink}" class="btn" data-confirm="">
+                            <i class="icon icon-copy"></i>
+                            <span class="text">
+                                {{ if (deliveryStatus === 3 || deliveryStatus === 4) { }}
+                                    <mvc:message code="mailing.ResumeDeliveryByCopy"/>
+                                {{ } else { }}
+                                    <mvc:message code="mailing.ResumeGenerationByCopy"/>
+                                {{ } }}
+                            </span>
+                        </a>
+                    </li>
+                {{ } }}
+            {{ } }}
+        </emm:ShowByPermission>
+    </script>
+</c:if>

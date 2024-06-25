@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.web.*" errorPage="/error.do" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.web.*" errorPage="/error.action" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -20,16 +20,16 @@
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
-<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
-    <tiles:put name="header" type="string">
+<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:putAttribute name="header" type="string">
         <h2 class="headline"><mvc:message code="TrackableLink.editLink"/></h2>
 
         <ul class="tile-header-nav">
-            <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+            <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
         </ul>
-    </tiles:put>
+    </tiles:putAttribute>
     
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <c:if test="${not isMailingGrid}">
             <div class="row">
         </c:if>
@@ -59,7 +59,7 @@
                         <div class="col-sm-8">
                             <c:choose>
                                 <c:when test="${isUrlEditingAllowed}">
-                                    <mvc:text path="url" id="linkUrl" cssClass="form-control"/>
+                                    <mvc:text path="url" id="linkUrl" cssClass="form-control" disabled="${isSettingsReadonly}"/>
                                 </c:when>
                                 <c:otherwise>
                                     <mvc:text path="" value="${trackableLinkForm.url}" id="linkUrl" cssClass="form-control" readonly="true"/>
@@ -89,7 +89,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:text path="shortname" id="linkName" cssClass="form-control" />
+                            <mvc:text path="shortname" id="linkName" cssClass="form-control" disabled="${isSettingsReadonly}"/>
                         </div>
                     </div>
 
@@ -118,7 +118,7 @@
                                     <mvc:message code="Text_and_HTML_Version" />
                                 </c:when>
                                 <c:otherwise>
-                                    <mvc:select path="usage" id="usage" cssClass="form-control" data-action="link-details-trackable">
+                                    <mvc:select path="usage" id="usage" cssClass="form-control" data-action="link-details-trackable" disabled="${isSettingsReadonly}">
                                         <mvc:option value="0"><mvc:message code="mailing.Not_Trackable" /></mvc:option>
                                         <mvc:option value="1"><mvc:message code="Only_Text_Version" /></mvc:option>
                                         <mvc:option value="2"><mvc:message code="Only_HTML_Version" /></mvc:option>
@@ -136,7 +136,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:select path="action" size="1" id="linkAction" cssClass="form-control">
+                            <mvc:select path="action" size="1" id="linkAction" cssClass="form-control" disabled="${isSettingsReadonly}">
                                 <mvc:option value="0"><mvc:message code="settings.No_Action" /></mvc:option>
                                 <c:forEach var="action" items="${notFormActions}">
                                     <mvc:option value="${action.id}">${action.shortname}</mvc:option>
@@ -155,7 +155,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:checkbox path="admin" id="administrativeCheckbox"/>
+                            <mvc:checkbox path="admin" id="administrativeCheckbox" disabled="${isSettingsReadonly}"/>
                         </div>
                     </div>
                         
@@ -167,7 +167,7 @@
                                 </label>
                             </div>
                             <div class="col-sm-8">
-                                <mvc:checkbox path="createSubstituteForAgnDynMulti" styleId="createSubstituteLink"/>
+                                <mvc:checkbox path="createSubstituteForAgnDynMulti" styleId="createSubstituteLink" disabled="${isSettingsReadonly}"/>
                             </div>
                         </div>
                     </c:if>								
@@ -190,11 +190,11 @@
         <c:if test="${not isMailingGrid}">
             </div>
         </c:if>
-    </tiles:put>
+    </tiles:putAttribute>
     
-    <tiles:putList name="footerItems">
-        <tiles:add>
-            <c:url var="backLink" value="/mailing/${mailingId}/trackablelink/list.action">
+    <tiles:putListAttribute name="footerItems">
+        <tiles:addAttribute>
+            <c:url var="backLink" value="/mailing/${mailingId}/trackablelink/list.action?restoreSort=true">
                 <c:param name="scrollToLinkId" value="${linkId}"/>
                 <c:if test="${not empty workflowForwardParams}">
                     <c:param name="forwardParams" value="${workflowForwardParams}"/>
@@ -205,13 +205,13 @@
                     <mvc:message code="button.Back"/>
                 </span>
             </a>
-        </tiles:add>
-        <tiles:add>
-            <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#trackableLinkForm' data-action="save">
+        </tiles:addAttribute>
+        <tiles:addAttribute>
+            <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#trackableLinkForm' ${isSettingsReadonly ? 'disabled' : 'data-action="save"'}>
                 <span class="text">
                     <mvc:message code="button.Save"/>
                 </span>
             </button>
-        </tiles:add>
-    </tiles:putList>
-</tiles:insert>
+        </tiles:addAttribute>
+    </tiles:putListAttribute>
+</tiles:insertTemplate>

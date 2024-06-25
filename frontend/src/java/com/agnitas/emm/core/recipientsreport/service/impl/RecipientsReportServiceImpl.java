@@ -19,10 +19,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FilenameUtils;
@@ -55,6 +58,11 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         TYPE_PERMISSIONS.put(RecipientsReport.RecipientReportType.EXPORT_REPORT, Permission.WIZARD_EXPORT);
     }
 
+    private static final Map<RecipientsReport.EntityType, Permission> REPORT_TYPE_PERMISSIONS = Map.of(
+            RecipientsReport.EntityType.IMPORT, Permission.WIZARD_IMPORT,
+            RecipientsReport.EntityType.EXPORT, Permission.WIZARD_EXPORT
+    );
+
     private RecipientsReportDao recipientsReportDao;
     private MimeTypeService mimeTypeService;
 
@@ -67,11 +75,33 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     public void setMimeTypeService(MimeTypeService mimeTypeService) {
         this.mimeTypeService = mimeTypeService;
     }
-    
+
     @Override
-    public RecipientsReport createAndSaveImportReport(int companyID, int adminID, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
+    public List<DashboardRecipientReport> getReportsForDashboard(int companyId) {
+        return recipientsReportDao.getReportsForDashboard(companyId);
+    }
+
+    @Override
+    public RecipientsReport saveNewReport(Admin admin, int companyId, RecipientsReport report, String content) throws Exception {
+        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+            report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
+            if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
+                report.setAutoImportID(report.getEntityId());
+            }
+        } else if (report.getEntityType() == RecipientsReport.EntityType.EXPORT) {
+            report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
+        }
+
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
+        recipientsReportDao.createNewReport(companyId, report, content);
+        return report;
+    }
+
+    @Override
+    public RecipientsReport createAndSaveImportReport(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -85,9 +115,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport createAndSaveExportReport(int companyID, int adminID, String filename, Date reportDate, String content, boolean isError) throws Exception {
+    public RecipientsReport createAndSaveExportReport(int companyID, Admin admin, String filename, Date reportDate, String content, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setFilename(filename);
         report.setReportDate(reportDate);
         report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
@@ -117,16 +147,38 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         }
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @Override
     public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         return recipientsReportDao.getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, types);
     }
 
     @Override
+    public PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId){
+        return recipientsReportDao.getReports(filter, companyId);
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    @Override
     @Transactional
     public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         int companyId = admin.getCompanyID();
         PaginatedListImpl<RecipientsReport> returnList = getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
+        DateTimeFormatter formatter = admin.getDateTimeFormatter();
+        ZoneId dbTimezone = ZoneId.systemDefault();
+        for (RecipientsReport item : returnList.getList()) {
+    		ZonedDateTime dbZonedDateTime = ZonedDateTime.ofInstant(item.getReportDate().toInstant(), dbTimezone);
+        	item.setReportDateFormatted(formatter.format(dbZonedDateTime));
+        }
+        return returnList;
+    }
+
+    @Override
+    @Transactional
+    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin){
+        int companyId = admin.getCompanyID();
+        filter.setTypes(getAllowedReportTypes(filter.getTypes(), admin));
+        PaginatedListImpl<RecipientsReport> returnList = getReports(filter, companyId);
         DateTimeFormatter formatter = admin.getDateTimeFormatter();
         ZoneId dbTimezone = ZoneId.systemDefault();
         for (RecipientsReport item : returnList.getList()) {
@@ -215,9 +267,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-	public void createSupplementalReportData(int companyID, int adminID, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
+	public void createSupplementalReportData(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -229,6 +281,21 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
 		recipientsReportDao.createSupplementalReportData(companyID, report, temporaryDataFile, textContent);
 	}
 
+    @Override
+    public void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception {
+        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+            report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
+            if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
+                report.setAutoImportID(report.getEntityId());
+            }
+        }
+
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
+        recipientsReportDao.createNewSupplementalReport(companyId, report, temporaryDataFile, content);
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     private RecipientsReport.RecipientReportType[] getAllowedReportTypes(final RecipientsReport.RecipientReportType[] reportTypes, final Admin admin) {
         RecipientsReport.RecipientReportType[] result;
         if (reportTypes == null) {
@@ -241,5 +308,16 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
                     .toArray(new RecipientsReport.RecipientReportType[]{});
         }
         return result;
+    }
+
+    private RecipientsReport.EntityType[] getAllowedReportTypes(RecipientsReport.EntityType[] types, final Admin admin) {
+        if (types == null) {
+            return RecipientsReport.EntityType.values();
+        }
+        return Arrays.stream(types)
+                .filter(Objects::nonNull)
+                .filter(type -> admin.permissionAllowed(REPORT_TYPE_PERMISSIONS.get(type)))
+                .collect(Collectors.toList())
+                .toArray(new RecipientsReport.EntityType[]{});
     }
 }

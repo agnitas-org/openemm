@@ -2,6 +2,7 @@
     var Def = AGN.Lib.WM.Definitions,
         Node = AGN.Lib.WM.Node,
         EditorsHelper = AGN.Lib.WM.EditorsHelper,
+        Utils = AGN.Lib.WM.Utils,
         Dialogs = AGN.Lib.WM.Dialogs;
 
     var MailingEditorHelper = function(data, submitWorkflowForm) {
@@ -18,6 +19,7 @@
         this.formNameJId = 'form[name="' + data.form + '"]';
         this.containerId = data.container;
         this.mailingType = data.mailingType;
+        this.mediaType = data.mediaType;
         this.mediatypes = data.mediatypes;
         this.mailingTypesForLoading = data.mailingTypesForLoading;
         this.statusName = data.mailingStatus;
@@ -46,7 +48,11 @@
 
         this.fillEditorBase = function(node) {
             this.node = node;
-            this.mailingsStatus = $(this.formNameJId).find('input[checked=checked]').val() || 'all';
+            if (Utils.checkActivation()) {
+                this.mailingsStatus = 'all';
+            } else {
+                this.mailingsStatus = $(this.formNameJId).find('input[checked=checked]').val() || 'all';
+            }
             this.mailingsSort = this.defaultMailingsSort;
             this.mailingsOrder = this.defaultMailingsOrder;
             this.cleanOptions();
@@ -163,8 +169,12 @@
         this.setMailingLinks = function(mailingId) {
             var mailLink = '';
             if (mailingId != '0') {
-                mailLink = '<span style="font-weight: bold;">' + t('workflow.mailing.tip') + ': &nbsp;</span>' +
-                    '<a href="#" data-action="mailing-editor-edit">' + t('workflow.mailing.edit_mailing_link') + '</a> ';
+                if (!Utils.checkActivation()) {
+                    mailLink = '<a href="#" data-action="mailing-editor-edit">' + t('workflow.mailing.edit_mailing_link') + '</a> ';
+                } else {
+                    const mailingUrl = AGN.url('/mailing/' + mailingId + '/settings.action');
+                    mailLink = '<a href="' + mailingUrl + '">' + t('workflow.mailing.edit_mailing_link') + '</a>';
+                }
             } else {
                 mailLink = '' +
                     '<a href="#" class="setting-mailing-left" data-action="mailing-editor-new"> ' +
@@ -338,6 +348,11 @@
             } else {
                 var additionalParams = [];
                 additionalParams.push('mailingType=' + self.mailingType);
+
+                if (self.mediaType) {
+                    additionalParams.push('mediaType=' + self.mediaType);
+                }
+
                 if (self.mailingType == self.MAILING_TYPE_FOLLOWUP) {
                     additionalParams.push('workflowFollowUpParentMailing=' + self.node.data.baseMailingId);
                     additionalParams.push('workflowFollowUpDecisionCriterion=' + self.node.data.decisionCriterion);

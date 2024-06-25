@@ -830,6 +830,38 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PauseCampaignRequest }
+     * 
+     */
+    public PauseCampaignRequest createPauseCampaignRequest() {
+        return new PauseCampaignRequest();
+    }
+
+    /**
+     * Create an instance of {@link PauseCampaignResponse }
+     * 
+     */
+    public PauseCampaignResponse createPauseCampaignResponse() {
+        return new PauseCampaignResponse();
+    }
+
+    /**
+     * Create an instance of {@link ResumeCampaignRequest }
+     * 
+     */
+    public ResumeCampaignRequest createResumeCampaignRequest() {
+        return new ResumeCampaignRequest();
+    }
+
+    /**
+     * Create an instance of {@link ResumeCampaignResponse }
+     * 
+     */
+    public ResumeCampaignResponse createResumeCampaignResponse() {
+        return new ResumeCampaignResponse();
+    }
+
+    /**
      * Create an instance of {@link UpdateContentBlockRequest }
      * 
      */
@@ -907,22 +939,6 @@ public class ObjectFactory {
      */
     public UpdateTemplateResponse createUpdateTemplateResponse() {
         return new UpdateTemplateResponse();
-    }
-
-    /**
-     * Create an instance of {@link DecryptLinkDataRequest }
-     * 
-     */
-    public DecryptLinkDataRequest createDecryptLinkDataRequest() {
-        return new DecryptLinkDataRequest();
-    }
-
-    /**
-     * Create an instance of {@link DecryptLinkDataResponse }
-     * 
-     */
-    public DecryptLinkDataResponse createDecryptLinkDataResponse() {
-        return new DecryptLinkDataResponse();
     }
 
     /**

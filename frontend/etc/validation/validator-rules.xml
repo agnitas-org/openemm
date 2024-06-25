@@ -5,5 +5,4 @@
                    version="2.0">
     <executable-validation enabled="false"/>
     <constraint-mapping>./validation-constraints-basic.xml</constraint-mapping>
-    
 </validation-config>

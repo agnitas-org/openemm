@@ -27,7 +27,7 @@ public class SpringPasswordCheckHandler implements PasswordCheckHandler {
     private final String propertyName;
 
     /**
-     * Creates a new {@link org.agnitas.emm.core.commons.password.PasswordCheckHandler} to add Struts messages.
+     * Creates a new {@link org.agnitas.emm.core.commons.password.PasswordCheckHandler} to add messages.
      *
      * @param popups collection to add error messages to.
      * @param propertyName name of the property to which the messages are added.
@@ -38,7 +38,7 @@ public class SpringPasswordCheckHandler implements PasswordCheckHandler {
     }
 
     /**
-     * Creates a new {@link org.agnitas.emm.core.commons.password.PasswordCheckHandler} to add Struts messages.
+     * Creates a new {@link org.agnitas.emm.core.commons.password.PasswordCheckHandler} to add messages.
      *
      * @param popups collection to add error messages to.
      */

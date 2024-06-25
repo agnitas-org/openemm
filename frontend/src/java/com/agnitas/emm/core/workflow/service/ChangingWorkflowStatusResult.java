@@ -10,10 +10,16 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import java.util.Collections;
+import java.util.List;
+
+import com.agnitas.messages.Message;
+
 public class ChangingWorkflowStatusResult {
 
 	private final boolean changed;
 	private final boolean anyMailingDeactivated;
+    private List<Message> messages = Collections.emptyList();
 
 	public static ChangingWorkflowStatusResult notChanged() {
 		return new ChangingWorkflowStatusResult(false, false);
@@ -28,6 +34,12 @@ public class ChangingWorkflowStatusResult {
 		this.anyMailingDeactivated = anyMailingDeactivated;
 	}
 
+    public ChangingWorkflowStatusResult(boolean changed, boolean anyMailingDeactivated, List<Message> messages) {
+        this.changed = changed;
+        this.anyMailingDeactivated = anyMailingDeactivated;
+        this.messages = Collections.unmodifiableList(messages);
+    }
+
 	public boolean isAnyMailingDeactivated() {
 		return anyMailingDeactivated;
 	}
@@ -35,4 +47,8 @@ public class ChangingWorkflowStatusResult {
 	public boolean isChanged() {
 		return changed;
 	}
+
+    public List<Message> getMessages() {
+        return messages;
+    }
 }

@@ -25,7 +25,6 @@ import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +33,8 @@ import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.util.SpecialCharactersWorker;
 
 public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagContentDao {
@@ -56,9 +57,21 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void saveDynamicContent(DynamicTagContent dynamicTagContent, String mailingCharset) {
+	public void saveDynamicContent(DynamicTagContent dynamicTagContent, String mailingCharset) throws Exception {
 		if (AgnUtils.DEFAULT_MAILING_TEXT_DYNNAME.equals(dynamicTagContent.getDynName())) {
 			dynamicTagContent.setDynContent(SpecialCharactersWorker.processString(dynamicTagContent.getDynContent(), mailingCharset));
+		}
+		
+		// Check for unallowed html tags
+		try {
+			HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing content name contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing content description contains unallowed HTML tags");
 		}
 
 		if (isExisting(dynamicTagContent.getCompanyID(), dynamicTagContent.getMailingID(), dynamicTagContent.getDynNameID(), dynamicTagContent.getId())) {
@@ -203,6 +216,20 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
     }
 
     private void batchInsertDynContent(List<DynamicTagContent> dynamicTagContents) throws Exception {
+		for (DynamicTagContent dynamicTagContent : dynamicTagContents) {
+			// Check for unallowed html tags
+			try {
+				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
+			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				throw new Exception("Mailing content name contains unallowed HTML tags");
+			}
+			try {
+				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
+			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				throw new Exception("Mailing content description contains unallowed HTML tags");
+			}
+		}
+		
         if (isOracleDB()) {
             dynamicTagContents.forEach(entry -> {
                 entry.setId(selectInt(logger, "SELECT dyn_content_tbl_seq.NEXTVAL FROM DUAL"));
@@ -241,7 +268,21 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
         }
     }
 
-    private void batchUpdateDynContent(List<DynamicTagContent> dynamicTagContents) {
+    private void batchUpdateDynContent(List<DynamicTagContent> dynamicTagContents) throws Exception {
+		for (DynamicTagContent dynamicTagContent : dynamicTagContents) {
+			// Check for unallowed html tags
+			try {
+				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
+			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				throw new Exception("Mailing content name contains unallowed HTML tags");
+			}
+			try {
+				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
+			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				throw new Exception("Mailing content description contains unallowed HTML tags");
+			}
+		}
+		
         List<Object[]> paramList = dynamicTagContents.stream().map(entry -> new Object[]{
                 entry.getDynContent(),
                 entry.getDynOrder(),
@@ -251,7 +292,6 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
                 entry.getDynNameID(),
                 entry.getId()
         }).collect(Collectors.toList());
-
 
         final String updateSql = "UPDATE dyn_content_tbl SET dyn_content = ?, dyn_order = ?, target_id = ? WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ? AND dyn_content_id = ?";
         batchupdate(logger, updateSql, paramList);

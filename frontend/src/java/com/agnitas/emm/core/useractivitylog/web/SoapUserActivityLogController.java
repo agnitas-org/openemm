@@ -13,6 +13,7 @@ package com.agnitas.emm.core.useractivitylog.web;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.XssCheckAware;
@@ -22,7 +23,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.springframework.http.ResponseEntity;
@@ -42,11 +43,16 @@ import java.util.List;
 @Controller
 @RequestMapping("/administration/soap-user/activitylog")
 @PermissionMapping("soap.user.activity.log")
-public class SoapUserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
+public class SoapUserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected SoapUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
                                             UserActivityLogExportWorkerFactory exportWorkerFactory) {
         super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
+    }
+
+    @Override
+    protected List<AdminEntry> getAdminEntries(Admin admin) {
+        return adminService.getAdminEntriesForUserActivityLog(admin, UserActivityLogService.UserType.SOAP);
     }
 
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
@@ -86,8 +92,18 @@ public class SoapUserActivityLogController extends UserActivityLogControllerBase
     }
 
     @Override
+    protected PaginatedListImpl<?> preparePaginatedListRedesigned(UserActivityLogFilterBase filter, List<AdminEntry> admins, Admin admin) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected String redirectToListPage() {
         return "redirect:/administration/soap-user/activitylog/list.action";
+    }
+
+    @Override
+    protected String redirectToRedesignedListPage() {
+        return "redirect:/administration/soap-user/activitylog/listRedesigned.action";
     }
 
     @Override

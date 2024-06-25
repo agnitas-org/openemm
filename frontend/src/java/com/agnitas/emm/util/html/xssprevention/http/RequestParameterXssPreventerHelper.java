@@ -26,18 +26,18 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class RequestParameterXssPreventerHelper {
 
-	private final Function<String, Boolean> isParameterExcludedFromCheck;
+	private final Predicate<String> isParameterExcludedFromCheck;
 	
 	public RequestParameterXssPreventerHelper() {
 		this(x -> false);
 	}
 	
-	public RequestParameterXssPreventerHelper(final Function<String, Boolean> isParameterExcludedFromCheck) {
+	public RequestParameterXssPreventerHelper(final Predicate<String> isParameterExcludedFromCheck) {
 		this.isParameterExcludedFromCheck = Objects.requireNonNull(isParameterExcludedFromCheck, "Parameter function cannot be null");
 	}
 	
@@ -49,7 +49,7 @@ public class RequestParameterXssPreventerHelper {
 		while (parameterNames.hasMoreElements()) {
 			final String paramName = parameterNames.nextElement();
 
-			if (Boolean.FALSE.equals(isParameterExcludedFromCheck.apply(paramName))) {
+			if (!isParameterExcludedFromCheck.test(paramName)) {
 				htmlErrors.addAll(getHtmlCheckErrors(request.getParameterValues(paramName)));
 			}
 		}

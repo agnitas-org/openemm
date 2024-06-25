@@ -10,6 +10,7 @@
 
 package org.agnitas.service;
 
+import java.util.List;
 import java.util.Set;
 
 public interface RecipientOptions {
@@ -20,7 +21,7 @@ public interface RecipientOptions {
 
     int getUserStatus();
 
-    String getUserType();
+    List<String> getUserTypes();
 
     int getAltgId();
     

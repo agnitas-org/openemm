@@ -10,84 +10,54 @@
 
 package com.agnitas.web.mvc.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.agnitas.util.GuiConstants;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-
 import com.agnitas.messages.Message;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.commons.collections4.CollectionUtils;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-public class PopupsJsonSerializer extends JsonSerializer<StrutsPopups> {
+public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
     @Override
-    public void serialize(StrutsPopups popups, JsonGenerator generator, SerializerProvider provider) throws IOException {
-        generator.writeObject(adopt(popups.getMessages(), popups.getErrors()));
+    public void serialize(PopupsImpl popups, JsonGenerator generator, SerializerProvider provider) throws IOException {
+        generator.writeObject(adopt(popups));
     }
 
-    private PopupsDto adopt(ActionMessages messages, ActionErrors errors) {
+    private PopupsDto adopt(PopupsImpl source) {
+        List<PopupsImpl.MessagePopup> popupsMessages = source.getPopupsMessages();
+
         PopupsDto popups = new PopupsDto();
 
-        popups.setSuccess(adopt(messages, ActionMessages.GLOBAL_MESSAGE));
-        popups.setWarning(adopt(messages, GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING));
-        popups.setAlert(adopt(errors, ActionMessages.GLOBAL_MESSAGE));
-        popups.setFields(adoptFieldErrors(errors));
+        popups.setSuccess(getMessages(popupsMessages, PopupsImpl.MessageType.SUCCESS));
+        popups.setAlert(getMessages(popupsMessages, PopupsImpl.MessageType.ERROR));
+        popups.setWarning(getMessages(popupsMessages, PopupsImpl.MessageType.WARNING));
+        popups.setInfo(getMessages(popupsMessages, PopupsImpl.MessageType.INFO));
 
         return popups;
     }
 
-    private List<Message> adopt(ActionMessages messages, String property) {
-        Iterator<ActionMessage> iterator = messages.get(property);
-        List<Message> popups = new ArrayList<>();
-
-        while (iterator.hasNext()) {
-            popups.add(adopt(iterator.next()));
+    private List<Message> getMessages(List<PopupsImpl.MessagePopup> messages, PopupsImpl.MessageType type) {
+        if (CollectionUtils.isEmpty(messages)) {
+            return Collections.emptyList();
         }
 
-        return popups;
-    }
-
-    private Map<String, List<Message>> adoptFieldErrors(ActionErrors errors) {
-        Map<String, List<Message>> map = new HashMap<>();
-
-        Iterator<String> iterator = errors.properties();
-        
-        while (iterator.hasNext()) {
-            String property = iterator.next();
-
-            if (StringUtils.equals(property, ActionMessages.GLOBAL_MESSAGE) || map.containsKey(property)) {
-                continue;
-            }
-
-            map.put(property, adopt(errors, property));
-        }
-
-        return map;
-    }
-
-    private Message adopt(ActionMessage message) {
-        if (message.isResource()) {
-            return new Message(message.getKey(), message.getValues());
-        } else {
-            return new Message(message.getKey(), false);
-        }
+        return messages.stream()
+                .filter(m -> type.equals(m.getType()))
+                .map(PopupsImpl.MessagePopup::getMessage)
+                .collect(Collectors.toList());
     }
 
     public static class PopupsDto {
+
         private List<Message> success;
         private List<Message> warning;
         private List<Message> alert;
-        private Map<String, List<Message>> fields;
+        private List<Message> info;
 
         public List<Message> getSuccess() {
             return success;
@@ -113,12 +83,12 @@ public class PopupsJsonSerializer extends JsonSerializer<StrutsPopups> {
             this.alert = alert;
         }
 
-        public Map<String, List<Message>> getFields() {
-            return fields;
+        public List<Message> getInfo() {
+            return info;
         }
 
-        public void setFields(Map<String, List<Message>> fields) {
-            this.fields = fields;
+        public void setInfo(List<Message> info) {
+            this.info = info;
         }
     }
 }

@@ -1,9 +1,7 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowMailing" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring" prefix="mvc" %>
 
 <c:set var="AUTOMATIC_REPORT_NONE" value="<%= WorkflowMailing.AUTOMATIC_REPORT_NONE %>" scope="page"/>
 <c:set var="AUTOMATIC_REPORT_1DAY" value="<%= WorkflowMailing.AUTOMATIC_REPORT_1DAY %>" scope="page"/>
@@ -16,7 +14,7 @@
             <div id="sendSettingsToggle_${param.editorId}" class="toggle_closed wm-mailing-send-settings-link btn-group">
                 <a href="#" class="btn btn-regular" data-action="mailing-editor-base-toggle-settings"
                    data-config="editorId:${param.editorId}">
-                    <bean:message key="workflow.mailing.DeliverySettings"/>
+                    <mvc:message code="workflow.mailing.DeliverySettings"/>
                 </a>
             </div>
         </div>
@@ -25,14 +23,14 @@
     <div id="sendSettings_${param.editorId}" class="wm-mailing-send-settings" style="display: none">
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label"><bean:message key="workflow.mailing.AutomaticReport"/></label>
+                <label class="control-label"><mvc:message code="workflow.mailing.AutomaticReport"/></label>
             </div>
             <div class="col-sm-8">
                 <select class="form-control" name="autoReport">
-                    <option value="${AUTOMATIC_REPORT_NONE}"><bean:message key="default.none"/></option>
-                    <option value="${AUTOMATIC_REPORT_1DAY}"><bean:message key="mailing.send.report.24h"/></option>
-                    <option value="${AUTOMATIC_REPORT_2DAYS}"><bean:message key="mailing.send.report.48h"/></option>
-                    <option value="${AUTOMATIC_REPORT_7DAYS}"><bean:message key="mailing.send.report.1week"/></option>
+                    <option value="${AUTOMATIC_REPORT_NONE}"><mvc:message code="default.none"/></option>
+                    <option value="${AUTOMATIC_REPORT_1DAY}"><mvc:message code="mailing.send.report.24h"/></option>
+                    <option value="${AUTOMATIC_REPORT_2DAYS}"><mvc:message code="mailing.send.report.48h"/></option>
+                    <option value="${AUTOMATIC_REPORT_7DAYS}"><mvc:message code="mailing.send.report.1week"/></option>
                 </select>
             </div>
         </div>
@@ -40,7 +38,7 @@
             <div class="col-sm-8 col-sm-push-4">
                 <label class="checkbox-inline">
                     <input id="dontDeliverMailing_${param.editorId}" type="checkbox" class="mailing-send-settings-checkbox" name="skipEmptyBlocks"/>
-                    <bean:message key="skipempty.email"/>
+                    <mvc:message code="skipempty.email"/>
                 </label>
             </div>
         </div>
@@ -48,14 +46,14 @@
             <div class="col-sm-8 col-sm-push-4">
                 <label class="checkbox-inline">
                     <input id="duplicateCheck_${param.editorId}" type="checkbox" value="true" class="mailing-send-settings-checkbox" name="doubleCheck"/>
-                    <bean:message key="doublechecking.email"/>
+                    <mvc:message code="doublechecking.email"/>
                 </label>
             </div>
         </div>
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">
-                    <bean:message key="setMaxRecipients"/>
+                    <mvc:message code="setMaxRecipients"/>
                     <button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/MailingMaxsendquantyMsg.xml"></button>
                 </label>
             </div>
@@ -66,12 +64,12 @@
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label" for="mailType">
-                    <bean:message key="mailing.mailsperhour"/>
+                    <mvc:message code="mailing.mailsperhour"/>
                 </label>
             </div>
             <div class="col-sm-8">
                 <select class="form-control" name="blocksize" id="mailType">
-                    <option value="0"><bean:message key="mailing.unlimited"/></option>
+                    <option value="0"><mvc:message code="mailing.unlimited"/></option>
                     <option value="500000">500.000</option>
                     <option value="250000">250.000</option>
                     <option value="100000">100.000</option>

@@ -395,7 +395,7 @@
       };
 
       return $.ajax({
-        type: 'POST',
+        type: 'GET',
         url: AGN.url('/workflow/getAllMailingSorted.action'),
         data: {
           sortField: 'date',

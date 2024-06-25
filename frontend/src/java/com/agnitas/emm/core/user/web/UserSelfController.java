@@ -21,7 +21,6 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.user.form.UserSelfForm;
 import com.agnitas.emm.core.user.service.UserSelfService;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
@@ -34,7 +33,7 @@ import org.agnitas.emm.core.commons.password.util.PasswordUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -98,7 +97,7 @@ public class UserSelfController implements XssCheckAware {
 
     @RequestMapping("/view.action")
     public String view(Admin admin, @ModelAttribute("selfForm") UserSelfForm form, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.ADMIN_LOGIN_LOG_OVERVIEW, form);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_LOGIN_LOG_OVERVIEW, form);
 
         fillForm(form, admin);
         prepareModelAttributesForViewPage(model, admin);

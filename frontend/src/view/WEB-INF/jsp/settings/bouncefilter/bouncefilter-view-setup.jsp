@@ -1,9 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean"%>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="bounceFilterForm" type="com.agnitas.emm.core.bounce.form.BounceFilterForm"--%>
+
+<c:url var="switchDesignUrl" value="/administration/bounce/list.action" scope="request" />
 
 <c:set var="isBounceFilterExist" value="${bounceFilterForm.id > 0}"/>
 
@@ -61,7 +63,7 @@
                 <c:set target="${itemSetting}" property="iconBefore" value="icon-trash-o"/>
                 <c:set target="${itemSetting}" property="type" value="button"/>
                 <c:set target="${itemSetting}" property="name">
-                    <bean:message key="button.Delete"/>
+                    <mvc:message code="button.Delete"/>
                 </c:set>
             </emm:instantiate>
         </emm:ShowByPermission>
@@ -74,7 +76,7 @@
             <c:set target="${itemSetting}" property="extraAttributes" value="data-form-target='#bounceFilterForm' data-form-submit"/>
             <c:set target="${itemSetting}" property="iconBefore" value="icon-save"/>
             <c:set target="${itemSetting}" property="name">
-                <bean:message key="button.Save"/>
+                <mvc:message code="button.Save"/>
             </c:set>
         </emm:instantiate>
     </emm:ShowByPermission>

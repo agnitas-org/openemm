@@ -328,6 +328,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		}
 		
 		RecipientFieldDescription profileField = new RecipientFieldDescription();
+		profileField.setNullable(true);
 		profileField.setColumnName(requestedProfilefieldName);
 		
 		if (RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
@@ -347,7 +348,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		try {
 			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
 		} catch (Exception e) {
-			e.printStackTrace();
 			throw new Exception("Storage of profilefield data failed", e);
 		}
 
@@ -431,7 +431,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		try {
 			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
 		} catch (Exception e) {
-			e.printStackTrace();
 			throw new Exception("Storage of profilefield data failed", e);
 		}
 
@@ -562,6 +561,8 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			} else if ("defaultValue".equals(entry.getKey())) {
 				if (entry.getValue() instanceof String) {
 					profileField.setDefaultValue((String) entry.getValue());
+				} else if (entry.getValue() instanceof Number) {
+					profileField.setDefaultValue(entry.getValue().toString());
 				} else {
 					throw new RestfulClientException("Invalid data type for 'defaultValue'. String expected");
 				}
@@ -808,6 +809,10 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			throw new RestfulClientException("Invalid value for property 'name' for profilefield: " + profileField.getColumnName(), e);
 		}
 		
+		if (profileField.getSimpleDataType() == null) {
+			throw new RestfulClientException("Invalid empty value for property 'type' for profilefield");
+		}
+		
 		if (StringUtils.isBlank(profileField.getShortName())) {
 			profileField.setShortName(profileField.getColumnName());
 		}
@@ -815,14 +820,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		RecipientFieldDescription profilefieldByShortname = recipientFieldService.getRecipientField(companyID, profileField.getShortName());
 		if (profilefieldByShortname != null && !profilefieldByShortname.getColumnName().equalsIgnoreCase(profileField.getColumnName())) {
 			throw new RestfulClientException("Invalid value for property 'shortname' for profilefield, already exists: " + profileField.getShortName());
-		}
-		
-		if (profileField.getSimpleDataType() == null) {
-			throw new RestfulClientException("Invalid empty value for property 'type' for profilefield");
-		}
-		
-		if (StringUtils.isBlank(profileField.getShortName())) {
-			profileField.setShortName(profileField.getColumnName());
 		}
 		
 		if (profileField.getAllowedValues() != null) {
@@ -837,6 +834,19 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					throw new RestfulClientException("Invalid allowedValue entry for data type 'DateTime': " + allowedValue);
 				} else if (profileField.getSimpleDataType() == SimpleDataType.Blob) {
 					throw new RestfulClientException("Invalid allowedValue entry for data type 'Blob': " + allowedValue);
+				}
+			}
+		}
+		
+		if (!profileField.isNullable() && profileField.getDefaultValue() == null) {
+			RecipientFieldDescription existingProfileField = recipientFieldService.getRecipientField(companyID, profileField.getColumnName());
+			if (existingProfileField == null) {
+				if (recipientFieldService.hasRecipients(companyID)) {
+					throw new RestfulClientException("New profilefield may not be set to 'not null', if there are existing recipients: " + profileField.getShortName());
+				}
+			} else if (existingProfileField.isNullable() != profileField.isNullable()) {
+				if (recipientFieldService.hasRecipientsWithNullValue(companyID, profileField.getColumnName())) {
+					throw new RestfulClientException("Existing profilefield may not be changed to 'not null', if there are existing recipients with null values: " + profileField.getShortName());
 				}
 			}
 		}
@@ -870,7 +880,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			
 			if (currentFieldCount < maxFields) {
 				return true;
-			} else if (currentFieldCount < maxFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+			} else if (currentFieldCount < maxFields + configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID)) {
 				return true;
 			} else {
 				return false;

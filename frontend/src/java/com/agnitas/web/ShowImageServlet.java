@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.RdirTrafficAmountDao;
@@ -29,12 +28,17 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeansException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.Company;
+import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.responseheaders.common.UsedFor;
+import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
+import com.agnitas.emm.responseheaders.web.NullHttpResonseHeaderApplier;
 import com.agnitas.util.ImageUtils;
 
 import jakarta.servlet.ServletException;
@@ -70,6 +74,7 @@ public class ShowImageServlet extends HttpServlet {
     protected RdirTrafficAmountDao rdirTrafficAmountDao;
     protected CompanyDaoCache companyDaoCache;
 	protected ConfigService configService;
+	protected HttpResponseHeaderApplier responseHeaderApplier;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
@@ -92,6 +97,10 @@ public class ShowImageServlet extends HttpServlet {
 
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	public void setHttpResponseHeaderApplier(final HttpResponseHeaderApplier applier) {
+		this.responseHeaderApplier = applier != null ? applier : new NullHttpResonseHeaderApplier();
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -221,7 +230,7 @@ public class ShowImageServlet extends HttpServlet {
 					if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
 						getRdirTrafficAmountDao().save(companyID, StringUtils.isNotEmpty(mailingIdString) ? Integer.parseInt(mailingIdString) : 0, image.name, image.imageData == null ? 0 : image.imageData.length);
 					}
-					writeImageToResponse(request, response, image);
+					writeImageToResponse(request, response, image, companyID);
 				}
 			} else {
 				boolean mobile = getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE;
@@ -437,8 +446,10 @@ public class ShowImageServlet extends HttpServlet {
 	 * @param response
 	 * @param image
 	 */
-	private void writeImageToResponse(HttpServletRequest request, HttpServletResponse response, DeliverableImage image) {
+	private void writeImageToResponse(HttpServletRequest request, HttpServletResponse response, DeliverableImage image, final int companyID) {
 		try {
+			getHttpResponseHeaderApplier().applyHeadersToResponse(UsedFor.RESOURCE, companyID, request, response);
+			
 			response.setContentType(image.mtype);
 			try(ServletOutputStream out = response.getOutputStream()) {
 				out.write(image.imageData);
@@ -590,4 +601,17 @@ public class ShowImageServlet extends HttpServlet {
 		}
 		return configService;
 	}
+    
+    private HttpResponseHeaderApplier getHttpResponseHeaderApplier() {
+    	if(this.responseHeaderApplier == null) {
+    		try {
+    			this.responseHeaderApplier = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("HttpResponseHeaderApplier", HttpResponseHeaderApplier.class);
+    		} catch(final BeansException e) {
+    			this.responseHeaderApplier = new NullHttpResonseHeaderApplier();
+    		}
+    	}
+    	
+    	return responseHeaderApplier;
+    }
+    
 }

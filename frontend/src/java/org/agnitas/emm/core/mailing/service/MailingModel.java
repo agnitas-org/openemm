@@ -249,6 +249,7 @@ public class MailingModel {
 	private TargetMode targetMode;
 	private MaildropStatus maildropStatus;
 	private Date sendDate;
+	private Date plannedDate;
 	private int stepping;
 	private int blocksize;
 
@@ -480,4 +481,11 @@ public class MailingModel {
 		this.blocksize = blocksize;
 	}
 
+    public Date getPlannedDate() {
+        return plannedDate;
+    }
+
+    public void setPlannedDate(Date plannedDate) {
+        this.plannedDate = plannedDate;
+    }
 }

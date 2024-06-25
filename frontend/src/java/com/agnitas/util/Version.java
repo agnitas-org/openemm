@@ -15,12 +15,20 @@ import java.text.DecimalFormat;
 import org.apache.commons.lang3.StringUtils;
 
 public class Version implements Comparable<Version> {
+
 	private int majorVersion;
 	private int minorVersion = 0;
 	private int microVersion = 0;
 	private int hotfixVersion = 0;
 	
 	private boolean legacyFormat = false;
+
+	public Version(int majorVersion, int minorVersion, int microVersion, int hotfixVersion) {
+		this.majorVersion = majorVersion;
+		this.minorVersion = minorVersion;
+		this.microVersion = microVersion;
+		this.hotfixVersion = hotfixVersion;
+	}
 	
 	public Version(String versionString) throws Exception {
 		if (StringUtils.isBlank(versionString)) {
@@ -31,14 +39,14 @@ public class Version implements Comparable<Version> {
 		if (versionParts.length == 1) {
 			try {
 				majorVersion = Integer.parseInt(versionParts[0]);
-			} catch (NumberFormatException e) {
+			} catch (@SuppressWarnings("unused") NumberFormatException e) {
 				throw new Exception("Invalid version sign: '" + versionString + "'");
 			}
 		} else if (versionParts.length == 2) {
 			try {
 				majorVersion = Integer.parseInt(versionParts[0]);
 				minorVersion = Integer.parseInt(versionParts[1]);
-			} catch (NumberFormatException e) {
+			} catch (@SuppressWarnings("unused") NumberFormatException e) {
 				throw new Exception("Invalid version sign: '" + versionString + "'");
 			}
 		} else if (versionParts.length == 3) {
@@ -54,7 +62,7 @@ public class Version implements Comparable<Version> {
 				} else {
 					microVersion = Integer.parseInt(versionParts[2]);
 				}
-			} catch (NumberFormatException e) {
+			} catch (@SuppressWarnings("unused") NumberFormatException e) {
 				throw new Exception("Invalid version sign: '" + versionString + "'");
 			}
 		} else if (versionParts.length == 4) {
@@ -63,7 +71,7 @@ public class Version implements Comparable<Version> {
 				minorVersion = Integer.parseInt(versionParts[1]);
 				microVersion = Integer.parseInt(versionParts[2]);
 				hotfixVersion = Integer.parseInt(versionParts[3]);
-			} catch (NumberFormatException e) {
+			} catch (@SuppressWarnings("unused") NumberFormatException e) {
 				throw new Exception("Invalid version sign: '" + versionString + "'");
 			}
 		} else {

@@ -1,7 +1,8 @@
 AGN.Lib.Controller.new('target-group-view', function ($scope) {
 
   var Action = AGN.Lib.Action,
-    Form = AGN.Lib.Form;
+    Form = AGN.Lib.Form,
+    Editor = AGN.Lib.Editor;
 
   Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function() {
       AGN.Lib.Messages(t('defaults.error'), t('querybuilder.errors.general'), 'alert');
@@ -18,6 +19,10 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
         return false;
       }
     });
+
+    if (this.config.errorPositionDetails) {
+      handleEqlErrorDetails(this.config.errorPositionDetails);
+    }
   });
 
   this.addAction({click: 'switch-tab-viewEQL'}, function() {
@@ -33,29 +38,42 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
       form = AGN.Lib.Form.get($(element));
 
     form.setValueOnce('viewFormat', 'QUERY_BUILDER');
-    form.submit('', {skip_empty: true});
+    const jqxhr = form.submit('', {skip_empty: true});
+    jqxhr.done(function(resp) {
+      handleFormSaveResponse(resp);
+      AGN.Lib.Tab.show($('#eql-editor-tab-trigger'));
+      $('#eql-alert').remove();
+      $('#eql').before(getNotificationMessage(resp.popups.alert[0]));
+    });
   });
 
-  this.addAction({click: 'save-wizard-target'}, function() {
-    var element = this.el,
-        form = AGN.Lib.Form.get($(element));
+  this.addAction({submission: 'save-target'}, function() {
+    Form
+      .get(this.el)
+      .submit(this.el.data('submit-type'))
+      .done(handleFormSaveResponse);
+  });
 
-    if (!containsNotEmptyRule()) {
-      AGN.Lib.Messages(t('defaults.error'), t('querybuilder.errors.no_rule'), 'alert');
-      return false;
+  function handleFormSaveResponse(resp) {
+    if (resp.success) {
+      return;
     }
-
-    var isValid = form.validate();
-    if (isValid) {
-      form.submit();
-    }
-  })
-
-  function getQbApi() {
-    return $('#targetgroup-querybuilder').prop('queryBuilder');
+    handleEqlErrorDetails(resp.data);
+    AGN.Lib.JsonMessages(resp.popups);
   }
 
-  function containsNotEmptyRule() {
-    return getQbApi().containsNotEmptyRule();
+  function handleEqlErrorDetails(details) {
+    const eqlEditor = Editor.get($('#eql')).editor;
+
+    eqlEditor.focus();
+    eqlEditor.gotoLine(details.line, details.column);
+  }
+
+  function getNotificationMessage(msg) {
+    return '<ul = id="eql-alert">' +
+      '         <div class="tile">' +
+      '             <li class="tile-notification tile-notification-alert">' + msg + '</li>' +
+      '         </div>' +
+      '    </ul>'
   }
 })

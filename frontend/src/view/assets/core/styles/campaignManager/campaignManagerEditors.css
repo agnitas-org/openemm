@@ -1,3 +1,4 @@
+/*TODO: EMMGUI-714: remove when old design will be removed*/
 .parentheses-opened, .primary-operator, .primary-value, .parenthesis-closed {
     margin-left: 4px;
 }

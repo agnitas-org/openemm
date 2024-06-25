@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Field visible]]></title>
+	<content><![CDATA[If the visibility of a profile field is disabled, the field cannot be used for imports and exports. This restriction does not affect existing auto-imports or auto-exports.]]></content>
+</HelpBalloon>

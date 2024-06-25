@@ -10,29 +10,39 @@
 
 package com.agnitas.emm.core.recipient.forms;
 
-import org.agnitas.dao.UserStatus;
 import org.agnitas.web.forms.FormSearchParams;
 
+import java.util.List;
+
 public class RecipientsFormSearchParams implements FormSearchParams<RecipientListForm> {
+
+    private final int defaultUserStatus;
+
+    public RecipientsFormSearchParams(int defaultUserStatus) {
+        this.defaultUserStatus = defaultUserStatus;
+    }
+
     private int mailinglistId;
     private int targetId;
     private int userStatus;
-    private String userType;
     private String firstName;
+    private Integer gender;
     private String lastName;
     private String email;
     private String queryBuilderRules;
+    private List<String> userTypes;
 
     @Override
     public void storeParams(RecipientListForm form) {
         this.mailinglistId = form.getFilterMailinglistId();
         this.targetId = form.getFilterTargetId();
         this.userStatus = form.getFilterUserStatus();
-        this.userType = form.getFilterUserType();
         this.firstName = form.getSearchFirstName();
         this.lastName = form.getSearchLastName();
+        this.gender = form.getFilterGender();
         this.email = form.getSearchEmail();
         this.queryBuilderRules = form.getSearchQueryBuilderRules();
+        this.userTypes = form.getFilterUserTypes();
     }
 
     @Override
@@ -40,23 +50,25 @@ public class RecipientsFormSearchParams implements FormSearchParams<RecipientLis
         form.setFilterMailinglistId(mailinglistId);
         form.setFilterTargetId(targetId);
         form.setFilterUserStatus(userStatus);
-        form.setFilterUserType(userType);
+        form.setFilterUserTypes(userTypes);
         form.setSearchFirstName(firstName);
         form.setSearchLastName(lastName);
         form.setSearchEmail(email);
         form.setSearchQueryBuilderRules(queryBuilderRules);
+        form.setFilterGender(gender);
     }
 
     @Override
     public void resetParams() {
         mailinglistId = 0;
         targetId = 0;
-        userStatus = UserStatus.Active.getStatusCode();
-        userType = "";
+        userStatus = defaultUserStatus;
         firstName = "";
         lastName = "";
         email = "";
         queryBuilderRules = "[]";
+        gender = null;
+        userTypes = null;
     }
 
     public void updateTargetId(int newTargetId) {
@@ -69,10 +81,6 @@ public class RecipientsFormSearchParams implements FormSearchParams<RecipientLis
 
     public int getUserStatus() {
         return userStatus;
-    }
-
-    public String getUserType() {
-        return userType;
     }
 
     public String getFirstName() {

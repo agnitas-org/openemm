@@ -64,8 +64,8 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			
 			recipientFieldDescription.setColumnName(fieldEntry.getKey().toLowerCase());
 			recipientFieldDescription.setShortName(fieldEntry.getKey());
-			recipientFieldDescription.setSimpleDataType(fieldEntry.getValue().getSimpleDataType());
 			
+			SimpleDataType simpleDataType = fieldEntry.getValue().getSimpleDataType();
 			String databaseDataType = fieldEntry.getValue().getTypeName();
 			if (isOracleDB()) {
 				// Some Oracle DATE fields should be displayed with time
@@ -75,9 +75,11 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 						|| fieldEntry.getKey().equalsIgnoreCase("lastopen_date")
 						|| fieldEntry.getKey().equalsIgnoreCase("lastsend_date")) {
 					databaseDataType = "TIMESTAMP";
+					simpleDataType = SimpleDataType.DateTime;
 				}
 			}
 			recipientFieldDescription.setDatabaseDataType(databaseDataType);
+			recipientFieldDescription.setSimpleDataType(simpleDataType);
 			
 			recipientFieldDescription.setCharacterLength(fieldEntry.getValue().getCharacterLength());
 			recipientFieldDescription.setNumericPrecision(fieldEntry.getValue().getNumericPrecision());
@@ -338,11 +340,14 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 	private void updateRecipientFieldPermissions(int companyID, RecipientFieldDescription recipientFieldDescription, String columnName, ProfileFieldMode fallbackProfileFieldMode) {
 		List<Object[]> parameterList = new ArrayList<>();
 		if (recipientFieldDescription.getPermissions() != null) {
+			// Some old cases of profilefield col_name may be stored in uppercse and cannot be changed because of FK relationships. Therefore use the stored name's letter case.
+			String storedColumnName = select(logger, "SELECT col_name FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", String.class, companyID, columnName.toLowerCase());
+			
 			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 			
 			for (Entry<Integer, ProfileFieldMode> permissionEntry : recipientFieldDescription.getPermissions().entrySet()) {
 				if (permissionEntry.getKey() != 0 && fallbackProfileFieldMode != permissionEntry.getValue()) {
-					parameterList.add(new Object[] { companyID, columnName.toLowerCase(), permissionEntry.getKey(), permissionEntry.getValue().getStorageCode() });
+					parameterList.add(new Object[] { companyID, storedColumnName, permissionEntry.getKey(), permissionEntry.getValue().getStorageCode() });
 				}
 		    }
 			if (!parameterList.isEmpty()) {
@@ -382,5 +387,20 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 		} else {
 			return DbUtilities.RESERVED_WORDS_MYSQL_MARIADB.contains(fieldname);
 		}
+	}
+
+	@Override
+	public boolean hasRecipients(int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") > 0;
+	}
+
+	@Override
+	public boolean hasRecipientsWithNullValue(int companyID, String columnName) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE columnName IS NULL") > 0;
+	}
+	
+	@Override
+	public final int countCustomerEntries(final int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
 	}
 }

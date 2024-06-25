@@ -1,0 +1,69 @@
+
+#sidebar__nav-block {
+  flex: 1 1 auto;
+  @include hide-scroll;
+  position: relative;
+
+  @include perfect-scrollbar($primary, 8px, 0);
+}
+
+#sidebar__nav-list {
+  @include flex-column($sidebar-spacer);
+
+  > li {
+    @include font($font-size-lg, $font-weight-normal, 27px);
+    flex: none;
+
+    &:hover .menu-item {
+      border-color: $white;
+    }
+  }
+
+  .menu-item {
+    display: flex;
+    @include sidebar-colors();
+    border: $border-transparent;
+
+    &.active {
+      @include sidebar-colors-inverse();
+    }
+  }
+}
+
+.submenu {
+  display: none;
+
+  &.open {
+    @include flex-column($sidebar-spacer / 2);
+    position: fixed;
+    @include sidebar-tooltip;
+    padding: $sidebar-spacer;
+  }
+}
+
+.submenu-header {
+  white-space: nowrap;
+  line-height: 30px;
+}
+
+.submenu-items-container {
+  @include flex-column($sidebar-spacer / 2);
+  @include font($font-size-base, $font-weight-normal);
+}
+
+.submenu-item {
+  display: block;
+  border-radius: $border-radius;
+  border: $border-transparent;
+  padding: $sidebar-spacer / 2;
+  white-space: nowrap;
+
+  &.active {
+    @include sidebar-colors-inverse;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:hover {
+    border-color: $white;
+  }
+}

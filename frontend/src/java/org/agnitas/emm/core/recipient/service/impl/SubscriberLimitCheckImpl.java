@@ -41,16 +41,17 @@ public class SubscriberLimitCheckImpl implements SubscriberLimitCheck {
 	@Override
 	public SubscriberLimitCheckResult checkSubscriberLimit(final int companyId, final int numNewSubscribers) throws SubscriberLimitExceededException {
 		final int maximumSubscribers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
+		final int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers_Graceful, companyId);
 
 		final int subscriberCount = recipientDao.getNumberOfRecipients(companyId);
 		
 		if (maximumSubscribers < 0) {
-			return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), false);
+			return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, gracefulExtension, false);
 		} else {
 			if (subscriberCount + numNewSubscribers <= maximumSubscribers) {
-				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), false);
-			} else if (subscriberCount + numNewSubscribers <= maximumSubscribers + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension()) {
-				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), true);
+				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, gracefulExtension, false);
+			} else if (subscriberCount + numNewSubscribers <= maximumSubscribers + gracefulExtension) {
+				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, gracefulExtension, true);
 			} else {
 				if (LOGGER.isInfoEnabled()) {
 					LOGGER.info(String.format("Subscriber limit for company %d exceeded (current: %d, new: %d, allowed: %d)", companyId, subscriberCount, numNewSubscribers, maximumSubscribers));

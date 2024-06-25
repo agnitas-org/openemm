@@ -10,28 +10,26 @@
 
 package com.agnitas.emm.core.userform.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.emm.core.userform.dto.ResultSettings;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.form.UserFormsForm;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
 import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
@@ -39,10 +37,10 @@ import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptVali
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.UserFormImporter;
-import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.util.MvcUtils;
 import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
@@ -67,17 +65,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.userform.dto.ResultSettings;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.form.UserFormsForm;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/webform")
@@ -200,6 +208,16 @@ public class UserFormController implements XssCheckAware {
 		return "userform_view";
 	}
 
+	@PostMapping("/{id:\\d+}/activate.action")
+	public @ResponseBody BooleanResponseDto activate(@PathVariable int id, Admin admin, Popups popups) {
+		boolean result = userformService.updateActiveness(admin.getCompanyID(), List.of(id), true) > 0;
+		if (!result) {
+			popups.alert(ERROR_MSG);
+		}
+
+		return new BooleanResponseDto(popups, result);
+	}
+
 	@PostMapping("/save.action")
 	public String save(Admin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
 		try {
@@ -265,6 +283,7 @@ public class UserFormController implements XssCheckAware {
 		return !popups.hasAlertPopups();
 	}
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	@GetMapping("/import.action")
 	@PermissionMapping("import")
 	public String importFormView(Admin admin, @RequestParam(value = "importTemplate", required = false) boolean templateOverview) {
@@ -358,6 +377,7 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	@PostMapping("/confirmBulkDelete.action")
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
 		if (CollectionUtils.isEmpty(form.getBulkIds())) {
 			popups.alert("bulkAction.nothing.userform");
@@ -367,6 +387,7 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/bulkDelete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
         if(form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.userform");
@@ -390,6 +411,7 @@ public class UserFormController implements XssCheckAware {
     }
 
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String confirmDelete(Admin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
 		if (userForm != null) {
@@ -404,6 +426,7 @@ public class UserFormController implements XssCheckAware {
 	}
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String delete(Admin admin, SimpleActionForm form, Popups popups) {
         if (userformService.deleteUserForm(form.getId(), admin.getCompanyID())) {
 			writeUserActivityLog(admin, "delete user form", String.format("ID: %d", form.getId()));
@@ -414,6 +437,43 @@ public class UserFormController implements XssCheckAware {
         popups.alert(ERROR_MSG);
         return MESSAGES_VIEW;
     }
+
+	@GetMapping(value = "/deleteRedesigned.action")
+	@PermissionMapping("confirmDelete")
+	public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
+		validateDeletion(bulkIds);
+		List<String> items = userformService.getUserFormNames(bulkIds, admin.getCompanyID());
+		MvcUtils.addDeleteAttrs(model, items,
+                "settings.form.delete", "settings.userform.delete.question",
+                "bulkAction.delete.userform", "bulkAction.delete.userform.question");
+		return DELETE_VIEW;
+	}
+
+	@RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	@PermissionMapping("delete")
+	public String deleteRedesigned(@RequestParam(required = false) List<Integer> bulkIds, Admin admin, Popups popups) {
+		validateDeletion(bulkIds);
+
+		List<UserFormDto> deletedUserForms = userformService.bulkDeleteUserForm(bulkIds, admin.getCompanyID());
+
+		if (CollectionUtils.isNotEmpty(deletedUserForms)) {
+			deletedUserForms.forEach(f -> {
+				writeUserActivityLog(admin, "delete user form", String.format("%s(%d)", f.getName(), f.getId()));
+			});
+
+			popups.success(SELECTION_DELETED_MSG);
+			return "redirect:/webform/list.action";
+		}
+
+		popups.alert(ERROR_MSG);
+		return MESSAGES_VIEW;
+	}
+
+	private void validateDeletion(Collection<Integer> bulkIds) {
+		if (CollectionUtils.isEmpty(bulkIds)) {
+			throw new RequestErrorException(NOTHING_SELECTED_MSG);
+		}
+	}
 
     private Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
@@ -441,7 +501,7 @@ public class UserFormController implements XssCheckAware {
 		Map<String, String> numericProfileFields = userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Numeric, DbColumnType.SimpleDataType.Float);
 
 		Map<String, String> profileFieldsForSelect = new HashMap<>(textProfileFields);
-		profileFieldsForSelect.put(RecipientUtils.COLUMN_GENDER, numericProfileFields.get(RecipientUtils.COLUMN_GENDER));
+		profileFieldsForSelect.put(RecipientStandardField.Gender.getColumnName(), numericProfileFields.get(RecipientStandardField.Gender.getColumnName()));
 
 		model.addAttribute("textProfileFields", textProfileFields);
 		model.addAttribute("profileFieldsForSelect", profileFieldsForSelect);

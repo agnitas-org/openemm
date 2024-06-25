@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 public class Target {
 	private long id;
 	private String sql;
+	private boolean hidden;
 	private boolean databaseOnly;
 	private boolean needEvaluation;
 	private boolean isEvaluated;
@@ -32,9 +33,10 @@ public class Target {
 	 * @param nId  the dyn_target_tbl.target_id value
 	 * @param nSql the dyn_target_tbl.target_sql value
 	 */
-	public Target(long nId, String nSql, boolean nDatabaseOnly) {
+	public Target(long nId, String nSql, boolean nHidden, boolean nDatabaseOnly) {
 		id = nId;
 		sql = nSql;
+		hidden = nHidden;
 		databaseOnly = nDatabaseOnly;
 	}
 
@@ -44,6 +46,10 @@ public class Target {
 
 	public String getSQL(boolean forDatabaseAccess) {
 		return forDatabaseAccess || (!databaseOnly) ? sql : null;
+	}
+	
+	public boolean isHidden () {
+		return hidden;
 	}
 
 	public boolean databaseOnly() {

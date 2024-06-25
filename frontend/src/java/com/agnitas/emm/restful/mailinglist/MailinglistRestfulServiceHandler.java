@@ -17,10 +17,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailinglistDao;
@@ -34,10 +35,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -45,6 +49,8 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -65,6 +71,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "mailinglist";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
+	private MailinglistService mailinglistService;
 	private MailinglistDao mailinglistDao;
 	private ComRecipientDao recipientDao;
 	private ColumnInfoService columnInfoService;
@@ -87,6 +94,11 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
+	}
+	
+	@Required
+	public void setMailinglistService(MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
 	}
 
 	@Override
@@ -236,23 +248,34 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
 		writeActivityLog(restfulContext[0], request, admin);
 
-		boolean success = false;
+		int mailinglistIdToDelete = 0;
+		
 		if (AgnUtils.isNumber(restfulContext[0])) {
-			success = mailinglistDao.deleteMailinglist(Integer.parseInt(restfulContext[0]), admin.getCompanyID());
+			mailinglistIdToDelete = Integer.parseInt(restfulContext[0]);
+			
 		} else {
-			for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+			for (Mailinglist mailinglistItem : mailinglistService.getMailinglists(admin.getCompanyID())) {
 				if (mailinglistItem.getShortname().equals(restfulContext[0])) {
-					success = mailinglistDao.deleteMailinglist(mailinglistItem.getId(), admin.getCompanyID());
+					mailinglistIdToDelete = mailinglistItem.getId();
 					break;
 				}
 			}
 		}
 		
-		if (success) {
-			return "1 mailinglist deleted";
-		} else {
-			throw new RestfulNoDataFoundException("No data found for deletion");
-		}
+		List<Mailing> dependentMailings = mailinglistService.getUsedMailings(Set.of(mailinglistIdToDelete), admin.getCompanyID());
+        if (!dependentMailings.isEmpty()) {
+        	String mailinglistInfo = "\"" + mailinglistService.getMailinglistName(mailinglistIdToDelete, admin.getCompanyID()) + "\" (ID: " + Integer.toString(mailinglistIdToDelete) + ")";
+        	String mailingInfos = dependentMailings.stream().limit(10).map(x -> "\"" + x.getShortname() + "\" (ID: " + Integer.toString(x.getId()) + ")").collect(Collectors.joining(", "));
+        	throw new RestfulClientException("Deletion of mailinglist " + mailinglistInfo + " failed, because there are mailings depending on it: " + mailingInfos);
+        } else {
+			boolean success = mailinglistService.deleteMailinglist(mailinglistIdToDelete, admin.getCompanyID());
+			
+			if (success) {
+				return "1 mailinglist deleted";
+			} else {
+				throw new RestfulNoDataFoundException("No data found for deletion");
+			}
+        }
 	}
 
 	/**
@@ -275,12 +298,24 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 						if ("name".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
 								mailinglist.setShortname((String) entry.getValue());
+								// Check for unallowed html tags
+								try {
+									HtmlChecker.checkForUnallowedHtmlTags(mailinglist.getShortname(), false);
+								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailinglist name contains unallowed HTML tags");
+								}
 							} else {
-								throw new RestfulClientException("Invalid data type for 'shortname'. String expected");
+								throw new RestfulClientException("Invalid data type for 'name'. String expected");
 							}
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
 								mailinglist.setDescription((String) entry.getValue());
+								// Check for unallowed html tags
+								try {
+									HtmlChecker.checkForUnallowedHtmlTags(mailinglist.getDescription(), false);
+								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailinglist description contains unallowed HTML tags");
+								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");
 							}
@@ -290,7 +325,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					}
 					
 					if (StringUtils.isBlank(mailinglist.getShortname())) {
-						throw new RestfulClientException("Missing mandatory value for property value for 'shortname'");
+						throw new RestfulClientException("Missing mandatory value for property value for 'name'");
 					} else {
 						for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
 							if (mailinglistItem.getShortname().equals(mailinglist.getShortname())) {
@@ -336,6 +371,22 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
 		
+		Mailinglist existingMailinglist = null;
+		
+		if (restfulContext.length == 1) {
+			String requestedMailinglistKeyValue = restfulContext[0];
+			if (AgnUtils.isNumber(requestedMailinglistKeyValue)) {
+				existingMailinglist = mailinglistDao.getMailinglist(Integer.parseInt(requestedMailinglistKeyValue), admin.getCompanyID());
+			} else {
+				for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+					if (mailinglistItem.getShortname().equals(requestedMailinglistKeyValue)) {
+						existingMailinglist = mailinglistItem;
+						break;
+					}
+				}
+			}
+		}
+		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
@@ -343,12 +394,65 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					JsonObject jsonObject = (JsonObject) jsonNode.getValue();
 					Mailinglist mailinglist = new MailinglistImpl();
 					mailinglist.setCompanyID(admin.getCompanyID());
+					
+					if (jsonObject.containsPropertyKey("mailinglist_id")) {
+						if (jsonObject.get("mailinglist_id") instanceof Integer) {
+							if (existingMailinglist == null) {
+								existingMailinglist = mailinglistDao.getMailinglist((Integer) jsonObject.get("mailinglist_id"), admin.getCompanyID());
+								if (existingMailinglist == null) {
+									throw new RestfulClientException("No such mailinglist for update");
+								}
+							} else {
+								if (existingMailinglist.getId() != (Integer) jsonObject.get("mailinglist_id")) {
+									throw new RestfulClientException("Invalid data for existing mailinglist for 'mailinglist_id'");
+								}
+							}
+						} else {
+							throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
+						}
+					}
+					
+					if (jsonObject.containsPropertyKey("name")) {
+						if (jsonObject.get("name") instanceof String) {
+							if (StringUtils.isBlank((String) jsonObject.get("name"))) {
+								throw new RestfulClientException("Invalid empty data for 'name'. String expected");
+							} else {
+								if (existingMailinglist == null) {
+									for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+										if (mailinglistItem.getShortname().equals(jsonObject.get("name"))) {
+											existingMailinglist = mailinglistItem;
+											break;
+										}
+									}
+								}
+							}
+						} else {
+							throw new RestfulClientException("Invalid data type for 'name'. String expected");
+						}
+					}
+					
+					if (existingMailinglist != null) {
+						if (mailinglist.getCompanyID() != existingMailinglist.getCompanyID()) {
+							throw new RestfulClientException("Invalid data for 'clientID'. Cannot change existing mailinglist of other client");
+						}
+						
+						mailinglist = existingMailinglist;
+					}
+					
 					for (Entry<String, Object> entry : jsonObject.entrySet()) {
-						if ("name".equals(entry.getKey())) {
+						if ("mailinglist_id".equals(entry.getKey())) {
+							if (entry.getValue() instanceof Integer) {
+								if (mailinglist.getId() != (Integer) entry.getValue()) {
+									throw new RestfulClientException("Invalid new data for internal value 'mailinglist_id'");
+								}
+							} else {
+								throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
+							}
+						} else if ("name".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
 								mailinglist.setShortname((String) entry.getValue());
 							} else {
-								throw new RestfulClientException("Invalid data type for 'shortname'. String expected");
+								throw new RestfulClientException("Invalid data type for 'name'. String expected");
 							}
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() instanceof String) {
@@ -362,33 +466,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					}
 					
 					if (StringUtils.isBlank(mailinglist.getShortname())) {
-						throw new RestfulClientException("Missing mandatory value for property value for 'shortname'");
+						throw new RestfulClientException("Missing mandatory value for property value for 'name'");
 					} else {
-						if (restfulContext.length == 1) {
-							String requestedMailinglistKeyValue = restfulContext[0];
-							Mailinglist requestedMailinglist = null;
-							if (AgnUtils.isNumber(requestedMailinglistKeyValue)) {
-								requestedMailinglist = mailinglistDao.getMailinglist(Integer.parseInt(requestedMailinglistKeyValue), admin.getCompanyID());
-							} else {
-								for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
-									if (mailinglistItem.getShortname().equals(requestedMailinglistKeyValue)) {
-										requestedMailinglist = mailinglistItem;
-										break;
-									}
-								}
-							}
-							
-							if (requestedMailinglist != null) {
-								mailinglist.setId(requestedMailinglist.getId());
-							}
-						}
-						
-						for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
-							if (mailinglistItem.getShortname().equals(mailinglist.getShortname()) && mailinglistItem.getId() != mailinglist.getId()) {
-								throw new RestfulClientException("Mailinglist with name '" + mailinglist.getShortname() + "' already exists");
-							}
-						}
-						
 						mailinglistDao.saveMailinglist(mailinglist);
 						
 						mailinglist = mailinglistDao.getMailinglist(mailinglist.getId(), admin.getCompanyID());

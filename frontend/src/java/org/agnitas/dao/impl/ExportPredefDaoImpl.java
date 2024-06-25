@@ -12,6 +12,7 @@ package org.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,6 +24,8 @@ import org.agnitas.beans.ExportPredef;
 import org.agnitas.dao.ExportPredefDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DbColumnType.SimpleDataType;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -47,21 +50,6 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	}
 
 	@Override
-	public ExportPredef create(int companyID) {
-		if (companyID == 0) {
-			return null;
-		} else {
-			ExportPredef exportPredef = new ExportPredef();
-			exportPredef.setId(0);
-			exportPredef.setCompanyID(companyID);
-
-			save(exportPredef);
-
-			return exportPredef;
-		}
-	}
-
-	@Override
 	@DaoUpdateReturnValueCheck
 	public int save(ExportPredef exportPredef) {
 		if (exportPredef == null || exportPredef.getCompanyID() == 0) {
@@ -82,18 +70,33 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					columnsListString += exportPredefMapping.getDbColumn();
 				}
 			}
+			
+			Object delimiterParameter = exportPredef.getDelimiter();
+			Object separatorParameter = exportPredef.getSeparator();
+			if (isOracleDB()) {
+				try {
+					if (DbUtilities.getColumnDataType(getDataSource(), "export_predef_tbl", "delimiter_char").getSimpleDataType() != SimpleDataType.Characters) {
+						delimiterParameter = getDelimiterValueForOracle(exportPredef);
+					}
+					if (DbUtilities.getColumnDataType(getDataSource(), "export_predef_tbl", "separator_char").getSimpleDataType() != SimpleDataType.Characters) {
+						separatorParameter = getSeparatorValueForOracle(exportPredef);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 
 			if (exists) {
-				update(logger, "UPDATE export_predef_tbl SET charset = ?, columns = ?, shortname = ?, description = ?, mailinglists = ?, mailinglist_id = ?, delimiter_char = ?, always_quote = ?, separator_char = ?, target_id = ?, user_type = ?, user_status = ?, deleted = ?, timestamp_start = ?, timestamp_end = ?, timestamp_lastdays = ?, timestamp_includecurrent = ?, creation_date_start = ?, creation_date_end = ?, creation_date_lastdays = ?, creation_date_includecurrent = ?, mailinglist_bind_start = ?, mailinglist_bind_end = ?, mailinglist_bind_lastdays = ?, ml_bind_includecurrent = ?, dateformat = ?, datetimeformat = ?, timezone = ?, locale_lang = ?, locale_country = ?, decimalseparator = ?, limits_linked_by_and = ? WHERE export_predef_id = ? AND company_id = ?",
+				update(logger, "UPDATE export_predef_tbl SET charset = ?, columns = ?, shortname = ?, description = ?, mailinglists = ?, mailinglist_id = ?, delimiter_char = ?, always_quote = ?, separator_char = ?, target_id = ?, user_type = ?, user_status = ?, deleted = ?, timestamp_start = ?, timestamp_end = ?, timestamp_lastdays = ?, timestamp_includecurrent = ?, creation_date_start = ?, creation_date_end = ?, creation_date_lastdays = ?, creation_date_includecurrent = ?, mailinglist_bind_start = ?, mailinglist_bind_end = ?, mailinglist_bind_lastdays = ?, ml_bind_includecurrent = ?, dateformat = ?, datetimeformat = ?, timezone = ?, locale_lang = ?, locale_country = ?, decimalseparator = ?, use_decoded_values = ?, limits_linked_by_and = ? WHERE export_predef_id = ? AND company_id = ?",
 					exportPredef.getCharset(),
 					columnsListString,
 					exportPredef.getShortname(),
 					exportPredef.getDescription(),
 					exportPredef.getMailinglists(),
 					exportPredef.getMailinglistID(),
-					isOracleDB() ? getDelimiterValueForOracle(exportPredef) : exportPredef.getDelimiter(),
+					delimiterParameter,
 					exportPredef.isAlwaysQuote() ? 1 : 0,
-					isOracleDB() ? getSeparatorValueForOracle(exportPredef) : exportPredef.getSeparator(),
+					separatorParameter,
 					exportPredef.getTargetID(),
 					exportPredef.getUserType(),
 					exportPredef.getUserStatus(),
@@ -116,13 +119,14 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					exportPredef.getLocale().getLanguage(),
 					exportPredef.getLocale().getCountry(),
 					exportPredef.getDecimalSeparator(),
+					exportPredef.isUseDecodedValues() ? 1 : 0,
 					exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0,
 					exportPredef.getId(),
 					exportPredef.getCompanyID());
 			} else {
 				if (isOracleDB()) {
 					int newExportPredefID = selectInt(logger, "SELECT export_predef_tbl_seq.NEXTVAL FROM DUAL");
-					update(logger, "INSERT INTO export_predef_tbl (export_predef_id, company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, locale_lang, locale_country, decimalseparator, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 34, ", ") + ")",
+					update(logger, "INSERT INTO export_predef_tbl (export_predef_id, company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, locale_lang, locale_country, decimalseparator, use_decoded_values, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 35, ", ") + ")",
 						newExportPredefID,
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
@@ -131,9 +135,9 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getDescription(),
 						exportPredef.getMailinglists(),
 						exportPredef.getMailinglistID(),
-						getDelimiterValueForOracle(exportPredef),
+						delimiterParameter,
 						exportPredef.isAlwaysQuote() ? 1 : 0,
-						getSeparatorValueForOracle(exportPredef),
+						separatorParameter,
 						exportPredef.getTargetID(),
 						exportPredef.getUserType(),
 						exportPredef.getUserStatus(),
@@ -156,10 +160,11 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getLocale().getLanguage(),
 						exportPredef.getLocale().getCountry(),
 						exportPredef.getDecimalSeparator(),
+						exportPredef.isUseDecodedValues() ? 1 : 0,
 						exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0);
 					exportPredef.setId(newExportPredefID);
 				} else {
-					int newExportPredefID = insertIntoAutoincrementMysqlTable(logger, "export_predef_id", "INSERT INTO export_predef_tbl (company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, locale_lang, locale_country, decimalseparator, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 33, ", ") + ")",
+					int newExportPredefID = insertIntoAutoincrementMysqlTable(logger, "export_predef_id", "INSERT INTO export_predef_tbl (company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, locale_lang, locale_country, decimalseparator, use_decoded_values, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 34, ", ") + ")",
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
 						columnsListString,
@@ -167,9 +172,9 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getDescription(),
 						exportPredef.getMailinglists(),
 						exportPredef.getMailinglistID(),
-						exportPredef.getDelimiter(),
+						delimiterParameter,
 						exportPredef.isAlwaysQuote() ? 1 : 0,
-						exportPredef.getSeparator(),
+						separatorParameter,
 						exportPredef.getTargetID(),
 						exportPredef.getUserType(),
 						exportPredef.getUserStatus(),
@@ -192,6 +197,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getLocale().getLanguage(),
 						exportPredef.getLocale().getCountry(),
 						exportPredef.getDecimalSeparator(),
+						exportPredef.isUseDecodedValues() ? 1 : 0,
 						exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0);
 					exportPredef.setId(newExportPredefID);
 				}
@@ -344,6 +350,11 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 
 		return ids;
 	}
+	
+	@Override
+	public List<Integer> getExportsContainingProfileField(int companyID, String profileFieldName) {
+		return select(logger, "SELECT DISTINCT(export_predef_id) FROM export_column_mapping_tbl WHERE export_predef_id IN (SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ?) AND LOWER(db_column) = ? ORDER BY export_predef_id", IntegerRowMapper.INSTANCE, companyID, profileFieldName.toLowerCase());
+	}
 
 	private static boolean validateMailingListIds(String ids, Collection<Integer> disabledMailingListIds) {
 		if (StringUtils.isBlank(ids)) {
@@ -408,33 +419,38 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			readItem.setAlwaysQuote(resultSet.getInt("always_quote") > 0);
 			
 			if (isOracle) {
-				int delimiterInt = resultSet.getBigDecimal("delimiter_char").intValue();
-				String delimiterString;
-				switch (delimiterInt) {
-					case 1:
-						delimiterString = "'";
-						break;
-					default:
-						delimiterString = "\"";
+				if (DbUtilities.getColumnTypeByName(resultSet.getMetaData(), "delimiter_char") == Types.VARCHAR) {
+					readItem.setDelimiter(resultSet.getString("delimiter_char"));
+					readItem.setSeparator(resultSet.getString("separator_char"));
+				} else {
+					int delimiterInt = resultSet.getBigDecimal("delimiter_char").intValue();
+					String delimiterString;
+					switch (delimiterInt) {
+						case 1:
+							delimiterString = "'";
+							break;
+						default:
+							delimiterString = "\"";
+					}
+					readItem.setDelimiter(delimiterString);
+					
+					int separatorInt = resultSet.getBigDecimal("separator_char").intValue();
+					String separatorString;
+					switch (separatorInt) {
+						case 1:
+							separatorString = ",";
+							break;
+						case 2:
+							separatorString = "|";
+							break;
+						case 3:
+							separatorString = "\t";
+							break;
+						default:
+							separatorString = ";";
+					}
+					readItem.setSeparator(separatorString);
 				}
-				readItem.setDelimiter(delimiterString);
-				
-				int separatorInt = resultSet.getBigDecimal("separator_char").intValue();
-				String separatorString;
-				switch (separatorInt) {
-					case 1:
-						separatorString = ",";
-						break;
-					case 2:
-						separatorString = "|";
-						break;
-					case 3:
-						separatorString = "\t";
-						break;
-					default:
-						separatorString = ";";
-				}
-				readItem.setSeparator(separatorString);
 			} else {
 				readItem.setDelimiter(resultSet.getString("delimiter_char"));
 				readItem.setSeparator(resultSet.getString("separator_char"));
@@ -447,7 +463,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 				readItem.setLocale(new Locale(resultSet.getString("locale_lang"), resultSet.getString("locale_country")));
 			}
 			readItem.setDecimalSeparator(resultSet.getString("decimalseparator"));
-			
+			readItem.setUseDecodedValues(resultSet.getInt("use_decoded_values") > 0);
 			readItem.setTimeLimitsLinkedByAnd(resultSet.getInt("limits_linked_by_and") > 0);
 
 			return readItem;

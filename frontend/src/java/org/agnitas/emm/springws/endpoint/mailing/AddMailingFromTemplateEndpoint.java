@@ -32,7 +32,7 @@ import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 @Endpoint
 public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 	
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	private static final Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
@@ -54,6 +54,7 @@ public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 		model.setShortname(request.getShortname());
 		model.setDescription(request.getDescription());
 		model.setAutoUpdate(request.isAutoUpdate());
+		model.setPlannedDate(request.getPlannedDate());
 
 		final int mailingID = mailingService.addMailingFromTemplate(model);
 		

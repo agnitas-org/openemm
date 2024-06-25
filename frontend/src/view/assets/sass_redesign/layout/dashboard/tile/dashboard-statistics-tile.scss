@@ -1,0 +1,14 @@
+
+#dashboard-statistics {
+  .tile-body {
+    &.has-chart {
+      @media only screen and (min-width: 601px) {
+        padding: $gap-md $gap-sm;
+      }
+
+      @media only screen and (max-width: 600px) {
+        padding-inline: 0;
+      }
+    }
+  }
+}

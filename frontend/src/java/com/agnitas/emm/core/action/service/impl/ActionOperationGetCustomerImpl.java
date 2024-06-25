@@ -11,8 +11,11 @@
 package com.agnitas.emm.core.action.service.impl;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.beans.Recipient;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -23,13 +26,16 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
+import com.agnitas.emm.core.service.RecipientFieldService;
 
 public class ActionOperationGetCustomerImpl implements EmmActionOperation {
 
 //	private static final Logger logger = LogManager.getLogger(ActionOperationGetCustomerImpl.class);
 
 	private BeanLookupFactory beanLookupFactory;
+	private ConfigService configService;
 	private RecipientService recipientService;
+	private RecipientFieldService recipientFieldService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors errors) {
@@ -49,7 +55,13 @@ public class ActionOperationGetCustomerImpl implements EmmActionOperation {
         
         if(customerID!=0) {
             aCust.setCustomerID(customerID);
-            aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+            
+            if (configService.getBooleanValue(ConfigValue.UseRecipientFieldService, companyID)) {
+            	aCust.setCustDBStructure(recipientFieldService.getRecipientDBStructure(companyID));
+    		} else {
+    			aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+    		}
+            
             aCust.setCustParameters(recipientService.getCustomerDataFromDb(companyID, customerID, aCust.getDateFormat()));
             aCust.setListBindings(recipientService.getMailinglistBindings(companyID, customerID));
             if(op.isLoadAlways() || aCust.isActiveSubscriber()) {
@@ -83,4 +95,12 @@ public class ActionOperationGetCustomerImpl implements EmmActionOperation {
     public void setRecipientService(RecipientService recipientService) {
         this.recipientService = recipientService;
     }
+	
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
+	}
+	
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
+	}
 }

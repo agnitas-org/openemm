@@ -51,9 +51,9 @@ public interface ComCompanyService {
 
 	List<AdminEntry> getAdmins(int companyId);
 
-	int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;
+	int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;	// TODO Replace CompanyCreateForm. This class belongs to presentation layer only.
 
-	int update(Admin admin, CompanyViewForm form) throws Exception;
+	int update(Admin admin, CompanyViewForm form) throws Exception;	// TODO Replace CompanyViewForm. This class belongs to presentation layer only.
 
     boolean deleteCompany(int companyIdForRemove);
     
@@ -81,4 +81,7 @@ public interface ComCompanyService {
 	int getCompanyDatasource(int companyId);
 
 	int getNumberOfCompanies();
+
+    String getTechnicalContact(int companyId);
+
 }

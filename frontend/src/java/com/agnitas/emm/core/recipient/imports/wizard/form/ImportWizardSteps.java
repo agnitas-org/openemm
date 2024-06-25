@@ -14,10 +14,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.agnitas.messages.Message;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.struts.action.ActionMessage;
 
 public class ImportWizardSteps {
     
@@ -58,6 +58,7 @@ public class ImportWizardSteps {
     private ImportWizardModeStepForm modeStep = new ImportWizardModeStepForm();
     private ImportWizardMappingStepForm mappingStep = new ImportWizardMappingStepForm();
     private boolean importRunning;
+    private String importUID;
 
     protected ImportWizardHelper helper;
     
@@ -112,6 +113,14 @@ public class ImportWizardSteps {
     public void setImportRunning(boolean importRunning) {
         this.importRunning = importRunning;
     }
+
+    public String getImportUID() {
+        return importUID;
+    }
+
+    public void setImportUID(String importUID) {
+        this.importUID = importUID;
+    }
     
     public boolean isMissingFieldsStepNeeded() {
         int mode = helper.getMode();
@@ -127,7 +136,7 @@ public class ImportWizardSteps {
      *
      * @return copy of dbInsertStatusMessages list
      */
-    public List<ActionMessage> getDbInsertStatusMessagesAndParameters() {
+    public List<Message> getDbInsertStatusMessagesAndParameters() {
         return new LinkedList<>(helper.getDbInsertStatusMessagesAndParameters());
     }
 }

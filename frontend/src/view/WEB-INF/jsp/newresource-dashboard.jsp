@@ -1,10 +1,9 @@
 <%@ page contentType="text/html; charset=utf-8"%>
-<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<emm:include page="newresource-dashboard-news.jsp"/>
+<%@include file="newresource-dashboard-news.jspf" %>
 
 <emm:ShowByPermission token="stats.mailing">
     <emm:ShowByPermission token="mailing.show">
@@ -52,12 +51,14 @@
 
     <ul class="dropdown-menu">
     	<emm:ShowByPermission token="mailing.change">
-                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
-            <li>
-                <a tabindex="-1" href="${mailingCreateLink}">
-                    <mvc:message code="mailing.create"/>
-                </a>
-            </li>
+            <emm:HideByPermission token="mailing.content.readonly">
+                    <c:url var="mailingCreateLink" value="/mailing/create.action"/>
+                <li>
+                    <a tabindex="-1" href="${mailingCreateLink}">
+                        <mvc:message code="mailing.create"/>
+                    </a>
+                </li>
+            </emm:HideByPermission>
 		</emm:ShowByPermission>
         <emm:ShowByPermission token="mailing.import">
             <li>
@@ -69,7 +70,7 @@
 
         <emm:ShowByPermission token="template.change">
             <li>
-                <a tabindex="-1" href="<html:rewrite page="/mailing/new.action?isTemplate=true"/>">
+                <a tabindex="-1" href="<c:url value="/mailing/new.action?isTemplate=true"/>">
                     <mvc:message code="mailing.template.create"/>
                 </a>
             </li>

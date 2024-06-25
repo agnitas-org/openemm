@@ -13,6 +13,7 @@ package com.agnitas.emm.core.blacklist.dao;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -57,19 +58,7 @@ public interface ComBlacklistDao {
      */
     List<BlackListEntry> getBlacklistedRecipients(int companyID);
 
-    /**
-     * Get a list of blacklisted recipients
-     *
-     * @param companyID the company to work on.
-     * @param sort the field for sorting of returned list
-     * @param direction the direction of  sorting of returned list
-     * @param page offset of the first item to return
-     * @param rownums maximum number of items to return
-     * @return list of blacklisted  recipients
-     */
-    PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums);
-	
-	PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums, String likePattern);
+	PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID);
 
     /**.
      * Check the presence given company and email in the blacklist.

@@ -68,6 +68,8 @@
     } @else {
       height: calc(100% - #{$header-height} - #{$footer-height});
     }
+
+    overflow-y: auto;
   }
 
   >.#{$selector-prefix}fixed-footer {

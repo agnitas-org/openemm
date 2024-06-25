@@ -1,0 +1,10 @@
+
+#logo-block {
+  height: $header-height;
+}
+
+.logo-block__img {
+  @include size($sidebar-icon-size);
+  border-radius: 2px;
+  background-color: $white;
+}

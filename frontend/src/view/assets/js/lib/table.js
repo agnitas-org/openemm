@@ -27,6 +27,10 @@
       if (column.headerComponent) {
         column.headerComponent = AGN.Opt.TableHeaderComponents[column.headerComponent];
       }
+
+      if (column.comparator) {
+        column.comparator = AGN.Opt.Table['comparators'][column.comparator];
+      }
     });
 
     this.gridOptions = _.merge({
@@ -167,7 +171,7 @@
     }, options || {});
 
     if (!this.gridOptions.showRecordsCount && !this.gridOptions.pagination) {
-      this.$el.find('.ag-theme-bootstrap').height(this.$el.parent().height());
+      this.$el.find('.ag-theme-bootstrap').height(this.gridOptions.autoHeight ? 'auto' : this.$el.parent().height());
     }
 
     this.grid = new agGrid.Grid(this.$el.find('.ag-theme-bootstrap').get(0), this.gridOptions);

@@ -13,38 +13,19 @@ package com.agnitas.emm.core.commons.database.fulltext.word.factory;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mysql.MysqlAtSignWordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mysql.MysqlSingleWildcardWordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mysql.MysqlWildcardWordProcessor;
-import com.agnitas.emm.core.commons.database.fulltext.word.impl.oracle.OracleMultiEscapeProcessor;
-import com.agnitas.emm.core.commons.database.fulltext.word.impl.oracle.OracleWildcardWordProcessor;
-import com.agnitas.emm.core.commons.database.fulltext.word.impl.oracle.OracleSingleWildcardWordProcessor;
 
 public class WordProcessorFactoryImpl implements WordProcessorFactory {
-
-    private DatabaseConfiguration databaseConfiguration;
 
     @Override
     public Set<WordProcessor> createWordProcessors() {
         Set<WordProcessor> wordProcessors = new HashSet<>();
-        if (databaseConfiguration.isOracle()) {
-            wordProcessors.add(new OracleSingleWildcardWordProcessor());
-            wordProcessors.add(new OracleWildcardWordProcessor());
-            wordProcessors.add(new OracleMultiEscapeProcessor());
-        } else {
-            wordProcessors.add(new MysqlSingleWildcardWordProcessor());
-            wordProcessors.add(new MysqlWildcardWordProcessor());
-            wordProcessors.add(new MysqlAtSignWordProcessor());
-        }
+        wordProcessors.add(new MysqlSingleWildcardWordProcessor());
+        wordProcessors.add(new MysqlWildcardWordProcessor());
+        wordProcessors.add(new MysqlAtSignWordProcessor());
         return wordProcessors;
-    }
-
-    @Required
-    public void setDatabaseConfiguration(DatabaseConfiguration databaseConfiguration) {
-        this.databaseConfiguration = databaseConfiguration;
     }
 }

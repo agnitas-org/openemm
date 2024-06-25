@@ -32,7 +32,7 @@
 
             editor.addCommand(commandName, {
                 exec: function (editor) {
-                    AGN.Lib.Confirm.request(AGN.url('/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
+                    AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/agn-tagsRedesigned.action' : '/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
                         if (code) {
                             editor.insertHtml(code);
                         }

@@ -31,6 +31,8 @@ public class MailinglistForm {
 	private boolean frequencyCounterEnabled;
 	
 	private RecipientProgressStatisticDto statistic;
+	private String senderEmail;
+	private String replyEmail;
 	
 	private Set<Integer> mediatypes = new HashSet<>();
 	
@@ -107,5 +109,21 @@ public class MailinglistForm {
 		for (MediaTypes mediatype : mediatypes) {
 			this.mediatypes.add(mediatype.getMediaCode());
 		}
+	}
+
+	public String getSenderEmail() {
+		return senderEmail;
+	}
+
+	public void setSenderEmail(String senderEmail) {
+		this.senderEmail = senderEmail;
+	}
+
+	public String getReplyEmail() {
+		return replyEmail;
+	}
+
+	public void setReplyEmail(String replyEmail) {
+		this.replyEmail = replyEmail;
 	}
 }

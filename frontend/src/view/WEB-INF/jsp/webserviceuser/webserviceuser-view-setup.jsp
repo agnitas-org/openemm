@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="webserviceUserForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserForm"--%>
 
@@ -38,7 +38,7 @@
             <c:set target="${saveAction}" property="extraAttributes" value="data-form-target='#wsuser-edit-form' data-form-submit"/>
             <c:set target="${saveAction}" property="iconBefore" value="icon-save"/>
             <c:set target="${saveAction}" property="name">
-                <bean:message key="button.Save"/>
+                <mvc:message code="button.Save"/>
             </c:set>
         </emm:instantiate>
     </emm:ShowByPermission>

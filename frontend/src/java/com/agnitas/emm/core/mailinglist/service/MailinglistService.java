@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 
@@ -46,9 +47,11 @@ public interface MailinglistService {
 
 	String getMailinglistName(int mailinglistId, int companyId);
 
+    List<String> getMailinglistNames(Set<Integer> mailinglistIds, int companyId);
+
 	List<Mailinglist> getAllMailingListsNames(int companyId);
 	
-	int saveMailinglist(int companyId, MailinglistDto mailinglist);
+	int saveMailinglist(int companyId, MailinglistDto mailinglist) throws ShortnameTooShortException;
 	
 	boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId);
     

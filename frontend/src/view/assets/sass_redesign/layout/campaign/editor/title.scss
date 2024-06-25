@@ -1,0 +1,35 @@
+
+#icon-titles-container {
+  width: 100%;
+  height: 100%;
+  z-index: 5; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_TITLES_CONTAINER */
+}
+
+.icon-title {
+  display: block;
+  position: absolute;
+  width: 94px; /* Same width as node + padding */
+  padding: 5px 15px;
+  font-size: 10px;
+  line-height: 18px;
+  max-height: 118px;  /* 6 lines of text + padding */
+  text-align: left;
+  color: var(--label-color);
+  border-radius: 4px;
+  word-break: break-word;
+  overflow: hidden;
+  background-color: white;
+
+  &.expandable::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 41px;  /* 2 lines of text + bottom padding */
+    background: linear-gradient(to top,
+            rgba(255, 255, 255, 1) 0%,
+            rgba(255, 255, 255, 0) 80%
+    );
+  }
+}

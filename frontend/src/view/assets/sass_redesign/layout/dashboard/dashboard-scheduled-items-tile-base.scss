@@ -1,0 +1,23 @@
+
+.tile.scheduled-items {
+
+  .list-item {
+    @include flex-column($gap-sm);
+  }
+
+  .item__info-container {
+    @include flex-row($gap-x-sm);
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .item__name-label {
+    flex-grow: 1;
+  }
+
+  .item__schedule-container {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    color: var(--text-gray-color);
+  }
+}

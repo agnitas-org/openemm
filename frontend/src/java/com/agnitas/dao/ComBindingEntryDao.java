@@ -12,6 +12,7 @@ package com.agnitas.dao;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.BindingEntry;
@@ -186,4 +187,8 @@ public interface ComBindingEntryDao {
 	int bulkDelete(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, List<Integer> customerIDs);
 
 	int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs);
+
+    Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId);
+
+	void cleanAdminAndTestUnsubsriptions(int companyID, int mailingID);
 }

@@ -10,35 +10,42 @@
 
 package com.agnitas.emm.core.profilefields.service.impl;
 
+import static java.text.MessageFormat.format;
+
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import org.agnitas.beans.ExportPredef;
+import org.agnitas.beans.ImportProfile;
+import org.agnitas.dao.ExportPredefDao;
+import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.KeywordList;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
-import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-
-import static java.text.MessageFormat.format;
+import com.agnitas.web.mvc.Popups;
 
 public class ProfileFieldValidationServiceImpl implements ProfileFieldValidationService {
     
@@ -47,15 +54,22 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     private static final int MAX_VARCHAR_LENGTH = 4000;
 
     private final KeywordList databaseKeywordList;
-    private final ProfileFieldDao profileFieldDao;
+    private final RecipientFieldService recipientFieldService;
     private final ComTargetService targetService;
     private final ConfigService configService;
+    private final ObjectUsageService objectUsageService;
+    private final ImportProfileDao importProfileDao;
+    private final ExportPredefDao exportPredefDao;
 
-    public ProfileFieldValidationServiceImpl(KeywordList databaseKeywordList, ProfileFieldDao profileFieldDao, ComTargetService targetService, ConfigService configService) {
+    public ProfileFieldValidationServiceImpl(KeywordList databaseKeywordList, RecipientFieldService recipientFieldService, ComTargetService targetService, ConfigService configService, ObjectUsageService objectUsageService,
+    		ImportProfileDao importProfileDao, ExportPredefDao exportPredefDao) {
         this.databaseKeywordList = databaseKeywordList;
-        this.profileFieldDao = profileFieldDao;
+        this.recipientFieldService = recipientFieldService;
         this.targetService = targetService;
         this.configService = configService;
+        this.objectUsageService = objectUsageService;
+        this.importProfileDao = importProfileDao;
+        this.exportPredefDao = exportPredefDao;
     }
 
     @Override
@@ -76,7 +90,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
             return false;
         }
 
-        for (String standardField : ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) {
+        for (String standardField : RecipientStandardField.getAllRecipientStandardFieldColumnNames()) {
             if (standardField.equalsIgnoreCase(fieldName)) {
                 return false;
             }
@@ -107,7 +121,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     @Override
     public boolean isShortnameInDB(int companyId, String shortName) {
         try {
-            return profileFieldDao.getProfileFieldByShortname(companyId, shortName) != null;
+            return recipientFieldService.getRecipientField(companyId, shortName) != null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,7 +155,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     @Override
     public boolean isDefaultValueAllowedInDb(int companyId, String fieldName, String defaultValue) {
         try {
-            return profileFieldDao.checkAllowedDefaultValue(companyId, fieldName, defaultValue);
+            return recipientFieldService.checkAllowedDefaultValue(companyId, fieldName, defaultValue);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -154,14 +168,14 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean mayAddNewColumn(int companyId) {
-        return profileFieldDao.mayAdd(companyId);
+    public boolean mayAddNewColumn(int companyId) throws Exception {
+        return recipientFieldService.mayAddNewRecipientField(companyId);
     }
 
     @Override
     public boolean notContainsInDb(int companyId, String fieldName) {
         try {
-            return !profileFieldDao.checkProfileFieldExists(companyId, fieldName);
+            return recipientFieldService.getRecipientField(companyId, fieldName) == null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -169,7 +183,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
 
     @Override
     public boolean hasNotAllowedNumberOfEntries(int companyId) {
-        int numberOfEntries = profileFieldDao.countCustomerEntries(companyId);
+        int numberOfEntries = recipientFieldService.countCustomerEntries(companyId);
 
         return numberOfEntries > configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId);
     }
@@ -182,21 +196,63 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
+    public boolean isValidToDelete(String fieldName, int companyId, Locale locale, Popups popups) {
+        if (notContainsInDb(companyId, fieldName)) {
+            popups.alert("error.profiledb.NotExists", fieldName);
+        }
+        
+        if (hasNotAllowedNumberOfEntries(companyId)) {
+            popups.alert("error.profiledb.delete.tooMuchRecipients", fieldName);
+        }
+        
+        if (isStandardColumn(fieldName)) {
+            popups.alert("error.profiledb.cannotDropColumn", fieldName);
+        }
+        
+        List<Integer> importProfileIds = importProfileDao.getImportsContainingProfileField(companyId, fieldName);
+        if (importProfileIds != null) {
+        	for (int importProfileID : importProfileIds) {
+        		ImportProfile importProfile = importProfileDao.getImportProfileById(importProfileID);
+        		popups.alert("error.profiledb.import.used", fieldName, importProfile.getName(), importProfileID);
+        	}
+        }
+        
+        List<Integer> exportProfileIds = exportPredefDao.getExportsContainingProfileField(companyId, fieldName);
+        if (exportProfileIds != null) {
+        	for (int exportProfileID : exportProfileIds) {
+        		ExportPredef exportProfile = exportPredefDao.get(exportProfileID, companyId);
+        		popups.alert("error.profiledb.export.used", fieldName, exportProfile.getShortname(), exportProfileID);
+        	}
+        }
+        
+        checkObjectUsages(fieldName, companyId, locale, popups);
+        return !popups.hasAlertPopups();
+    }
+
+    private void checkObjectUsages(String fieldName, int companyId, Locale locale, Popups popups) {
+        ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, fieldName);
+        if (usages.isEmpty()) {
+            return;
+        }
+        ObjectUsagesToPopups.objectUsagesToPopups(
+                "error.profilefield.used", "error.profilefield.used.withMore",
+                usages, popups, locale);
+    }
+
+    @Override
     public boolean isStandardColumn(String fieldName) {
-        return ArrayUtils.contains(ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS, fieldName);
+        return RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(fieldName);
     }
     
     @Override
-    public ServiceResult<Object> validateNewProfileFieldValue(Admin admin, RecipientFieldDto fieldChange) {
+    public ServiceResult<Object> validateNewProfileFieldValue(Admin admin, String fieldName, SimpleDataType newSimpleDataType, String newValue, boolean clearThisField) {
         Locale locale = admin.getLocale();
-        String newValue = fieldChange.getNewValue();
-        String fieldName = fieldChange.getShortname();
 
-        ProfileField profileField = null;
+        RecipientFieldDescription profileField = null;
         try {
-            profileField = profileFieldDao.getProfileField(admin.getCompanyID(), fieldChange.getShortname());
+            profileField = recipientFieldService.getRecipientField(admin.getCompanyID(), fieldName);
         } catch (Exception e) {
-            logger.error(format("Could find field by column name {0}", fieldChange.getShortname()), e);
+            logger.error(format("Could find field by column name {0}", fieldName), e);
         }
         
         Message message = null;
@@ -204,16 +260,16 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
 
         if (profileField == null) {
             message = getMessageWithFieldName(fieldName, "error.profiledb.notExists", locale);
-        } else if (!profileField.getNullable() && fieldChange.isClear()) {
+        } else if (!profileField.isNullable() && clearThisField) {
             message = getMessageWithFieldName(fieldName, "error.profiledb.empty", locale);
-        } else if (!isAllowedNewValue(profileField.getAllowedValues(), fieldChange.getNewValue())) {
+        } else if (!isAllowedNewValue(profileField.getAllowedValues(), newValue)) {
             message = getMessageWithFieldName(fieldName, "error.profiledb.invalidFixedValue", locale);
-        } else if (fieldChange.isClear() && StringUtils.isNotBlank(newValue)) {
+        } else if (clearThisField && StringUtils.isNotBlank(newValue)) {
             message = Message.of("error.bulkAction.empty.clear", fieldName);
         } else if (StringUtils.isBlank(newValue)) {
             value = "";
         } else {
-            switch (fieldChange.getType()) {
+            switch (newSimpleDataType) {
 	            case Date:
                     SimpleDateFormat dateFormat = admin.getDateFormat();
                     String dateFormatPattern = dateFormat.toPattern();
@@ -265,8 +321,8 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
                     }
                     break;
                 case Characters:
-                    if (StringUtils.length(newValue) > profileField.getDataTypeLength()) {
-                        message = getMessageWithFieldName(fieldName, "error.contentLengthExceedsLimit", locale, profileField.getDataTypeLength());
+                    if (StringUtils.length(newValue) > profileField.getCharacterLength()) {
+                        message = getMessageWithFieldName(fieldName, "error.contentLengthExceedsLimit", locale, profileField.getCharacterLength());
                     } else {
                         value = newValue;
                     }
@@ -280,9 +336,8 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         return new ServiceResult<>(value, value != null, message);
     }
     
-    private boolean isAllowedNewValue(String[] allowedValues, String newValue) {
-        return StringUtils.isBlank(newValue) ||
-                allowedValues == null || ArrayUtils.contains(allowedValues, newValue);
+    private boolean isAllowedNewValue(List<String> allowedValues, String newValue) {
+        return StringUtils.isBlank(newValue) || allowedValues == null || allowedValues.contains(newValue);
     }
     
     private Message getMessageWithFieldName(String fieldName, String messageKey, Locale locale, Object... parameters) {
@@ -300,12 +355,12 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     
     private boolean fieldNotExistInDb(int companyId, String shortName, String fieldName) {
         try {
-            List<ProfileField> profileFields = profileFieldDao.getProfileFields(companyId);
+            List<RecipientFieldDescription> profileFields = recipientFieldService.getRecipientFields(companyId);
 
-            for (ProfileField field : profileFields) {
-                boolean isColumnEqualsFieldName = StringUtils.equalsIgnoreCase(field.getColumn(), fieldName);
-                boolean isColumnEqualsShortname = StringUtils.equalsIgnoreCase(field.getColumn(), shortName);
-                boolean isDbShortnameEqualsShortname = StringUtils.equalsIgnoreCase(field.getShortname(), shortName);
+            for (RecipientFieldDescription field : profileFields) {
+                boolean isColumnEqualsFieldName = StringUtils.equalsIgnoreCase(field.getColumnName(), fieldName);
+                boolean isColumnEqualsShortname = StringUtils.equalsIgnoreCase(field.getColumnName(), shortName);
+                boolean isDbShortnameEqualsShortname = StringUtils.equalsIgnoreCase(field.getShortName(), shortName);
 
                 if (!isColumnEqualsFieldName && (isColumnEqualsShortname || isDbShortnameEqualsShortname)) {
                     return false;
@@ -318,4 +373,23 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         return true;
     }
 
+	@Override
+	public List<Integer> getImportsContainingProfileField(int companyId, String fieldName) {
+	    return importProfileDao.getImportsContainingProfileField(companyId, fieldName);
+	}
+
+	@Override
+	public List<Integer> getExportsContainingProfileField(int companyId, String fieldName) {
+		return exportPredefDao.getExportsContainingProfileField(companyId, fieldName);
+	}
+
+	@Override
+	public ImportProfile getImportProfile(int importProfileID) {
+		return importProfileDao.getImportProfileById(importProfileID);
+	}
+
+	@Override
+	public ExportPredef getExportProfile(int companyID, int exportProfileID) {
+		return exportPredefDao.get(exportProfileID, companyID);
+	}
 }

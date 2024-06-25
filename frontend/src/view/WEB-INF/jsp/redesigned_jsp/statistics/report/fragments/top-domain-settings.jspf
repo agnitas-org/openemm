@@ -1,0 +1,141 @@
+<%@ page import="com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings" %>
+<%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
+
+<%--@elvariable id="birtReportForm" type="com.agnitas.emm.core.birtreport.forms.BirtReportForm"--%>
+<%--@elvariable id="propertiesMap" type="java.util.Map<ReportSettingsType, Map<String, List<BirtReportSettings.Properties>>>"--%>
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="targetList" type="java.util.List"--%>
+<%--@elvariable id="mailinglistList" type="java.util.List"--%>
+<%--@elvariable id="datePickerFormatPattern" type="java.lang.String"--%>
+<%--@elvariable id="reportDateFormatPattern" type="java.lang.String"--%>
+
+<c:set var="TOP_DOMAIN_KEY" value="<%= ReportSettingsType.TOP_DOMAIN.getKey()%>"/>
+<c:set var="DATE_RANGE_PREDEFINED" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED%>" scope="request"/>
+<c:set var="DATE_RANGE_CUSTOM" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_CUSTOM%>" scope="request"/>
+
+<c:set var="DATE_RANGE_PREDEFINED_WEEK" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_30_DAYS" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_30_DAYS%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_LAST_MONTH" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_LAST_MONTH%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_THREE_MONTHS" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS%>" scope="request"/>
+
+<div class="row g-3" data-field="toggle-vis">
+    <div class="col-12">
+        <label class="form-label"><mvc:message code="report.recipient.period"/></label>
+
+        <div class="row g-1">
+            <div class="col-12">
+                <mvc:select path="settings[TOP_DOMAIN][dateRangeType]" cssClass="form-control js-select" data-field-vis="">
+                    <mvc:option value="${DATE_RANGE_PREDEFINED}" data-field-vis-hide="#top-domain-custom-date-range-block"
+                                data-field-vis-show="#top-domain-predefined-date-range">
+                        <mvc:message code="birt.report.period.predefined"/>
+                    </mvc:option>
+                    <mvc:option value="${DATE_RANGE_CUSTOM}" data-field-vis-hide="#top-domain-predefined-date-range"
+                                data-field-vis-show="#top-domain-custom-date-range-block">
+                        <mvc:message code="birt.report.period.custom"/>
+                    </mvc:option>
+                </mvc:select>
+            </div>
+
+            <div id="top-domain-predefined-date-range" class="col-12">
+                <mvc:select path="settings[TOP_DOMAIN][predefinedDateRange]" id="topDomains_predefinedDateRange" size="1" cssClass="form-control js-select">
+                    <mvc:option value="${DATE_RANGE_PREDEFINED_WEEK}"><mvc:message code="report.recipient.last.week"/></mvc:option>
+                    <mvc:option value="${DATE_RANGE_PREDEFINED_30_DAYS}"><mvc:message code="report.last.30days"/></mvc:option>
+                    <mvc:option value="${DATE_RANGE_PREDEFINED_LAST_MONTH}"><mvc:message code="report.last.month"/></mvc:option>
+                    <mvc:option value="${DATE_RANGE_PREDEFINED_THREE_MONTHS}"><mvc:message code="report.recipient.last.three.months"/></mvc:option>
+                </mvc:select>
+            </div>
+
+            <div id="top-domain-custom-date-range-block" class="col-12" data-date-range>
+                <div class="row g-1">
+                    <div class="col">
+                        <div class="date-picker-container">
+                            <mvc:message var="fromMsg" code="From"/>
+                            <mvc:text id="top-domain_customStartDate" path="settings[TOP_DOMAIN][startDate]" cssClass="form-control js-datepicker" placeholder="${fromMsg}"
+                                      data-datepicker-options="formatSubmit: '${fn:toLowerCase(reportDateFormatPattern)}'" />
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="date-picker-container">
+                            <mvc:message var="toMsg" code="To"/>
+\                            <mvc:text id="top-domain_customStopDate" path="settings[TOP_DOMAIN][stopDate]" cssClass="form-control js-datepicker" placeholder="${toMsg}"
+                                      data-datepicker-options="formatSubmit: '${fn:toLowerCase(reportDateFormatPattern)}'" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label" for="selectedMaialinglists_topDomains"><mvc:message code="report.mailinglists"/></label>
+        <mvc:select path="settings[TOP_DOMAIN][selectedMailinglists]" id="selectedMaialinglists_topDomains" multiple="true" cssClass="form-control js-select">
+            <mvc:options items="${mailinglistList}" itemValue="id" itemLabel="shortname"/>
+        </mvc:select>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label" for="availableTargets_topDomains"><mvc:message code="Target-Groups"/></label>
+        <mvc:message var="addTargetGroupMessage" code="addTargetGroup" />
+        <mvc:select path="settings[TOP_DOMAIN][selectedTargets]" id="availableTargets_topDomains" cssClass="form-control js-select" multiple="true" placeholder="${addTargetGroupMessage}">
+            <mvc:options items="${targetList}" itemValue="id" itemLabel="targetName"/>
+        </mvc:select>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label" for="max-domains"><mvc:message code="domains.max"/></label>
+        <mvc:select id="max-domains" path="settings[TOP_DOMAIN][maxDomains]" cssClass="form-control js-select">
+            <mvc:option value="5">5</mvc:option>
+            <mvc:option value="10">10</mvc:option>
+            <mvc:option value="15">15</mvc:option>
+        </mvc:select>
+    </div>
+
+        <div class="col-12">
+            <div class="tile tile--sm h-auto">
+                <div class="tile-header">
+                    <h3 class="text-dark"><mvc:message code="report.figures"/></h3>
+                    <div class="tile-controls">
+                        <div class="form-check form-switch">
+                            <input id="toggle-comparison-figures" class="form-check-input" type="checkbox" role="switch" data-toggle-checkboxes="on">
+                            <label class="form-label form-check-label" for="toggle-comparison-figures"><mvc:message code="ToggleOnOff" /></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="tile-body">
+                    <div class="row g-2">
+                        <c:forEach items="${propertiesMap}" var="settings">
+                            <c:if test="${settings.key.key == TOP_DOMAIN_KEY}">
+                                <c:forEach items="${settings.value}" var="group">
+                                    <c:if test="${empty group.key}">
+                                        <c:forEach items="${group.value}" var="prop">
+                                            <div class="col-12">
+                                                <div class="form-check form-switch">
+                                                    <mvc:checkbox id="property_topdomain_${prop.propName}" path="settings[TOP_DOMAIN][${prop.propName}]" cssClass="form-check-input" value="true" role="switch" />
+                                                    <label class="form-label form-check-label fw-normal" for="property_topdomain_${prop.propName}">
+                                                        <mvc:message code="${prop.labelCode}"/>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <c:if test="${settings.value.containsKey(prop.propName)}">
+                                                <c:forEach items="${settings.value.get(prop.propName)}" var="subProp">
+                                                    <div class="col-12 ml-6">
+                                                        <div class="form-check form-switch">
+                                                            <mvc:checkbox id="property_topdomain_${subProp.propName}" path="settings[TOP_DOMAIN][${subProp.propName}]" cssClass="form-check-input" value="true" role="switch" />
+                                                            <label class="form-label form-check-label fw-normal" for="property_topdomain_${subProp.propName}">
+                                                                <mvc:message code="${subProp.labelCode}"/>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </c:forEach>
+                                            </c:if>
+                                        </c:forEach>
+                                    </c:if>
+                                </c:forEach>
+                            </c:if>
+                        </c:forEach>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>

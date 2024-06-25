@@ -12,7 +12,6 @@ AGN.Lib.Controller.new('manage-table-import', function() {
 
     var $columnMappingsTable;
     var columnMappingRowTemplate;
-    var file;
 
     this.addDomInitializer('manage-table-import', function() {
         config = this.config;
@@ -58,7 +57,7 @@ AGN.Lib.Controller.new('manage-table-import', function() {
         recalculateMappingIndexes($tbody.find(MAPPING_ROW));
     });
 
-    this.addAction({change: 'select-file', click: 'create-mapping'}, function() {
+    this.addAction({click: 'create-mapping'}, function() {
         const form = Form.get(this.el);
 
         $.ajax(config.urls.CREATE_MAPPINGS, {
@@ -78,6 +77,13 @@ AGN.Lib.Controller.new('manage-table-import', function() {
         })
     });
 
+    this.addAction({click: 'import-data'}, function() {
+        const url = this.el.data('url');
+        const form = Form.get($('#form'));
+        form.setActionOnce(url);
+
+        submitForm(form);
+    });
     function renderMappings(mappings) {
         $columnMappingsTable = $('#manage-tables-tbody');
         $columnMappingsTable.html('');
@@ -137,7 +143,10 @@ AGN.Lib.Controller.new('manage-table-import', function() {
 
     this.addAction({submission: 'save'}, function () {
         const form = Form.get(this.el);
+        submitForm(form);
+    });
 
+    function submitForm(form) {
         _.each(collectMappingsDataFromTable(), function (mapping, index) {
             form.setValueOnce('mappings[' + index + '].sourceColumn', mapping.sourceColumn);
             form.setValueOnce('mappings[' + index + '].targetColumn', mapping.targetColumn);
@@ -146,9 +155,8 @@ AGN.Lib.Controller.new('manage-table-import', function() {
             form.setValueOnce('mappings[' + index + '].defaultValue', mapping.defaultValue);
             form.setValueOnce('mappings[' + index + '].format', mapping.format);
         })
-        file = $('[data-action="select-file"]').prop('files')[0];
         form.submit();
-    });
+    }
 
     function recalculateMappingIndexes($rows) {
         var currentIndex = 0;

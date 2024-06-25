@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Max. sending mails/hour]]></title>
+    <content><![CDATA[Default shipping throttling has been activated in your EMM client. As a result, only values that are less than or equal to the amount set in the client configuration will be available in this dropdown. If you want to raise the limit, you can adjust this in the Administration area under Clients.]]></content>
+</HelpBalloon>

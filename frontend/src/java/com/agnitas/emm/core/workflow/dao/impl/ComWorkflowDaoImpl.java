@@ -16,19 +16,26 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.PredicateUtils;
@@ -51,12 +58,14 @@ import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import org.springframework.transaction.annotation.Transactional;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	
 	private static final Logger logger = LogManager.getLogger(ComWorkflowDaoImpl.class);
 
     protected ComTargetService targetService;
+    protected ConfigService configService;
 
     @Override
     public boolean exists(int workflowId, int companyId) {
@@ -81,15 +90,161 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         return update(logger, sqlSetSchema, Objects.requireNonNull(schema, "schema == null"), workflowId, companyId) > 0;
     }
 
+    @Transactional
+    @Override
+    public void savePausedSchemaForUndo(Workflow workflow, int adminId) {
+        int undoId = insertUndoEntry(workflow, adminId);
+        updatePauseUndoId(undoId, workflow.getWorkflowId(), workflow.getCompanyId());
+    }
+
+    private void updatePauseUndoId(int undoId, int workflowId, int companyId) {
+        update(logger, "UPDATE workflow_tbl SET pause_undo_id = ? WHERE workflow_id = ? AND company_id = ?",
+                undoId, workflowId, companyId);
+    }
+
+    @Override
+    public int insertUndoEntry(Workflow workflow, int adminId) {
+        List<Object> params = new ArrayList<>(List.of(
+                workflow.getWorkflowId(),
+                adminId,
+                workflow.getCompanyId(),
+                workflow.getWorkflowSchema()
+        ));
+
+        if (isOracleDB()) {
+            int newUndoId = selectInt(logger, "SELECT undo_workflow_seq.NEXTVAL FROM DUAL");
+            params.add(0, newUndoId);
+            update(logger, "INSERT INTO undo_workflow_tbl " +
+                    "(undo_id, workflow_id, admin_id, company_id, workflow_schema) " +
+                    "VALUES (?, ?, ?, ?, ?)", params.toArray());
+            return newUndoId;
+        } else {
+            return insertIntoAutoincrementMysqlTable(logger, "undo_id", "INSERT INTO undo_workflow_tbl " +
+                    "(workflow_id, admin_id, company_id, workflow_schema) " +
+                    "VALUES (?, ?, ?, ?)", params.toArray());
+        }
+    }
+
+    @Override
+    public String getSchemaBeforePause(int workflowId, int companyId) {
+        return select(logger, "SELECT workflow_schema FROM undo_workflow_tbl " +
+                "WHERE undo_id = (SELECT pause_undo_id FROM workflow_tbl WHERE workflow_id = ?) AND company_id = ?",
+                String.class, workflowId, companyId);
+    }
+
+    @Override
+    public Date getPauseDate(int workflowId, int companyId) {
+        int pauseUndoId = getPauseUndoId(workflowId, companyId);
+        if (pauseUndoId <= 0) {
+            throw new IllegalStateException("Unable to get the undo entry of a paused workflow");
+        }
+        return select(logger, "SELECT creation_date FROM undo_workflow_tbl WHERE undo_id = ?", Date.class, pauseUndoId);
+    }
+
+    private int getPauseUndoId(int workflowId, int companyId) {
+        return selectInt(logger,
+                "SELECT pause_undo_id FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?",
+                workflowId, companyId);
+    }
+
+    @Override
+    public List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin) {
+        final int rowsNumber = 10;
+        final List<Integer> necessaryWorkflowStatuses = Stream.of(DashboardWorkflow.Status.values())
+                .flatMap(s -> s.getRealStatuses().stream())
+                .map(WorkflowStatus::getId)
+                .collect(Collectors.toList());
+
+        List<Object> parameters = new ArrayList<>();
+
+        String subQuery = "SELECT wf.workflow_id, wf.shortname, wf.general_start_date, wf.actual_end_date, wf.end_type, " +
+                " CASE " + buildSqlWithStatusConditions() + " END AS status FROM workflow_tbl wf " +
+                " WHERE wf.company_id = ? AND wf.is_inner = 0 AND " + makeBulkInClauseForInteger("wf.status", necessaryWorkflowStatuses);
+
+        parameters.add(admin.getCompanyID());
+        subQuery += getDisabledMailingListsSqlRestriction(admin, parameters);
+        subQuery += getWorkflowOverviewAdditionalRestrictions(admin, parameters);
+
+        String query = String.format(
+                "SELECT workflow_id, shortname, status, general_start_date, actual_end_date, end_type FROM (%s) %s ORDER BY status ASC, general_start_date DESC ",
+                subQuery,
+                isOracleDB() ? "" : "AS subquery"
+        );
+
+        if (isOracleDB()) {
+            query = String.format("SELECT * FROM (%s) WHERE ROWNUM <= ?", query);
+        } else {
+            query += "LIMIT ?";
+        }
+
+        parameters.add(rowsNumber);
+        return select(logger, query, new DashboardWorkflowRowMapper(), parameters.toArray());
+    }
+
+    private String buildSqlWithStatusConditions() {
+        StringBuilder sqlStatusConditions = new StringBuilder();
+
+        for (DashboardWorkflow.Status status : DashboardWorkflow.Status.values()) {
+            List<Integer> statuses = status.getRealStatuses().stream()
+                    .map(WorkflowStatus::getId)
+                    .collect(Collectors.toList());
+
+            sqlStatusConditions.append(" WHEN ")
+                    .append(makeBulkInClauseForInteger("wf.status", statuses))
+                    .append(" THEN ")
+                    .append(status.getId());
+        }
+
+        return sqlStatusConditions.toString();
+    }
+
+    private String getDisabledMailingListsSqlRestriction(Admin admin, List<Object> params) {
+        if (admin.getAdminID() <= 0 || !configService.isDisabledMailingListsSupported()) {
+            return "";
+        }
+
+        String sql = "AND wf.workflow_id NOT IN (SELECT workflow_id FROM workflow_dependency_tbl WHERE company_id = wf.company_id AND type = ? AND " +
+        " entity_id IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?))";
+        params.add(WorkflowDependencyType.MAILINGLIST.getId());
+        params.add(admin.getAdminID());
+
+        return sql;
+    }
+
+    @Transactional
+    @Override
+    public void deletePauseUndoEntry(int workflowId, int companyId) {
+        int pauseUndoId = getPauseUndoId(workflowId, companyId);
+        update(logger,
+                "UPDATE workflow_tbl SET pause_undo_id = NULL WHERE workflow_id = ? AND company_id = ?",
+                workflowId, companyId);
+        deleteUndoEntry(pauseUndoId, companyId);
+    }
+
+    @Override
+    public void setActualEndDate(int workflowId, Date date, int companyId) {
+        String query = "UPDATE workflow_tbl SET actual_end_date = ? WHERE workflow_id = ? AND company_id = ?";
+        update(logger, query, date, workflowId, companyId);
+    }
+
+    @Override
+    public void deleteUndoEntry(int undoId, int companyId) {
+        update(logger, "DELETE FROM undo_workflow_tbl WHERE undo_id = ? AND company_id = ?", undoId, companyId);
+    }
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteWorkflow(int workflowId, int companyId) {
+        update(logger, "UPDATE workflow_tbl SET pause_undo_id = NULL WHERE workflow_id = ? AND company_id = ?", workflowId, companyId);
+        update(logger, "DELETE FROM undo_workflow_tbl WHERE workflow_id = ? AND company_id = ?", workflowId, companyId);
 	    update(logger, "DELETE FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", workflowId, companyId);
 	}
 
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteWorkflow(int companyId) {
+        update(logger, "UPDATE workflow_tbl SET pause_undo_id = NULL WHERE company_id = ?", companyId);
+        update(logger, "DELETE FROM undo_workflow_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_tbl WHERE company_id = ?", companyId);
     }
 
@@ -213,6 +368,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 		}
 	}
 
+	@Transactional
     @Override
     public void deleteDependencies(int companyId, int workflowId, boolean clearTargetConditions) {
         if (companyId > 0 && workflowId > 0) {
@@ -244,6 +400,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                 companyId, workflowId, WorkflowDependencyType.TARGET_GROUP_CONDITION.getId());
     }
 
+    @Transactional
     @Override
     public void setDependencies(int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions) {
         String sqlInsertNew = "INSERT INTO workflow_dependency_tbl (company_id, workflow_id, type, entity_id, entity_name) VALUES (?, ?, ?, ?, ?)";
@@ -317,13 +474,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 				" WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
 		parameters.add(admin.getCompanyID());
 
-		if (admin.getAdminID() > 0 && isDisabledMailingListsSupported()) {
-			query += "AND wf.workflow_id NOT IN (SELECT workflow_id FROM workflow_dependency_tbl WHERE company_id = wf.company_id AND type = ? AND " +
-					" entity_id IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?))";
-			parameters.add(WorkflowDependencyType.MAILINGLIST.getId());
-			parameters.add(admin.getAdminID());
-		}
-
+        query += getDisabledMailingListsSqlRestriction(admin, parameters);
         query += getWorkflowOverviewAdditionalRestrictions(admin, parameters);
 
 		query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
@@ -360,6 +511,46 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
 		return select(logger, sqlGetWorkflowsToDeactivate, new WorkflowRowMapper(), sqlParameters);
 	}
+
+    @Override
+  	public List<Workflow> getWorkflowsToUnpause(CompaniesConstraints constraints) {
+        return getPausedWorkflowToCompanyIdMap(constraints).entrySet().stream()
+                .map(entry -> getWorkflowsToUnpause(entry.getKey(), entry.getValue()))
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private Map<Integer, Integer> getPausedWorkflowToCompanyIdMap(CompaniesConstraints constraints) {
+        Map<Integer, Integer> map = new HashMap<>();
+        select(logger, "SELECT w.workflow_id, w.company_id FROM workflow_tbl w WHERE w.status = ? AND EXISTS" +
+                        "(SELECT 1 FROM undo_workflow_tbl uw WHERE uw.undo_id = w.pause_undo_id)" +
+                        DbUtilities.asCondition(" AND %s", constraints),
+                (rs, i) -> map.put(rs.getInt("workflow_id"), rs.getInt("company_id")),
+                WorkflowStatus.STATUS_PAUSED.getId());
+        return map;
+    }
+
+    private List<Workflow> getWorkflowsToUnpause(int workflowId, int companyId) {
+        int expireHours = configService.getIntegerValue(ConfigValue.WorkflowPauseExpirationHours, companyId);
+        Object[] params = new Object[]{
+                workflowId,
+                WorkflowStatus.STATUS_PAUSED.getId(),
+                DateUtilities.getDateOfHoursAgo(expireHours)
+        };
+        String sql = "SELECT w.* FROM workflow_tbl w WHERE w.workflow_id = ? AND w.status = ? AND EXISTS" +
+                "(SELECT 1 FROM undo_workflow_tbl uw WHERE uw.undo_id = w.pause_undo_id AND uw.creation_date < ?)";
+        return select(logger, sql, new WorkflowRowMapper(), params);
+    }
+
+	@Override
+	public int getPauseAdminId(int workflowId, int companyId) {
+        int pauseUndoId = getPauseUndoId(workflowId, companyId);
+        if (pauseUndoId <= 0) {
+            throw new IllegalStateException("Unable to get the undo entry of a paused workflow");
+        }
+        return selectInt(logger, "SELECT admin_id FROM undo_workflow_tbl WHERE undo_id = ?", pauseUndoId);
+    }
 
     @Override
     public List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId) {
@@ -412,10 +603,11 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         if (!strict) {
             // When a non-strict mode selected ignore dependencies related to inactive workflows.
             sqlBuilder.append("LEFT JOIN workflow_tbl w ON w.company_id = dep.company_id AND w.workflow_id = dep.workflow_id ")
-                    .append("AND w.status IN (?, ?) ");
+                    .append("AND w.status IN (?, ?, ?) ");
 
             sqlParameters.add(WorkflowStatus.STATUS_ACTIVE.getId());
             sqlParameters.add(WorkflowStatus.STATUS_TESTING.getId());
+            sqlParameters.add(WorkflowStatus.STATUS_PAUSED.getId());
         }
 
         sqlBuilder.append("WHERE dep.company_id = ? AND dep.type = ? ");
@@ -486,9 +678,10 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         sqlBuilder.append(" )");
 
         if (exceptInactive) {
-            sqlBuilder.append("AND w.status IN (?, ?) ");
+            sqlBuilder.append("AND w.status IN (?, ?, ?) ");
             sqlParameters.add(WorkflowStatus.STATUS_ACTIVE.getId());
             sqlParameters.add(WorkflowStatus.STATUS_TESTING.getId());
+            sqlParameters.add(WorkflowStatus.STATUS_PAUSED.getId());
         }
 
         sqlBuilder.append("ORDER BY w.workflow_id DESC");
@@ -515,12 +708,13 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         params.add(companyId);
         params.add(WorkflowStatus.STATUS_ACTIVE.getId());
         params.add(WorkflowStatus.STATUS_TESTING.getId());
+        params.add(WorkflowStatus.STATUS_PAUSED.getId());
         List.of(types).forEach(type -> params.add(type.getId()));
         params.add(name);
 
         return select(logger, "SELECT w.* FROM workflow_tbl w " +
                 "JOIN workflow_dependency_tbl d ON d.workflow_id = w.workflow_id AND d.company_id = w.company_id " +
-                "WHERE w.company_id = ? AND w.status IN (?, ?) " +
+                "WHERE w.company_id = ? AND w.status IN (?, ?, ?) " +
                 (types.length > 0 ? "AND d.type IN (" + StringUtils.repeat("?",  ", ", types.length) + ") " : "") +
                 "AND d.entity_name = ? " +
                 "ORDER BY w.workflow_id DESC", new WorkflowRowMapper(), params.toArray());
@@ -534,13 +728,14 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
         String sqlGetDependentWorkflows = "SELECT w.* FROM workflow_tbl w " +
                 "JOIN workflow_reaction_tbl rc ON rc.workflow_id = w.workflow_id AND rc.company_id = w.company_id " +
-                "WHERE w.company_id = ? AND w.status IN (?, ?) AND rc.reaction_type = ? AND LOWER(rc.profile_column) = ? AND rc.mailinglist_id = ? " +
+                "WHERE w.company_id = ? AND w.status IN (?, ?, ?) AND rc.reaction_type = ? AND LOWER(rc.profile_column) = ? AND rc.mailinglist_id = ? " +
                 "AND " + getIsEmpty("rc.rules_sql", !isUseRules) + " ORDER BY w.workflow_id DESC";
 
         Object[] sqlParameters = new Object[] {
                 companyId,
                 WorkflowStatus.STATUS_ACTIVE.getId(),
                 WorkflowStatus.STATUS_TESTING.getId(),
+                WorkflowStatus.STATUS_PAUSED.getId(),
                 WorkflowReactionType.CHANGE_OF_PROFILE.getId(),
                 column.trim().toLowerCase(),
                 mailingListId
@@ -595,16 +790,6 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
             update(logger, sql, Mailing.NONE_SPLIT_ID, companyId);
         }
     }
-    
-    @Override
-    public void deactivateWorkflowScheduledReports(int workflowId, int companyId) {
-        update(logger, "DELETE FROM workflow_report_schedule_tbl WHERE sent = 0 AND company_id = ? AND workflow_id = ?", companyId, workflowId);
-    }
-    
-    @Override
-    public void deleteWorkflowScheduledReports(int workflowId, int companyId) {
-        update(logger, "DELETE FROM workflow_report_schedule_tbl WHERE company_id = ? AND workflow_id = ?", companyId, workflowId);
-    }
 
     protected class WorkflowRowMapper implements RowMapper<Workflow> {
 		@Override
@@ -627,9 +812,31 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 			return workflow;
 		}
 	}
+
+	private class DashboardWorkflowRowMapper implements RowMapper<DashboardWorkflow> {
+
+        @Override
+        public DashboardWorkflow mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final DashboardWorkflow workflow = new DashboardWorkflow();
+
+            workflow.setId(rs.getBigDecimal("workflow_id").intValue());
+            workflow.setName(rs.getString("shortname"));
+            workflow.setStatus(DashboardWorkflow.Status.fromId(rs.getInt("status"), false));
+            workflow.setStartDate(rs.getTimestamp("general_start_date"));
+            workflow.setEndDate(rs.getTimestamp("actual_end_date"));
+            workflow.setEndType(WorkflowStop.WorkflowEndType.fromId(rs.getInt("end_type")));
+
+            return workflow;
+        }
+    }
 	
     @Required
     public void setTargetService(ComTargetService targetService) {
         this.targetService = targetService;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 }

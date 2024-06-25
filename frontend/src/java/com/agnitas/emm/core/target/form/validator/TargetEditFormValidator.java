@@ -10,6 +10,16 @@
 
 package com.agnitas.emm.core.target.form.validator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
+import com.agnitas.exception.DetailedRequestErrorException;
+import com.agnitas.messages.Message;
+import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -41,5 +51,42 @@ public class TargetEditFormValidator {
         }
 
         return isValid;
+    }
+
+    public void throwEqlValidationException(String eql, EqlSyntaxError error) {
+        throw new DetailedRequestErrorException(
+                getPositionDetails(error),
+                getEqlErrorMsg(eql, error)
+        );
+    }
+
+    public Map<String, Object> getPositionDetails(EqlSyntaxError error) {
+        return Map.of(
+                "symbol", error.getSymbol(),
+                "line", error.getLine(),
+                "column", error.getColumn()
+        );
+    }
+
+    public Message getEqlErrorMsg(String eql, EqlSyntaxError error) {
+        List<Object> msgArgs = new ArrayList<>(Arrays.asList(error.getLine(), error.getColumn(), error.getSymbol()));
+
+        Character notBalancedPairChar = getNotBalancedPairChar(eql);
+        if (notBalancedPairChar != null) {
+            msgArgs.add(notBalancedPairChar);
+            return Message.of("error.target.eql.syntax.char", msgArgs.toArray());
+        }
+        return Message.of("error.target.eql.syntax", msgArgs.toArray());
+    }
+
+    private Character getNotBalancedPairChar(String str) {
+        return Stream.of('`', '\'')
+                .filter(pairChar -> isPairCharNotBalanced(str, pairChar))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isPairCharNotBalanced(String str, char ch) {
+        return StringUtils.countMatches(str, CharUtils.toString(ch)) % 2 != 0;
     }
 }

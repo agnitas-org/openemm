@@ -1,0 +1,43 @@
+
+<div class="tile">
+    <script data-initializer="user|groups-permissions" type="application/json">
+        {
+            "permissionCategories": ${emm:toJson(permissionCategories)}
+        }
+    </script>
+
+    <div class="tile-header">
+        <h2 class="headline"><mvc:message code="Search"/></h2>
+    </div>
+    <div class="tile-content tile-content-forms">
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="permission-filter"><mvc:message code="settings.permission.type"/></label>
+            </div>
+            <div class="col-sm-8">
+                <select name="filter" id="permission-filter" multiple class="form-control js-select-tags">
+                    <option value="granted"><mvc:message code="settings.permission.granted"/></option>
+                    <option value="grantedForUser"><mvc:message code="settings.permission.granted.user"/></option>
+                    <option value="grantedByGroup"><mvc:message code="settings.permission.granted.group"/></option>
+                    <option value="grantable"><mvc:message code="settings.permission.grantable"/></option>
+                    <option value="notGrantable"><mvc:message code="settings.permission.notavailable"/></option>
+                    <option value="new"><mvc:message code="New"/></option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12">
+                <div class="btn-group pull-right">
+                    <button type="button" class="btn btn-regular" data-action="reset-filter">
+                        <mvc:message code="button.search.reset"/>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-regular pull-right"
+                            data-action="apply-filter">
+                        <i class="icon icon-search"></i>
+                        <span class="text"><mvc:message code="Search"/></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

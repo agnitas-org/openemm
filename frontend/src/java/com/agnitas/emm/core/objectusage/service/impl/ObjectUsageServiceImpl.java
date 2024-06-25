@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -24,7 +25,6 @@ import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 
 /**
  * Implementation of {@link ObjectUsageService} interface.
@@ -71,19 +71,22 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	@Override
 	public final ObjectUsages listUsageOfProfileFieldByDatabaseName(final int companyID, final String databaseName) {
 		try {
-            List<ObjectUsage> usages = new ArrayList<>();
 		    String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, databaseName);
-
-		    usages.addAll(collectWorkflowUsagesOfProfileField(companyID, databaseName));
-            usages.addAll(listUsageOfProfileFieldByVisibleName(companyID, visibleName));
-
-			return new ObjectUsages(usages);
+			return new ObjectUsages(findUsagesOfProfileField(companyID, visibleName, databaseName));
 		} catch (final ProfileFieldException e) {
 			if (LOGGER.isInfoEnabled()) {
 				LOGGER.info(String.format("No profile field with database name '%s'", databaseName));
 			}
 			return ObjectUsages.empty();
 		}
+	}
+
+	protected List<ObjectUsage> findUsagesOfProfileField(int companyID, String visibleName, String databaseName) {
+		List<ObjectUsage> usages = new ArrayList<>();
+		usages.addAll(collectWorkflowUsagesOfProfileField(companyID, databaseName));
+		usages.addAll(listUsageOfProfileFieldByVisibleName(companyID, visibleName));
+
+		return usages;
 	}
 
     private List<ObjectUsage> collectWorkflowUsagesOfProfileField(int companyID, String column) {
@@ -109,6 +112,12 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 
 	@Override
 	public ObjectUsages listUsageOfReferenceTableColumn(int companyID, int tableID, String columnName) {
+		// Implemented in extended class
+		return ObjectUsages.empty();
+	}
+
+	@Override
+	public ObjectUsages listUsageOfCompanyDomains(int companyId, int domainId, String domainName, List<String> addressesNames) {
 		// Implemented in extended class
 		return ObjectUsages.empty();
 	}

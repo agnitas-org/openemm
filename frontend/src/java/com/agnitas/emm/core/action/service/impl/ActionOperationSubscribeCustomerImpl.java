@@ -45,6 +45,8 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 import com.agnitas.emm.mobilephone.MobilephoneNumber;
 import com.agnitas.emm.mobilephone.service.MobilephoneNumberWhitelist;
 import com.agnitas.emm.push.pushsubscription.service.PushSubscriptionService;
@@ -62,6 +64,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	private ComCompanyDao companyDao;
 	private DatasourceDescriptionDao datasourceDescriptionDao;
 	private RecipientService recipientService;
+	private RecipientFieldService recipientFieldService;
 	private PushSubscriptionService pushSubscriptionService;	// Can be set to null
 	private MobilephoneNumberWhitelist mobilephoneNumberWhitelist;
 
@@ -94,7 +97,12 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		final Recipient recipient = beanLookupFactory.getBeanRecipient();
 		
 		recipient.setCompanyID(companyID);
-		recipient.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+		
+		if (configService.getBooleanValue(ConfigValue.UseRecipientFieldService, companyID)) {
+			recipient.setCustDBStructure(recipientFieldService.getRecipientDBStructure(companyID));
+		} else {
+			recipient.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+		}
 
 		if(customerID != null) {
 			recipient.setCustomerID(customerID);
@@ -201,7 +209,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID)) {
-			reqParams.put("SYS_TRACKING_VETO", "1");
+			reqParams.put(RecipientStandardField.DoNotTrack.getColumnName(), "1");
 		}
 
 		// copy the request parameters into the customer
@@ -320,6 +328,10 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	@Required
 	public void setRecipientService(RecipientService recipientService) {
 		this.recipientService = Objects.requireNonNull(recipientService, "Recipient Service cannot be null");
+	}
+	
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
 	}
 
 	@Required

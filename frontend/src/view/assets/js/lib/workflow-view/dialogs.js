@@ -12,9 +12,11 @@
         confirmCopy: confirmCopy
     };
 
-    function activationDialog(onSuccess, mailingNames) {
+    function activationDialog(onSuccess, mailingNames, isUnpause) {
         var $activatingDialog = $('#activating-campaign-dialog');
-        $('#activating-campaign-mailings').html(mailingNames);
+        if (!isUnpause) {
+          $('#activating-campaign-mailings').html(mailingNames);
+        }
         $activatingDialog.css('visibility', 'visible');
         $activatingDialog.show();
         var activateBtn = $('#activating-campaign-activate-button');
@@ -28,7 +30,7 @@
             open: function() {
                 var title = $activatingDialog.parent().find('.ui-dialog-title');
                 title.empty();
-                title.append('<span class="dialog-title-image">' + t('workflow.activating.title') + '</span>');
+                title.append('<span class="dialog-title-image">' + t(isUnpause ? 'workflow.activating.unpauseTitle' : 'workflow.activating.title') + '</span>');
                 title.find('.dialog-title-image').css('padding-left', '0px');
             },
             modal: true,

@@ -45,6 +45,11 @@ public class RecipientsStatisticRowMapper implements RowMapper<RecipientsStatist
 		row.setCountBouncedAsOf(resultSet.getInt("count_bounced_as_of"));
 		row.setCountWaitingForConfirmAsOf(resultSet.getInt("count_waiting_for_confirm_as_of"));
 		row.setCountRecipientAsOf(resultSet.getInt("count_recipient_as_of"));
+		row.setNotConfirmedDoiCount(resultSet.getInt("count_doi_not_confirmed"));
+		row.setNotConfirmedAndDeletedDoiCount(resultSet.getInt("count_doi_not_confirmed_deleted"));
+		row.setConfirmedDoiCount(resultSet.getInt("count_doi_confirmed"));
+		row.setConfirmedAndNotActiveDoiCount(resultSet.getInt("count_doi_confirmed_not_active"));
+		row.setTotalDoiCount(resultSet.getInt("count_doi_total"));
 
 		return row;
 	}

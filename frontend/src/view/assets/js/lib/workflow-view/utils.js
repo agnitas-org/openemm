@@ -4,12 +4,16 @@
       DateFormat = AGN.Lib.DateFormat
 
     AGN.Lib.WM.Utils = {
-        checkActivation: function() {
+        checkActivation: function(withAlert) {
             var currentWorkflowStatus = $('#workflow-status').val();
 
             if (Def.constants.initialWorkflowStatus === Def.constants.statusActive &&
                 (currentWorkflowStatus === Def.constants.statusActive || currentWorkflowStatus === Def.constants.statusTesting)) {
-                AGN.Lib.Messages(t('workflow.defaults.error'), t('error.workflow.saveActivatedWorkflow'), 'alert');
+
+                if (withAlert) {
+                    AGN.Lib.Messages(t('workflow.defaults.error'), t('error.workflow.saveActivatedWorkflow'), 'alert');
+                }
+
                 return true;
             } else {
                 return false;

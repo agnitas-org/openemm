@@ -14,7 +14,7 @@ import java.util.Date;
 
 import org.agnitas.beans.MailingComponentType;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 
 public class MailingImageDto {
 	private int id;
@@ -25,7 +25,7 @@ public class MailingImageDto {
     private String mimeType;
     private String description;
     private Date creationDate;
-    private ComTrackableLink link;
+    private TrackableLink link;
     private MailingComponentType type;
 
 	public void setId(int id) {
@@ -92,11 +92,11 @@ public class MailingImageDto {
 		return creationDate;
 	}
 
-    public ComTrackableLink getLink() {
+    public TrackableLink getLink() {
         return link;
     }
 
-    public void setLink(ComTrackableLink link) {
+    public void setLink(TrackableLink link) {
         this.link = link;
     }
 

@@ -1,0 +1,26 @@
+
+#dashboard-add-ons {
+  .tile-body {
+    @include flex-column($gap-sm);
+  }
+
+  #feature-preview {
+    @include max-size(100%, 120px);
+  }
+
+  #feature-name-container {
+    @include flex-row($gap-sm);
+    align-items: center;
+
+    i {
+      @include flex-center;
+      flex: none;
+
+      @include size(20px);
+
+      background-color: $dark-grey;
+      color: $white;
+      border-radius: 2px;
+    }
+  }
+}

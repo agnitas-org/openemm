@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -96,9 +97,44 @@ public class CalendarServiceImpl implements CalendarService {
         return mailingsAsJson(mailings, openers, clickers, admin);
     }
 
+    @Override
+    public JSONArray getMailingsRedesigned(Admin admin, LocalDate startDate, LocalDate endDate) {
+        ZoneId zoneId = AgnUtils.getZoneId(admin);
+        Date start = DateUtilities.toDate(startDate.atStartOfDay(), zoneId);
+        Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
+
+        List<Map<String, Object>> mailings = ListUtils.union(
+                mailingDao.getSentAndScheduledRedesigned(admin, start, end),
+                mailingDao.getPlannedMailingsRedesigned(admin, start, end));
+        return mailingsAsJsonRedesigned(mailings, admin);
+    }
+
+    private JSONArray mailingsAsJsonRedesigned(List<Map<String, Object>> mailings, Admin admin) {
+        JSONArray json = new JSONArray();
+        TimeZone timeZone = AgnUtils.getTimeZone(admin);
+        DateFormat dateFormat = DateUtilities.getFormat(DATE_FORMAT, timeZone);
+        DateFormat timeFormat = DateUtilities.getFormat(TIME_FORMAT, timeZone);
+        mailings.forEach(mailing -> json.add(mailingToJson(mailing, dateFormat, timeFormat)));
+        return json;
+    }
+
+    private JSONObject mailingToJson(Map<String, Object> mailing, DateFormat dateFormat, DateFormat timeFormat) {
+        JSONObject object = new JSONObject();
+        Date sendDate = (Date) mailing.get("senddate");
+        object.element("shortname", getShortname(mailing));
+        object.element("mailingId", mailing.get("mailingid"));
+        object.element("workstatus", mailing.get("workstatus"));
+        object.element("sendDate", dateFormat.format(sendDate));
+        object.element("sendTime", timeFormat.format(sendDate));
+        object.element("mailinglistName", mailing.get("mailinglist_name"));
+        return object;
+    }
+
     protected List<Map<String, Object>> getPlannedMailings(final Admin admin, final Date startDate, final Date endDate) {
         List<Map<String, Object>> plannedMailings;
-        plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate);
+        plannedMailings = admin.isRedesignedUiUsed()
+                ? mailingDao.getPlannedMailingsRedesigned(admin, startDate, endDate)
+                : mailingDao.getPlannedMailings(admin, startDate, endDate);
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
     }
 
@@ -115,7 +151,9 @@ public class CalendarServiceImpl implements CalendarService {
 
     protected List<Map<String, Object>> getMailings(final Admin admin, Date startDate, Date endDate) {
         List<Map<String, Object>> mailings;
-        mailings = mailingDao.getSentAndScheduled(admin, startDate, endDate);
+        mailings = admin.isRedesignedUiUsed()
+                ? mailingDao.getSentAndScheduledRedesigned(admin, startDate, endDate)
+                : mailingDao.getSentAndScheduled(admin, startDate, endDate);
 
         return addSomeFieldsToSentAndScheduledMailings(mailings);
     }
@@ -269,6 +307,7 @@ public class CalendarServiceImpl implements CalendarService {
             object.element("isOnlyPostType", isOnlyPostType);
             object.element("openers", openers.getOrDefault(mailingId, 0));
             object.element("clickers", clickers.getOrDefault(mailingId, 0));
+            object.element("mailinglistName", mailing.get("mailinglist_name"));
 
             result.add(object);
         }

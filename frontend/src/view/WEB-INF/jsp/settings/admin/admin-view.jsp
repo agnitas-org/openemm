@@ -1,7 +1,6 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
 
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
@@ -141,7 +140,7 @@
                         <label class="control-label" for="groupIDs"><mvc:message code="settings.Usergroup"/></label>
                     </div>
                     <div class="col-sm-8">
-                    	<mvc:select path="groupIDs" id="groupIDs" cssClass="form-control js-select-tags" multiple="true">
+                    	<mvc:select path="groupIDs" id="groupIDs" cssClass="form-control js-select-tags" multiple="true" data-sort="alphabetic">
 	                        <c:forEach var="adminGroup" items="${adminGroups}">
 	                            <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
 	                        </c:forEach>
@@ -149,6 +148,8 @@
                     </div>
                 </div>
             </emm:ShowByPermission>
+
+            <%@include file="./fragments/update-password-reminder-switch.jspf"%>
 
             <div data-field="password">
                 <div class="form-group">

@@ -30,9 +30,13 @@ import org.agnitas.util.HttpUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeansException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.responseheaders.common.UsedFor;
+import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
+import com.agnitas.emm.responseheaders.web.NullHttpResonseHeaderApplier;
 
 public class ShowComponent extends HttpServlet {
 
@@ -44,6 +48,7 @@ public class ShowComponent extends HttpServlet {
 	protected MailingComponentDao mailingComponentDao;
 	protected PreviewFactory previewFactory;
 	protected ComRecipientDao recipientDao;
+	protected HttpResponseHeaderApplier responseHeaderApplier;
 
 	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
@@ -75,31 +80,31 @@ public class ShowComponent extends HttpServlet {
     @Override
     public void service(HttpServletRequest req, HttpServletResponse response) throws IOException, ServletException {
         ServletOutputStream out;
-        long len;
-        int compId;
         
 		if (!AgnUtils.isUserLoggedIn(req)) {
             return;
         }
-	
-		String compIDParam = req.getParameter("compID");
-		compId = NumberUtils.toInt(compIDParam, -1);
 		
-		if (compId < 0) {
-			logger.warn("Error converting " + (compIDParam != null ? "'" + compIDParam + "'" : compIDParam) + " to integer");
+		final int companyId = AgnUtils.getCompanyID(req);
+	
+		final String componentIDParam = req.getParameter("compID");
+		final int componentId = NumberUtils.toInt(componentIDParam, -1);
+		
+		if (componentId < 0) {
+			logger.warn("Error converting " + (componentIDParam != null ? "'" + componentIDParam + "'" : componentIDParam) + " to integer");
 			return;
 		}
         
-        if(compId==0) {
+        if(componentId==0) {
             return;
         }
 	
-		String customerIDStr = req.getParameter("customerID");
-		String targetGroupIDStr = req.getParameter("targetGroupID");
-		int customerID = NumberUtils.toInt(customerIDStr);
-		int targetGroupID = NumberUtils.toInt(targetGroupIDStr);
+        final String customerIDStr = req.getParameter("customerID");
+		final String targetGroupIDStr = req.getParameter("targetGroupID");
+		final int customerID = NumberUtils.toInt(customerIDStr);
+		final int targetGroupID = NumberUtils.toInt(targetGroupIDStr);
         
-        MailingComponent comp = getComponentDao().getMailingComponent(compId, AgnUtils.getCompanyID(req));
+		final MailingComponent comp = getComponentDao().getMailingComponent(componentId, AgnUtils.getCompanyID(req));
         
 		if (comp != null) {
             try {
@@ -108,7 +113,9 @@ public class ShowComponent extends HttpServlet {
 				    case HostedImage:
 					case ThumbnailImage:
 						if (comp.getBinaryBlock() != null) {
-							response.setContentType(comp.getMimeType());
+							getHttpResponseHeaderApplier().applyHeadersToResponse(UsedFor.RESOURCE, companyId, req, response);
+
+					    	response.setContentType(comp.getMimeType());
 							out=response.getOutputStream();
 							out.write(comp.getBinaryBlock());
 							out.flush();
@@ -128,7 +135,7 @@ public class ShowComponent extends HttpServlet {
 				        	attachment = comp.getBinaryBlock();
 				        }
 				        
-				        len = attachment.length;
+				        final long len = attachment.length;
 				        response.setContentLength((int)len);
 				        out.write(attachment);
 				        out.flush();
@@ -144,7 +151,7 @@ public class ShowComponent extends HttpServlet {
 					throw new Exception("Invalid component type");
 				}
 			} catch (Exception e) {
-				logger.error("Invalid component found: " + AgnUtils.getCompanyID(req) + "/" + compId, e);
+				logger.error("Invalid component found: " + AgnUtils.getCompanyID(req) + "/" + componentId, e);
 				// do not show component
 			}
         }
@@ -189,4 +196,17 @@ public class ShowComponent extends HttpServlet {
 		}
 		return recipientDao;
 	}
+    
+    private HttpResponseHeaderApplier getHttpResponseHeaderApplier() {
+    	if(this.responseHeaderApplier == null) {
+    		try {
+    			this.responseHeaderApplier = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("HttpResponseHeaderApplier", HttpResponseHeaderApplier.class);
+    		} catch(final BeansException e) {
+    			this.responseHeaderApplier = new NullHttpResonseHeaderApplier();
+    		}
+    	}
+    	
+    	return responseHeaderApplier;
+    }
+    
 }

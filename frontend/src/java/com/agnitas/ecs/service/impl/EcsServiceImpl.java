@@ -10,35 +10,41 @@
 
 package com.agnitas.ecs.service.impl;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-
-import org.agnitas.ecs.backend.beans.ClickStatColor;
-import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.ecs.service.EcsService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
+import com.agnitas.service.PdfService;
+import org.agnitas.ecs.backend.beans.ClickStatColor;
+import org.agnitas.ecs.backend.beans.impl.ClickStatColorImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class EcsServiceImpl implements EcsService {
 
-    public static final String PDF_ORIENTATION = "Portrait";
     public static final String PDF_FOOTER_MESSAGE_KEY = "ecs.Heatmap";
 
-    protected GenerationPDFService generationPDFService;
+    private static final List<ClickStatColor> CLICK_STAT_COLORS = List.of(
+            new ClickStatColorImpl(0, 5, "#E5CEF0"),
+            new ClickStatColorImpl(5, 10, "#569AFF"),
+            new ClickStatColorImpl(10, 15, "#8BF4AF"),
+            new ClickStatColorImpl(15, 20, "#FAFF00"),
+            new ClickStatColorImpl(20, 25, "#F8CE39"),
+            new ClickStatColorImpl(25, 100, "#E12E59")
+    );
+
+    protected PdfService pdfService;
     protected ComRecipientDao recipientDao;
-    protected EmbeddedClickStatDao embeddedClickStatDao;
     protected ConfigService configService;
 
     @Override
     public List<ClickStatColor> getClickStatColors(int companyId) {
-        return embeddedClickStatDao.getClickStatColors(companyId);
+        return CLICK_STAT_COLORS;
     }
 
     @Override
@@ -47,29 +53,24 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File generatePDF(Admin admin, String url, String title) {
-        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath),
-                url,
-                StringUtils.defaultString(title),
+    public File generatePDF(Admin admin, String url, String title) throws IOException {
+        return pdfService.generatePDF(
                 admin,
-                "heatmapLoadFinished",
-                PDF_ORIENTATION,
-                PDF_FOOTER_MESSAGE_KEY);
+                url,
+                false,
+                StringUtils.defaultString(title),
+                PDF_FOOTER_MESSAGE_KEY,
+                "heatmapLoadFinished");
     }
 
     @Required
-    public void setGenerationPDFService(GenerationPDFService generationPDFService) {
-        this.generationPDFService = generationPDFService;
+    public void setPdfService(PdfService pdfService) {
+        this.pdfService = pdfService;
     }
 
     @Required
     public void setRecipientDao(ComRecipientDao recipientDao) {
         this.recipientDao = recipientDao;
-    }
-
-    @Required
-    public void setEmbeddedClickStatDao(EmbeddedClickStatDao embeddedClickStatDao) {
-        this.embeddedClickStatDao = embeddedClickStatDao;
     }
 
     @Required

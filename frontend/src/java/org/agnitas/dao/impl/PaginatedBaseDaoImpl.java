@@ -13,6 +13,8 @@ package org.agnitas.dao.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -22,6 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.emm.core.JavaMailService;
+
 /**
  * Helper class which hides the dependency injection variables and eases some select and update actions and logging.
  * But still the datasource or the JdbcTemplate can be used directly if needed.
@@ -30,6 +34,15 @@ import org.springframework.jdbc.core.RowMapper;
  * Therefore every simplified update and select method demands an logger delivered as parameter.
  */
 public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
+	public PaginatedBaseDaoImpl(DataSource dataSource, JavaMailService javaMailService) {
+		this.dataSource = dataSource;
+		this.javaMailService = javaMailService;
+	}
+	
+	public PaginatedBaseDaoImpl() {
+		// Nothing to do
+	}
+	
 	public <T> PaginatedListImpl<T> selectPaginatedList(Logger logger, String selectStatement, String sortTable, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
 		if (StringUtils.isNotBlank(sortTable)) {
 			sortTable = SafeString.getSafeDbTableName(sortTable);
@@ -49,7 +62,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 				sortClause = "ORDER BY " + sortColumn;
 			}
 			sortClause = sortClause + " " + (sortDirectionAscending ? "asc" : "desc");
-		} catch (Exception e) {
+		} catch (@SuppressWarnings("unused") Exception e) {
 			sortClause = "";
 		}
 

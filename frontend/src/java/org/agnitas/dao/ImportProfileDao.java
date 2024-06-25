@@ -10,11 +10,10 @@
 
 package org.agnitas.dao;
 
-import java.util.List;
-import java.util.Map;
-
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
+
+import java.util.List;
 
 
 public interface ImportProfileDao {
@@ -91,11 +90,9 @@ public interface ImportProfileDao {
 
 	List<Integer> getSelectedMailingListIds(int id, int companyId);
 
-	Map<String, Integer> getImportProfileGenderMapping(int id);
-
-	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
-
 	int findImportProfileIdByName(String name, int companyId);
 
 	boolean isColumnWasImported(String columnName, int id);
+
+	List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName);
 }

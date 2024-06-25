@@ -14,21 +14,20 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.log.LogMessage;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.InvalidCsrfTokenException;
-import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class AgnCsrfFilter extends OncePerRequestFilter {
 
@@ -36,14 +35,16 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private static final Set<String> ALLOWED_METHODS = Set.of("GET", "HEAD", "TRACE", "OPTIONS");
 
     private final CsrfTokenRepository tokenRepository;
-    private final AccessDeniedHandlerImpl accessDeniedHandler;
+
+    private static final Pattern PUSH_API_PATTERN = Pattern.compile("^.*/push-api/.*$");
+    private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
+    private static final String ERROR_PAGE_URL = "/csrf/error.action";
 
     public AgnCsrfFilter() {
         this.tokenRepository = createTokenRepository();
-        this.accessDeniedHandler = new AccessDeniedHandlerImpl();
     }
 
-    private CsrfTokenRepository createTokenRepository() {
+    private static CsrfTokenRepository createTokenRepository() {
         CookieCsrfTokenRepository cookieTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 
         cookieTokenRepository.setHeaderName(HEADER_AND_COOKIE_NAME);
@@ -57,7 +58,6 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
         CsrfFilter.skipRequest(req);
 
         CsrfToken csrfToken = tokenRepository.loadToken(req);
-        boolean missingToken = csrfToken == null;
         if (csrfToken == null) {
             csrfToken = generateNewToken(req, resp);
         }
@@ -79,39 +79,53 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
         } else {
             logger.debug(LogMessage.of(() -> "Invalid CSRF token found for " + UrlUtils.buildFullRequestUrl(req)));
 
-            AccessDeniedException exception = !missingToken
-                    ? new InvalidCsrfTokenException(csrfToken, sentToken)
-                    : new MissingCsrfTokenException(sentToken);
-
-            accessDeniedHandler.handle(req, resp, exception);
+            resp.setStatus(HttpStatus.FORBIDDEN.value());
+            req.getRequestDispatcher(ERROR_PAGE_URL).forward(req, resp);
         }
     }
 
     private CsrfToken generateNewToken(HttpServletRequest req, HttpServletResponse resp) {
         CsrfToken csrfToken = tokenRepository.generateToken(req);
         tokenRepository.saveToken(csrfToken, req, resp);
+        addSameSitePolictyToCookie(resp);
 
         return csrfToken;
     }
 
-    private void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
+    private void addSameSitePolictyToCookie(HttpServletResponse resp) {
+        resp.getHeaders("Set-Cookie")
+                .stream()
+                .filter(header -> StringUtils.startsWith(header, HEADER_AND_COOKIE_NAME))
+                .findFirst()
+                .ifPresent(header -> resp.setHeader("Set-Cookie", header + "; SameSite=Lax"));
+    }
+
+    private static void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
         req.setAttribute(CsrfToken.class.getName(), csrfToken);
         req.setAttribute(csrfToken.getParameterName(), csrfToken);
     }
 
-    private boolean shouldSkipTokenComparison(HttpServletRequest req) {
-        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req);
+    private static boolean shouldSkipTokenComparison(HttpServletRequest req) {
+        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req);
     }
 
-    private boolean isSentFromUserWebForm(HttpServletRequest req) {
+    private static boolean isSentFromUserWebForm(HttpServletRequest req) {
         return req.getRequestURI().endsWith("form.action") || req.getRequestURI().endsWith("form.do");
     }
 
-    private boolean isAllowedHttpMethod(HttpServletRequest req) {
+    private static boolean isPushApiRequest(final HttpServletRequest req) {
+        return PUSH_API_PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static boolean isMailingLockRequest(HttpServletRequest req) {
+        return MAILING_LOCK_PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static boolean isAllowedHttpMethod(HttpServletRequest req) {
         return ALLOWED_METHODS.contains(req.getMethod());
     }
 
-    private String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
+    private static String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
         String token = req.getHeader(csrfToken.getHeaderName());
         if (token == null) {
             token = req.getParameter(csrfToken.getParameterName());

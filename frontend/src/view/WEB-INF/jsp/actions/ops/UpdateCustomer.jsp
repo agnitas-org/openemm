@@ -1,4 +1,5 @@
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <emm:instantiate var="trackingPoints" type="java.util.LinkedHashMap">
     <c:set target="${trackingPoints}" property="-1"><mvc:message code="statistic.revenue"/></c:set>
@@ -26,12 +27,14 @@
 		2. No spaces between "," and names
 		3. Each line must start and end with a ","
  --%>
-<c:set var="HIDDEN_PROFILE_FIELDS">
+<c:set var="NEVER_SHOWN_PROFILE_FIELDS">
 	,change_date,timestamp,creation_date,datasource_id,bounceload,email,customer_id,gender,mailtype,firstname,
 	,lastname,title,cleaned_date,facebook_status,foursquare_status,google_status,twitter_status,xing_status,
 </c:set>
 
 <script id="module-UpdateCustomer" type="text/x-mustache-template">
+    {{ var disabledAttr = readonly ? 'disabled' : ''; }}
+
     <div class="inline-tile-content" data-module-content="{{- index}}" data-initializer="update-customer-module">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="UpdateCustomer"/>
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
@@ -46,22 +49,25 @@
             <div class="col-sm-8">
                 <table class="table table-bordered table-form">
                     <tr>
-                        <td>
+                        <td data-field="required">
                             {{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
-                            <select class="form-control js-select" name="modules[].columnName" id="module_{{- index}}.columnName" size="1">
-								<c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
-									<c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.column)}," />
-                            		{{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
-
-									{{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
-									<c:if test="${not fn:contains(HIDDEN_PROFILE_FIELDS, SEARCH)}">
-										<option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
-									</c:if>
-								</c:forEach>
+                            <select class="form-control js-select" name="modules[].columnName" id="module_{{- index}}.columnName" size="1" {{- disabledAttr }} data-field-required="">
+                                {{ if (readonly) { }}
+                                    <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>                                 
+                                {{ } else { }}
+                                    <option value="">--</option>                                 
+                                    <c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
+                                        <c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD)}," />
+                                        {{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
+                                        <c:if test="${not fn:contains(NEVER_SHOWN_PROFILE_FIELDS, SEARCH)}">
+                                            <option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
+                                        </c:if>
+                                    </c:forEach>
+                                {{ } }}
                             </select>
                         </td>
                         <td>
-                            <select class="form-control js-select" name="modules[].updateType" id="module_{{- index}}.updateType" size="1">
+                            <select class="form-control js-select" name="modules[].updateType" id="module_{{- index}}.updateType" size="1" {{- disabledAttr }}>
                                 <option value="1" {{ updateType == 1 ? print('selected="selected"') : print('') }}>+</option>
                                 <option value="2" {{ updateType == 2 ? print('selected="selected"') : print('') }}>-</option>
                                 <option value="3" {{ updateType == 3 ? print('selected="selected"') : print('') }}>=</option>
@@ -69,7 +75,7 @@
                         </td>
                         <td>
                             <input type="text" name="modules[].updateValue" id="module_{{- index}}_updateValue" class="form-control" data-useTrack-updateValue
-                                   value="{{- updateValue}}">
+                                   value="{{- updateValue}}" {{- disabledAttr }}>
                             <%@ include file="UpdateCustomer-trackpoint-table.jspf" %>
 
                         </td>

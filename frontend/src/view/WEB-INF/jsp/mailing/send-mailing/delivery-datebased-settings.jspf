@@ -1,7 +1,3 @@
-<%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page import="java.util.GregorianCalendar" %>
-<%@ page import="java.text.SimpleDateFormat" %>
-<%@ page import="java.text.DateFormat" %>
 
 <%--@elvariable id="isThresholdClearanceExceeded" type="java.lang.Boolean"--%>
 
@@ -12,8 +8,7 @@
                 <mvc:message code="mailing.send.active.date" /><br>
                 <mvc:message code="mailing.send.deactivate" />
                 <mvc:message code="SendingTimeDaily" />:&nbsp;
-                <fmt:formatDate value="${form.deliveryStat.scheduledSendTime}"
-                                pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" />
+                <fmt:formatDate value="${form.deliveryStat.scheduledSendTime}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" />
             </c:when>
 
             <c:otherwise>
@@ -44,14 +39,10 @@
                         <div class="col-sm-8">
                             <c:choose>
                                 <c:when test="${not isWorkflowDriven}">
-                                    <mvc:form servletRelativeAction="/mailing/send/deactivate/confirm.action" modelAttribute="form" data-form="resource">
-                                        <mvc:hidden path="mailingID"/>
-
-                                        <a href="#" class="btn btn-regular btn-warning" data-form-confirm="">
-                                            <i class="icon icon-ban"></i>
-                                            <span class="text"><mvc:message code="btndeactivate" /></span>
-                                        </a>
-                                    </mvc:form>
+                                    <a href="<c:url value="/mailing/send/${form.mailingID}/deactivate/confirm.action" />" class="btn btn-regular btn-warning" data-confirm="">
+                                        <i class="icon icon-ban"></i>
+                                        <span class="text"><mvc:message code="btndeactivate" /></span>
+                                    </a>
                                 </c:when>
 
                                 <c:otherwise>
@@ -80,103 +71,18 @@
 				    <c:if test="${canSendOrActivateMailing}">
 	                    <c:choose>
 	                        <c:when test="${not form.hasDeletedTargetGroups}">
-	                            <mvc:form modelAttribute="form" id="activation-form" servletRelativeAction="/mailing/send/datebased/activation/confirm.action" data-form="resource">
-	                                <mvc:hidden path="mailingID" />
-	                                <mvc:hidden path="autoImportId" />
-	
-	                                <div class="form-group">
-	                                    <div class="col-sm-4">
-	                                        <label class="control-label" for="sendTime">
-	                                            <mvc:message code="SendingTimeDaily" />
-	                                        </label>
-	                                    </div>
-	
-	                                    <div class="col-sm-8">
-											<c:choose>
-												<c:when test="${isWorkflowDriven}">
-													<div class="input-group" data-field="split">
-														<div class="input-group-controls">
-															<c:set var="sendHour"><fmt:formatNumber minIntegerDigits="2" value="${form.sendHour}" /></c:set>
-															<c:set var="sendMinute"><fmt:formatNumber minIntegerDigits="2" value="${form.sendMinute}" /></c:set>
-
-															<input type="text" id="sendTime" name="sendTime" class="form-control js-timepicker" value="${sendHour}:${sendMinute}"
-																   data-field-split="sendHour, sendMinute" data-field-split-rule=":" data-timepicker-options="mask: 'h:00'" disabled='disabled'/>
-														</div>
-														<div class="input-group-addon" disabled='disabled'>
-															<span class="addon">
-																<i class="icon icon-clock-o"></i>
-															</span>
-														</div>
-														<div class="input-group-addon" disabled='disabled'>
-															<span class="addon">
-																	${emm:getTimeZoneId(pageContext.request)}
-															</span>
-														</div>
-													</div>
-												</c:when>
-												<c:otherwise>
-													<%
-														GregorianCalendar date = new GregorianCalendar(AgnUtils.getTimeZone(request));
-														DateFormat internalFormat = new SimpleDateFormat("yyyyMMdd");
-													%>
-
-													<input type="hidden" name="sendDate" value="<%= internalFormat.format(date.getTime()) %>">
-
-													<div class="input-group" data-field="split">
-														<div class="input-group-controls">
-															<c:set var="sendHour"><fmt:formatNumber minIntegerDigits="2" value="${form.sendHour}" /></c:set>
-															<c:set var="sendMinute"><fmt:formatNumber minIntegerDigits="2" value="${form.sendMinute}" /></c:set>
-
-															<input type="text" id="sendTime" name="sendTime" class="form-control js-timepicker" value="${sendHour}:${sendMinute}"
-																   data-field-split="sendHour, sendMinute" data-field-split-rule=":" data-timepicker-options="mask: 'h:00'" />
-														</div>
-														<div class="input-group-addon">
-	                                                    <span class="addon">
-	                                                        <i class="icon icon-clock-o"></i>
-	                                                    </span>
-														</div>
-														<div class="input-group-addon">
-	                                                    <span class="addon">
-																${emm:getTimeZoneId(pageContext.request)}
-														</span>
-														</div>
-													</div>
-
-													<p class="help-block"><mvc:message code="default.interval" />: <mvc:message code="default.minutes.60" /></p>
-												</c:otherwise>
-											</c:choose>
-	                                    </div>
-	                                </div>
-	
-	                                <div class="form-group">
-	                                    <div class="col-sm-4">
-	                                        <label class="control-label"><mvc:message code="MailingActivate" /></label>
-	                                    </div>
-	                                    <div class="col-sm-8">
-											<c:choose>
-												<c:when test="${isWorkflowDriven}">
-													<div class="input-group">
-														<div class="input-group-btn">
-															<button class="btn btn-regular" disabled='disabled'>
-																<i class="icon icon-check-circle-o"></i>
-																<span class="text"><mvc:message code="button.Activate" /></span>
-															</button>
-															<a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
-																<i class="icon icon-linkage-campaignmanager"></i>
-																<strong><mvc:message code="campaign.manager.icon"/></strong>
-															</a>
-														</div>
-													</div>
-												</c:when>
-												<c:otherwise>
-													<button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-confirm=''>
-														<span><mvc:message code="button.Activate" /></span>
-													</button>
-												</c:otherwise>
-											</c:choose>
-	                                    </div>
-	                                </div>
-	                            </mvc:form>
+                                <div class="form-group">
+                                    <div class="col-sm-4">
+                                        <label class="control-label"><mvc:message code="mailing.Delivery" /></label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <c:url var="configureAndActivateLink" value="/mailing/send/${form.mailingID}/date-based/options/configure.action" />
+                                        <a href="${configureAndActivateLink}" type="button" class="btn btn-regular btn-primary">
+                                            <i class="icon icon-paper-plane"></i>
+                                            <span class="text"><mvc:message code="button.configure.activate" /></span>
+                                        </a>
+                                    </div>
+                                </div>
 	                        </c:when>
 	                        <c:otherwise>
 	                            <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
@@ -190,16 +96,6 @@
         <c:if test="${isThresholdClearanceExceeded}">
             <%@ include file="fragments/mailing-resume-button.jspf" %>
         </c:if>
-
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-                <c:url var="securitySettingsLink" value="/mailing/ajax/${form.mailingID}/load-security-settings.action"/>
-
-                <a href="${securitySettingsLink}" type="button" tabindex="-1" class="btn btn-regular btn-primary" data-action="load-security-settings">
-                    <span><mvc:message code="mailing.send.security.notification" /></span>
-                </a>
-            </div>
-        </div>
 
         <%-- Approve button --%>
         <%@ include file="fragments/mailing-approve-button.jspf" %>

@@ -1,0 +1,65 @@
+
+#choose-tile-modal {
+  .modal-body {
+    padding-top: 0;
+    
+    .col {
+      padding-top: $gap-md;
+    }
+    
+    .tile-thumbnail {
+      position: relative;
+      
+      &.disabled {
+        &:hover {
+          img {
+            filter: brightness(50%);
+          }
+        }
+        
+        .overlay {
+          @include flex-center;
+        }
+        
+        filter: grayscale(100%);
+        color: white;
+        text-align: center;
+        font-size: 11px;
+        font-weight: bold;
+        i {
+          display: none;
+        }
+      }
+
+      &:hover {
+        .overlay {
+          background-color: rgba(75, 75, 75, 0.4);
+          opacity: 1;
+        }
+      }
+
+      .overlay {
+        position: absolute;
+        top: -1px;
+        bottom: -1px;
+        left: -1px;
+        right: -1px;
+        opacity: 0;
+        transition: .1s ease;
+
+        i {
+          color: $white;
+          font-size: 40px;
+          text-align: center;
+        }
+      }
+    }
+
+    .tile-name {
+      display: flex;
+      align-items: center;
+      font-size: $font-size-base;
+      padding-top: $gap-sm;
+    }
+  }
+}

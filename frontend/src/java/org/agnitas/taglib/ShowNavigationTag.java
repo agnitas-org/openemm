@@ -23,6 +23,7 @@ import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 
 import org.agnitas.emm.core.navigation.ConditionsHandler;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
+	private String redesigned;
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
@@ -55,19 +57,21 @@ public class ShowNavigationTag extends BodyTagSupport {
 		private final String href;
         private final Boolean hideForMysqlKey;
         private final String iconClass;
+		private final String itemClass;
 		private final String subMenu;
 		private final String hideForToken;
 		private final String upsellingRef;
 		private final boolean conditionSatisfied;
 
 		public NavigationData(String message, String token, String href, Boolean hideForMysqlKey, String iconClass,
-							  String subMenu, String hideForToken,
+							  String subMenu, String hideForToken, String itemClass,
 							  String upsellingRef, boolean conditionSatisfied) {
             this.message = message;
             this.token = token;
             this.href = href;
             this.hideForMysqlKey = hideForMysqlKey;
             this.iconClass = iconClass;
+			this.itemClass = itemClass;
 			this.subMenu = subMenu;
 			this.hideForToken = hideForToken;
 			this.upsellingRef = upsellingRef;
@@ -79,6 +83,11 @@ public class ShowNavigationTag extends BodyTagSupport {
         public String getHref() { return href; }
         public Boolean getHideForMysqlKey() { return hideForMysqlKey; }
         public String getIconClass() { return iconClass; }
+
+		public String getItemClass() {
+			return itemClass;
+		}
+
 		public String getSubMenu() { return subMenu; }
 		public String getHideForToken() { return hideForToken; }
 		public String getUpsellingRef() { return upsellingRef; }
@@ -91,7 +100,8 @@ public class ShowNavigationTag extends BodyTagSupport {
                     + "], href[" + getHref()
 					+ "], subMenu[" + (subMenu != null ? subMenu : "")
 					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "")
-                    + "], conditionId[" + isConditionSatisfied() + "]";
+                    + "], conditionId[" + isConditionSatisfied()
+					+ "], itemClass[" + getItemClass() + "]";
         }
 	}
 
@@ -105,6 +115,10 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 	public void setHighlightKey(String highlightKey) {
 		this.highlightKey = highlightKey;
+	}
+
+	public void setRedesigned(String redesigned) {
+		this.redesigned = redesigned;
 	}
 
 	@Override
@@ -146,7 +160,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 				if (!navigationDataList.isEmpty()) {
 					currentBodyContent.writeOut(getPreviousOut());
 				}
-				currentBodyContent.clearBody();
+//				currentBodyContent.clearBody();
 			}
 		} catch (IOException e) {
 			logger.error("Error in ShowNavigationTag.doEndTag: " + e.getMessage(), e);
@@ -165,7 +179,11 @@ public class ShowNavigationTag extends BodyTagSupport {
 			}
 
 			try {
-				bundle = ResourceBundle.getBundle("navigation." + navigation);
+				if (BooleanUtils.toBoolean(redesigned)) {
+					bundle = ResourceBundle.getBundle("navigation_redesigned." + navigation);
+				} else {
+					bundle = ResourceBundle.getBundle("navigation." + navigation);
+				}
 			} catch (Exception e) {
 				if (navigation.endsWith("Sub")) {
 					// no such submenu properties file found => no submenu
@@ -191,6 +209,7 @@ public class ShowNavigationTag extends BodyTagSupport {
             String hrefKey = "href_" + i;
             String hideForMysqlKey = "hideForMysql_" + i;
             String iconClass = "iconClass_" + i;
+            String itemClass = "itemClass_" + i;
             String subMenu = "submenu_" + i;
             String upsellingRef = "upsellingRef_" + i;
 
@@ -211,7 +230,7 @@ public class ShowNavigationTag extends BodyTagSupport {
             NavigationData navigationData = new NavigationData(resourceBundle.getString(msgKey), securityToken,
                 resourceBundle.getString(hrefKey),
 				getDataQuietly(resourceBundle, hideForMysqlKey).equals("true"), getDataQuietly(resourceBundle, iconClass),
-                getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken),
+                getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken), getDataQuietly(resourceBundle, itemClass),
 				getDataQuietly(resourceBundle, upsellingRef), isConditionSatisfied(getDataQuietly(resourceBundle, conditionId)));
 
             navigationDataList.add(navigationData);
@@ -258,6 +277,7 @@ public class ShowNavigationTag extends BodyTagSupport {
         pageContext.setAttribute(prefix + "_navigation_index", navigationIndex);
         if (navigationData.conditionSatisfied) {
             pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.getIconClass()));
+            pageContext.setAttribute(prefix + "_navigation_itemClass", StringUtils.trimToEmpty(navigationData.getItemClass()));
         }
 		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.getSubMenu()));
 		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));

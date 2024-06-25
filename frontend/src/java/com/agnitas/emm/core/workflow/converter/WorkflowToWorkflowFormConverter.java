@@ -55,6 +55,7 @@ public class WorkflowToWorkflowFormConverter implements Converter<Workflow, Work
             case STATUS_OPEN:
             case STATUS_INACTIVE:
             case STATUS_TESTED:
+            case STATUS_PAUSED:
                 result = STATUS_ACTIVE;
                 break;
 

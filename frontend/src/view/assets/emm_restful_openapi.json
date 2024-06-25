@@ -2,9 +2,10 @@
   "openapi" : "3.0.0",
   "info" : {
     "title" : "EMM Restful API",
-    "description" : "This is the EMM Restful API.<br /><br />Authentification methods<br /><ul><li>\"username\" and \"password\" as URL parameters</li><li>Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication)</li><li>JWT (JSON Web Token) Auth (see https://de.wikipedia.org/wiki/JSON_Web_Token)</li></ul><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre><br />Example for request via wget with JWT AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/login\" > login.txt; cat login.txt</pre><pre>wget -S -O - --content-on-error --auth-no-challenge --header=\"Authorization&colon; Bearer &lt;jwt token from login>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
+    "description" : "This is the EMM Restful API.<br /><br />Authentification methods<br /><ul><li>\"username\" and \"password\" as URL parameters</li><li>Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication)</li><li>JWT (JSON Web Token) Auth (see https://de.wikipedia.org/wiki/JSON_Web_Token)</li></ul>JWT (JSON Web Token) Auth is an optional feature which has to be activated on request by AGNITAS<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre><br />Example for request via wget with JWT AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/login\" > login.txt; cat login.txt</pre><pre>wget -S -O - --content-on-error --auth-no-challenge --header=\"Authorization&colon; Bearer &lt;jwt token from login>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre><br /><br />To utilize the JavaScript example code you need to install library code<pre>npm install swagger-client</pre>",
     "version" : "1.4.1",
     "contact" : {
+      "url" : "https://agnitas.de",
       "email" : "info@agnitas.ag"
     }
   },
@@ -106,7 +107,7 @@
         "tags" : [ "System" ],
         "responses" : {
           "200" : {
-            "description" : "Current system status",
+            "description" : "Current system status (Not included in OpenEMM)",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -123,6 +124,63 @@
         "summary" : "Get a list of all existing mailings",
         "tags" : [ "Mailing" ],
         "operationId" : "getMailings",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "name",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailing names (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "type",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with type (NORMAL, ACTION_BASED, DATE_BASED, FOLLOW_UP, INTERVAL)"
+        }, {
+          "in" : "query",
+          "name" : "mailinglistid",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with mailinglistid (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "mailinglistname",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with mailinglist by name (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with status (ACTIVE, ADMIN, CANCELED, CANCELED_AND_COPIED, DISABLE, EDIT, GENERATION_FINISHED, IN_GENERATION, NEW, NORECIPIENTS, READY, SCHEDULED, SENDING, SENT, TEST, wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "creationdate",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with creation date (Format yyyy-MM-dd, wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "senddate",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with send date (Format yyyy-MM-dd, wildcard *)"
+        } ],
         "responses" : {
           "200" : {
             "description" : "list of all existing mailings",
@@ -1248,6 +1306,421 @@
         }
       }
     },
+    "/workflow" : {
+      "get" : {
+        "summary" : "Read all existing workflow items",
+        "tags" : [ "Workflow" ],
+        "responses" : {
+          "200" : {
+            "description" : "All the workflow items",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WorkflowItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_id}" : {
+      "get" : {
+        "summary" : "Read a single existing workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the workflow item to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_id}/pause" : {
+      "put" : {
+        "summary" : "Pause a workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the workflow item to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Pause a workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the workflow item to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_id}/resume" : {
+      "put" : {
+        "summary" : "Pause a workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the workflow item to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Pause a workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the workflow item to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_name}" : {
+      "get" : {
+        "summary" : "Read existing workflow item",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the workflow item to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_name}/pause" : {
+      "put" : {
+        "summary" : "Pause a workflow",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the workflow to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Pause a workflow",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the workflow to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/workflow/{workflow_name}/resume" : {
+      "put" : {
+        "summary" : "Resume a workflow",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the workflow to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Resume a workflow",
+        "tags" : [ "Workflow" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "workflow_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the workflow to change"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new workflow item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WorkflowItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
     "/mediapool" : {
       "get" : {
         "summary" : "Read all existing mediapool items (Not included in OpenEMM)",
@@ -2003,7 +2476,7 @@
     },
     "/target" : {
       "get" : {
-        "summary" : "Read all existing target data",
+        "summary" : "Read all existing target data (Not included in OpenEMM)",
         "tags" : [ "Target" ],
         "operationId" : "getTarget",
         "description" : "Read existing target data",
@@ -2110,7 +2583,7 @@
     },
     "/target/{target_id}" : {
       "get" : {
-        "summary" : "Read a single existing target item",
+        "summary" : "Read a single existing target item (Not included in OpenEMM)",
         "tags" : [ "Target" ],
         "parameters" : [ {
           "in" : "path",
@@ -2234,7 +2707,7 @@
     },
     "/target/{target_id}/recipients" : {
       "get" : {
-        "summary" : "Read a single existing target item and its recipients (Optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\")",
+        "summary" : "Read a single existing target item and its recipients (Optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\") (Not included in OpenEMM)",
         "tags" : [ "Target" ],
         "parameters" : [ {
           "in" : "path",
@@ -2691,6 +3164,44 @@
       }
     },
     "/recipient" : {
+      "get" : {
+        "summary" : "Get a dataitem or customer_id list of all matching existing recipients",
+        "tags" : [ "Recipient" ],
+        "operationId" : "getRecipient",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "<profilefield name>",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "Filter for recipient data values names (Wildcards * and ? allowed)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of recipient entries. JsonObject when item is unique. JsonArray of recipient entries when results contains max. 5 items. JsonArray of recipient customer ids when results contains max. 1000 items.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
       "post" : {
         "summary" : "Create new recipient entry (no update)",
         "tags" : [ "Recipient" ],
@@ -4567,7 +5078,7 @@
     },
     "/send/{mailing_id}" : {
       "put" : {
-        "summary" : "Send an existing mailing",
+        "summary" : "Send an existing mailing (Not included in OpenEMM)",
         "tags" : [ "Send" ],
         "parameters" : [ {
           "in" : "path",
@@ -4585,31 +5096,30 @@
             "application/json" : {
               "schema" : {
                 "type" : "object",
-                "required" : [ "send_type" ],
                 "properties" : {
                   "send_type" : {
                     "type" : "string",
-                    "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\", send_date on hour base only), ACTION_BASED(\"E\", immediate delivery start, send_date ignored))",
+                    "description" : "Optional type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\", send_date on hour base only), ACTION_BASED(\"E\", immediate delivery start, send_date ignored)). Only needed wen using TEST(\"T\") or ADMIN(\"A\").",
                     "example" : "W"
                   },
                   "send_date" : {
                     "type" : "string",
-                    "description" : "Date-time of sending (ISO-8601)",
+                    "description" : "Optional date-time of sending (ISO-8601). Not needed for actionbased mailings.",
                     "example" : "2017-07-21T17:32:28Z"
                   },
                   "customer_id" : {
                     "type" : "integer",
-                    "description" : "Optional customerId for actionbased mailings",
+                    "description" : "Optional customerId for actionbased mailings. To send an actionbased mailing to a single recipient, this is the only data needed in the request body",
                     "example" : 4711
                   },
                   "user_status" : {
                     "type" : "integer",
-                    "description" : "Optional customer status, only if user is waiting for confirm (DOI)",
+                    "description" : "Optional customer status, only if user is waiting for confirm (Waiting-For-DOI status 5)",
                     "example" : 5
                   },
                   "data" : {
                     "type" : "object",
-                    "description" : "Optional profile data to override in ACTION_BASED mailing",
+                    "description" : "Optional profile data to override in ACTION_BASED mailing. This data is not persisted in already existing recipient database data.",
                     "example" : "{'voucher_code': 4711, 'price': '10.000 €'}"
                   }
                 }
@@ -4654,31 +5164,30 @@
             "application/json" : {
               "schema" : {
                 "type" : "object",
-                "required" : [ "send_type" ],
                 "properties" : {
                   "send_type" : {
                     "type" : "string",
-                    "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
+                    "description" : "Optional type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\")). Only needed wen using TEST(\"T\") or ADMIN(\"A\")",
                     "example" : "W"
                   },
                   "send_date" : {
                     "type" : "string",
-                    "description" : "Date-time of sending (ISO-8601)",
+                    "description" : "Optional date-time of sending (ISO-8601). Not needed for actionbased mailings.",
                     "example" : "2017-07-21T17:32:28Z"
                   },
                   "customer_id" : {
                     "type" : "integer",
-                    "description" : "Optional customerId for actionbased mailings",
+                    "description" : "Optional customerId for actionbased mailings. To send an actionbased mailing to a single recipient, this is the only data needed in the request body",
                     "example" : 4711
                   },
                   "user_status" : {
                     "type" : "integer",
-                    "description" : "Optional customer status, only if user is waiting for confirm (DOI)",
+                    "description" : "Optional customer status, only if user is waiting for confirm (Waiting-For-DOI status 5)",
                     "example" : 5
                   },
                   "data" : {
                     "type" : "object",
-                    "description" : "Optional profile data to override in ACTION_BASED mailing",
+                    "description" : "Optional profile data to override in ACTION_BASED mailing. This data is not persisted in already existing recipient database data.",
                     "example" : "{'voucher_code': 4711, 'price': '10.000 €'}"
                   }
                 }
@@ -4707,7 +5216,7 @@
     },
     "/send/{dynamicContentMailingSchemaName}" : {
       "put" : {
-        "summary" : "Send an exiting actionbased mailing with dynamic content (templateMailingID, sendMailingID)",
+        "summary" : "Send an exiting actionbased mailing with dynamic content (templateMailingID, sendMailingID) (Not included in OpenEMM)",
         "tags" : [ "Send" ],
         "parameters" : [ {
           "in" : "path",
@@ -4941,7 +5450,7 @@
     },
     "/url/fullview" : {
       "put" : {
-        "summary" : "Create a fullview link url for a given mailing and customer",
+        "summary" : "Create a fullview link url for a given mailing and customer (Not included in OpenEMM)",
         "tags" : [ "Url" ],
         "requestBody" : {
           "description" : "Supplemental data for fullview link",
@@ -5037,7 +5546,7 @@
     },
     "/url/agnUidInfo" : {
       "put" : {
-        "summary" : "Aquire information included in agnUID",
+        "summary" : "Aquire information included in agnUID (Not included in OpenEMM)",
         "tags" : [ "Url" ],
         "requestBody" : {
           "description" : "agnUID data",
@@ -5117,7 +5626,7 @@
     },
     "/autoimport/{autoimport_id}" : {
       "get" : {
-        "summary" : "Read status information of an existing auto import",
+        "summary" : "Read status information of an existing auto import (Not included in OpenEMM)",
         "tags" : [ "Autoimport" ],
         "parameters" : [ {
           "in" : "path",
@@ -5231,6 +5740,15 @@
         "tags" : [ "User" ],
         "operationId" : "getuser",
         "description" : "Read existing user data",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "fields",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Optionally selected additional user details to include in list (\"groups\", \"permissions\", \"accesslimitingtargetgroups\", \"fieldpermissions\", \"disabledmailinglists\", \"others\", \"*\" = all, example \"GET https://<SystemUrl/restful/user?fields=permissions,groups\")"
+        } ],
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",
@@ -7018,6 +7536,30 @@
           }
         }
       },
+      "WorkflowItem" : {
+        "type" : "object",
+        "required" : [ "shortname" ],
+        "properties" : {
+          "workflow_id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "shortname" : {
+            "type" : "string",
+            "example" : "My test campaign"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "My description"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Current status of this workflow (STATUS_ACTIVE, STATUS_INACTIVE, STATUS_OPEN, STATUS_PAUSED)",
+            "example" : "STATUS_ACTIVE"
+          }
+        }
+      },
       "MediapoolItem" : {
         "type" : "object",
         "required" : [ "filename", "mimetype", "content" ],
@@ -7061,7 +7603,7 @@
           "content" : {
             "type" : "string",
             "description" : "Binary content zipped and coded in base64",
-            "example" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ+abcdefghijklmnopqrstuvwxyz/1234567890="
+            "example" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ+abcdefghijklmnopqrstuvwxyz/1234567890"
           }
         }
       },

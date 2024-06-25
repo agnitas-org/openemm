@@ -10,10 +10,21 @@
 
 package org.agnitas.emm.core.userforms.impl;
 
+import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.userform.bean.UserForm;
+import org.agnitas.emm.core.userforms.UserformService;
+import org.agnitas.exceptions.FormNotFoundException;
+import org.agnitas.service.UserFormExporter;
+import org.agnitas.service.UserFormImporter;
+import org.agnitas.util.Tuple;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -21,20 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.agnitas.emm.core.userforms.UserformService;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.service.UserFormExporter;
-import org.agnitas.service.UserFormImporter;
-import org.agnitas.util.Tuple;
-
-import com.agnitas.dao.UserFormDao;
-import com.agnitas.userform.bean.UserForm;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Implementation of {@link UserformService}.
@@ -47,6 +47,7 @@ public class UserformServiceImpl implements UserformService {
 	protected UserFormDao userFormDao;
 	protected UserFormExporter userFormExporter;
 	protected UserFormImporter userFormImporter;
+	protected CompanyTokenService companyTokenService;
 
 	@Override
 	public final boolean isFormNameInUse(String formName, int formId, int companyId) {
@@ -107,7 +108,10 @@ public class UserformServiceImpl implements UserformService {
 		}
 	}
 
-	private void replacePlaceholdersInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws IOException {
+	private void replacePlaceholdersInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws Exception {
+		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(companyID);
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+		
 		String content = FileUtils.readFileToString(userFormTempFile, StandardCharsets.UTF_8);
 
 		String cid = Integer.toString(companyID);
@@ -117,6 +121,12 @@ public class UserformServiceImpl implements UserformService {
 		String mlid = Integer.toString(mailinglistID);
 		content = StringUtils.replaceEach(content, new String[]{"<MLID>", "<mlid>", "[MAILINGLIST_ID]", "[mailinglist_id]", "[Mailinglist_ID]"},
 				new String[]{mlid, mlid, mlid, mlid, mlid});
+		
+		if (StringUtils.isNotBlank(companyToken)) {
+			content = content.replace("[CTOKEN]", companyToken);
+		} else {
+			content = content.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyID);
+		}
 
 		content = content.replace("<rdir-domain>", StringUtils.defaultIfBlank(rdirDomain, "RDIR-Domain"));
 
@@ -144,5 +154,10 @@ public class UserformServiceImpl implements UserformService {
 	@Required
 	public void setUserFormImporter(UserFormImporter userFormImporter) {
 		this.userFormImporter = userFormImporter;
+	}
+	
+	@Required
+	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
+		this.companyTokenService = companyTokenService;
 	}
 }

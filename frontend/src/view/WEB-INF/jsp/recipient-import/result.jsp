@@ -1,5 +1,5 @@
 <%@ page import="com.agnitas.emm.core.imports.beans.ImportResultFileType" %>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -36,6 +36,22 @@
             <i class="icon ${headlineCls}"></i> <mvc:message code="import.csv_Finished"/>
         </h2>
     </div>
+
+	<c:if test="${not empty reportWarnings}">
+	    <div class="tile-content tile-content-forms">
+	        <div class="form-group">
+	            <div class="col-sm-offset-4 col-sm-8">
+	                <ul class="list-group">
+	                    <c:forEach var="reportEntry" items="${reportWarnings}">
+	                    	<li class="state-warning">${reportEntry}</li>
+	                    </c:forEach>
+	                </ul>
+	            </div>
+	        </div>
+	    </div>
+	</c:if>
+    
+    
     <div class="tile-content tile-content-forms">
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">

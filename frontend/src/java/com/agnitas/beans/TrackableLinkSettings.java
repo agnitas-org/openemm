@@ -14,23 +14,23 @@ import java.util.List;
 
 public class TrackableLinkSettings {
 
-    private ComTrackableLink trackableLink;
+    private TrackableLink trackableLink;
     private List<LinkProperty> linkProperties;
 
     public TrackableLinkSettings() {
 
     }
 
-    public TrackableLinkSettings(ComTrackableLink trackableLink, List<LinkProperty> linkProperties) {
+    public TrackableLinkSettings(TrackableLink trackableLink, List<LinkProperty> linkProperties) {
         this.trackableLink = trackableLink;
         this.linkProperties = linkProperties;
     }
 
-    public ComTrackableLink getTrackableLink() {
+    public TrackableLink getTrackableLink() {
         return trackableLink;
     }
 
-    public void setTrackableLink(ComTrackableLink trackableLink) {
+    public void setTrackableLink(TrackableLink trackableLink) {
         this.trackableLink = trackableLink;
     }
 

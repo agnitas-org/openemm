@@ -1,9 +1,8 @@
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="supportEmergencyUrl" type="java.lang.String"--%>
 
@@ -19,7 +18,7 @@
 
         <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
-        <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
+        <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body class="systempage">
         <div class="msg-tile msg-tile-error">
@@ -31,9 +30,9 @@
                 <h2><mvc:message code="error.global.headline"/></h2>
                 <p><mvc:message code="error.global.message" arguments="${supportEmergencyUrl}"/></p>
 
-                <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
+                <emm:messages var="msg" type="error">
                     <p style="color: red;">${msg}</p>
-                </html:messages>
+                </emm:messages>
             </div>
         </div>
     </body>

@@ -1,0 +1,33 @@
+
+#zoom {
+  @include border;
+  display: flex;
+  height: 10px;
+
+  #slider {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    height: unset;
+
+    .ui-slider-handle {
+      @include border(50%);
+      background-color: $border-color;
+      border: 3px solid transparent !important;
+      top: 0;
+      margin-left: -4px;
+      height: 8px;
+      width: 8px;
+      outline: none !important;
+    }
+  }
+
+  .zoom-btn {
+    @include flex-center;
+    padding: 1px 3px;
+    color: var(--label-color);
+    font-size: 6px;
+    background-color: transparent;
+    border: none;
+  }
+}

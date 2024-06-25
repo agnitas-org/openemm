@@ -1,0 +1,89 @@
+
+$calendar-day-diameter: 35px;
+
+#calendar-table {
+  text-align: center;
+  border: $border-default;
+  border-radius: $border-radius;
+  border-collapse: unset;
+  height: 100%;
+  margin: 0;
+
+  #calendar-container {
+    height: 100%;
+  }
+
+  td {
+    padding: 0;
+  }
+
+  th:first-child,
+  td:first-child {
+    font-weight: bold;
+  }
+
+  th, td {
+    width: calc(100% / 8);
+    text-align: center;
+  }
+  
+  tr:not(:first-child) td:not(:first-child):hover {
+    cursor: pointer;
+  }
+  
+  #calendar-header {
+    .calendar-cell {
+      width: auto;
+    }
+  }
+}
+
+.calendar-cell {
+  display: inline-block;
+  @include size(clamp(20px, 2vw, $calendar-day-diameter));
+  line-height: clamp(20px, 2vw, $calendar-day-diameter);
+  text-align: center;
+  border: $border-transparent;
+
+  @include desktop {
+    font-size: clamp(0.5vw, $font-size-base, 1vw);
+  }
+
+  @include mobile {
+    @include size($calendar-day-diameter);
+    line-height: $calendar-day-diameter;
+  }
+}
+
+.calendar-day {
+  border-radius: 50%;
+  border: $border-transparent;
+
+  &:hover:not(.calendar-day--selected) {
+    border: $border-default;
+  }
+}
+
+.calendar-day--selectable {
+  background-color: var(--calendar-selectable-cell-bg-color);
+}
+
+.calendar-day--today {
+  color: $white;
+  background-color: $primary;
+}
+
+.calendar-day--selected {
+  font-weight: $font-weight-semibold;
+  border: 1px solid var(--calendar-selected-border-color);
+}
+
+.calendar-day--alien {
+  color: var(--calendar-other-month-color);
+
+  &.calendar-day--selectable {
+    background: var(--calendar-other-month-selectable-bg-color);
+    border: 1px solid var(--calendar-other-month-selectable-border-color);
+    color: var(--calendar-other-month-selectable-color);
+  }
+}

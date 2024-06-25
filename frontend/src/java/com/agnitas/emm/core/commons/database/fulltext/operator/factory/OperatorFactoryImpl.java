@@ -13,34 +13,17 @@ package com.agnitas.emm.core.commons.database.fulltext.operator.factory;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.operator.Operator;
 import com.agnitas.emm.core.commons.database.fulltext.operator.impl.mysql.MySqlConjunction;
 import com.agnitas.emm.core.commons.database.fulltext.operator.impl.mysql.MySqlDisjunction;
-import com.agnitas.emm.core.commons.database.fulltext.operator.impl.oracle.OracleConjunction;
-import com.agnitas.emm.core.commons.database.fulltext.operator.impl.oracle.OracleDisjunction;
 
 public class OperatorFactoryImpl implements OperatorFactory {
-
-    private DatabaseConfiguration databaseConfiguration;
 
     @Override
     public Map<String, Operator> createOperators() {
         Map<String, Operator> operators = new HashMap<>();
-        if (databaseConfiguration.isOracle()) {
-            operators.put("+", new OracleConjunction());
-            operators.put(" ", new OracleDisjunction());
-        } else {
-            operators.put("+", new MySqlConjunction());
-            operators.put(" ", new MySqlDisjunction());
-        }
+        operators.put("+", new MySqlConjunction());
+        operators.put(" ", new MySqlDisjunction());
         return operators;
-    }
-
-    @Required
-    public void setDatabaseConfiguration(DatabaseConfiguration databaseConfiguration) {
-        this.databaseConfiguration = databaseConfiguration;
     }
 }

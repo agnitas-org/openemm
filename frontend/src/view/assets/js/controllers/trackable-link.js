@@ -27,6 +27,7 @@ AGN.Lib.Controller.new('trackable-link', function () {
 
   this.addInitializer('trackableAction', function ($scope) {
     var $trigger = $('[data-action="link-details-trackable"] :selected');
-    $('#linkAction').prop('disabled', $trigger.val() == 0);
+    var $linkAction = $('#linkAction');
+    $linkAction.prop('disabled', $linkAction.prop('disabled') || $trigger.val() == 0);
   })
 });

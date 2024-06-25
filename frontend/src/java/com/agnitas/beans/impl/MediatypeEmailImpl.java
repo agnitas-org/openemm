@@ -35,13 +35,15 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import jakarta.mail.internet.InternetAddress;
 
 public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MediatypeEmailImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(MediatypeEmailImpl.class);
 
 	public final String DEFAULT_CHARSET = "UTF-8";
 
 	/** Holds value of property subject. */
 	protected String subject = "";
+
+	protected String preHeader = "";
 
 	/** Holds value of property linefeed. */
 	protected int linefeed;
@@ -77,6 +79,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 	protected boolean skipempty = false;
 
+	protected boolean cleanupTestsBeforeDelivery = false;
+
 	/** Flag, if IntelliAd link tracking is enabled. */
 	protected boolean intelliAdEnabled;
 
@@ -94,6 +98,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	protected String bccRecipients;
 
 	private boolean isEncryptedSend;
+
+	private boolean clearance;
 
 	/** Creates a new instance of MediatypeEmailImpl */
 	public MediatypeEmailImpl() {
@@ -163,27 +169,24 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		return onepixel;
 	}
 
-	/**
-	 * Getter for property subject.
-	 * 
-	 * @return Value of property subject.
-	 *
-	 */
 	@Override
 	public String getSubject() {
 		return subject;
 	}
 
-	/**
-	 * Setter for property subject.
-	 * 
-	 * @param subject
-	 *            New value of property subject.
-	 *
-	 */
+	@Override
+	public String getPreHeader() {
+		return preHeader;
+	}
+
 	@Override
 	public void setSubject(String subject) {
 		this.subject = subject;
+	}
+
+	@Override
+	public void setPreHeader(String preHeader) {
+		this.preHeader = preHeader;
 	}
 
 	/**
@@ -459,6 +462,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 		subject = parameters.get("subject");
 
+		preHeader = parameters.get("preHeader");
+
 		mailFormat = NumberUtils.toInt(parameters.get("mailformat"), OFFLINE_HTML.getValue());
 
 		linefeed = NumberUtils.toInt(parameters.get("linefeed"), 72);
@@ -477,6 +482,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 		String skip = parameters.get("skipempty");
 		skipempty = BooleanUtils.toBoolean(skip);
+		
+		String cleanupTestsBeforeDeliveryString = parameters.get("cleanupTestsBeforeDelivery");
+		cleanupTestsBeforeDelivery = BooleanUtils.toBoolean(cleanupTestsBeforeDeliveryString);
 
 		String intelliAdEnableParam = parameters.get(INTELLIAD_ENABLE_PARAM);
 		setIntelliAdEnabled(BooleanUtils.toBoolean(intelliAdEnableParam));
@@ -489,6 +497,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 		String bcc = parameters.get(BCC_STRING_PARAM);
 		setBccRecipients(bcc);
+
+        setClearance(BooleanUtils.toBoolean(parameters.get("clearance")));
 	}
 
 	@Override
@@ -510,6 +520,12 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		result.append(", subject=\"");
 		result.append(ParameterParser.escapeValue(subject));
 		result.append("\"");
+
+		if (StringUtils.isNotBlank(preHeader)) {
+			result.append(", preHeader=\"");
+			result.append(ParameterParser.escapeValue(preHeader));
+			result.append("\"");
+		}
 
 		result.append(", charset=\"");
 		result.append(ParameterParser.escapeValue(charset));
@@ -571,6 +587,10 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append("\"false\"");
 		}
 
+		if (cleanupTestsBeforeDelivery) {
+			result.append(", cleanupTestsBeforeDelivery=\"true\"");
+		}
+
 		if (isIntelliAdEnabled()) {
 			result.append(", ");
 			result.append(INTELLIAD_ENABLE_PARAM);
@@ -592,6 +612,10 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append(getBccRecipients());
 			result.append("\"");
 		}
+
+        if (isClearance()) {
+            result.append(", clearance=\"true\"");
+        }
 
 		super.setParam(result.toString());
 		return result.toString();
@@ -617,6 +641,16 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	@Override
 	public void setSkipempty(boolean skipempty) {
 		this.skipempty = skipempty;
+	}
+
+	@Override
+	public boolean isCleanupTestsBeforeDelivery() {
+		return cleanupTestsBeforeDelivery;
+	}
+
+	@Override
+	public void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery) {
+		this.cleanupTestsBeforeDelivery = cleanupTestsBeforeDelivery;
 	}
 
 	// removes the parameters for a follow-up mailing.
@@ -706,7 +740,17 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		return this.isEncryptedSend;
 	}
 
-	/**
+    @Override
+    public boolean isClearance() {
+        return clearance;
+    }
+
+    @Override
+    public void setClearance(boolean clearance) {
+        this.clearance = clearance;
+    }
+
+    /**
 	 * Makes a standalone copy of this mediatype without any references to this
 	 * objects data
 	 * 

@@ -1,0 +1,49 @@
+<%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
+<%@ page import="com.agnitas.beans.Admin" %>
+<%@ page import="com.agnitas.beans.Company" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
+
+<%
+    int tmpMailingID = NumberUtils.toInt(request.getParameter("mailingID"));
+    Company company = ((Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany();
+%>
+
+<%
+    String imageSrcExpression = "CONCAT(co.rdir_domain, '/image?ci=', cmp.company_id, '&mi=', cmp.mailing_id, '&name=', cmp.compname)";
+    if (ConfigService.isOracleDB()) {
+        imageSrcExpression = "co.rdir_domain||'/image?ci='||cmp.company_id||'&mi='||cmp.mailing_id||'&name='||cmp.compname";
+    }
+    String query = "select filename, image_src from (" +
+            "  select cmp.compname filename, " +
+            "      case when (cmp.comptype=1) then cmp.compname else " + imageSrcExpression + " end image_src" +
+            "  from component_tbl cmp, company_tbl co where co.company_id = cmp.company_id and (cmp.comptype=1 or cmp.comptype=5) and cmp.mailing_id=" + tmpMailingID +
+            "  and cmp.company_id=" + company.getId() +
+            "  union all" +
+            "  select upl.filename filename, co.rdir_domain||'/image?upi='||upl.upload_id image_src from upload_tbl upl, company_tbl co " +
+            "  where co.company_id = upl.company_id " +
+            "  and (lower(upl.filename) like '%.jpg' or lower(upl.filename) like '%.jpeg' or lower(upl.filename) like '%.png' or lower(upl.filename) like '%.gif') " +
+            "  and upl.company_id = " + company.getId() +
+            "  and upl.filename not in (select compname from component_tbl " +
+            "  where (comptype=1 or comptype=5) and mailing_id=" + tmpMailingID +" and company_id="+ company.getId() +")) subsel1 order by filename";
+%>
+
+<div id="other-images-tab" class="tile-body d-flex flex-column gap-3">
+    <div>
+        <label for="image-dropdown" class="form-label"><mvc:message code="mailing.Graphics_Component"/></label>
+        <select id="image-dropdown" class="js-select form-control" data-action="update-image" size="1">
+            <emm:ShowTable id="comp" sqlStatement="<%= query %>">
+                <option value='<%= (String)pageContext.getAttribute("_comp_image_src") %>'><%= pageContext.getAttribute("_comp_filename") %></option>
+            </emm:ShowTable>
+        </select>
+    </div>
+
+    <div class="flex-center flex-grow-1 hidden">
+        <img id="image-preview" alt="No preview">
+    </div>
+
+    <div id="no-image-message" class="notification-simple notification-simple--lg hidden">
+        <i class="icon icon-info-circle"></i>
+        <span><mvc:message code="mailing.Graphics_Component.NoImage"/></span>
+    </div>
+</div>

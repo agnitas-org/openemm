@@ -10,7 +10,6 @@
 
 package org.agnitas.service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,16 +18,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.messages.Message;
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.ImportUtils.ImportErrorType;
-import org.apache.struts.action.ActionMessage;
 
+import com.agnitas.emm.core.commons.dto.FileDto;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ImportWizardHelper {
+
+    String MAILTYPE_KEY = "mailtype";
+    String GENDER_KEY = "gender";
 
 	/**
 	 * Getter for property datasourceID.
@@ -186,8 +188,6 @@ public interface ImportWizardHelper {
 
 	Blacklist getBlacklistHelper();
 
-	void setReadlines(int readlines);
-
 	public LinkedList<Object> parseLine(List<String> inputData, boolean addErrors);
 
 	/**
@@ -264,7 +264,7 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property dbInsertStatusMessagesAndParameters.
 	 */
-	public abstract List<ActionMessage> getDbInsertStatusMessagesAndParameters();
+	public abstract List<Message> getDbInsertStatusMessagesAndParameters();
 
 	public abstract void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters);
 
@@ -361,15 +361,6 @@ public interface ImportWizardHelper {
 	public abstract boolean isGenderMissing();
 
 	public abstract void setGenderMissing(boolean genderMissing);
-
-	public abstract int getReadlines();
-
-	/**
-	 * read all lines of the file
-	 * @return
-	 * @throws IOException
-	 */
-	public abstract int getLinesOKFromFile() throws Exception;
 
 	public abstract Locale getLocale();
 

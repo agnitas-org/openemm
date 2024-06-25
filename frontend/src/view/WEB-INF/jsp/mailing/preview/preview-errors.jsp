@@ -1,10 +1,7 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.preview.service.MailingWebPreviewService" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -29,12 +26,12 @@
     <link type="text/css" rel="stylesheet" href="${reportstylesUrl}">
 </head>
 <body>
-<logic:messagesPresent>
+<emm:messagesPresent type="error">
     <div style="padding: 10px">
         <div class="error_box">
-            <html:messages id="msg_key" message="false">
-                <span class="error_message"><bean:write name="msg_key"/></span><br/>
-            </html:messages>
+            <emm:messages var="msg_key" type="error">
+                <span class="error_message">${msg_key}</span><br/>
+            </emm:messages>
 
             <c:if test="${not empty errorReport}">
                 <display:table name="errorReport" id="reportRow" class="errorTable">
@@ -70,7 +67,7 @@
             </c:if>
         </div>
     </div>
-</logic:messagesPresent>
+</emm:messagesPresent>
 
 </body>
 </html>

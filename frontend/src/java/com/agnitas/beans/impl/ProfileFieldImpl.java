@@ -122,7 +122,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 		if (overrideSimpleDataType != null) {
 			return overrideSimpleDataType;
 		} else {
-			return new DbColumnType(dataType, 0, 0, 0, false).getSimpleDataType();
+			return new DbColumnType(dataType, 0, numericPrecision, numericScale, false).getSimpleDataType();
 		}
 	}
 

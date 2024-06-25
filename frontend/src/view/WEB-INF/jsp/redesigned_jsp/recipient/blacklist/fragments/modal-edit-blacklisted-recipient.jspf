@@ -1,0 +1,36 @@
+<script id="modal-edit-blacklisted-recipient" type="text/x-mustache-template">
+    <mvc:form servletRelativeAction="/recipients/blacklist/update.action" data-form="resource" cssClass="modal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="recipient.RecipientEdit"/></h1>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="blacklist-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
+                            <input id="blacklist-email" type="text" class="form-control" value="{{- email}}" readonly>
+                            <input type="hidden" name="email" value="{{- email}}"/>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="blacklist-reason" class="form-label"><mvc:message code="blacklist.reason" /></label>
+                            <input id="blacklist-reason" type="text" class="form-control" name="reason" value="{{- reason}}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary flex-grow-1" data-action="save-edit">
+                        <i class="icon icon-save"></i>
+                        <span class="text"><mvc:message code="button.Save"/></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </mvc:form>
+</script>

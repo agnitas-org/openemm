@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
@@ -32,7 +32,6 @@
 <c:set var="BOUNCES_TYPE" value="<%= StatisticType.BOUNCES %>"/>
 <c:set var="BENCHMARK_TYPE" value="<%= StatisticType.BENCHMARK %>"/>
 <c:set var="TRACKING_POINT_TYPE" value="<%= StatisticType.TRACKING_POINT_WEEK_OVERVIEW %>"/>
-<c:set var="SOCIAL_NETWORKS_TYPE" value="<%= StatisticType.SOCIAL_NETWORKS %>"/>
 <c:set var="SIMPLE_TRACKING_POINT_TYPE" value="<%= StatisticType.SIMPLE_TRACKING_POINT %>"/>
 <c:set var="NUM_TRACKING_POINT_TYPE" value="<%= StatisticType.NUM_TRACKING_POINT_WEEK_OVERVIEW %>"/>
 <c:set var="ALPHA_TRACKING_POINT_TYPE" value="<%= StatisticType.ALPHA_TRACKING_POINT %>"/>

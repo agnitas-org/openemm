@@ -1013,7 +1013,7 @@ function beforeDrawAxisTitle( axis, label, icsc ) {
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale());
 		} else {
-			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
+			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Date&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
 	}
@@ -3283,7 +3283,7 @@ mydate;</expression>
                                         <expression name="valueExpr">if (reportContext.getParameterValue("hourScale")==true) {
 	 Packages.com.agnitas.messages.I18nString.getLocaleString("Time", reportContext.getLocale())
 } else {
-	Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale());
+	Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale());
 }</expression>
                                         <property name="contentType">html</property>
                                     </text-data>
@@ -3724,7 +3724,7 @@ mydate;</expression>
                                     <expression name="valueExpr" type="javascript">params["hourScale"].value == true</expression>
                                 </structure>
                             </list-property>
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="256">

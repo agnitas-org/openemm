@@ -151,6 +151,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     this.validatorName = null;
     this.validatorOptions = null;
     this.dirtyChecking = $form.is('[data-form-dirty-checking]');
+    this.editable = !$form.is('[data-editable]') || !!$form.data('editable');
 
     this.url = $form.attr('action');
     this.urlNextRequest = null;
@@ -172,6 +173,10 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
     if (this.dirtyChecking) {
       enableDirtyChecking($form);
+    }
+
+    if (!this.editable) {
+      $form.find(':input, button').prop('disabled', true);
     }
   };
 
@@ -893,7 +898,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
         $view.animate({scrollTop: $target.offset().top - $view.offset().top + $view.scrollTop()});
       } else {
         $view = $(document);
-        $view.scrollTop($field.offset().top - 25);
+        $view.scrollTop($field.offset().top - 125);
       }
     }
   };

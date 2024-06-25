@@ -10,12 +10,14 @@
 
 package com.agnitas.emm.core.recipientsreport.forms;
 
+import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import org.agnitas.web.forms.FormDateTime;
 import org.agnitas.web.forms.PaginationForm;
 
 public class RecipientsReportForm extends PaginationForm {
 
+    // TODO: EMMGUI-714: remove this old fields when old design will be removed
     private RecipientsReport.RecipientReportType[] filterTypes;
 
     private FormDateTime filterDateStart = new FormDateTime();
@@ -36,5 +38,51 @@ public class RecipientsReportForm extends PaginationForm {
 
     public FormDateTime getFilterDateFinish() {
         return filterDateFinish;
+    }
+
+    private Integer datasourceId;
+    private int adminId;
+    private String fileName;
+    private RecipientsReport.EntityType[] types;
+    private DateRange reportDate = new DateRange();
+
+    public Integer getDatasourceId() {
+        return datasourceId;
+    }
+
+    public void setDatasourceId(Integer datasourceId) {
+        this.datasourceId = datasourceId;
+    }
+
+    public int getAdminId() {
+        return adminId;
+    }
+
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public RecipientsReport.EntityType[] getTypes() {
+        return types;
+    }
+
+    public void setTypes(RecipientsReport.EntityType[] types) {
+        this.types = types;
+    }
+
+    public DateRange getReportDate() {
+        return reportDate;
+    }
+
+    public void setReportDate(DateRange reportDate) {
+        this.reportDate = reportDate;
     }
 }

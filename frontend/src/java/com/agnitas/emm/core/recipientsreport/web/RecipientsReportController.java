@@ -10,13 +10,16 @@
 
 package com.agnitas.emm.core.recipientsreport.web;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportSearchParams;
 import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
@@ -24,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -31,7 +35,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -43,49 +49,75 @@ import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/recipientsreport")
 @PermissionMapping("recipientsreport")
+@SessionAttributes(types = RecipientsReportSearchParams.class)
 public class RecipientsReportController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(RecipientsReportController.class);
     
     private final RecipientsReportService recipientsReportService;
     private final WebStorage webStorage;
+    private final AdminService adminService;
     private final UserActivityLogService userActivityLogService;
 
     public RecipientsReportController(RecipientsReportService recipientsReportService, WebStorage webStorage,
-                                      UserActivityLogService userActivityLogService) {
+                                      AdminService adminService, UserActivityLogService userActivityLogService) {
         this.recipientsReportService = recipientsReportService;
         this.webStorage = webStorage;
+        this.adminService = adminService;
         this.userActivityLogService = userActivityLogService;
     }
 
+    @InitBinder
+    public void initBinder(Admin admin, WebDataBinder binder) {
+        SimpleDateFormat dateFormat = admin.getDateFormat();
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));
+    }
+
     @RequestMapping("/list.action")
-    public String list(Admin admin, RecipientsReportForm reportForm, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
+    public String list(Admin admin, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams, Model model) {
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
+        FormUtils.syncSearchParams(searchParams, reportForm, true);
 
         Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
         Date finishDate = reportForm.getFilterDateFinish().get(admin.getDateFormat());
 
-
-        PaginatedListImpl<RecipientsReport> reports =
-                recipientsReportService.deleteOldReportsAndGetReports(admin,
+        PaginatedListImpl<RecipientsReport> reports = isUiRedesign(admin)
+                ? recipientsReportService.deleteOldReportsAndGetReports(reportForm, admin)
+                : recipientsReportService.deleteOldReportsAndGetReports(admin,
                         reportForm.getPage(), reportForm.getNumberOfRows(),
                         reportForm.getSort(), reportForm.getDir(),
                         startDate, finishDate,
                         reportForm.getFilterTypes());
 
         model.addAttribute("reportsList", reports);
-        
+
+        if (isUiRedesign(admin)) {
+            model.addAttribute("users", adminService.listAdminsByCompanyID(admin.getCompanyID()));
+        }
+
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         
         writeUserActivityLog(admin, "Import/Export logs", "active tab - overview");
 
         return "recipient_reports";
+    }
+
+    private boolean isUiRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed(Permission.RECIPIENTS_REPORT_UI_MIGRATION);
+    }
+
+    @GetMapping("/search.action")
+    public String search(RecipientsReportForm filter, RecipientsReportSearchParams searchParams, RedirectAttributes ra) {
+        FormUtils.syncSearchParams(searchParams, filter, false);
+        ra.addFlashAttribute("recipientsReportForm", filter);
+        return "redirect:/recipientsreport/list.action";
     }
 
     @GetMapping("/{reportId:\\d+}/view.action")

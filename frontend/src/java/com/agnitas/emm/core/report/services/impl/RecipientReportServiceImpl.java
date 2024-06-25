@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.report.services.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -17,18 +18,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.Resource;
-
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.util.CsvWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
@@ -36,6 +39,7 @@ import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
+import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientRemark;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
@@ -45,15 +49,34 @@ import com.agnitas.emm.core.report.bean.RecipientEntity;
 import com.agnitas.emm.core.report.builder.RecipientBindingHistoryBuilder;
 import com.agnitas.emm.core.report.builder.impl.RecipientBindingHistoryBuilderImpl;
 import com.agnitas.emm.core.report.converter.CollectionConverter;
+import com.agnitas.emm.core.report.converter.impl.RecipientDeviceHistoryDtoConverter;
+import com.agnitas.emm.core.report.converter.impl.RecipientEntityDtoConverter;
+import com.agnitas.emm.core.report.converter.impl.RecipientMailingHistoryDtoConverter;
+import com.agnitas.emm.core.report.converter.impl.RecipientRetargetingHistoryDtoConverter;
+import com.agnitas.emm.core.report.converter.impl.RecipientStatusHistoryDtoConverter;
 import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
+import com.agnitas.emm.core.report.dao.RecipientHistoryReportDao;
 import com.agnitas.emm.core.report.director.RecipientBindingHistoryDirector;
 import com.agnitas.emm.core.report.director.impl.RecipientBindingHistoryDirectorImpl;
+import com.agnitas.emm.core.report.dto.RecipientEntityDto;
+import com.agnitas.emm.core.report.dto.RecipientMailingLinkClicksHistoryDto;
+import com.agnitas.emm.core.report.dto.RecipientMailingOpeningsHistoryDto;
+import com.agnitas.emm.core.report.dto.RecipientSoftBounceHistoryDto;
+import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.mapper.Mapper;
+import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
+import com.agnitas.messages.I18nString;
+
+import jakarta.annotation.Resource;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 @Service
 public class RecipientReportServiceImpl implements RecipientReportService {
 
+    public static final String TXT_REPORT_FOOTER = "The data is stored on servers in Germany";
+    
     @Resource
     private ComBindingEntryDao bindingEntryDao;
 
@@ -74,6 +97,104 @@ public class RecipientReportServiceImpl implements RecipientReportService {
 
     @Resource
     private Mapper<RecipientEntity> recipientEntityMapper;
+
+    @Resource
+    protected RecipientHistoryReportDao historyDao;
+
+    @Resource(name = "txtTableGenerator")
+    protected TableGenerator txtTableGenerator;
+    
+    @Resource
+    private RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
+
+    @Resource
+    private RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter;
+
+    @Resource
+    private RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter;
+
+    @Resource
+    private RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter;
+
+    @Resource
+    private RecipientEntityDtoConverter recipientEntityDtoConverter;
+
+    @Resource
+    private RecipientEntityDtoPrinter recipientEntityDtoPrinter;
+
+    @Override
+    public String getRecipientTxtReport(int recipientId, int companyId, Locale locale) {
+        return getRecipientInfoTxt(recipientId, companyId, locale) +
+                getRecipientReportTxtTables(recipientId, companyId, locale) +
+                "\n" + TXT_REPORT_FOOTER;
+    }
+
+    protected String getRecipientReportTxtTables(int recipientId, int companyId, Locale locale) {
+        return getStatusHistoryTxtTable(recipientId, companyId, locale) +
+                getMailingHistoryTxtTable(recipientId, companyId, locale) +
+                getTrackingHistoryTxtTable(recipientId, companyId, locale) +
+                getDeviceHistoryTxtTable(recipientId, companyId, locale) +
+                getSoftBouncesHistoryTxtTable(recipientId, companyId, locale) +
+                getIpAddressesOfClicksHistoryTxtTable(recipientId, companyId, locale) +
+                getMailingOpeningsTxtTable(recipientId, companyId, locale) +
+                getMailingClicksTxtTable(recipientId, companyId, locale) +
+                getUserFormClicksTxtTable(recipientId, companyId, locale) +
+                getWorkflowReactionsHistoryTxtTable(recipientId, companyId, locale);
+    }
+
+    private String getIpAddressesOfClicksHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        return txtTableGenerator.generate(historyDao.getIpAddressesOfClicksHistory(recipientId, companyId), locale);
+    }
+
+    private String getUserFormClicksTxtTable(int recipientId, int companyId, Locale locale) {
+        return txtTableGenerator.generate(historyDao.getUserFormClicksHistory(recipientId, companyId), locale);
+    }
+
+    private String getMailingClicksTxtTable(int recipientId, int companyId, Locale locale) {
+        List<RecipientMailingLinkClicksHistoryDto> clicks = historyDao.getMailingClicksHistory(recipientId, companyId);
+        return txtTableGenerator.generate(clicks, locale);
+    }
+
+    private String getMailingOpeningsTxtTable(int recipientId, int companyId, Locale locale) {
+        List<RecipientMailingOpeningsHistoryDto> openings = historyDao.getOpeningsHistory(recipientId, companyId);
+        return txtTableGenerator.generate(openings, locale);
+    }
+
+    private String getSoftBouncesHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        List<RecipientSoftBounceHistoryDto> softBouncesDto = historyDao.getSoftBouncesHistory(recipientId, companyId);
+        return txtTableGenerator.generate(softBouncesDto, locale);
+    }
+
+    private String getDeviceHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        List<ComRecipientReaction> deviceHistory = getDeviceHistory(recipientId, companyId);
+        return txtTableGenerator.generate(recipientDeviceHistoryDtoConverter.convert(deviceHistory, locale), locale);
+    }
+
+    private String getTrackingHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        List<WebtrackingHistoryEntry> trackingHistory = getRetargetingHistory(recipientId, companyId);
+        return txtTableGenerator.generate(recipientRetargetingHistoryDtoConverter.convert(trackingHistory), locale);
+    }
+
+    private String getMailingHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        List<ComRecipientMailing> mailingHistory = getMailingHistory(recipientId, companyId);
+        return txtTableGenerator.generate(recipientMailingHistoryDtoConverter.convert(mailingHistory, locale), locale);
+    }
+
+    private String getStatusHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        List<ComRecipientHistory> statusHistory = getStatusHistory(recipientId, companyId);
+        return txtTableGenerator.generate(recipientStatusHistoryConverter.convert(statusHistory, locale), locale);
+    }
+
+    private String getRecipientInfoTxt(int recipientId, int companyId, Locale locale) {
+        RecipientEntity recipientEntity = getRecipientInfo(recipientId, companyId);
+        RecipientEntityDto recipientEntityDto = recipientEntityDtoConverter.convert(recipientEntity, locale);
+        return recipientEntityDtoPrinter.print(recipientEntityDto, locale);
+    }
+
+    private String getWorkflowReactionsHistoryTxtTable(int recipientId, int companyId, Locale locale) {
+        return txtTableGenerator
+                .generate(historyDao.getWorkflowReactionsHistory(recipientId, companyId), locale);
+    }
 
     @Override
     public List<RecipientBindingHistory> getBindingHistory(int recipientId, int companyId) {
@@ -303,5 +424,52 @@ public class RecipientReportServiceImpl implements RecipientReportService {
         }
 
         return recipientBindingHistories;
+    }
+
+    @Override
+    public Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId) {
+        return bindingEntryDao.getRecipientRemarksStat(mailinglistId, targetId, companyId);
+    }
+
+    @Override
+    public JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summed) {
+        JSONArray jsonArray = new JSONArray();
+        remarks.entrySet().stream()
+                .filter(remarkEntry -> summed == SummedRecipientRemark.getNames().contains(remarkEntry.getKey()))
+                .map(remarkEntry -> getRemarkJson(remarkEntry.getKey(), remarkEntry.getValue()))
+                .forEach(jsonArray::add);
+        return jsonArray;
+    }
+
+    private JSONObject getRemarkJson(String remark, int value) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("remark", remark);
+        jsonObject.put("value", value);
+        return jsonObject;
+    }
+
+    @Override
+    public byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) {
+        Map<String, Integer> remarks = getRecipientRemarksStat(mailingListId, targetId, admin.getCompanyID());
+        Locale locale = admin.getLocale();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
+            writeRemarksToCsv(csvWriter, remarks, locale);
+        } catch (Exception e) {
+            return new byte[0];
+        }
+        return outputStream.toByteArray();
+    }
+
+    private void writeRemarksToCsv(CsvWriter csvWriter, Map<String, Integer> remarks, Locale locale) throws Exception {
+        csvWriter.writeValues(localStr("recipient.Remark", locale), localStr("Value", locale));
+        for (Map.Entry<String, Integer> remark : remarks.entrySet()) {
+            csvWriter.writeValues(remark.getKey(), remark.getValue());
+        }
+    }
+
+    private String localStr(String code, Locale locale) {
+        return I18nString.getLocaleString(code, locale);
     }
 }

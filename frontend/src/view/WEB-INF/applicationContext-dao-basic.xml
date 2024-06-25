@@ -57,7 +57,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Blacklist -->
-	<bean id="BlacklistDao"	class="com.agnitas.emm.core.blacklist.dao.impl.BlacklistDaoImplBasic">
+	<bean id="BlacklistDao"	class="com.agnitas.emm.core.blacklist.dao.impl.BlacklistDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -278,11 +278,11 @@
 	</bean>
 
 	<bean id="ImportProfileDao" class="org.agnitas.dao.impl.ImportProfileDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="dataEncryptor" ref="DataEncryptor" />
-		<property name="emmActionOperationDao" ref="EmmActionOperationDao" />
-		<property name="mailingDao" ref="MailingDao" />
+    	<constructor-arg ref="dataSource" />
+    	<constructor-arg ref="JavaMailService" />
+    	<constructor-arg ref="DataEncryptor" />
+    	<constructor-arg ref="EmmActionOperationDao" />
+    	<constructor-arg ref="MailingDao" />
 	</bean>
 	
 <!-- ============================================================================================================================== Job queue -->
@@ -349,13 +349,6 @@
 <!-- ============================================================================================================================== Mediatypes -->
 	<bean id="MediatypeFactory" class="org.agnitas.emm.core.mediatypes.factory.MediatypeFactoryImpl"/>
 
-	<bean id="MediatypesDao" class="org.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="mediatypeFactory" ref="MediatypeFactory" />
-		<property name="configService" ref="ConfigService" />
-	</bean>
-
 <!-- ============================================================================================================================== Messages -->
 	<bean id="MessageDao" class="com.agnitas.dao.impl.ComMessageDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -381,6 +374,7 @@
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="profileHistoryService" ref="RecipientProfileHistoryService" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
 	</bean>
 	
 <!-- ============================================================================================================================== Reports -->
@@ -412,7 +406,6 @@
 	<bean id="ServerStatusDao" class="com.agnitas.dao.impl.ComServerStatusDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="configService" ref="ConfigService" />
 	</bean>
 
 	
@@ -508,18 +501,14 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
         <property name="targetService" ref="targetService"/>
+        <property name="configService" ref="ConfigService"/>
     </bean>
 
 	<bean id="WorkflowReactionDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowReactionDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
-	</bean>
-
-	<bean id="WorkflowReportScheduleDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowReportScheduleDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="birtReportFactory" ref="BirtReportFactory"/>
+		<property name="selfRef" ref="WorkflowReactionDao" />
 	</bean>
 
 	<bean id="comWorkflowStartStopReminderDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowStartStopReminderDaoImpl">
@@ -561,7 +550,7 @@
 		<property name="dataSource" ref="dataSource" />
 	</bean>
 
-	<bean id="RecipientProfileHistoryDao" class="com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImplBasic">
+	<bean id="RecipientProfileHistoryDao" class="com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -612,12 +601,6 @@
 	
 	<!-- ============================================================================================================================== Mobile phone whitelist -->
 	<bean id="MobilephoneNumberWhitelistDao" class="com.agnitas.emm.mobilephone.dao.MobilephoneNumberWhitelistDaoImpl" parent="_BaseDao" />
-	
-	<!-- ============================================================================================================================== Upload -->
-	<bean id="UploadDao" class="com.agnitas.emm.core.upload.dao.impl.ComUploadDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
 
 	<bean id="PermissionDao" class="com.agnitas.dao.impl.PermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionDaoImpl" parent="_BaseDao" />
@@ -637,9 +620,12 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
+	<bean id="MailingRecipientsDao" class="com.agnitas.emm.core.mailing.dao.impl.MailingRecipientsDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
     <bean id="MailingStatisticsDao" class="com.agnitas.dao.impl.MailingStatisticsDaoImpl">
-    	<constructor-arg ref="ConfigService" />
-    	<constructor-arg ref="TargetDao" />
     	<constructor-arg ref="targetService" />
 		
 		
@@ -651,4 +637,6 @@
 		<constructor-arg ref="dataSource" />
 		<constructor-arg ref="JavaMailService" />
 	</bean>
+	
+	<bean id="ImportQuotaDao" class="com.agnitas.emm.core.importquota.dao.ImportQuotaDaoImpl" parent="_BaseDao" />
 </beans>

@@ -47,6 +47,10 @@
     $element.data('_load', loadObj);
   };
 
+  Load.get = function ($el) {
+    return $el.data('_load');
+  }
+
   Load.prototype.stop = function() {
     window.clearInterval(this._interval)
   };

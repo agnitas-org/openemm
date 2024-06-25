@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Au moment de l'envoi]]></title>
+	<content><![CDATA[Si vous s&eacute;lectionnez l'option "&agrave; l'heure d'envoi" pour l'auto-exportation de vos destinataires de mailings, l'exportation sera toujours g&eacute;n&eacute;r&eacute;e &agrave; l'heure pleine suivante. Si l'envoi de votre mailing se situe par exemple entre 9:00 et 9:59, l'auto-export correspondant sera effectu&eacute; &agrave; 10:00.]]></content>
+</HelpBalloon>

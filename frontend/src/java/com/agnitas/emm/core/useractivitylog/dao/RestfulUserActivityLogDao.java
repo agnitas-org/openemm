@@ -10,21 +10,26 @@
 
 package com.agnitas.emm.core.useractivitylog.dao;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
+import java.util.Date;
+import java.util.List;
+
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.SqlPreparedStatementManager;
 
-import java.util.Date;
-import java.util.List;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 
 public interface RestfulUserActivityLogDao extends UserActivityLogDaoBase {
 
     void writeUserActivityLog(String endpoint, String description, String httpMethod, String host, Admin admin);
 
     PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) throws Exception;
+    PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntriesRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
 
     SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description) throws Exception;
+
+    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
 
 }

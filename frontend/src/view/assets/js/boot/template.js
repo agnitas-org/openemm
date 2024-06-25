@@ -15,6 +15,27 @@ AGN.Opt.Templates['modal'] = '\
   </div> \
 </div>';
 
+AGN.Opt.Templates['csrf-error'] = '\
+    <div class="backdrop backdrop-error js-close-error" style="position: fixed; top: 0; left: 0; bottom: 0; right:0; z-index: 1100; background-color: rgba(0,0,0,0.5)">\
+        <div class="notification notification-alert" style="position: fixed; top: 50%; left: 50%; width: 420px; margin: -80px 0 0 -210px; z-index: 1101;">\
+            <div class="notification-header">\
+                <p class="headline">\
+                    <i class="icon icon-state-alert"></i>\
+                    <span class="text">{{= headline }}</span>\
+                    <i class="icon icon-times-circle close-icon js-close-error"></i>\
+                </p>\
+            </div>\
+            <div class="notification-content">\
+                <p>{{= content }}</p>\
+                <a href="#" class="btn btn-regular btn-primary vspace-top-10" onclick="location.reload();">\
+                    <i class="icon icon-repeat"></i>\
+                    <span class="text">{{= reload }}</span>\
+                </a>\
+            </div>\
+        </div>\
+    </div>\
+';
+
 AGN.Opt.Templates['modal-yes-no-cancel'] = '\
 <div class="modal"> \
   <div class="modal-dialog"> \
@@ -323,13 +344,13 @@ AGN.Opt.Templates['trackablelink-extension-table-row'] = '\
 AGN.Opt.Templates['mailing-param-row'] = '\
   <tr data-param-row="{{- index}}"> \
       <td> \
-          <input type="text" value="{{- name}}" data-param-name class="form-control" data-action="param-enterdown"/> \
+          <input type="text" value="{{- name}}" data-param-name class="form-control" data-action="param-enterdown" {{ isChangeable ? print("") : print("readonly") }} /> \
       </td> \
       <td> \
-          <input type="text" value="{{- value}}" data-param-value class="form-control" data-action="param-enterdown"/> \
+          <input type="text" value="{{- value}}" data-param-value class="form-control" data-action="param-enterdown" {{ isChangeable ? print("") : print("readonly") }} /> \
       </td> \
       <td> \
-          <input type="text" value="{{- description}}" data-param-description class="form-control" data-action="param-enterdown"/> \
+          <input type="text" value="{{- description}}" data-param-description class="form-control" data-action="param-enterdown" {{ isChangeable ? print("") : print("readonly") }} /> \
       </td> \
       {{ if (isChangeable) { }} \
       <td class="table-actions"> \
@@ -353,10 +374,10 @@ AGN.Opt.Templates['mailing-reference-content-item'] = ' \
       </div> \
       <div class="col-sm-8"> \
           <div class="input-group-controls"> \
-              <input type="text" class="form-control" name="referenceContentSettings.items" value="{{- value }}" id="input-{{- name }}"/> \
+              <input type="text" class="form-control" name="referenceContentSettings.items" value="{{- value }}" {{ disable ? print("disabled") : print("")}} id="input-{{- name }}"/> \
           </div> \
           <div class="input-group-btn"> \
-              <button type="button" class="btn btn-regular btn-alert" \
+              <button type="button" class="btn btn-regular btn-alert" {{ disable ? print("disabled") : print("")}} \
                       data-action="delete-reference-content-item"> \
                   <i class="icon icon-trash-o"></i> \
               </button> \

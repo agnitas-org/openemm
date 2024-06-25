@@ -14,6 +14,7 @@ import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.SoapUserActivityLogDao;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -56,7 +57,7 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
     public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to) throws Exception {
         SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT timestamp, username, endpoint, client_ip FROM webservice_usage_log_tbl");
         sqlPreparedStatementManager.addWhereClause("timestamp >= ?", from);
-        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", to);
+        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", DateUtilities.addDaysToDate(to, 1));
 
         //  If set, any of the visible admins must match
         if (visibleAdmins != null && !visibleAdmins.isEmpty()) {

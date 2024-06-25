@@ -12,22 +12,22 @@ package com.agnitas.rdir.processing;
 
 import java.util.Objects;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 
 public final class SubstituteLinkResult {
 
-	private final ComTrackableLink trackableLink;
+	private final TrackableLink trackableLink;
 	private final String fullUrl;
 	private final ComExtensibleUID uid;
 
-	public SubstituteLinkResult(final ComTrackableLink trackableLink, final String fullUrl, final ComExtensibleUID uid) {
+	public SubstituteLinkResult(final TrackableLink trackableLink, final String fullUrl, final ComExtensibleUID uid) {
 		this.trackableLink = Objects.requireNonNull(trackableLink);
 		this.fullUrl = Objects.requireNonNull(fullUrl);
 		this.uid = Objects.requireNonNull(uid);
 	}
 
-	public ComTrackableLink getTrackableLink() {
+	public TrackableLink getTrackableLink() {
 		return trackableLink;
 	}
 

@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,10 +58,10 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
     protected ConfigService configService;
     private ExecutorService workerExecutorService;
 
-	private void validateArguments(int mailingId, List<Integer> targetList, Integer recipientsType) {
+	private void validateArguments(int mailingId, final int companyId, List<Integer> targetList, Integer recipientsType) {
 		StringBuffer errorStr = new StringBuffer();
 		
-		if (!mailingDao.exist(mailingId, Utils.getUserCompany())) {
+		if (!mailingDao.exist(mailingId, companyId)) {
 			errorStr.append(" Mailing ").append(mailingId).append(" doesn't exist.");
 		}
 		
@@ -72,7 +71,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		
 		String badTargets = "";
 		for (Integer targetId : targetList) {
-			if (lightTargetDao.getTarget(targetId, Utils.getUserCompany()) == null) {
+			if (lightTargetDao.getTarget(targetId, companyId) == null) {
 				if (!badTargets.isEmpty()) {
 					badTargets += ",";
 				}
@@ -90,9 +89,9 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 	
 	@Override
 	@Transactional
-	public int startSummaryStatisticJob(final int mailingId, List<Integer> targetList, final Integer recipientsType) {
+	public int startSummaryStatisticJob(final int mailingId, final int companyId, List<Integer> targetList, final Integer recipientsType) {
 		synchronized (dataSet) {
-			validateArguments(mailingId, targetList, recipientsType);
+			validateArguments(mailingId, companyId, targetList, recipientsType);
 
 			Collections.sort(targetList);
 			final String targetGroups = StringUtils.join(targetList, ',');
@@ -109,7 +108,6 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 			}
 
 			final int id = mailingStatJobDao.createMailingStatJob(job);
-			final int companyId = Utils.getUserCompany();
 			workerExecutorService.execute(() -> {
 				try {
 					statJob(id, companyId, mailingId, targetGroups, job.getRecipientsType());
@@ -148,8 +146,6 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		} catch (NumberFormatException e) {
 			throw new TargetGroupsStringFormatException();
 		}
-		
-		// removeExpiredData(); // Done by CleanDBDaoImpl now
 		
 		int targetGroupIndex = 1;
 		 // DataSet uses target group ID = 1 for 'all subscribers'

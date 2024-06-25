@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -163,7 +163,8 @@ reportContext.setGlobalVariable("tr", tr);
 function hasPercentageRepresentation(categoryKey) {
 	return categoryKey != CommonKeys.REVENUE_SHIFTED_INDEX &amp;&amp;
 			categoryKey != CommonKeys.OPENINGS_ANONYMOUS_INDEX &amp;&amp;
-			categoryKey != CommonKeys.CLICKS_ANONYMOUS_INDEX;
+			categoryKey != CommonKeys.CLICKS_ANONYMOUS_INDEX &amp;&amp;
+			categoryKey != CommonKeys.OPENERS_PROXY_INDEX;
 }
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>

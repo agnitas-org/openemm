@@ -6,6 +6,10 @@
         errors: function ($e, options) {
             var errors = [];
 
+            if (options.excludeHidden && $e.is(':hidden')) {
+              return [];
+            }
+
             var exactValue = $e.val();
             if (exactValue) {
                 var value = options.float === true ? parseFloat(exactValue) : parseInt(exactValue);
@@ -14,7 +18,7 @@
                     errors.push({field: $e, msg: t('fields.errors.number_nan')});
                 } else {
                     if (value < options.min) {
-                        errors.push({field: $e, msg: t('fields.errors.number_exceed_min', options.min)});
+                        errors.push({field: $e, msg: t('fields.errors.number_exceed_min', options.min - 1)});
                     } else if (value > options.max) {
                         errors.push({field: $e, msg: t('fields.errors.number_exceed_max', options.max)});
                     } else if (options.strict === true) {

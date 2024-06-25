@@ -26,16 +26,26 @@ public class RecipientFieldsCacheImpl implements RecipientFieldsCache {
 	
 	public RecipientFieldsCacheImpl(ConfigService configService) {
 		this.configService = configService;
-		cache = new TimeoutLRUMap<>(this.configService.getIntegerValue(ConfigValue.RecipientFieldsMaxCache), this.configService.getLongValue(ConfigValue.RecipientFieldsMaxCacheTimeMillis));
+	}
+	
+	/**
+	 * Lazy init the cache Map, otherwise the startup of the Spring context will fail
+	 * @return
+	 */
+	private TimeoutLRUMap<Integer, List<RecipientFieldDescription>> getCacheMap() {
+		if (cache == null) {
+			cache = new TimeoutLRUMap<>(this.configService.getIntegerValue(ConfigValue.RecipientFieldsMaxCache), this.configService.getLongValue(ConfigValue.RecipientFieldsMaxCacheTimeMillis));
+		}
+		return cache;
 	}
 
 	@Override
 	public void put(int companyID, List<RecipientFieldDescription> cacheValues) {
-		cache.put(companyID, cacheValues);
+		getCacheMap().put(companyID, cacheValues);
 	}
 
 	@Override
 	public List<RecipientFieldDescription> get(int companyID) {
-		return cache.get(companyID);
+		return getCacheMap().get(companyID);
 	}
 }

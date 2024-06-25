@@ -13,7 +13,7 @@ package com.agnitas.emm.core.imports.service.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.imports.form.ImportForm;
 import com.agnitas.emm.core.imports.service.MailingImportService;
-import com.agnitas.exception.ValidationException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.Message;
 import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingImporter;
@@ -49,7 +49,7 @@ public class MailingImportServiceImpl implements MailingImportService {
         String fileExtension = extractFileExtension(uploadedFile.getOriginalFilename());
 
         if (!isFileUploadingSupports(fileExtension)) {
-            throw new ValidationException(Message.of("error.import.invalidDataType", getSupportedFilesExtensionsAsStr()));
+            throw new RequestErrorException(Message.of("error.import.invalidDataType", getSupportedFilesExtensionsAsStr()));
         }
 
         if (fileExtension.equalsIgnoreCase("json")) {
@@ -58,7 +58,7 @@ public class MailingImportServiceImpl implements MailingImportService {
                 return importMailingDataFromJson(admin, input, form);
             } catch (Exception e) {
                 LOGGER.error("Mailing import failed", e);
-                throw new ValidationException("error.mailing.import");
+                throw new RequestErrorException("error.mailing.import");
             }
         }
 

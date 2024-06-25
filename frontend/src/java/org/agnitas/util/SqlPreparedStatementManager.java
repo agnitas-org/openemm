@@ -84,7 +84,7 @@ public class SqlPreparedStatementManager {
 		
 		int parametersLength = parameter == null ? 0 : parameter.length;
 		if (parametersLength != numberOfParameterPlaceholders) {
-			throw new Exception("Invalid number of parameters in where clause");
+			throw new Exception(String.format("Invalid number of parameters in where clause (%s, got %d params)", whereClause, parametersLength));
 		}
 		
 		if (hasAppendedClauses) {

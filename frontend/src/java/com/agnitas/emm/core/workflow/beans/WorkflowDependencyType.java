@@ -26,7 +26,6 @@ public enum WorkflowDependencyType implements IntEnum {
     MAILINGLIST(7),
     PROFILE_FIELD(8),
     PROFILE_FIELD_HISTORY(9),
-    REPORT(10),
     TARGET_GROUP(11),
     TARGET_GROUP_CONDITION(13),
     USER_FORM(12),

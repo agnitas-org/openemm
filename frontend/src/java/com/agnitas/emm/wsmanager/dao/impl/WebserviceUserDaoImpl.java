@@ -12,15 +12,19 @@ package com.agnitas.emm.wsmanager.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -68,7 +72,55 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 			throw new WebserviceUserDaoException("Error listing webservice user", e);
 		}
 	}
-	
+
+	@Override
+	public PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(WebserviceUserOverviewFilter filter) throws WebserviceUserDaoException {
+		String sortColumn = filter.getSortOrDefault(DEFAULT_SORT_COLUMN);
+
+		StringBuilder query = new StringBuilder("SELECT w.username, w.company_id, w.default_data_source_id, w.active, c.shortname AS company_name FROM webservice_user_tbl w JOIN company_tbl c ON c.company_id = w.company_id");
+		List<Object> params = applyOverviewFilter(filter, query);
+
+		try {
+			if (sortColumn.equals("company_name")) {
+				String sortClause = "ORDER BY LOWER(company_name) " + (filter.ascending() ? "ASC" : "DESC");
+				return selectPaginatedListWithSortClause(logger, query.toString(), sortClause, sortColumn, filter.ascending(), filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
+			}
+
+			return selectPaginatedList(logger, query.toString(), WS_USER_TBL_NAME, sortColumn, filter.ascending(), filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
+		} catch (Exception e) {
+			logger.error("Error listing webservice user", e);
+			throw new WebserviceUserDaoException("Error listing webservice user", e);
+		}
+	}
+
+	private List<Object> applyOverviewFilter(WebserviceUserOverviewFilter filter, StringBuilder query) {
+		List<Object> params = new ArrayList<>();
+
+		if (filter.getCompanyId() != null) {
+			query.append(" WHERE w.company_id = ?");
+			params.add(filter.getCompanyId());
+		} else {
+			query.append(" WHERE 1=1");
+		}
+
+		if (filter.getStatus() != null) {
+			query.append(" AND w.active = ?");
+			params.add(filter.getStatus());
+		}
+
+		if (StringUtils.isNotBlank(filter.getUsername())) {
+			query.append(getPartialSearchFilterWithAnd("w.username"));
+			params.add(filter.getUsername());
+		}
+
+		if (filter.getDefaultDataSourceId() != null) {
+			query.append(" AND w.default_data_source_id = ?");
+			params.add(filter.getDefaultDataSourceId());
+		}
+
+		return params;
+	}
+
 	@Override
 	public PaginatedListImpl<WebserviceUserListItem> getWebserviceUserMasterList(String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException {
 		if(!SORTABLE_COLUMNS.contains(sortColumn)) {
@@ -97,7 +149,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	}
 
 	@Override
-	public void updateUser(final WebserviceUser user) throws WebserviceUserDaoException, WebserviceUserException {
+	public void updateUser(final WebserviceUser user) throws WebserviceUserDaoException {
 		try {
 			int count = update(logger, "UPDATE webservice_user_tbl SET active = ?, contact_info = ?, contact_email = ? WHERE username = ?", user.isActive(), user.getContact(), user.getContactEmail(), user.getUsername());
 			if (count == 0) {
@@ -179,6 +231,10 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 			user.setDefaultDatasourceID(resultSet.getInt("default_data_source_id"));
 			user.setUsername(resultSet.getString("username"));
 			user.setActive(resultSet.getBoolean("active"));
+
+			if (DbUtilities.resultsetHasColumn(resultSet, "company_name")) {
+				user.setClientName(resultSet.getString("company_name"));
+			}
 	
 			return user;
 		}

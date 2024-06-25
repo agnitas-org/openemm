@@ -1,0 +1,19 @@
+#system-status-overview {
+  display: flex;
+
+  #general-tile {
+    flex: 1 0 min-content;
+    .general-info__title {
+      font-weight: 500;
+      text-align: right;
+    }
+
+    @media screen and (max-height: 800px) {
+      flex: 1 1 auto;
+    }
+  }
+
+  #settings-tile, #system-status-tile, #db-status-tile {
+    flex: 1;
+  }
+}

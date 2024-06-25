@@ -28,6 +28,7 @@ public class UserGroupDtoToUserGroupFormConverter implements Converter<UserGroup
         userGroupForm.setDescription(userGroup.getDescription());
         userGroupForm.setParentGroupIDs(userGroup.getParentGroupIDs());
         userGroupForm.setGrantedPermissions(userGroup.getGrantedPermissions());
+        userGroupForm.setCompanyDescr(userGroup.getCompanyDescr());
 
         return userGroupForm;
     }

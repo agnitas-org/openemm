@@ -24,13 +24,13 @@ public enum TriggerdialogDeliveryStatus {
 		this.code = code;
 	}
 	
-	public static TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByCode(int code) throws Exception {
+	public static TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByCode(int code) {
 		for (TriggerdialogDeliveryStatus status : TriggerdialogDeliveryStatus.values()) {
 			if (status.getCode() == code) {
 				return status;
 			}
 		}
-		throw new Exception("Invalid code for TriggerdialogDeliveryStatus: " + code);
+		throw new RuntimeException("Invalid code for TriggerdialogDeliveryStatus: " + code);
 	}
 
 	public int getCode() {

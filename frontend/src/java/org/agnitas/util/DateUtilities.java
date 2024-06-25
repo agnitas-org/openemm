@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -72,7 +73,7 @@ public class DateUtilities {
 	/** Date format for SOAP Webservices (ISO 8601) */
 	public static final String ISO_8601_DATE_FORMAT_NO_TIMEZONE = "yyyy-MM-dd";
 	/** Date format for SOAP Webservices (ISO 8601) */
-	private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-ddX";
+	public static final String ISO_8601_DATE_FORMAT = "yyyy-MM-ddX";
 	/** DateTime format for SOAP Webservices (ISO 8601) */
 	private static final String ISO_8601_DATETIME_FORMAT_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss";
 	/** DateTime format for SOAP Webservices (ISO 8601) */
@@ -1431,5 +1432,75 @@ public class DateUtilities {
 
 	public static long millisecondsToMinutes(long ms) {
 		return ms / A_MINUTE_MILLISECONDS;
+	}
+	
+	public static LocalDateTime parseLocalDateTime(final String dateTimeFormatPattern, final String dateTimeString) {
+		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatPattern);
+		final LocalDateTime localDateTime = LocalDateTime.parse(dateTimeString, dateTimeFormatter);
+		return localDateTime;
+	}
+
+	public static String getDateTimeFormatWithSecondsPattern(final Locale locale) {
+		return getDateFormatPattern(locale) + " HH:mm:ss";
+	}
+
+	public static String getDateFormatPattern(final Locale locale) {
+		final SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateInstance(DateFormat.SHORT, locale);
+		return dateTimeFormat.toPattern().replaceFirst("y+", "yyyy");
+	}
+
+	public static LocalDate parseLocalDate(final String dateFormatPattern, final String dateString) {
+		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern);
+		final LocalDate localDate = LocalDate.parse(dateString, dateTimeFormatter);
+		return localDate;
+	}
+
+	public static Date parseDateTime(final String format, final String dateTimeString) {
+		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(format);
+		final LocalDateTime localDateTime = LocalDateTime.parse(dateTimeString, dateTimeFormatter);
+		return getDateForLocalDateTime(localDateTime);
+	}
+
+	public static Date getDateForLocalDateTime(final LocalDateTime localDateTime) {
+		return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+	}
+
+	public static Date getDateForLocalDate(final LocalDate localDate) {
+		return Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+	}
+
+	public static String formatDate(final String format, final Date date) {
+		if (date == null) {
+			return null;
+		} else {
+			return DateTimeFormatter.ofPattern(format).format(getLocalDateTimeForDate(date));
+		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	public static LocalDateTime getLocalDateTimeForDate(Date date) {
+		if (date == null) {
+			return null;
+		} else {
+			try {
+				date = new Date(date.getTime());
+				final long milliseconds = date.getTime();
+				final long epochSeconds = milliseconds / 1000;
+				final int nanoseconds = ((int) (milliseconds % 1000)) * 1000000;
+				final LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(epochSeconds, nanoseconds, ZoneOffset.ofTotalSeconds(date.getTimezoneOffset() * -60));
+				return localDateTime;
+			} catch (final Exception e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+	}
+
+	public static Date getDateForZonedDateTime(ZonedDateTime zonedDateTime) {
+		return Date.from(zonedDateTime.toInstant());
+	}
+
+	public static ZonedDateTime getZonedDateTimeForDate(Date date) {
+		return ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 	}
 }

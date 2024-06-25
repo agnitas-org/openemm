@@ -1,0 +1,4 @@
+<HelpBalloon>
+        <title><![CDATA[Espace disque restant]]></title>
+        <content><![CDATA[Cet affichage vous donne une vue d'ensemble du niveau d'utilisation actuel de la capacit&#xE9; de stockage de votre disque dur, sur la base des fichiers journaux g&#xE9;n&#xE9;r&#xE9;s par l'EMM. L'affichage change de couleur au fur et &#xE0; mesure que le niveau d'utilisation de la capacit&#xE9; augmente, <75% : Vert, <90% : Jaune, >=90% : Rouge, et sert d'indicateur pr&#xE9;coce pour vous permettre de reconna&#xEE;tre une utilisation compl&#xE8;te de l'espace de stockage. ]]></content>
+</HelpBalloon>

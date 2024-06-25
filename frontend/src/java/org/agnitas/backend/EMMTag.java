@@ -108,10 +108,12 @@ public class EMMTag {
 	public final static int TI_SENDDATE = 15;
 	public final static int TI_GRIDPH = 16;
 	public final static int TI_MODULE = 17;
+	public final static int TI_FULLVIEW = 18;
+	public final static int TI_WEBVIEW = 19;
 	/**
 	 * Names of all internal tags
 	 */
-	protected final static String[] TAG_INTERNALS = { null, "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null };
+	protected final static String[] TAG_INTERNALS = { null, "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null, "agnFULLVIEW", "agnWEBVIEW" };
 	/**
 	 * The generic tag reference for an extrernal implementation
 	 */
@@ -435,7 +437,7 @@ public class EMMTag {
 				}
 				break;
 			case TI_IMAGE:
-				if ((imagePatternName != null) && (imagePatternColumn != null) && (! imagePatternColumn.getIsnull ())) {
+				if ((imagePatternName != null) && (imagePatternColumn != null) && (! imagePatternColumn.isnull ())) {
 					mTagValue = data.defaultImageLink(imagePatternName.replace("*", imagePatternColumn.get()), imageSource, false);
 				}
 				break;
@@ -628,6 +630,11 @@ public class EMMTag {
 					mTagValue = code.getCode();
 				}
 				break;
+			case TI_FULLVIEW:
+			case TI_WEBVIEW:
+				mTagValue = data.rdirDomain + "/fullview.action?agnUID=##AGNUID##";
+				break;
+
 			default:
 				if (tag != null) {
 					tag.makeValue(cinfo);
@@ -646,12 +653,14 @@ public class EMMTag {
 	public void imageLinkReference(Data data, long urlID) {
 		String destination = ilURL;
 
-		for (int n = 0; n < data.urlcount; ++n) {
-			URL url = data.URLlist.get(n);
+		if (data.URLlist != null) {
+			for (int n = 0; n < data.URLlist.size (); ++n) {
+				URL url = data.URLlist.get(n);
 
-			if (url.getId() == urlID) {
-				destination = url.getUrl();
-				break;
+				if (url.getId() == urlID) {
+					destination = url.getUrl();
+					break;
+				}
 			}
 		}
 		mTagValue = ilPrefix + destination + ilPostfix;
@@ -1122,6 +1131,9 @@ public class EMMTag {
 					case TI_SYSINFO:
 						collect.add("name");
 						collect.add("default");
+						break;
+					case TI_FULLVIEW:
+					case TI_WEBVIEW:
 						break;
 					case TI_DYN:
 						collect.add("name");

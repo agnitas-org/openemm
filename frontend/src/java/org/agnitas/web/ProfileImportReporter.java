@@ -15,24 +15,20 @@ import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReport
 import java.io.File;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.service.DataSourceService;
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.ImportStatus;
-import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.bean.AutoImport.UsedFile;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportException;
@@ -54,20 +50,22 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
-import com.agnitas.web.forms.ComNewImportWizardForm;
+import com.agnitas.service.DataSourceService;
 
 public class ProfileImportReporter {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ProfileImportReporter.class);
+
+	private static final Logger logger = LogManager.getLogger(ProfileImportReporter.class);
 	
 	private RecipientsReportService recipientsReportService;
 	
@@ -82,85 +80,43 @@ public class ProfileImportReporter {
 	private ImportRecipientsDao importRecipientsDao;
 	
 	private DataSourceService dataSourceService;
+	
+	private ImportQuotaCheckService importQuotaCheckService;
+	
+	public final void setImportQuotaCheckService(final ImportQuotaCheckService service) {
+		this.importQuotaCheckService = Objects.requireNonNull(service, "ImportQuotaCheckService");
+	}
 
-	@Required
 	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
 		this.recipientsReportService = recipientsReportService;
 	}
 
-	@Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
 
-	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
 	}
 
-	@Required
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
 	public void setDataSourceService(DataSourceService dataSourceService) {
 		this.dataSourceService= dataSourceService;
 	}
 	
-	@Required
 	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
 	}
 	
-	public void fillProfileImportForm(ProfileImportWorker profileImportWorker, ComNewImportWizardForm aForm) throws Exception {
-		List<Mailinglist> assignedMailingLists = new ArrayList<>();
-		if (profileImportWorker.getMailinglistAssignStatistics() != null) {
-			for (MediaTypes mediaType : profileImportWorker.getMailinglistAssignStatistics().keySet()) {
-				for (Mailinglist mailinglist : aForm.getAllMailingLists()) {
-					if (profileImportWorker.getMailinglistAssignStatistics().get(mediaType).containsKey(mailinglist.getId())) {
-						if (!assignedMailingLists.contains(mailinglist)) {
-							assignedMailingLists.add(mailinglist);
-						}
-					}
-				}
-			}
-		}
-		aForm.setAssignedMailingLists(assignedMailingLists);
-		aForm.setMailinglistAssignStats(profileImportWorker.getMailinglistAssignStatistics());
-
-		List<ImportReportEntry> reportStatusEntries = generateImportStatusEntries(profileImportWorker, profileImportWorker.getImportProfile().isNoHeaders());
-		aForm.setReportEntries(reportStatusEntries);
-
-		// generate valid recipients file (valid unique recipients and duplicate
-		// recipients)
-		File validRecipients = profileImportWorker.getStatus().getImportedRecipientsCsv();
-		aForm.setValidRecipientsFile(validRecipients);
-
-		// generate invalid recipients file (invalid by wrong field values +
-		// other invalid: blacklisted etc.)
-		File invalidRecipientsFile = profileImportWorker.getStatus().getInvalidRecipientsCsv();
-		aForm.setInvalidRecipientsFile(invalidRecipientsFile);
-
-		// generate fixed recipients file (fixed on error edit page)
-		File fixedRecipientsFile = profileImportWorker.getStatus().getFixedByUserRecipientsCsv();
-		aForm.setFixedRecipientsFile(fixedRecipientsFile);
-
-		// generate duplicate recipients file
-		File duplicateRecipients = profileImportWorker.getStatus().getDuplicateInCsvOrDbRecipientsCsv();
-		aForm.setDuplicateRecipientsFile(duplicateRecipients);
-
-		// assign result file
-		aForm.setResultFile(profileImportWorker.getResultFile());
-	}
-
-	public File writeProfileImportResultFile(ProfileImportWorker profileImportWorker, int companyID, int adminID) throws Exception {
-		String resultFileContent = generateResultFileContent(profileImportWorker, adminID);
+	public File writeProfileImportResultFile(ProfileImportWorker profileImportWorker, int companyID, Admin admin) {
+		String resultFileContent = generateResultFileContent(profileImportWorker, admin);
 
 		try {
 			File resultFile = new File(profileImportWorker.getImportFile().getLocalFile().getAbsolutePath()
@@ -175,17 +131,70 @@ public class ProfileImportReporter {
 		}
 	}
 	
-	public int writeProfileImportReport(ProfileImportWorker profileImportWorker, int companyID, int adminID, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean isError) throws Exception {
-		String resultFileContent = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true);
+	public int writeProfileImportReport(ProfileImportWorker profileImportWorker, int companyID, Admin admin, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean isError) throws Exception {
+		/*
+		 * Disabled again by EMM-9770
+		if(!isError) {
+			this.quotaRegisterService.registerImportSize(companyID, profileImportWorker.getImportProfile().getId(), importType, profileImportWorker.getLinesInFile() - headerLines);
+		}
+		*/
+		
+		String resultFileContent = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true, profileImportWorker.getStatus());
+		boolean isAutoImport = profileImportWorker.getAutoImport() != null;
 		int autoImportID = -1;
-		if (profileImportWorker.getAutoImport() != null) {
+		if (isAutoImport) {
 			autoImportID = profileImportWorker.getAutoImport().getAutoImportId();
 		}
 		if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null) {
-			recipientsReportService.createSupplementalReportData(companyID, adminID, RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
+			if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, companyID)) {
+				createInvalidRecipientsReport(profileImportWorker, admin, companyID, true);
+			} else {
+				recipientsReportService.createSupplementalReportData(companyID, admin, RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
+			}
 		}
-        String filename = generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID);
-        return recipientsReportService.createAndSaveImportReport(companyID, adminID, filename, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
+
+		if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, companyID)) {
+			RecipientsReport report = new RecipientsReport();
+
+			report.setDatasourceId(profileImportWorker.getDatasourceId());
+			report.setFilename(generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID));
+			report.setReportDate(profileImportWorker.getEndTime());
+			report.setIsError(isError);
+
+			report.setEntityId(isAutoImport ? autoImportID : profileImportWorker.getImportProfileId());
+			report.setEntityType(RecipientsReport.EntityType.IMPORT);
+			report.setEntityExecution(isAutoImport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
+			report.setEntityData(RecipientsReport.EntityData.PROFILE);
+
+			return recipientsReportService.saveNewReport(admin, companyID, report, resultFileContent).getId();
+		} else {
+			String filename = generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID);
+			return recipientsReportService.createAndSaveImportReport(companyID, admin, filename, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
+		}
+	}
+
+	private void createInvalidRecipientsReport(ProfileImportWorker profileImportWorker, Admin admin, int companyID, boolean isError) throws Exception {
+		boolean isAutoImport = profileImportWorker.getAutoImport() != null;
+
+		RecipientsReport report = new RecipientsReport();
+
+		report.setDatasourceId(profileImportWorker.getDatasourceId());
+		report.setFilename(RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip");
+		report.setReportDate(profileImportWorker.getEndTime());
+		report.setIsError(isError);
+
+		report.setEntityId(isAutoImport ? profileImportWorker.getAutoImport().getAutoImportId() : profileImportWorker.getImportProfileId());
+		report.setEntityType(RecipientsReport.EntityType.IMPORT);
+		report.setEntityExecution(isAutoImport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
+		report.setEntityData(RecipientsReport.EntityData.PROFILE);
+
+		recipientsReportService.saveNewSupplementalReport(
+				admin,
+				companyID,
+				report,
+				"Downloadable file with invalid recipients data",
+				profileImportWorker.getStatus().getInvalidRecipientsCsv()
+		);
 	}
 	
     private String generateProfileImportReportFileName(int datasourceId, int companyId) {
@@ -194,10 +203,6 @@ public class ProfileImportReporter {
 
 	/**
 	 * Send a report email about this import to the executing GUI-admin or the creator of the autoimport
-	 * 
-	 * @param profileImportWorker
-	 * @param admin
-	 * @throws Exception
 	 */
 	public void sendProfileImportReportMail(ProfileImportWorker profileImportWorker, int companyID, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
@@ -220,7 +225,7 @@ public class ProfileImportReporter {
 			Company company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 			
 			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true);
+			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true, profileImportWorker.getStatus());
 			String bodyText = generateLocalizedImportTextReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true);
 			
 			// Deactivated attachment of InvalidRecipientsCsvZipFile for DSGVO reasons. Must be password secured if reintegrated!
@@ -282,6 +287,9 @@ public class ProfileImportReporter {
 			} catch (Exception e) {
 				profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
+			
+			profileContent += "HtmlTagCheck: " + (configService.getBooleanValue(ConfigValue.NoHtmlCheckOnReferenceImport, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
+			profileContent += "AllowSimpleHtmlTags: " + (configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
 			
 			try {
 				profileContent += I18nString.getLocaleString("Mode", reportLocale) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(profileImportWorker.getImportProfile().getImportMode()).getMessageKey(), reportLocale) + "\n";
@@ -400,176 +408,27 @@ public class ProfileImportReporter {
 
 		Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = profileImportWorker.getMailinglistAssignStatistics();
 		if (mailinglistAssignStatistics != null && mailinglistAssignStatistics.size() > 0) {
-			reportContent += I18nString.getLocaleString("Mailinglists", reportLocale) +":\n";
+			reportContent += I18nString.getLocaleString("import.result.mailinglist.data", reportLocale) +":\n";
 			for (MediaTypes mediaType : mailinglistAssignStatistics.keySet()) {
 				if (mailinglistAssignStatistics.keySet().size() > 1) {
 					reportContent += "\t" + mediaType.name() + ":";
 				}
+				
 				for (Entry<Integer, Integer> entry : mailinglistAssignStatistics.get(mediaType).entrySet()) {
-					reportContent += "\t\"" + mailinglistDao.getMailinglistName(entry.getKey(), profileImportWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + "): " + entry.getValue() + "\n";
+					reportContent += "\t\"" + I18nString.getLocaleString("Mailinglist", reportLocale) + " " + mailinglistDao.getMailinglistName(entry.getKey(), profileImportWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + "): \n";
+					
+					Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> importedRecipientStatuses = profileImportWorker.getMailinglistStatusesForImportedRecipients();
+					for (UserStatus userStatus : UserStatus.values()) {
+						Integer amount = importedRecipientStatuses.get(entry.getKey()).get(mediaType).get(userStatus);
+						reportContent += "\t\t" + I18nString.getLocaleString(userStatus.getMessageKey(), reportLocale) + ": " + Integer.toString(amount != null ? amount : 0);
+					}
 				}
 			}
 		}
 		return reportContent;
 	}
 	
-	private String generateLocalizedImportTextReportForAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean showVerboseProfileData) {
-		String reportContent = I18nString.getLocaleString("import.recipients.report", reportLocale) + " \"" + importProfile.getName() + "\":\n\n";
-		
-		reportContent += I18nString.getLocaleString("autoimport.error.fileWasAlreadyImported", reportLocale, alreadyImportedFile.getRemoteFileName(), AgnUtils.getHumanReadableNumber(alreadyImportedFile.getFileSize(), "Byte", false, reportLocale), DateUtilities.getDateTimeString(alreadyImportedFile.getFileDate(), TimeZone.getTimeZone(reportTimezone).toZoneId(), reportDateTimeFormatter));
-
-		reportContent += I18nString.getLocaleString("decode.licenseID", reportLocale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
-		
-		Company company = companyDao.getCompany(importProfile.getCompanyId());
-		reportContent += I18nString.getLocaleString("Company", reportLocale) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
-		
-		reportContent += "AutoImport: " + autoImport.toString() + "\n";
-		
-		reportContent += I18nString.getLocaleString("import.type", reportLocale) + ": " + I18nString.getLocaleString("Recipients", reportLocale) + "\n";
-		
-		// Show ImportProfile data
-		reportContent += I18nString.getLocaleString("import.ImportProfile", reportLocale) + ": \"" + importProfile.getName() + "\" (ID: " + importProfile.getId() + ")\n";
-		String profileContent = "";
-		if (showVerboseProfileData) {
-			try {
-				profileContent += I18nString.getLocaleString("Charset", reportLocale) + ": " + Charset.getCharsetById(importProfile.getCharset()).getCharsetName() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Charset", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", reportLocale) + ": " + !importProfile.isNoHeaders() + "\n";
-			profileContent += I18nString.getLocaleString("import.zipPassword", reportLocale) + ": " + (importProfile.getZipPassword() != null) + "\n";
-			
-			profileContent += I18nString.getLocaleString("import.autoMapping", reportLocale) + ": " + importProfile.isAutoMapping() + "\n";
-			
-			try {
-				profileContent += I18nString.getLocaleString("csv.Delimiter", reportLocale) + ": " + Separator.getSeparatorById(importProfile.getSeparator()).getValueChar() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("csv.Delimiter", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("csv.StringQuote", reportLocale) + ": " + TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).name() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("csv.StringQuote", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", reportLocale) + ": " + importProfile.getDecimalSeparator() + "\n";
-			
-			try {
-				profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": " + DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("Mode", reportLocale) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), reportLocale) + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Mode", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("import.recipients.duplicate", reportLocale) + ": " + CheckForDuplicates.getFromInt(importProfile.getCheckForDuplicates()).name() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.recipients.duplicate", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("import.null_value_handling", reportLocale) + ": " + NullValuesAction.getFromInt(importProfile.getNullValuesAction()).name() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.null_value_handling", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", reportLocale) + " (" + I18nString.getLocaleString("import.profile.default", reportLocale) + "): " + MailType.getFromInt(importProfile.getDefaultMailType()).name() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", reportLocale) + " (" + I18nString.getLocaleString("import.profile.default", reportLocale) + "): Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			try {
-				profileContent += I18nString.getLocaleString("mediatype", reportLocale) + ": " + getMediaTypesText(importProfile.getMediatypes(), reportLocale) + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("mediatype", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("import.datatype", reportLocale) + ": " + importProfile.getDatatype() + "\n";
-			
-			profileContent += I18nString.getLocaleString("import.profile.updateAllDuplicates", reportLocale) + ": " + importProfile.getUpdateAllDuplicates() + "\n";
-			
-			if (importProfile.getImportProcessActionID() > 0) {
-				profileContent += "ImportProcessActionID" + ": " + importProfile.getImportProcessActionID() + "\n";
-			}
-			
-			if (importProfile.getActionForNewRecipients() > 0) {
-				profileContent += I18nString.getLocaleString("import.actionForNewRecipients", reportLocale) + ": " + importProfile.getActionForNewRecipients() + "\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("import.profile.report.email", reportLocale) + ": " + (StringUtils.isBlank(importProfile.getMailForReport()) ? I18nString.getLocaleString("default.none", reportLocale) : importProfile.getMailForReport()) + "\n";
-			profileContent += I18nString.getLocaleString("error.import.profile.email", reportLocale) + ": " + (StringUtils.isBlank(importProfile.getMailForError()) ? I18nString.getLocaleString("default.none", reportLocale) : importProfile.getMailForError()) + "\n";
-			
-			profileContent += I18nString.getLocaleString("import.profile.gender.settings", reportLocale) + ": ";
-			
-			if (importProfile.getGenderMapping() != null && importProfile.getGenderMapping().size() > 0) {
-				profileContent += "\n\t" + AgnUtils.mapToString(importProfile.getGenderMapping()).replace("\n", "\n\t") + "\n";
-			} else {
-				profileContent += "NONE\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("Mapping", reportLocale) + ": \n";
-			for (ColumnMapping mapping : importProfile.getColumnMapping()) {
-				String mappingEntryContent = mapping.getDatabaseColumn() + " = " + mapping.getFileColumn();
-				if (mapping.isKeyColumn()) {
-					mappingEntryContent += ", keycolumn";
-				}
-				if (StringUtils.isNotEmpty(mapping.getDefaultValue())) {
-					mappingEntryContent += ", default = \"" + mapping.getDefaultValue() + "\"";
-				}
-				if (StringUtils.isNotEmpty(mapping.getFormat())) {
-					mappingEntryContent += ", format = \"" + mapping.getFormat() + "\"";
-				}
-				if (mapping.isMandatory()) {
-					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
-				}
-				if (mapping.isEncrypted()) {
-					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
-				}
-				
-				profileContent += "\t" + mappingEntryContent + "\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("KeyColumn", reportLocale) + ": " + StringUtils.join(importProfile.getKeyColumns(), ", ");
-		} else {
-			try {
-				profileContent += I18nString.getLocaleString("Mode", reportLocale) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), reportLocale) + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Mode", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			profileContent += I18nString.getLocaleString("KeyColumn", reportLocale) + ": " + StringUtils.join(importProfile.getKeyColumns(), ", ");
-		}
-		reportContent += "\t" + profileContent.replace("\n", "\n\t") + "\n";
-		
-		if (CollectionUtils.isNotEmpty(importProfile.getKeyColumns())) {
-			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), importProfile.getKeyColumns())) {
-				reportContent += "\n*** " + I18nString.getLocaleString("warning.import.keyColumn.index", reportLocale) + " ***\n\n";
-			}
-		}
-		
-		reportContent += I18nString.getLocaleString("StartTime", reportLocale) + ": " + DateUtilities.getDateTimeString(new Date(), TimeZone.getTimeZone(reportTimezone).toZoneId(), reportDateTimeFormatter) + "\n";
-		
-		if (autoImport != null) {
-			reportContent += I18nString.getLocaleString("autoImport.fileServer", reportLocale) + ": " + autoImport.getFileServerWithoutCredentials();
-			reportContent += I18nString.getLocaleString("autoImport.filePath", reportLocale) + ": " + autoImport.getFilePath();
-			reportContent += I18nString.getLocaleString("autoImport.importMultipleFiles", reportLocale) + ": " + I18nString.getLocaleString(autoImport.isImportMultipleFiles() ? "default.Yes" : "No", reportLocale);
-			reportContent += I18nString.getLocaleString("autoImport.removeImportedFiles", reportLocale) + ": " + I18nString.getLocaleString(autoImport.isRemoveImportedFiles() ? "default.Yes" : "No", reportLocale);
-		}
-		reportContent += I18nString.getLocaleString("settings.FileName", reportLocale) + ": " + (StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", reportLocale) : alreadyImportedFile.getRemoteFileName()) + "\n";
-		
-		reportContent += "\n";
-		
-		return reportContent;
-	}
-
-	public String generateLocalizedImportHtmlReport(ProfileImportWorker importWorker, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean showVerboseProfileData) throws Exception {
+	public String generateLocalizedImportHtmlReport(ProfileImportWorker importWorker, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean showVerboseProfileData, final ImportStatus status) throws Exception {
 		Locale locale = reportLocale;
 		String title;
 		if (importWorker.getAutoImport() != null) {
@@ -600,99 +459,130 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
 		}
 		
+		// Warning messages
+		final List<String> warningMessages = new ArrayList<>();
+		
 		// Index Warning
 		if (CollectionUtils.isNotEmpty(importWorker.getImportProfile().getKeyColumns())) {
 			if (!importRecipientsDao.isKeyColumnIndexed(importWorker.getImportProfile().getCompanyId(), importWorker.getImportProfile().getKeyColumns())) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableStart());
-				htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
-				
-				htmlContent.append(HtmlReporterHelper.getOutputTableWarningContentLine(I18nString.getLocaleString("warning.import.keyColumn.index", locale)));
-				
-				htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
-				htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
-			}
-		}
-
-		// Errors
-		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
-		htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("report.summary", locale)));
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(true));
-
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_email", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.EMAIL_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.EMAIL_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_invalidNullValues", locale), Integer.toString(importWorker.getStatus().getInvalidNullValues()), importWorker.getStatus().getInvalidNullValues() > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_blacklist", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.BLACKLIST_ERROR))));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_double", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.KEYDOUBLE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.KEYDOUBLE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_numeric", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.NUMERIC_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.NUMERIC_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_mailtype", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.MAILTYPE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.MAILTYPE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_gender", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_date", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("csv_errors_linestructure", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.encryption_errors", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.value.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.number.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.invalidFormat", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)) > 0));
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.missingMandatory", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.MISSING_MANDATORY_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.MISSING_MANDATORY_ERROR)) > 0));
-		
-		if (importWorker.getStatus().getErrorColumns().size() > 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.errorColumns", locale), StringUtils.join(importWorker.getStatus().getErrorColumns(), ", "), true));
-		}
-
-		htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.action_errors", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.ACTION_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.ACTION_ERROR)) > 0));
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
-
-		// Results
-		htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("ResultMsg", locale)));
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(true));
-
-		if (importWorker.getStatus().getFileSize() >= 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("mailing.Graphics_Component.FileSize", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getFileSize(), "Byte", false, locale)));
-		}
-
-		if ("CSV".equalsIgnoreCase(importWorker.getImportProfile().getDatatype())) {
-			if (importWorker.getImportProfile().isNoHeaders()) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
-			} else if (importWorker.getStatus().getCsvLines() <= 0) {
-				// Maybe there was an error in csv structure
-				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), I18nString.getLocaleString("Unknown", locale)));
-			} else {
-				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
-			}
-		} else {
-			if (importWorker.getStatus().getCsvLines() <= 0) {
-				// Maybe there was an error in data file structure
-				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), I18nString.getLocaleString("Unknown", locale)));
-			} else {
-				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
+				warningMessages.add(I18nString.getLocaleString("warning.import.keyColumn.index", locale));
 			}
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.RecipientsAllreadyinDB", locale), Integer.toString(importWorker.getStatus().getAlreadyInDb())));
-		htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.imported", locale), Integer.toString(importWorker.getStatus().getInserted())));
-		htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.updated", locale), Integer.toString(importWorker.getStatus().getUpdated())));
-
-		if (importWorker.getStatus().getBlacklisted() >= 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.blacklisted", locale), Integer.toString(importWorker.getStatus().getBlacklisted())));
+		if(importWorker.getError() == null || ((importWorker.getError() instanceof ImportException) && !((ImportException) importWorker.getError()).getErrorMessageKey().equals("error.import.lineQuotaExceeded"))) {
+			if(this.importQuotaCheckService.checkWarningLimitReached(importWorker.getImportProfile().getCompanyId(), status.getCsvLines())) {
+				warningMessages.add(I18nString.getLocaleString(
+						"warning.import.lineQuota", 
+						locale, 
+						this.importQuotaCheckService.getImportLimit(importWorker.getImportProfile().getCompanyId()),
+						this.importQuotaCheckService.totalImportLinesCount(importWorker.getImportProfile().getCompanyId(), importWorker.getStatus().getCsvLines())));			
+			}
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.datasourceId", locale), Integer.toString(importWorker.getStatus().getDatasourceID())));
+		if(!warningMessages.isEmpty()) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableStart());
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
 
-		// Mailinglists
-		Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = importWorker.getMailinglistAssignStatistics();
-		if (mailinglistAssignStatistics != null && mailinglistAssignStatistics.size() > 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("Mailinglists", locale), true));
-			for (MediaTypes mediaType : mailinglistAssignStatistics.keySet()) {
-				if (mailinglistAssignStatistics.keySet().size() > 1) {
-					htmlContent.append(mediaType.name() + ":\n");
+			for(final String warning : warningMessages) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableWarningContentLine(warning));
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+			htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
+		}
+		
+		if (importWorker.getError() == null) {
+			// Errors
+			htmlContent.append(HtmlReporterHelper.getOutputTableStart());
+			htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("report.summary", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(true));
+	
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_email", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.EMAIL_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.EMAIL_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_invalidNullValues", locale), Integer.toString(importWorker.getStatus().getInvalidNullValues()), importWorker.getStatus().getInvalidNullValues() > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_blacklist", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.BLACKLIST_ERROR))));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_double", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.KEYDOUBLE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.KEYDOUBLE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_numeric", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.NUMERIC_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.NUMERIC_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_mailtype", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.MAILTYPE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.MAILTYPE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_gender", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_date", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("csv_errors_linestructure", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.encryption_errors", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.value.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.number.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.invalidFormat", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)) > 0));
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.missingMandatory", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.MISSING_MANDATORY_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.MISSING_MANDATORY_ERROR)) > 0));
+			
+			if (importWorker.getStatus().getErrorColumns().size() > 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.errorColumns", locale), StringUtils.join(importWorker.getStatus().getErrorColumns(), ", "), true));
+			}
+	
+			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.action_errors", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.ACTION_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.ACTION_ERROR)) > 0));
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+	
+			// Results
+			htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("ResultMsg", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(true));
+
+			if (importWorker.getStatus().getFileSize() >= 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("mailing.Graphics_Component.FileSize", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getFileSize(), "Byte", false, locale)));
+			}
+	
+			if ("CSV".equalsIgnoreCase(importWorker.getImportProfile().getDatatype())) {
+				if (importWorker.getImportProfile().isNoHeaders()) {
+					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
+				} else if (importWorker.getStatus().getCsvLines() <= 0) {
+					// Maybe there was an error in csv structure
+					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), I18nString.getLocaleString("Unknown", locale)));
+				} else {
+					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
 				}
-				for (Entry<Integer, Integer> entry : mailinglistAssignStatistics.get(mediaType).entrySet()) {
-					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine("\"" + mailinglistDao.getMailinglistName(entry.getKey(), importWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + ")", Integer.toString(entry.getValue())));
+			} else {
+				if (importWorker.getStatus().getCsvLines() <= 0) {
+					// Maybe there was an error in data file structure
+					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), I18nString.getLocaleString("Unknown", locale)));
+				} else {
+					htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
 				}
 			}
-		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
-		htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
+			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.RecipientsAllreadyinDB", locale), Integer.toString(importWorker.getStatus().getAlreadyInDb())));
+			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.imported", locale), Integer.toString(importWorker.getStatus().getInserted())));
+			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.updated", locale), Integer.toString(importWorker.getStatus().getUpdated())));
+	
+			if (importWorker.getStatus().getBlacklisted() >= 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.blacklisted", locale), Integer.toString(importWorker.getStatus().getBlacklisted())));
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.datasourceId", locale), Integer.toString(importWorker.getStatus().getDatasourceID())));
+	
+			htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+			
+			// Mailinglists
+			Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = importWorker.getMailinglistAssignStatistics();
+			if (mailinglistAssignStatistics != null && mailinglistAssignStatistics.size() > 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("import.result.mailinglist.data", locale)));
+		
+				for (MediaTypes mediaType : mailinglistAssignStatistics.keySet()) {
+					if (mailinglistAssignStatistics.keySet().size() > 1) {
+						htmlContent.append(mediaType.name() + ":\n");
+					}
+					for (Entry<Integer, Integer> entry : mailinglistAssignStatistics.get(mediaType).entrySet()) {
+						htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("Mailinglist", locale) + " " + "\"" + mailinglistDao.getMailinglistName(entry.getKey(), importWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + ")"));
+	
+						htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(true));
+						Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> importedRecipientStatuses = importWorker.getMailinglistStatusesForImportedRecipients();
+						for (UserStatus userStatus : UserStatus.values()) {
+							Integer amount = importedRecipientStatuses.get(entry.getKey()).get(mediaType).get(userStatus);
+							htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString(userStatus.getMessageKey(), locale), Integer.toString(amount != null ? amount : 0)));
+						}
+						htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+					}
+				}
+			}
+		
+			htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
+		}
 
 		// Informations
 		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
@@ -748,6 +638,9 @@ public class ProfileImportReporter {
 			} catch (Exception e) {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), "Invalid (\"" + e.getMessage() + "\")"));
 			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("HtmlTagCheck", I18nString.getLocaleString(configService.getBooleanValue(ConfigValue.NoHtmlCheckOnReferenceImport, importWorker.getImportProfile().getCompanyId()) ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("AllowSimpleHtmlTags", I18nString.getLocaleString(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, importWorker.getImportProfile().getCompanyId()) ? "default.Yes" : "No", locale)));
 			
 			try {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), I18nString.getLocaleString(ImportMode.getFromInt(importWorker.getImportProfile().getImportMode()).getMessageKey(), locale)));
@@ -857,177 +750,6 @@ public class ProfileImportReporter {
 		return htmlContent.toString();
 	}
 	
-	private String generateLocalizedImportHtmlReportForAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter, boolean showVerboseProfileData) {
-		Locale locale = reportLocale;
-		String title = "AutoImport: " + autoImport.toString();
-		
-		StringBuilder htmlContent = new StringBuilder(HtmlReporterHelper.getHtmlPrefixWithCssStyles(title));
-		
-		htmlContent.append(HtmlReporterHelper.getHeader(title, I18nString.getLocaleString("default.version", locale)));
-		
-		// Already Imported File Warning
-		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableWarningContentLine(I18nString.getLocaleString("autoimport.error.fileWasAlreadyImported", locale, alreadyImportedFile.getRemoteFileName(), AgnUtils.getHumanReadableNumber(alreadyImportedFile.getFileSize(), "Byte", false, locale), DateUtilities.getDateTimeString(alreadyImportedFile.getFileDate(), TimeZone.getTimeZone(reportTimezone).toZoneId(), reportDateTimeFormatter))));
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
-		htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
-
-		// Informations
-		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
-		htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("Info", locale)));
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
-
-		Company company = companyDao.getCompany(importProfile.getCompanyId());
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.toString())));
-		
-		if (autoImport != null) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("AutoImport", autoImport.toString()));
-		}
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.type", locale), I18nString.getLocaleString("Recipients", locale)));
-		
-		// Importprofile
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.ImportProfile", locale), "\"" + importProfile.getName() + "\" (ID: " + importProfile.getId() + ")"));
-		
-		if (showVerboseProfileData) {
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), Charset.getCharsetById(importProfile.getCharset()).getCharsetName()));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importProfile.isNoHeaders() ? "default.Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importProfile.getZipPassword() != null ? "default.Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importProfile.isAutoMapping() ? "default.Yes" : "No", locale)));
-
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.Delimiter", locale), Character.toString(Separator.getSeparatorById(importProfile.getSeparator()).getValueChar())));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.Delimiter", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.StringQuote", locale), I18nString.getLocaleString(TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getPublicValue(), locale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.StringQuote", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DecimalSeparator", locale), Character.toString(importProfile.getDecimalSeparator())));
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue()));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), locale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.recipients.duplicate", locale), I18nString.getLocaleString(CheckForDuplicates.getFromInt(importProfile.getCheckForDuplicates()).getMessageKey(), locale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.recipients.duplicate", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.null_value_handling", locale), I18nString.getLocaleString(NullValuesAction.getFromInt(importProfile.getNullValuesAction()).getMessageKey(), locale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.null_value_handling", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", MailType.getFromInt(importProfile.getDefaultMailType()).name()));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), getMediaTypesText(importProfile.getMediatypes(), reportLocale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.datatype", locale), importProfile.getDatatype()));
-			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.updateAllDuplicates", locale), I18nString.getLocaleString(importProfile.getUpdateAllDuplicates() ? "default.Yes" : "No", locale)));
-			
-			if (importProfile.getImportProcessActionID() > 0) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("ImportProcessActionID", Integer.toString(importProfile.getImportProcessActionID())));
-			}
-			
-			if (importProfile.getActionForNewRecipients() > 0) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.actionForNewRecipients", locale), Integer.toString(importProfile.getActionForNewRecipients())));
-			}
-			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.report.email", locale), StringUtils.isBlank(importProfile.getMailForReport()) ? I18nString.getLocaleString("default.none", locale) : importProfile.getMailForReport()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("error.import.profile.email", locale), StringUtils.isBlank(importProfile.getMailForError()) ? I18nString.getLocaleString("default.none", locale) : importProfile.getMailForError()));
-
-			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("import.profile.gender.settings", locale), false));
-			if (importProfile.getGenderMapping() != null && importProfile.getGenderMapping().size() > 0) {
-				for (Entry<String, Integer> genderEntry : importProfile.getGenderMapping().entrySet()) {
-					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", genderEntry.getKey() + " = " + genderEntry.getValue()));
-				}
-			} else {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", I18nString.getLocaleString("default.none", locale)));
-			}
-
-			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("Mapping", locale), false));
-			for (ColumnMapping mapping : importProfile.getColumnMapping()) {
-				String mappingEntryContent = mapping.getDatabaseColumn() + " = " + mapping.getFileColumn();
-				if (mapping.isKeyColumn()) {
-					mappingEntryContent += ", keycolumn";
-				}
-				if (StringUtils.isNotEmpty(mapping.getDefaultValue())) {
-					mappingEntryContent += ", default = \"" + mapping.getDefaultValue() + "\"";
-				}
-				if (StringUtils.isNotEmpty(mapping.getFormat())) {
-					mappingEntryContent += ", format = \"" + mapping.getFormat() + "\"";
-				}
-				if (mapping.isMandatory()) {
-					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
-				}
-				if (mapping.isEncrypted()) {
-					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
-				}
-				
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", mappingEntryContent));
-			}
-
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("KeyColumn", locale), StringUtils.join(importProfile.getKeyColumns(), ", ")));
-		} else {
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), locale)));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("KeyColumn", locale), StringUtils.join(importProfile.getKeyColumns(), ", ")));
-		}
-		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), DateUtilities.getDateTimeString(new Date(), TimeZone.getTimeZone(reportTimezone).toZoneId(), reportDateTimeFormatter)));
-
-		if (autoImport != null) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), autoImport.getFileServerWithoutCredentials()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), autoImport.getFilePath()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.importMultipleFiles", locale), I18nString.getLocaleString(autoImport.isImportMultipleFiles() ? "default.Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.removeImportedFiles", locale), I18nString.getLocaleString(autoImport.isRemoveImportedFiles() ? "default.Yes" : "No", locale)));
-		}
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", locale) : alreadyImportedFile.getRemoteFileName()));
-
-		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
-		htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
-		
-		htmlContent.append(HtmlReporterHelper.getFooter(AgnUtils.getHostName(), configService.getValue(ConfigValue.ApplicationVersion)));
-		
-		return htmlContent.toString();
-	}
-
 	private String getMediaTypesText(Set<MediaTypes> mediatypes, Locale locale) {
 		StringBuilder result = new StringBuilder();
 		for (MediaTypes mediaType : mediatypes) {
@@ -1086,7 +808,7 @@ public class ProfileImportReporter {
 				// Maybe there was an error in csv structure
 				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines", I18nString.getLocaleString("Unknown", locale)));
 			} else {
-				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
+				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines(), locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
 			}
 		} else {
 			if (customerImportStatus.getCsvLines() <= 0) {
@@ -1108,7 +830,7 @@ public class ProfileImportReporter {
 		return reportStatusEntries;
 	}
 
-	private String generateResultFileContent(ProfileImportWorker profileImportWorker, int adminID) throws Exception {
+	private String generateResultFileContent(ProfileImportWorker profileImportWorker, Admin admin) {
 		String resultFileContent = "";
 
 		resultFileContent += "Importname: " + profileImportWorker.getImportProfile().getName() + "\n";
@@ -1116,7 +838,9 @@ public class ProfileImportReporter {
 		resultFileContent += "End time: " + DateUtilities.getDateTimeString(profileImportWorker.getEndTime(), TimeZone.getTimeZone("Europe/Berlin").toZoneId(), AgnUtils.getDateTimeFormatterByPattern(DateUtilities.DD_MM_YYYY_HH_MM_SS, Locale.US, true)) + "\n";
 		resultFileContent += "License id: " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		resultFileContent += "Company id: " + profileImportWorker.getImportProfile().getCompanyId() + "\n";
-		resultFileContent += "Admin id: " + adminID + "\n";
+		if (admin != null) {
+			resultFileContent += "Admin id: " + admin.getAdminID() + "\n";
+		}
 
 		if (profileImportWorker.getAutoImport() != null) {
 			resultFileContent += "AutoImport: " + profileImportWorker.getAutoImport().toString() + "\n";
@@ -1138,6 +862,9 @@ public class ProfileImportReporter {
 
 		resultFileContent += "ImportProfile: \n\t" + profileImportWorker.getImportProfile().toString().replace("\n", "\n\t") + "\n";
 		
+		resultFileContent += "HtmlTagCheck: " + (configService.getBooleanValue(ConfigValue.NoHtmlCheckOnReferenceImport, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
+		resultFileContent += "AllowSimpleHtmlTags: " + (configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
+		
 		if (CollectionUtils.isNotEmpty(profileImportWorker.getImportProfile().getKeyColumns())) {
 			if (!importRecipientsDao.isKeyColumnIndexed(profileImportWorker.getImportProfile().getCompanyId(), profileImportWorker.getImportProfile().getKeyColumns())) {
 				resultFileContent += "\n*** Keycolumn has no index ***\n\n";
@@ -1155,13 +882,20 @@ public class ProfileImportReporter {
 
 		Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = profileImportWorker.getMailinglistAssignStatistics();
 		if (mailinglistAssignStatistics != null && mailinglistAssignStatistics.size() > 0) {
-			resultFileContent += "Mailinglist assignments:\n";
+			resultFileContent += "Imported data per mailinglist:\n";
 			for (MediaTypes mediaType : mailinglistAssignStatistics.keySet()) {
 				if (mailinglistAssignStatistics.keySet().size() > 1) {
-					resultFileContent += "\t" + mediaType.name() + ":";
+					resultFileContent += "\t" + mediaType.name() + ":\n";
 				}
 				for (Entry<Integer, Integer> entry : mailinglistAssignStatistics.get(mediaType).entrySet()) {
-					resultFileContent += "\t\"" + mailinglistDao.getMailinglistName(entry.getKey(), profileImportWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + "): " + entry.getValue() + "\n";
+					resultFileContent += "\t\"Mailinglist " + mailinglistDao.getMailinglistName(entry.getKey(), profileImportWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + "):\n";
+					
+					Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> importedRecipientStatuses = profileImportWorker.getMailinglistStatusesForImportedRecipients();
+					for (UserStatus userStatus : UserStatus.values()) {
+						Integer amount = importedRecipientStatuses.get(entry.getKey()).get(mediaType).get(userStatus);
+						resultFileContent += "\t\t" + userStatus.name() + ": " + Integer.toString(amount != null ? amount : 0) + "\n";
+							
+					}
 				}
 			}
 		}
@@ -1202,47 +936,25 @@ public class ProfileImportReporter {
 			Company company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 			
 			String subject = "Import-ERROR: " + I18nString.getLocaleString("import.recipients.report", reportLocale) + ": " + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", reportLocale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true);
+			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true, profileImportWorker.getStatus());
 			String bodyText = "Import-ERROR:\n" + generateLocalizedImportTextReport(profileImportWorker, reportLocale, reportTimezone, reportDateTimeFormatter, true);
 			
 			javaMailService.sendEmail(profileImportWorker.getImportProfile().getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
-	public void sendProfileImportReportAlreadyImportedFileMail(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, int companyID, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter) {
-		Set<String> emailRecipients = new HashSet<>();
+	public List<String> generateImportWarningEntries(ProfileImportWorker worker) {
+		final Locale locale = worker.getImportProfile().getReportLocale();
+		final List<String> list = new ArrayList<>();
 		
-		if (StringUtils.isNotBlank(importProfile.getMailForReport())) {
-			for (String email : AgnUtils.splitAndTrimList(importProfile.getMailForReport())) {
-				emailRecipients.add(AgnUtils.normalizeEmail(email));
-			}
-		}
-		
-		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ImportAlwaysInformEmail, companyID))) {
-			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ImportAlwaysInformEmail, companyID))) {
-				emailRecipients.add(AgnUtils.normalizeEmail(email));
-			}
+		if(this.importQuotaCheckService.checkWarningLimitReached(worker.getImportProfile().getCompanyId(), worker.getStatus().getCsvLines())) {
+			list.add(I18nString.getLocaleString(
+					"warning.import.lineQuota", 
+					locale, 
+					this.importQuotaCheckService.getImportLimit(worker.getImportProfile().getCompanyId()),
+					this.importQuotaCheckService.totalImportLinesCount(worker.getImportProfile().getCompanyId(), worker.getStatus().getCsvLines())));			
 		}
 
-		if (!emailRecipients.isEmpty()) {
-			Locale emailLocale = reportLocale;
-			
-			Company company = companyDao.getCompany(importProfile.getCompanyId());
-			
-			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + importProfile.getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, reportLocale, reportTimezone, reportDateTimeFormatter, true);
-			String bodyText = generateLocalizedImportTextReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, reportLocale, reportTimezone, reportDateTimeFormatter, true);
-			
-			javaMailService.sendEmail(autoImport.getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
-		}
-	}
-
-	public int writeProfileImportReportAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, int adminID, Locale reportLocale, String reportTimezone, DateTimeFormatter reportDateTimeFormatter) throws Exception {
-		String resultFileContent = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, reportLocale, reportTimezone, reportDateTimeFormatter, true);
-		int autoImportID = -1;
-		if (autoImport != null) {
-			autoImportID = autoImport.getAutoImportId();
-		}
-		return recipientsReportService.createAndSaveImportReport(importProfile.getCompanyId(), adminID, RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX, 0, new Date(), resultFileContent, autoImportID, false).getId();
+		return list;
 	}
 }

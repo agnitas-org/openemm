@@ -19,6 +19,8 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+// TODO: EMMGUI-714: remove and replace with RowsCountWebStorageEntry when old design will be removed
+//  since filter for this table was removed in redesigned UI
 public class FilterTypesAndRowsCountWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("types")
     private List<String> filterTypes = Collections.emptyList();

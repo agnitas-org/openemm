@@ -337,4 +337,9 @@ public class ComBirtReportImpl implements ComBirtReport {
 	public String getLastresult() {
 		return lastresult;
 	}
+
+	@Override
+	public String toString() {
+		return "\"" + shortname + "\" (CompanyID: " + companyID + ", ReportID: " + reportID + ")";
+	}
 }

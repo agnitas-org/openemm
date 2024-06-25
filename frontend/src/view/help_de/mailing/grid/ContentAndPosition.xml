@@ -1,0 +1,17 @@
+<HelpBalloon>
+    <title><![CDATA[Inhalt und Position]]></title>
+    <content><![CDATA[Wenn bestimmte Inhalte in Ihren Mailings immer an der gleichen Position erscheinen sollen oder nicht verändert werden dürfen, können Sie mit den angebotenen Optionen arbeiten. Die Einstellungen haben folgende Eigenschaften:
+    <br /><br />
+    <b>Frei editierbar:</b> <br />
+    Der Baustein kann jederzeit vom Benutzer bearbeitet, verschoben und auch ganz aus dem Mailing entfernt werden.
+    <br /><br />
+    <b>Inhalt fest:</b> <br />
+    Der Inhalt des Bausteins wird im Reiter Standardinhalt vorgegeben und kann im späteren Mailing nicht verändert werden. Der Benutzer kann den Baustein im Mailing jedoch neu positionieren oder löschen.
+    <br /><br />
+    <b>Im Mailing verankert:</b> <br />
+    Der Baustein wird in der Schablone positioniert und kann im späteren Mailing nicht verschoben oder gelöscht werden. Der Benutzer kann den Baustein im Mailing allerdings inhaltlich bearbeiten.
+    <br /><br />
+    <b>Inhalt fest und im Mailing verankert:</b> <br />
+    Der Baustein wird in der Schablone positioniert und kann im späteren Mailing nicht verschoben oder gelöscht werden. Der Inhalt des Bausteins wird im Reiter Standardinhalt vorgegeben und kann im Mailing ebenfalls nicht mehr verändert werden.
+]]></content>
+</HelpBalloon>

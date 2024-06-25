@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.action" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -9,13 +9,54 @@
 <%--@elvariable id="selectionMax" type="java.lang.Integer"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 
-<mvc:form servletRelativeAction="/statistics/mailing/comparison/list.action" modelAttribute="form"
+<mvc:form servletRelativeAction="/statistics/mailing/comparison/list.action" modelAttribute="mailingComparisonFilter"
           data-form="resource"
           data-resource-selector="#available-mailings">
+    <script type="application/json" data-initializer="web-storage-persist">
+            {
+                "mailing-comparison-overview": {
+                    "rows-count": ${mailingComparisonFilter.numberOfRows}
+                }
+            }
+    </script>
+
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline"><mvc:message code="default.Overview"/></h2>
             <ul class="tile-header-actions">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="icon icon-eye"></i>
+                        <span class="text"><mvc:message code="button.Show"/></span>
+                        <i class="icon icon-caret-down"></i>
+                    </a>
+
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                        <li>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="20"/>
+                                <span class="label-text">20</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="50"/>
+                                <span class="label-text">50</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="100"/>
+                                <span class="label-text">100</span>
+                            </label>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <p>
+                                <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
+                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
+                                </button>
+                            </p>
+                        </li>
+                    </ul>
+                </li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-cloud-download"></i>
@@ -53,9 +94,13 @@
             <div class="table-wrapper">
                 <display:table class="table table-bordered table-striped table-hover js-table"
                                id="mailing"
+                               pagesize="${mailings.pageSize}"
+                               sort="external"
                                name="mailings"
                                requestURI="/statistics/mailing/comparison/list.action"
-                               excludedParams="*" sort="list">
+                               partialList="true"
+                               size="${mailings.fullListSize}"
+                               excludedParams="*">
 
                     <display:setProperty name="basic.msg.empty_list_row" value=" "/>
 

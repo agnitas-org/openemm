@@ -1,6 +1,5 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:url var="importAction" value="/webform/importUserForm.action" />
@@ -8,7 +7,7 @@
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline">
-				<bean:message key="forms.import"/>
+				<mvc:message code="forms.import"/>
 			</h2>
 		</div>
 		<div class="tile-content">
@@ -22,7 +21,7 @@
 							<button type="button" class="btn btn-regular btn-primary" data-form-submit>
 								<i class="icon icon-cloud-upload"></i>
 								<span class="text">
-									<bean:message key="forms.import"/>
+									<mvc:message code="forms.import"/>
 								</span>
 							</button>
 						</div>

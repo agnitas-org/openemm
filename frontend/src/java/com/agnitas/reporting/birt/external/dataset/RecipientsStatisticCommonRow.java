@@ -32,6 +32,11 @@ public class RecipientsStatisticCommonRow extends RecipientsStatisticRowBase {
 	protected int countBouncedAsOf;
 	protected int countWaitingForConfirmAsOf;
 	protected int countRecipientAsOf;
+	protected int notConfirmedDoiCount;
+	protected int notConfirmedAndDeletedDoiCount;
+	protected int confirmedDoiCount;
+	protected int confirmedAndNotActiveDoiCount;
+	protected int totalDoiCount;
 
 	public int getCountTypeText() {
 		return countTypeText;
@@ -191,5 +196,45 @@ public class RecipientsStatisticCommonRow extends RecipientsStatisticRowBase {
 
 	public void setCountRecipientAsOf(int countRecipientAsOf) {
 		this.countRecipientAsOf = countRecipientAsOf;
+	}
+
+	public int getNotConfirmedDoiCount() {
+		return notConfirmedDoiCount;
+	}
+
+	public void setNotConfirmedDoiCount(int notConfirmedDoiCount) {
+		this.notConfirmedDoiCount = notConfirmedDoiCount;
+	}
+
+	public int getNotConfirmedAndDeletedDoiCount() {
+		return notConfirmedAndDeletedDoiCount;
+	}
+
+	public void setNotConfirmedAndDeletedDoiCount(int notConfirmedAndDeletedDoiCount) {
+		this.notConfirmedAndDeletedDoiCount = notConfirmedAndDeletedDoiCount;
+	}
+
+	public int getConfirmedDoiCount() {
+		return confirmedDoiCount;
+	}
+
+	public void setConfirmedDoiCount(int confirmedDoiCount) {
+		this.confirmedDoiCount = confirmedDoiCount;
+	}
+
+	public int getConfirmedAndNotActiveDoiCount() {
+		return confirmedAndNotActiveDoiCount;
+	}
+
+	public void setConfirmedAndNotActiveDoiCount(int confirmedAndNotActiveDoiCount) {
+		this.confirmedAndNotActiveDoiCount = confirmedAndNotActiveDoiCount;
+	}
+
+	public int getTotalDoiCount() {
+		return totalDoiCount;
+	}
+
+	public void setTotalDoiCount(int totalDoiCount) {
+		this.totalDoiCount = totalDoiCount;
 	}
 }

@@ -18,13 +18,13 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.web.mvc.Popups;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.Admin;
@@ -133,7 +133,7 @@ public interface ComMailingBaseService {
      * @return distinct number of recipients for referenced mailinglist and other settings.
      * @throws Exception if calculation is impossible or some data is corrupted.
      */
-    int calculateRecipients(int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
+    int calculateRecipients(int companyId, int mailingId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
 
     /**
      * Get distinct number of recipients for referenced mailinglist and other settings.
@@ -192,8 +192,6 @@ public interface ComMailingBaseService {
      */
     boolean isContentBlank(String content, Map<String, DynamicTag> contentMap);
 
-    void doTextTemplateFilling(Mailing mailing, Admin admin, ActionMessages messages);
-    
     void doTextTemplateFilling(Mailing mailing, Admin admin, Popups popups);
     
     Mailing getMailing(int companyId, int mailingId);
@@ -205,7 +203,7 @@ public interface ComMailingBaseService {
      *                  Id of the company that sent the mailings
      * @return  List of MailingBase bean objects
      */
-    List<MailingBase> getMailingsForComparison(Admin admin);
+    PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
     
     Map<Integer, String> getMailingNames(List<Integer> mailingIds, int companyId);
 

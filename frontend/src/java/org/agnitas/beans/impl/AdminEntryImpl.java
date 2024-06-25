@@ -28,16 +28,17 @@ public class AdminEntryImpl implements AdminEntry {
     private Timestamp creationDate;
     private Timestamp loginDate;
     private boolean passwordExpired;
+	private String companyName;
 
     public AdminEntryImpl(Admin admin) {
-        this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail());
+        this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail(), admin.getCompanyName());
     }
 
     public AdminEntryImpl(int companyID, int id, String username, String fullname, String firstname, String shortname) {
-		this(companyID, id, username, fullname, firstname, shortname, null);
+		this(companyID, id, username, fullname, firstname, shortname, null, null);
     }
 
-    public AdminEntryImpl(int companyID, int id, String userName, String fullName, String firstName, String shortName, String email) {
+    public AdminEntryImpl(int companyID, int id, String userName, String fullName, String firstName, String shortName, String email, String companyName) {
     	this.companyID = companyID;
         this.username = userName;
         this.fullname = fullName;
@@ -45,6 +46,7 @@ public class AdminEntryImpl implements AdminEntry {
         this.shortname = shortName;
         this.id = id;
         this.email = email;
+		this.companyName = companyName;
     }
 
     @Override
@@ -141,4 +143,13 @@ public class AdminEntryImpl implements AdminEntry {
 		this.passwordExpired = passwordExpired;
 	}
 
+	@Override
+	public void setCompanyName(String companyName) {
+		this.companyName = companyName;
+	}
+
+	@Override
+	public String getCompanyName() {
+		return companyName;
+	}
 }

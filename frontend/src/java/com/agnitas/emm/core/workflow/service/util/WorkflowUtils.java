@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.workflow.service.util;
 
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_ACTIVE;
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
@@ -33,6 +35,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
+import com.agnitas.emm.core.workflow.beans.Workflow;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
@@ -200,11 +203,17 @@ public class WorkflowUtils {
         return icon.getType() == WorkflowIconType.ACTION_BASED_MAILING.getId() ||
                 icon.getType() == WorkflowIconType.MAILING.getId() ||
                 icon.getType() == WorkflowIconType.DATE_BASED_MAILING.getId() ||
-                icon.getType() == WorkflowIconType.FOLLOWUP_MAILING.getId();
+                icon.getType() == WorkflowIconType.FOLLOWUP_MAILING.getId() ||
+				icon.getType() == WorkflowIconType.MAILING_MEDIATYPE_POST.getId() ||
+				icon.getType() == WorkflowIconType.MAILING_MEDIATYPE_SMS.getId();
     }
 
     public static boolean isStartStopIcon(WorkflowIcon icon) {
         return icon.getType() == WorkflowIconType.START.getId() || icon.getType() == WorkflowIconType.STOP.getId();
+    }
+
+    public static boolean isStopIcon(WorkflowIcon icon) {
+        return icon.getType() == WorkflowIconType.STOP.getId();
     }
 
 	public static boolean isAutoOptimizationIcon(WorkflowIcon icon) {
@@ -517,4 +526,24 @@ public class WorkflowUtils {
 			}
 		}
 	}
+	
+    public static String getWorkflowDescription(Workflow workflow) {
+        return workflow.getShortname() + " (" + workflow.getWorkflowId() + ")";
+    }
+
+    public static boolean isPausing(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus) {
+        return oldStatus == STATUS_ACTIVE && newStatus == STATUS_PAUSED;
+    }
+
+    public static boolean isUnpausing(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus) {
+        return oldStatus == STATUS_PAUSED && newStatus == STATUS_ACTIVE;
+    }
+
+    public static boolean isStoppingOnPause(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus) {
+        return oldStatus == STATUS_PAUSED && newStatus == Workflow.WorkflowStatus.STATUS_INACTIVE;
+    }
+
+    public static boolean isDuringPause(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus) {
+        return oldStatus == STATUS_PAUSED && newStatus == STATUS_PAUSED;
+    }
 }

@@ -1,10 +1,13 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page import="com.agnitas.emm.core.maildrop.MaildropStatus" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="http://www.springframework.org/tags" %>
+
+<c:set var="MAILDROP_STATUS_ADMIN" value="<%= MaildropStatus.ADMIN.getCodeString() %>"/>
+<c:set var="MAILDROP_STATUS_TEST" value="<%= MaildropStatus.TEST.getCodeString() %>"/>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
@@ -23,7 +26,10 @@
     <div class="well block">
         <b><mvc:message code="mailing.DistribStatus"/>:</b> <mvc:message code="statistic.DeliveryStatus.${deliveryStatus}"/>
     </div>
-    <c:if test="${form.deliveryStat.lastType ne 'NO'}">
+
+    <c:set var="isAdminOrTest" value="${form.deliveryStat.lastType eq MAILDROP_STATUS_ADMIN or form.deliveryStat.lastType eq MAILDROP_STATUS_TEST}" />
+    
+    <c:if test="${form.deliveryStat.lastType ne 'NO' and (isAdminOrTest or form.deliveryStat.sendEndTime ne null)}">
         <div class="table-responsive vspace-top-10">
             <table class="table table-bordered table-striped table-equal-col-width">
                 <thead>
@@ -35,11 +41,11 @@
                 <tbody>
                 <tr>
                     <td><mvc:message code="Date"/></td>
-                    <td><fmt:formatDate value="${form.deliveryStat.lastDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></td>
+                    <td><fmt:formatDate value="${isAdminOrTest ? form.deliveryStat.lastDate : form.deliveryStat.sendEndTime}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></td>
                 </tr>
                 <tr>
                     <td><mvc:message code="default.Time"/></td>
-                    <td><fmt:formatDate value="${form.deliveryStat.lastDate}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" /></td>
+                    <td><fmt:formatDate value="${isAdminOrTest ? form.deliveryStat.lastDate : form.deliveryStat.sendEndTime}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" /></td>
                 </tr>
                 <tr>
                     <td><mvc:message code="Targets"/></td>

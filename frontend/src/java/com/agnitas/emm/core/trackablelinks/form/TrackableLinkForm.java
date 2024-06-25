@@ -24,6 +24,7 @@ public class TrackableLinkForm {
     private String url;
     private String shortname;
     private boolean admin;
+    private boolean deleted;
     private boolean staticLink;
     private boolean createSubstituteForAgnDynMulti;
     private List<ExtensionProperty> extensions = new ArrayList<>();
@@ -106,5 +107,13 @@ public class TrackableLinkForm {
 
     public void setStaticLink(boolean staticLink) {
         this.staticLink = staticLink;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

@@ -1,0 +1,21 @@
+
+.bordered-box {
+  padding: $gap;
+  border: $border-default;
+  border-radius: $border-radius;
+  @include hide-scroll;
+}
+
+.bordered-box-sm {
+  @extend .bordered-box;
+  padding: $gap-sm;
+}
+
+.bordered-box--input {
+  padding: $input-padding-y $input-padding-x;
+}
+
+.bordered-box--readonly {
+  color: var(--input-disabled-color);
+  background-color: var(--input-disabled-bg-color);
+}

@@ -64,7 +64,46 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	protected String getMailinglistName(int companyId, int mailinglistId) {
 		return mailinglistNamesById.computeIfAbsent(mailinglistId, id -> super.getMailinglistName(companyId, mailinglistId));
 	}
-    
+
+	protected int calcPercent(int amount, int total) {
+		if (total <= 0) {
+			return 0;
+		}
+
+		return Math.round(100 * amount / total);
+	}
+
+	protected int getConfirmedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status = ? AND EXISTS \n" +
+				"(SELECT 1 FROM hst_customer_" + companyId + "_binding_tbl hst WHERE hst.mailinglist_id = bind.mailinglist_id AND user_status = ? \n" +
+				"AND timestamp > ? AND timestamp < ? AND bind.customer_id = hst.customer_id)", mailinglistId, UserStatus.Active.getStatusCode(), UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+	}
+
+	protected int getConfirmedAndNotActiveDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status IN (2,3,4,6,7) AND EXISTS \n" +
+				"(SELECT 1 FROM hst_customer_" + companyId + "_binding_tbl hst WHERE hst.mailinglist_id = bind.mailinglist_id AND user_status = ? \n" +
+				"AND timestamp > ? AND timestamp < ? AND bind.customer_id = hst.customer_id)", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+	}
+
+	protected int getNotConfirmedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? and user_status = ? \n" +
+				"AND timestamp > ? AND timestamp < ?", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+	}
+
+	protected int getNotConfirmedAndDeletedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
+		return selectInt(logger, "SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
+				"AND timestamp > ? AND timestamp < ? AND change_type = 0", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+	}
+
+	protected int getTotalDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
+		int count1 = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? AND timestamp > ? AND timestamp < ?",
+				mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+		int count2 = selectInt(logger, "SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
+				"AND timestamp > ? AND timestamp < ?", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
+
+		return count1 + count2;
+	}
+
     protected static void calculateAmount(UserStatus status, int amount, RecipientsDetailedStatisticsRow row) {
     	if (status == null || row == null) {
     		return;

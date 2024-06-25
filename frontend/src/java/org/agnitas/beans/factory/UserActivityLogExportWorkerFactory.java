@@ -10,9 +10,11 @@
 
 package org.agnitas.beans.factory;
 
+import org.agnitas.service.ActivityLogExportWorker;
 import org.agnitas.service.UserActivityLogExportWorker;
 
 public interface UserActivityLogExportWorkerFactory {
 
     UserActivityLogExportWorker.Builder getBuilderInstance();
+    ActivityLogExportWorker.Builder getBuilderInstanceRedesigned();
 }

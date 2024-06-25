@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -131,13 +132,20 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-    public void deleteAdminAndTestOpenings(int mailingId, int companyId) {
-        // remove from onepixellog_X_tbl
-        String query = createDeleteAdminAndTestOpeningsQuery(getOnepixellogTableName(companyId), companyId);
-        update(logger, query, mailingId, mailingId);
+    public void deleteAdminAndTestOpenings(int mailingID, int companyID) {
+		// remove from onepixellog_X_tbl
+		String sqlOpen = "DELETE FROM onepixellog_" + companyID	+ "_tbl"
+			+ " WHERE mailing_id = ?"
+				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
+					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
+		update(logger, sqlOpen, mailingID, mailingID);
+
         // remove from onepixellog_device_X_tbl
-        query = createDeleteAdminAndTestOpeningsQuery(getOnepixellogDeviceTableName(companyId), companyId);
-        update(logger, query, mailingId, mailingId);
+		String sqlOpenDevice = "DELETE FROM onepixellog_device_" + companyID + "_tbl"
+			+ " WHERE mailing_id = ?"
+				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
+					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
+		update(logger, sqlOpenDevice, mailingID, mailingID);
     }
 
     private String createDeleteAdminAndTestOpeningsQuery(String tableName, int companyId) {

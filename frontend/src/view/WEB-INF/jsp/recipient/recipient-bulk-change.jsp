@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
 <%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -15,6 +15,7 @@
 <c:set var="SIMPLE_DATE_TYPE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
 <c:set var="DATETIME_TYPE" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
 <c:set var="localeDateHint" value="(${localeDatePattern})"/>
+<c:set var="localeDateTimeHint" value="(${localeDateTimePattern})"/>
 
 <mvc:form servletRelativeAction="/recipient/bulkView.action"
           modelAttribute="recipientBulkForm"
@@ -108,7 +109,7 @@
                                     sortable="false">
 						<c:set var="columnDataType" value="${column.simpleDataType}"/>
 						<%--@elvariable id="columnDataType" type="org.agnitas.util.DbColumnType.SimpleDataType"--%>
-                    	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE || columnDataType == DATETIME_TYPE ? localeDateHint : ''}
+                    	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE ? localeDateHint: columnDataType == DATETIME_TYPE ? localeDateTimeHint : ''}
                     </display:column>
 
 					<display:column headerClass="js-table-sort" class="js-checkable field_newValue"

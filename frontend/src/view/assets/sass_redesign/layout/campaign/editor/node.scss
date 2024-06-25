@@ -1,0 +1,64 @@
+
+.node {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  margin: 0;
+  z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON */
+  background-color: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  @include flex-center;
+  color: $campaign-empty-icon-color;
+
+  .node-image {
+    height: $campaign-icon-height;
+  }
+
+  &.active {
+    color: $campaign-icon-color;
+  }
+
+  &:hover {
+    z-index: 13; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_HOVER */
+    color: $grey-blue; // todo
+  }
+
+  &:hover:not(.jtk-drag-hover):not(.jtk-dragged) .node-connect-button,
+  &.jtk-drag-selected.jtk-drag-active .node-connect-button {
+    visibility: visible;
+  }
+
+  &.ui-selected, &.ui-selecting {
+    color: $campaign-selected-icon-color;
+  }
+
+  &.js-collision-detected {
+    opacity: 0.2;
+  }
+}
+
+.draggable-node {
+  cursor: grabbing;
+  opacity: 0.8;
+  svg {
+    @include size(64px);
+  }
+}
+
+.draggable-node.js-collision-detected {
+  opacity: 0.4;
+  cursor: no-drop !important;
+}
+
+.node.jtk-dragged {
+  cursor: grabbing;
+  z-index: 20; /* be careful modifying this, synchronize with JS: Z_INDEX_DRAGGED_ICON_NODE */
+}
+
+.node.jtk-drag-hover,
+.node.jtk-drag-selected.jtk-drag-active {
+  background-color: rgba(255, 180, 0, 0.5) !important;
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#80FFB400', endColorstr='#80FFB400') !important; /* IE */
+}

@@ -28,9 +28,9 @@ public class MailingSendForm extends PaginationForm {
     private boolean isTemplate;
     private int mailingtype;
     private String shortname;
-    private boolean isMailingUndoAvailable;
+    private boolean isMailingUndoAvailable; // TODO: EMMGUI-714: remove when old design will be removed
     private boolean worldMailingSend;
-    private DeliveryStat deliveryStat;
+    private DeliveryStat deliveryStat; // TODO: EMMGUI-714: remove when old design will be removed
     private int sendHour;
     private int sendMinute;
     private String sendTime;
@@ -44,6 +44,7 @@ public class MailingSendForm extends PaginationForm {
     private int stepping;
     private boolean checkForDuplicateRecords;
     private boolean skipWithEmptyTextContent;
+    private boolean cleanupTestsBeforeDelivery;
     private boolean reportSendAfter24h;
     private boolean reportSendAfter48h;
     private boolean reportSendAfter1Week;
@@ -51,15 +52,17 @@ public class MailingSendForm extends PaginationForm {
     private int autoImportId;
     private String statusmailRecipients = "";
     private String workStatus = "";
-    private String[] filterTypes;
+    private String[] filterTypes; // TODO: EMMGUI-714: remove when old design will be removed
     private int offlineHtmlEmailsCount;
     private int totalSentCount;
     private int htmlEmailsCount;
     private int textEmailsCount;
     private Map<Integer, Integer> sentStatistics = new HashMap<>();
     private int templateId;
-    private MailingIntervalSettingsForm intervalSettings;
+    private boolean isActivateAgainToday;
     private Date date;
+    private MailingIntervalSettingsForm intervalSettings;
+    private SecurityAndNotificationsSettingsForm securitySettings;
 
     public int getWorkflowId() {
         return workflowId;
@@ -249,6 +252,14 @@ public class MailingSendForm extends PaginationForm {
         this.skipWithEmptyTextContent = skipWithEmptyTextContent;
     }
 
+    public boolean isCleanupTestsBeforeDelivery() {
+        return cleanupTestsBeforeDelivery;
+    }
+
+    public void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery) {
+        this.cleanupTestsBeforeDelivery = cleanupTestsBeforeDelivery;
+    }
+
     public boolean isReportSendAfter24h() {
         return reportSendAfter24h;
     }
@@ -399,5 +410,25 @@ public class MailingSendForm extends PaginationForm {
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public boolean isActivateAgainToday() {
+        return isActivateAgainToday;
+    }
+
+    public void setActivateAgainToday(boolean activateAgainToday) {
+        isActivateAgainToday = activateAgainToday;
+    }
+
+    public SecurityAndNotificationsSettingsForm getSecuritySettings() {
+        if (securitySettings == null) {
+            securitySettings = new SecurityAndNotificationsSettingsForm();
+        }
+
+        return securitySettings;
+    }
+
+    public void setSecuritySettings(SecurityAndNotificationsSettingsForm securitySettings) {
+        this.securitySettings = securitySettings;
     }
 }

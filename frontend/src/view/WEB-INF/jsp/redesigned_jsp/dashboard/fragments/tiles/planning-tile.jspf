@@ -1,0 +1,39 @@
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+
+<script id="config:dashboard-planning" type="application/json">
+    {
+        "translations": {
+            "dashboard.schedule.noMailings": "<mvc:message code='dashboard.mailing.noMailings'/>"
+        }
+    }
+</script>
+
+<fmt:formatDate var="currentYear" value="${emm:now()}" pattern="yyyy" timeZone="${adminTimeZone}"/>
+<c:set var="maxYear" value="${currentYear + 5}" />
+
+<script id="dashboard-tile-planning" type="text/x-mustache-template">
+    <div class="tile draggable-tile tile-tall" id="dashboard-planning" data-initializer="dashboard-planning">
+        <div class="tile-header">
+            <h1 class="tile-title">{{- tileName }}</h1>
+        </div>
+        <div class="tile-body">
+            <div data-date-range>
+                <label for="schedule-start-date" class="form-label"><mvc:message code="mailing.senddate" /></label>
+
+                <div class="date-picker-container mb-1">
+                    <mvc:message var="fromMsg" code="From" />
+                    <input id="schedule-start-date" type="text" name="fromDate" placeholder="${fromMsg}" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}'">
+                </div>
+                <div class="date-picker-container">
+                    <mvc:message var="toMsg" code="To" />
+                    <input id="schedule-end-date" type="text" name="toDate" placeholder="${toMsg}" class="form-control js-datepicker" data-datepicker-options="minDate: 0, yearRange: '${currentYear}:${maxYear}'">
+                </div>
+            </div>
+
+            <div id="schedule-data-container" class="bordered-box h-100">
+                <%-- Loads by JS --%>
+            </div>
+        </div>
+        {{= overlay }}
+    </div>
+</script>

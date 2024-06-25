@@ -1,0 +1,75 @@
+
+#mailing-content-blocks {
+  .dyn-tag {
+    @extend .btn;
+    @extend .btn-inverse;
+    @extend .justify-content-between;
+
+    border-radius: $border-radius;
+    padding: $gap-sm;
+
+    span {
+      @include flex-row($gap-x-sm);
+      align-items: center;
+    }
+
+    &.disabled {
+      color: var(--input-disabled-color);
+      background-color: var(--input-disabled-bg-color);
+      opacity: 1;
+    }
+  }
+
+  #dyn-tag-list {
+    @include flex-column($gap-sm);
+    @include hide-scroll;
+    min-height: 0;
+  }
+  
+  #dyn-tag-settings {
+    min-height: 0;
+  }
+}
+
+#dyn-tag-settings, #targets-settings, #targets-order-box, #target_groups + .select2-container, .target-row > .select2-container {
+  min-width: 0;
+}
+
+#targets-order-box {
+  @include flex-column($gap-x-sm);
+  min-height: 95px;  // 2 target rows
+  max-height: 185px; // 5 target rows
+}
+
+#targets-order {
+  @include flex-column($gap-x-sm);
+  @include hide-scroll;
+}
+
+#enlargeable-settings {
+  display: grid;
+  gap: $gap-sm;
+  grid-template-rows: 1fr auto auto; overflow: hidden;
+
+  .modal & {
+    grid-template-rows: 1fr;
+    grid-template-columns: 1fr 3fr;
+
+    #multi-editor {
+      order: 1;
+      min-height: 0;
+    }
+
+    #targets-settings {
+      order: 0;
+      justify-content: space-between;
+      min-height: 0;
+    }
+
+    #targets-order-box {
+      flex-grow: 1;
+      max-height: unset;
+      min-height: 0;
+    }
+  }
+}

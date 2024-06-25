@@ -18,13 +18,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.service.ImportException;
 import org.agnitas.util.DbColumnType;
@@ -36,10 +35,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class ImportModeAddHandler implements ImportModeHandler {
     private static final transient Logger logger = LogManager.getLogger(ImportModeAddHandler.class);
@@ -79,7 +78,7 @@ public class ImportModeAddHandler implements ImportModeHandler {
 					&& !"customer_id".equalsIgnoreCase(columnEntry.getKey())
 					&& !"gender".equalsIgnoreCase(columnEntry.getKey())
 					&& !"mailtype".equalsIgnoreCase(columnEntry.getKey())
-					&& !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(columnEntry.getKey())) {
+					&& !RecipientStandardField.Bounceload.getColumnName().equalsIgnoreCase(columnEntry.getKey())) {
 				boolean notNullColumnIsSet = false;
 				for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 					if (columnEntry.getKey().equalsIgnoreCase(mapping.getDatabaseColumn()) && (mapping.getFileColumn() != null || mapping.getDefaultValue() != null)) {
@@ -121,10 +120,10 @@ public class ImportModeAddHandler implements ImportModeHandler {
 		int companyId = importProfile.getCompanyId();
 
 		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId)) {
-			importRecipientsDao.updateColumnOfTemporaryCustomerImportTable(temporaryImportTableName, RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+			importRecipientsDao.updateColumnOfTemporaryCustomerImportTable(temporaryImportTableName, RecipientStandardField.DoNotTrack.getColumnName(), 1);
 
-			if (!transferDbColumns.contains(RecipientUtils.COLUMN_DO_NOT_TRACK)) {
-				transferDbColumns.add(RecipientUtils.COLUMN_DO_NOT_TRACK);
+			if (!transferDbColumns.contains(RecipientStandardField.DoNotTrack.getColumnName())) {
+				transferDbColumns.add(RecipientStandardField.DoNotTrack.getColumnName());
 			}
 		}
 
@@ -155,7 +154,7 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Do nothing
 	}
 

@@ -1,0 +1,10 @@
+
+#recipient-insights {
+  #days-stat-tile, #time-stat-tile {
+    flex: 1.42;
+  }
+
+  #devices-stat-tile, #progress-stat-tile, #mailings-tile, #statistics-tile {
+    flex: 1;
+  }
+}

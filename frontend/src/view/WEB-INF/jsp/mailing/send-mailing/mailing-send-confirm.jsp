@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -22,6 +22,7 @@
                         <mvc:hidden path="blocksize"/>
                         <mvc:hidden path="checkForDuplicateRecords"/>
                         <mvc:hidden path="skipWithEmptyTextContent"/>
+                        <mvc:hidden path="cleanupTestsBeforeDelivery"/>
 
                         <mvc:hidden path="maxRecipients"/>
 

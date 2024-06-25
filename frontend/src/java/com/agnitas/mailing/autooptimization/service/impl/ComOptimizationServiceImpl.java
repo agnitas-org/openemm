@@ -236,7 +236,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 
 		mailing.getMaildropStatus().add(drop);
 		mailingDao.saveMailing(mailing, false);
-		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED, now);
+		mailingDao.updateStatus(drop.getCompanyID(), drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED, now);
 
 		if (testRun) {
 			return true;

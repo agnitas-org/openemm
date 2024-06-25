@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="org.agnitas.dao.LicenseType"%>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
 <%@ page import="com.agnitas.util.ComHelpUtil" %>
 <%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
-<%@ page import="org.agnitas.service.WebStorage" %>
+<%@ page import="com.agnitas.service.WebStorage" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.commons.web.ConnectionSpeedTestController" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -26,20 +24,21 @@
 
 <c:set var="isTabsMenuShown" value="true" scope="request"/>
 <c:set var="isBreadcrumbsShown" value="false" scope="request"/>
+<c:set var="hideDesignSwitch" value="false" scope="request" />
 
 <c:url var="LOGOUT" value="/logout.action"/>
 
-<tiles:insert attribute="page-setup"/>
+<tiles:insertAttribute name="page-setup"/>
 
 <!--[if IE 9 ]>    <html class="ie9"> <![endif]-->
 <!--[if (gt IE 9)|!(IE)]><!--> <html class=""> <!--<![endif]-->
-<tiles:insert attribute="head-tag"/>
+<tiles:insertAttribute name="head-tag"/>
 
 <emm:webStorage var="isWideSidebarBundle" key="${isWideSidebarWebStorageBundleKey}"/>
 <body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''} ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
 
     <div class="loader">
-        <i class="icon icon-refresh icon-spin"></i> <bean:message key="default.loading" />
+        <i class="icon icon-refresh icon-spin"></i> <mvc:message code="default.loading" />
     </div>
     
     <!-- Header BEGIN -->
@@ -61,7 +60,7 @@
                             <c:set var="agnHeadLineIconClass" value="${_navigation_iconClass}"/>
 
                             <c:set var="agnHeadLineFirstCrumb">
-                                <bean:message key="${_navigation_navMsg}" />
+                                <mvc:message code="${_navigation_navMsg}" />
                             </c:set>
                         </c:if>
                     </emm:ShowNavigation>
@@ -87,7 +86,7 @@
                                     <c:set var="crumb">
                                         <c:choose>
                                             <c:when test="${not empty agnBreadcrumb.textKey}">
-	                                            <bean:message key="${agnBreadcrumb.textKey}"/>
+	                                            <mvc:message code="${agnBreadcrumb.textKey}"/>
                                             </c:when>
                                             <c:when test="${not empty agnBreadcrumb.text}">
                                                 ${fn:escapeXml(agnBreadcrumb.text)}
@@ -121,12 +120,12 @@
                 <c:set var="helpPageUrl" value="<%= ComHelpUtil.getHelpPageUrl(request) %>" />
                 <button class="btn btn-secondary btn-regular" type="button" data-popup="${helpPageUrl}">
                     <i class="icon icon-question-circle"></i>
-                    <span class="text"><bean:message key="help"/></span>
+                    <span class="text"><mvc:message code="help"/></span>
                 </button>
             </li>
             <%@ include file="itemactions-support.jspf" %>
-            <tiles:insert attribute="newresource"/>
-            <tiles:insert attribute="itemactions"/>
+            <tiles:insertAttribute name="newresource"/>
+            <tiles:insertAttribute name="itemactions"/>
         </ul>
     </header>
     <!-- Header END -->
@@ -142,7 +141,7 @@
             <c:set var="maxInactiveInterval" value="${pageContext.session.maxInactiveInterval}"/>
             <c:url var="sessionInfoUrl" value="/session/info.action" />
             <c:set var="sessionTimeOnMouseOverMessage">
-                <bean:message key="session.timer.mouseover"/>
+                <mvc:message code="session.timer.mouseover"/>
             </c:set>
 
             <%-- data injection into client --%>
@@ -155,7 +154,7 @@
                 }
             </script>
 
-            <tiles:insert attribute="sidemenu"/>
+            <tiles:insertAttribute name="sidemenu"/>
         </ul>
 
         <ul class="l-info-section">
@@ -168,21 +167,38 @@
                     <span class="item" id="session-time-field"></span>
                 </div>
             </li>
+            <c:if test="${canSwitchDesign and not hideDesignSwitch}">
+                <li style="margin-bottom: 10px">
+                    <div id="design-switch-block">
+                        <label class="toggle" style="margin-bottom: 0">
+                            <input type="checkbox" id="switch-to-new-design" data-action="switch-to-new-design" data-switch-url="${switchDesignUrl}">
+                            <div class="toggle-control"></div>
+                        </label>
+
+                        <label id="switch-to-new-design-label" for="switch-to-new-design">
+                            <mvc:message code="redesign.switch.new" />
+                        </label>
+
+                        <span class="beta-badge">BETA</span>
+                    </div>
+                </li>
+            </c:if>
+
             <li class="logout-area">
                 <mvc:form action="${LOGOUT}" method="POST" cssClass="logout-form">
-                    <button type="submit" data-tooltip="<bean:message key='default.Logout'/>">
+                    <button type="submit" data-tooltip="<mvc:message code='default.Logout'/>">
                         <i class="logout-logo icon-fa5 icon-power-off"></i>
-                        <span class="logout-text"><bean:message key='default.Logout'/></span>
+                        <span class="logout-text"><mvc:message code='default.Logout'/></span>
                     </button>
                 </mvc:form>
                 <c:if test="${SLOW_CONNECTION_THRESHOLD_KBPS > 0}">
-                    <span id="internet-indicator" class="icon-stack icon-lg" data-tooltip="<bean:message key='OK'/>">
+                    <span id="internet-indicator" class="icon-stack icon-lg" data-tooltip="<mvc:message code='OK'/>">
                       <i class="fas icon-wifi icon-stack-1x icon-inverse"></i>
                     </span>
                 </c:if>
             </li>
             <li id="account-data" data-initializer="account-data">
-                <html:link page="/user/self/view.action">
+                <a href="<c:url value="/user/self/view.action"/>">
                     <div class="account-initials">
                         <span><c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}</span>
                     </div>
@@ -190,12 +206,17 @@
                         <p><strong><c:if test="${not empty firstName}">${firstName} </c:if>${fullName}</strong></p>
                         <c:if test="${not empty supervisorName}"><p><strong>${supervisorName}</strong></p></c:if>
                         <p>${companyShortName}</p>
-                        <p><bean:message key="default.CompanyID"/>: ${companyID}</p>
+                        <p><mvc:message code="default.CompanyID"/>: ${companyID}</p>
                         <br/>
 
                         <%
                         // Show Version on non-live servers only (and on all OpenEMM)
-                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance) || "Inhouse".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.System_License_Type)) || ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
+                        LicenseType licenseType = LicenseType.getLicenseTypeByID(ConfigService.getInstance().getValue(ConfigValue.System_License_Type));
+                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)
+                        		|| licenseType == LicenseType.Inhouse
+                                || licenseType == LicenseType.OpenEMM
+                                || licenseType == LicenseType.OpenEMM_Plus
+                        		|| ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
                         %>
                             <p class="version-sign">
                                 <strong>
@@ -210,7 +231,7 @@
                         }
                         %>
                     </div>
-                </html:link>
+                </a>
             </li>
         </ul>
     </aside>
@@ -219,21 +240,21 @@
 
     <c:if test="${isTabsMenuShown}">
         <!-- Tabs BEGIN -->
-        <tiles:insert attribute="tabsmenu"/>
+        <tiles:insertAttribute name="tabsmenu"/>
         <!-- Tabs END -->
     </c:if>
 
 
     <!-- Main Content BEGIN -->
     <main class="l-main-view">
-        <tiles:insert attribute="body"/>
+        <tiles:insertAttribute name="body"/>
     </main>
     <!-- Main Content END -->
 
 
-    <tiles:insert attribute="footer_matomo"/>
+    <tiles:insertAttribute name="footer_matomo"/>
 
-    <tiles:insert attribute="messages"/>
+    <tiles:insertAttribute name="messages"/>
     
     <c:if test="${SLOW_CONNECTION_THRESHOLD_KBPS > 0}">
         <script data-initializer="connection-speed-test" type="application/json">

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do"%>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action"%>
 <%@ page import="com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -8,6 +8,8 @@
 
 <c:set var="DEPENDENT_TYPE_WORKFLOW" value="<%= ProfileFieldDependentType.WORKFLOW %>"/>
 <c:set var="DEPENDENT_TYPE_TARGET_GROUP" value="<%= ProfileFieldDependentType.TARGET_GROUP %>"/>
+<c:set var="DEPENDENT_TYPE_IMPORT_PROFILE" value="<%= ProfileFieldDependentType.IMPORT_PROFILE %>"/>
+<c:set var="DEPENDENT_TYPE_EXPORT_PROFILE" value="<%= ProfileFieldDependentType.EXPORT_PROFILE %>"/>
 
 <div class="tile js-data-table" data-table="profile-field-dependents-table">
 
@@ -66,6 +68,20 @@
                         </c:set>
 
                         <c:url var="viewLink" value="/target/${dependent.id}/view.action"/>
+                    </c:when>
+                    <c:when test="${dependent.type eq DEPENDENT_TYPE_IMPORT_PROFILE}">
+                        <c:set target="${entry}" property="entityType">
+                            <mvc:message code="import.ImportProfile"/>
+                        </c:set>
+
+                        <c:url var="viewLink" value="/import-profile/${dependent.id}/view.action"/>
+                    </c:when>
+                    <c:when test="${dependent.type eq DEPENDENT_TYPE_EXPORT_PROFILE}">
+                        <c:set target="${entry}" property="entityType">
+                            <mvc:message code="export"/>
+                        </c:set>
+
+                        <c:url var="viewLink" value="/export/${dependent.id}/view.action"/>
                     </c:when>
                 </c:choose>
 

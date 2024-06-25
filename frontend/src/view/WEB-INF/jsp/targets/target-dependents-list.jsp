@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
@@ -141,12 +141,7 @@
                             </c:when>
                             <c:when test="${item.type == 'EXPORT_PROFILE'}">
                                 <emm:ShowByPermission token="wizard.export">
-                                    <emm:HideByPermission token="export.rollback">
-                                        <a href="<c:url value='/export/${item.id}/view.action'/>" class="hidden js-row-show"></a>
-                                    </emm:HideByPermission>                                     
-                                    <emm:ShowByPermission token="export.rollback">
-                                        <a href="<c:url value='/exportwizard.do?action=2&exportPredefID=${item.id}'/>" class="hidden js-row-show"></a>
-                                    </emm:ShowByPermission>
+                                    <a href="<c:url value='/export/${item.id}/view.action'/>" class="hidden js-row-show"></a>
                                 </emm:ShowByPermission>
                                 <mvc:message code="export.ExportProfile"/>
                             </c:when>

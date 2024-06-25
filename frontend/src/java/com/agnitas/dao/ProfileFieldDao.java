@@ -22,7 +22,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.profilefields.ProfileFieldException;
 
 /**
  * @deprecated Use RecipientFieldService instead
@@ -32,10 +31,6 @@ public interface ProfileFieldDao {
 	int MAX_SORT_INDEX = 1000;
 
 	boolean mayAdd(int companyID);
-
-	boolean isNearLimit(int companyID);
-
-	int getCurrentFieldCount(int companyID) throws Exception;
 
     ProfileField getProfileField(int companyID, String column, int adminId) throws Exception;
 
@@ -58,24 +53,12 @@ public interface ProfileFieldDao {
 
     ProfileField getProfileFieldByShortname(int companyID, String shortName, int adminID) throws Exception;
 
-	List<ProfileField> getProfileFieldsWithIndividualSortOrder(int companyID, int adminID) throws Exception;
 
 	List<ProfileField> getProfileFieldsWithInterest(int companyID, int adminID) throws Exception;
 
 	List<ProfileField> getHistorizedProfileFields(int companyID) throws Exception;
 
 	boolean checkAllowedDefaultValue(int companyID, String columnName, String fieldDefault) throws Exception;
-
-	/**
-	 * Returns the user-selected profile fields in history.
-	 *
-	 * @param companyID company ID
-	 *
-	 * @return list of user-selected profile fields in history.
-	 */
-	Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(int companyID);
-
-	boolean deleteByCompany(int companyID);
 
 	/**
 	 * Check whether or not a {@code column} exists (either a default (built-in) column or a custom profile field).
@@ -107,10 +90,6 @@ public interface ProfileFieldDao {
 	DbColumnType getColumnType(int companyId, String columnName);
 
 	boolean isColumnIndexed(int companyId, String column);
-
-	boolean isReservedKeyWord(String fieldname);
-
-	int getMaximumNumberOfCompanySpecificProfileFields() throws Exception;
 
 	void clearProfileStructureCache(int companyID);
 	
@@ -194,18 +173,8 @@ public interface ProfileFieldDao {
      */
     boolean alterColumnTypeInDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
 
-    /**
-     * Removes custom column in customer_tbl for given company_id.
-     *
-     * @param companyID Table of customers for this company will be altered.
-     * @param fieldname Database column name to remove.
-     * @throws Exception
-     */
-    void removeProfileField(int companyID, String fieldname) throws ProfileFieldException;
-
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 
 	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;
 
-	boolean isWithinGracefulLimit(int companyId);
 }

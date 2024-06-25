@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
@@ -31,12 +31,16 @@ import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.JsonRequestResponse;
 import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -64,6 +68,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private UserFormDao userFormDao;
 	private UserFormExporter userFormExporter;
+	private CompanyTokenService companyTokenService;
 
 	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
@@ -78,6 +83,11 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setUserFormExporter(UserFormExporter userFormExporter) {
 		this.userFormExporter = userFormExporter;
+	}
+	
+	@Required
+	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
+		this.companyTokenService = companyTokenService;
 	}
 
 	@Override
@@ -301,16 +311,31 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	private void fillUserformObject(Admin admin, UserForm userForm, JsonObject jsonObject) throws RestfulClientException, Exception {
+		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+		
 		for (Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("formname".equals(entry.getKey()) || "name".equals(entry.getKey())) {
 				if (entry.getValue() != null && entry.getValue() instanceof String) {
 					userForm.setFormName((String) entry.getValue());
+					// Check for unallowed html tags
+					try {
+						HtmlChecker.checkForNoHtmlTags(userForm.getFormName());
+					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+						throw new RestfulClientException("Userform name contains unallowed HTML tags");
+					}
 				} else {
 					throw new RestfulClientException("Invalid data type for 'formname'. String expected");
 				}
 			} else if ("description".equals(entry.getKey())) {
 				if (entry.getValue() instanceof String) {
 					userForm.setDescription((String) entry.getValue());
+					// Check for unallowed html tags
+					try {
+						HtmlChecker.checkForUnallowedHtmlTags(userForm.getDescription(), false);
+					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+						throw new RestfulClientException("Userform description contains unallowed HTML tags");
+					}
 				} else {
 					throw new RestfulClientException("Invalid data type for 'description'. String expected");
 				}
@@ -400,6 +425,11 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 					trackableLink.setShortname((String) linkJsonObject.get("name"));
 					String fullUrl = (String) linkJsonObject.get("url");
 					fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", admin.getCompany().getRdirDomain());
+					if (StringUtils.isNotBlank(companyToken)) {
+						fullUrl = fullUrl.replace("[CTOKEN]", companyToken);
+					} else {
+						fullUrl = fullUrl.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + admin.getCompanyID());
+					}
 					trackableLink.setFullUrl(fullUrl);
 
 					if (linkJsonObject.containsPropertyKey("deep_tracking")) {

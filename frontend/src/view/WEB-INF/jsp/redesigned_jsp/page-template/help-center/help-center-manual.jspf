@@ -1,0 +1,10 @@
+<%@ page import="com.agnitas.util.ComHelpUtil" %>
+
+<c:set var="agnHelpKey" value="${helpKey}" scope="request" />
+
+<div id="help-center-manual-tab" class="h-100">
+    <c:url var="manualUrl" value="<%= ComHelpUtil.getHelpPageUrl(request) %>"/>
+    <iframe id="manual-iframe" class="js-fixed-iframe" src='${manualUrl}' data-popuot-window style="width: 100%; height: 100%">
+        Your Browser does not support IFRAMEs, please update!
+    </iframe>
+</div>

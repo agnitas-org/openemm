@@ -1,8 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" %>
 
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="html"    uri="http://struts.apache.org/tags-html" %>
-<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="agnTitleKey" 			value="recipient.DatasourceId"      scope="request" />

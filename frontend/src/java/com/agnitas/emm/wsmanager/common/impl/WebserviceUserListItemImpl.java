@@ -30,6 +30,7 @@ public class WebserviceUserListItemImpl implements WebserviceUserListItem {
 	
 	/** <i>active</i>-flag of user. */
 	private boolean active;
+	private String clientName;
 	
 	@Override
 	public int getCompanyID() {
@@ -84,5 +85,14 @@ public class WebserviceUserListItemImpl implements WebserviceUserListItem {
 	 */
 	public void setActive(final boolean active) {
 		this.active = active;
+	}
+
+	@Override
+	public String getClientName() {
+		return this.clientName;
+	}
+
+	public void setClientName(String clientName) {
+		this.clientName = clientName;
 	}
 }

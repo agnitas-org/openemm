@@ -1,0 +1,69 @@
+
+.icon-switch {
+  display: none !important;
+}
+
+.icon-switch__label, .text-switch__label {
+  display: flex;
+  border: $border-default;
+  border-radius: $border-radius;
+  background-color: var(--switch-inactive-color);
+
+  > * {
+    color: $white;
+    border-radius: inherit;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+
+    // off state
+    &:first-child {
+      background-color: $primary;
+      margin: -1px -1px -1px -3px; // hide contrast pixels near border radius
+    }
+
+    &:last-child {
+      background-color: transparent;
+    }
+  }
+
+  // on state
+  .icon-switch:checked + & {
+    > *:first-child {
+      background-color: transparent;
+      margin: 0;
+    }
+    > *:last-child {
+      background-color: $primary;
+      margin: -1px -3px -1px -1px; // hide contrast pixels near border radius
+    }
+  }
+}
+
+.icon-switch__label {
+  @include size(70px, 30px);
+
+  > i {
+    flex: 1;
+    @include flex-center;
+    font-size: $font-size-md;
+  }
+}
+
+.icon-switch__label--sm {
+  @include size(36px, 18px);
+  border-radius: $border-radius-sm;
+
+  i {
+    font-size: 8px;
+  }
+}
+
+.text-switch__label {
+  min-width: 0; // to allow shrink and text truncation when not enough space to display completely
+
+  > span {
+    @extend .text-truncate;
+    user-select: none;
+    padding: 3.5px;
+  }
+}

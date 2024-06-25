@@ -1,0 +1,115 @@
+
+<%--@elvariable id="fieldsMap" type="java.util.Map"--%>
+<%--@elvariable id="mailingId" type="java.lang.Integer"--%>
+<%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
+<%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
+<%--@elvariable id="recipient" type="com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow"--%>
+<%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
+<%--@elvariable id="recipients" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
+
+<c:set var="recipientsLimitExceeded" value="${recipients.fullListSize > countOfRecipients}" />
+
+<display:table id="recipient" name="${recipients}"
+               class="table table-bordered table-striped js-table"
+               partialList="true"
+               size="${form.numberOfRows}"
+               requestURI="/mailing/${mailingId}/recipients/list.action"
+               sort="external"
+               excludedParams="*">
+
+    <c:if test="${recipientsLimitExceeded}">
+        <display:caption>
+            <div class="l-tile-recipient-info-box align-left">
+                <span> <mvc:message code="recipient.search.max_recipients" arguments="${countOfRecipients}"/></span>
+            </div>
+        </display:caption>
+    </c:if>
+
+    <c:if test="${not empty recipient}">
+
+        <display:column titleKey="Firstname" property="firstName" 
+                        sortProperty="firstname" 
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"/>
+        
+        <display:column titleKey="Lastname" property="lastName" 
+                        sortProperty="lastname" 
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"/>
+
+        <display:column titleKey="mailing.MediaType.0" property="email"
+                        sortProperty="email"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"/>
+
+        <display:column titleKey="target.rule.mailingReceived"
+                        sortProperty="receive_time"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort">
+            <fmt:formatDate value="${recipient.receiveTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+        </display:column>
+
+        <display:column titleKey="mailing.recipients.mailing_opened"
+                        sortProperty="open_time"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"
+                        class="recipient_title">
+            <fmt:formatDate value="${recipient.openTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+        </display:column>
+
+        <display:column titleKey="statistic.openings" property="openingsCount"
+                        sortProperty="openings"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"
+                        class="recipient_title"/>
+
+        <display:column titleKey="mailing.recipients.mailing_clicked"
+                        sortProperty="click_time"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort">
+            <fmt:formatDate value="${recipient.clickTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+        </display:column>
+
+        <display:column titleKey="statistic.Clicks" property="clicksCount"
+                        sortProperty="clicks"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort"/>
+
+        <display:column titleKey="mailing.recipients.mailing_bounced"
+                        sortProperty="bounce_time"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort">
+            <fmt:formatDate value="${recipient.bounceTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+        </display:column>
+
+        <display:column titleKey="mailing.recipients.mailing_unsubscribed"
+                        sortProperty="optout_time"
+                        sortable="${not recipientsLimitExceeded}"
+                        headerClass="js-table-sort">
+            <fmt:formatDate value="${recipient.unsubscribeTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+        </display:column>
+
+        <c:forEach var="field" items="${form.selectedFields}">
+            <c:choose>
+                <c:when test="${'gender'.equalsIgnoreCase(field)}">
+                    <display:column titleKey="recipient.Salutation"
+                                    sortProperty="gender"
+                                    sortable="${not recipientsLimitExceeded}"
+                                    class="recipient_title" 
+                                    headerClass="js-table-sort">
+                        <mvc:message code="recipient.gender.${recipient.getVal(field)}.short"/>
+                    </display:column>
+                </c:when>
+                <c:otherwise>
+                    <display:column title="${fieldsMap.get(field)}"
+                                    sortProperty="${field}"
+                                    sortable="${not recipientsLimitExceeded}"
+                                    class="recipient_title"
+                                    headerClass="js-table-sort">
+                        ${recipient.getVal(field)}
+                    </display:column>
+                </c:otherwise>
+            </c:choose>
+        </c:forEach>
+    </c:if>
+</display:table>

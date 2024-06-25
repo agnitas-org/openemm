@@ -16,15 +16,11 @@ import java.util.Set;
 public class UserGroupForm {
     
     private int id;
-    
     private int companyId;
-    
+    private String companyDescr;
     private String shortname;
-    
     private String description;
-    
     private String[] parentGroupIDs;
-    
     private Set<String> grantedPermissions = new HashSet<>();
     
     public int getId() {
@@ -38,7 +34,15 @@ public class UserGroupForm {
     public int getCompanyId() {
         return companyId;
     }
-    
+
+    public String getCompanyDescr() {
+        return companyDescr;
+    }
+
+    public void setCompanyDescr(String companyDescr) {
+        this.companyDescr = companyDescr;
+    }
+
     public void setCompanyId(int companyId) {
         this.companyId = companyId;
     }

@@ -16,7 +16,9 @@ import com.agnitas.emm.core.beans.DependentEntityTypeEnum;
 
 public enum ProfileFieldDependentType implements DependentEntityTypeEnum<ProfileFieldDependentType> {
     WORKFLOW(1),
-    TARGET_GROUP(2);
+    TARGET_GROUP(2),
+    IMPORT_PROFILE(3),
+    EXPORT_PROFILE(4);
 
     private final int id;
 

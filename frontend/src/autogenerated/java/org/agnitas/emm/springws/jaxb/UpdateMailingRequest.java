@@ -12,12 +12,15 @@
 package org.agnitas.emm.springws.jaxb;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlSchemaType;
 import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 
 /**
@@ -56,6 +59,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *         &lt;element name="linefeed" type="{http://www.w3.org/2001/XMLSchema}int"/&gt;
  *         &lt;element name="format" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="onePixel" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
+ *         &lt;element name="plannedDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/&gt;
  *       &lt;/all&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -98,6 +102,10 @@ public class UpdateMailingRequest {
     protected String format;
     @XmlElement(required = true)
     protected String onePixel;
+    @XmlElement(type = String.class)
+    @XmlJavaTypeAdapter(DateAdapter.class)
+    @XmlSchemaType(name = "dateTime")
+    protected Date plannedDate;
 
     /**
      * Gets the value of the mailingID property.
@@ -457,6 +465,30 @@ public class UpdateMailingRequest {
      */
     public void setOnePixel(String value) {
         this.onePixel = value;
+    }
+
+    /**
+     * Gets the value of the plannedDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public Date getPlannedDate() {
+        return plannedDate;
+    }
+
+    /**
+     * Sets the value of the plannedDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setPlannedDate(Date value) {
+        this.plannedDate = value;
     }
 
 

@@ -27,7 +27,7 @@ Class           | Used for
 `js-editor-eql` | ?
 
 
-```htmlexample
+```html
 <div class="form-group">
   <div class="col-sm-4">
     <label class="form-label">

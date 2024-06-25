@@ -39,6 +39,7 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Prope
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CONVERSION_RATE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.DEVELOPMENT_DETAILED;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.DEVELOPMENT_NET;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.DOI;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.FORMAT_TYPE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.HARD_BOUNCES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.HTML;
@@ -128,7 +129,7 @@ public class BirtReportSettingsUtils {
     public static final List<BirtReportSettingsUtils.Properties> MAILING_OPENER_GROUP = Arrays.asList(OPENERS_MEASURED, OPENERS_INVISIBLE, OPENERES_TOTAL, OPENING_ANONYM);
     public static final List<BirtReportSettingsUtils.Properties> MAILING_DEVICES_GROUP = Arrays.asList(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, OPENER_DEVICES, CLICKER_DEVICES, ACTIVATE_LINK_STATISTICS);
     
-    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP = Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS);
+    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP = Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS, DOI);
     public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_ANALYSIS_GROUP = Arrays.asList(OPENERS_MEASURED, CLICKING_RECIPIENT, CLICKERS_AFTER_DEVICE);
     
     public static final List<BirtReportSettingsUtils.Properties> TOP_DOMAIN_WITHOUT_GROUP = Arrays.asList(SENT_MAILS, HARD_BOUNCES, SOFT_BOUNCES, OPENERS, CLICKING_RECIPIENT);
@@ -578,8 +579,9 @@ public class BirtReportSettingsUtils {
         ACTIVITY_ANALYSIS("activityAnalysis", "statistic.recipient.activity.analysis"),
         
         SENT_MAILS("sentMails", "statistic.mails.sent"),
-        OPENERS("openers", "birt.report.opens");
-    
+        OPENERS("openers", "birt.report.opens"),
+        DOI("recipientDOI", "recipient.DOI");
+
         private final String propName;
         private final String labelCode;
     

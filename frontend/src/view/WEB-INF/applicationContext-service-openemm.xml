@@ -73,7 +73,6 @@
 		<lookup-method name="getBeanCompanyService" bean="ComCompanyService" />
 		<lookup-method name="getBeanAdminService" bean="AdminService" />
 		<lookup-method name="getBeanMaildropStatusService" bean="MaildropStatusService" />
-		<lookup-method name="getBeanPreviewFactory" bean="PreviewFactory" />
 		<lookup-method name="getBeanServerStatusService" bean="ServerStatusService" />
 	</bean>
 

@@ -13,7 +13,6 @@ package org.agnitas.backend;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.StringTokenizer;
 
 import org.agnitas.util.Log;
 
@@ -49,24 +48,19 @@ public class Destroyer implements Closeable {
 		 */
 		@Override
 		public boolean accept(File dir, String name) {
-			boolean st;
-			StringTokenizer tok;
-
-			st = false;
-			tok = new StringTokenizer(name, "=");
-			if (tok.countTokens() == 6) {
-				int n;
-				long mid;
-
-				for (n = 0; n < 3; ++n) {
-					tok.nextToken();
-				}
-				mid = Long.decode(tok.nextToken()).longValue();
-				if (mid == mailingID) {
-					st = true;
+			String[]	parts = name.split ("=");
+			
+			if (parts.length == 6) {
+				String[]	mailingIDParts = parts[3].split ("[^0-9]+");
+				
+				if (mailingIDParts.length > 0) {
+					long	filenameMailingID = Long.parseLong (mailingIDParts[mailingIDParts.length - 1]);
+					
+					if (filenameMailingID == mailingID)
+						return true;
 				}
 			}
-			return st;
+			return false;
 		}
 	}
 
@@ -113,12 +107,14 @@ public class Destroyer implements Closeable {
 	public String destroy() throws Exception {
 		String msg;
 		String path;
+		String destination;
 
 		msg = "Destroy:";
 		path = data.targetPath();
-		msg += " [" + path;
+		destination = data.mailing.outputDirectory("deleted");
+		msg += " [" + path + " -> " + destination;
 		try {
-			msg += " " + doDestroy(path);
+			msg += " " + doDestroy(path, destination);
 			msg += " done";
 		} catch (Exception e) {
 			msg += " failed: " + e.toString();
@@ -133,7 +129,7 @@ public class Destroyer implements Closeable {
 	 * @param path the directory to search for
 	 * @return number of files deleted
 	 */
-	private int doDestroy(String path) throws Exception {
+	private int doDestroy(String path, String destination) throws Exception {
 		File file;
 		File[] files;
 		int n;
@@ -141,8 +137,14 @@ public class Destroyer implements Closeable {
 		file = new File(path);
 		files = file.listFiles(new DestroyFilter(mailingID));
 		for (n = 0; n < files.length; ++n) {
-			if (!files[n].delete()) {
-				data.logging(Log.ERROR, "destroy", "File " + files[n] + " cannot be removed");
+			File current = files[n];
+			File target = new File(destination, current.getName ());
+			
+			if (! current.renameTo (target)) {
+				data.logging(Log.ERROR, "destroy", "File " + current + " cannot be moved to " + target + ", try to remove it");
+				if (!current.delete()) {
+					data.logging(Log.ERROR, "destroy", "File " + current + " cannot be removed");
+				}
 			}
 		}
 		return files.length;

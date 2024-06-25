@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
@@ -208,7 +208,7 @@
                         <span><emm:formatDate value="${userAction.timestamp}" format="${localeTableFormat}"/></span>
                     </display:column>
 
-                    <display:column property="username"
+                    <display:column property="displayName"
                                     sortProperty="username"
                                     titleKey="logon.username"
                                     sortable="true"

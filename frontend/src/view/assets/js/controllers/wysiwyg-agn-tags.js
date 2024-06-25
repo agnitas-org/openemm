@@ -8,6 +8,27 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function() {
   var insertTagsHandlers = {};
   var selectTagsHandlers = {};
 
+  insertTagsHandlers["agnFULLVIEW"] = function () {
+    const $option = $('#agn-tag-name').children('option:selected');
+    const name = $option.val();
+    if (!name) {
+      return;
+    }
+
+    if (!$('#createLinkToggle').prop('checked')) {
+      return '[' + name + ']';
+    }
+
+    var linkText = $('#tagLinkText').val();
+    if (!linkText) {
+      linkText = 'fullview';
+    }
+
+    return '<a href="[' + name + ']">' + linkText + '</a>';
+  }
+
+  insertTagsHandlers["agnWEBVIEW"] = insertTagsHandlers["agnFULLVIEW"];
+
   insertTagsHandlers["agnFORM"] = function () {
     var $option = $('#agn-tag-name').children('option:selected');
     var name = $option.val(),
@@ -50,6 +71,9 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function() {
     });
   }
 
+  selectTagsHandlers["agnFULLVIEW"] = selectTagsHandlers["agnFORM"];
+  selectTagsHandlers["agnWEBVIEW"] = selectTagsHandlers["agnFULLVIEW"];
+
   function selectTag(name, attributes) {
     var $inputs = $('#agn-tag-attributes');
 
@@ -67,16 +91,16 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function() {
             break;
         }
       });
-
-      try {
-        var extendedAttributes = Template.dom(name + '-extended-attributes');
-        if(extendedAttributes) {
-          $inputs.append(extendedAttributes);
-        }
-      } catch(e) { /* do nothing */ }
-
-      AGN.runAll($inputs);
     }
+
+    try {
+      const extendedAttributes = Template.dom(name + '-extended-attributes');
+      if(extendedAttributes) {
+        $inputs.append(extendedAttributes);
+      }
+    } catch(e) { /* do nothing */ }
+
+    AGN.runAll($inputs);
   }
 
   function composeTag() {

@@ -52,4 +52,12 @@ public class UserActivityLogForm extends PaginationForm {
     public void setUsername(String userName) {
         this.username = userName;
     }
+
+    public void setDateFrom(FormDate dateFrom) {
+        this.dateFrom = dateFrom;
+    }
+
+    public void setDateTo(FormDate dateTo) {
+        this.dateTo = dateTo;
+    }
 }

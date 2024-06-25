@@ -10,10 +10,6 @@
 
 package com.agnitas.emm.core.recipient.converter;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FREQUENCY_COUNTER_WEEK;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FREQUENCY_COUNT_DAY;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FREQUENCY_COUNT_MONTH;
-
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -32,6 +28,7 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.dto.FrequencyCounter;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.forms.RecipientForm;
+import com.agnitas.emm.core.service.RecipientFieldService.RecipientOptionalField;
 
 public class RecipientDtoToRecipientFormConverter {
     private static final Logger logger = LogManager.getLogger(RecipientDtoToRecipientFormConverter.class);
@@ -60,9 +57,9 @@ public class RecipientDtoToRecipientFormConverter {
         form.setDataSourceId(recipientDto.getDataSourceId());
 
         FrequencyCounter frequencyCounter = new FrequencyCounter();
-        frequencyCounter.setDays(recipientDto.getIntValue(COLUMN_FREQUENCY_COUNT_DAY));
-        frequencyCounter.setWeeks(recipientDto.getIntValue(COLUMN_FREQUENCY_COUNTER_WEEK));
-        frequencyCounter.setMonths(recipientDto.getIntValue(COLUMN_FREQUENCY_COUNT_MONTH));
+        frequencyCounter.setDays(recipientDto.getIntValue(RecipientOptionalField.FrequencyCountDay.getColumnName()));
+        frequencyCounter.setWeeks(recipientDto.getIntValue(RecipientOptionalField.FrequencyCounterWeek.getColumnName()));
+        frequencyCounter.setMonths(recipientDto.getIntValue(RecipientOptionalField.FrequencycountMonth.getColumnName()));
         form.setCounter(frequencyCounter);
 
         Set<ProfileField> recipientFields = recipientDto.getDbColumns().values().stream()

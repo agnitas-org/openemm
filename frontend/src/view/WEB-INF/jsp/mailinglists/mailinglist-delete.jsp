@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -6,7 +6,7 @@
 
 <%--@elvariable id="mailinglistForm" type="com.agnitas.emm.core.mailinglist.form.MailinglistForm"--%>
 <%--@elvariable id="excludeDialog" type="java.lang.Boolean"--%>
-<%--@elvariable id="bulkDeleteForm" type="org.agnitas.web.forms.BulkDeleteForm"--%>
+<%--@elvariable id="bulkDeleteForm" type="org.agnitas.web.forms.BulkActionForm"--%>
 
 <div class="modal">
     <div class="modal-dialog">

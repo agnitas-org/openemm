@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
+import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
 import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -92,4 +94,12 @@ public interface BirtStatisticsService {
 	String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId) throws Exception;
 
     boolean isWorldMailing(Mailing mailing);
+
+	/**
+	 * Generates birt URL for report statistic.
+	 */
+	String getReportStatisticsUrl(Admin admin, BirtReportStatisticDto settings) throws Exception;
+
+	File getBirtReportTmpFile(BirtReportDownload birtDownload, final int companyId);
+
 }

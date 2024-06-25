@@ -1,0 +1,15 @@
+{
+  "name": "web-inf-agnitas",
+  "description": "Package for js/css libs, puppeteer",
+  "version": "1.0.0",
+  "dependencies": {
+    "ag-grid-community": "30.0.6",
+    "bootstrap": "5.2.3",
+    "chart.js": "4.3.0",
+    "chartjs-plugin-datalabels": "2.2.0",
+    "perfect-scrollbar": "1.5.5",
+    "puppeteer": "^21.6.0",
+    "select2": "4.1.0-rc.0",
+    "spectrum-colorpicker": "^1.8.1"
+  }
+}

@@ -12,6 +12,7 @@ package com.agnitas.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.LinkProperty.PropertyType;
 
 import bsh.StringUtil;
 
@@ -181,6 +184,39 @@ public class LinkUtils {
 				currentPosition += matcherStart;
 			}
 			return returnString;
+		}
+	}
+
+	public static void extendTrackableLink(TrackableLink link, String defaultExtensionString) {
+		if (StringUtils.isNotBlank(defaultExtensionString)) {
+			if (defaultExtensionString.startsWith("?")) {
+				defaultExtensionString = defaultExtensionString.substring(1);
+			}
+			String[] extensionProperties = defaultExtensionString.split("&");
+			for (String extensionProperty : extensionProperties) {
+				final int eqIndex = extensionProperty.indexOf('=');
+				final String[] extensionPropertyData = (eqIndex == -1) ? new String[] { extensionProperty, "" } : new String[] { extensionProperty.substring(0, eqIndex), extensionProperty.substring(eqIndex + 1) };
+				
+				String extensionPropertyName = URLDecoder.decode(extensionPropertyData[0], StandardCharsets.UTF_8);
+				String extensionPropertyValue = "";
+				if (extensionPropertyData.length > 1) {
+					extensionPropertyValue = URLDecoder.decode(extensionPropertyData[1], StandardCharsets.UTF_8);
+				}
+		
+				// Change link properties
+				List<LinkProperty> properties = link.getProperties();
+				boolean changedProperty = false;
+				for (LinkProperty property : properties) {
+					if (LinkUtils.isExtension(property) && property.getPropertyName().equals(extensionPropertyName)) {
+						property.setPropertyValue(extensionPropertyValue);
+						changedProperty = true;
+					}
+				}
+				if (!changedProperty) {
+					LinkProperty newProperty = new LinkProperty(PropertyType.LinkExtension, extensionPropertyName, extensionPropertyValue);
+					properties.add(newProperty);
+				}
+			}
 		}
 	}
 }

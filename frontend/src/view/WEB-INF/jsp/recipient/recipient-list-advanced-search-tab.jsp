@@ -1,11 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ page import="org.agnitas.web.forms.FormSearchParams" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
+<%--@elvariable id="listForm" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="forceShowAdvancedSearchTab" type="java.lang.Boolean"--%>
@@ -28,7 +28,7 @@
                 {
                     "mailTrackingAvailable": ${mailTrackingAvailable},
                     "helpLanguage": "${helplanguage}",
-                    "queryBuilderRules": ${emm:toJson(form.searchQueryBuilderRules)},
+                    "queryBuilderRules": ${emm:toJson(listForm.searchQueryBuilderRules)},
                     "queryBuilderFilters": ${queryBuilderFilters}
                 }
             </script>

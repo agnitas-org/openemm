@@ -108,10 +108,6 @@ public class DkimDAO {
 			return (key != null) && (domain != null) && (selector != null);
 		}
 
-		private boolean local() {
-			return local;
-		}
-
 		private boolean match(EMail email) {
 			if ((email != null) && (email.domain != null)) {
 				return domain.equalsIgnoreCase(email.domain);
@@ -135,6 +131,11 @@ public class DkimDAO {
 		private void ident(boolean nIdent) {
 			ident = nIdent;
 		}
+		
+		@Override
+		public String toString () {
+			return "DKIM (" + selector + "._domainkey." + domain + ")" + (ident ? "" : " (default)");
+		}
 
 		public long id() {
 			return id;
@@ -152,6 +153,10 @@ public class DkimDAO {
 			return selector;
 		}
 		
+		public boolean local() {
+			return local;
+		}
+
 		public boolean reportEnabled() {
 			return reportEnabled;
 		}
@@ -219,6 +224,10 @@ public class DkimDAO {
 			}
 		}
 		dkimReportEnabled (dbase);
+	}
+	
+	public List <DKIM> dkims () {
+		return dkims;
 	}
 
 	public DKIM find(EMail email, boolean useLocal, boolean useGlobal) {

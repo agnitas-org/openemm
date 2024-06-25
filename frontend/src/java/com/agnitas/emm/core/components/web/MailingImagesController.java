@@ -10,61 +10,12 @@
 
 package com.agnitas.emm.core.components.web;
 
-import static org.agnitas.beans.MailingComponentType.HostedImage;
-import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.zip.ZipOutputStream;
-
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.SFtpHelper;
-import org.agnitas.util.SFtpHelperFactory;
-import org.agnitas.util.ZipUtilities;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.SimpleActionForm;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.net.util.Base64;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
+import com.agnitas.emm.core.components.form.MailingImagesFormSearchParams;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
 import com.agnitas.emm.core.components.form.UploadMailingImagesForm;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService.ImportStatistics;
@@ -82,17 +33,69 @@ import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.MvcUtils;
+import org.agnitas.util.ZipUtilities;
+import org.agnitas.web.forms.BulkActionForm;
+import org.agnitas.web.forms.FormUtils;
+import org.agnitas.web.forms.SimpleActionForm;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.util.Base64;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.zip.ZipOutputStream;
+
+import static org.agnitas.beans.MailingComponentType.HostedImage;
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class MailingImagesController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingImagesController.class);
 
     protected static final String REDIRECT_TO_LIST_STR = "redirect:/mailing/%d/images/list.action";
-    protected static final String MESSAGES_VIEW = "messages";
-    private static final String SFTP_FILES_KEY = "sftpFiles";
-    private static final String SFTP_SERVER_KEY = "sftpServer";
     private static final String CHANGES_SAVED_MSG = "default.changes_saved";
 
     protected final ComMailingComponentsService mailingComponentsService;
@@ -101,16 +104,14 @@ public class MailingImagesController implements XssCheckAware {
     private final MailinglistApprovalService mailinglistApprovalService;
     private final UserActivityLogService userActivityLogService;
     private final ComMailingBaseService mailingBaseService;
-    private final SFtpHelperFactory sFtpHelperFactory;
     private final MaildropService maildropService;
 
     public MailingImagesController(ComMailingBaseService mailingBaseService, PreviewImageService previewImageService,
                                    MaildropService maildropService, UserActivityLogService userActivityLogService,
                                    ComMailingComponentsService mailingComponentsService, ConfigService configService,
-                                   MailinglistApprovalService mailinglistApprovalService, SFtpHelperFactory sFtpHelperFactory) {
+                                   MailinglistApprovalService mailinglistApprovalService) {
         this.configService = configService;
         this.maildropService = maildropService;
-        this.sFtpHelperFactory = sFtpHelperFactory;
         this.mailingBaseService = mailingBaseService;
         this.previewImageService = previewImageService;
         this.userActivityLogService = userActivityLogService;
@@ -130,17 +131,43 @@ public class MailingImagesController implements XssCheckAware {
         return MESSAGES_VIEW;
     }
 
+    @InitBinder
+    public void initBinder(WebDataBinder binder, Admin admin) {
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
+    }
+
+    @ModelAttribute
+    public MailingImagesFormSearchParams getSearchParams() {
+        return new MailingImagesFormSearchParams();
+    }
+
     @GetMapping("/list.action")
-    public String list(@PathVariable int mailingId, Admin admin, Model model) {
-        setMailingModelAttrs(mailingId, admin, model);
-        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-        model.addAttribute("images", mailingComponentsService.getMailingImages(admin.getCompanyID(), mailingId));
-        if (admin.permissionAllowed(Permission.MAILING_COMPONENTS_SFTP)) {
-            tryGetSftpServerInfoAttrs(admin, model);
+    public String list(@PathVariable int mailingId, @ModelAttribute("filter") MailingImagesOverviewFilter filter, @ModelAttribute MailingImagesFormSearchParams searchParams,
+                       Admin admin, Model model) {
+        if (isRedesignedUiUsed(admin)) {
+            FormUtils.syncSearchParams(searchParams, filter, true);
         }
+        addModelAttrs(mailingId, filter, admin, model);
 
         writeUserActivityLog(admin, "images list", "active tab - images");
         return "mailing_images_list";
+    }
+
+    protected void addModelAttrs(int mailingId, MailingImagesOverviewFilter filter, Admin admin, Model model) {
+        setMailingModelAttrs(mailingId, admin, model);
+        model.addAttribute("images", mailingComponentsService.getMailingImages(admin.getCompanyID(), mailingId, filter));
+        if (isRedesignedUiUsed(admin)) {
+            model.addAttribute("adminDateTimeFormat", admin.getDateTimeFormat());
+            model.addAttribute("imagesMimetypes", ImageUtils.ALLOWED_MIMETYPES);
+        } else {
+            AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+        }
+    }
+
+    @GetMapping("/search.action")
+    public String search(@PathVariable int mailingId, @ModelAttribute MailingImagesOverviewFilter filter, @ModelAttribute MailingImagesFormSearchParams searchParams) {
+        FormUtils.syncSearchParams(searchParams, filter, false);
+        return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
     private void setMailingModelAttrs(int mailingId, Admin admin, Model model) {
@@ -148,45 +175,20 @@ public class MailingImagesController implements XssCheckAware {
         Mailing mailing = mailingBaseService.getMailing(companyId, mailingId);
         model.addAttribute("mailingShortname", mailing.getShortname());
         model.addAttribute("isTemplate", mailing.isIsTemplate());
-        model.addAttribute("isMailingUndoAvailable", mailingId > 0 && mailingBaseService.checkUndoAvailable(mailingId));
-        model.addAttribute("workflowId", mailingId > 0 ? mailingBaseService.getWorkflowId(mailingId, companyId) : 0);
+        if (!isRedesignedUiUsed(admin)) {
+            model.addAttribute("isMailingUndoAvailable", mailingId > 0 && mailingBaseService.checkUndoAvailable(mailingId));
+            model.addAttribute("workflowId", mailingId > 0 ? mailingBaseService.getWorkflowId(mailingId, companyId) : 0);
+        }
         model.addAttribute("limitedRecipientOverview", maildropService.isActiveMailing(mailing.getId(), companyId)
                 && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
     }
 
-    private void tryGetSftpServerInfoAttrs(Admin admin, Model model) {
-        try {
-            String sftpServerAndCredentials = configService.getEncryptedValue(ConfigValue.DefaultSftpServerAndCredentials, admin.getCompanyID());
-            String sftpPrivateKey = configService.getEncryptedValue(ConfigValue.DefaultSftpPrivateKey, admin.getCompanyID());
-            if (StringUtils.isNotEmpty(sftpServerAndCredentials)) {
-                setSftpModelAttrsFromServer(model, sftpServerAndCredentials, sftpPrivateKey);
-            } else {
-                model.addAttribute(SFTP_SERVER_KEY, I18nString.getLocaleString("error.sftp_upload.no_server_config", admin.getLocale()));
-                model.addAttribute(SFTP_FILES_KEY, new ArrayList<>());
-            }
-        } catch (Exception e) {
-            logger.error("SFTP-server configuration is invalid: {}", e.getMessage(), e);
-            model.addAttribute(SFTP_SERVER_KEY, I18nString.getLocaleString("error.sftp_upload.invalid_server_config", admin.getLocale()));
-        }
-    }
-
-    private void setSftpModelAttrsFromServer(Model model, String sftpServerAndCredentials, String sftpPrivateKey) throws Exception {
-        try (SFtpHelper sFtpHelper = sFtpHelperFactory.createSFtpHelper(sftpServerAndCredentials)) {
-            if (StringUtils.isNotBlank(sftpPrivateKey)) {
-                sFtpHelper.setPrivateSshKeyData(sftpPrivateKey);
-            }
-            sFtpHelper.setAllowUnknownHostKeys(true);
-            sFtpHelper.connect();
-            String sftpServerWithoutCredentials = sFtpHelper.getSetUpDataWithoutString();
-            if (!sftpServerWithoutCredentials.endsWith("/")) {
-                sftpServerWithoutCredentials += "/";
-            }
-            model.addAttribute(SFTP_SERVER_KEY, sftpServerWithoutCredentials);
-            model.addAttribute(SFTP_FILES_KEY, sFtpHelper.scanForFiles(".*\\.(jpg|jpeg|gif|bmp|tif|tiff|png|svg)", true));
-        }
+    private static boolean isRedesignedUiUsed(Admin admin) {
+        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
     }
 
     @GetMapping("/{imageId:\\d+}/confirmDelete.action")
+    // TODO: EMMGUI-714: remove when old design will be removed
     public String confirmDelete(Admin admin, @PathVariable int mailingId, @PathVariable int imageId,
                                 Model model, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
         MailingComponent image = mailingComponentsService.getComponent(imageId, admin.getCompanyID());
@@ -201,6 +203,7 @@ public class MailingImagesController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/{imageId:\\d+}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    // TODO: EMMGUI-714: remove when old design will be removed
     public String delete(@PathVariable int mailingId, @PathVariable int imageId, Admin admin, Popups popups, HttpSession session) {
         MailingComponent image = mailingComponentsService.getComponent(imageId, admin.getCompanyID());
         if (isImageCantBeDeleted(image, popups)) {
@@ -211,6 +214,41 @@ public class MailingImagesController implements XssCheckAware {
         previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
         logDeletion(image, admin);
         popups.success("default.selection.deleted");
+        return String.format(REDIRECT_TO_LIST_STR, mailingId);
+    }
+
+    @GetMapping(value = "/deleteRedesigned.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDeleteRedesigned(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+        if (CollectionUtils.isEmpty(bulkIds)) {
+            popups.alert("bulkAction.nothing.image");
+            return MESSAGES_VIEW;
+        }
+        if (isImagesCantBeDeleted(bulkIds, mailingId, admin.getCompanyID(), popups)) {
+            return MESSAGES_VIEW;
+        }
+
+        List<String> items = mailingComponentsService.getImagesNames(mailingId, bulkIds, admin);
+        MvcUtils.addDeleteAttrs(model, items,
+                "mailing.Graphics_Component.delete", "image.delete.question",
+                "bulkAction.delete.image", "bulkAction.delete.image.question");
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @PermissionMapping("delete")
+    public String deleteRedesgigned(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups, HttpSession session) {
+        if (isImagesCantBeDeleted(bulkIds, mailingId, admin.getCompanyID(), popups)) {
+            return MESSAGES_VIEW;
+        }
+
+        if (mailingComponentsService.deleteImages(admin.getCompanyID(), mailingId, bulkIds)) {
+            previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
+        }
+
+        writeUserActivityLog(admin, "delete mailing images", String.format("%s(%d), deleted images (IDS: %s)",
+                mailingBaseService.getMailingName(mailingId, admin.getCompanyID()), mailingId, StringUtils.join(bulkIds, ", ")));
+        popups.success(SELECTION_DELETED_MSG);
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
@@ -235,6 +273,7 @@ public class MailingImagesController implements XssCheckAware {
     }
 
     @GetMapping("/confirmBulkDelete.action")
+    // TODO: EMMGUI-714: remove when old design will be removed
     public String confirmBulkDelete(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups) {
         if (CollectionUtils.isEmpty(form.getBulkIds())) {
             popups.alert("bulkAction.nothing.image");
@@ -247,6 +286,7 @@ public class MailingImagesController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/bulkDelete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    // TODO: EMMGUI-714: remove when old design will be removed
     public String bulkDelete(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups, HttpSession session) {
         if (isImagesCantBeDeleted(new HashSet<>(form.getBulkIds()), mailingId, admin.getCompanyID(), popups)) {
             return MESSAGES_VIEW;
@@ -353,12 +393,24 @@ public class MailingImagesController implements XssCheckAware {
     }
 
     @PostMapping("/{imageId:\\d+}/edit.action")
+    // TODO: EMMGUI-714: remove when old design will be removed
     public String edit(@PathVariable int mailingId, @PathVariable int imageId, Admin admin, Popups popups,
                        @RequestParam(required = false) String imgBase64, HttpSession session) {
-        if (StringUtils.isBlank(imgBase64)) {
+        return editImage(imgBase64, mailingId, imageId, admin, session, popups);
+    }
+
+    @PostMapping("/{imageId:\\d+}/editRedesigned.action")
+    @PermissionMapping("edit")
+    public String editRedesigned(@PathVariable int mailingId, @PathVariable int imageId, Admin admin, Popups popups,
+                       @RequestParam(required = false) String encodedFile, HttpSession session) {
+        return editImage(encodedFile, mailingId, imageId, admin, session, popups);
+    }
+
+    private String editImage(String endodedFile, int mailingId, int imageId, Admin admin, HttpSession session, Popups popups) {
+        if (StringUtils.isBlank(endodedFile)) {
             return String.format(REDIRECT_TO_LIST_STR, mailingId);
         }
-        if (mailingComponentsService.updateHostImage(mailingId, admin.getCompanyID(), imageId, Base64.decodeBase64(imgBase64))) {
+        if (mailingComponentsService.updateHostImage(mailingId, admin.getCompanyID(), imageId, Base64.decodeBase64(endodedFile))) {
             previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
             writeUserActivityLog(admin, "update mailing image", String.format("%s(%d), edited image (%d)",
                     mailingBaseService.getMailingName(mailingId, admin.getCompanyID()), mailingId, imageId));

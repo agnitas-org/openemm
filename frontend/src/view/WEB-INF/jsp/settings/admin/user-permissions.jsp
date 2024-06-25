@@ -1,7 +1,6 @@
 <%@page import="com.agnitas.emm.core.Permission"%>
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
 
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
@@ -19,48 +18,9 @@
         <c:set var="actionUrl" value="/admin/${adminRightsForm.adminID}/rights/view.action" />
     </c:otherwise>
 </c:choose>
-<mvc:form id="PermissionForm" servletRelativeAction="${actionUrl}" modelAttribute="adminRightsForm" data-controller="user-permissions">
-    <div class="tile">
-        <script data-initializer="user-permissions" type="application/json">        
-            {
-                "permissionCategories": ${emm:toJson(permissionCategories)}
-            }
-        </script>
-        <div class="tile-header">
-            <h2 class="headline"><mvc:message code="Search"/></h2>
-        </div>
-        <div class="tile-content tile-content-forms">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="permission-filter"><mvc:message code="settings.permission.type"/></label>
-                </div>
-                <div class="col-sm-8">
-                    <select name="filter" id="permission-filter" multiple class="form-control js-select-tags">
-                        <option value="granted"><mvc:message code="settings.permission.granted"/></option>
-                        <option value="grantedForUser"><mvc:message code="settings.permission.granted.user"/></option>
-                        <option value="grantedByGroup"><mvc:message code="settings.permission.granted.group"/></option>
-                        <option value="grantable"><mvc:message code="settings.permission.grantable"/></option>
-                        <option value="notGrantable"><mvc:message code="settings.permission.notavailable"/></option>
-                        <option value="new"><mvc:message code="New"/></option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-12">
-                    <div class="btn-group pull-right">
-                        <button type="button" class="btn btn-regular" data-action="reset-filter">
-                            <mvc:message code="button.search.reset"/>
-                        </button>
-                        <button type="button" class="btn btn-primary btn-regular pull-right"
-                                data-action="apply-filter">
-                            <i class="icon icon-search"></i>
-                            <span class="text"><mvc:message code="Search"/></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<mvc:form id="PermissionForm" servletRelativeAction="${actionUrl}" modelAttribute="adminRightsForm" data-controller="user|groups-permissions">
+	<%@ include file="./fragments/user-permissions-filter-tile.jspf" %>
+
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline"><mvc:message code ="UserRights.edit"/></h2>
@@ -96,7 +56,7 @@
 
 		<div class="tile-content tile-content-forms">
 			<c:forEach items="${permissionCategories}" var="category" varStatus="index">
-				<div class="tile">
+				<div class="tile permission-categories-tile">
 					<div class="tile-header">
 						<a href="#" class="headline" data-toggle-tile="#userrights_category_${index.index}">
 							<i class="icon tile-toggle icon-angle-up"></i>

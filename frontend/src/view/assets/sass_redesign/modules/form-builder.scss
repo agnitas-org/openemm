@@ -1,0 +1,163 @@
+
+.form-wrap.form-builder {
+  padding: 5px;
+  @include box-shadow(inset 0px 0px 5px 1px rgba(0,0,0,0.3));
+  border-radius: 5px;
+  background-color: #e2e3e3;
+
+  .form-field {
+    cursor: move;
+    background-color: $white !important;
+    @include clearfix;
+
+    .frm-holder {
+      cursor: auto;
+    }
+
+    .field-actions {
+      display: none;
+      opacity: 1;
+    }
+
+    .field-label {
+      @extend .text-truncate;
+      max-width: calc(100% - 25px); // 25px ~= tooltip
+      margin-bottom: 0 !important;
+    }
+
+    .tooltip-element {
+      position: absolute;
+      margin-top: 6px;
+    }
+
+    &:hover {
+      .field-label {
+        max-width: calc(100% - 120px); // 120px ~= tooltip + field-actions
+      }
+      .field-actions {
+        display: block;
+      }
+    }
+    
+    .btn {
+      border: $border-default;
+    }
+  }
+
+  .frmb {
+    @include media-breakpoint-up(xl) {
+      width: calc(100% - 325px) !important;
+    }
+
+    h1 {
+      color: $black;
+    }
+
+    &>li {
+      border: 1px dotted rgba(0,0,0,0.3);
+    } 
+
+    .form-elements input[type='number'] {
+      width: 100% !important;
+    }
+  }
+
+  .cb-wrap {
+    @include media-breakpoint-up(xl) {
+      width: 320px !important;
+    }
+    .form-actions {
+      display: flex !important;
+      max-width: 100%;
+
+      button {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .input-control + .input-set-control {
+    margin-top: 5px;
+  }
+}
+
+.form-builder-dialog.positioned {
+  @extend .tile, .tile--notification, .tile--warning;
+  position: absolute !important;
+  top: 50% !important;;
+  left: 50% !important;;
+  @include translate(-50%, -50%);
+  width: 500px;
+  padding: $gap-md;
+
+  body.dark-theme & {
+    color: $white;
+  }
+
+  .button-wrap {
+    body &::before { // remove bottom arrow of the original modal 
+      content: unset;
+    }
+    display: flex;
+    gap: $gap;
+    button {
+      @extend .btn;
+      margin: 0 !important;
+      
+      &.yes {
+        @extend .btn-primary;
+        flex: 1;
+
+        &::before {
+          @include fa-content($fa-var-check);
+        }
+      }      
+      &.no {
+        @extend .btn-danger;
+        flex: 1;
+
+        &::before {
+          @include fa-content($fa-var-times);
+        }
+
+        &::after { // modal header close x btn
+          @include fa-content($fa-var-times-circle);
+          position: absolute;
+          top: -75px;
+          right: 0;
+          font-size: $font-size-lg;
+        }
+      }
+    }
+  }
+
+  &::before { // tile header
+    content: var(--warn-dialog-title, 'WarningINLINe');
+    color: $white;
+    background-color: $yellow;
+    margin-inline: -$gap;
+    margin-top: -$gap-md;
+    margin-bottom: $gap-md;
+    padding: $gap-sm $gap $gap-x-sm 55px;
+    font-size: $font-size-lg;
+    line-height: 30px;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:after { // triangle icon
+    @include fa-content($fa-var-exclamation-triangle);
+    position: absolute;
+    color: $white;
+    top: 13px;
+    left: $gap;
+    font-size: $font-size-lg;
+  }
+}
+
+body.dark-theme .form-wrap.form-builder {
+  color: $black;
+  .form-control {
+    color: $black;
+  }
+}

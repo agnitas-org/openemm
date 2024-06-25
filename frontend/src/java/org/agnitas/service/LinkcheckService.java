@@ -18,10 +18,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.agnitas.beans.Mailing;
-import com.agnitas.messages.Message;
-import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.linkcheck.beans.LinkReachability;
@@ -29,7 +25,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.Mailing;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 
 /**
  * Checks availability of links.
@@ -48,7 +47,7 @@ public class LinkcheckService {
 	 *
 	 * @return list of check results of invalid links
 	 */
-	public List<LinkReachability> checkLinkReachability(Collection<ComTrackableLink> linkList) {
+	public List<LinkReachability> checkLinkReachability(Collection<TrackableLink> linkList) {
 		// Check all links...
 		Collection<LinkReachability> checkResults = checkReachability(linkList);
 		
@@ -66,7 +65,7 @@ public class LinkcheckService {
 	 *
 	 * @return list of check results
 	 */
-	public Collection<LinkReachability> checkReachability(Collection<ComTrackableLink> linkList) {
+	public Collection<LinkReachability> checkReachability(Collection<TrackableLink> linkList) {
 		// create usual <String> List
 		List<String> checkList = new Vector<>();
 
@@ -117,7 +116,7 @@ public class LinkcheckService {
 		List<Message> errors = new ArrayList<>();
 
 		try {
-			Collection<ComTrackableLink> links = mailing.getTrackableLinks().values();
+			Collection<TrackableLink> links = mailing.getTrackableLinks().values();
 			List<LinkReachability> resultList = checkLinkReachability(links);
 
 			for (LinkReachability availability : resultList) {

@@ -23,6 +23,7 @@ public class FormUploadComponentDto {
 	private String description;
 
 	private byte[] data = new byte[0];
+	private boolean overwriteExisting = true;
 
 	public MultipartFile getFile() {
 		return file;
@@ -46,6 +47,14 @@ public class FormUploadComponentDto {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public boolean isOverwriteExisting() {
+		return overwriteExisting;
+	}
+
+	public void setOverwriteExisting(boolean overwriteExisting) {
+		this.overwriteExisting = overwriteExisting;
 	}
 
 	public byte[] getData() {

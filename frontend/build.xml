@@ -543,9 +543,10 @@
 			<fileset dir="${emmSourcePath}/view/WEB-INF/conf" />
 		</copy>
 
-		<copy file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" tofile="${deploydir}${appname}/WEB-INF/tiles-defs.xml"/>
+        <mergexml source="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" change="${deploydir}${appname}/WEB-INF/tiles-defs-redesigned-basic.xml" dest="${deploydir}${appname}/WEB-INF/tiles-defs.xml" overwrite="true" />
 		<replace file="${deploydir}${appname}/WEB-INF/tiles-defs.xml" token="src/view/WEB-INF/tiles-config_3_0.dtd" value="http://tiles.apache.org/dtds/tiles-config_3_0.dtd" />
 		<delete file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" />
+        <delete file="${deploydir}${appname}/WEB-INF/tiles-defs-redesigned-basic.xml" />
 
 		<chmod file="${deploydir}${appname}/WEB-INF/sql/mariadb/*.sh" perm="ugo+x"/>
 

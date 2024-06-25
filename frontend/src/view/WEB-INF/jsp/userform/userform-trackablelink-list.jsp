@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.util.LinkUtils" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -49,7 +49,7 @@
                             <th><mvc:message code="LinkTracking"/></th>
 
                             <emm:ShowByPermission token="mailing.extend_trackable_links">
-                                <th><mvc:message code="mailing.extend_trackable_link"/></th>
+                                <th><mvc:message code="default.advanced"/></th>
                             </emm:ShowByPermission>
                             <th></th>
                             </thead>

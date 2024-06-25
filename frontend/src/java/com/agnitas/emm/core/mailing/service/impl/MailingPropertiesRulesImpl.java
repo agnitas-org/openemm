@@ -13,7 +13,6 @@ package com.agnitas.emm.core.mailing.service.impl;
 import java.util.Objects;
 
 import org.agnitas.dao.MailingStatus;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
@@ -45,12 +44,12 @@ public final class MailingPropertiesRulesImpl implements MailingPropertiesRules 
 	@Override
 	public final boolean mailingIsWorldSentOrActive(final Mailing mailing) {
 		if (mailing.getMailingType() == MailingType.INTERVAL) {
-			final String workStatus = mailingDao.getWorkStatus(mailing.getCompanyID(), mailing.getId());
+			final MailingStatus workStatus = mailingDao.getStatus(mailing.getCompanyID(), mailing.getId());
 			
-			return StringUtils.equals(workStatus, MailingStatus.ACTIVE.getDbKey());
+			return workStatus == MailingStatus.ACTIVE;
 		}
 
-		return this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
+		return maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
 	}
 	
 	@Override

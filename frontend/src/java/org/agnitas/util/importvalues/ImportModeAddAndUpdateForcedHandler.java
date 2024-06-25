@@ -27,6 +27,19 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
+/**
+ * Import mode "import.mode.add_update_forced"
+ * 	English text: "Add new recipients and update existing recipients. Subscribe unsubscribers.
+ * 	German text: "Neue Empfänger hinzufügen und bestehende aktualisieren. Abmelder auch anmelden.
+ * 
+ * In this import mode, the following recipients are subscribed to the defined mailinglists:
+ * 	- New recipients who do not have a binding for these mailinglists
+ * 	- Existing recipients who do not have a binding for these mailinglists
+ * 	- Existing recipients that have been unsubscribed by an admin
+ * 	- Existing recipients that have been unsubscribed by the recipient himself
+ * 
+ * NO bounced recipients!
+ */
 public class ImportModeAddAndUpdateForcedHandler extends ImportModeAddAndUpdateHandler {
     private static final transient Logger logger = LogManager.getLogger(ImportModeAddAndUpdateForcedHandler.class);
     

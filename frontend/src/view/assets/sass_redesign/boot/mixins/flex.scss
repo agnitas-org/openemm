@@ -1,0 +1,25 @@
+
+@mixin flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-wrap($wrap: wrap) {
+  display: flex;
+  flex-wrap: $wrap;
+}
+
+@mixin flex-column($gap: null) {
+  display: flex;
+  flex-direction: column;
+
+  @if $gap != null {
+    gap: $gap;
+  }
+}
+
+@mixin flex-row($gap) {
+  display: flex;
+  gap: $gap;
+}

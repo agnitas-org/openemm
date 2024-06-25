@@ -1,9 +1,9 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"    uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -30,9 +30,6 @@
 <c:set var="NORMAL_MAILING_TYPE" value="<%= MailingType.NORMAL %>"/>
 <c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
 
-<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, workflowId)}" scope="request"/>
-<c:set var="workflowDriven" value="${workflowParams.workflowId gt 0}"/>
-
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}" scope="request"/>
 <c:set var="mailingFollowUpAllowed" value="${false}"/>
 <%@include file="fragments/mailing-followup-allowed-flag.jspf" %>
@@ -40,14 +37,14 @@
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
-<tiles:insert page="../template.jsp">
-    <tiles:put name="header" type="string">
+<tiles:insertTemplate template="../template.jsp">
+    <tiles:putAttribute name="header" type="string">
         <ul class="tile-header-nav">
-            <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+            <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
         </ul>
-    </tiles:put>
+    </tiles:putAttribute>
 
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <div class="${isMailingGrid ? "tile-content-padded" : "row"}">
             <c:set var="mainBoxClass" value=""/>
             <c:set var="mainBoxViewModes" value=""/>
@@ -83,6 +80,10 @@
                         "workflowDriven": ${workflowDriven},
                         "mailingType": "${mailingSettingsForm.mailingType}",
                         "selectedRemovedMailinglistId": ${emm:toJson(selectedRemovedMailinglist.id)},
+                        <emm:ShowByPermission token="mailinglists.addresses">
+                            "mailinglists": ${emm:toJson(mailinglists)},
+                            "allowedMailinglistsAddresses": ${emm:toJson(mailinglists)},
+                        </emm:ShowByPermission>
                         "campaignEnableTargetGroups": ${isCampaignEnableTargetGroups},
                         "TARGET_MODE_OR": "${TARGET_MODE_OR}"
                     }
@@ -96,7 +97,7 @@
 
                     <jsp:include page="tiles/mailing-settings-frame-tile.jsp" />
 
-                    <script id="email-tile-template" type="text/x-mustache-template">
+                    <script id="email-tile-template" type="text/html">
                         <jsp:include page="tiles/mailing-settings-email-tile.jsp" />
                     </script>
 
@@ -127,10 +128,10 @@
                 </emm:ShowByPermission>
             </c:if>
         </div>
-    </tiles:put>
+    </tiles:putAttribute>
     
-    <tiles:putList name="footerItems">
-        <tiles:add>
+    <tiles:putListAttribute name="footerItems">
+        <tiles:addAttribute>
             <c:choose>
                 <c:when test="${mailingId gt 0}">
                     <a href="<c:url value="/mailing/${mailingId}/confirmDelete.action"/>" class="btn btn-large pull-left" data-confirm=''>
@@ -143,13 +144,17 @@
                     </a>
                 </c:otherwise>
             </c:choose>
-        </tiles:add>
-        <emm:ShowByPermission token="mailing.change">
-            <tiles:add>
-                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group="save">
-                    <span class="text"><mvc:message code="button.Save"/></span>
-                </button>
-            </tiles:add>
-        </emm:ShowByPermission>
-    </tiles:putList>
-</tiles:insert>
+        </tiles:addAttribute>
+        <c:set var="saveBtnAttrs" value="disabled"/>
+        <c:if test="${not isSettingsReadonly}">
+            <emm:ShowByPermission token="mailing.change">
+                <c:set var="saveBtnAttrs" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
+            </emm:ShowByPermission>
+        </c:if>
+        <tiles:addAttribute>
+            <button type="button" class="btn btn-large btn-primary pull-right" ${saveBtnAttrs}>
+                <span class="text"><mvc:message code="button.Save"/></span>
+            </button>
+        </tiles:addAttribute>
+    </tiles:putListAttribute>
+</tiles:insertTemplate>

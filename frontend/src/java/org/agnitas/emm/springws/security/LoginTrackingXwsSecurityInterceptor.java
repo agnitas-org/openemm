@@ -34,18 +34,16 @@ import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 
 import com.agnitas.emm.springws.WebserviceUserDetails;
-import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor {
 
 	private static final transient Logger LOGGER = LogManager.getLogger(LoginTrackingXwsSecurityInterceptor.class);
 	
 	private LoginTrackService loginTrackService;
-	private final WebserviceUserService webserviceUserService;
 	private ConfigService configService;
 	
-	public LoginTrackingXwsSecurityInterceptor(final WebserviceUserService webserviceUserService) {
-		this.webserviceUserService = Objects.requireNonNull(webserviceUserService, "WebserviceUserService is null");
+	public LoginTrackingXwsSecurityInterceptor() {
+		// Empty
 	}
 	
 	@Override
@@ -83,6 +81,8 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 
 			this.loginTrackService.trackLoginFailed(ip, usernameOrNull);
 				
+			
+			logger.fatal("STACK TRACE", e);
 			throw e;
 		}
 	
