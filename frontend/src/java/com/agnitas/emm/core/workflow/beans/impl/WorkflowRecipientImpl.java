@@ -98,20 +98,12 @@ public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowR
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		if (!super.equals(o)) {
-			return false;
-		}
+	public boolean equalsIgnoreI18n(Object o) {
 		WorkflowRecipientImpl that = (WorkflowRecipientImpl) o;
-		return mailinglistId == that.mailinglistId &&
-				Objects.equals(targets, that.targets) &&
-				targetsOption == that.targetsOption;
+		return super.equalsIgnoreI18n(o)
+			&& mailinglistId == that.mailinglistId
+			&& Objects.equals(targets, that.targets)
+			&& targetsOption == that.targetsOption;
 	}
 
 	@Override

@@ -247,10 +247,6 @@
 		<url-pattern>/sc</url-pattern>
 	</servlet-mapping>
 
-	<servlet>
-		<servlet-name>ShowImageServlet</servlet-name>
-		<servlet-class>com.agnitas.web.ShowImageServlet</servlet-class>
-	</servlet>
 	<servlet-mapping>
 		<servlet-name>ShowImageServlet</servlet-name>
 		<url-pattern>/image</url-pattern>

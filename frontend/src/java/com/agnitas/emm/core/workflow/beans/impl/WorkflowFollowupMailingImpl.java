@@ -60,19 +60,11 @@ public class WorkflowFollowupMailingImpl extends WorkflowMailingImpl implements 
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowFollowupMailingImpl that = (WorkflowFollowupMailingImpl) o;
-        return baseMailingId == that.baseMailingId &&
-                decisionCriterion == that.decisionCriterion;
+        return super.equalsIgnoreI18n(o)
+            && baseMailingId == that.baseMailingId
+            && decisionCriterion == that.decisionCriterion;
     }
 
     @Override

@@ -35,18 +35,10 @@ public class WorkflowParameterImpl extends BaseWorkflowIcon implements WorkflowP
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowParameterImpl that = (WorkflowParameterImpl) o;
-        return value == that.value;
+        return super.equalsIgnoreI18n(o)
+            && value == that.value;
     }
 
     @Override

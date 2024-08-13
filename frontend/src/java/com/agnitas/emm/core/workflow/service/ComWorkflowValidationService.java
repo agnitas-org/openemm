@@ -1826,7 +1826,7 @@ public class ComWorkflowValidationService {
             if (!oldIcon.getConnections().equals(newIcon.getConnections())) {
                 return true;
             }
-            if (!oldIcon.equals(newIcon) && !isMailingOrStopIconWithNotChangedType(oldIcon, newIcon)) {
+            if (!oldIcon.equalsIgnoreI18n(newIcon) && !isMailingOrStopIconWithNotChangedType(oldIcon, newIcon)) {
                 return true; // Only mailing and stop icons can be changed in a paused campaign
             }
         }

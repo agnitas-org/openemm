@@ -440,6 +440,7 @@ public class WorkflowController implements XssCheckAware {
                        @RequestParam(value = "forwardParams", required = false) String forwardParams,
                        @RequestParam(value = "forwardTargetItemId", required = false) String forwardTargetItemId,
                        @RequestParam(value = "showStatistic", required = false) boolean showStatistic,
+                       @RequestParam(required = false) Boolean startTimeAdjusted,
                        RedirectAttributes redirectModel,
                        HttpSession session,
                        Popups popups) throws Exception {
@@ -462,10 +463,6 @@ public class WorkflowController implements XssCheckAware {
 
         // Running or complete campaign should never be saved.
         if (existingStatus.isChangeable() && allowedToSave(existingWorkflow, newIcons, popups, existingStatus, newStatus)) {
-            if (existingStatus != STATUS_PAUSED && workflowService.adjustStartDateIfNeeded(newStatus, newIcons, admin)) {
-                popups.info("workflow.startdate.changed");
-            }
-
             // Set OPEN_STATUS until validation passed and workflow is activated.
             newWorkflow.setStatus(Workflow.WorkflowStatus.STATUS_OPEN);
             
@@ -544,7 +541,9 @@ public class WorkflowController implements XssCheckAware {
                 popups.alert("error.workflow.noStatistics.title");
             }
         }
-
+        if (Boolean.TRUE.equals(startTimeAdjusted)) {
+            popups.info("workflow.startdate.changed");
+        }
         return String.format("redirect:/workflow/%d/view.action", workflowForm.getWorkflowId());
     }
 

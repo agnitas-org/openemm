@@ -16,4 +16,9 @@
 			/WEB-INF/applicationContext*.xml
 		</param-value>
 	</context-param>
+
+	<servlet>
+		<servlet-name>ShowImageServlet</servlet-name>
+		<servlet-class>com.agnitas.web.ShowImageServlet</servlet-class>
+	</servlet>
 </web-app>

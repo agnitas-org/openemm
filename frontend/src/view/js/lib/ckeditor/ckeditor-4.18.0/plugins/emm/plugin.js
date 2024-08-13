@@ -88,7 +88,7 @@
             if(imgName) {
                 var imageUrl = imagesUrlsMap[imgName];
                 if(imageUrl) {
-                    data = data.replace(tagText, imageUrl);
+                    data = data.replace(tagText, encodeURI(imageUrl));
                 }
             }
         });
@@ -101,7 +101,7 @@
         if(!imagesUrlsMap) {
             return content;
         }
-        var urls = content.match(/(?:https?:\/\/)[\w\/\-.~:?#@!$&'()*+,;=]+/g);
+        const urls = content.match(/https?:\/\/[\w\-._~:\/?#@!$&'()*+,;=%]+/g);
         if(!urls) {
             return content;
         }
@@ -113,9 +113,9 @@
             var normalizedUrl = url.replace(/(\/mediapool_element)(\/\d+)?(\/\d+\/\d+\/0\/\d+)(\.\w+)?/, function (match, $1, $2, $3) {
                 return $1 + $3;
             });
-            var imageName = urlsImagesNamesMap[normalizedUrl];
+            const imageName = urlsImagesNamesMap[decodeURI(normalizedUrl)];
             if(imageName) {
-                content = content.replace(url, '[agnIMAGE name=\'' + imageName + '\']');
+                content = content.replace(url, `[agnIMAGE name="${imageName}"]`);
             }
         });
 

@@ -3089,9 +3089,40 @@ AGN.Lib.Controller.new('workflow-view', function() {
     function activate(validate, options) {
         Dialogs.Activation(
             function() {
+                editor
+                    .getNodesByTypes([Def.NODE_TYPE_START])
+                    .filter(isStartNodeDateInPast)
+                    .forEach(adjustStartDate); 
                 saveWorkflowFormData(validate, options);
             },
             getMailingNames().join('<br/>'));
+    }
+
+    function isStartNodeDateInPast(startNode) {
+        const startDate = _.clone(startNode.data.date);
+        startDate.setHours(startNode.data.hour);
+        startDate.setMinutes(startNode.data.minute);
+        startDate.setSeconds(0);
+        return startDate <= new Date();
+    }
+
+    function adjustStartDate(startNode) {
+        const currentAdminTime = $.ajax({url: AGN.url('/workflow/getCurrentAdminTime.action'), async: false}).responseJSON || {};
+        const hour = currentAdminTime.hour;
+        const minute = currentAdminTime.minute;
+        if (!hour || !minute) {
+            return;
+        }
+        startNode.data.date = new Date();
+        const startDate = startNode.data.date;
+        startDate.setHours(parseInt(hour, 10));
+        startDate.setMinutes(parseInt(minute, 10));
+        startDate.setSeconds(startDate.getSeconds() > 55 ? (startDate.getSeconds() + 120) : (startDate.getSeconds() + 60)); // add one-two minutes
+        startNode.data.hour = startDate.getHours();
+        startNode.data.minute = startDate.getMinutes();
+
+        editor.updateNodeTitle(startNode, true);
+        AGN.Lib.Form.get($('form#workflowForm')).setValueOnce('startTimeAdjusted', true);
     }
 
     function unpause(validate, options) {

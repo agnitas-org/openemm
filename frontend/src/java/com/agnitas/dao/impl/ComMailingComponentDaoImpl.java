@@ -472,12 +472,15 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		return update(logger, sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
 	}
 
-	@Override
-	public List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, int companyID) {
-		String query = "SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?) AND "
-				+ makeBulkInClauseForInteger("component_id", bulkIds);
-		return select(logger, query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
-	}
+    @Override
+    public List<String> getImagesNames(int mailingId, Set<Integer> ids, int companyID) {
+        String query = "SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?)";
+        if (CollectionUtils.isNotEmpty(ids)) {
+            query += " AND " + makeBulkInClauseForInteger("component_id", ids);
+        }
+
+        return select(logger, query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
+    }
 
 	@Override
 	public List<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter) {

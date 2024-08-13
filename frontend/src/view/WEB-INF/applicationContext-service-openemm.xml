@@ -95,6 +95,7 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="gridServiceWrapper" ref="GridServiceWrapper"/>
 		<property name="mailingSendService" ref="MailingSendService" />
+        <property name="mailingService" ref="MailingService" />
         <!-- Self injection for transactions -->
         <property name="selfReference" ref="MailingBaseService"/>
 	</bean>
@@ -105,6 +106,7 @@
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
 		<property name="targetDao" ref="TargetDao" />
+		<property name="trackableLinkService" ref="TrackableLinkService"/>
         <property name="mailingSendService" ref="MailingSendService"/>
         <property name="mailingService" ref="MailingService"/>
 	</bean>

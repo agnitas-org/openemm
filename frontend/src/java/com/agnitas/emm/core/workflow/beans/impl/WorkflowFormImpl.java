@@ -59,19 +59,11 @@ public class WorkflowFormImpl extends BaseWorkflowIcon implements WorkflowForm {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowFormImpl that = (WorkflowFormImpl) o;
-        return userFormId == that.userFormId &&
-                Objects.equals(formType, that.formType);
+        return super.equalsIgnoreI18n(o)
+            && userFormId == that.userFormId
+            && Objects.equals(formType, that.formType);
     }
 
     @Override

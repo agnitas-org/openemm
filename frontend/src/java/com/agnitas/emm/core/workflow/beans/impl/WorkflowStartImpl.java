@@ -106,18 +106,10 @@ public class WorkflowStartImpl extends WorkflowStartStopImpl implements Workflow
     }
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		if (!super.equals(o)) {
-			return false;
-		}
+	public boolean equalsIgnoreI18n(Object o) {
 		WorkflowStartImpl that = (WorkflowStartImpl) o;
-		return startType == that.startType;
+		return super.equalsIgnoreI18n(o)
+			&& startType == that.startType;
 	}
 
 	@Override

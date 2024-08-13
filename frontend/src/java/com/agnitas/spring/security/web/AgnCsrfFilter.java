@@ -38,6 +38,8 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
     private static final Pattern PUSH_API_PATTERN = Pattern.compile("^.*/push-api/.*$");
     private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
+    private static final Pattern SSO_PATTERN = Pattern.compile("^.*/sso(?:Select)?.action$");
+
     private static final String ERROR_PAGE_URL = "/csrf/error.action";
 
     public AgnCsrfFilter() {
@@ -106,7 +108,7 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     }
 
     private static boolean shouldSkipTokenComparison(HttpServletRequest req) {
-        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req);
+        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req) || isSsoRequest(req);
     }
 
     private static boolean isSentFromUserWebForm(HttpServletRequest req) {
@@ -119,6 +121,10 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
     private static boolean isMailingLockRequest(HttpServletRequest req) {
         return MAILING_LOCK_PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static final boolean isSsoRequest(final HttpServletRequest request) {
+        return SSO_PATTERN.matcher(request.getRequestURI()).matches();
     }
 
     private static boolean isAllowedHttpMethod(HttpServletRequest req) {

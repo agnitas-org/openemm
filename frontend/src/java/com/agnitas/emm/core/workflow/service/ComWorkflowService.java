@@ -288,6 +288,4 @@ public interface ComWorkflowService {
     int getWorkflowSenderId(Workflow workflow);
 
     String getInitialWorkflowSchema();
-
-    boolean adjustStartDateIfNeeded(WorkflowStatus newStatus, List<WorkflowIcon> icons, Admin admin);
 }

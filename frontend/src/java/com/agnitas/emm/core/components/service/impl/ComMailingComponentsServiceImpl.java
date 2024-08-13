@@ -689,4 +689,9 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	public List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, Admin admin) {
 		return mailingComponentDao.getImagesNames(mailingId, bulkIds, admin.getCompanyID());
 	}
+
+    @Override
+    public List<String> getImagesNames(int mailingId, int companyId) {
+        return mailingComponentDao.getImagesNames(mailingId, Collections.emptySet(), companyId);
+    }
 }

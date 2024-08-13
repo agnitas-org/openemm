@@ -105,24 +105,16 @@ public class WorkflowDeadlineImpl extends BaseWorkflowIcon implements WorkflowDe
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowDeadlineImpl that = (WorkflowDeadlineImpl) o;
-        return delayValue == that.delayValue &&
-                hour == that.hour &&
-                minute == that.minute &&
-                useTime == that.useTime &&
-                deadlineType == that.deadlineType &&
-                Objects.equals(date, that.date) &&
-                timeUnit == that.timeUnit;
+        return super.equalsIgnoreI18n(o)
+            && delayValue == that.delayValue
+            && hour == that.hour
+            && minute == that.minute
+            && useTime == that.useTime
+            && deadlineType == that.deadlineType
+            && Objects.equals(date, that.date)
+            && timeUnit == that.timeUnit;
     }
 
     @Override

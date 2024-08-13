@@ -119,19 +119,25 @@ public class BaseWorkflowIcon implements WorkflowIcon {
 
     @Override
     public boolean equals(Object o) {
+        BaseWorkflowIcon that = (BaseWorkflowIcon) o;
+        return equalsIgnoreI18n(o)
+            // i18n properties:
+            && Objects.equals(iconTitle, that.iconTitle)
+            && Objects.equals(iconComment, that.iconComment);
+    }
+
+    @Override
+    public boolean equalsIgnoreI18n(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BaseWorkflowIcon that = (BaseWorkflowIcon) o;
-        return id == that.id &&
-                x == that.x &&
-                y == that.y &&
-                type == that.type &&
-                filled == that.filled &&
-                editable == that.editable &&
-                Objects.equals(iconTitle, that.iconTitle) &&
-                Objects.equals(iconComment, that.iconComment);
+        return id == that.id
+            && x == that.x
+            && y == that.y
+            && type == that.type
+            && filled == that.filled
+            && editable == that.editable;
     }
-
 
     @Override
     public int hashCode() {

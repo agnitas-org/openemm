@@ -42,18 +42,10 @@ public class WorkflowMailingAwareImpl extends BaseWorkflowIcon implements Workfl
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowMailingAwareImpl that = (WorkflowMailingAwareImpl) o;
-        return mailingId == that.mailingId;
+        return super.equalsIgnoreI18n(o)
+            && mailingId == that.mailingId;
     }
 
     @Override

@@ -59,19 +59,11 @@ public class WorkflowImportImpl extends BaseWorkflowIcon implements WorkflowImpo
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowImportImpl that = (WorkflowImportImpl) o;
-        return autoImportId == that.autoImportId &&
-                isErrorTolerant == that.isErrorTolerant;
+        return super.equalsIgnoreI18n(o)
+            && autoImportId == that.autoImportId
+            && isErrorTolerant == that.isErrorTolerant;
     }
 
     @Override

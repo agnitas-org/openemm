@@ -3597,34 +3597,25 @@ public class AgnUtils {
             return rdirDomain + "/";
         }
     }
-	
+
 	public static List<String> sortCollectionWithItemsFirst(Collection<String> sourceCollection, String... keepItemsFirst) {
+		final Set<String> keepFirstSet = new HashSet<>(List.of(keepItemsFirst));
 		List<String> list = new ArrayList<>(sourceCollection);
+
 		list.sort((o1, o2) -> {
-			if (o1 == o2) {
-				return 0;
-			}
+			final boolean o1InFirst = keepFirstSet.contains(o1);
+			final boolean o2InFirst = keepFirstSet.contains(o2);
 
-			if (o1 == null) {
+			if(o1InFirst && !o2InFirst) {
+				return -1;
+			} else if(!o1InFirst && o2InFirst) {
 				return 1;
+			} else {
+				// o1 and o2 are in the same segment of the list
+				return o1.compareTo(o2);
 			}
-
-			if (o1.equals(o2)) {
-				return 0;
-			}
-
-			for (String item : keepItemsFirst) {
-				if (o1.equalsIgnoreCase(item)) {
-					return -1;
-				}
-			}
-			for (String item : keepItemsFirst) {
-				if (o2.equalsIgnoreCase(item)) {
-					return 1;
-				}
-			}
-			return o1.compareTo(o2);
 		});
+
 		return list;
 	}
 	

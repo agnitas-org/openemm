@@ -129,7 +129,7 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
       if ( $el.is('[data-sort]') ) {
         if ($el.data('sort') === 'alphabetic') {
           options.sorter = function (data) {
-            data.sort(function(a, b) {
+            data.sort((a, b) => {
               if ($(a.element).is('[data-no-sort]')) {
                 return -1;
               } else if ($(b.element).is('[data-no-sort]')) {

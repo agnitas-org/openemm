@@ -97,4 +97,14 @@ public interface WorkflowIcon {
     default List<WorkflowDependency> getDependencies() {
         return new ArrayList<>();
     }
+
+    /**
+     * The original method includes properties that can vary depending on the user's locale.
+     * This method compares icons for cases where such properties can be ignored.
+     *
+     * @param o the object to compare
+     * @return {@code true} if the objects are equal, {@code false} otherwise
+     */
+    @JsonIgnore
+    boolean equalsIgnoreI18n(Object o);
 }

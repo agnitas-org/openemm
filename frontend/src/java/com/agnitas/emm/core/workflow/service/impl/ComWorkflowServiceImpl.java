@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -47,7 +45,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.agnitas.messages.I18nString;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.MediaTypeStatus;
@@ -2874,38 +2871,5 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
         start.setConnections(List.of(new WorkflowConnectionImpl(recipient.getId())));
         return workflowDataParser.serializeWorkflowIcons(List.of(start, recipient));
-    }
-
-    @Override
-    // if start date is in past when activating, then we adjust it to current date and time
-    public boolean adjustStartDateIfNeeded(WorkflowStatus newStatus, List<WorkflowIcon> icons, Admin admin) {
-        TimeZone timeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
-
-        if (!newStatus.equals(Workflow.WorkflowStatus.STATUS_ACTIVE)
-                || !workflowValidationService.isStartDateInPast(icons, timeZone)) {
-            return false;
-        }
-
-        Optional<WorkflowStartStop> startIcon = icons.stream()
-                .filter(i -> i.getType() == WorkflowIconType.START.getId())
-                .map(i -> ((WorkflowStartStop) i))
-                .findFirst();
-
-        if (startIcon.isEmpty()) {
-            return false;
-        }
-
-        LocalDateTime adminLocalDateTime = LocalDateTime.now().plusMinutes(1)
-                .atZone(ZoneId.systemDefault())
-                .withZoneSameInstant(timeZone.toZoneId())
-                .toLocalDateTime();
-
-        WorkflowStartStop icon = startIcon.get();
-        icon.setDate(Date.from(adminLocalDateTime.atZone(ZoneId.systemDefault()).toInstant()));
-        icon.setHour(adminLocalDateTime.getHour());
-        icon.setMinute(adminLocalDateTime.getMinute());
-        icon.setIconTitle(I18nString.getLocaleString("workflow.start.StartDate", admin.getLocale()) + ":\n" + admin.getDateTimeFormat().format(icon.getDate()));
-
-        return true;
     }
 }

@@ -54,8 +54,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * The caching is done for performance reasons and the caching timeout is set in emm configuration
  */
 public class ShowImageServlet extends HttpServlet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ShowImageServlet.class);
+
+	private static final Logger logger = LogManager.getLogger(ShowImageServlet.class);
 
     /**
      * Dummy object to be stored in cache for not found images.
@@ -225,6 +225,10 @@ public class ShowImageServlet extends HttpServlet {
 						}
 					}
 				}
+
+				if (image == null && StringUtils.isNotBlank(request.getParameter("upi"))) {
+					image = getUploadedImage(Integer.parseInt(request.getParameter("upi")));
+				}
 	
 				if (image != null) {
 					if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
@@ -276,6 +280,10 @@ public class ShowImageServlet extends HttpServlet {
 	 * @param isMobileDevice
 	 */
 	protected DeliverableImage getMediapoolImage(int companyID, int elementID, boolean noCache, boolean isMobileDevice) {
+		return null;
+	}
+
+	protected DeliverableImage getUploadedImage(int id) {
 		return null;
 	}
 

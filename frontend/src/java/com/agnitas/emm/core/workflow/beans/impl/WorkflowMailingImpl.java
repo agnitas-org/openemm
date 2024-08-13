@@ -78,22 +78,14 @@ public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements Wor
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-			return true;
-		}
-        if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-        if (!super.equals(o)) {
-			return false;
-		}
+    public boolean equalsIgnoreI18n(Object o) {
         WorkflowMailingImpl that = (WorkflowMailingImpl) o;
-        return autoReport == that.autoReport &&
-                skipEmptyBlocks == that.skipEmptyBlocks &&
-                doubleCheck == that.doubleCheck &&
-                maxRecipients == that.maxRecipients &&
-                blocksize == that.blocksize;
+        return super.equalsIgnoreI18n(o)
+            && autoReport == that.autoReport
+            && skipEmptyBlocks == that.skipEmptyBlocks
+            && doubleCheck == that.doubleCheck
+            && maxRecipients == that.maxRecipients
+            && blocksize == that.blocksize;
     }
 
     @Override

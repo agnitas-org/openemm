@@ -110,5 +110,7 @@ public interface ComMailingComponentsService {
     void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImagesNames);
 
 	List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, Admin admin);
+    List<String> getImagesNames(int mailingId, int companyId);
+
 
 }
