@@ -22,7 +22,7 @@ Forum for OpenEMM **Support**:
 
 **Extensions** for OpenEMM:
 
-[OpenEMM Plus](https://www.agnitas.de/openemm-plus/)
+[OpenEMM Plus](https://www.agnitas.de/en/openemm-plus/)
 
 
 
