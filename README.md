@@ -16,12 +16,13 @@ Forum for OpenEMM **Support**:
 
 [OpenEMM Forum](https://forum.openemm.org)
 
-**Source Code** of OpenEMM
+**Source Code** of OpenEMM:
 
 [OpenEMM GitHub Repository](https://github.com/agnitas-org/openemm)
 
+**Extensions** for OpenEMM:
 
-
+[OpenEMM Plus](https://www.agnitas.de/openemm-plus/)
 
 
 
