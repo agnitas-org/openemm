@@ -46,7 +46,7 @@
                                 </table>
                             </div>
 
-                            <input id="uploadFile" type="file" name="uploadFile" class="form-control hidden">
+                            <input id="uploadFile" type="file" name="uploadFile" class="form-control hidden" disabled>
                         </c:when>
                         <c:otherwise>
                             <input id="uploadFile" type="file" name="uploadFile" class="form-control">

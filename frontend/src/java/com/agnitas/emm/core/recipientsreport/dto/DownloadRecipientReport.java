@@ -12,6 +12,8 @@ package com.agnitas.emm.core.recipientsreport.dto;
 
 import org.springframework.http.MediaType;
 
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+
 public class DownloadRecipientReport {
     
     private String filename;
@@ -21,6 +23,8 @@ public class DownloadRecipientReport {
     private MediaType mediaType;
     
     private boolean suplemental;
+    
+    private RecipientsReport.EntityType type;
     
     public String getFilename() {
         return filename;
@@ -52,5 +56,13 @@ public class DownloadRecipientReport {
     
     public void setSuplemental(boolean suplemental) {
         this.suplemental = suplemental;
+    }
+
+    public RecipientsReport.EntityType getType() {
+        return type;
+    }
+
+    public void setType(RecipientsReport.EntityType type) {
+        this.type = type;
     }
 }

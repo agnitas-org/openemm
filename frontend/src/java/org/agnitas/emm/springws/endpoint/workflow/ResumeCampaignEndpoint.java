@@ -59,8 +59,6 @@ public class ResumeCampaignEndpoint extends BaseEndpoint {
         if (!workflow.getStatus().equals(Workflow.WorkflowStatus.STATUS_PAUSED)) {
             throw new IllegalStateException("Workflow cannot be activated because it is not paused!");
         }
-        workflow.setStatus(Workflow.WorkflowStatus.STATUS_OPEN);
-        workflowService.saveWorkflow(workflow);
 
         Admin admin = adminService.getAdmin(workflowService.getWorkflowSenderId(workflow), companyId);
         workflowService.deleteWorkflowTargetConditions(admin.getCompanyID(), workflowId);

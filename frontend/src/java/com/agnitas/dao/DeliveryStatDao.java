@@ -30,6 +30,8 @@ public interface DeliveryStatDao {
 
 	MailingBackendLog getLastMailingBackendLog(int statusId);
 
+    MailingBackendLog getLastWorldMailingBackendLog(int statusId);
+
 	MaildropEntry getFirstMaildropGenerationStatus(int companyId, int mailingId, String statusField);
 
 	int getTotalMails(int mailingID);

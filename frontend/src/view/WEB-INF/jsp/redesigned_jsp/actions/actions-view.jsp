@@ -6,10 +6,10 @@
 <%@ page import="com.agnitas.emm.core.action.operations.ActionOperationType" %>
 <%@ page import="com.agnitas.emm.core.action.bean.EmmActionDependency" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="operationList" type="java.util.List"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionForm"--%>
@@ -26,7 +26,7 @@
 <c:if test="${not empty operationList}">
     <mvc:form id="emm-action-view" servletRelativeAction="/action/save.action" data-form="resource"
               data-controller="action-view" data-initializer="action-view" data-action="save-action-data"
-              modelAttribute="form" cssClass="tiles-container hidden" data-validator="action"
+              modelAttribute="form" cssClass="tiles-container" data-validator="action"
               data-editable-view="${agnEditViewKey}">
 
         <mvc:hidden path="id"/>
@@ -43,19 +43,10 @@
             }
         </script>
 
-        <div class="tiles-block flex-column" style="flex: 1">
-            <div id="settings-tile" class="tile" data-editable-tile>
+        <div class="tiles-block flex-column">
+            <div id="settings-tile" class="tile" data-editable-tile style="flex: 1 0 min-content">
                 <div class="tile-header">
-                    <h1 class="tile-title"><mvc:message code="Settings" /></h1>
-
-                    <div class="tile-controls">
-                        <div class="form-check form-switch">
-                            <mvc:checkbox path="active" id="active" cssClass="form-check-input" role="switch"/>
-                            <label class="form-label form-check-label text-capitalize" for="active">
-                                <mvc:message code="default.status.active"/>
-                            </label>
-                        </div>
-                    </div>
+                    <h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
                 </div>
                 <div class="tile-body">
                     <div class="row g-3">
@@ -100,28 +91,16 @@
 
             <c:if test="${form.id gt 0}">
                 <div id="used-in-tile" class="tile" data-editable-tile>
-                    <div class="tile-header">
-                        <h1 class="tile-title"><mvc:message code="default.usedIn" /></h1>
-                    </div>
-                    <div class="tile-body js-data-table" data-table="dependencies-table">
-                        <div class="js-data-table-body"></div>
-
-                        <mvc:message var="formMsg" code="Form" />
-                        <mvc:message var="mailingMsg" code="Mailing" />
-
-                        <c:forEach var="dependency" items="${dependencies}">
-                            <c:choose>
-                                <c:when test="${MAILING_DEPENDENCY_TYPE.name() eq dependency.type}">
-                                    <c:url var="viewLink" value="/mailing/${dependency.id}/settings.action"/>
-                                    <c:set target="${dependency}" property="typeMsg" value="${formMsg}"/>
-                                </c:when>
-                                <c:when test="${FORM_DEPENDENCY_TYPE.name() eq dependency.type}">
-                                    <c:url var="viewLink" value="/webform/${dependency.id}/view.action"/>
-                                    <c:set target="${dependency}" property="typeMsg" value="${mailingMsg}"/>
-                                </c:when>
-                            </c:choose>
-                            <c:set target="${dependency}" property="show" value="${viewLink}"/>
-                        </c:forEach>
+                    <div class="tile-body">
+                        <div class="table-wrapper" data-js-table="dependencies-table">
+                            <div class="table-wrapper__header">
+                                <h1 class="table-wrapper__title"><mvc:message code="default.usedIn" /></h1>
+                                <div class="table-wrapper__controls">
+                                    <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                                    <jsp:include page="../common/table/entries-label.jsp" />
+                                </div>
+                            </div>
+                        </div>
 
                         <script id="dependencies-table" type="application/json">
                             {
@@ -129,8 +108,9 @@
                                     {
                                         "headerName": "<mvc:message code='default.Type'/>",
                                         "editable": false,
-                                        "cellRenderer": "NotEscapedStringCellRenderer",
-                                        "field": "typeMsg"
+                                        "cellRenderer": "MustacheTemplateCellRender",
+                                        "cellRendererParams": {"templateName": "action-dependency-type"},
+                                        "field": "type"
                                     },
                                     {
                                         "headerName": "<mvc:message code='default.Name'/>",
@@ -141,7 +121,8 @@
                                 ],
                                 "options": {
                                     "pagination": false,
-                                    "showRecordsCount": "simple"
+                                    "showRecordsCount": "simple",
+                                    "viewLinkTemplate": "action-dependency-view-link"
                                 },
                                 "data": ${dependencies}
                             }
@@ -153,7 +134,7 @@
 
         <div id="steps-tile" class="tile" data-editable-tile>
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="Steps"/></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="Steps"/></h1>
             </div>
             <div class="tile-body js-scrollable">
                 <div class="row g-3">
@@ -165,11 +146,11 @@
                     <div class="col-12">
                         <div class="tile tile--md">
                             <div class="tile-header">
-                                <h2 class="tile-title"><mvc:message code="dashboard.tile.add" /></h2>
+                                <h2 class="tile-title text-truncate"><mvc:message code="dashboard.tile.add" /></h2>
 
                                 <emm:ShowByPermission token="actions.change">
                                     <div class="tile-controls">
-                                        <button class="btn btn-primary btn-icon-sm" type="button" data-action="add-new-module">
+                                        <button class="btn btn-primary btn-icon" type="button" data-action="add-new-module">
                                             <i class="icon icon-plus"></i>
                                         </button>
                                     </div>
@@ -215,6 +196,7 @@
     <%@include file="fragments/UpdateCustomer.jspf"%>
     <%@include file="fragments/ServiceMail.jspf"%>
     <%@include file="fragments/ExecuteScript.jspf"%>
+    <%@include file="fragments/SendLastNewsletter.jspf"%>
 
     <script id="common-module-data" type="text/x-mustache-template">
         <div class="col-12" data-action-module>
@@ -222,12 +204,12 @@
                 <div class="tile-header border-bottom">
                     <h2 class="tile-title">
                         <span data-module-index></span>
-                        {{- moduleName}}
+                        <span class="text-truncate">{{- moduleName}}</span>
                     </h2>
 
                     <emm:ShowByPermission token="actions.change">
                         <div class="tile-controls">
-                            <button class="btn btn-icon-sm btn-danger" type="button" data-action="action-delete-module" data-tooltip="<mvc:message code="button.Delete"/>">
+                            <button class="btn btn-icon btn-danger" type="button" data-action="action-delete-module" data-tooltip="<mvc:message code="button.Delete"/>">
                                 <i class="icon icon-trash-alt"></i>
                             </button>
                         </div>
@@ -239,11 +221,11 @@
 
     <script id="action-modal-editor" type="text/x-mustache-template">
         <div class="modal modal-adaptive modal-editor">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h1 class="modal-title">{{= title }}</h1>
-                        <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                             <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                         </button>
                     </div>
@@ -255,7 +237,7 @@
                     </div>
                     <emm:ShowByPermission token="actions.change">
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-primary flex-grow-1"
+                            <button type="button" class="btn btn-primary"
                                     data-sync-from="\#{{= id }}" data-sync-to="\#{{= target }}" data-bs-dismiss="modal" data-form-target="#emm-action-view" data-form-submit-event="">
                                 <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.Save"/></span>
@@ -267,3 +249,21 @@
         </div>
     </script>
 </c:if>
+
+<script id="action-dependency-view-link" type="text/x-mustache-template">
+    {{ if ('${MAILING_DEPENDENCY_TYPE.name()}' === type) { }}
+        /mailing/{{- id }}/settings.action
+    {{ } else if ('${FORM_DEPENDENCY_TYPE.name()}' === type) { }}
+        /webform/{{- id }}/view.action
+    {{ } }}
+</script>
+
+<script id="action-dependency-type" type="text/x-mustache-template">
+    <span class="text-truncate-table">
+        {{ if ('${MAILING_DEPENDENCY_TYPE.name()}' === value) { }}
+            <mvc:message code="Mailing" />
+        {{ } else if ('${FORM_DEPENDENCY_TYPE.name()}' === value) { }}
+            <mvc:message code="Form" />
+        {{ } }}
+    </span>
+</script>

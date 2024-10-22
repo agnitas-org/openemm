@@ -1,5 +1,7 @@
 <%@ page import="com.agnitas.beans.DeliveryStat" %>
 
+<%--@elvariable id="approvalsCount" type="java.lang.Integer"--%>
+
 <c:set var="STATUS_SENT" value="<%= DeliveryStat.STATUS_SENT %>" scope="page" />
 
 <div class="form-group">
@@ -20,6 +22,9 @@
                 <mvc:message code="mailing.send.ready" />
             </c:otherwise>
         </c:choose>
+        <c:if test="${not empty approvalsCount}">
+            <p><mvc:message code="mailing.approval.grant" arguments="${approvalsCount}"/></p>
+        </c:if>
     </div>
 </div>
 

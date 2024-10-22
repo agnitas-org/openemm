@@ -10,19 +10,19 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.ProfileFieldPermission;
+import com.agnitas.beans.impl.ProfileFieldImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
 import org.agnitas.beans.LightProfileField;
 import org.agnitas.beans.impl.LightProfileFieldImpl;
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -40,20 +40,18 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.ProfileFieldPermission;
-import com.agnitas.beans.impl.ProfileFieldImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
-import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * @deprecated Use RecipientFieldService instead
@@ -737,7 +735,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		int companySpecificFieldCount = currentFieldCount - RecipientStandardField.getAllRecipientStandardFieldColumnNames().size();
 		
 		// Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
-		for (String fieldName : ComCompanyDaoImpl.OLD_SOCIAL_MEDIA_FIELDS) {
+		for (String fieldName : RecipientFieldService.OLD_SOCIAL_MEDIA_FIELDS) {
 			if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldName)) {
 				companySpecificFieldCount--;
 			}
@@ -1101,5 +1099,10 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		clearProfileStructureCache(companyID);
 		
 		recipientFieldService.clearCachedData(companyID);
+	}
+
+	@Override
+	public Set<String> getCustomerColumns(int companyId) throws Exception {
+		return DbUtilities.getColumnDataTypes(dataSource, "customer_" + companyId + "_tbl").keySet();
 	}
 }

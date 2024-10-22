@@ -1,0 +1,59 @@
+
+.chart-timeline {
+  position: relative;
+  max-height: 70px;
+  border: $border-default;
+  border-radius: $border-radius-sm;
+}
+
+.chart-timeline__handle {
+  cursor: ew-resize;
+  z-index: 1;
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  right: 0;
+  width: 100%;
+  border: $border-color solid;
+  border-width: 1px 10px;
+  border-radius: $border-radius-sm;
+  touch-action: pan-x;
+  user-select: none;
+}
+.chart-timeline__handle_touch-area {
+  position: absolute;
+  height: 100%;
+  left: -$gap;
+  right: -$gap;
+}
+.chart-timeline__handle::before,
+.chart-timeline__handle::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: $gap-md;
+  bottom: $gap-md;
+  width: 2px;
+  background: $white;
+  border-radius: 2px;
+}
+.chart-timeline__handle:after {
+  left: auto;
+  right: -6px;
+}
+
+.chart-timeline__rest-left,
+.chart-timeline__rest-right {
+  position: absolute;
+  top: 0;
+  background: rgba(226, 238, 249, 0.5);
+  height: 100%;
+  padding: 0 5px;
+  border-radius: $border-radius-sm;
+}
+.chart-timeline__rest-left {
+  left: 0;
+}
+.chart-timeline__rest-right {
+  right: 0;
+}

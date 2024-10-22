@@ -36,9 +36,6 @@ public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
     @JsonProperty("page")
     private int page = 1;
 
-    @JsonProperty("use-recycle-bin")
-    private boolean useRecycleBin;
-
     private String searchQueryText;
 
     public Set<MailingType> getMailingTypes() {
@@ -81,14 +78,6 @@ public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
         this.searchQueryText = searchQueryText;
     }
 
-    public boolean isUseRecycleBin() {
-        return useRecycleBin;
-    }
-
-    public void setUseRecycleBin(boolean useRecycleBin) {
-        this.useRecycleBin = useRecycleBin;
-    }
-
     @Override
     public MailingOverviewWebStorageEntry clone() throws CloneNotSupportedException {
         MailingOverviewWebStorageEntry entry = (MailingOverviewWebStorageEntry) super.clone();
@@ -97,7 +86,6 @@ public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
         entry.setSelectedFields(selectedFields.isEmpty() ? Collections.emptyList() : new ArrayList<>(selectedFields));
         entry.setSearchQueryText(searchQueryText);
         entry.setPage(page);
-        entry.setUseRecycleBin(useRecycleBin);
         return entry;
     }
 }

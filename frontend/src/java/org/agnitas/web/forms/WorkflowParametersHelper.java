@@ -118,7 +118,7 @@ public class WorkflowParametersHelper {
         }
         
         if (type.isInstance(value)) {
-            return (T) value;
+            return (T) value; // suppress warning for this cast
         }
         
         return null;
@@ -139,7 +139,7 @@ public class WorkflowParametersHelper {
         }
         
         Integer workflowId = (Integer) request.getAttribute(WORKFLOW_ID);
-        if (workflowId == null && session != null) {
+        if ((workflowId == null || workflowId <= 0) && session != null) {
             workflowId = (Integer) session.getAttribute(WORKFLOW_ID);
         }
         

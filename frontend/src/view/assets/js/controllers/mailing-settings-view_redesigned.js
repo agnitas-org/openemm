@@ -27,7 +27,7 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   this.addDomInitializer('mailing-settings-view', function() {
     config = this.config;
     addRecipientsCountListener();
-    editWithCampaignBtn = Template.text('edit-with-campaign-btn');
+    editWithCampaignBtn = tryGetEditWithCampaignBtn();
     $form = $('#mailingSettingsForm');
     lastSelectedTargetsIds = $('#targetGroupIds').val() || [];
     displayTargetModeToggle(lastSelectedTargetsIds.length > 1);
@@ -35,6 +35,7 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     mailingListSelect.setReadonly(false);
     if (lastMailingListId > 0) {
       lastMailingListId = mailingListSelect.selectOption(lastMailingListId);
+      mailingListSelect.get$().trigger('change');
     }
     if (config.selectedRemovedMailinglistId) {
       showRemovedMailinglistError();
@@ -47,6 +48,14 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     decorateWorkflowDrivenInputs();
     hideFirstAndLastMediatypeControlArrows();
   });
+
+  function tryGetEditWithCampaignBtn() {
+    try {
+      return Template.text('edit-with-campaign-btn');
+    } catch (e) {
+      return '';
+    }
+  }
 
   function addRecipientsCountListener() {
     $(recipientsCountRelatedFields.join(',')).on('change', function () {
@@ -260,28 +269,25 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
         form.cleanFieldError('mailinglistId');
     }
 
-    // TODO: remove condition after GWUA-5688 will be successfully tested
-    if (config.allowedMailinglistsAddresses) {
-      const mailinglistData = config.mailinglists.find(function (data) {
-        return data.id == mailinglistId;
-      });
+    const mailinglistData = config.mailinglists.find(function (data) {
+      return data.id == mailinglistId;
+    });
 
-      if (mailinglistData) {
-        if (mailinglistData.senderEmail) {
-          $('#emailSenderMail').val(mailinglistData.senderEmail).trigger('change');
-        }
+    if (mailinglistData) {
+      if (mailinglistData.senderEmail) {
+        $('#emailSenderMail').val(mailinglistData.senderEmail).trigger('change');
+      }
 
-        if (mailinglistData.replyEmail) {
-          $('#emailReplyEmail').val(mailinglistData.replyEmail);
-        }
+      if (mailinglistData.replyEmail) {
+        $('#emailReplyEmail').val(mailinglistData.replyEmail);
+      }
 
-        if (mailinglistData.senderEmail && mailinglistData.replyEmail) {
-          Messages.info('mailing.default.sender_and_reply_emails_changed');
-        } else if (mailinglistData.senderEmail) {
-          Messages.info('mailing.default.sender_email_changed');
-        } else if (mailinglistData.replyEmail) {
-          Messages.info('mailing.default.reply_email_changed');
-        }
+      if (mailinglistData.senderEmail && mailinglistData.replyEmail) {
+        Messages.info('mailing.default.sender_and_reply_emails_changed');
+      } else if (mailinglistData.senderEmail) {
+        Messages.info('mailing.default.sender_email_changed');
+      } else if (mailinglistData.replyEmail) {
+        Messages.info('mailing.default.reply_email_changed');
       }
     }
   });
@@ -340,6 +346,8 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     var $el = $(this.el);
     var active = isMediatypeListElemActive($el);
     redrawMediatypeCheckboxes($el, active);
+    const showEditFrameContentBtn = $('#email-mediatype-switch, #sms-mediatype-switch').is(':checked');
+    $('#edit-frame-content-btn').toggle(showEditFrameContentBtn);
   });
 
   function isMediatypeListElemActive($el) {
@@ -484,4 +492,9 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     Modal.getInstance($contentForm).hide();
     saveMailing();
   });
+
+  this.addAction({'editor:change': 'validate-on-change'}, function () {
+    Form.get(this.el).validateField(this.el);
+  });
+
 });

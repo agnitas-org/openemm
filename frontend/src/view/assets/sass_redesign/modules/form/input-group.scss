@@ -1,6 +1,77 @@
+/*doc
+---
+title: Input group
+name: input_group
+category: Components - Input group
+---
+
+With `.input-group` text, buttons, or other custom inputs can be combined together with no breaks.
+
+```htmlexample
+<div class="d-flex flex-column gap-2">
+    <div class="input-group">
+        <span class="input-group-text">Default</span>
+        <input type="text" class="form-control" value="text">
+    </div>
+
+    <div class="input-group flex-nowrap">
+        <span class="input-group-text input-group-text--left-aligned">Default</span>
+        <span class="input-group-text text-truncate">Very loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong text</span>
+    </div>
+
+    <div class="input-group">
+        <select class="form-control js-select">
+          <option>ftp://</option>
+          <option>sftp://</option>
+        </select>
+        <input type="text" class="form-control" value="127.0.0.1">
+    </div>
+
+    <div class="input-group">
+        <input type="text" class="form-control" value="">
+        <button class="btn btn-icon btn-primary">
+          <i class="icon icon-plus"></i>
+        </button>
+    </div>
+</div>
+```
+
+Use `.input-groups` in order to create `.input-group` stack.
+
+```htmlexample
+<div class="input-groups">
+    <div class="input-group">
+        <span class="input-group-text">Default</span>
+        <input type="text" class="form-control" value="text">
+    </div>
+    <div class="input-group">
+        <span class="input-group-text input-group-text--dark">Dark background</span>
+        <input type="text" class="form-control" value="text">
+    </div>
+    <div class="input-group">
+        <span class="input-group-text disabled">Disabled</span>
+        <input type="text" class="form-control" value="text" disabled="">
+    </div>
+    <div class="input-group">
+        <span class="input-group-text input-group-text--disabled fw-semibold">Disabled and bold text</span>
+        <input type="text" class="form-control fw-semibold" value="text" disabled="">
+    </div>
+</div>
+```
+
+*/
 
 .input-group-text {
   height: $input-height;
+
+  &.text-truncate {
+    display: block !important;
+  }
+}
+
+.input-group-text--left-aligned {
+  display: block !important;
+  text-align: left;
 }
 
 .input-group-text--dark {
@@ -22,6 +93,10 @@
   grid-template-columns: min-content 1fr;
   row-gap: $gap-sm;
 
+  &--md {
+    row-gap: $gap-md;
+  }
+
   .input-group {
     display: contents;
 
@@ -40,6 +115,26 @@
     font-weight: $font-weight-normal;
     padding: $gap-x-sm $gap-sm - 1;
   }
+
+  > .select2-container {
+    &:nth-child(2) {
+      flex-grow: 0;
+
+      --select-dropdown-bg-color: var(--bs-gray-200);
+      --select2-selection-color: #{$dark-grey};
+      --input-icon-color: var(--select2-selection-color);
+
+      .select2-selection.form-control.select2-selection--single {
+        @include border-end-radius(0);
+      }
+    }
+
+    &:last-child {
+      .select2-selection.form-control.select2-selection--single {
+        @include border-start-radius(0);
+      }
+    }
+  }
 }
 
 // input group validation (rewrite of some bootstrap styles)
@@ -56,4 +151,8 @@
     margin-left: 0 !important;
     width: 100%;
   }
+}
+
+.input-group:has(.select2-container:nth-child(3)) {
+  overflow: hidden;
 }

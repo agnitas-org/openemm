@@ -35,7 +35,7 @@ public class WorkflowStateTransitionJobWorker extends JobWorker {
    	public String runJob() throws Exception {
    		ComWorkflowService workflowService = serviceLookupFactory.getBeanWorkflowService();
 
-        List<Workflow> workflowsToDeactivate = workflowService.getWorkflowsToDeactivate(getCompaniesConstrains());
+        List<Workflow> workflowsToDeactivate = workflowService.getWorkflowsToDeactivate(getCompaniesConstraints());
 
    		for (Workflow workflow : workflowsToDeactivate) {
    			int workflowId = workflow.getWorkflowId();
@@ -61,7 +61,7 @@ public class WorkflowStateTransitionJobWorker extends JobWorker {
     private void processPausedWorkflows(ComWorkflowService workflowService) throws Exception {
         ComWorkflowActivationService activationService = serviceLookupFactory.getBeanWorkflowActivationService();
         UserActivityLogService userActivityLogService = serviceLookupFactory.getBeanUserActivityLogService();
-        List<Workflow> workflowsToUnpause = workflowService.getWorkflowsToUnpause(getCompaniesConstrains());
+        List<Workflow> workflowsToUnpause = workflowService.getWorkflowsToUnpause(getCompaniesConstraints());
 
         for (Workflow workflow : workflowsToUnpause) {
             Admin pauseAdmin = workflowService.getPauseAdmin(workflow.getWorkflowId(), workflow.getCompanyId());

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.report.dto.RecipientEntityDto;
 import com.agnitas.emm.core.report.generator.constants.TableSpecialCharacters;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.messages.I18nString;
 
 @Component

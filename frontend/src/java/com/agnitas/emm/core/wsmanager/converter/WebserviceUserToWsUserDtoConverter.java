@@ -23,7 +23,6 @@ public class WebserviceUserToWsUserDtoConverter implements Converter<WebserviceU
         WebserviceUserDto userDto = new WebserviceUserDto();
         userDto.setUserName(user.getUsername());
         userDto.setEmail(user.getContactEmail());
-        userDto.setContactInfo(user.getContact());
         userDto.setPassword("");
         userDto.setCompanyId(user.getCompanyID());
         userDto.setActive(user.isActive());

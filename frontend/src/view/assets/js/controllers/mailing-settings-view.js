@@ -282,28 +282,26 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
         form.cleanFieldError('mailinglistId');
     }
 
-    // TODO: remove condition after GWUA-5688 will be successfully tested
-    if (config.allowedMailinglistsAddresses) {
-      const mailinglistData = config.mailinglists.find(function (data) {
-        return data.id == mailinglistId;
-      });
 
-      if (mailinglistData) {
-        if (mailinglistData.senderEmail) {
-          $('#emailSenderMail').val(mailinglistData.senderEmail).trigger('change');
-        }
+    const mailinglistData = config.mailinglists.find(function (data) {
+      return data.id == mailinglistId;
+    });
 
-        if (mailinglistData.replyEmail) {
-          $('#emailReplyEmail').val(mailinglistData.replyEmail);
-        }
+    if (mailinglistData) {
+      if (mailinglistData.senderEmail) {
+        $('#emailSenderMail').val(mailinglistData.senderEmail).trigger('change');
+      }
 
-        if (mailinglistData.senderEmail && mailinglistData.replyEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_and_reply_emails_changed'), 'info');
-        } else if (mailinglistData.senderEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_email_changed'), 'info');
-        } else if (mailinglistData.replyEmail) {
-          AGN.Lib.Messages(t('defaults.info'), t('mailing.default.reply_email_changed'), 'info');
-        }
+      if (mailinglistData.replyEmail) {
+        $('#emailReplyEmail').val(mailinglistData.replyEmail);
+      }
+
+      if (mailinglistData.senderEmail && mailinglistData.replyEmail) {
+        AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_and_reply_emails_changed'), 'info');
+      } else if (mailinglistData.senderEmail) {
+        AGN.Lib.Messages(t('defaults.info'), t('mailing.default.sender_email_changed'), 'info');
+      } else if (mailinglistData.replyEmail) {
+        AGN.Lib.Messages(t('defaults.info'), t('mailing.default.reply_email_changed'), 'info');
       }
     }
   });

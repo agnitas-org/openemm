@@ -57,7 +57,7 @@ public class MediapoolDAO {
 	private BlockData retrieveContent(DBase dbase, Image image, String idColumn, String table) throws SQLException {
 		BlockData rc = null;
 
-		if (dbase.exists (table)) try (DBase.With with = dbase.with ()) {
+		try (DBase.With with = dbase.with ()) {
 			Map <String, Object>	row = dbase.querys (with.cursor (),
 								    "SELECT content, mime_type " +
 								    "FROM " + table + " " +
@@ -66,14 +66,14 @@ public class MediapoolDAO {
 			if (row != null) {
 				rc = new BlockData ();
 
-					rc.comptype = 5;
-					rc.cid = image.filename();
-					rc.cidEmit = image.link();
-					rc.mime = dbase.asString(row.get("mime_type"));
-					rc.type = BlockData.RELATED_BINARY;
-					rc.binary = dbase.asBlob(row.get("content"));
-				}
+				rc.comptype = 5;
+				rc.cid = image.filename();
+				rc.cidEmit = image.link();
+				rc.mime = dbase.asString(row.get("mime_type"));
+				rc.type = BlockData.RELATED_BINARY;
+				rc.binary = dbase.asBlob(row.get("content"));
 			}
+		}
 		return rc;
 	}
 
@@ -81,30 +81,28 @@ public class MediapoolDAO {
 		Map<String, Image> rc = new HashMap<>();
 		List<Map<String, Object>> rq;
 
-		if (dbase.exists (table)) {
-			rq = dbase.query (with.cursor (),
-					  "SELECT " + idColumn + ", filename, mime_type " +
-					  "FROM  " + table + " " +
-					  "WHERE company_id IN (0, :companyID) AND filename IS NOT NULL " +
-					  "ORDER BY company_id",
-					  "companyID", companyID);
-			for (int n = 0; n < rq.size (); ++n) {
-				Map <String, Object>	row = rq.get (n);
-				long			id = dbase.asLong (row.get (idColumn));
-				String			filename = dbase.asString (row.get ("filename"));
-				String			mime = dbase.asString (row.get ("mime"));
-				String			ext;
-				int			pos;
+		rq = dbase.query (with.cursor (),
+				  "SELECT " + idColumn + ", filename, mime_type " +
+				  "FROM  " + table + " " +
+				  "WHERE company_id IN (0, :companyID) AND filename IS NOT NULL " +
+				  "ORDER BY company_id",
+				  "companyID", companyID);
+		for (int n = 0; n < rq.size (); ++n) {
+			Map <String, Object>	row = rq.get (n);
+			long			id = dbase.asLong (row.get (idColumn));
+			String			filename = dbase.asString (row.get ("filename"));
+			String			mime = dbase.asString (row.get ("mime"));
+			String			ext;
+			int			pos;
 					
-				if ((pos = filename.lastIndexOf ('.')) != -1) {
-					ext = filename.substring (pos + 1);
-				} else if ((mime != null) && ((pos = mime.indexOf ('/')) != -1)) {
-					ext = mime.substring (pos + 1);
-				} else {
-					ext = "jpg";
-				}
-				rc.put(filename, new Image(id, filename, String.format("%d.%s", id, ext), null));
+			if ((pos = filename.lastIndexOf ('.')) != -1) {
+				ext = filename.substring (pos + 1);
+			} else if ((mime != null) && ((pos = mime.indexOf ('/')) != -1)) {
+				ext = mime.substring (pos + 1);
+			} else {
+				ext = "jpg";
 			}
+			rc.put(filename, new Image(id, filename, String.format("%d.%s", id, ext), null));
 		}
 		return rc;
 	}

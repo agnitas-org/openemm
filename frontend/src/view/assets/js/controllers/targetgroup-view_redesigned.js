@@ -1,6 +1,10 @@
 AGN.Lib.Controller.new('target-group-view', function ($scope) {
 
   const Form = AGN.Lib.Form;
+  const ScheduleTimeTable = AGN.Lib.ScheduleTimeTable;
+  const PeriodRow = AGN.Lib.ScheduleTimeTable.PeriodRow;
+
+  let scheduleTimeTable;
 
   AGN.Lib.Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function () {
     AGN.Lib.Messages.alert('querybuilder.errors.general');
@@ -26,7 +30,7 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
     form.submit('', {skip_empty: true});
   });
 
-  this.addAction({submission: 'save-target'}, function() {
+  this.addAction({submission: 'save-target'}, function () {
     Form.get(this.el)
       .submit(this.el.data('submit-type'))
       .done(resp => {
@@ -43,4 +47,32 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
     eqlEditor.focus();
     eqlEditor.gotoLine(details.line, details.column);
   }
+
+  // Scheduler
+
+  this.addDomInitializer('target-scheduler-init', function () {
+    scheduleTimeTable?.clean();
+    scheduleTimeTable = new ScheduleTimeTable($('#target-scheduler-block'));
+
+    let period = [];
+    if (this.config.intervalAsJson) {
+      period = JSON.parse(this.config.intervalAsJson)
+        .map(object => PeriodRow.deserialize(object));
+    }
+
+    if (period.length === 0) {
+      scheduleTimeTable.addEmptyPeriodRow();
+    } else {
+      period.forEach(day => scheduleTimeTable.addRow(day));
+    }
+
+    Form.get(this.el).initFields();
+  });
+
+  this.addAction({click: 'activate-schedule'}, function () {
+    const url = this.el.attr('href');
+    const intervalAsJson = scheduleTimeTable.getSubmissionJson('period');
+
+    $.post(url, {intervalAsJson}).done(resp => AGN.Lib.Page.render(resp));
+  });
 });

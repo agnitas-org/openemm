@@ -3,16 +3,15 @@
     {
         "creationTime": "${pageContext.session.creationTime}",
         "lastAccessedTime": "${pageContext.session.lastAccessedTime}",
-        "maxInactiveInterval": "${pageContext.session.maxInactiveInterval}",
-        "sessionInfoUrl": "<c:url value="/session/info.action" />"
+        "maxInactiveInterval": "${pageContext.session.maxInactiveInterval}"
     }
 </script>
 
-<div class="sidebar__block sidebar__block-item gap-1 hidden" data-action="display-tooltip">
+<div id="session-timer-block" class="sidebar__block sidebar__block-item gap-1 position-relative hidden" data-action="display-tooltip">
     <h4 id="session-time-label">
         <%-- Loads by JS --%>
     </h4>
-    <span class="sidebar__tooltip text-nowrap">
+    <span class="sidebar__tooltip text-nowrap absolute-center-v">
         <mvc:message code="session.timer.mouseover" />
     </span>
 </div>

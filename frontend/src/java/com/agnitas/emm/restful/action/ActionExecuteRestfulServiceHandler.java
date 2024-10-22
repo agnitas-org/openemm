@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.servicemail.ExecutingActionFailedException;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -51,7 +51,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	public static final String NAMESPACE = "actionExecute";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComEmmActionService emmActionService;
+	private EmmActionService emmActionService;
 
 	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
@@ -59,7 +59,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	}
 	
 	@Required
-	public void setEmmActionService(ComEmmActionService emmActionService) {
+	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
 	}
 

@@ -1,0 +1,21 @@
+#new-mailing-modal {
+  #standard-mailing-card .status-badge {
+    background: $stat-or-badge-blue;
+  }
+
+  #emc-mailing-card .status-badge {
+    background: $stat-or-badge-dark-blue;
+  }
+
+  #sms-mailing-card .status-badge {
+    background: $stat-or-badge-cyan;
+  }
+
+  #post-mailing-card .status-badge {
+    background: $stat-or-badge-orange;
+  }
+
+  #import-mailing-card .horizontal-card__icon {
+    background: $stat-or-badge-grey;
+  }
+}

@@ -1,6 +1,8 @@
 (function() {
-    var Def = AGN.Lib.WM.Definitions,
-        Select = AGN.Lib.Select;
+    const Def = AGN.Lib.WM.Definitions;
+    const Utils = AGN.Lib.WM.Utils;
+    const Node = AGN.Lib.WM.Node;
+    const Select = AGN.Lib.Select;
 
     var EditorsHelper = function() {
         var options = {};
@@ -8,10 +10,6 @@
         this.editors = [];
         this.curEditor;
         this.curEditingNode;
-
-        this.getCurrentNode = function() {
-            return this.curEditingNode;
-        };
 
         this.getCurrentNodeId = function() {
             return this.curEditingNode.getId();
@@ -37,50 +35,65 @@
             return this.editors[name] = editor;
         };
 
-        this.isPausedWorkflow = function() {
-            return $('#workflow-status').val() === Def.constants.statusPaused;
-        }
-
         this._notAllowedToChangeDuringPause = function(node) {
-            return this.isPausedWorkflow()
+            return Utils.isPausedWorkflow()
                 && !_.union(Def.NODE_TYPES_MAILING, [Def.NODE_TYPE_STOP]).includes(node.getType());
         }
+        
+        this.hideNodeEditors = function () {
+          $('#node-editor > [id$="-editor"]').hide();
+        }
+        
+        this.activeNodeIcon = function (node) {
+          $('.node').removeClass('under-edit');
+          node.$element.addClass('under-edit');
+        }
+        
+        this.toggleSelectNodeInfoMsg = function (show) {
+          $('#select-node-notification').toggle(show);
+        }
 
-        this.showEditDialog = function(node, isActivatedWorkflow) {
-            var self = this;
-            var nodeType = node.getType();
+        this.exitNodeEditorIfActive = function (node) {
+          if (this.curEditingNode !== node) {
+            return;
+          }
+          this.hideNodeEditors();
+          this.toggleSelectNodeInfoMsg(true);
+        }
 
-            this.curEditingNode = node;
-            this.curEditor = this.editors[nodeType];
-            this.curEditor.fillEditor(node);
+        this.showEditDialog = function(node) {
+          const nodeType = node.getType();
+          this.curEditingNode = node;
+          this.curEditor = this.editors[nodeType];
+          this.curEditor.fillEditor(node);
 
-
-            $('#node-editor').html(this.getEditorPanel(nodeType)); // todo initialization
-            AGN.runAll($('#node-editor'));
-            
-              //   open: function(event) {
-                    var $panel = $(this);
-                    // var title = $panel.parent().find('.ui-dialog-title');
-
-                    // title.empty();
-                    // title.append($('<span class="dialog-title-image">' + self.curEditor.getTitle() + '</span>'));
-                    // title.find('.dialog-title-image').attr('data-type', nodeType);
-
-                    // todo
-                    // if (nodeType == Def.NODE_TYPE_RECIPIENT) {
-                    //     // Only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
-                    //     $panel.parent().find('.recipient-editor-select').prop('disabled', node.isDependent() || node.isInRecipientsChain());
-                    // }
-                    // if (isActivatedWorkflow || self._notAllowedToChangeDuringPause(self.curEditingNode)) {
-                    //     disableDialogItems($(event.target));
-                    // }
-                // },
-                //         self.curEditor.closeEditor();
-
+          this.activeNodeIcon(node);
+          this.toggleSelectNodeInfoMsg(false);
+          this.hideNodeEditors();
+          const $editor = this.getEditorPanel(nodeType);
+          AGN.runAll($editor.find('form'));
+          $('#node-editor').scrollTop(0)
+          $editor.show();
+          
+          if (nodeType === Def.NODE_TYPE_RECIPIENT) {
+              // Only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
+            $editor.parent().find('.recipient-editor-select').prop('disabled', node.isDependent() || node.isInRecipientsChain());
+          }
+          if (this.isReadOnlyMode()) {
+              disableDialogItems($editor);
+          }
+          if (this.curEditor.saveOnOpen && !this.isReadOnlyMode()) {
+            this.curEditor.save();
+          }
         };
+        
+        this.isReadOnlyMode = function () {
+          return Utils.checkActivation(!Node.isMailingNode(this.curEditingNode))
+            || this._notAllowedToChangeDuringPause(this.curEditingNode);
+        }
 
         this.showIconCommentDialog = function(node) {
-            var self = this;
+            const self = this;
 
             this.curEditingNode = node;
             this.curEditor = this.editors['icon-comment'];
@@ -101,30 +114,23 @@
         };
 
         this.saveIconComment = function(iconComment) {
-            var self = this;
+            const node = this.curEditingNode;
             options.getUndoManager().transaction(function() {
-                var node = self.curEditingNode;
                 options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node));
-
                 node.setComment(iconComment);
                 options.onChange(node);
             });
+            node.nodePopover?.update();
         };
 
-        this.saveCurrentEditorWithUndo = function(leaveOpen, mailingEditorBase) {
-            var self = this;
-
-            _.defer(function() {
+        this.saveCurrentEditorWithUndo = function(mailingEditorBase) {
+            _.defer(() => {
                 options.getUndoManager().startTransaction();
-
-                self.saveCurrentEditor(leaveOpen, mailingEditorBase, function() {
-                    options.getUndoManager().endTransaction();
-                });
+                this.saveCurrentEditor(mailingEditorBase, () => options.getUndoManager().endTransaction());
             });
-
         };
 
-        this.saveCurrentEditor = function(leaveOpen, mailingEditorBase, undoCallback) {
+        this.saveCurrentEditor = function(mailingEditorBase, undoCallback) {
             undoCallback = _.isFunction(undoCallback) ? undoCallback : _.noop;
 
             var self = this;
@@ -133,22 +139,18 @@
             options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node), self.curEditor);
             var editorData = self.curEditor.saveEditor();
 
-            // check to close editor dialog
-            if (!leaveOpen) {
-                self.cancelEditor();
-            }
-
             if (self.isNodeIsMailing(node)) {
                 var mailingId = editorData.mailingId;
                 if (mailingEditorBase) {
-                    mailingEditorBase.checkDifferentMailingLists(mailingId, function(mailingContent) {
-                        self.mailingSpecificSave(leaveOpen, mailingContent, editorData, mailingEditorBase);
+                    mailingEditorBase.checkDifferentMailingLists(mailingId,
+                      function(mailingContent) {
+                        self.mailingSpecificSave(mailingContent, editorData, mailingEditorBase);
 
                         undoCallback();
-                    }, function(mailingContent) {
+                    },
+                      function(mailingContent) {
                         self.curEditor.storedMailingContent = mailingContent;
                         self.curEditor.storedMailingId = mailingId;
-                        self.curEditor.storedLeaveOpen = leaveOpen;
                         self.curEditor.storedEditorData = editorData;
                         mailingEditorBase.initOneMailinglistWarningDialog(mailingEditorBase);
 
@@ -211,20 +213,18 @@
         /**
          * Save changes in mailing node of any type (normal, follow-up, action-based, date-based).
          *
-         * @param leaveOpen
          * @param mailingContent
          * @param editorData
          * @param mailingEditorBase
          */
-        this.mailingSpecificSave = function(leaveOpen, mailingContent, editorData, mailingEditorBase) {
-            var self = this;
-            var node = this.curEditingNode;
-            var data = node.getData();
+        this.mailingSpecificSave = function(mailingContent, editorData, mailingEditorBase) {
+            const node = this.curEditingNode;
+            const data = node.getData();
 
             $.extend(data, editorData);
 
-            if (node.isFilled() && _.isFunction(self.curEditor.isSetFilledAllowed)) {
-                if (!self.curEditor.isSetFilledAllowed()) {
+            if (node.isFilled() && _.isFunction(this.curEditor.isSetFilledAllowed)) {
+                if (!this.curEditor.isSetFilledAllowed()) {
                     node.setFilled(false);
                 }
             }
@@ -236,6 +236,8 @@
             if (options.onChange) {
                 options.onChange(node);
             }
+            node.nodePopover.update();
+            node.toggleInUseBadge();
         };
 
         /**
@@ -243,16 +245,7 @@
          */
         this.mailingSpecificSaveAfterMailinglistCheckModal = function(mailingEditorBase) {
             this.curEditor.storedMailingContent.mailinglistId = mailingEditorBase.configuredMailingData.mailinglistId;
-            this.mailingSpecificSave(this.curEditor.storedLeaveOpen, this.curEditor.storedMailingContent, this.curEditor.storedEditorData, mailingEditorBase);
-        };
-
-        this.cancelEditor = function() {
-            var nodeType = this.curEditingNode.getType();
-            var $panel = this.getEditorPanel(nodeType);
-
-            if ($panel.dialog('instance')) {
-                $panel.dialog('close');
-            }
+            this.mailingSpecificSave(this.curEditor.storedMailingContent, this.curEditor.storedEditorData, mailingEditorBase);
         };
 
         this.getEditorPanel = function(type) {
@@ -346,7 +339,7 @@
             if (!!extraForwardParams) {
                 forwardParams.push(extraForwardParams);
             }
-            var options = {
+            const options = {
                 forwardName: forwardName,
                 forwardParams: forwardParams.join(';')
             }
@@ -433,27 +426,19 @@
     };
 
     function disableDialogItems($target) {
-        $target.find('.disable-for-active').each(function(index, element) {
-            $(element).attr('disabled', true);
+        $target.find('.disable-for-active').each((i, element) => $(element).attr('disabled', true));
+
+        $target.find('.hide-for-active').each((index, element) => $(element).hide());
+
+        $target.find(':input:enabled[type!="hidden"]').not(':button, .select2, .js-select, .js-datepicker').each((i, element) => {
+            $(element).attr(['radio', 'checkbox'].includes($(element).prop('type')) ? 'disabled' : 'readonly', true);
         });
 
-        $target.find('.hide-for-active').each(function(index, element) {
-            $(element).hide();
-        });
-
-        $target.find(':input:enabled[type!="hidden"]').not(':button, .select2, .js-select, .js-datepicker').each(function(index, element) {
-            if ($(element).prop('type') == 'radio' || $(element).prop('type') == 'checkbox') {
+        $target.find(':input:enabled.select2, .select2 .btn, :input:enabled.js-select, select').not('.disabled, :disabled').each(function(index, element) {
+            if ($(element).prop('type') === 'text' || $(element).is('input, select')) {
                 $(element).attr('disabled', true);
             } else {
-                $(element).attr('readonly', true);
-            }
-        });
-
-        $target.find(':input:enabled.select2, :input:enabled.js-select, .select2-container').not('.disabled, :disabled').each(function(index, element) {
-            if ($(element).prop('type') == 'text' || $(element).is('input, select')) {
-                $(element).attr('disabled', true);
-            } else {
-                $(element).select2('disable');
+                $(element).prop('disabled', true);
             }
         });
 

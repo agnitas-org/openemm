@@ -12,6 +12,8 @@ package com.agnitas.emm.core.bounce.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class BounceFilterListForm extends PaginationForm {
 
     private int companyId;
@@ -58,5 +60,9 @@ public class BounceFilterListForm extends PaginationForm {
 
     public void setCompanyDomain(String companyDomain) {
         this.companyDomain = companyDomain;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || isNotBlank(description) || isNotBlank(filterAddress);
     }
 }

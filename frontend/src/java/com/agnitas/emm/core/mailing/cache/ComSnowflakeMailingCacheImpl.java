@@ -18,7 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 
 /**
  * Cache for light-weight mailing objects with DAO access.
@@ -30,7 +30,7 @@ public class ComSnowflakeMailingCacheImpl implements SnowflakeMailingCache {
 	private ConfigService configService;
 	
 	/** DAO for accessing mailing data. */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 
 	/** Internal cache structure. */
 	private TimeoutLRUMap<String, LightweightMailing> cache;
@@ -72,13 +72,13 @@ public class ComSnowflakeMailingCacheImpl implements SnowflakeMailingCache {
 	}
 
 	/**
-	 * Setter for ComMailingDao.
+	 * Setter for MailingDao.
 	 * 
-	 * @param comMailingDao
+	 * @param mailingDao
 	 *            DAO
 	 */
 	@Required
-	public void setComMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 }

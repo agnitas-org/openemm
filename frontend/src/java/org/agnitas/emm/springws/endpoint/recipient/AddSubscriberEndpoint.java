@@ -34,7 +34,7 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.springws.subscriptionrejection.service.SubscriptionRejectionService;
 
 import jakarta.annotation.Resource;

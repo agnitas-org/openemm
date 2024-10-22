@@ -28,23 +28,8 @@
         },
 
         init: function (editor) {
-            var commandName = 'showAgnTags';
-
-            editor.addCommand(commandName, {
-                exec: function (editor) {
-                    AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/agn-tagsRedesigned.action' : '/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
-                        if (code) {
-                            editor.insertHtml(code);
-                        }
-                    });
-                }
-            });
-
-            editor.ui.addButton('AGNTag', {
-                label: t('wysiwyg.dialogs.agn_tags.tooltip'),
-                command: commandName,
-                icon: this.path + 'emm.gif'
-            });
+            addAgnTagsButton(editor, this.path);
+            addAiTextGenerationButton(editor, this.path);
 
             var HREF = "href";
             var filteringRule = {
@@ -73,6 +58,46 @@
             prepareImagesMapToConfig(editor);
         }
     });
+
+    function addAgnTagsButton(editor, path) {
+        const commandName = 'showAgnTags';
+
+        editor.addCommand(commandName, {
+            exec: function (editor) {
+                AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/agn-tagsRedesigned.action' : '/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
+                    if (code) {
+                        editor.insertHtml(code);
+                    }
+                });
+            }
+        });
+
+        editor.ui.addButton('AGNTag', {
+            label: t('wysiwyg.dialogs.agn_tags.tooltip'),
+            command: commandName,
+            icon: path + 'emm.gif'
+        });
+    }
+
+    function addAiTextGenerationButton(editor, path) {
+        const commandName = 'generateAiText';
+
+        editor.addCommand(commandName, {
+            exec: function (editor) {
+                AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/aiTextGenerationRedesigned.action' : '/wysiwyg/dialogs/aiTextGeneration.action')).done(function (code) {
+                    if (code) {
+                        editor.insertHtml(code);
+                    }
+                });
+            }
+        });
+
+        editor.ui.addButton('AiTextGeneration', {
+            label: t('ai.textGeneration'),
+            command: commandName,
+            icon: path + 'ai-text-generation.png'
+        });
+    }
 
     function replaceAgnImageTags(editor, data) {
         var imagesUrlsMap = editor.config.emmMailingImages;
@@ -113,8 +138,15 @@
             var normalizedUrl = url.replace(/(\/mediapool_element)(\/\d+)?(\/\d+\/\d+\/0\/\d+)(\.\w+)?/, function (match, $1, $2, $3) {
                 return $1 + $3;
             });
-            const imageName = urlsImagesNamesMap[decodeURI(normalizedUrl)];
-            if(imageName) {
+
+            try {
+                normalizedUrl = decodeURI(normalizedUrl);
+            } catch (e) {
+                console.error('Error with encoding URL: ' + normalizedUrl);
+            }
+
+            const imageName = urlsImagesNamesMap[normalizedUrl];
+            if (imageName) {
                 content = content.replace(url, `[agnIMAGE name="${imageName}"]`);
             }
         });

@@ -10,19 +10,31 @@
 
 package com.agnitas.emm.core.admin.web;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-
-import com.agnitas.emm.core.Permission;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.form.AdminListForm;
+import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
+import com.agnitas.emm.core.admin.form.AdminRightsForm;
+import com.agnitas.emm.core.admin.form.validation.AdminFormValidator;
+import com.agnitas.emm.core.admin.service.AdminChangesLogService;
+import com.agnitas.emm.core.admin.service.AdminGroupService;
+import com.agnitas.emm.core.admin.service.AdminSavingResult;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.web.LogonController;
+import com.agnitas.service.ComCSVService;
+import com.agnitas.service.PdfService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.lowagie.text.DocumentException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.company.service.CompanyService;
@@ -33,7 +45,6 @@ import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormSearchParams;
@@ -58,31 +69,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.admin.form.AdminForm;
-import com.agnitas.emm.core.admin.form.AdminListForm;
-import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
-import com.agnitas.emm.core.admin.form.AdminRightsForm;
-import com.agnitas.emm.core.admin.form.validation.AdminFormValidator;
-import com.agnitas.emm.core.admin.service.AdminChangesLogService;
-import com.agnitas.emm.core.admin.service.AdminGroupService;
-import com.agnitas.emm.core.admin.service.AdminSavingResult;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.web.LogonController;
-import com.agnitas.service.ComCSVService;
-import com.agnitas.service.PdfService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.lowagie.text.DocumentException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
@@ -140,8 +138,9 @@ public class RestfulUserController implements XssCheckAware {
                                        final Model model, final HttpSession session,
                                        @RequestParam(value = FormSearchParams.RESET_PARAM_NAME, required = false) boolean resetSearchParams,
                                        @RequestParam(value = FormSearchParams.RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
+                                       @RequestParam(required = false) boolean restoreSort,
                                        @ModelAttribute AdminListFormSearchParams adminListSearchParams) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_OVERVIEW, form);
+        FormUtils.syncPaginationData(webStorage, WebStorage.ADMIN_OVERVIEW, form, restoreSort);
         if (resetSearchParams) {
             FormUtils.resetSearchParams(adminListSearchParams, form);
         } else {
@@ -172,7 +171,7 @@ public class RestfulUserController implements XssCheckAware {
         FormUtils.syncSearchParams(searchParams, form, false);
         model.addFlashAttribute("adminListForm", form);
 
-        return REDIRECT_TO_LIST;
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
     @RequestMapping("/{adminID}/view.action")
@@ -181,7 +180,7 @@ public class RestfulUserController implements XssCheckAware {
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
         if (adminToEdit.getGroups() == null || adminToEdit.getGroups().isEmpty()) {
             popups.alert("error.admin.invalidGroup");
@@ -206,7 +205,7 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.USERS_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     @RequestMapping("/{adminID}/welcome.action")
@@ -226,7 +225,7 @@ public class RestfulUserController implements XssCheckAware {
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
 
         prepareRightsViewPageData(admin, form, model, adminToEdit);
@@ -365,6 +364,7 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/{adminID}/confirmDelete.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String confirmDelete(final Admin admin, final AdminForm form, final Popups popups) {
         final int adminIdToDelete = form.getAdminID();
         final int companyID = admin.getCompanyID();
@@ -375,7 +375,7 @@ public class RestfulUserController implements XssCheckAware {
         }
 
         if (deleteConfirmSR.getResult() == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
 
         popups.addPopups(deleteConfirmSR);
@@ -383,6 +383,7 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/{adminID}/delete.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String delete(final Admin admin, final AdminForm form, final Popups popups,
                          final HttpServletResponse response, final HttpSession session,
                          RedirectAttributes redirectAttributes) {
@@ -404,8 +405,8 @@ public class RestfulUserController implements XssCheckAware {
             popups.alert("Error");
         }
 
-       redirectAttributes.addAttribute(FormSearchParams.RESTORE_PARAM_NAME, true);
-        return REDIRECT_TO_LIST;
+        redirectAttributes.addAttribute(FormSearchParams.RESTORE_PARAM_NAME, true);
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
     @ModelAttribute

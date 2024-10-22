@@ -10,22 +10,24 @@
 
 package org.agnitas.emm.core.commons.util;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.DateRowMapper;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * This class is intended to simplify access to the company_info_tbl
  */
 public class CompanyInfoDao extends BaseDaoImpl {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(CompanyInfoDao.class);
+
+	private static final Logger logger = LogManager.getLogger(CompanyInfoDao.class);
 	
 	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
 		String sql;
@@ -61,6 +63,11 @@ public class CompanyInfoDao extends BaseDaoImpl {
 		}
 		return returnMap;
 	}
+
+	public Date getChangeDate(ConfigValue configValue, int companyID) {
+		String query = "SELECT timestamp FROM company_info_tbl WHERE company_id = ? AND cname = ?";
+		return selectObjectDefaultNull(logger, query, DateRowMapper.INSTANCE, companyID, configValue.getName());
+	}
 	
 	public final void writeConfigValue(final int companyID, final String name, final String value, final String description) {
 		final int updated = updateExistingValue(companyID, name, value, description);
@@ -70,12 +77,12 @@ public class CompanyInfoDao extends BaseDaoImpl {
 		}
 	}
 	
-	private final int updateExistingValue(final int companyID, final String name, final String value, final String description) {
+	private int updateExistingValue(final int companyID, final String name, final String value, final String description) {
 		final String sql = "UPDATE company_info_tbl SET cvalue = ?, description = ?, timestamp = CURRENT_TIMESTAMP WHERE company_id = ? AND cname = ?";
 		return update(logger, sql, value, description, companyID, name);
 	}
 	
-	private final void insertNewValue(final int companyID, final String name, final String value, final String description) {
+	private void insertNewValue(final int companyID, final String name, final String value, final String description) {
 		final String sql = "INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 		update(logger, sql, companyID, name, value, description);
 	}

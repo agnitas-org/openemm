@@ -191,20 +191,24 @@ public class BC {
 				customerID = 0;
 			}
 
-			rc = setMissingVoucherCode(customerID);
-			if (rc) {
-				subscriberCount = 1;
-				if (data.maildropStatus.isCampaignMailing()) {
-					receiverQuery = "SELECT count(distinct cust.customer_id) FROM " + partFrom + " WHERE " + partCounter;
-					try {
-						receiverCount = data.dbase.queryLong(receiverQuery);
-					} catch (Exception e) {
-						data.logging(Log.ERROR, "bc", "Failed to count receiver using \"" + receiverQuery + "\", setting to " + subscriberCount + ": " + e.toString(), e);
+			try {
+				rc = setMissingVoucherCode(customerID);
+				if (rc) {
+					subscriberCount = 1;
+					if (data.maildropStatus.isCampaignMailing()) {
+						receiverQuery = "SELECT count(distinct cust.customer_id) FROM " + partFrom + " WHERE " + partCounter;
+						try {
+							receiverCount = data.dbase.queryLong(receiverQuery);
+						} catch (Exception e) {
+							data.logging(Log.ERROR, "bc", "Failed to count receiver using \"" + receiverQuery + "\", setting to " + subscriberCount + ": " + e.toString(), e);
+							receiverCount = subscriberCount;
+						}
+					} else {
 						receiverCount = subscriberCount;
 					}
-				} else {
-					receiverCount = subscriberCount;
 				}
+			} catch (SQLException e) {
+				rc = false;
 			}
 		} else {
 			data.logging(Log.ERROR, "bc", "Unsupported mailing type detected!");
@@ -219,7 +223,6 @@ public class BC {
 		partFrom = "FROM " + partFrom;
 		return rc;
 	}
-
 	/**
 	 * return number of subscriber for this newsletter,
 	 * i.e. the number of recipients the mail would
@@ -330,11 +333,11 @@ public class BC {
 	 * @return the final statement to write the recipients to the mailtrack table
 	 */
 	public String mailtrackStatement(String destination, int mediaType) {
-		if (!data.maildropStatus.isVerificationMailing()) {
+		if ((data.maildropStatus.id() != 0) && (!data.maildropStatus.isVerificationMailing()) && (!data.maildropStatus.isPreviewMailing())) {
 			String prefix = "INSERT INTO " + destination + " (maildrop_status_id, mailing_id, customer_id, mediatype, timestamp) ";
 			String	mediaTypeValue = mediaType == Media.TYPE_UNRELATED ? "NULL" : Integer.toString (mediaType);
 
-			if (data.maildropStatus.isCampaignMailing() || data.maildropStatus.isVerificationMailing()) {
+			if (data.maildropStatus.isCampaignMailing()) {
 				if (receiverCount > 0) {
 					return prefix + "VALUES (" + data.maildropStatus.id() + ", " + data.mailing.id() + ", " + data.campaignCustomerID + ", " + mediaTypeValue + ", CURRENT_TIMESTAMP)";
 				}
@@ -636,6 +639,7 @@ public class BC {
 		for (String rest : collect) {
 			if (rest != null) {
 				partSelect += " AND (" + rest + ")";
+				partCounter += " AND (" + rest + ")";
 				if (partReactivate != null) {
 					partReactivate += " AND (" + rest + ")";
 				}
@@ -1131,84 +1135,10 @@ public class BC {
 		return ok;
 	}
 
-	static class Voucher implements ResultSetExtractor<Object> {
-		private Data data;
-		private String retrieveQuery;
-		private String assignQuery;
-		private String currentQuery;
-		private String cleanupQuery;
-		private String name;
-		private long count;
-
-		public Voucher(Data nData, String nName, String nRetrieveQuery, String nAssignQuery, String nCurrentQuery, String nCleanupQuery) {
-			data = nData;
-			name = nName;
-			retrieveQuery = nRetrieveQuery;
-			assignQuery = nAssignQuery;
-			currentQuery = nCurrentQuery;
-			cleanupQuery = nCleanupQuery;
-			count = 0;
-		}
-
-		public String query() {
-			return retrieveQuery;
-		}
-
-		public long getCount() {
-			return count;
-		}
-
-		@Override
-		public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
-			try (Connection conn = data.dbase.getConnection(assignQuery)) {
-				boolean autoCommit = conn.getAutoCommit();
-
-				try {
-					conn.setAutoCommit(false);
-					try (PreparedStatement assignPrep = conn.prepareStatement(assignQuery);
-							PreparedStatement currentPrep = currentQuery != null ? conn.prepareStatement(currentQuery) : null;
-							PreparedStatement cleanupPrep = cleanupQuery != null ? conn.prepareStatement(cleanupQuery) : null) {
-						while (rset.next()) {
-							long customerID = rset.getLong(1);
-							String current = null;
-
-							if (currentPrep != null) {
-								currentPrep.setLong(1, customerID);
-								try (ResultSet temp = currentPrep.executeQuery()) {
-									while (temp.next()) {
-										current = temp.getString(1);
-									}
-								}
-							}
-							assignPrep.setLong(1, customerID);
-							long lcount = assignPrep.executeUpdate();
-
-							if ((lcount > 0) && (cleanupPrep != null) && (current != null)) {
-								cleanupPrep.setString(1, current);
-								cleanupPrep.executeUpdate();
-							}
-							count += lcount;
-							if (count % 1000 == 0) {
-								data.logging(Log.INFO, "bc", "Assigned " + count + " vouchers for " + name);
-								conn.commit();
-							}
-						}
-						data.logging(Log.INFO, "bc", "Finally assigned " + count + " vouchers for " + name);
-						conn.commit();
-					}
-				} finally {
-					conn.setAutoCommit(autoCommit);
-				}
-			}
-			return null;
-		}
-	}
-
 	private boolean fillMissingVoucherCodes() {
 		boolean ok = true;
 
 		if (data.references != null) {
-			boolean legacy = Str.atob (data.company.info ("legacy-bulk-voucher-assign", data.mailing.id ()), false);
 			int	voucherChunkSize = Str.atoi (data.company.info ("voucher-assign-chunk-size", data.mailing.id ()), 50000);
 			
 			String stmt = "";
@@ -1216,140 +1146,105 @@ public class BC {
 				for (Reference r : getReferences ()) {
 					if (r.isFullfilled () && r.isVoucher ()) {
 						long	cnt = 0;
-
-						if (! legacy) {
-							boolean	renew = voucherRenew (r);
+						boolean	renew = voucherRenew (r);
 							
-							if (renew) {
-								stmt = "SELECT customer_id FROM " + table;
-							} else {
-								stmt =
-									"SELECT bind.customer_id " +
-									"FROM " + table + " bind LEFT OUTER JOIN " + r.table () + " voucher ON voucher.customer_id = bind.customer_id " +
-									"WHERE voucher.customer_id IS NULL";
+						if (renew) {
+							stmt = "SELECT customer_id FROM " + table;
+						} else {
+							stmt =
+								"SELECT bind.customer_id " +
+								"FROM " + table + " bind LEFT OUTER JOIN " + r.table () + " voucher ON voucher.customer_id = bind.customer_id " +
+								"WHERE voucher.customer_id IS NULL";
+						}
+							
+						List <Map <String, Object>>	rc = data.dbase.query (stmt);
+						TLongList			customerIDs = new TLongArrayList (rc.size ());
+							
+						for (Map <String, Object> row : rc) {
+							long	customerID = data.dbase.asLong (row.get ("customer_id"));
+										
+							if (customerID > 0) {
+								customerIDs.add (customerID);
 							}
+						}
+
+						int		size = customerIDs.size ();
+						int		position = 0;
+						String		stmtFindOld =
+							"SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?";
+						String		stmtRemoveOld =
+							"DELETE FROM " + r.table () + " WHERE voucher_code = ?";
+						String		stmtAssign =
+							"UPDATE " + r.table () + " " +
+							"SET customer_id = ?, assign_date = current_timestamp, mailing_id = " + data.mailing.id () + " " +
+							"WHERE voucher_code = ? AND customer_id IS NULL";
 							
-							List <Map <String, Object>>	rc = data.dbase.query (stmt);
-							TLongList			customerIDs = new TLongArrayList (rc.size ());
-							
+						stmt = "SELECT voucher_code FROM " + r.table () + " WHERE customer_id IS NULL " +
+							(data.dbase.isOracle () ? "AND rownum <= :chunkSize" : "LIMIT :chunkSize");
+						while (position < size) {
+							int	remain = size - position;
+							int	chunk = remain < voucherChunkSize ? remain : voucherChunkSize;
+
+							List <String>	vouchers = new ArrayList <> ();
+
+							rc = data.dbase.query (stmt, "chunkSize", chunk);
 							for (Map <String, Object> row : rc) {
-								long	customerID = data.dbase.asLong (row.get ("customer_id"));
-										
-								if (customerID > 0) {
-									customerIDs.add (customerID);
+								String	voucher = data.dbase.asString (row.get ("voucher_code"));
+											
+								if (voucher != null) {
+									vouchers.add (voucher);
 								}
 							}
-
-							int		size = customerIDs.size ();
-							int		position = 0;
-							String		stmtFindOld =
-								"SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?";
-							String		stmtRemoveOld =
-								"DELETE FROM " + r.table () + " WHERE voucher_code = ?";
-							String		stmtAssign =
-								"UPDATE " + r.table () + " " +
-								"SET customer_id = ?, assign_date = current_timestamp, mailing_id = " + data.mailing.id () + " " +
-								"WHERE voucher_code = ? AND customer_id IS NULL";
-							
-							stmt = "SELECT voucher_code FROM " + r.table () + " WHERE customer_id IS NULL " +
-								(data.dbase.isOracle () ? "AND rownum <= :chunkSize" : "LIMIT :chunkSize");
-							while (position < size) {
-								int	remain = size - position;
-								int	chunk = remain < voucherChunkSize ? remain : voucherChunkSize;
-
-								List <String>	vouchers = new ArrayList <> ();
-
-								rc = data.dbase.query (stmt, "chunkSize", chunk);
-								for (Map <String, Object> row : rc) {
-									String	voucher = data.dbase.asString (row.get ("voucher_code"));
-											
-									if (voucher != null) {
-										vouchers.add (voucher);
-									}
-								}
 								
-								int		vsize = vouchers.size ();
-								int		vposition = 0;
-								if (vsize == 0) {
-									data.logging (Log.INFO, "bc", r.name () + ": no more free vouchers available, still expecting " + (size - position));
-									break;
+							int		vsize = vouchers.size ();
+							int		vposition = 0;
+							if (vsize == 0) {
+								data.logging (Log.WARNING, "bc", r.name () + ": no more free vouchers available, still expecting " + (size - position));
+								if (vouchersMandatory (r)) {
+									ok = false;
 								}
+								break;
+							}
 								
-								try (Connection conn = data.dbase.getConnection (stmtAssign)) {
-									boolean	autoCommit = conn.getAutoCommit ();
-									try {
-										conn.setAutoCommit (false);
-										try (PreparedStatement assignPrep = conn.prepareStatement (stmtAssign);
-										     PreparedStatement queryPrep = renew ? conn.prepareStatement (stmtFindOld) : null;
-										     PreparedStatement removePrep = renew ? conn.prepareStatement (stmtRemoveOld) : null) {
-											while ((position < size) && (vposition < vsize)) {
-												long	customerID = customerIDs.get (position++);
-												String	oldVoucher = null;
+							try (Connection conn = data.dbase.getConnection (stmtAssign)) {
+								boolean	autoCommit = conn.getAutoCommit ();
+								try {
+									conn.setAutoCommit (false);
+									try (PreparedStatement assignPrep = conn.prepareStatement (stmtAssign);
+									     PreparedStatement queryPrep = renew ? conn.prepareStatement (stmtFindOld) : null;
+									     PreparedStatement removePrep = renew ? conn.prepareStatement (stmtRemoveOld) : null) {
+										while ((position < size) && (vposition < vsize)) {
+											long	customerID = customerIDs.get (position++);
+											String	oldVoucher = null;
 									
-												if (renew && (queryPrep != null)) {
-													queryPrep.setLong (1, customerID);
-													try (ResultSet temp = queryPrep.executeQuery ()) {
-														while (temp.next ()) {
-															oldVoucher = temp.getString (1);
-														}
-													}
-												}
-												while (vposition < vsize) {
-													String	voucher = vouchers.get (vposition++);
-										
-													assignPrep.setLong (1, customerID);
-													assignPrep.setString (2, voucher);
-													if (assignPrep.executeUpdate () == 1) {
-														if (renew && (removePrep != null) && (oldVoucher != null)) {
-															removePrep.setString (1, oldVoucher);
-															removePrep.executeUpdate ();
-														}
-														++cnt;
-														break;
+											if (renew && (queryPrep != null)) {
+												queryPrep.setLong (1, customerID);
+												try (ResultSet temp = queryPrep.executeQuery ()) {
+													while (temp.next ()) {
+														oldVoucher = temp.getString (1);
 													}
 												}
 											}
-											conn.commit ();
+											while (vposition < vsize) {
+												String	voucher = vouchers.get (vposition++);
+										
+												assignPrep.setLong (1, customerID);
+												assignPrep.setString (2, voucher);
+												if (assignPrep.executeUpdate () == 1) {
+													if (renew && (removePrep != null) && (oldVoucher != null)) {
+														removePrep.setString (1, oldVoucher);
+														removePrep.executeUpdate ();
+													}
+													++cnt;
+													break;
+												}
+											}
 										}
-									} finally {
-										conn.setAutoCommit (autoCommit);
+										conn.commit ();
 									}
+								} finally {
+									conn.setAutoCommit (autoCommit);
 								}
-							}
-						} else {
-							Voucher	voucher;
-							String	assignQuery =
-								"UPDATE " + r.table () + " " +
-								"SET customer_id = ?, assign_date = CURRENT_TIMESTAMP, mailing_id = " + data.mailing.id () + " " +
-								"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? "AND rownum = 1" : "LIMIT 1");
-							
-							if (voucherRenew (r)) {
-								voucher = new Voucher (data, r.name (),
-										       "SELECT customer_id FROM " + table,
-										       assignQuery,
-										       "SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?",
-										       "DELETE FROM " + r.table () + " WHERE voucher_code = ?");
-							} else {
-								voucher = new Voucher (data, r.name (),
-										       "SELECT bind.customer_id " +
-										       "FROM " + table + " bind " +
-										       "WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)",
-										       assignQuery,
-										       null,
-										       null);
-							}
-
-							DBase.Retry<Long> rt = data.dbase.new Retry<>("voucher", data.dbase, data.dbase.cursor(voucher.query())) {
-								@Override
-								public void execute() throws SQLException {
-									cursor.query(voucher.query(), null, voucher);
-									priv = voucher.getCount();
-								}
-							};
-							if (data.dbase.retry(rt)) {
-								cnt = rt.priv != null ? rt.priv : 0L;
-							} else {
-								throw rt.error;
 							}
 						}
 						data.logging(Log.INFO, "bc", r.name() + ": set " + cnt + " new vouchers in " + r.table());
@@ -1366,8 +1261,8 @@ public class BC {
 		return ok;
 	}
 
-	private boolean setMissingVoucherCode(long customerID) {
-		boolean ok = true;
+	private boolean setMissingVoucherCode(long customerID) throws SQLException {
+		boolean success = true;
 
 		if (data.references != null) {
 			String stmt = "";
@@ -1396,6 +1291,9 @@ public class BC {
 							cnt = data.dbase.update (stmt, "customerID", customerID, "mailingID", data.mailing.id ());
 							if (cnt != 1) {
 								data.logging(Log.WARNING, "bc", r.name() + ": no new voucher found (" + cnt + ") for " + r.table());
+								if (vouchersMandatory (r)) {
+									success = false;
+								}
 							} else {
 								data.logging(Log.DEBUG, "bc", r.name() + ": new voucher assigned");
 								if (current != null) {
@@ -1413,12 +1311,12 @@ public class BC {
 						}
 					}
 				}
-			} catch (Exception e) {
+			} catch (SQLException e) {
 				data.logging(Log.ERROR, "bc", "Failed to assing single voucher: " + e.toString() + " using " + stmt, e);
-				ok = false;
+				throw e;
 			}
 		}
-		return ok;
+		return success;
 	}
 
 	private boolean voucherRenew(Reference r) {
@@ -1701,5 +1599,19 @@ public class BC {
 	
 	private boolean isSelectedTestMailing () {
 		return data.maildropStatus.isTestMailing () && data.maildropStatus.selectedTestRecipients ();
+	}
+	
+	private boolean vouchersMandatory (Reference r) throws SQLException {
+		boolean	rc = data.vouchersMandatory ();
+		
+		data.logging (rc ? Log.WARNING : Log.INFO, "bc", r.name () + ": insufficient voucher codes, mailing generation " + (rc ? "aborted" : "continues"));
+		if (rc && (data.maildropStatus.isTestMailing () || data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing () || data.maildropStatus.isWorldMailing ())) {
+			Informer		inform = new Informer (data, "Mandatory Voucher");
+			Map <String, String>	details = new HashMap <> ();
+			
+			details.put ("voucher", r.voucherName ());
+			inform.send (details);
+		}
+		return rc;
 	}
 }

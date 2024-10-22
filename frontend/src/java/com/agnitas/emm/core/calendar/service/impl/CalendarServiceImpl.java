@@ -10,6 +10,28 @@
 
 package com.agnitas.emm.core.calendar.service.impl;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
+import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
+import com.agnitas.emm.core.calendar.service.CalendarService;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.messages.I18nString;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,40 +46,30 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.calendar.service.CalendarService;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.messages.I18nString;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
 public class CalendarServiceImpl implements CalendarService {
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
 
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String TIME_FORMAT = "HH:mm";
     private static final String LINE_SEPARATOR = "\u2028";
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    protected ComMailingDao getMailingDao() {
+    protected MailingDao getMailingDao() {
         return mailingDao;
+    }
+
+    @Override
+    public List<CalendarUnsentMailing> getUnplannedMailings(Admin admin) {
+        return mailingDao.getNotSentMailings(admin, false);
+    }
+
+    @Override
+    public List<CalendarUnsentMailing> getPlannedUnsentMailings(Admin admin) {
+        return mailingDao.getNotSentMailings(admin, true);
     }
 
     @Override
@@ -69,19 +81,23 @@ public class CalendarServiceImpl implements CalendarService {
     public PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, int listSize) {
         return mailingDao.getPlannedMailings(admin, listSize);
     }
+    
+    @Override
+    public List<MailingPopoverInfo> mailingsPopoverInfo(Set<Integer> mailingIds, Admin admin) {
+        return mailingDao.getMailingsCalendarInfo(mailingIds, admin);
+    }
 
     @Override
-    public JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate) {
+    public JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate, int limit) {
         List<Map<String, Object>> mailings = new ArrayList<>();
         int companyId = admin.getCompanyID();
         ZoneId zoneId = AgnUtils.getZoneId(admin);
 
-        // TODO: change DAO methods to use inclusive (not exclusive) date bounds.
-        Date start = DateUtilities.toDate(startDate.atStartOfDay().minusNanos(1), zoneId);
-        Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
+        Date start = DateUtilities.toDate(startDate.atStartOfDay(), zoneId);
+        Date end = DateUtilities.toDate(endDate.plusDays(1).atStartOfDay(), zoneId);
 
-        mailings.addAll(getMailings(admin, start, end));
-        mailings.addAll(getPlannedMailings(admin, start, end));
+        mailings.addAll(getSentAndScheduledMailings(admin, start, end, limit));
+        mailings.addAll(getPlannedMailings(admin, start, end, limit));
 
         List<Integer> sentMailings = getSentMailings(mailings);
 
@@ -98,14 +114,14 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public JSONArray getMailingsRedesigned(Admin admin, LocalDate startDate, LocalDate endDate) {
+    public JSONArray getMailingsLight(Admin admin, LocalDate startDate, LocalDate endDate) {
         ZoneId zoneId = AgnUtils.getZoneId(admin);
         Date start = DateUtilities.toDate(startDate.atStartOfDay(), zoneId);
         Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
 
         List<Map<String, Object>> mailings = ListUtils.union(
-                mailingDao.getSentAndScheduledRedesigned(admin, start, end),
-                mailingDao.getPlannedMailingsRedesigned(admin, start, end));
+                mailingDao.getSentAndScheduledLight(admin, start, end),
+                mailingDao.getPlannedMailingsLight(admin, start, end));
         return mailingsAsJsonRedesigned(mailings, admin);
     }
 
@@ -130,11 +146,8 @@ public class CalendarServiceImpl implements CalendarService {
         return object;
     }
 
-    protected List<Map<String, Object>> getPlannedMailings(final Admin admin, final Date startDate, final Date endDate) {
-        List<Map<String, Object>> plannedMailings;
-        plannedMailings = admin.isRedesignedUiUsed()
-                ? mailingDao.getPlannedMailingsRedesigned(admin, startDate, endDate)
-                : mailingDao.getPlannedMailings(admin, startDate, endDate);
+    protected List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate, int limit) {
+        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate, limit);
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
     }
 
@@ -149,12 +162,8 @@ public class CalendarServiceImpl implements CalendarService {
         return mailings;
     }
 
-    protected List<Map<String, Object>> getMailings(final Admin admin, Date startDate, Date endDate) {
-        List<Map<String, Object>> mailings;
-        mailings = admin.isRedesignedUiUsed()
-                ? mailingDao.getSentAndScheduledRedesigned(admin, startDate, endDate)
-                : mailingDao.getSentAndScheduled(admin, startDate, endDate);
-
+    protected List<Map<String, Object>> getSentAndScheduledMailings(final Admin admin, Date startDate, Date endDate, int limit) {
+        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(admin, startDate, endDate, limit);
         return addSomeFieldsToSentAndScheduledMailings(mailings);
     }
 
@@ -209,6 +218,30 @@ public class CalendarServiceImpl implements CalendarService {
         return false;
     }
 
+    @Override
+    public boolean clearMailingPlannedDate(int mailingId, int companyId) {
+        return canClearPlannedDate(mailingId, companyId) && mailingDao.clearPlanDate(mailingId, companyId);
+    }
+
+    private boolean canClearPlannedDate(int mailingId, int companyId) {
+        if (mailingId <= 0) {
+            return false;
+        }
+
+        Set<MaildropEntry> maildropStatuses = mailingDao.getMailing(mailingId, companyId).getMaildropStatus();
+        if (CollectionUtils.isEmpty(maildropStatuses)) {
+            return true;
+        }
+
+        if (maildropStatuses.size() > 1) {
+            return false;
+        }
+
+        return maildropStatuses.stream()
+                .map(MaildropEntry::getStatus)
+                .allMatch(sc -> MaildropStatus.TEST.getCode() == sc || MaildropStatus.ADMIN.getCode() == sc);
+    }
+
     private boolean setMailingDate(Admin admin, Mailing mailing, MaildropEntry drop, LocalDate date) {
         ZoneId zoneId = AgnUtils.getZoneId(admin);
         boolean success = false;
@@ -222,7 +255,7 @@ public class CalendarServiceImpl implements CalendarService {
                 mailing.setPlanDate(DateUtilities.toDate(date, zoneId));
                 success = true;
             }
-        } else if (Objects.nonNull(mailing.getPlanDate())) {
+        } else if (Objects.nonNull(mailing.getPlanDate()) || admin.isRedesignedUiUsed()) {
             // Mailing has only plan date without any drop statuses.
             mailing.setPlanDate(DateUtilities.toDate(date, zoneId));
             success = true;
@@ -295,9 +328,12 @@ public class CalendarServiceImpl implements CalendarService {
             object.element("workstatusIn", I18nString.getLocaleString((String) mailing.get("workstatus"), locale));
             object.element("preview_component", mailing.get("preview_component"));
             object.element("mailsSent", mailing.get("mailssent"));
-            object.element("genstatus", mailing.get("genstatus"));
-            object.element("statusfield", mailing.get("statusfield"));
-
+            if (admin.isRedesignedUiUsed()) {
+                Object mediatype = mailing.get("mediatype");
+                if (mediatype != null) {
+                    object.element("mediatype", MediaTypes.getMediaTypeForCode(((Number)mediatype).intValue()));
+                }
+            }
             object.element("subject", mailing.get("subject"));
             object.element("planned", mailing.get("planned"));
             object.element("plannedInPast", mailing.get("plannedInPast"));
@@ -307,7 +343,6 @@ public class CalendarServiceImpl implements CalendarService {
             object.element("isOnlyPostType", isOnlyPostType);
             object.element("openers", openers.getOrDefault(mailingId, 0));
             object.element("clickers", clickers.getOrDefault(mailingId, 0));
-            object.element("mailinglistName", mailing.get("mailinglist_name"));
 
             result.add(object);
         }

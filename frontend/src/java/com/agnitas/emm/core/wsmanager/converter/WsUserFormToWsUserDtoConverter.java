@@ -27,7 +27,6 @@ public class WsUserFormToWsUserDtoConverter implements Converter<WebserviceUserF
         WebserviceUserDto userDto = new WebserviceUserDto();
         userDto.setUserName(userForm.getUserName());
         userDto.setEmail(userForm.getEmail());
-        userDto.setContactInfo(userForm.getContactInfo());
         userDto.setPassword(userForm.getPassword());
         userDto.setActive(userForm.isActive());
         userDto.setCompanyId(userForm.getCompanyId());

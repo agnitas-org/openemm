@@ -29,8 +29,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
@@ -66,8 +66,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComMailingDao mailingDao;
-	private ComMailingComponentDao mailingComponentDao;
+	private MailingDao mailingDao;
+	private MailingComponentDao mailingComponentDao;
 	private ComTargetDao targetDao;
 	private ComCompanyDao companyDao;
 	private ThumbnailService thumbnailService;
@@ -79,12 +79,12 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	
 	@Required
-	public void setMailingComponentDao(ComMailingComponentDao mailingComponentDao) {
+	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
 	}
 	
@@ -391,8 +391,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 							// Check for unallowed html tags
 							try {
 								HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
-							} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-								throw new RestfulClientException("Component name contains unallowed HTML tags");
+							} catch(final HtmlCheckerException e) {
+								throw new RestfulClientException("Component name contains unallowed HTML tags", e);
 							}
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() == null || entry.getValue() instanceof String) {
@@ -400,8 +400,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Component description contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Component description contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");
@@ -436,8 +436,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(emmBlock, true);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Mailing component contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailing component contains unallowed HTML tags", e);
 								}
 								if (jsonObject.get("mimetype") != null  && jsonObject.get("mimetype") instanceof String) {
 									mailingComponent.setEmmBlock(emmBlock, (String) jsonObject.get("mimetype"));

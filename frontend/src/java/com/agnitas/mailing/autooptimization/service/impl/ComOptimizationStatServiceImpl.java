@@ -15,7 +15,7 @@ import java.util.Hashtable;
 import org.agnitas.stat.CampaignStatEntry;
 import org.agnitas.stat.impl.CampaignStatEntryImpl;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
@@ -26,7 +26,7 @@ public class ComOptimizationStatServiceImpl implements
 		ComOptimizationStatService {
 
 	private ComOptimizationStatDao statDao;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private ComCompanyDao comCompanyDao;
 	
 	@Override
@@ -88,7 +88,7 @@ public class ComOptimizationStatServiceImpl implements
 		this.statDao = statDao;
 	}
 
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 

@@ -139,7 +139,7 @@
 					</div>
 					<%@ include file="fragments/serverstatus-external-footer.jspf" %>
 				</div>
-				<div class="sysstat__page-footer"><p><mvc:message code="pluginmanager.plugin.version"/>: ${appVersion}</p></div>
+				<div class="sysstat__page-footer"><p><mvc:message code="serverStatus.general.version"/>: ${appVersion}</p></div>
 			</div>
 		</mvc:form>
 	</body>

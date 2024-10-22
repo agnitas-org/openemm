@@ -10,6 +10,39 @@
 
 package org.agnitas.util;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.Company;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
+import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import com.agnitas.emm.core.mailing.enums.BlocksizeSteppingOption;
+import com.agnitas.emm.validator.ApacheTikaUtils;
+import com.agnitas.util.Version;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.jsp.PageContext;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.web.forms.WorkflowParameters;
+import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.springframework.ui.Model;
+
+import javax.imageio.ImageIO;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
@@ -36,7 +69,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -70,6 +102,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -77,44 +110,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.crypto.Cipher;
-import javax.imageio.ImageIO;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.web.forms.WorkflowParameters;
-import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.springframework.ui.Model;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.Company;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
-import com.agnitas.emm.validator.ApacheTikaUtils;
-import com.agnitas.util.Version;
-
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.jsp.PageContext;
 
 public class AgnUtils {
 
@@ -244,34 +239,6 @@ public class AgnUtils {
     }
 
 	/**
-	 * Reads a file in encoding UTF-8.
-	 */
-	public static String readFile(String path) {
-		try {
-			return FileUtils.readFileToString(new File(path), "UTF-8");
-		} catch (Exception e) {
-			logger.warn(MessageFormat.format("Error reading file {0}", path), e);
-			return null;
-		}
-	}
-
-	/**
-	 * Getter for property parameterMap.
-	 *
-	 * @return Value of property parameterMap.
-	 */
-	public static Map<String, String> getRequestParameterMap(ServletRequest req) {
-		Map<String, String> parameterMap = new HashMap<>();
-		Enumeration<String> e = req.getParameterNames();
-		while (e.hasMoreElements()) {
-			String parameterName = e.nextElement();
-			String parameterValue = req.getParameter(parameterName);
-			parameterMap.put(parameterName, parameterValue);
-		}
-		return parameterMap;
-	}
-
-	/**
 	 * Get year for statistics overview from which should starts year list
 	 */
 	public static int getStatStartYearForCompany(Admin admin) {
@@ -376,11 +343,6 @@ public class AgnUtils {
 		return admin != null && admin.permissionAllowed(permissions);
 	}
 
-	public static boolean isRedesignedUiUsed(HttpServletRequest req, Permission permission) {
-		Admin admin = getAdmin(req);
-		return admin != null && admin.isRedesignedUiUsed(permission);
-	}
-
 	public static boolean isRedesignedUiUsed(HttpServletRequest req) {
 		Admin admin = getAdmin(req);
 		return admin != null && admin.isRedesignedUiUsed();
@@ -463,19 +425,6 @@ public class AgnUtils {
 		}
 	}
 
-    public static void setAdminPreferences(HttpServletRequest request, AdminPreferences adminPreferences) {
-		try {
-			HttpSession session = request.getSession();
-			if (session != null) {
-				session.setAttribute(SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, adminPreferences);
-			} else {
-				logger.error("no session found for setting admin preferences data");
-			}
-		} catch (Exception e) {
-			logger.error("error while setting admin preferences data in session");
-		}
-	}
-
 	public static Admin getAdmin(PageContext pageContext) {
 		try {
 			HttpSession session = pageContext.getSession();
@@ -515,14 +464,6 @@ public class AgnUtils {
         } catch (Exception e) {
             logger.error("Error while reading admin preferences from request", e);
             return null;
-        }
-    }
-    
-    public static void saveWorkflowForwardParams(HttpServletRequest request, WorkflowParameters params) {
-		try {
-            WorkflowParametersHelper.put(request, params);
-        } catch (Exception e) {
-            logger.error("Error while saving workflow forward params to request", e);
         }
     }
     
@@ -770,35 +711,6 @@ public class AgnUtils {
 
 	public static boolean parameterNotEmpty(HttpServletRequest request, String paramName) {
 		return StringUtils.isNotEmpty(request.getParameter(paramName));
-	}
-
-	public static boolean parameterNotEmpty(HttpSession session, String paramName) {
-		Object value = session.getAttribute(paramName);
-		if (value == null) {
-			return false;
-		}
-		if (value instanceof String) {
-			return StringUtils.isNotEmpty(value.toString());
-		} else {
-			return true;
-		}
-	}
-
-	public static boolean parameterNotBlank(HttpServletRequest request, String paramName) {
-		return StringUtils.isNotBlank(request.getParameter(paramName));
-	}
-
-	public static boolean parameterNotBlank(HttpSession session, String paramName) {
-		Object value = session.getAttribute(paramName);
-		if (value == null) {
-			return false;
-		}
-
-		if (value instanceof String) {
-			return StringUtils.isNotBlank(value.toString());
-		}
-
-		return true;
 	}
 
 	public static String bytesToKbStr(int bytes) {
@@ -1091,16 +1003,6 @@ public class AgnUtils {
 			}
 		}
 		return -1;
-	}
-
-	public static int getLineCountOfFile(File file) throws IOException {
-		try(final LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(new FileInputStream(file)))) {
-			while (lineNumberReader.readLine() != null) {
-				// do nothing
-			}
-
-			return lineNumberReader.getLineNumber();
-		}
 	}
 
 	public static int getLineCountOfStream(InputStream inputStream) throws IOException {
@@ -1652,7 +1554,8 @@ public class AgnUtils {
 	 * @deprecated Use "com.agnitas.emm.core.LinkServiceImpl.personalizeLink(TrackableLink, String, int, String)" instead
 	 */
 	@Deprecated
-	public static String replaceHashTags(String hashTagString, @SuppressWarnings("unchecked") Map<String, Object>... replacementMaps) {
+	@SafeVarargs
+	public static String replaceHashTags(String hashTagString, Map<String, Object>... replacementMaps) {
 		if (StringUtils.isBlank(hashTagString)) {
 			return hashTagString;
 		} else {
@@ -1891,10 +1794,6 @@ public class AgnUtils {
 		return sendmailVersion;
 	}
 
-	public static boolean isJCEUnlimitedKeyStrenght() throws NoSuchAlgorithmException {
-		return Cipher.getMaxAllowedKeyLength("RC5") >= 256;
-	}
-
 	public static String getTomcatVersion() {
 		String version = "";
 		try {
@@ -1946,15 +1845,6 @@ public class AgnUtils {
 		javaVersion.append(System.getProperty("java.vendor"));
 		javaVersion.append(")");
 		return javaVersion.toString();
-	}
-	
-	public static int getCompanyMaxRecipients(HttpServletRequest request) {
-		Company company = AgnUtils.getCompany(request);
-		if (company != null) {
-			return company.getMaxRecipients();
-		}
-		
-		return 0;
 	}
 	
 	public static int getCompanyMaxRecipients(Admin admin) {
@@ -2102,82 +1992,6 @@ public class AgnUtils {
 		return System.getProperty("java.io.tmpdir");
 	}
 
-	public static Object getValueFromMapByCamelcaseKey(Map<String, Object> map, String key) {
-		for (Entry<String, Object> entry : map.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase(key)) {
-				return entry.getValue();
-			}
-		}
-		return null;
-	}
-
-	public static String getActiveIndexesFromBooleanArray(boolean[] data) {
-		StringBuilder dataString = new StringBuilder();
-		for (int i = 0; i < data.length; i++) {
-			if (data[i]) {
-				if (dataString.length() > 0) {
-					dataString.append(", ");
-				}
-				dataString.append(i);
-			}
-		}
-		return dataString.toString();
-	}
-
-	public static WebApplicationContext getSpringContextFromRequest( HttpServletRequest request) {
-		return WebApplicationContextUtils.getRequiredWebApplicationContext(request.getSession().getServletContext());
-	}
-
-	public static void logJspError(String jspFileName, String message, Exception e) {
-		logger.error("Error in JSP '" + jspFileName + "': " + message, e);
-	}
-
-	public static void logJspInfo(String jspFileName, String message) {
-		logger.info("Info from JSP '" + jspFileName + "': " + message);
-	}
-
-	public static boolean checkNumberIsWithinInterval(String numberIntervalString, int number) throws Exception {
-		try {
-			if (StringUtils.isNotBlank(numberIntervalString)) {
-				List<String> intervals = splitAndTrimList(numberIntervalString);
-				for (String interval : intervals) {
-					if (StringUtils.isNotBlank(interval)) {
-						if (interval.startsWith("-")) {
-							int intervalEnd = Integer.parseInt(interval
-									.substring(1));
-							if (number <= intervalEnd) {
-								return true;
-							}
-						} else if (interval.endsWith("+")) {
-							int intervalStart = Integer.parseInt(interval
-									.substring(0, interval.length() - 1));
-							if (intervalStart <= number) {
-								return true;
-							}
-						} else if (interval.contains("-")) {
-							int intervalStart = Integer.parseInt(interval
-									.substring(0, interval.indexOf('-')));
-							int intervalEnd = Integer.parseInt(interval
-									.substring(interval.indexOf('-') + 1));
-							if (intervalStart <= number
-									&& number <= intervalEnd) {
-								return true;
-							}
-						} else {
-							int item = Integer.parseInt(interval);
-							if (item == number) {
-								return true;
-							}
-						}
-					}
-				}
-			}
-			return false;
-		} catch (Exception e) {
-			throw new Exception("Invalid numberIntervalString: " + numberIntervalString);
-		}
-	}
-	
 	public static Map<String, String> getParamsMap(String paramsString) {
 		return getParamsMap(paramsString, ";", "=");
 	}
@@ -2212,15 +2026,6 @@ public class AgnUtils {
 				.collect(Collectors.joining(pairsDelimiter));
 	}
 
-	public static <T> List<T> getEnumerationAsList(Enumeration<T> enumeration) {
-		List<T> returnList = new ArrayList<>();
-    	while (enumeration.hasMoreElements()) {
-    		T item = enumeration.nextElement();
-    		returnList.add(item);
-    	}
-    	return returnList;
-	}
-
 	public static boolean check24HourTime(String timeString) {
 		return Pattern.compile("^([01]?[0-9]|2[0-3]):[0-5][0-9]$").matcher(timeString).matches();
 	}
@@ -2243,18 +2048,6 @@ public class AgnUtils {
 		} else {
 			return null;
 		}
-	}
-
-	public static List<String> makeListTrimAndLowerCase(List<String> data) {
-		List<String> returnList = new ArrayList<>();
-		for (String item : data) {
-			if (item == null) {
-				returnList.add(null);
-			} else {
-				returnList.add(item.trim().toLowerCase());
-			}
-		}
-		return returnList;
 	}
 
 	public static List<String> makeListTrim(List<String> data) {
@@ -2527,23 +2320,8 @@ public class AgnUtils {
 		return NumberFormat.getInstance(locale).format(value);
 	}
 
-	/**
-	 * Escape a char by adding the same char to it like escaping "\" by "\\"
-	 */
-    public static String escapeChars(String input, String charToEscape) {
-    	if (StringUtils.isEmpty(input) || StringUtils.isEmpty(charToEscape)) {
-    		return input;
-    	} else {
-    		return input.replace(charToEscape, charToEscape + charToEscape);
-    	}
-    }
-
     public static String emptyToNull(String string) {
     	return StringUtils.isEmpty(string) ? null : string;
-	}
-
-	public static boolean equalsNullToEmpty(String str1, String str2) {
-    	return StringUtils.defaultString(str1).equals(StringUtils.defaultString(str2));
 	}
 
     public static String readFileToString(File file, String encoding) throws Exception {
@@ -3083,10 +2861,22 @@ public class AgnUtils {
 	 */
 	public static String getBrowserCacheMarker() throws UnsupportedEncodingException {
 		if (BROWSER_CACHE_MARKER == null) {
-			BROWSER_CACHE_MARKER = new Sha512Encoder().encodeToHex(new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(ConfigService.getBuildTime()));
+			updateBrowserCacheMarker(ConfigService.getBuildTime());
 		}
 
 		return BROWSER_CACHE_MARKER;
+	}
+
+	public static void updateBrowserCacheMarker() {
+        try {
+            updateBrowserCacheMarker(new Date(System.currentTimeMillis()));
+        } catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("Error occurred when create browser cache marker!", e);
+        }
+    }
+
+	private static void updateBrowserCacheMarker(Date date) throws UnsupportedEncodingException {
+		BROWSER_CACHE_MARKER = new Sha512Encoder().encodeToHex(new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(date));
 	}
 
 	/**
@@ -3136,49 +2926,17 @@ public class AgnUtils {
 	 * @param defaultStepping required if this method is unable to get stepping for blocksize
 	 * @return first value - blocksize, second value - stepping
 	 */
-	public static Tuple<Integer, Integer> makeBlocksizeAndSteppingFromBlocksize(int blocksize, int defaultStepping){
-		int stepping;
-		switch (blocksize) {
-			case 0:
-				stepping = 0;
-				break;
-			case 1000:
-				blocksize = 250;
-				stepping = 15;
-				break;
-			case 5000:
-				blocksize = 1250;
-				stepping = 15;
-				break;
-			case 10000:
-				blocksize = 500;
-				stepping = 3;
-				break;
-			case 25000:
-				blocksize = 416;
-				stepping = 1;
-				break;
-			case 50000:
-				blocksize = 833;
-				stepping = 1;
-				break;
-			case 100000:
-				blocksize = 1666;
-				stepping = 1;
-				break;
-			case 250000:
-				blocksize = 4166;
-				stepping = 1;
-				break;
-			case 500000:
-				blocksize = 8333;
-				stepping = 1;
-				break;
-			default:
-				stepping = defaultStepping;
-		}
-		return new Tuple<>(blocksize, stepping);
+	public static Tuple<Integer, Integer> makeBlocksizeAndSteppingFromBlocksize(int blocksize, int defaultStepping) {
+		return BlocksizeSteppingOption.findByMailsPerHour(blocksize)
+				.map(o -> new Tuple<>(o.getBlockSize(), o.getStepping()))
+				.orElseGet(() -> new Tuple<>(blocksize, defaultStepping));
 	}
+
+	public static int getSelectedBlocksizeByBlocksizeAndStepping(int blockSize, int stepping) {
+		return BlocksizeSteppingOption.findByBlockSizeAndStepping(blockSize, stepping)
+				.map(BlocksizeSteppingOption::getMailsPerHour)
+				.orElse(blockSize);
+ 	}
 
 	public static String replaceHomeVariables(String value) {
 		if (StringUtils.isNotBlank(value)) {
@@ -3189,7 +2947,7 @@ public class AgnUtils {
 		}
 	}
 	
-	public static String replaceVersionPlaceholders(String value, Version applicationVersion) throws Exception {
+	public static String replaceVersionPlaceholders(String value, Version applicationVersion) {
 		if (StringUtils.isEmpty(value)) {
 			return value;
 		}
@@ -3213,37 +2971,6 @@ public class AgnUtils {
 			throw e;
 		}
     }
-
-	public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> collection) {
-		List<T> list = new ArrayList<>(collection);
-		Collections.sort(list);
-		return list;
-	}
-
-	public static String shortenStringToMaxLengthCutRight(String value, int maxLength) {
-		if (value != null && value.length() > maxLength) {
-			return value.substring(0, maxLength - 4) + " ...";
-		} else {
-			return value;
-		}
-	}
-
-	public static String shortenStringToMaxLengthCutMiddle(String value, int maxLength) {
-		if (value != null && value.length() > maxLength) {
-			int leftLength = (maxLength - 5) / 2;
-			return value.substring(0, leftLength) + " ... " + value.substring(value.length() - ((maxLength - leftLength) - 5));
-		} else {
-			return value;
-		}
-	}
-
-	public static String shortenStringToMaxLengthCutLeft(String value, int maxLength) {
-		if (value != null && value.length() > maxLength) {
-			return "... " + value.substring((value.length() - maxLength) + 4);
-		} else {
-			return value;
-		}
-	}
 
 	public static void closeQuietly(Closeable closeable) {
 		if (closeable != null) {
@@ -3304,18 +3031,6 @@ public class AgnUtils {
 		}
     }
 
-	/**
-	 * Check for change in customer data
-	 * Changes of "null" to "empty String" and vice versa are ignored
-	 */
-	public static boolean stringValueChanged(String valueOriginal, String valueNew) {
-		if (StringUtils.isEmpty(valueOriginal) && StringUtils.isEmpty(valueNew)) {
-			return false;
-		} else {
-			return !StringUtils.equals(valueOriginal, valueNew);
-		}
-	}
-
 	public static double round(double value, int scale) {
 	    return Math.round(value * Math.pow(10, scale)) / Math.pow(10, scale);
 	}
@@ -3348,10 +3063,6 @@ public class AgnUtils {
 		return normalizeTextLineBreaks(s1).equals(normalizeTextLineBreaks(s2));
 	}
 
-	public static <T extends Enum<T>> T getEnum(Class<T> clz, String name) {
-		return getEnum(clz, name, null);
-	}
-
 	public static <T extends Enum<T>> T getEnum(Class<T> clz, String name, T defaultValue) {
 		try {
 			return Enum.valueOf(clz, name);
@@ -3369,6 +3080,22 @@ public class AgnUtils {
 		return availableFonts;
 	}
 
+	public static String escapeForRFC5322(String str) {
+		if (str == null) {
+			return null;
+		}
+
+		return str.replace("\"", "\\\"");
+	}
+
+	public static String unescapeForRFC5322(String str) {
+		if (str == null) {
+			return null;
+		}
+
+		return str.replace("\\\"", "\"");
+	}
+
 	public static String stripTrailingZeros(String numberString) {
 		if (StringUtils.isBlank(numberString)) {
 			return numberString;
@@ -3376,10 +3103,6 @@ public class AgnUtils {
 			DecimalFormat decimalFormat = new DecimalFormat("0.#####");
 			return decimalFormat.format(Double.valueOf(numberString));
 		}
-	}
-
-	public static Set<String> getCaseInsensitiveSet(String... values) {
-		return new CaseInsensitiveSet(Arrays.asList(values));
 	}
 
 	public static String formatBytes(int bytes, int minUnit, String mode, Locale locale) {
@@ -3407,22 +3130,6 @@ public class AgnUtils {
 				.format(AgnUtils.round(result, 2));
 
 			return value + " " + FILESIZE_UNITS[unit];
-		}
-	}
-
-	public static String getMaxLengthString(String value, int maxLength, String cutSign) {
-		if (maxLength < 0) {
-			maxLength = 0;
-		}
-
-		if (value == null || value.length() <= maxLength) {
-			return value;
-		} else {
-			if (cutSign == null) {
-				cutSign = "...";
-			}
-
-			return value.substring(0, maxLength - cutSign.length()) + cutSign;
 		}
 	}
 
@@ -3571,10 +3278,6 @@ public class AgnUtils {
 			return returnList;
 		}
 	}
-
-	public static boolean isLatinCharacter(int code) {
-		return Character.UnicodeScript.of(code) == Character.UnicodeScript.LATIN;
-	}
 	
 	public static TimeZone getSystemTimeZone() {
 		return Calendar.getInstance().getTimeZone();
@@ -3598,6 +3301,45 @@ public class AgnUtils {
         }
     }
 
+	public static final void main(final String... args) throws Exception {
+		final String[] testStrings = new String [] { "alpha", "bravo", "charlie", "delta", "echo", "foxtrott", "golf",
+		"hotel", "indigo", "juliet", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", "sierra", "tango",
+		"uniform", "victor", "whiskey", "x-ray", "yankee", "zulu" };
+		final Random random = new Random();
+
+		for(int round = 1; round <= 100_000_000; round++) {
+			if(round % 1000 == 0)
+				System.out.println("ROUND: " + round);
+
+
+			final List<String> list = new ArrayList<>();
+			final int listLength = random.nextInt(100);
+			for(int i = 0; i < listLength; i++)
+				list.add(testStrings[random.nextInt(testStrings.length)]);
+
+			final List<String> keepFirst = new ArrayList<>();
+			final int keepFirstLength = random.nextInt(testStrings.length);
+			for(int i = 0; i < keepFirstLength; i++)
+				keepFirst.add(testStrings[random.nextInt(testStrings.length)]);
+
+			// final List<String> list = Arrays.asList("echo, whiskey, lima, juliet, bravo, yankee, lima, november, charlie, whiskey, papa, tango, papa, indigo, x-ray, yankee, uniform, delta, x-ray, victor, papa, papa, hotel, uniform, kilo, hotel, tango, delta, quebec, quebec, x-ray, delta, alpha, tango, zulu, victor, zulu, uniform, oscar, indigo, whiskey, romeo, victor, delta, alpha, tango, uniform, golf, delta, hotel".split("\\s*,\\s*"));
+			// final List<String> keepFirst = Arrays.asList("indigo, victor, lima, november, oscar, november, indigo, whiskey, november, kilo, echo, papa, x-ray, golf, november, bravo, x-ray, yankee, victor, kilo".split("\\s*,\\s*"));
+
+			try {
+				final List<String> result = sortCollectionWithItemsFirst(list, keepFirst.toArray(new String[keepFirst.size()]));
+			} catch(final IllegalArgumentException e) {
+				System.out.println("LIST = " + list);
+				System.out.println("KEEP FIRST = " + keepFirst);
+				e.printStackTrace();
+
+				throw e;
+			} catch(final Exception e) {
+				throw e;
+				// Ignore
+			}
+		}
+	}
+	
 	public static List<String> sortCollectionWithItemsFirst(Collection<String> sourceCollection, String... keepItemsFirst) {
 		final Set<String> keepFirstSet = new HashSet<>(List.of(keepItemsFirst));
 		List<String> list = new ArrayList<>(sourceCollection);
@@ -3712,4 +3454,15 @@ public class AgnUtils {
         ImageIO.write(image, "jpg", imageDataJpg);
         return imageDataJpg.toByteArray();
 	}
+
+    public static List<Integer> csvStrToIntList(String csv) {
+        return Arrays.stream(StringUtils.split(StringUtils.trimToEmpty(csv), ","))
+                .map(String::trim)
+                .map(NumberUtils::toInt)
+                .collect(Collectors.toList());
+    }
+
+    public static Set<Integer> csvStrToIntSet(String csv) {
+        return new HashSet<>(csvStrToIntList(csv));
+    }
 }

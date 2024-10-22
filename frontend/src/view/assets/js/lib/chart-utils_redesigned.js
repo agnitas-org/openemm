@@ -1,4 +1,4 @@
-(function () {
+(() => {
   AGN.Lib.ChartUtils = {
     getTotal: values => values.reduce((acc, value) => acc + value, 0),
     calcExactPercentages: function (values) {

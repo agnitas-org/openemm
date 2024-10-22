@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.springws.endpoint.dyncontent;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +42,7 @@ import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 @Endpoint
 public class UpdateContentBlockEndpoint extends BaseEndpoint {
 
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(UpdateContentBlockEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final DynamicTagContentService dynamicTagContentService;
@@ -60,8 +62,10 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateContentBlockRequest")
 	public @ResponsePayload UpdateContentBlockResponse updateContentBlock(@RequestPayload UpdateContentBlockRequest request) throws Exception {
+		logTimePoint("Start of the updateContentBlock endpoint");
 		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
-		
+
+		logTimePoint("before requireMailingForContentBlockEditable");
 		this.mailingEditableCheck.requireMailingForContentBlockEditable(request.getContentID(), companyID);
 		
 		final UpdateContentBlockResponse response = new UpdateContentBlockResponse();
@@ -72,13 +76,17 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 		model.setTargetId(request.getTargetID());
 		model.setOrder(request.getOrder());
 		model.setContent(request.getContent());
-		
+
+		logTimePoint("before validateContent");
 		validateContent(model);
 
 		List<UserAction> userActions = new ArrayList<>();
+		logTimePoint("before updateContent");
 		dynamicTagContentService.updateContent(model, userActions);
+		logTimePoint("before writeLog");
 		this.userActivityLogAccess.writeLog(userActions);
 
+		logTimePoint("before try updateMailingThumbnailByWebservice");
 		try {
 			final DynamicTagContent currentContent = this.dynamicTagContentService.getContent(model);
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, currentContent.getMailingID());
@@ -86,11 +94,12 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 			LOGGER.error(String.format("Error updating thumbnail of mailing containing content block", request.getContentID()), e);
 		}
 
+		logTimePoint("End of the updateContentBlock endpoint");
 		return response;
 	}
 	
-	private final void validateContent(final ContentModel model) throws InvalidMailingContentException {
-		final List<String> invalidElements = this.htmlContentValidator.findInvalidTags(model.getContent());
+	private void validateContent(final ContentModel model) throws InvalidMailingContentException {
+		final List<String> invalidElements = this.htmlContentValidator.findIllegalTags(model.getContent());
 		
 		if(!invalidElements.isEmpty()) {
 			throw new InvalidMailingContentException(
@@ -100,4 +109,10 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 		}
 	}
 
+	// GWUA-5995
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+	public static void logTimePoint(String name) {
+		LocalDateTime now = LocalDateTime.now();
+		LOGGER.error("GWUA-5995: " + name + ": " + formatter.format(now));
+	}
 }

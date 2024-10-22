@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.components.service.impl;
 
 import com.agnitas.emm.core.components.service.MailingBlockSizeService;
+import com.agnitas.emm.core.mailing.enums.BlocksizeSteppingOption;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -36,7 +37,7 @@ public class MailingBlockSizeServiceImpl implements MailingBlockSizeService {
     public Tuple<Integer, Integer> calculateBlocksizeStepping(int companyId, int stepping, int blocksize) {
         try {
             int maxBlocksize = getMaxBlocksize(companyId, blocksize);
-            if (maxBlocksize != UNLIMITED_SPEED) {
+            if (maxBlocksize != BlocksizeSteppingOption.UNLIMITED.getMailsPerHour()) {
                 return AgnUtils.makeBlocksizeAndSteppingFromBlocksize(maxBlocksize, DEFAULT_STEPPING);
             }
 
@@ -97,10 +98,10 @@ public class MailingBlockSizeServiceImpl implements MailingBlockSizeService {
 
     private int getMaxBlocksize(int companyID, int blocksize) {
         if (!configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyID)) {
-            return UNLIMITED_SPEED;
+            return BlocksizeSteppingOption.UNLIMITED.getMailsPerHour();
         }
 
         int maxBlocksize = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyID);
-        return blocksize > maxBlocksize ? maxBlocksize : blocksize;
+        return Math.min(blocksize, maxBlocksize);
     }
 }

@@ -17,9 +17,6 @@
 <c:set var="STATUS_TESTING" 	value="<%= WorkflowStatus.STATUS_TESTING %>" 	scope="page" />
 <c:set var="STATUS_TESTED" 		value="<%= WorkflowStatus.STATUS_TESTED %>" 	scope="page" />
 
-<emm:CheckLogon/>
-<emm:Permission token="workflow.show"/>
-
 <c:set var="showStatisticsTile" value="${workflowForm.status != STATUS_OPEN.name()}" scope="request"/>
 <c:url var="workflowsOverviewLink" value="/workflow/list.action"/>
 
@@ -30,16 +27,15 @@
 <c:if test="${showStatisticsTile}">
     <c:set var="agnNavigationKey" 		value="campaign" 				            scope="request" />
 </c:if>
-<c:set var="agnHighlightKey" 		value="GWUA.edit.campaign" 						scope="request" />
+<c:set var="agnHighlightKey" 		value="workflow.editor" 						scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&workflowId=${workflowForm.workflowId}" 	scope="request" />
 <c:set var="agnTitleKey" 			value="workflow.single" 						scope="request" />
 <c:set var="sidemenu_active" 		value="Workflow" 								scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 									scope="request" />
+<c:set var="sidemenu_sub_active" 	value="default.Overview" 			            scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Workflow" 								scope="request" />
 <c:set var="agnBreadcrumbsRootUrl" 	value="${workflowsOverviewLink}"                scope="request" />
 <c:set var="agnHelpKey" 			value="help_workflow_edit" 						scope="request" />
 <c:set var="agnEditViewKey" 	    value="campaign-view" 	                        scope="request" />
-
 
 <c:set var="workflowToggleTestingButtonEnabled" value="false" scope="request"/>
 <c:set var="workflowToggleTestingButtonState" value="true" scope="request"/> <%-- Start/stop testing --%>
@@ -57,9 +53,6 @@
 
 <c:choose>
     <c:when test="${workflowForm.workflowId > 0 && not empty workflowForm.shortname}">
-        <c:set var="agnSubtitleKey" 		value="workflow.single" scope="request" />
-        <c:set var="sidemenu_sub_active" 	value="none" 			scope="request" />
-
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
@@ -68,8 +61,6 @@
         </emm:instantiate>
     </c:when>
     <c:otherwise>
-        <c:set var="agnSubtitleKey" 		value="workflow.new" 		scope="request" />
-        <c:set var="sidemenu_sub_active" 	value="workflow.new" 		scope="request" />
         <c:set var="agnHelpKey" 			value="help_workflow_new" 	scope="request" />
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
@@ -86,9 +77,7 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
         <c:set target="${element}" property="cls" value="mobile-hidden"/>
-        <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
         <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
         <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -102,7 +91,6 @@
                 <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                     <c:set target="${optionList}" property="0" value="${option}"/>
 
-                    <c:set target="${option}" property="url" value="#"/>
                     <c:set target="${option}" property="extraAttributes" value="data-action='workflow-copy'"/>
                     <c:set target="${option}" property="name"><mvc:message code="button.Copy"/></c:set>
                 </emm:instantiate>
@@ -133,7 +121,6 @@
         <%-- pdf--%>
         <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
             <c:set target="${optionList}" property="1" value="${option}"/>
-            <c:set target="${option}" property="url" value="#"/>
             <c:set target="${option}" property="extraAttributes" value="data-action='workflow-generate-pdf'"/>
             <c:set target="${option}" property="name"><mvc:message code="workflow.pdf.tooltip"/></c:set>
         </emm:instantiate>
@@ -142,7 +129,6 @@
     <emm:ShowByPermission token="workflow.change">
         <emm:instantiate var="itemAction" type="java.util.LinkedHashMap"  scope="request">
             <c:set target="${itemActionsSettings}" property="1" value="${itemAction}"/>
-            <c:set target="${itemAction}" property="btnCls" value="btn"/>
             <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflow-save'"/>
             <c:set target="${itemAction}" property="iconBefore" value="icon-save"/>
             <c:set target="${itemAction}" property="name"><mvc:message code="button.Save"/></c:set>

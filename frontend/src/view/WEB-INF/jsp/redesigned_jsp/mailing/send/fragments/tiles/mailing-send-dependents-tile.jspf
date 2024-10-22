@@ -1,4 +1,4 @@
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
 
 <%--@elvariable id="dependents" type="java.util.List<Dependent<MailingDependentType>>"--%>
 
@@ -13,23 +13,29 @@
         }
     </script>
 
-    <div class="tile-header">
-        <h1 class="tile-title">
-            <mvc:message code="default.usedIn"/>
-            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/MailingDependentsList.xml"></a>
-        </h1>
-    </div>
-
     <div class="tile-body">
-        <div class="table-box">
-            <div class="table-scrollable">
-                <display:table class="table table-hover table-rounded js-table" id="item" list="${dependents}"
+        <div class="table-wrapper">
+            <div class="table-wrapper__header">
+                <h1 class="table-wrapper__title">
+                    <mvc:message code="default.usedIn"/>
+                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/MailingDependentsList.xml"></a>
+                </h1>
+                <div class="table-wrapper__controls">
+                    <%@include file="../../../../common/table/toggle-truncation-btn.jspf" %>
+                    <jsp:include page="../../common/table/entries-label.jsp">
+                        <jsp:param name="totalEntries" value="${fn:length(dependents)}"/>
+                    </jsp:include>
+                </div>
+            </div>
+
+            <div class="table-wrapper__body">
+                <agnDisplay:table class="table table-hover table--borderless js-table" id="item" list="${dependents}"
                                pagesize="${form.numberOfRows}" sort="list" excludedParams="*" requestURI="/mailing/send/${tmpMailingID}/view.action"
                                partialList="false">
 
-                    <%@ include file="../../../../displaytag/displaytag-properties.jspf" %>
+                    <%@ include file="../../../../common/displaytag/displaytag-properties.jspf" %>
 
-                    <display:setProperty name="basic.msg.empty_list_row">
+                    <agnDisplay:setProperty name="basic.msg.empty_list_row">
                         <tr class="empty">
                             <td colspan="{0}">
                                 <div class="notification-simple">
@@ -38,23 +44,23 @@
                                 </div>
                             </td>
                         </tr>
-                    </display:setProperty>
+                    </agnDisplay:setProperty>
 
-                    <display:column headerClass="js-table-sort js-filter-type" sortProperty="type" sortable="true" titleKey="default.Type">
+                    <agnDisplay:column headerClass="js-table-sort" sortProperty="type" sortable="true" titleKey="default.Type">
                         <c:choose>
                             <c:when test="${item.type == 'ACTION'}">
                                 <emm:ShowByPermission token="actions.show">
                                     <c:url var="actionViewLink" value="/action/${item.id}/view.action" />
                                     <a href="${actionViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
-                                <mvc:message code="action.Action"/>
+                                <span><mvc:message code="action.Action"/></span>
                             </c:when>
                             <c:when test="${item.type == 'WORKFLOW'}">
                                 <emm:ShowByPermission token="workflow.show">
                                     <c:url var="workflowViewLink" value="/workflow/${item.id}/view.action" />
                                     <a href="${workflowViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
-                                <mvc:message code="workflow.single"/>
+                                <span><mvc:message code="workflow.single"/></span>
                             </c:when>
 
                             <c:when test="${item.type == 'BOUNCE_FILTER'}">
@@ -62,12 +68,14 @@
                                     <c:url var="bounceViewLink" value="/administration/bounce/${item.id}/view.action" />
                                     <a href="${bounceViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
-                                <mvc:message code="settings.Mailloop"/>
+                                <span><mvc:message code="settings.Mailloop"/></span>
                             </c:when>
                         </c:choose>
-                    </display:column>
-                    <display:column headerClass="js-table-sort" property="shortname" sortProperty="name" sortable="true" titleKey="Name" escapeXml="true"/>
-                </display:table>
+                    </agnDisplay:column>
+                    <agnDisplay:column headerClass="js-table-sort" sortProperty="name" sortable="true" titleKey="Name">
+                        <span>${fn:escapeXml(item.shortname)}</span>
+                    </agnDisplay:column>
+                </agnDisplay:table>
             </div>
         </div>
     </div>

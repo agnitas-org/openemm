@@ -13,13 +13,9 @@ package org.agnitas.dao;
 import java.util.Map;
 
 public interface DocMappingDao {
-    /**
-     * Reads filename value of pagekey from doc_mapping_tbl table of database
-     */
-	public String getDocMapping(String pagekey);
 
     /**
      * Reads all filename, pagekey entries from doc_mapping_tbl table of database
      */
-	public Map<String, String> getDocMapping();
+	Map<String, String> getDocMapping();
 }

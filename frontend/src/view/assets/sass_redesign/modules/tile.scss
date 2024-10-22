@@ -1,4 +1,569 @@
 
+/*doc
+---
+title: Tiles
+name: tiles
+category: Components - Tiles
+---
+
+Tiles are major building blocks and the main element containing .
+In principal they are made up of a header, content and an optional footer.
+
+The header supports various specific elements that will be discussed in a dedicated section below.
+
+The basic structure is as follows:
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">...</div>
+    <div class="tile-body">...</div>
+    <div class="tile-footer">...</div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Full Example
+name: tiles_01_example
+parent: tiles
+---
+
+This is a full example showcasing what eventually makes up a complete tile.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h1 class="tile-title">Headline</h1>
+        <div class="tile-title-controls">
+            <label class="text-switch">
+                <input type="checkbox">
+                <span>Basic</span>
+                <span>Advanced</span>
+            </label>
+        </div>
+
+        <div class="tile-controls">
+            <a class="btn btn-icon btn-inverse">
+                <i class="icon icon-sync"></i>
+            </a>
+            <a class="btn btn-icon btn-primary">
+                <i class="icon icon-search"></i>
+            </a>
+        </div>
+    </div>
+    <div class="tile-body row g-3">
+        <div class="col-12">
+            <label for="input1" class="form-label">Label 1</label>
+            <input id="input1" type="text" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label for="input2" class="form-label">Label 2</label>
+            <input id="input2" type="text" class="form-control" />
+        </div>
+    </div>
+    <div class="tile-footer tile-footer--buttons">
+        <button class="btn btn-danger">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+    </div>
+</div>
+```
+
+*/
+
+
+/*doc
+---
+title: Tile Elements
+name: tiles_02_elements
+parent: tiles
+---
+*/
+
+/*doc
+---
+title: Tile Header
+name: tiles_03_header
+parent: tiles_02_elements
+---
+
+The tile header is the most complex component of a tile.
+
+It consists of 3 main areas: a title, a middle controls area and additional controls.
+
+The title is always positioned on the left, followed by the title controls, and the main controls are aligned to the right.
+*/
+
+/*doc
+---
+title: Title
+name: tiles_04_title
+parent: tiles_03_header
+---
+
+The title is usually any heading element like `<h1>, <h2>, <h3>, <h4> ...` with the class `.tile-title`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h1 class="tile-title">Headline</h1>
+    </div>
+</div>
+```
+
+To cut off a title that is too long, you need to add the class `.text-truncate`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h1 class="tile-title text-truncate">Headline is toooooooooooooooooooooooooooooooooooooooo looooooooooooooooooooooooooonnnnnnnngggggggg</h1>
+    </div>
+</div>
+```
+
+You can also add some kind of icon to the beginning or end of the title
+
+```htmlexample
+<div class="tile">
+  <div class="tile-header">
+    <h1 class="tile-title">
+        <i class="icon icon-caret-up"></i>
+        <span class="text-truncate">Headline</span>
+        <a href="#" class="icon icon-question-circle"></a>
+    </h1>
+  </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Title controls
+name: tiles_05_title-controls
+parent: tiles_03_header
+---
+
+Title controls are the area that is located between the title and the main actions (or between the edge(s) if there is no title or main actions). It occupies the entire available width.
+
+This area is very flexible and can store different types of elements. It can contain buttons, icons, switches, drop-down lists, navigation panel, etc.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <div class="tile-title-controls">
+            <label class="icon-switch">
+                <input type="checkbox">
+                <i class="icon icon-image"></i>
+                <i class="icon icon-th-list"></i>
+            </label>
+
+            <a class="btn btn-icon btn-primary">
+                <i class="icon icon-search"></i>
+            </a>
+
+            <select class="form-control js-select" data-select-options="width: 'auto'">
+                <option value="true">Yes</option>
+                <option value="true">No</option>
+            </select>
+
+            <nav class="navbar navbar-expand-lg">
+                <a class="chosen-tab btn btn-primary w-0" href="#"><span class="text text-truncate">Tab 1</span></a>
+                <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#tile-title-nav" aria-controls="tile-title-nav" aria-expanded="false">
+                    <i class="icon icon-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="tile-title-nav">
+                    <ul class="navbar-nav offcanvas-body">
+                        <li class="nav-item">
+                            <a class="btn btn-outline-primary active" href="#" data-bs-dismiss="offcanvas">
+                                <span class="text-truncate">Tab 1</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="btn btn-outline-primary" href="#" data-bs-dismiss="offcanvas">
+                                <span class="text-truncate">Tab 2</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Main controls
+name: tiles_06_main-controls
+parent: tiles_03_header
+---
+
+This area is essentially the same as `tile-tile-controls`. It’s just that if there is a title tile, it is displayed on the right side.
+If the tile title is missing, you need to add the class `.justify-content-end` for `.tile-header` block.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header justify-content-end">
+        <div class="tile-controls">
+            <div class="form-check form-switch">
+                <input id="tile-controls-switch" type="checkbox" class="form-check-input" role="switch" />
+                <label class="form-label form-check-label" for="tile-controls-switch">Enable</label>
+            </div>
+
+            <div class="search-container">
+                <input type="text" class="form-control">
+            </div>
+
+            <button class="btn btn-icon btn-danger">
+                <i class="icon icon-trash-alt"></i>
+            </button>
+        </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile Body
+name: tiles_07_body
+parent: tiles_02_elements
+---
+
+`.tile-body` is the main body of a `.tile`. Anything inside here goes.
+
+A .tile-body__block element is also available, which can be placed inside a .tile-body to visually separate content.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+        <div class="tile-body__block">
+            <h2>Just some text content</h2>
+        </div>
+        <div class="tile-body__block">
+            <h2>Just some text content</h2>
+        </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile Footer
+name: tiles_08_footer
+parent: tiles_02_elements
+---
+
+The `.tile-footer` is mostly used for buttons, but as with the content anything goes.
+In order for the buttons to stretch to the available area, you need to add a class `.tile-footer--buttons`.
+
+<small class="text-muted">You can apply a <a href="components_-_char_counter.html"><i>char counter</i></a> component to this.</small>
+
+```htmlexample
+<div class="tile">
+    <div class="tile-footer tile-footer--buttons">
+        <button type="button" class="btn btn-danger">button</button>
+        <button type="button" class="btn btn-primary">button</button>
+    </div>
+</div>
+```
+
+You can also display the loader here. To do this you need to add a class `.tile-footer--loader` and put the loader icon inside.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-footer tile-footer--loader">
+        <i class="icon icon-spinner icon-pulse"></i>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile variants
+name: tiles_09_variants
+parent: tiles
+---
+*/
+
+/*doc
+---
+title: Colored tiles
+name: tiles_10_tile-colored
+parent: tiles_09_variants
+---
+
+You can make tiles of different colors simply by adding certain classes.
+
+```htmlexample
+  <div class="tile tile--alert">
+      <div class="tile-header">
+          <h1 class="tile-title">Error</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some alert message text!</p>
+      </div>
+      <div class="tile-footer tile-footer--buttons">
+          <button class="btn btn-primary">
+              <i class="icon icon-reply"></i>
+              <span class="text">Back</span>
+          </button>
+      </div>
+  </div>
+```
+
+Success: `.tile--success`.
+
+```htmlexample
+  <div class="tile tile--success">
+      <div class="tile-header">
+          <h1 class="tile-title">Success</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some success message text!</p>
+      </div>
+  </div>
+```
+
+Warning: `.tile--warning`.
+
+```htmlexample
+  <div class="tile tile--warning">
+      <div class="tile-header">
+          <h1 class="tile-title">Warning</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some warning message text!</p>
+      </div>
+  </div>
+```
+
+Info: `.tile--info`.
+
+```htmlexample
+  <div class="tile tile--info">
+      <div class="tile-header">
+          <h1 class="tile-title">Info</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some info message text!</p>
+      </div>
+  </div>
+```
+
+Dark blue: `.tile--dark-blue`.
+
+```htmlexample
+  <div class="tile tile--dark-blue">
+      <div class="tile-header">
+          <h1 class="tile-title">Info</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some info message text!</p>
+      </div>
+  </div>
+```
+
+Highlighted: `.tile--highlighted`.
+
+```htmlexample
+  <div class="tile tile--highlighted">
+      <div class="tile-header">
+          <h1 class="tile-title">Hightlited tile title</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Hightlited tile body text!</p>
+      </div>
+  </div>
+```
+*/
+
+/*doc
+---
+title: Tile sizes
+name: tiles_11_tile-sizes
+parent: tiles_09_variants
+---
+
+There are several versions for controlling tile sizes. Basically, such tiles are used inside the main tile and are sub-tiles.
+
+Extra small: `.tile--xs`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--xs">
+          <div class="tile-header">
+              <h1 class="tile-title">Very small sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Very small sub tile text!</p>
+          </div>
+      </div>
+    </div>
+</div>
+```
+
+Small: `.tile--sm`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--sm">
+          <div class="tile-header">
+              <h1 class="tile-title">Small sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Small sub tile text!</p>
+          </div>
+      </div>
+    </div>
+</div>
+```
+
+Medium: `.tile--md`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--md">
+          <div class="tile-header">
+              <h1 class="tile-title">Medium sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Medium sub tile text!</p>
+          </div>
+          <div class="tile-footer tile-footer--buttons">
+            <button type="button" class="btn btn-danger">button</button>
+            <button type="button" class="btn btn-primary">button</button>
+          </div>
+      </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile with borders
+name: tiles_12_tile-borders
+parent: tiles_09_variants
+---
+
+In some cases, it is necessary to add a border below the header and above the footer. To do this you need to add the classes `.border-bottom` and `.border-top` respectively.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header border-bottom">
+        <h1 class="tile-title">Headline</h1>
+    </div>
+    <div class="tile-body">
+        <p>Body content!</p>
+    </div>
+    <div class="tile-footer tile-footer--buttons border-top">
+        <button class="btn btn-danger">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+    </div>
+</div>
+```
+
+Medium: `.tile--md`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--md">
+          <div class="tile-header">
+              <h1 class="tile-title">Medium sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Medium sub tile text!</p>
+          </div>
+          <div class="tile-footer tile-footer--buttons">
+            <button type="button" class="btn btn-danger">button</button>
+            <button type="button" class="btn btn-primary">button</button>
+          </div>
+      </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Notification tile
+name: tiles_13_tile-notification
+parent: tiles_09_variants
+---
+
+This variation is needed to display in the center of the page. Еo use it you need to add a class `.tile--notification`.
+
+```htmlexample
+<div style="height: 300px; position: relative; width: 100%">
+    <div class="tile tile--notification">
+        <div class="tile-header">
+            <h1 class="tile-title">Item not found</h1>
+        </div>
+
+        <div class="tile-body">
+            <p>Item was not found!</p>
+        </div>
+        <div class="tile-footer tile-footer--buttons">
+            <button class="btn btn-primary">
+                <i class="icon icon-reply"></i>
+                <span class="text">Back</span>
+            </button>
+        </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Message tile
+name: tiles_14_tile-message
+parent: tiles_09_variants
+---
+
+Used primarily for error messages only on separate pages and is small in size. The tile header contains an image.
+To use it you need to add a class `.tile--msg`.
+
+```htmlexample
+<div class="systempage" style="height: 350px;">
+    <div class="tile tile--msg tile--alert">
+        <div class="tile-header">
+            <img alt="error-img" src="/assets/core/images/facelift/errors_error-500.svg">
+            <h1>500 - Error</h1>
+        </div>
+        <div class="tile-body">
+            <h2>Full error explanation text!</h2>
+
+            <a href="#" class="btn btn-primary w-100 flex-center gap-1">
+                <i class="icon icon-reply"></i>
+                <span class="text">Back</span>
+            </a>
+        </div>
+    </div>
+</div>
+```
+*/
+
 .tile {
   @extend .card;
   border-color: var(--bs-border-color);
@@ -12,7 +577,7 @@
   .tile-body {
     @extend .card-body;
     @include hide-scroll;
-    color: var(--default-text-color);
+    color: var(--text-color-default);
     padding: $tile-body-spacer;
     position: relative;
 
@@ -60,6 +625,7 @@
   align-items: center;
   font-weight: 500;
   color: var(--tile-title-color);
+  overflow: hidden; // for text truncation
 
   &.text-truncate {
     display: block;
@@ -67,7 +633,7 @@
 }
 
 .tile-title-controls {
-  display: flex;
+  @include flex-row($gap-sm);
   flex: 1;
   min-width: 0;
 }
@@ -75,15 +641,15 @@
 .tile-controls {
   @include flex-row($gap-sm);
   align-items: center;
+  min-width: 0;
 
-  .btn {
-    cursor: pointer;
-  }
+  @include mobile {
+    .btn-icon:not(.btn-select-control) {
+      @include size(40px);
 
-  .btn-icon {
-    @include mobile {
-      @include size(unset);
-      @include btn-icon($gap-sm - 1, $gap);
+      i {
+        font-size: $font-size-xl;
+      }
     }
   }
 
@@ -98,6 +664,10 @@
 
   > .select2-container {
     min-width: 0;
+  }
+
+  .progress {
+    width: 280px;
   }
 }
 
@@ -121,7 +691,10 @@
     @include flex-row($gap-sm);
     padding: $gap-md;
     background-color: inherit;
-    border-top: $border-default;
+
+    > .btn {
+      flex-grow: 1;
+    }
   }
 }
 
@@ -136,17 +709,28 @@
   }
 }
 
-.tile--md {
+.tile--xs {
   > .tile-header {
-    padding-block: $gap-sm - 1px;
+    color: var(--text-color-default);
+    flex-basis: 30px;
+    padding: 0 $gap-sm;
+    gap: $gap-x-sm;
+  }
+
+  .tile-title {
+    gap: $gap-x-sm;
+  }
+
+  > .tile-body {
+    padding: $gap-sm;
   }
 }
 
 .tile--sm {
   > .tile-header {
-    color: var(--default-text-color);
-    min-height: 40px;
-    padding: 6px $gap-sm;
+    color: var(--text-color-default);
+    flex-basis: 40px;
+    padding: 0 $gap-sm;
   }
 
   > .tile-body {
@@ -156,13 +740,18 @@
 
 .tile--md {
   > .tile-header {
-    color: var(--default-text-color);
-    min-height: $tile-header-height;
-    padding: 7px $gap-md;
+    color: var(--text-color-default);
+    padding: 0 $gap-md;
   }
 
   > .tile-body {
     padding: $gap-md;
+  }
+
+  > .tile-footer {
+    &.tile-footer--buttons {
+      padding: $gap-sm;
+    }
   }
 }
 
@@ -216,9 +805,12 @@
 
 .tile--highlighted {
   .tile-header {
-    color: var(--text-dark-gray-color);
     background-color: var(--tile-highlighted-header-bg-color);
     border-bottom: $border-default;
+  }
+
+  .tile-title {
+    color: var(--text-dark-gray-color);
   }
 }
 
@@ -228,6 +820,10 @@
   .tile-header, .tile-body {
     color: $white;
     background: $dark-blue;
+  }
+
+  .tile-title {
+    color: $white;
   }
 }
 

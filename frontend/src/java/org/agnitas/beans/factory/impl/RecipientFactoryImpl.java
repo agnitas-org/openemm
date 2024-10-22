@@ -19,14 +19,14 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.service.ColumnInfoService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 
 
 public class RecipientFactoryImpl implements RecipientFactory {
 
     protected ComRecipientDao recipientDao;
     protected BlacklistService blacklistService;
-    protected ColumnInfoService columnInfoService;
+    protected RecipientFieldService recipientFieldService;
     protected BindingEntryFactory bindingEntryFactory;
     protected ComBindingEntryDao bindingEntryDao;
 
@@ -36,8 +36,8 @@ public class RecipientFactoryImpl implements RecipientFactory {
     }
 
     @Required
-    public void setColumnInfoService(ColumnInfoService columnInfoService) {
-        this.columnInfoService = columnInfoService;
+    public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+        this.recipientFieldService = recipientFieldService;
     }
 
     @Required
@@ -65,7 +65,7 @@ public class RecipientFactoryImpl implements RecipientFactory {
         RecipientImpl recipient = new RecipientImpl();
 
         recipient.setRecipientDao(recipientDao);
-        recipient.setColumnInfoService(columnInfoService);
+        recipient.setRecipientFieldService(recipientFieldService);
         recipient.setBindingEntryFactory(bindingEntryFactory);
         recipient.setBindingEntryDao(bindingEntryDao);
         recipient.setBlacklistService(blacklistService);

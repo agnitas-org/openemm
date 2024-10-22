@@ -86,7 +86,9 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="doForward"><mvc:message code="settings.mailloop.forward"/></label>
+                    <label class="control-label checkbox-control-label" for="doForward">
+                        <mvc:message code="settings.mailloop.forward"/> <button class="icon icon-help" data-help="help_${helplanguage}/settings/ForwardFilteredMails.xml" tabindex="-1" type="button"></button>
+                    </label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">

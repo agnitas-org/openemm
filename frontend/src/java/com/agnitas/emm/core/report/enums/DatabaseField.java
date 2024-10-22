@@ -13,8 +13,7 @@ package com.agnitas.emm.core.report.enums;
 /**
  * @param <T>
  */
-@SuppressWarnings({ "rawtypes" })
-public interface DatabaseField<CodeType, T extends Enum> {
+public interface DatabaseField<CodeType, T extends Enum<T>> {
 
     CodeType getCode();
 

@@ -1,15 +1,13 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="agnNavigationKey" 		value="userlogs" 			scope="request" />
 <c:set var="agnTitleKey" 			value="Userlogs" 			scope="request" />
-<c:set var="agnSubtitleKey" 		value="Userlogs" 			scope="request" />
 <c:set var="sidemenu_active" 		value="Administration" 		scope="request" />
 <c:set var="sidemenu_sub_active" 	value="Userlogs" 			scope="request" />
 <c:set var="agnHighlightKey" 		value="settings.Admin" 	    scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Administration" 		scope="request" />
 <c:set var="agnHelpKey" 			value="userlog" 			scope="request" />
 <c:set var="agnEditViewKey" 	    value="gui-ual-overview" 	scope="request" />
@@ -30,7 +28,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn"/>
         <c:set target="${element}" property="extraAttributes" value="data-form-url='${csvDownloadUrl}' data-prevent-load data-form-submit-static data-form-target='#filter-tile'"/>
         <c:set target="${element}" property="iconBefore" value="icon-cloud-download-alt"/>
         <c:set target="${element}" property="name">

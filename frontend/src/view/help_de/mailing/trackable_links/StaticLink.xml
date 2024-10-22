@@ -1,0 +1,6 @@
+<HelpBalloon>
+        <title><![CDATA[Statischer Link:]]></title>
+        <content><![CDATA[In statischen Links werden Referenzen auf Referenztabellen &#xFC;bertragen.
+Diese sind fest mit dem Wert ab dem Zeitpunkt, indem ein Mailing-Versand stattfindet, verbunden. Sofern Sie das Feld "Statischer Link" nicht abhaken, passt sich der Wert dynamisch an den Wert in der Referenztabelle an.
+]]></content>    
+</HelpBalloon>

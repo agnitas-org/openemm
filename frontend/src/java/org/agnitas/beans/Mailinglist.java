@@ -54,4 +54,8 @@ public interface Mailinglist {
 	String getReplyEmail();
 
 	void setReplyEmail(String replyEmail);
+
+	boolean isRestrictedForSomeAdmins();
+
+	void setRestrictedForSomeAdmins(boolean restrictedForSomeAdmins);
 }

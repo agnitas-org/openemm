@@ -1,75 +1,75 @@
-/*doc
----
-title: Modals
-name: modal
-category: Javascripts - Modals
----
-
-Modals can be triggered using the `data-modal` attribute. The attribute defines the template which should be used for the modal.
-
-The modal template is looked up from `AGN.Opt.Templates['my-template-key']`, which automatically adds all script tags of the type "text/x-mustache-template" to the lookup table by using the `id` of the script tag as the template key.
-
-A click on an element with the `data-dismiss="modal"` attribute will close the modal again.
-
-```htmlexample
-<a href="#" class="btn btn-regular btn-success" data-modal="simple-modal">Trigger simple modal</a>
-
-<script id="simple-modal" type="text/x-mustache-template">
-    <div class="modal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">Title</h4>
-                </div>
-                <div class="modal-body">
-                    Modal Content
-                </div>
-            </div>
-        </div>
-    </div>
-</script>
-```
-*/
-
-/*doc
----
-title: Modals with variable content
-name: modal_01_variable
-parent: modal
----
-
-For a modal with custom content, you can use mustache syntax on the template . The variables are read from the `data-modal-set` attribute on the trigger
-
-```htmlexample
-<a href="#" class="btn btn-regular btn-success" data-modal="variable-modal" data-modal-set="title: 'Custom Title 1', content: true">Trigger Modal 1</a>
-
-<a href="#" class="btn btn-regular btn-success" data-modal="variable-modal" data-modal-set="title: 'Custom Title 2', content: false">Trigger Modal 2</a>
-
-<script id="variable-modal" type="text/x-mustache-template">
-    <div class="modal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">{{= title }}</h4>
-                </div>
-
-                {{ if (content) { }}
-                <div class="modal-body">
-                    Modal Content
-                </div>
-                {{ } }}
-            </div>
-        </div>
-    </div>
-</script>
-```
-*/
+// /*doc
+// ---
+// title: Modals
+// name: modal
+// category: Javascripts - Modals
+// ---
+//
+// Modals can be triggered using the `data-modal` attribute. The attribute defines the template which should be used for the modal.
+//
+// The modal template is looked up from `AGN.Opt.Templates['my-template-key']`, which automatically adds all script tags of the type "text/x-mustache-template" to the lookup table by using the `id` of the script tag as the template key.
+//
+// A click on an element with the `data-dismiss="modal"` attribute will close the modal again.
+//
+// ```htmlexample
+// <a href="#" class="btn btn-regular btn-success" data-modal="simple-modal">Trigger simple modal</a>
+//
+// <script id="simple-modal" type="text/x-mustache-template">
+//     <div class="modal">
+//         <div class="modal-dialog">
+//             <div class="modal-content">
+//                 <div class="modal-header">
+//                     <button type="button" class="close-icon close" data-dismiss="modal">
+//                         <i aria-hidden="true" class="icon icon-times-circle"></i>
+//                     </button>
+//                     <h4 class="modal-title">Title</h4>
+//                 </div>
+//                 <div class="modal-body">
+//                     Modal Content
+//                 </div>
+//             </div>
+//         </div>
+//     </div>
+// </script>
+// ```
+// */
+//
+// /*doc
+// ---
+// title: Modals with variable content
+// name: modal_01_variable
+// parent: modal
+// ---
+//
+// For a modal with custom content, you can use mustache syntax on the template . The variables are read from the `data-modal-set` attribute on the trigger
+//
+// ```htmlexample
+// <a href="#" class="btn btn-regular btn-success" data-modal="variable-modal" data-modal-set="title: 'Custom Title 1', content: true">Trigger Modal 1</a>
+//
+// <a href="#" class="btn btn-regular btn-success" data-modal="variable-modal" data-modal-set="title: 'Custom Title 2', content: false">Trigger Modal 2</a>
+//
+// <script id="variable-modal" type="text/x-mustache-template">
+//     <div class="modal">
+//         <div class="modal-dialog">
+//             <div class="modal-content">
+//                 <div class="modal-header">
+//                     <button type="button" class="close-icon close" data-dismiss="modal">
+//                         <i aria-hidden="true" class="icon icon-times-circle"></i>
+//                     </button>
+//                     <h4 class="modal-title">{{= title }}</h4>
+//                 </div>
+//
+//                 {{ if (content) { }}
+//                 <div class="modal-body">
+//                     Modal Content
+//                 </div>
+//                 {{ } }}
+//             </div>
+//         </div>
+//     </div>
+// </script>
+// ```
+// */
 
 (function() {
   var Action = AGN.Lib.Action,

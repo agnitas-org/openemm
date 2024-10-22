@@ -73,7 +73,6 @@ public class CsvReader extends BasicReader {
 	/** state variable to check for a break inside the last cell of line */
 	private boolean lastCellInLineHasUnclosedQuote = false;
 	/** indicates whether it is necessary to find line breaks in the cell */
-	private boolean useExtendedCheck = false;
 
 	/**
 	 * CSV Reader derived constructor.
@@ -82,7 +81,7 @@ public class CsvReader extends BasicReader {
 	 *            the input stream
 	 */
 	public CsvReader(InputStream inputStream) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, Charset.forName(DEFAULT_ENCODING), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -94,7 +93,7 @@ public class CsvReader extends BasicReader {
 	 *            the encoding
 	 */
 	public CsvReader(InputStream inputStream, String encoding) throws Exception {
-		this(inputStream, Charset.forName(encoding), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, Charset.forName(encoding), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -106,7 +105,7 @@ public class CsvReader extends BasicReader {
 	 *            the encoding
 	 */
 	public CsvReader(InputStream inputStream, Charset encoding) throws Exception {
-		this(inputStream, encoding, DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, encoding, DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -118,7 +117,7 @@ public class CsvReader extends BasicReader {
 	 *            the separator
 	 */
 	public CsvReader(InputStream inputStream, char separator) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -132,7 +131,7 @@ public class CsvReader extends BasicReader {
 	 *            the separator
 	 */
 	public CsvReader(InputStream inputStream, String encoding, char separator) throws Exception {
-		this(inputStream, Charset.forName(encoding), separator, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, Charset.forName(encoding), separator, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -146,7 +145,7 @@ public class CsvReader extends BasicReader {
 	 *            the separator
 	 */
 	public CsvReader(InputStream inputStream, Charset encoding, char separator) throws Exception {
-		this(inputStream, encoding, separator, DEFAULT_STRING_QUOTE, false);
+		this(inputStream, encoding, separator, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -160,7 +159,7 @@ public class CsvReader extends BasicReader {
 	 *            the string quote
 	 */
 	public CsvReader(InputStream inputStream, char separator, Character stringQuote) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, stringQuote, false);
+		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, stringQuote);
 	}
 
 	/**
@@ -176,7 +175,7 @@ public class CsvReader extends BasicReader {
 	 *            the string quote
 	 */
 	public CsvReader(InputStream inputStream, String encoding, char separator, Character stringQuote) throws Exception {
-		this(inputStream, Charset.forName(encoding), separator, stringQuote, false);
+		this(inputStream, Charset.forName(encoding), separator, stringQuote);
 	}
 
 	/**
@@ -192,7 +191,7 @@ public class CsvReader extends BasicReader {
 	 *            the string quote
 	 * @throws Exception
 	 */
-	public CsvReader(InputStream inputStream, Charset encoding, char separator, Character stringQuote, boolean useExtendedCheck) throws Exception {
+	public CsvReader(InputStream inputStream, Charset encoding, char separator, Character stringQuote) throws Exception {
 		super(inputStream, encoding);
 		
 		this.separator = separator;
@@ -203,8 +202,6 @@ public class CsvReader extends BasicReader {
 		} else {
 			useStringQuote = false;
 		}
-
-		this.useExtendedCheck = useExtendedCheck;
 
 		if (anyCharsAreEqual(this.separator, '\r', '\n')) {
 			throw new IllegalArgumentException("Separator '" + this.separator + "' is invalid");
@@ -387,7 +384,7 @@ public class CsvReader extends BasicReader {
 								this.lastCellInLineHasUnclosedQuote = false;
 								return returnList;
 							} else {
-								if (useExtendedCheck && CollectionUtils.isNotEmpty(returnList)) {
+								if (CollectionUtils.isNotEmpty(returnList)) {
 									String lastValue = returnList.get(returnList.size() - 1);
 									if (hasUnclosedQuotesFromStart(lastValue) || (lastCellInLineHasUnclosedQuote && hasUnclosedQuotesFromEnd(lastValue))) {
 										throw new CsvDataBreakInsideCellException(

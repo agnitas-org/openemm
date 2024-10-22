@@ -82,6 +82,8 @@ public interface WorkflowDecision extends WorkflowMailingAware {
     boolean isIncludeVetoed();
 
     void setIncludeVetoed(boolean includeVetoed);
+    
+    boolean hasReactionCriteria();
 
     enum WorkflowDecisionType implements IntEnum {
         TYPE_DECISION(1),

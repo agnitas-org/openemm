@@ -1,14 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
-<%--@elvariable id="firstDayOfWeek" type="java.lang.Integer"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
@@ -16,24 +13,19 @@
     <c:set var="MONTH_LIST" value="<%= AgnUtils.getMonthList() %>"/>
     <c:set var="YEAR_LIST" value="<%= AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM, 5) %>"/>
 
-    <fmt:formatDate var="currentServerTime" value="${emm:now()}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
-
-    <c:set var="statisticsViewAllowed" value="${false}"/>
-    <emm:ShowByPermission token="stats.mailing">
-        <c:set var="statisticsViewAllowed" value="${true}"/>
-    </emm:ShowByPermission>
+    <c:set var="firstDayOfWeek" value="${1}"/> <%-- MONDAY --%>
 
     <script id="config:dashboard-calendar" type="application/json">
         {
             "firstDayOfWeek": ${firstDayOfWeek},
-            "statisticsViewAllowed": ${statisticsViewAllowed}
+            "statisticsViewAllowed": ${emm:permissionAllowed('stats.mailing', pageContext.request)}
         }
     </script>
 
     <script id="dashboard-tile-calendar" type="text/x-mustache-template">
-        <div id="calendar-tile" class="tile draggable-tile tile-{{- tileType }}" data-initializer="dashboard-calendar">
+        <div id="calendar-tile" class="tile draggable-tile tile-{{- tileSize }}" data-initializer="dashboard-calendar">
             <div class="tile-header">
-                <h1 class="tile-title">{{- tileName }}</h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="calendar.Calendar"/></h1>
             </div>
             <div class="tile-body">
                 <table id="calendar-table" class="table table-borderless align-middle">

@@ -8,9 +8,10 @@
 
 */
 
--- nothing left to do here right now
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'inbox.show' FROM admin_group_tbl WHERE shortname = 'Administrator';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'inbox.delete' FROM admin_group_tbl WHERE shortname = 'Administrator';
 
 INSERT INTO migration_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('23.10.000', CURRENT_USER, CURRENT_TIMESTAMP);
+	VALUES ('25.04.000', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

@@ -1,19 +1,7 @@
 
-
-//.modal {
-  //  display:  none;
-  //  position: fixed;
-  //  left: 0;
-  //  right: 0;
-  //  top: 50%;
-  //  max-height: 100vh;
-  //
-  //  overflow:   auto;
-  //  z-index:    1003;
-  //
-  //  @include translate(0, -50%);
-//}
-
+.modal-dialog {
+  @extend .modal-dialog-centered;
+}
 
 .modal-content {
   border: $border-default;
@@ -40,17 +28,7 @@
 
 .modal-body {
   @include hide-scroll;
-  
-//  position: relative;
   padding: $gap-md;
-//
-//  .modal-separator:last-child {
-//    display: none;
-//  }
-//
-//  &.ui-modal-loading {
-//    overflow: hidden;
-//  }
 }
 
 .modal-footer {
@@ -62,10 +40,13 @@
   & > * {
     margin: 0;
   }
+  & > .btn {
+    flex-grow: 1;
+  }
 }
 
 .modal-content {
-  color: var(--default-text-color);
+  color: var(--text-color-default);
 }
 
 @include media-breakpoint-down(lg) {
@@ -89,14 +70,12 @@
   }
 }
 
-.modal.modal-adaptive {
-  text-align: center;
-}
-
 .modal-adaptive {
   overflow-x: auto;
+  text-align: center;
+
   .modal-dialog {
-    max-width: max-content;
+    max-width: calc(100% - $gap);
     display: inline-flex;
     width: auto;
     text-align: initial;
@@ -110,37 +89,6 @@
     height: 100%;
   }
 }
-
-//@media (max-width: 440px) {
-//  .modal-dialog {
-//    margin-left: 10px;
-//    margin-right: 10px;
-//  }
-//
-//  .modal-header, .modal-body {
-//    padding-left: 15px;
-//    padding-right: 15px;
-//  }
-//
-//  .modal-separator {
-//    margin: 30px -15px;
-//  }
-//}
-
-//.modal-wide {
-//  .modal-dialog {
-//    @media screen and (min-width: 768px) {
-//      width: 740px;
-//    }
-//  }
-//}
-//
-//.modal-extra-wide {
-//  .modal-dialog {
-//    width: 80vw;
-//    max-width: 1200px;
-//  }
-//}
 
 [data-modal] {
   cursor: pointer;

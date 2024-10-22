@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
 
     protected MailingPreviewService previewService;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private MediatypeFactory mediatypeFactory;
     private PreviewFactory previewFactory;
     private TAGCheckFactory tagCheckFactory;
@@ -333,7 +333,7 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     }
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 

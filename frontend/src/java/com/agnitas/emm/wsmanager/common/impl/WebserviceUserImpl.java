@@ -21,7 +21,6 @@ import com.agnitas.emm.wsmanager.common.WebserviceUser;
 public class WebserviceUserImpl extends WebserviceUserListItemImpl implements WebserviceUser {
 	
 	/** Contact information. */
-	private String contact;
 	private String contactEmail;
 	
 	private Set<String> grantedPermissions;
@@ -31,17 +30,7 @@ public class WebserviceUserImpl extends WebserviceUserListItemImpl implements We
 		setGrantedPermissions(null);
 		setGrantedPermissionGroupIDs(null);
 	}
-
-	@Override
-	public String getContact() {
-		return this.contact;
-	}
-
-	@Override
-	public void setContact(final String contact) {
-		this.contact = contact;
-	}
-	
+		
 	@Override
 	public String getContactEmail() {
 		return this.contactEmail;

@@ -27,9 +27,9 @@ public class AuthorizationExceptionHandler {
 
     @ExceptionHandler(AuthorizationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public String onAuthorizationException(@SuppressWarnings("unused") AuthorizationException e) {
+    public String onAuthorizationException(AuthorizationException e) {
         logger.error("User authorization required");
-        return "forward:/logon.action";
+        return "forward:/logonRedesigned.action";
     }
 
     @ExceptionHandler(NotAllowedActionException.class)

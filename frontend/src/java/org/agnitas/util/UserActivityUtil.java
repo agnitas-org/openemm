@@ -21,7 +21,23 @@ import org.apache.logging.log4j.Logger;
 
 public class UserActivityUtil {
 
-    public static  String addChangedFieldLog(String fieldName, boolean newValue, boolean oldValue) {
+    public static String addSetFieldLog(String fieldName, int value) {
+        return addSetFieldLog(fieldName, String.valueOf(value));
+    }
+
+    public static String addSetFieldLog(String fieldName, boolean value) {
+        return addSetFieldLog(fieldName, String.valueOf(value));
+    }
+
+    public static String addSetFieldLog(String fieldName, String value) {
+        if (StringUtils.isBlank(value)) {
+            return "";
+        }
+
+        return "set " + fieldName + " to " + value + ". ";
+    }
+
+    public static String addChangedFieldLog(String fieldName, boolean newValue, boolean oldValue) {
         return addChangedFieldLog(fieldName, String.valueOf(newValue), String.valueOf(oldValue));
     }
 

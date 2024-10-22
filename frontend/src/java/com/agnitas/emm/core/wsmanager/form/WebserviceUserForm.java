@@ -23,8 +23,6 @@ public class WebserviceUserForm {
 
     private int companyId;
 
-    private String contactInfo;
-
     private boolean active;
     
     private final Map<String, String> endpointPermissions = new HashMap<>();
@@ -60,14 +58,6 @@ public class WebserviceUserForm {
 
     public void setCompanyId(int companyId) {
         this.companyId = companyId;
-    }
-
-    public String getContactInfo() {
-        return contactInfo;
-    }
-
-    public void setContactInfo(String contactInfo) {
-        this.contactInfo = contactInfo;
     }
 
     public boolean isActive() {

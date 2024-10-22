@@ -20,7 +20,6 @@
 
         this.$buttons.each(function() {
             var $button = $(this);
-            var type = $button.data('type');
             var occupiedAreas = [];
 
             $button.draggable({
@@ -34,7 +33,7 @@
                 },
                 appendTo: '#canvas',
                 helper: function() {
-                    return Node.createDraggable$(type);
+                    return Node.createDraggable$($button.data('type'));
                 },
                 start: function() {
                     occupiedAreas = options.getOccupiesAreas.call(self);
@@ -53,7 +52,7 @@
                 }
             }).on('dblclick', function() {
                 if (self.enabled) {
-                    options.onDrop.call(self, type);
+                    options.onDrop.call(self, $button.data('type'));
                 }
             });
         });

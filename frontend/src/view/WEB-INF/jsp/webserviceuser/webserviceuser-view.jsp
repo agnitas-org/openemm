@@ -43,17 +43,6 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="contactInfo" class="control-label">
-                        <mvc:message code="webserviceuser.contact_info" />
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:textarea path="contactInfo" cssClass="form-control" id="contactInfo"/>
-                </div>
-            </div>
-
             <div data-field="password">
                 <%--Password--%>
                 <div class="form-group">

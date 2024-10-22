@@ -101,6 +101,5 @@ public class Utils {
 		} catch(final Exception e) {
 			return OptionalInt.empty();
 		}
-	} 
-	
+	}
 }

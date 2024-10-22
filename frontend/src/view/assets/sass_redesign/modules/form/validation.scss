@@ -1,34 +1,13 @@
 
-//TODO: check if comment lines are redundant and remove them
-
 @mixin form-control-validation($color: $light-grey, $border-color: $color) {
-  //// Color the label and help text
-  //.help-block,
-  .form-label,
-  //.radio,
-  //.checkbox,
-  //.radio-inline,
-  //.checkbox-inline
-  {
+  .form-label {
     color: #{$color};
   }
   // Set the border and box shadow on specific inputs to match
   .form-control, .select2-container .select2-selection.form-control {
     border-color: #{$border-color};
     @include border-bottom-radius(0);
-    
-  //  @include box-shadow(inset 0 1px 1px rgba(0,0,0,.075)); // Redeclare so transitions work
-  //  &:focus {
-  //    border-color: darken($border-color, 10%);
-  //    $shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 6px lighten($border-color, 20%);
-  //    @include box-shadow($shadow);
-  //  }
   }
-
-  // //Optional feedback icon
-  //.form-control-feedback {
-  //  color: $text-color;
-  //}
 }
 
 .has-feedback {
@@ -49,7 +28,7 @@
   .has-#{$state} {
     @include form-control-validation($color);
 
-    .form-control-feedback-message { 
+    .form-control-feedback-message {
       background-color: $color;
       color: $white;
       border-color: $color;
@@ -58,9 +37,8 @@
 }
 
 .form-control-feedback-message {
-  display: flex;
+  @include flex-row($gap-x-sm);
   align-items: center;
-  gap: $gap-x-sm;
   padding: $gap-x-sm $gap-sm;
   color: $white;
 

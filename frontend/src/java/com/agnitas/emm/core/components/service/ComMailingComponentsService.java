@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.components.service;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
@@ -22,8 +23,11 @@ import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.web.forms.PaginationForm;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,13 +72,15 @@ public interface ComMailingComponentsService {
 
 	List<MailingComponent> getComponents(int companyId, int mailingId, boolean includeContent);
 
-    List<MailingImageDto> getMailingImages(int companyId, int mailingId, MailingImagesOverviewFilter filter);
+    List<String> getMailingImagesNamesForMobileAlternative(int mailingId, int companyId);
+    PaginatedListImpl<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter);
 
     ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
     
 	List<MailingComponent> getComponentsByType(int companyID, int mailingId, List<MailingComponentType> types);
 
 	List<MailingComponent> getPreviewHeaderComponents(int companyId, int mailingId);
+	PaginatedListImpl<MailingAttachmentDto> getAttachmentsOverview(PaginationForm form, int mailingId, int companyId);
 
 	Map<String, String> getUrlsByNamesForEmmImages(Admin admin, int mailingId);
 
@@ -109,8 +115,11 @@ public interface ComMailingComponentsService {
 
     void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImagesNames);
 
-	List<String> getImagesNames(int mailingId, Set<Integer> bulkIds, Admin admin);
-    List<String> getImagesNames(int mailingId, int companyId);
+	List<String> getImagesNames(int mailingId, Set<Integer> ids, Admin admin);
+	List<String> getImagesNames(int mailingId, int companyId);
 
+	List<String> getNames(Set<Integer> ids, int mailingId, Admin admin);
+	ServiceResult<UserAction> delete(Set<Integer> ids, int mailingId, Admin admin);
+	File getZipToDownload(Set<Integer> ids, int mailingId, Admin admin);
 
 }

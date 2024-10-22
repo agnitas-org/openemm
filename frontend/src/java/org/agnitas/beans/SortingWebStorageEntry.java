@@ -37,7 +37,7 @@ public class SortingWebStorageEntry extends RowsCountWebStorageEntry {
     }
 
     @Override
-    public RowsCountWebStorageEntry clone() throws CloneNotSupportedException {
+    public SortingWebStorageEntry clone() throws CloneNotSupportedException {
         final SortingWebStorageEntry clone = new SortingWebStorageEntry();
         clone.setSortColumn(getSortColumn());
         clone.setAscendingOrder(isAscendingOrder());

@@ -3,10 +3,10 @@
 <%@ page import="org.agnitas.beans.ColumnMapping" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileForm"--%>
 <%--@elvariable id="genderMappingJoined" type="java.lang.String"--%>
@@ -19,7 +19,7 @@
 <%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
 <%--@elvariable id="importModes" type="org.agnitas.util.importvalues.ImportMode[]"--%>
 <%--@elvariable id="availableTimeZones" type="java.lang.String[]"--%>
-<%--@elvariable id="availableImportProfileFields" type="java.util.List<com.agnitas.beans.ProfileField>"--%>
+<%--@elvariable id="availableImportProfileFields" type="java.util.List<com.agnitas.emm.core.service.RecipientFieldDescription>"--%>
 <%--@elvariable id="checkForDuplicatesValues" type="org.agnitas.util.importvalues.CheckForDuplicates[]"--%>
 <%--@elvariable id="importProcessActions" type="java.util.List<com.agnitas.beans.ImportProcessAction>"--%>
 
@@ -31,13 +31,11 @@
 <c:set var="MAILTYPE_TEXT" value="<%= Recipient.MAILTYPE_TEXT %>"/>
 <c:set var="MAILTYPE_HTML" value="<%= Recipient.MAILTYPE_HTML %>"/>
 <c:set var="MAILTYPE_HTML_OFFLINE" value="<%= Recipient.MAILTYPE_HTML_OFFLINE %>"/>
-<c:set var="importModeUpdateOnly" value="<%= ImportMode.UPDATE %>"/>
-<c:set var="importModeBlacklist" value="<%= ImportMode.TO_BLACKLIST %>"/>
 
 <c:set var="DO_NOT_IMPORT" value="<%= ColumnMapping.DO_NOT_IMPORT %>"/>
 <c:set var="isNewProfile" value="${form.id == 0}" />
 
-<mvc:form id="import-profile-view" cssClass="tiles-container d-flex hidden" servletRelativeAction="/import-profile/save.action" modelAttribute="form" enctype="multipart/form-data"
+<mvc:form id="import-profile-view" cssClass="tiles-container" servletRelativeAction="/import-profile/save.action" modelAttribute="form" enctype="multipart/form-data"
           data-form="resource" data-controller="import-profile" data-initializer="import-profile-view" data-editable-view="${agnEditViewKey}">
 
     <script id="config:import-profile-view" type="application/json">
@@ -47,10 +45,10 @@
         }
     </script>
 
-    <div class="tiles-block flex-column" style="flex: 1">
+    <div class="tiles-block flex-column">
         <div id="general-settings-tile" class="tile" data-editable-tile style="flex: 1">
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="mailing.generalSettings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="mailing.generalSettings" /></h1>
             </div>
 
             <div class="tile-body js-scrollable">
@@ -64,7 +62,7 @@
                         <mvc:text path="name" cssClass="form-control" id="profileName" maxlength="99" />
                     </div>
 
-                    <div class="col-12" data-hide-by-select="#import_mode_select" data-hide-by-select-values="${importModeBlacklist.getIntValue()}">
+                    <div class="col-12" data-hide-by-select="#import_mode_select" data-hide-by-select-values="${ImportMode.TO_BLACKLIST.intValue}">
                         <div class="row g-1">
                             <div class="col">
                                 <label for="recipient-mailinglists" class="form-label">
@@ -92,13 +90,43 @@
                     </div>
 
                     <%@ include file="fragments/mediatype_settings.jspf" %>
+
+                    <div class="col-12">
+                        <label for="import_email" class="form-label text-truncate">
+                            <mvc:message code="import.profile.report.email"/>
+                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ReportEmail.xml"></a>
+                        </label>
+
+                        <select name="mailForReport" id="import_email" class="form-control dynamic-tags" multiple placeholder="${emailPlaceholder}">
+                            <c:forEach var="reportEmail" items="${emm:splitString(form.mailForReport)}">
+                                <c:if test="${not empty reportEmail}">
+                                    <option value="${reportEmail}" selected>${reportEmail}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="import_error_email" class="form-label text-truncate">
+                            <mvc:message code="error.import.profile.email"/>
+                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ErrorEmail.xml"></a>
+                        </label>
+
+                        <select name="mailForError" id="import_error_email" class="form-control dynamic-tags" multiple placeholder="${emailPlaceholder}">
+                            <c:forEach var="errorEmail" items="${emm:splitString(form.mailForError)}">
+                                <c:if test="${not empty errorEmail}">
+                                    <option value="${errorEmail}" selected>${errorEmail}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="file-settings-tile" class="tile" data-editable-tile style="flex: 1">
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="import.profile.file.settings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="import.profile.file.settings" /></h1>
             </div>
 
             <div class="tile-body js-scrollable">
@@ -183,9 +211,9 @@
         </div>
     </div>
 
-    <div id="import-settings-tile" class="tile" data-editable-tile style="flex: 1">
+    <div id="import-settings-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="import.profile.process.settings" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="import.profile.process.settings" /></h1>
         </div>
 
         <div class="tile-body js-scrollable">
@@ -200,12 +228,16 @@
                                 data-field-vis="" disabled="${!isUserHasPermissionForSelectedMode && !isNewProfile}">
                         <c:forEach var="importMode" items="${importModes}">
                             <c:choose>
-                                <c:when test="${importMode == importModeUpdateOnly}">
+                                <c:when test="${[ImportMode.ADD, ImportMode.ADD_AND_UPDATE, ImportMode.ADD_AND_UPDATE_FORCED, ImportMode.ADD_AND_UPDATE_EXCLUSIVE].contains(importMode)}">
+                                    <c:set var="hideAttr" value=""/>
+                                    <c:set var="showAttr" value="#mailtype-block,#new-recipients-doi-action"/>
+                                </c:when>
+                                <c:when test="${importMode == ImportMode.UPDATE}">
                                     <c:set var="hideAttr" value="#mailtype-block"/>
-                                    <c:set var="showAttr" value=""/>
+                                    <c:set var="showAttr" value="#new-recipients-doi-action"/>
                                 </c:when>
                                 <c:otherwise>
-                                    <c:set var="hideAttr" value=""/>
+                                    <c:set var="hideAttr" value="#new-recipients-doi-action"/>
                                     <c:set var="showAttr" value="#mailtype-block"/>
                                 </c:otherwise>
                             </c:choose>
@@ -231,14 +263,14 @@
                         </c:when>
                         <c:otherwise>
                             <mvc:select id="import_key_column" path="firstKeyColumn" cssClass="form-control js-select">
-                                <mvc:options items="${availableImportProfileFields}" itemLabel="shortname" itemValue="column" />
+                                <mvc:options items="${availableImportProfileFields}" itemLabel="shortName" itemValue="columnName" />
                             </mvc:select>
                         </c:otherwise>
                     </c:choose>
                 </div>
 
                 <c:if test="${isCheckForDuplicatesAllowed}">
-                    <div class="col-6">
+                    <div class="col-12">
                         <div class="form-check form-switch">
                             <mvc:checkbox path="shouldCheckForDuplicates" id="checkForDuplicates" role="switch" cssClass="form-check-input"/>
                             <label class="form-label form-check-label text-truncate" for="checkForDuplicates">
@@ -250,7 +282,7 @@
                 </c:if>
 
                 <c:if test="${isUpdateDuplicatesChangeAllowed}">
-                    <div class="col-6">
+                    <div class="col-12">
                         <div class="form-check form-switch">
                             <mvc:checkbox path="updateAllDuplicates" id="import_duplicates" role="switch" cssClass="form-check-input"/>
                             <label class="form-label form-check-label text-truncate" for="import_duplicates">
@@ -287,29 +319,11 @@
                 </div>
 
                 <div class="col-6">
-                    <label for="import_email" class="form-label text-truncate">
-                        <mvc:message code="import.profile.report.email"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ReportEmail.xml"></a>
-                    </label>
-
-                    <mvc:text id="import_email" path="mailForReport" cssClass="form-control" />
-                </div>
-
-                <div class="col-6">
-                    <label for="import_error_email" class="form-label text-truncate">
-                        <mvc:message code="error.import.profile.email"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ErrorEmail.xml"></a>
-                    </label>
-
-                    <mvc:text id="import_error_email" path="mailForError" cssClass="form-control" />
-                </div>
-
-                <div class="col-6">
                     <label for="reportLocale" class="form-label text-truncate">
                         <mvc:message code="import.report.locale" />
                     </label>
 
-                    <mvc:select id="reportLocale" path="reportLocale" cssClass="form-control js-select" data-action="change-import-profile">
+                    <mvc:select id="reportLocale" path="reportLocale" cssClass="form-control js-select">
                         <mvc:option value="de_DE"><mvc:message code="settings.German" /></mvc:option>
                         <mvc:option value="en_US"><mvc:message code="settings.English" /></mvc:option>
                         <mvc:option value="fr_FR"><mvc:message code="settings.French" /></mvc:option>
@@ -325,22 +339,22 @@
                         <mvc:message code="import.report.timezone" />
                     </label>
 
-                    <mvc:select id="reportTimezone" path="reportTimezone" cssClass="form-control js-select" data-action="change-import-profile">
+                    <mvc:select id="reportTimezone" path="reportTimezone" cssClass="form-control js-select">
                         <c:forEach var="timeZone" items="${availableTimeZones}">
                             <mvc:option value="${timeZone}">${timeZone}</mvc:option>
                         </c:forEach>
                     </mvc:select>
                 </div>
 
-                <%@ include file="fragments/action_settings-extended_actions.jspf.jspf" %>
+                <%@ include file="fragments/action_settings-extended_actions.jspf" %>
             </div>
         </div>
     </div>
 
-    <div class="tiles-block flex-column" style="flex: 1">
+    <div class="tiles-block flex-column">
         <div id="gender-settings-tile" class="tile" data-editable-tile style="flex: 1">
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="import.profile.gender.settings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="import.profile.gender.settings" /></h1>
             </div>
 
             <div class="tile-body js-scrollable">
@@ -357,20 +371,17 @@
                     {
                         "columns" : ${profileFieldsAsJson},
                         "columnMappings": ${emm:toJson(columnMappings)},
-                        "urls": {
-                            "READ": "<c:url value="/import-profile/mappings/read.action"/>"
-                        },
                         "doNotImportValue": ${emm:toJson(DO_NOT_IMPORT)}
                     }
                 </script>
             </c:if>
 
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="import.ManageColumns" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="import.ManageColumns" /></h1>
 
                 <c:if test="${not isNewProfile}">
                     <div class="tile-controls">
-                        <button type="button" class="btn btn-inverse btn-icon-sm" data-action="show-column-mappings">
+                        <button type="button" class="btn btn-inverse btn-icon" data-action="show-column-mappings">
                             <i class="icon icon-external-link-alt"></i>
                         </button>
                     </div>
@@ -381,14 +392,15 @@
                 <div class="row g-3">
                     <c:if test="${not isNewProfile}">
                         <div class="col-12 d-flex gap-1">
-                            <div class="input-group">
-                                <input id="uploadFile" type="file" name="uploadFile" class="form-control">
-                            </div>
-                            <button id="upload-mappings-btn" type="button" class="btn btn-icon-sm btn-primary" data-action="upload-column-mappings">
+                            <input id="uploadFile" type="file" name="uploadFile" class="form-control">
+                            <button id="upload-mappings-btn" type="button" class="btn btn-icon btn-primary" data-action="upload-column-mappings" data-tooltip="<mvc:message code="button.Upload" />">
                                 <i class="icon icon-cloud-upload-alt"></i>
                             </button>
                         </div>
                     </c:if>
+
+                    <%@ include file="fragments/profile-automatic-mapping-switch.jspf" %>
+
                     <div class="col-12">
                         <div class="notification-simple notification-simple--lg notification-simple--info">
                             <span><mvc:message code="${isNewProfile ? 'hint.import.manage.fields.save' : 'export.CsvMappingMsg'}" /></span>
@@ -408,7 +420,7 @@
 </mvc:form>
 
 <c:if test="${not isNewProfile}">
-    <script type="application/json" id="config:import-profile-mappings-validator">
+    <script type="application/json" data-initializer="import-profile-mappings-validator">
         {
             "columns": ${profileFieldsAsJson},
             "doNotImportValue": ${emm:toJson(DO_NOT_IMPORT)}

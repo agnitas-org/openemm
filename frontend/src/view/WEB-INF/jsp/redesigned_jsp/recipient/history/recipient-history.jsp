@@ -1,6 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="statusChangesHistoryJson" type="net.sf.json.JSONArray"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
@@ -10,14 +10,18 @@
 <mvc:message var="oldvalueMsg" code='recipient.history.oldvalue'/>
 <mvc:message var="newvalueMsg" code='recipient.history.newvalue'/>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <div id="table-tile" class="tile js-data-table" data-table="recipient-status-history" data-editable-tile="main">
-        <div class="tile-header">
-            <h1><mvc:message code="default.search"/></h1>
-        </div>
-
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <div id="table-tile" class="tile" data-editable-tile="main">
         <div class="tile-body">
-            <div class="js-data-table-body" data-web-storage="recipient-status-history-overview"></div>
+            <div class="table-wrapper" data-web-storage="recipient-status-history-overview" data-js-table="recipient-status-history">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script id="recipient-status-history" type="application/json">
@@ -32,18 +36,21 @@
                     {
                         "headerName": "${fieldnameMsg}",
                         "editable": false,
-                        "field": "fieldDescription"
+                        "field": "fieldDescription",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${oldvalueMsg}",
                         "editable": false,
-                        "field": "oldValue"
+                        "field": "oldValue",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${newvalueMsg}",
                         "editable": false,
                         "resizable": false,
-                        "field": "newValue"
+                        "field": "newValue",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     }
                 ],
                 "data": ${statusChangesHistoryJson},
@@ -60,11 +67,12 @@
     <div id="filter-tile" class="tile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">

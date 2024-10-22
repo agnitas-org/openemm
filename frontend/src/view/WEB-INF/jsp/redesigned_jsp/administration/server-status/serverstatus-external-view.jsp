@@ -97,7 +97,7 @@
 				</div>
 				<!-- DB Connection -->
 				<c:set var="dbConnectStatus" value="${serverStatus.dbConnectStatus}"/>
-				<div class="panel panel--status panel--${dbConnectStatus ? 'success' : 'error'}">
+				<div class="panel panel--status panel--${dbConnectStatus ? 'success' : 'alert'}">
 					<div class="panel-head">
 						<i class="icon icon-${dbConnectStatus ? 'check-circle' : 'ban'}"></i>
 						<div class="panel-title">
@@ -111,7 +111,7 @@
 
 				<%@ include file="fragments/serverstatus-external-footer.jspf" %>
 			</main>
-			<footer><p>${appVersion}</p></footer>
+			<footer><p><mvc:message code="serverStatus.general.version"/>: ${appVersion}</p></footer>
 		</div>
 	</body>
 </html>

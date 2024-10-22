@@ -1,11 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.mailingcontent.form.MailingContentForm"--%>
 <%--@elvariable id="isMailingEditable" type="java.lang.Boolean"--%>
@@ -13,6 +12,8 @@
 <%--@elvariable id="isMailingExclusiveLockingAcquired" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="anotherLockingUserName" type="java.lang.String"--%>
+<%--@elvariable id="smsDynNames" type="java.util.Set<java.lang.String>"--%>
+<%--@elvariable id="gsm7BitChars" type="java.util.Set<java.lang.Character>"--%>
 
 <c:set var="PREVIEW_FORMAT_HTML" value="<%= MailingPreviewHelper.INPUT_TYPE_HTML %>"/>
 <c:set var="PREVIEW_FORMAT_TEXT" value="<%= MailingPreviewHelper.INPUT_TYPE_HTML %>"/>
@@ -38,6 +39,7 @@
 
     <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
         <jsp:param name="toolbarType" value="${toolbarType}"/>
+        <jsp:param name="showAiTextGenerationBtn" value="${isContentGenerationAllowed}"/>
     </jsp:include>
 </emm:HideByPermission>
 
@@ -46,7 +48,7 @@
         <%@include file="fragments/mailing-type-post.jspf" %>
     </c:when>
     <c:otherwise>
-        <div id="mailing-content-blocks" class="tiles-container d-flex hidden" data-controller="mailing-content-controller" data-editable-view="${agnEditViewKey}">
+        <div id="mailing-content-blocks" class="tiles-container" data-controller="mailing-content-controller" data-editable-view="${agnEditViewKey}">
             <script data-initializer="mailing-content-initializer" type="application/json">
                 {
                     "dynTags": ${emm:toJson(form.tags)},
@@ -60,20 +62,21 @@
                     "mailFormat": ${mailFormat},
                     "isMailingGrid": ${isMailingGrid},
                     "isEmailMediaTypeActive": ${isEmailMediaTypeActive},
-                    "isSmsMediaTypeActive": ${isSmsMediaTypeActive}
+                    "isSmsMediaTypeActive": ${not empty isSmsMediaTypeActive and isSmsMediaTypeActive},
+                    "smsDynNames": ${emm:toJson(smsDynNames)}
                 }
             </script>
             
-            <div class="tile" data-editable-tile="main" style="flex:1">
+            <div class="tile" data-editable-tile="main">
                 <div class="tile-header">
-                    <h1 class="tile-title"><mvc:message code="webservice.permissionCategory.contentBlock"/></h1>
+                    <h1 class="tile-title text-truncate"><mvc:message code="webservice.permissionCategory.contentBlock"/></h1>
                 </div>
                     <c:choose>
                         <c:when test="${empty form.tags}">
                             <div class="tile-body">
                                 <div class="notification-simple">
                                     <i class="icon icon-info-circle"></i>
-                                    <mvc:message code="GWUA.contentBlocks.empty"/>
+                                    <mvc:message code="mailing.content.empty"/>
                                 </div>
                             </div>
                         </c:when>
@@ -95,7 +98,7 @@
                         </c:otherwise>
                     </c:choose>
             </div>
-            <div class="tiles-block flex-column" style="flex:1">
+            <div class="tiles-block flex-column">
                 <%@include file="fragments/mailing-content-settings.jspf" %>
 
                 <emm:ShowByPermission token="mailing.send.show">
@@ -111,3 +114,9 @@
 </c:choose>
 
 <%@ include file="fragments/content-editor-template.jspf" %>
+
+<script id="gsm-7-bit-chars" type="application/json">
+    {
+      "chars": ${emm:toJson(gsm7BitChars)}
+    }
+</script>

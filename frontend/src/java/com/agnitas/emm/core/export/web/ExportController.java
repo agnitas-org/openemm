@@ -15,19 +15,23 @@ import com.agnitas.beans.PollingUid;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.export.form.ExportForm;
 import com.agnitas.emm.core.export.util.ExportUtils;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.I18nString;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.RecipientExportWorker;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
@@ -47,13 +51,14 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -61,9 +66,12 @@ import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -72,12 +80,13 @@ import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static org.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
-@Controller
-@RequestMapping("/export")
-public class ExportController {
+public class ExportController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(ExportController.class);
 
@@ -90,33 +99,39 @@ public class ExportController {
     private final MailinglistService mailinglistService;
     private final UserActivityLogService userActivityLogService;
     private final RecipientExportReporter recipientExportReporter;
-    private final MailinglistApprovalService mailinglistApprovalService;
     private final WebStorage webStorage;
 
-    public ExportController(ColumnInfoService columnInfoService, ComTargetService targetService, ExportPredefService exportService, MailinglistService mailinglistService, UserActivityLogService userActivityLogService, RecipientExportReporter recipientExportReporter, MailinglistApprovalService mailinglistApprovalService, WebStorage webStorage) {
+    public ExportController(ColumnInfoService columnInfoService, ComTargetService targetService,
+                            ExportPredefService exportService, MailinglistService mailinglistService,
+                            UserActivityLogService userActivityLogService,
+                            RecipientExportReporter recipientExportReporter, WebStorage webStorage) {
         this.columnInfoService = columnInfoService;
         this.targetService = targetService;
         this.exportService = exportService;
         this.mailinglistService = mailinglistService;
         this.userActivityLogService = userActivityLogService;
         this.recipientExportReporter = recipientExportReporter;
-        this.mailinglistApprovalService = mailinglistApprovalService;
         this.webStorage = webStorage;
     }
 
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute("form") PaginationForm form, Model model, Admin admin) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.EXPORT_PROFILE_OVERVIEW, form);
-        model.addAttribute("exports", exportService.getExportProfiles(admin));
+    public String list(@RequestParam(required = false) Boolean restoreSort, @ModelAttribute("form") PaginationForm form, Model model, Admin admin) {
+        FormUtils.syncPaginationData(webStorage, WebStorage.EXPORT_PROFILE_OVERVIEW, form, restoreSort);
+        model.addAttribute("exports", exportService.getExportProfilesOverview(form, admin));
         writeUserActivityLog(admin, "exports list", "Data management -> Export");
         return "export_list";
     }
 
     @GetMapping("/{id:\\d+}/view.action")
-    public String view(@PathVariable int id, ExportForm form, Model model, Admin admin) throws Exception {
+    public String view(@PathVariable int id, ExportForm form, Model model, Admin admin,
+                       @RequestHeader("referer") String referringUrl, Popups popups) throws Exception {
         ExportPredef export = null;
         if (id != 0) {
             export = exportService.get(id, admin.getCompanyID());
+            if (!allowedToView(admin, export)) {
+                popups.alert(PERMISSION_DENIED_MSG);
+                return "redirect:" + AgnUtils.removeJsessionIdFromUrl(referringUrl);
+            }
             exportToForm(export, form, admin);
             writeUserActivityLog(admin, "view export", export.toString());
         } else {
@@ -124,6 +139,10 @@ public class ExportController {
         }
         prepareViewAttrs(model, admin, export);
         return "export_view";
+    }
+
+    protected boolean allowedToView(Admin admin, ExportPredef export) {
+        return true; // overridden in extended class
     }
 
     @PostMapping("/{id:\\d+}/save.action")
@@ -169,22 +188,26 @@ public class ExportController {
         return newId;
     }
 
-    protected void formToExport(ExportForm form, ExportPredef export, Admin admin) throws Exception {
+    private void formToExport(ExportForm form, ExportPredef export, Admin admin) throws Exception {
         export.setShortname(form.getShortname());
         export.setDescription(form.getDescription());
         export.setMailinglists(StringUtils.join(ArrayUtils.toObject(form.getMailinglists()), ";"));
 
         formFileFormatToExport(form, export);
-        formRecipientInfoToExport(form, export);
+        formRecipientInfoToExport(form, export, admin);
         setColumnsToExport(form, export, admin);
         formDateLimitsToExport(form, export, admin);
     }
 
-    private void formRecipientInfoToExport(ExportForm form, ExportPredef export) {
-        export.setMailinglistID(form.getMailinglistId());
+    private void formRecipientInfoToExport(ExportForm form, ExportPredef export, Admin admin) {
+        formMailinglistToExport(form, export, admin);
         export.setTargetID(form.getTargetId());
         export.setUserType(form.getUserType());
         export.setUserStatus(form.getUserStatus());
+    }
+
+    protected void formMailinglistToExport(ExportForm form, ExportPredef export, Admin admin) {
+        export.setMailinglistID(form.getMailinglistId());
     }
 
     private void formFileFormatToExport(ExportForm form, ExportPredef export) {
@@ -244,19 +267,25 @@ public class ExportController {
     }
 
     private List<ExportColumnMapping> getExportCustomColumns(ExportPredef export, Admin admin) throws Exception {
-        return ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
+        if (isUiRedesign(admin)) {
+            List<ExportColumnMapping> customCols = ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
+            customCols.sort(Comparator.comparing(ExportColumnMapping::getDbColumn));
+            return customCols;
+        } else {
+            return ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
+        }
     }
 
     private String changelog(ExportPredef oldExport, ExportPredef newExport, Admin admin) {
         SimpleDateFormat dateFormat = admin.getDateTimeFormatWithSeconds();
         return addChangedFieldLog(SHORTNAME_FIELD, newExport.getShortname(), oldExport.getShortname()) +
                 addChangedFieldLog("description", newExport.getDescription(), oldExport.getDescription()) +
-                addChangedFieldLog("mailing list", newExport.getMailinglistID(), oldExport.getMailinglistID()) +
+                getMailinglistChangeLog(oldExport, newExport, admin) +
                 addChangedFieldLog("target group", newExport.getTargetID(), oldExport.getTargetID()) +
                 addChangedFieldLog("recipient type", newExport.getUserType(), oldExport.getUserType()) +
                 addChangedFieldLog("recipient status", newExport.getUserStatus(), oldExport.getUserStatus()) +
                 addChangedFieldLog("columns", getExportColumnsCsv(newExport), getExportColumnsCsv(oldExport)) +
-                addChangedFieldLog("mailing lists", newExport.getMailinglists(), oldExport.getMailinglists()) +
+                addChangedFieldLog("status mailing lists", newExport.getMailinglists(), oldExport.getMailinglists()) +
                 addChangedFieldLog("separator", newExport.getSeparator(), oldExport.getSeparator()) +
                 addChangedFieldLog("delimiter", newExport.getDelimiter(), oldExport.getDelimiter()) +
                 addChangedFieldLog("charset", newExport.getCharset(), oldExport.getCharset()) +
@@ -271,31 +300,29 @@ public class ExportController {
                 addChangedFieldLog("ML binding period last days", newExport.getMailinglistBindLastDays(), oldExport.getMailinglistBindLastDays());
     }
 
+    protected String getMailinglistChangeLog(ExportPredef oldExport, ExportPredef newExport, Admin admin) {
+        return addChangedFieldLog("mailing list", newExport.getMailinglistID(), oldExport.getMailinglistID());
+    }
+
     private String getExportColumnsCsv(ExportPredef newExport) {
         return StringUtils.join(newExport.getExportColumnMappings().stream()
                 .map(ExportColumnMapping::getDbColumn)
                 .collect(Collectors.toList()), ",");
     }
 
-    private boolean isInvalidForm(ExportForm form, Admin admin, Popups popups) {
+    protected boolean isInvalidForm(ExportForm form, Admin admin, Popups popups) {
         if (StringUtils.length(form.getShortname()) < 3) {
-            popups.field(SHORTNAME_FIELD, "error.name.too.short");
+            popups.fieldError(SHORTNAME_FIELD, "error.name.too.short");
         }
-
-        List<Integer> disabledMailingListsForAdmin = mailinglistApprovalService.getDisabledMailinglistsForAdmin(admin.getCompanyID(), admin.getAdminID());
-        if (disabledMailingListsForAdmin.size() > 0 && form.getMailinglistId() <= 0) {
-            popups.field("mailinglist", "error.import.no_mailinglist");
-        }
-
         return popups.hasAlertPopups();
     }
 
-    private void prepareViewAttrs(Model model, Admin admin, ExportPredef export) throws Exception {
+    protected void prepareViewAttrs(Model model, Admin admin, ExportPredef export) throws Exception {
         model.addAttribute("timeZones", TimeZone.getAvailableIDs());
         model.addAttribute("dateFormats", DateFormat.values());
         model.addAttribute("dateTimeFormats", DateFormat.values());
         model.addAttribute("targetGroups", targetService.getTargetLights(admin));
-        model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
+        model.addAttribute("mailinglists", getViewMailinglists(admin));
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         model.addAttribute("availableCharsetOptions", exportService.getAvailableCharsetOptionsForDisplay(admin, export));
         model.addAttribute("availableUserStatusOptions", exportService.getAvailableUserStatusOptionsForDisplay(admin, export));
@@ -306,6 +333,10 @@ public class ExportController {
                 .getComColumnInfos(admin.getCompanyID(), admin.getAdminID()).stream()
                 .filter(t -> EnumSet.of(ProfileFieldMode.Editable, ProfileFieldMode.ReadOnly).contains(t.getModeEdit()))
                 .collect(Collectors.toList()));
+    }
+
+    protected List<Mailinglist> getViewMailinglists(Admin admin) {
+        return mailinglistService.getMailinglists(admin.getCompanyID());
     }
 
     private void prepareFormToCreateNewExport(ExportForm form, Admin admin) {
@@ -346,6 +377,7 @@ public class ExportController {
 
     private void setRecipientsInfoToForm(ExportPredef export, ExportForm form) {
         form.setMailinglistId(export.getMailinglistID());
+        form.setMailinglistIds(export.getMailinglistIds());
         form.setTargetId(export.getTargetID());
         form.setUserType(export.getUserType());
         form.setUserStatus(export.getUserStatus());
@@ -403,20 +435,6 @@ public class ExportController {
         return "export_delete";
     }
 
-    @GetMapping("/{id:\\d+}/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@PathVariable int id, Model model, Admin admin, Popups popups) {
-        ServiceResult<ExportPredef> result = exportService.getExportForDeletion(id, admin.getCompanyID());
-        if (!result.isSuccess()) {
-            popups.addPopups(result);
-            return MESSAGES_VIEW;
-        }
-
-        MvcUtils.addDeleteAttrs(model, result.getResult().getShortname(),
-                "export.ExportDelete", "export.delete.question");
-        return DELETE_VIEW;
-    }
-
     @PostMapping("/{id:\\d+}/delete.action")
     public String delete(@PathVariable int id, Admin admin, Popups popups) {
         ServiceResult<ExportPredef> result = exportService.delete(id, admin.getCompanyID());
@@ -426,13 +444,55 @@ public class ExportController {
         }
         popups.success(SELECTION_DELETED_MSG);
         writeUserActivityLog(admin, "delete export definition", result.getResult().toString());
-        return "redirect:/export/list.action";
+        return "redirect:/export/list.action?restoreSort=true";
+    }
+
+    @GetMapping(value = "/delete.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+        validateDeletion(bulkIds);
+
+        ServiceResult<List<ExportPredef>> result = exportService.getAllowedForDeletion(bulkIds, admin.getCompanyID());
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        List<String> names = result.getResult().stream().map(ExportPredef::getShortname).collect(Collectors.toList());
+        MvcUtils.addDeleteAttrs(model, names,
+                "export.ExportDelete", "export.delete.question",
+                "bulk.export.delete", "bulk.export.delete.question");
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @PermissionMapping("delete")
+    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+        validateDeletion(bulkIds);
+        ServiceResult<UserAction> result = exportService.delete(bulkIds, admin);
+
+        popups.addPopups(result);
+        userActivityLogService.writeUserActivityLog(admin, result.getResult());
+
+        return "redirect:/export/list.action?restoreSort=true";
+    }
+
+    private void validateDeletion(Set<Integer> ids) {
+        if (isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
     }
 
     @PostMapping("/{id:\\d+}/evaluate.action")
     public Object evaluate(@PathVariable int id, ExportForm form, Model model,
                            Admin admin, HttpSession session, Popups popups) {
-        Callable<ModelAndView> exportWorker = () -> {
+        Callable<Object> exportWorker = () -> {
+            if (form.isInProgress()) {
+                LOGGER.error("Evaluation already in progress. Maybe some delayed client request occurred due to connection hang.");
+                return ResponseEntity.noContent().build();
+            }
+
             ExportPredef export = prepareExportToEvaluate(id, form, admin);
 
             if (!exportService.isManageAllowed(export, admin)) {
@@ -443,17 +503,29 @@ public class ExportController {
             worker.call();
             createExportReport(worker, admin, popups);
             writeEvaluationLog(form, admin, worker);
-            model.addAttribute("tmpFileName", new File(worker.getExportFile()).getName());
-            model.addAttribute("exportedLines", worker.getExportedLines());
-            model.addAttribute("downloadFileName", new File(worker.getExportFile()).getName());
+            if (isUiRedesign(admin)) {
+                model.addAttribute("titleKey", "export.finish")
+                        .addAttribute("message", I18nString.getLocaleString("export.finished.result", admin.getLocale(), worker.getExportedLines()))
+                        .addAttribute("downloadUrl", String.format("/export/%d/download.action", id))
+                        .addAttribute("tmpFileName", new File(worker.getExportFile()).getName())
+                        .addAttribute("success", true);
+            } else {
+                model.addAttribute("tmpFileName", new File(worker.getExportFile()).getName());
+                model.addAttribute("exportedLines", worker.getExportedLines());
+                model.addAttribute("downloadFileName", new File(worker.getExportFile()).getName());
+            }
             return new ModelAndView("export_result", model.asMap());
         };
         updateProgressStatus(model, form);
         return new Pollable<>(
-                PollingUid.builder(session.getId(), EXPORT_KEY).arguments(ArrayUtils.add(form.toArray(), id)).build(),
+                PollingUid.builder(session.getId(), EXPORT_KEY).arguments(id, form.getExportStartTime()).build(),
                 Pollable.DEFAULT_TIMEOUT,
-                new ModelAndView("export_progress", form.toMap()),
+                new ModelAndView("export_progress", Map.of("exportStartTime", form.getExportStartTime())),
                 exportWorker);
+    }
+    
+    private boolean isUiRedesign(Admin admin) {
+        return admin.isRedesignedUiUsed();
     }
 
     private void updateProgressStatus(Model model, ExportForm form) {
@@ -488,12 +560,16 @@ public class ExportController {
                 "Export started at: " + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).format(worker.getStartTime()) + ". " +
                         "ended at: " + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).format(worker.getEndTime()) + ". " +
                         "Number of profiles: " + worker.getExportedLines() + ". " +
-                        "Export parameters:" +
-                        " mailing list: " + getMailingListNameById(form.getMailinglistId(), admin.getCompanyID()) +
+                        "Export parameters:"
+                        + getEvaluationMailinglistLog(form, admin) +
                         ", target group: " + getTargetNameById(form.getTargetId(), admin.getCompanyID()) +
                         ", recipient type: " + getRecipientTypeByLetter(form.getUserType()) +
                         ", recipient status: " + getRecipientStatusById(form.getUserStatus()) +
                         ", number of selected columns: " + form.getUserColumns().length);
+    }
+
+    protected String getEvaluationMailinglistLog(ExportForm form, Admin admin) {
+        return " mailing list: " + getMailingListNameById(form.getMailinglistId(), admin.getCompanyID());
     }
 
     /**
@@ -553,7 +629,7 @@ public class ExportController {
      * @param companyId company id
      * @return a text representation of export parameter "Mailing list"
      */
-    private String getMailingListNameById(int listId, int companyId) {
+    protected String getMailingListNameById(int listId, int companyId) {
        if (listId == 0) {
            return "All";
        } else if (listId == -1) {

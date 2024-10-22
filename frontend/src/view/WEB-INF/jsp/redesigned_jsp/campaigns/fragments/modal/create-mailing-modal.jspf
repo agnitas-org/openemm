@@ -1,0 +1,30 @@
+
+<script id="create-mailing-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="dashboard.mailing.new"/></h1>
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <label for="create-mailing-method" class="form-label"><mvc:message code="mailing.mode.select"/></label>
+                    <select name="confirm-choice" id="create-mailing-method" class="form-control js-select">
+                        <option value="<%= WorkflowForward.MAILING_CREATE_STANDARD.getUrl() %>"><mvc:message code="mailing.wizard.Normal"/></option>
+                        <option value="<%= WorkflowForward.MAILING_CREATE_EMC.getUrl() %>"><mvc:message code="mailing.grid.GridMailing"/></option>
+                        <option value="<%= WorkflowForward.MAILING_IMPORT.getUrl() %>"><mvc:message code="import"/></option>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary js-confirm-positive" data-dismiss="modal">
+                        <i class="icon icon-plus"></i><mvc:message code="dashboard.mailing.new"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

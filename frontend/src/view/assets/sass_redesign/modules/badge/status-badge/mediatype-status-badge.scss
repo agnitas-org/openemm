@@ -1,0 +1,35 @@
+
+/*doc
+---
+title: Mailing mediatype badges
+name: badges_16_mailing_mediatype
+parent: badges_04_status
+---
+
+`.mailing.mediatype` can be combined with the mailing mediatype, e.g. `.mailing.mediatype.sms, .mailing.mediatype.post`.
+
+```htmlexample
+<div class="d-flex gap-1">
+    <span class="status-badge mailing.mediatype.sms"></span>
+    <span class="status-badge mailing.mediatype.post"></span>
+</div>
+```
+*/
+
+$mailing-mediatype-badges-defs: (
+  email: (background: $stat-or-badge-dark-blue, icon: $fa-var-envelope),
+  post:  (background: $stat-or-badge-orange,    icon: $fa-var-envelope-open-text),
+  sms:   (background: $stat-or-badge-cyan,      icon: $fa-var-mobile-alt),
+);
+
+@mixin mailing-mediatype-badge($state) {
+  $background: map-get(map-get($mailing-mediatype-badges-defs, $state), background);
+  $icon: map-get(map-get($mailing-mediatype-badges-defs, $state), icon);
+  @include status-badge($background, $icon);
+}
+
+@each $state, $values in $mailing-mediatype-badges-defs {
+  .mailing\.mediatype\.#{$state} {
+    @include mailing-mediatype-badge($state);
+  }
+}

@@ -17,7 +17,7 @@ import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAUL
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_TEXT;
 
 /**
- * Represents a type of a custom (user-defined) placeholder (see {@link com.agnitas.emm.grid.grid.beans.GridDivMarkupSpanType#Placeholder}).
+ * Represents a type of custom (user-defined) placeholder (see {@link com.agnitas.emm.grid.grid.beans.GridDivMarkupSpanType#Placeholder}).
  * Attention: these types are persisted in the database as numbers so never change an assigned id values!
  */
 public enum GridCustomPlaceholderType {
@@ -28,10 +28,11 @@ public enum GridCustomPlaceholderType {
     ImageLink(4, PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC),
     Color(5, PLACEHOLDER_DEFAULT_CONTENT_COLOR),
     Select(6, ""),
-    Check(7, "");
+    Check(7, ""),
+    Multi(8, "");
 
-    private int id;
-    private String stub;
+    private final int id;
+    private final String stub;
 
     GridCustomPlaceholderType(int id, String stub) {
         this.id = id;

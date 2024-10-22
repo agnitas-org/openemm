@@ -32,7 +32,7 @@ public class MessageEventHandlerImpl implements MethodExceptionEventHandler, Inv
 	}
 
 	@Override
-    public Object methodException(final Context context, @SuppressWarnings("rawtypes") Class aClass, String method, Exception e, final Info info) {
+    public Object methodException(final Context context, Class aClass, String method, Exception e, final Info info) {
     	String exceptionMessage = e.getMessage() != null ? e.getMessage() : "<no exception message>";
     	
         String error = "an " + e.getClass().getName() + " was thrown by the " + method

@@ -17,9 +17,11 @@
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 <%--@elvariable id="id" type="java.lang.Integer"--%>
 <%--@elvariable id="isManageAllowed" type="java.lang.Boolean"--%>
+<%--@elvariable id="adminHasDisabledMailingLists" type="java.lang.Boolean"--%>
 <%--@elvariable id="isOwnColumnsExportAllowed" type="java.lang.Boolean"--%>
 
 <c:set var="NO_MAILINGLIST" value="<%= RecipientExportWorker.NO_MAILINGLIST %>" scope="page" />
+<c:set var="ALL_MAILINGLISTS" value="<%= RecipientExportWorker.ALL_MAILINGLISTS %>" scope="page" />
 <c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>" scope="page" />
 <c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>" scope="page" />
 <c:set var="GENERIC_TYPE_FLOAT" value="<%= DbColumnType.GENERIC_TYPE_FLOAT %>" scope="page" />
@@ -84,20 +86,29 @@
             </a>
         </div>
         <div class="tile-content tile-content-forms" id="recipient-export-tile-selection">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-mailinglist" class="control-label">
-                        <mvc:message code="Mailinglist"/>
-                    </label>
+            <c:set var="mailinglistSelect">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label for="recipient-export-mailinglist" class="control-label">
+                            <mvc:message code="Mailinglist"/>
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <mvc:select path="mailinglistId" id="recipient-export-mailinglist" cssClass="js-select form-control">
+                            <c:if test="${not adminHasDisabledMailingLists}">
+                                <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
+                                <mvc:option value="${NO_MAILINGLIST}"><mvc:message code="No_Mailinglist"/></mvc:option>
+                            </c:if>
+                            <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname"/>
+                        </mvc:select>
+                    </div>
                 </div>
-                <div class="col-sm-8">
-                    <mvc:select path="mailinglistId" id="recipient-export-mailinglist" cssClass="js-select form-control">
-                        <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
-                        <mvc:option value="${NO_MAILINGLIST}"><mvc:message code="No_Mailinglist"/></mvc:option>
-                        <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname"/>
-                    </mvc:select>
-                </div>
-            </div>
+            </c:set>
+            
+            <%@ include file="fragments/export-mailinglist-select.jspf" %>
+            
+            ${mailinglistSelect}
+
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="recipient-export-targetgroup" class="control-label">

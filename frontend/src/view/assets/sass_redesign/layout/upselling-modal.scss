@@ -1,0 +1,12 @@
+#upselling-modal {
+  @extend .modal-info;
+
+  .modal-header {
+    flex-basis: 160px;
+    justify-content: center;
+
+    > img {
+      max-height: 100px;
+    }
+  }
+}

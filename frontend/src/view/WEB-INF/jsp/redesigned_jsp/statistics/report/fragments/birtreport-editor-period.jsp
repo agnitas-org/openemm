@@ -57,7 +57,7 @@
             </div>
             <div class="col">
                 <div class="date-picker-container">
-                    <mvc:message var="toMsg" code="To"/>
+                    <mvc:message var="toMsg" code="default.to"/>
                     <mvc:text id="customStopDate_${periodPath}" path="${stopDatePath}" cssClass="form-control js-datepicker" placeholder="${toMsg}"
                               data-datepicker-options="formatSubmit: '${fn:toLowerCase(reportDateFormatPattern)}'"/>
                 </div>

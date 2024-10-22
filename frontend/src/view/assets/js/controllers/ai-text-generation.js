@@ -9,7 +9,7 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
     $modal = this.el.closest('.modal');
     initListeners();
 
-    const languageSelect = Select.get($('#ai-language'));
+    const languageSelect = Select.get(this.el.find("[id^='ai-language']"));
     if (languageSelect.hasOption(window.adminLocale)) {
       languageSelect.selectValue(window.adminLocale);
     }
@@ -55,24 +55,26 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
 
   this.addAction({click: 'generateText'}, function() {
     const form = Form.get(this.el);
-    const $tile = this.el.closest('.tile');
+    const $scope = this.el.closest('.tile, .modal');
+    const $el = this.el;
 
-    if (validateSettings(form, $tile)) {
-      const settings = getSettingsFromUi($tile);
+    if (validateSettings(form, $scope)) {
+      const settings = getSettingsFromUi($scope);
 
       $.post(AGN.url("/mailing/content/generateText.action"), settings).done(function(resp) {
         lastGeneratedText = resp.data;
-        displayGeneratedText(resp.data, $tile);
+        displayGeneratedText(resp.data, $scope);
+        $el.find('.text').text(t('ai.regenerateText'));
       }).fail(function() {
         AGN.Lib.Messages(t("Error"), t("defaults.error"), "alert");
       });
     }
   });
 
-  function validateSettings(form, $tile) {
+  function validateSettings(form, $scope) {
     var isValid = true;
-    var $numberOfWords = $tile.find("[id^='ai-numberOfWords']");
-    var $contentDescription = $tile.find("[id^='ai-content-description']");
+    var $numberOfWords = $scope.find("[id^='ai-numberOfWords']");
+    var $contentDescription = $scope.find("[id^='ai-content-description']");
 
     const numberOfWordsErrors = AGN.Lib.Validator.get('number').errors($numberOfWords, {min: 1, required: true});
     if (numberOfWordsErrors.length > 0) {
@@ -96,12 +98,16 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
   }
 
   this.addAction({click: 'assumeGeneratedText'}, function() {
-    const $tile = this.el.closest('.tile');
-    const tabId = $tile.data('tab-id');
-    const text = $tile.find('.ai-generated-text').val();
+    const $scope = this.el.closest('.tile, .modal');
+    const text = $scope.find('.ai-generated-text').val();
 
-    openEditorTab(tabId);
-    setEditorContent(text, $tile, tabId);
+    if ($scope.is('.modal')) {
+      AGN.Lib.Confirm.get(this.el).positive(text);
+    } else {
+      const tabId = $scope.data('tab-id');
+      openEditorTab(tabId);
+      setEditorContent(text, $scope, tabId);
+    }
   });
 
   function openEditorTab(tabId) {

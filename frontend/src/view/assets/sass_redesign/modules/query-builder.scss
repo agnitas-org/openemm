@@ -8,19 +8,21 @@
     margin: 0;
   }
 
+  .radio-switch {
+    height: 30px;
+  }
+
   .drag-handle {
-    margin: 0;
-    color: var(--input-icon-color);
     display: flex;
-    align-items: center;
+    margin: 0;
+    order: -2;
   }
 
   .rules-group-header {
-    display: flex;
+    @include flex-row($gap-sm);
     justify-content: space-between;
-    gap: $gap-sm;
 
-    .drag-handle {
+    .group-conditions {
       margin-right: auto;
     }
   }
@@ -30,11 +32,15 @@
     border-radius: $border-radius;
     padding: $gap-md;
     background: inherit;
+
+    .rules-group-container {
+      background: var(--qb-group-bg-color);
+      border-color: transparent;
+    }
   }
 
   .group-actions {
-    display: flex;
-    gap: $gap-sm;
+    @include flex-row($gap-sm);
   }
 
   // adapt vertical container spacing
@@ -43,24 +49,12 @@
   }
 
   .rules-list {
-    // adapt connecting lines to spacing
-    > ::before, > ::after {
-      border-color: $border-color;
-      height: calc(50% + $gap-sm);
-      width: 9px;
-    }
+    padding: 0;
 
-    > ::before {
-      border-width: 0 0 1px 1px;
+    // hide connection lines
+    > ::before, > ::after, > :first-child::before {
+      display: none;
     }
-
-    > ::after {
-      border-width: 0 0 0 1px;
-    }
-  }
-
-  .rules-list > :first-child::before {
-    top: -$gap-sm - 1px;
   }
 
   // Flex Children
@@ -68,9 +62,10 @@
     order: 99;
     flex-grow: 0;
     margin-left: auto;
-    display: flex;
+    @include flex-row($gap-sm);
     align-items: center;
-    gap: $gap-sm;
+    overflow: hidden;
+    min-width: $btn-icon-size;
   }
 
   .rule-actions {
@@ -84,7 +79,7 @@
   }
 
   .rule-container {
-    background: transparent;
+    background: var(--qb-rule-bg-color);
     display: flex;
     gap: $gap-sm;
     flex: 1 0 auto;
@@ -126,12 +121,36 @@
       }
     }
 
-    .rule-operator-conditions-container:empty {
-      display: none;
+    .rule-operator-conditions-container {
+      overflow: hidden;
+
+      &:empty {
+        display: none;
+      }
     }
 
     .input-group {
       width: auto;
+      flex-wrap: nowrap;
+      flex: 1;
+
+      &:has(.input-group-text:not(.hidden)) {
+        .form-control {
+          min-width: 50px;
+        }
+      }
+    }
+  }
+
+  .qb-dateformat-block {
+    @include flex-row($gap-sm);
+    align-items: center;
+    flex: 1;
+
+    .form-label {
+      @include flex-row($gap-x-sm);
+      align-items: center;
+      white-space: nowrap;
     }
   }
 
@@ -155,13 +174,8 @@
     }
 
     .rule-value-container {
-      .form-label {
-        width: 100%;
-      }
-
       .input-group {
         min-width: 0;
-        flex: 1;
       }
     }
 
@@ -169,25 +183,17 @@
       order: 0
     }
 
-    .drag-handle, .error-container {
+    .group-conditions {
       order: -1;
     }
 
-    .group-conditions {
+    .error-container {
       order: -2;
     }
 
     .qb-select-container {
       width: 100%;
       flex-basis: auto;
-    }
-
-    .group-actions .btn {
-      @include btn-icon-sm;
-
-      .text {
-        display: none;
-      }
     }
   }
 }

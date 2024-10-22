@@ -17,16 +17,16 @@ import org.agnitas.util.TimeoutLRUMap;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 
 public class ComRdirMailingDataDaoCache extends AbstractDaoCache<ComRdirMailingData> {
 
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 
 	private ConfigService configService;
 
 	@Required
-	public void setMailingDao( ComMailingDao mailingDao) {
+	public void setMailingDao( MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 

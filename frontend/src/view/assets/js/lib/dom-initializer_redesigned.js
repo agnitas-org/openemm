@@ -90,7 +90,7 @@ So the following DOM structure:
 
 ```html
 <div data-initializer="bless-you">
-  <span data-initializer="bless-you">Foo</span>
+    <span data-initializer="bless-you">Foo</span>
 </div>
 ```
 
@@ -135,20 +135,11 @@ belongs to (the one having `data-initializer` attribute). So if that element is 
 
 ```htmlexample
 <div data-initializer="dom-initializer-actions-demo">
-  <div class="form-group">
-    <div class="col-sm-4">
-      <label class="control-label">Type anything and press enter key</label>
+    <label class="form-label">Type anything and press enter key</label>
+    <div class="d-flex gap-1">
+        <input type="text" class="form-control" data-action="enterText"/>
+        <button type="button" class="btn btn-regular btn-primary" data-action="makeBeep">Beep!</button>
     </div>
-    <div class="col-sm-4">
-      <input type="text" class="form-control" data-action="enterText"/>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <div class="col-sm-push-4 col-sm-4">
-      <button type="button" class="btn btn-regular btn-primary" data-action="makeBeep">Beep!</button>
-    </div>
-  </div>
 </div>
 ```
 
@@ -178,18 +169,13 @@ Now you don't have to query proper element, retrieve its content and then parse 
 All you need is to use `<script>` element having `application/json` type and identifier that matches initializer's name prepended by `config:` string:
 
 ```htmlexample
-<div class="form-group" data-initializer="dom-initializer-config-demo-1">
-  <div class="col-sm-4">
-    <label for="demoText" class="control-label">Click button to get the message</label>
-  </div>
-  <div class="col-sm-4">
-    <input type="text" class="form-control" id="demoText"/>
-  </div>
-
-  <div class="col-sm-4">
-    <button type="button" class="btn btn-regular btn-primary" data-action="showConfigDemo">Demo</button>
-  </div>
-
+<div data-initializer="dom-initializer-config-demo-1">
+    <label for="demoText" class="form-label">Click button to get the message</label>
+    <div class="d-flex gap-1">
+        <input type="text" class="form-control" id="demoText"/>
+        <button type="button" class="btn btn-primary" data-action="showConfigDemo">Demo</button>
+    </div>
+</div>
   <!-- Here is our config -->
   <script id="config:dom-initializer-config-demo-1" type="application/json">
     { "target": "#demoText", "message": "Hi there!", "color": "darkblue" }
@@ -216,12 +202,10 @@ AGN.Lib.DomInitializer.new('dom-initializer-config-demo-1', function($e) {
 Another option is to use standalone `<script>` element marked with `data-initializer`:
 
 ```htmlexample
-<div class="form-group">
-  <div class="col-sm-12">
+<div>
     <script data-initializer="dom-initializer-config-demo-2" type="application/json">
       { "message": "This is a message provided by dom-initializer-config-demo-2 DOM initializer" }
     </script>
-  </div>
 </div>
 ```
 

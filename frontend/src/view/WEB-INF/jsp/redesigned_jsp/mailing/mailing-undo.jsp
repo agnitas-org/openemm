@@ -6,7 +6,7 @@
 <%--@elvariable id="shortname" type="java.lang.String"--%>
 
 <mvc:form cssClass="modal modal-adaptive" servletRelativeAction="/mailing/${mailingId}/undo.action" method="GET" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">
@@ -19,7 +19,7 @@
                         </c:otherwise>
                     </c:choose>
                 </h1>
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -30,13 +30,13 @@
                         <mvc:message code="mailing.Undo_Template_Question"/>
                     </c:when>
                     <c:otherwise>
-                        <mvc:message code="mailing.MailingUndoQuestion"/>
+                        <mvc:message code="mailing.emc.undo.question"/>
                     </c:otherwise>
                 </c:choose>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary js-confirm-positive flex-grow-1" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-primary js-confirm-positive" data-bs-dismiss="modal">
                     <i class="icon icon-undo"></i>
                     <span class="text"><mvc:message code="button.Undo"/></span>
                 </button>

@@ -39,15 +39,15 @@ AGN.Lib.CoreInitializer.new('alert-buttons', function() {
 ```
 
 ```html_example
-<button data-alert="Code red" class="btn btn-regular btn-primary">
+<button data-alert="Code red" class="btn btn-primary">
   Code red
 </button>
 
-<button data-alert="Code blue" class="btn btn-regular btn-primary">
+<button data-alert="Code blue" class="btn btn-primary">
   Code blue
 </button>
 
-<button data-alert="Code green" class="btn btn-regular btn-primary">
+<button data-alert="Code green" class="btn btn-primary">
   Code green
 </button>
 ```
@@ -93,7 +93,7 @@ AGN.Lib.CoreInitializer.new('shopping', function() {
 ```
 
 ```html_example
-<button id="show-initialization-order-button" class="btn btn-regular btn-primary">
+<button id="show-initialization-order-button" class="btn btn-primary">
   Tell me the initialization order
 </button>
 ```

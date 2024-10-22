@@ -10,13 +10,23 @@
 
 package com.agnitas.emm.core.mailinglist.web;
 
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
+import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import net.sf.json.JSONArray;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -31,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,22 +53,18 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
-import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import net.sf.json.JSONArray;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 
 public class MailinglistController implements XssCheckAware {
@@ -65,7 +72,6 @@ public class MailinglistController implements XssCheckAware {
 
 	private static final String YEAR_LIST = "yearlist";
 	private static final String MONTH_LIST = "monthList";
-	private static final String MESSAGES_VIEW = "messages";
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 
 	protected final MailinglistService mailinglistService;
@@ -116,12 +122,21 @@ public class MailinglistController implements XssCheckAware {
 		}
 
 		MailinglistForm form = null;
-		if (model.containsKey("mailinglistForm")) {
-			form = (MailinglistForm) model.get("mailinglistForm");
-		} else {
+
+		if (admin.isRedesignedUiUsed()) {
 			Mailinglist mailinglist = mailinglistService.getMailinglist(id, admin.getCompanyID());
 			if (Objects.nonNull(mailinglist)) {
 				form = conversionService.convert(mailinglist, MailinglistForm.class);
+				model.addAttribute("isRestrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
+			}
+		} else {
+			if (model.containsKey("mailinglistForm")) {
+				form = (MailinglistForm) model.get("mailinglistForm");
+			} else {
+				Mailinglist mailinglist = mailinglistService.getMailinglist(id, admin.getCompanyID());
+				if (Objects.nonNull(mailinglist)) {
+					form = conversionService.convert(mailinglist, MailinglistForm.class);
+				}
 			}
 		}
 
@@ -166,7 +181,7 @@ public class MailinglistController implements XssCheckAware {
 		try {
 			int id = mailinglistService.saveMailinglist(companyId, conversionService.convert(form, MailinglistDto.class));
 			logger.info("save Mailinglist with id: " + id);
-			popups.success("default.changes_saved");
+			popups.success(CHANGES_SAVED_MSG);
 			userActivityLogService.writeUserActivityLog(admin,
 					(form.getId() == id ? "edit " : "create ") + "mailing list",
 					String.format("%s (%d)", form.getShortname(), id), logger);
@@ -186,12 +201,24 @@ public class MailinglistController implements XssCheckAware {
         int companyId = admin.getCompanyID();
         Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
         if (mailinglist == null) {
-            popups.alert("Error");
+            popups.alert(ERROR_MSG);
             return MESSAGES_VIEW;
         }
-        if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
-            return MESSAGES_VIEW;
-        }
+
+		if (isRedesign(admin)) {
+			ServiceResult<List<Mailinglist>> result
+					= mailinglistService.getAllowedForDeletion(Set.of(mailinglistId), admin);
+			popups.addPopups(result);
+
+			if (!result.isSuccess()) {
+				return MESSAGES_VIEW;
+			}
+		} else {
+			if (isMailinglistsDependent(Collections.singleton(mailinglistId), admin, model)) {
+				return MESSAGES_VIEW;
+			}
+		}
+
         model.addAttribute("mailinglistId", mailinglist.getId());
         model.addAttribute("mailinglistShortname", mailinglist.getShortname());
         model.addAttribute("sentMailingsCount", mailinglistService.getSentMailingsCount(mailinglistId, companyId));
@@ -199,19 +226,29 @@ public class MailinglistController implements XssCheckAware {
         return "mailinglist_delete";
     }
 
-    @PostMapping("/confirmBulkDelete.action")
+    @RequestMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (bulkIds.isEmpty() || bulkIds.stream().anyMatch(id -> id <= 0)) {
             popups.alert("bulkAction.nothing.mailinglist");
             return MESSAGES_VIEW;
         }
-        if (isMailinglistsDependent(bulkIds, admin.getCompanyID(), model)) {
-            return MESSAGES_VIEW;
-        }
+
         if (isRedesign(admin)) {
-            model.addAttribute("items", mailinglistService.getMailinglistNames(bulkIds, admin.getCompanyID()));
-        }
+			ServiceResult<List<Mailinglist>> result = mailinglistService.getAllowedForDeletion(bulkIds, admin);
+			popups.addPopups(result);
+
+			if (!result.isSuccess()) {
+				return MESSAGES_VIEW;
+			}
+
+			model.addAttribute("items", result.getResult().stream().map(Mailinglist::getShortname).collect(Collectors.toList()));
+        } else {
+			if (isMailinglistsDependent(bulkIds, admin, model)) {
+				return MESSAGES_VIEW;
+			}
+		}
+
         return "mailinglist_bulk_delete";
     }
 
@@ -222,36 +259,64 @@ public class MailinglistController implements XssCheckAware {
 	@RequestMapping("/{id:\\d+}/delete.action")
 	public String delete(Admin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
-        if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
-            return MESSAGES_VIEW;
-        }
-        if (mailinglistService.deleteMailinglist(mailinglistId, companyId)) {
-            popups.success("default.selection.deleted");
-            userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, companyId));
-        } else {
-            popups.alert("error.mailinglist.delete.last");
-            return MESSAGES_VIEW;
-        }
+
+		if (isRedesign(admin)) {
+			List<Integer> ids = mailinglistService.delete(Set.of(mailinglistId), admin);
+
+			writeDeleteUAL(admin, ids);
+			popups.success(SELECTION_DELETED_MSG);
+		} else {
+			if (isMailinglistsDependent(Collections.singleton(mailinglistId), admin, model)) {
+				return MESSAGES_VIEW;
+			}
+			if (mailinglistService.deleteMailinglist(mailinglistId, companyId)) {
+				popups.success("default.selection.deleted");
+				userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, companyId));
+			} else {
+				popups.alert("error.mailinglist.delete.last");
+				return MESSAGES_VIEW;
+			}
+		}
+
         return "redirect:/mailinglist/list.action";
     }
-	
+
 	@PostMapping("/bulkDelete.action")
-	public String bulkDelete(Admin admin, BulkActionForm form, Model model, Popups popups) {
-        int companyId = admin.getCompanyID();
+	public Object bulkDelete(Admin admin, BulkActionForm form, Model model, Popups popups) {
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
-        if (isMailinglistsDependent(bulkIds, companyId, model)) {
-            return MESSAGES_VIEW;
-        }
-        mailinglistService.bulkDelete(bulkIds, companyId);
 
-        bulkIds.stream()
-                .map(id -> getDescription(id, companyId))
-                .map(description -> new UserAction("delete mailinglist", description))
-                .forEach(action -> userActivityLogService.writeUserActivityLog(admin, action, logger));
+		if (isRedesign(admin)) {
+			List<Integer> ids = mailinglistService.delete(bulkIds, admin);
 
-        popups.success("default.selection.deleted");
+			writeDeleteUAL(admin, ids);
+			popups.success(SELECTION_DELETED_MSG);
+
+			return ResponseEntity.ok(new DataResponseDto<>(ids, popups));
+		} else {
+			int companyId = admin.getCompanyID();
+			if (isMailinglistsDependent(bulkIds, admin, model)) {
+				return MESSAGES_VIEW;
+			}
+			mailinglistService.bulkDelete(bulkIds, companyId);
+
+			bulkIds.stream()
+					.map(id -> getDescription(id, companyId))
+					.map(description -> new UserAction("delete mailinglist", description))
+					.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action, logger));
+
+			popups.success(SELECTION_DELETED_MSG);
+		}
+
         return "redirect:/mailinglist/list.action";
     }
+
+	private void writeDeleteUAL(Admin admin, List<Integer> ids) {
+		userActivityLogService.writeUserActivityLog(
+				admin,
+				"delete mailinglists",
+				"deleted mailinglists with following ids: " + StringUtils.join(ids, ", ")
+		);
+	}
 
 	@PostMapping("/recipientsDelete.action")
 	public String recipientsDelete(Admin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
@@ -322,16 +387,18 @@ public class MailinglistController implements XssCheckAware {
 		form.setStatistic(statistic);
 	}
 
-    private boolean isMailinglistsDependent(Set<Integer> mailinglistIds, int companyId, Model model) {
-        List<Mailing> affectedMailings = mailinglistService.getUsedMailings(mailinglistIds, companyId);
+	// TODO: EMMGUI-714: remove after remove of old design
+	private boolean isMailinglistsDependent(Set<Integer> mailinglistIds, Admin admin, Model model) {
+        List<Mailing> affectedMailings = mailinglistService.getUsedMailings(mailinglistIds, admin.getCompanyID());
         if (!affectedMailings.isEmpty()) {
-            addAffectedMailingsToModel(model, affectedMailings);
+			addAffectedMailingsToModel(model, affectedMailings);
             return true;
         }
         return false;
     }
 
-    private void addAffectedMailingsToModel(Model model, List<Mailing> affectedMailings) {
+	// TODO: EMMGUI-714: remove after remove of old design
+	private void addAffectedMailingsToModel(Model model, List<Mailing> affectedMailings) {
         if (model instanceof RedirectAttributes) {
             RedirectAttributes attributes = (RedirectAttributes) model;
             attributes.addFlashAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);

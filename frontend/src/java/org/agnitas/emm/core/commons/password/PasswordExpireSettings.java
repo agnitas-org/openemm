@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public enum PasswordExpireSettings {
 	
+	UNLIMITED(-1),
 	EXPIRE_30_DAYS(30),
 	EXPIRE_90_DAYS(90),
 	EXPIRE_180_DAYS(180),
@@ -24,7 +25,7 @@ public enum PasswordExpireSettings {
 	
 	private final int expireDays;
 	
-	private PasswordExpireSettings(final int days) {
+	PasswordExpireSettings(final int days) {
 		this.expireDays = days;
 	}
 	
@@ -32,7 +33,7 @@ public enum PasswordExpireSettings {
 		return this.expireDays;
 	}
 	
-	public static final Optional<PasswordExpireSettings> findByDays(final int days) {
+	public static Optional<PasswordExpireSettings> findByDays(final int days) {
 		for (final PasswordExpireSettings settings : values()) {
 			if (settings.expireDays == days) {
 				return Optional.of(settings);

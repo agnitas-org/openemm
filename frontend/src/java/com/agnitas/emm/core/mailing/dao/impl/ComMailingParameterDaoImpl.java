@@ -10,6 +10,19 @@
 
 package com.agnitas.emm.core.mailing.dao.impl;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -18,20 +31,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
-
-public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailingParameterDao {
+public class ComMailingParameterDaoImpl extends PaginatedBaseDaoImpl implements ComMailingParameterDao {
 	
 	private static final Logger logger = LogManager.getLogger(ComMailingParameterDaoImpl.class);
 
@@ -55,47 +55,68 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith, DateRange changeDate) {
-		final List<Object> parameters = new ArrayList<>();
-		parameters.add(companyID);
+	public PaginatedListImpl<ComMailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID) {
+		StringBuilder query = new StringBuilder("SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl info");
+		List<Object> params = applyOverviewFilter(filter, companyID, query);
 
-		// whole query.
-		StringBuilder selectBySearchQuery = new StringBuilder();
-		selectBySearchQuery.append("SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl info");
-		selectBySearchQuery.append(" WHERE info.company_id = ?");
+		PaginatedListImpl<ComMailingParameter> list = selectPaginatedList(logger, query.toString(), "mailing_info_tbl", filter.getSortOrDefault("creation_date"),
+				filter.ascending(), filter.getPage(), filter.getNumberOfRows(), new ComMailingParameter_RowMapper(), params.toArray());
 
-		if (StringUtils.isNotBlank(searchQuery)) {
-			final String escapedParameterSearchQuery = "%" + getEscapedValue(StringUtils.defaultString(searchQuery)) + "%";
-
-			// search rules.
-			StringBuilder searchRulesSubQuery = new StringBuilder();
-			searchRulesSubQuery.append("(info.name IS NOT NULL AND LOWER(info.name) LIKE LOWER(?) ESCAPE '!')");
-			searchRulesSubQuery.append(" OR (info.description IS NOT NULL AND LOWER(info.description) LIKE LOWER(?) ESCAPE '!')");
-
-			selectBySearchQuery.append(" AND (").append(searchRulesSubQuery).append(")");
-
-			parameters.add(escapedParameterSearchQuery);
-			parameters.add(escapedParameterSearchQuery);
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(companyID));
 		}
 
-		if (mailingIdStartsWith > 0) {
-			selectBySearchQuery.append(" AND (info.mailing_id IS NOT NULL AND CAST(info.mailing_id AS CHAR(15)) LIKE ?)");
-			parameters.add("%" + mailingIdStartsWith + "%");
+		return list;
+	}
+
+	private List<Object> applyOverviewFilter(MailingParamOverviewFilter filter, int companyId, StringBuilder query) {
+		List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+		// TODO: EMMGUI-714 remove after old design will be removed
+		if (StringUtils.isNotBlank(filter.getParamQuery())) {
+			query.append(" AND (");
+			query.append(getPartialSearchFilter("info.name")).append(" OR ").append(getPartialSearchFilter("info.description"));
+			query.append(")");
+			params.add(filter.getParamQuery());
+			params.add(filter.getParamQuery());
 		}
 
-		if (changeDate.getFrom() != null) {
-			selectBySearchQuery.append(" AND info.change_date >= ?");
-			parameters.add(changeDate.getFrom());
-		}
-		if (changeDate.getTo() != null) {
-			selectBySearchQuery.append(" AND info.change_date < ?");
-			parameters.add(DateUtilities.addDaysToDate(changeDate.getTo(), 1));
+		if (StringUtils.isNotBlank(filter.getName())) {
+			query.append(getPartialSearchFilterWithAnd("info.name"));
+			params.add(filter.getName());
 		}
 
-		selectBySearchQuery.append(" ORDER BY creation_date DESC");
+		if (StringUtils.isNotBlank(filter.getDescription())) {
+			query.append(getPartialSearchFilterWithAnd("info.description"));
+			params.add(filter.getDescription());
+		}
 
-		logDebugStmt(selectBySearchQuery.toString());
-		return select(logger, selectBySearchQuery.toString(), new ComMailingParameter_RowMapper(), parameters.toArray());
+		if (filter.getMailingId() != null) {
+			query.append(getPartialSearchFilterWithAnd("info.mailing_id", filter.getMailingId(), params));
+		}
+
+		if (filter.getChangeDate().getFrom() != null) {
+			query.append(" AND info.change_date >= ?");
+			params.add(filter.getChangeDate().getFrom());
+		}
+		if (filter.getChangeDate().getTo() != null) {
+			query.append(" AND info.change_date < ?");
+			params.add(DateUtilities.addDaysToDate(filter.getChangeDate().getTo(), 1));
+		}
+
+		return params;
+	}
+
+	private int getTotalUnfilteredCountForOverview(int companyId) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM mailing_info_tbl info");
+		List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
+		query.append(" WHERE info.company_id = ?");
+		return new ArrayList<>(List.of(companyId));
 	}
 
 	@Override

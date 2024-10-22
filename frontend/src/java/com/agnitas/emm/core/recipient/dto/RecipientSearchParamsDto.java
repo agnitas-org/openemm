@@ -10,7 +10,11 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class RecipientSearchParamsDto {
     private int mailingListId;
@@ -102,5 +106,10 @@ public class RecipientSearchParamsDto {
 
     public void setGender(Integer gender) {
         this.gender = gender;
+    }
+
+    public boolean isUiFiltersSet() {
+        return mailingListId != 0 || targetGroupId != 0 || userStatus > 0 || altgId > 0 || CollectionUtils.isNotEmpty(userTypes)
+                || isNotBlank(firstName) || isNotBlank(lastName) || isNotBlank(email) || gender != null || isNotBlank(eql);
     }
 }

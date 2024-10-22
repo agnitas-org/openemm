@@ -10,13 +10,19 @@
 
 package com.agnitas.emm.core.profilefields.service.impl;
 
-import static java.text.MessageFormat.format;
-
-import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ExportPredefDao;
@@ -32,20 +38,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Popups;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import static java.text.MessageFormat.format;
 
 public class ProfileFieldValidationServiceImpl implements ProfileFieldValidationService {
     
@@ -196,47 +196,49 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean isValidToDelete(String fieldName, int companyId, Locale locale, Popups popups) {
+    public SimpleServiceResult isValidToDelete(String fieldName, Admin admin) {
+        final Set<Message> errors = new HashSet<>();
+        final int companyId = admin.getCompanyID();
+
         if (notContainsInDb(companyId, fieldName)) {
-            popups.alert("error.profiledb.NotExists", fieldName);
+            errors.add(Message.of("error.profiledb.NotExists", fieldName));
         }
         
         if (hasNotAllowedNumberOfEntries(companyId)) {
-            popups.alert("error.profiledb.delete.tooMuchRecipients", fieldName);
+            errors.add(Message.of("error.profiledb.delete.tooMuchRecipients", fieldName));
         }
         
         if (isStandardColumn(fieldName)) {
-            popups.alert("error.profiledb.cannotDropColumn", fieldName);
+            errors.add(Message.of("error.profiledb.cannotDropColumn", fieldName));
         }
         
         List<Integer> importProfileIds = importProfileDao.getImportsContainingProfileField(companyId, fieldName);
         if (importProfileIds != null) {
         	for (int importProfileID : importProfileIds) {
         		ImportProfile importProfile = importProfileDao.getImportProfileById(importProfileID);
-        		popups.alert("error.profiledb.import.used", fieldName, importProfile.getName(), importProfileID);
-        	}
+                errors.add(Message.of("error.profiledb.import.used", fieldName, importProfile.getName(), importProfileID));
+            }
         }
         
         List<Integer> exportProfileIds = exportPredefDao.getExportsContainingProfileField(companyId, fieldName);
         if (exportProfileIds != null) {
         	for (int exportProfileID : exportProfileIds) {
         		ExportPredef exportProfile = exportPredefDao.get(exportProfileID, companyId);
-        		popups.alert("error.profiledb.export.used", fieldName, exportProfile.getShortname(), exportProfileID);
-        	}
+                errors.add(Message.of("error.profiledb.export.used", fieldName, exportProfile.getShortname(), exportProfileID));
+            }
         }
-        
-        checkObjectUsages(fieldName, companyId, locale, popups);
-        return !popups.hasAlertPopups();
+
+        checkObjectUsages(fieldName, companyId, admin.getLocale(), errors);
+        return new SimpleServiceResult(errors.isEmpty(), errors);
     }
 
-    private void checkObjectUsages(String fieldName, int companyId, Locale locale, Popups popups) {
+    private void checkObjectUsages(String fieldName, int companyId, Locale locale, Set<Message> errors) {
         ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, fieldName);
         if (usages.isEmpty()) {
             return;
         }
-        ObjectUsagesToPopups.objectUsagesToPopups(
-                "error.profilefield.used", "error.profilefield.used.withMore",
-                usages, popups, locale);
+
+        errors.add(usages.toMessage("error.profilefield.used", "error.profilefield.used.withMore", locale));
     }
 
     @Override

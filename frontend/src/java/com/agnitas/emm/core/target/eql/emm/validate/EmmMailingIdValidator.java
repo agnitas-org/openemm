@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidationException;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
 
@@ -28,7 +28,7 @@ public class EmmMailingIdValidator implements MailingIdValidator {
 	private static final transient Logger logger = LogManager.getLogger(EmmMailingIdValidator.class);
 	
 	/** DAO for accessing mailing data. */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	@Override
 	public void validateMailingId(int mailingId, int companyId) throws MailingIdValidationException {
@@ -54,7 +54,7 @@ public class EmmMailingIdValidator implements MailingIdValidator {
 	 * @param dao DAO for accessing mailing data
 	 */
 	@Required
-	public void setMailingDao(ComMailingDao dao) {
+	public void setMailingDao(MailingDao dao) {
 		this.mailingDao = dao;
 	}
 }

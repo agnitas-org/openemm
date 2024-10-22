@@ -957,12 +957,8 @@
     NodePopover.getMailingThumbnail = _.memoize(function(mailingId) {
         var img = '';
         $.ajax({
-            type: "POST",
-            url: AGN.url('/workflow/getMailingThumbnail.action'),
+            url: AGN.url('/workflow/mailing/' + mailingId + '/thumbnail.action'),
             async: false,
-            data: {
-              mailingId: mailingId
-            },
             success: function (componentId) {
               if (componentId > 0) {
                 img = new Image;

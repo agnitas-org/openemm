@@ -10,30 +10,46 @@
 
 package com.agnitas.emm.core.service.impl;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DbColumnType;
-import org.apache.commons.lang3.StringUtils;
-
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientFieldsCache;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.util.Const;
+import org.agnitas.util.DbColumnType;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RecipientFieldServiceImpl implements RecipientFieldService {
+
+	private static final Logger logger = LogManager.getLogger(RecipientFieldServiceImpl.class);
+
 	private ConfigService configService;
 	private RecipientFieldsCache recipientFieldsCache;
 	private RecipientFieldDao recipientFieldDao;
 	private ProfileFieldDao profileFieldDao;
 	private RecipientProfileHistoryService recipientProfileHistoryService;
+	private BulkActionValidationService<String, String> bulkActionValidationService;
 
 	@Override
 	public List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception {
@@ -131,26 +147,6 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		}
 	}
 
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
-	public void setRecipientFieldsCache(RecipientFieldsCache recipientFieldsCache) {
-		this.recipientFieldsCache = recipientFieldsCache;
-	}
-
-	public void setRecipientFieldDao(RecipientFieldDao recipientFieldDao) {
-		this.recipientFieldDao = recipientFieldDao;
-	}
-
-	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
-		this.profileFieldDao = profileFieldDao;
-	}
-
-	public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
-		this.recipientProfileHistoryService = recipientProfileHistoryService;
-	}
-
 	@Override
 	public boolean hasRecipients(int companyID) {
 		return recipientFieldDao.hasRecipients(companyID);
@@ -176,7 +172,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
     		}
 
     		List<RecipientFieldDescription> recipientFields = getRecipientFields(companyID);
-    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
+    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
 			int currentFieldCount = companySpecificFields.size();
 			
 			if (currentFieldCount < maxFields) {
@@ -203,5 +199,104 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 			// Field does not exist yet, so a default value which is not empty must be copied in every existing entry, which can take a lot of time
 			return StringUtils.isEmpty(fieldDefault) || recipientFieldDao.countCustomerEntries(companyID) <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
 		}
+	}
+
+	/**
+	 * Get the current number of profile fields that are not included in the EMM standard fields, but created by the client for special purpose
+	 */
+	@Override
+	public int getClientSpecificFieldCount(int companyID) throws Exception {
+		int companySpecificFieldCount = 0;
+		
+		Set<String> recipientStandardFieldColumnNames = RecipientStandardField.getAllRecipientStandardFieldColumnNames();
+		
+		// Collect optional column names for postal profile fields
+		Set<String> postalFieldColumnNames = new HashSet<>();
+		for (PostalField postalField : PostalField.values()) {
+            String columnName = configService.getValue(postalField.getConfigValue(), companyID);
+            if (StringUtils.isNotBlank(columnName)) {
+            	postalFieldColumnNames.add(columnName);
+            }
+        }
+		
+		for (RecipientFieldDescription recipientField : getRecipientFields(companyID)) {
+			if (!recipientStandardFieldColumnNames.contains(recipientField.getColumnName())
+				&& !RecipientFieldService.OLD_SOCIAL_MEDIA_FIELDS.contains(recipientField.getColumnName())
+				&& !postalFieldColumnNames.contains(recipientField.getColumnName())) {
+					companySpecificFieldCount++;
+			}
+		}
+		
+        return companySpecificFieldCount;
+	}
+
+	@Override
+	public ServiceResult<List<String>> filterAllowedForDelete(Map<String, SimpleServiceResult> validationResults, Admin admin) {
+		return bulkActionValidationService.checkAllowedForDeletion(validationResults.keySet(), col -> {
+			SimpleServiceResult result = validationResults.get(col);
+			if (result.isSuccess()) {
+				return ServiceResult.success(col);
+			}
+			return new ServiceResult<>(col, result.isSuccess(), result.getSuccessMessages(), result.getWarningMessages(), result.getErrorMessages());
+		});
+	}
+
+	@Override
+	public ServiceResult<UserAction> delete(Map<String, SimpleServiceResult> validationResults, Admin admin) {
+		List<String> allowedColumns = filterAllowedForDelete(validationResults, admin).getResult();
+
+		List<String> deletedColumns = new ArrayList<>(allowedColumns.size());
+		for (String column : allowedColumns) {
+			try {
+				deleteRecipientField(admin.getCompanyID(), column);
+				deletedColumns.add(column);
+			} catch (Exception e) {
+				logger.error("Cannot delete profile field: {}", column, e);
+			}
+		}
+
+		return ServiceResult.success(
+				new UserAction(
+						"delete profile fields",
+						"Profile fields: " + StringUtils.join(deletedColumns, ", ")
+				),
+				Message.of(Const.Mvc.SELECTION_DELETED_MSG)
+		);
+	}
+
+	@Override
+	public long getCountForOverview(int companyId) {
+        try {
+            return profileFieldDao.getCustomerColumns(companyId).stream()
+                    .filter(col -> !RecipientStandardField.Bounceload.getColumnName().equals(col))
+                    .count();
+        } catch (Exception e) {
+            logger.error("Error occurred when get count of profile fields", e);
+			return -1;
+        }
+    }
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	public void setRecipientFieldsCache(RecipientFieldsCache recipientFieldsCache) {
+		this.recipientFieldsCache = recipientFieldsCache;
+	}
+
+	public void setBulkActionValidationService(BulkActionValidationService<String, String> bulkActionValidationService) {
+		this.bulkActionValidationService = bulkActionValidationService;
+	}
+
+	public void setRecipientFieldDao(RecipientFieldDao recipientFieldDao) {
+		this.recipientFieldDao = recipientFieldDao;
+	}
+
+	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
+		this.profileFieldDao = profileFieldDao;
+	}
+
+	public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
+		this.recipientProfileHistoryService = recipientProfileHistoryService;
 	}
 }

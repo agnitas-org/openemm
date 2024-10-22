@@ -7,12 +7,12 @@
 <%--@elvariable id="mailingLists" type="java.util.List"--%>
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden" id="stat-form" servletRelativeAction="/statistics/domain/view.action"
+<mvc:form cssClass="tiles-container flex-column" id="stat-form" servletRelativeAction="/statistics/domain/view.action"
           data-form="resource" modelAttribute="domainStatisticForm" data-editable-view="${agnEditViewKey}">
 
     <div id="filter-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="report.mailing.filter" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.filter" /></h1>
         </div>
 
         <div class="tile-body">
@@ -49,9 +49,9 @@
         </div>
     </div>
 
-    <div id="overview-tile" class="tile flex-grow-1" data-editable-tile="main">
+    <div id="overview-tile" class="tile" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="report.mailing.statistics.select"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.statistics.select"/></h1>
             <div class="tile-title-controls">
                 <mvc:select path="topLevelDomain" cssClass="form-control js-select" data-form-submit="" data-select-options="dropdownAutoWidth: true, width: 'auto'">
                     <mvc:option value="false"><mvc:message code="Domains"/></mvc:option>

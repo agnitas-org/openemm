@@ -1,0 +1,114 @@
+
+/*doc
+---
+title: Buttons
+name: buttons
+category: Components - Buttons
+---
+
+Button styles can be applied to an `<a>` or `<button>` element.
+
+```htmlexample
+<button class="btn btn-primary">Button text</button>
+<a href="#" class="btn btn-inverse">Anchor text</a>
+```
+
+##Button Variants
+
+Vairant/Size                                        |Small                                                                                        |Default (Medium)                                                                 |Large                                                                                        |
+----------------------------------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+Primary                                             |<button class="btn btn-primary btn-sm lh-base">Primary small</button>`btn btn-primary btn-sm`|<button class="btn btn-primary lh-base">Primary default</button>`btn btn-primary`|<button class="btn btn-primary btn-lg lh-base">Primary large</button>`btn btn-primary btn-lg`|
+Info                                                |<button class="btn btn-info btn-sm lh-base">Info small</button>`btn btn-info btn-sm`         |<button class="btn btn-info lh-base">Info default</button>`btn btn-info`         |<button class="btn btn-info btn-lg lh-base">Info large</button>`btn btn-info btn-lg`         |
+Success                                             |<button class="btn btn-success btn-sm lh-base">Success small</button>`btn btn-success btn-sm`|<button class="btn btn-success lh-base">Success default</button>`btn btn-success`|<button class="btn btn-success btn-lg lh-base">Success large</button>`btn btn-success btn-lg`|
+Warning                                             |<button class="btn btn-warning btn-sm lh-base">Warning small</button>`btn btn-warning btn-sm`|<button class="btn btn-warning lh-base">Warning default</button>`btn btn-warning`|<button class="btn btn-warning btn-lg lh-base">Warning large</button>`btn btn-warning btn-lg`|
+Danger                                              |<button class="btn btn-danger btn-sm lh-base">Danger small</button>`btn btn-danger btn-sm`   |<button class="btn btn-danger lh-base">Danger default</button>`btn btn-danger`   |<button class="btn btn-danger btn-lg lh-base">Danger large</button>`btn btn-danger btn-lg`   |
+Purple                                              |<button class="btn btn-purple btn-sm lh-base">Purple small</button>`btn btn-purple btn-sm`   |<button class="btn btn-purple lh-base">Purple default</button>`btn btn-purple`   |<button class="btn btn-purple btn-lg lh-base">Purple large</button>`btn btn-purple btn-lg`   |
+Dark                                                |<button class="btn btn-dark btn-sm lh-base">Dark small</button>`btn btn-dark btn-sm`         |<button class="btn btn-dark lh-base">Dark default</button>`btn btn-dark`         |<button class="btn btn-dark btn-lg lh-base">Dark large</button>`btn btn-dark btn-lg`         |
+Light                                               |<div class="bg-primary"><button class="btn btn-light btn-sm lh-base m-2">Light small</button></div>`btn btn-light btn-sm`|<div class="bg-primary"><button class="btn btn-light lh-base m-2">Light default</button></div>`btn btn-light`|<div class="bg-primary"><button class="btn btn-light btn-lg lh-base m-2">Light large</button></div>`btn btn-light btn-lg`|
+*/
+
+$btn-icon-size: 30px;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $gap-x-sm;
+
+  &.btn-sm {
+    --bs-btn-padding-x: #{$gap};
+  }
+
+  &.btn-sm-horizontal {
+    --bs-btn-padding-x: #{$gap-sm};
+  }
+
+  &.btn-lg {
+    gap: $gap-sm;
+    --bs-btn-padding-y: #{$gap-sm};
+  }
+
+  &[disabled], &[readonly] {
+    cursor: not-allowed;
+    pointer-events: all !important;
+  }
+}
+
+.btn-inverse {
+  @include button-variant(
+          $background: $white,
+          $border: $border-color,
+          $color: $dark-grey,
+          $hover-border: $primary,
+          $hover-color: $primary,
+          $active-background: $primary,
+          $active-border: $primary,
+          $active-color: white
+  );
+  font-weight: $font-weight-base;
+}
+
+.btn-purple {
+  @include button-variant(
+          $light-purple,
+          $light-purple,
+          $color: $white
+  );
+}
+
+.btn-info, .btn-success {
+  --bs-btn-color: var(--bs-white);
+  --bs-btn-hover-color: var(--bs-white);
+  --bs-btn-active-color: var(--bs-btn-hover-color);
+}
+
+.btn-light {
+  --bs-btn-bg: var(--bs-white);
+  --bs-btn-color: #{$dark-blue};
+}
+
+.dark-theme {
+  .btn-inverse {
+    @include button-variant(
+            $background: $grey-blue,
+            $border: $border-color,
+            $color: $gray-100,
+            $hover-border: $primary,
+            $hover-background: $primary,
+            $hover-color: $white,
+            $active-background: $primary,
+            $active-border: $primary,
+            $active-color: $white
+    );
+  }
+
+  .btn-dark {
+    @include button-variant(
+            $gray-600,
+            $gray-600,
+            $hover-border: tint-color($gray-600, $btn-hover-border-tint-amount),
+            $active-background: tint-color($gray-600, $btn-active-bg-tint-amount),
+            $active-border: tint-color($gray-600, $btn-active-border-tint-amount)
+    );
+  }
+}

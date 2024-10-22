@@ -51,9 +51,7 @@ public final class AdminEmailNotifier implements AdminNotifier {
 
 	@Override
 	public void notifyAdminAboutChangedPassword(final Admin admin) {
-		if (LOGGER.isInfoEnabled()) {
-			LOGGER.info(String.format("Password for admin '%s' (admin ID %d, company ID %d) has been changed", admin.getUsername(), admin.getAdminID(), admin.getCompanyID()));
-		}
+        LOGGER.info(String.format("Password for admin '%s' (admin ID %d, company ID %d) has been changed", admin.getUsername(), admin.getAdminID(), admin.getCompanyID()));
 
 		if (configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, admin.getCompanyID())) {
 			try {
@@ -162,18 +160,18 @@ public final class AdminEmailNotifier implements AdminNotifier {
         if (mailingId <= 0) {
             String text = getTextForEmailChangedMail(admin);
             return new EmailContent(
-                    getLocaleString("GWUA.admin.emailChanged.mail.subject", admin.getLocale()),
+                    getLocaleString("user.adress.change.mail.subject", admin.getLocale()),
                     text, HtmlUtils.replaceLineFeedsForHTML(text));
         }
         Page output = getMailingOutput(mailingId);
         return new EmailContent(
-                fillEmailChangedContentWithAdminData(output.getHeaderField("subject"), admin),
-                fillEmailChangedContentWithAdminData(output.getText(), admin),
-                fillEmailChangedContentWithAdminData(output.getHTML(), admin));
+            output.getHeaderField("subject"),
+            fillEmailChangedContentWithAdminData(output.getText(), admin),
+            fillEmailChangedContentWithAdminData(output.getHTML(), admin));
     }
 
     private static String getTextForEmailChangedMail(Admin admin) {
-        return getLocaleString("GWUA.admin.emailChanged.email.body.text",
+        return getLocaleString("user.adress.change.mail.body.html",
                 admin.getLocale(), admin.getUsername(), admin.getEmail());
     }
 
@@ -187,9 +185,8 @@ public final class AdminEmailNotifier implements AdminNotifier {
 
     private static String fillEmailChangedContentWithAdminData(String content, Admin admin) {
         return content
-                .replace("{0}", admin.getUsername())
-                .replace("{1}", admin.getFirstName())
-                .replace("{2}", admin.getFullname());
+                .replace("{0}", admin.getFirstName())
+                .replace("{1}", admin.getEmail());
     }
 
     private Page getMailingOutput(int mailingId) {

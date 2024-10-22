@@ -1,16 +1,18 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailinglistForm" type="com.agnitas.emm.core.mailinglist.form.MailinglistForm"--%>
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
+<%--@elvariable id="isRestrictedForSomeAdmins" type="java.lang.Boolean"--%>
 <%--@elvariable id="monthList" type="java.util.List"--%>
 <%--@elvariable id="yearlist" type="java.util.List"--%>
 
 <c:set var="isNew" value="${mailinglistForm.id eq 0}"/>
 
-<mvc:form id="mailinglist-form" cssClass="tiles-container hidden" servletRelativeAction="/mailinglist/save.action" modelAttribute="mailinglistForm"
+<mvc:form id="mailinglist-form" cssClass="tiles-container flex-column" servletRelativeAction="/mailinglist/save.action" modelAttribute="mailinglistForm"
           data-form="resource"
           data-form-focus="shortname" data-editable-view="${agnEditViewKey}">
 
@@ -18,11 +20,17 @@
     <mvc:hidden path="targetId"/>
     <mvc:hidden path="mediatypes"/>
 
-    <div id="settings-tile" class="tile" data-editable-tile="main">
+    <div id="settings-tile" class="tile h-auto flex-none" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="settings.EditMailinglist"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="settings.EditMailinglist"/></h1>
             <div class="tile-controls">
                 <%@include file="fragments/mailinglist-frequency-counter-toggle.jspf"%>
+
+                <c:if test="${isRestrictedForSomeAdmins}">
+                    <span class="icon-badge text-bg-danger-dark" data-tooltip="<mvc:message code="mailinglist.limit.access" />">
+                        <i class="icon icon-user-lock"></i>
+                    </span>
+                </c:if>
              </div>
         </div>
         <div class="tile-body js-scrollable">
@@ -43,31 +51,29 @@
                     <mvc:textarea path="description" id="description" cssClass="form-control" rows="1" placeholder="${descriptionMsg}"/>
                 </div>
 
-                <emm:ShowByPermission token="mailinglists.addresses">
-                    <div class="col-6">
-                        <label for="description" class="form-label">
-                            <mvc:message var="senderEmailMsg" code="mailing.SenderEmail"/>
-                            ${senderEmailMsg}
-                        </label>
-                        <%@include file="fragments/domain-addresses-dropdown.jspf" %>
-                        <c:choose>
-                            <c:when test="${domainAddressesDropdown eq null}">
-                                <mvc:text path="senderEmail" cssClass="form-control" id="senderEmail" placeholder="${senderEmailMsg}"/>
-                            </c:when>
-                            <c:otherwise>
-                                ${domainAddressesDropdown}
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
+                <div class="col-6">
+                    <label for="description" class="form-label">
+                        <mvc:message var="senderEmailMsg" code="mailing.SenderEmail"/>
+                        ${senderEmailMsg}
+                    </label>
+                    <%@include file="fragments/domain-addresses-dropdown.jspf" %>
+                    <c:choose>
+                        <c:when test="${domainAddressesDropdown eq null}">
+                            <mvc:text path="senderEmail" cssClass="form-control" id="senderEmail" placeholder="${senderEmailMsg}"/>
+                        </c:when>
+                        <c:otherwise>
+                            ${domainAddressesDropdown}
+                        </c:otherwise>
+                    </c:choose>
+                </div>
 
-                    <div class="col-6">
-                        <label for="description" class="form-label">
-                            <mvc:message var="replyToEmailMsg" code="mailing.ReplyEmail"/>
-                            ${replyToEmailMsg}
-                        </label>
-                        <mvc:text path="replyEmail" cssClass="form-control" id="replyToEmail" placeholder="${replyToEmailMsg}"/>
-                    </div>
-                </emm:ShowByPermission>
+                <div class="col-6">
+                    <label for="description" class="form-label">
+                        <mvc:message var="replyToEmailMsg" code="mailing.ReplyEmail"/>
+                        ${replyToEmailMsg}
+                    </label>
+                    <mvc:text path="replyEmail" cssClass="form-control" id="replyToEmail" placeholder="${replyToEmailMsg}"/>
+                </div>
             </div>
         </div>
     </div>
@@ -75,7 +81,7 @@
         <mvc:hidden path="statistic.mailinglistId"/>
         <div id="statistics-tile" class="tile" data-editable-tile>
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="Statistics"/></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="Statistics"/></h1>
             </div>
             <div class="tile-body js-scrollable" style="overflow-y: auto !important;">
                 <div class="row g-3">

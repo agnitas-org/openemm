@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.EncodingException;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
@@ -47,7 +47,7 @@ public class V2Sha512ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDS
 	private ComRdirMailingDataDaoCache mailingDataDaoCache;
 	private CompanyUidDataDaoCache companyUidDataCache;
 	
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	private ConfigService configService;
 	
@@ -62,7 +62,7 @@ public class V2Sha512ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDS
 	}
 
 	@Required
-	public final void setMailingDao(final ComMailingDao dao) { // TODO Replace by constructor injection
+	public final void setMailingDao(final MailingDao dao) { // TODO Replace by constructor injection
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 

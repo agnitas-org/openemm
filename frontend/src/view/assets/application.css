@@ -18128,6 +18128,18 @@ __It should not be used anywhere manually and is just included here for complete
   background-color: #109e4d;
 }
 
+.campaign\.status\.testing_failed {
+  background-color: #880010;
+  border: 1px solid #880010;
+}
+.campaign\.status\.testing_failed:before {
+  content: "\f0c3";
+}
+
+.campaign\.status\.background\.testing_failed {
+  background-color: #880010;
+}
+
 .campaign\.status\.paused {
   background-color: #707173;
   border: 1px solid #707173;

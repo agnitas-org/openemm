@@ -1,46 +1,39 @@
 /*doc
 ---
-title: Datepicker Directive
-name: datepicker-directive
-parent: directives
+title: Date & Time
+name: datepicker
+category: Components - Date & Time
 ---
 
-An input can be decorated with a datepicker using the `js-datepicker` class. Options for the datepicker can be passed via the `data-datepicker-options` attribute. For aligning the datepicker on the right side you can pass the `js-datepicker-right` class.
+#####Datepicker
 
-A documentation of the available options can be found under <a href="http://amsul.ca/pickadate.js/date/" target="_blank">PickADate Doc</a>
+An input can be decorated with a datepicker using the `.date-picker-container` input wrapper and `.js-datepicker` class.
+Options for the datepicker can be passed via the `[data-datepicker-options]` attribute.
+
+data-datepicker-options   |Description                                |
+--------------------------|-------------------------------------------|
+`minDate: '02-04-2024'`   |The minimum selectable date. 0 - no minimum|
+`maxDate: '02-04-2024'`   |The maximum selectable date. 0 - no maximum|
+`dateFormat: 'dd-mm-yyyy'`|Date format pattern                        |
+`yearRange: '2000:2014'`  |Year from 2000 inclusive to 2014 inclusive |
+
+See more options at <a href="https://api.jqueryui.com/datepicker/" class="text-color-info" target="_blank"><i>Jquery Datepicker Widget API</i></a>
 
 ```htmlexample
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Date</label>
-    </div>
-    <div class="col-sm-8">
-        <div class="input-group">
-            <div class="input-group-controls">
-                <input type="text" class="form-control datepicker-input js-datepicker" value="01.12.2015" />
-            </div>
-            <div class="input-group-btn">
-                <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                    <i class="icon icon-calendar-o"></i>
-                </button>
-            </div>
-        </div>
+<div>
+    <label class="form-label" for="date">Date</label>
+    <div class="date-picker-container">
+        <input type="text" name="date" id="date" value="01.12.2024"
+               class="form-control js-datepicker" placeholder="DD.MM.YYYY"
+               data-datepicker-options="dateFormat: 'dd-mm-yyyy', minDate: '02-04-2024', maxDate: '25-04-2024'">
     </div>
 </div>
 ```
-*/
 
-/*doc
----
-title: Datepicker Range
-name: datepicker-range
-parent: directives
----
+#####Datepicker Range
 
 If you have a couple of date pickers that represent a date range you usually need to make sure that user cannot break the rule `begin < end`.
-
 To apply that restriction just put both date pickers to some container (e.g. `<div>`) and add `data-date-range` attribute to container element.
-
 The first `.js-datepicker` in hierarchy will be treated as `begin` and the second — as `end`.
 
 ```htmlexample
@@ -55,108 +48,75 @@ The first `.js-datepicker` in hierarchy will be treated as `begin` and the secon
     </div>
 </div>
 ```
-*/
 
-/*doc
----
-title: Timepicker Directive
-name: timepicker-directive
-parent: directives
----
+#####Timepicker
 
-An input can be decorated with an input-mask for time by using the `js-timepicker` class. Options for the input-mask can be passed via the `data-timepicker-options` attribute. This is mainly used to define the mask:
+An input can be decorated with an input-mask for time by using the `.time-picker-container` wrapper and `.js-timepicker` class.
+Options for the input-mask can be passed via the `[data-timepicker-options]` attribute. This is mainly used to define the mask:
 
-data-timepicker-options | Used for
-----------------|-----------------
-`mask: 'h:halfs'` | Default, full control over hours, with 30 minute increments
-`mask: 'h:s'` | full control
-`mask: 'h:00'` | full control over hours, minutes stay at 00
-`mask: 'h:quarts'` | full control over hours, with 15 minute increments
+data-timepicker-options|Description                                                |
+-----------------------|-----------------------------------------------------------|
+`mask: 'h:halfs'`      |Default, full control over hours, with 30 minute increments|
+`mask: 'h:s'`          |full control                                               |
+`mask: 'h:00'`         |full control over hours, minutes stay at 00                |
+`mask: 'h:quarts'`     |full control over hours, with 15 minute increments         |
 
-
-A documentation of the underlying jquery plugin can be found under <a href="https://github.com/RobinHerbots/jquery.inputmask" target="_blank">Jquery Inputmask Doc</a>
+A documentation of the underlying jquery plugin can be found under <a href="https://github.com/RobinHerbots/jquery.inputmask" target="_blank"><i>Jquery Inputmask Doc</i></a>
 
 <strong>CAVEAT: When passing a value to the input make sure it is zero-padded (08:45 instead of 8:45)</strong>
 
 ```htmlexample
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Time (Default)</label>
-    </div>
-    <div class="col-sm-8">
-        <div class="input-group">
-            <div class="input-group-controls">
-                <input type="text" value="08:30" class="form-control js-timepicker" />
-            </div>
-            <div class="input-group-addon">
-                <span class="addon">
-                    <i class="icon icon-clock-o"></i>
-                </span>
-            </div>
-        </div>
-    </div>
+<div class="d-flex gap-3">
+  <div>
+      <label class="form-label" for="time">Time (Default)</label>
+      <div class="time-picker-container">
+          <input type="text" value="08:30" class="form-control js-timepicker" />
+      </div>
+  </div>
+  <div>
+      <label class="form-label" for="time">Time h:s</label>
+      <div class="time-picker-container">
+          <input type="text" value="08:22" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" />
+      </div>
+  </div>
+  <div>
+      <label class="form-label" for="time">Time h:00</label>
+      <div class="time-picker-container">
+          <input type="text" value="08:00" class="form-control js-timepicker" data-timepicker-options="mask: 'h:00'" />
+      </div>
+  </div>
+  <div>
+      <label class="form-label" for="time">Time h:quarts</label>
+      <div class="time-picker-container">
+          <input type="text" value="08:15" class="form-control js-timepicker" data-timepicker-options="mask: 'h:quarts'" />
+      </div>
+  </div>
 </div>
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Time h:s</label>
+```
+
+#####Combined date and time
+
+Use `.date-time-container` wrapper in order to create combined date & time input. 
+
+```htmlexample
+<div class="date-time-container">
+    <div class="date-picker-container">
+        <input type="text" name="date-and-time-day" id="date-and-time-date" class="form-control js-datepicker"/>
     </div>
-    <div class="col-sm-8">
-        <div class="input-group">
-            <div class="input-group-controls">
-                <input type="text" value="08:22" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" />
-            </div>
-            <div class="input-group-addon">
-                <span class="addon">
-                    <i class="icon icon-clock-o"></i>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Time h:00</label>
-    </div>
-    <div class="col-sm-8">
-        <div class="input-group">
-            <div class="input-group-controls">
-                <input type="text" value="08:00" class="form-control js-timepicker" data-timepicker-options="mask: 'h:00'" />
-            </div>
-            <div class="input-group-addon">
-                <span class="addon">
-                    <i class="icon icon-clock-o"></i>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Time h:quarts</label>
-    </div>
-    <div class="col-sm-8">
-        <div class="input-group">
-            <div class="input-group-controls">
-                <input type="text" value="08:15" class="form-control js-timepicker" data-timepicker-options="mask: 'h:quarts'" />
-            </div>
-            <div class="input-group-addon">
-                <span class="addon">
-                    <i class="icon icon-clock-o"></i>
-                </span>
-            </div>
-        </div>
+    <div class="time-picker-container">
+        <input type="text" id="date-and-time-time" name="date-and-time-time" class="form-control js-timepicker"/>
     </div>
 </div>
 ```
 */
 
-;(function () {
+;(() => {
 
   const Helpers = AGN.Lib.Helpers;
   const DATA_ATTR_PREFIX = 'agn:datepicker-opt';
 
-  AGN.Lib.CoreInitializer.new('pickadate', function ($scope = $(document)) {
-    _.each($scope.find('.js-datepicker'), function (input) {
+  AGN.Lib.CoreInitializer.new('datepicker', function ($scope = $(document)) {
+    _.each($scope.find('.js-datepicker'), input => {
       const $input = $(input);
       $input.removeClass('hasDatepicker');
 
@@ -190,6 +150,9 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 
       options = _.merge({}, options, Helpers.objFromString($input.data('datepicker-options')));
 
+      let maskDateFormat = options.dateFormat?.toLowerCase()?.replace(/d+/, "dd")?.replace(/m+/, "mm")?.replace(/y+/, "yyyy");
+      $input.inputmask(maskDateFormat, { placeholder: "_", showMaskOnHover: false,  });
+
       options.dateFormat = adoptDateFormat(options.dateFormat);
 
       if (options.formatSubmit) {
@@ -217,6 +180,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
       if (options.maxFor) {
         $input.data(`${DATA_ATTR_PREFIX}-maxFor`, options.maxFor);
         const updateMaxFor = () => {
+          fixRestrictionsAfterManualTextInput(options, $input);
           const maximum = $input.datepicker('getDate') || options.minDate;
           $(options.maxFor).datepicker('option', 'maxDate', maximum);
         }
@@ -227,14 +191,22 @@ A documentation of the underlying jquery plugin can be found under <a href="http
       if (options.minFor) {
         $input.data(`${DATA_ATTR_PREFIX}-minFor`, options.minFor);
         const updateMinFor = () => {
+          fixRestrictionsAfterManualTextInput(options, $input);
           const minimum = $input.datepicker('getDate') || options.maxDate;
           $(options.minFor).datepicker('option', 'minDate', minimum);
         }
         $input.on('change', updateMinFor);
-        updateMinFor();
+        window.setTimeout(updateMinFor, 100);
       }
+      fixRestrictionsAfterManualTextInput(options, $input);
     });
 
+    function fixRestrictionsAfterManualTextInput(options, $input) {
+      if (options.minDate || options.maxDate) {
+        $input.datepicker("setDate", $.datepicker.parseDate(options.dateFormat, $input.val()));
+      }
+    }
+    
     function adoptDateFormat(dateFormat) {
       return dateFormat.replace(/M/g, 'm')
         .replace(/D/g, 'd')
@@ -260,9 +232,9 @@ A documentation of the underlying jquery plugin can be found under <a href="http
       const $buttonsContainer = $('.ui-datepicker-buttonpane');
 
       $buttonsContainer.append(`
-        <button id="clear-datepicker-btn" class="btn btn-inverse gap-1">
-            <i class="icon icon-sync"></i>
-            <span class="text">${t('defaults.clear')}</span>
+        <button id="clear-datepicker-btn" class="btn btn-inverse">
+            <i class="icon icon-undo-alt"></i>
+            <span class="text">${t('defaults.reset')}</span>
         </button>
       `);
       $buttonsContainer.find('#clear-datepicker-btn').on('click', () => handleClear($input));
@@ -270,7 +242,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
       // if original 'Today' button not exists, then it means that current date can't be selected by restrictions of minDate/maxDate.
       if ($buttonsContainer.find('.ui-datepicker-current').exists()) {
         $buttonsContainer.append(`
-            <button id="today-datepicker-btn" class="btn btn-inverse gap-1">
+            <button id="today-datepicker-btn" class="btn btn-inverse">
                 <i class="icon icon-calendar-alt"></i>
                 <span class="text">${t('defaults.today')}</span>
             </button>

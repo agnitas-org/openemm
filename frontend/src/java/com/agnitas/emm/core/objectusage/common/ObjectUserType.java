@@ -31,5 +31,7 @@ public enum ObjectUserType {
     CLASSIC_MAILING_CONTENT,
 
     /** Used as a content component of the EMC mailing or template. */
-    EMC_CONTENT
+    EMC_CONTENT,
+	/** Using object is birt report. */
+	BIRT_REPORT;
 }

@@ -8,7 +8,7 @@
 <%--@elvariable id="errorSizeThreshold" type="java.lang.Long"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/send/send-world.action" modelAttribute="form">
 
             <mvc:hidden path="mailingID"/>
@@ -35,7 +35,7 @@
 
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="Mailing"/>:&nbsp;${form.shortname}</h1>
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive">
+                <button type="button" class="btn btn-primary js-confirm-positive">
                     <i class="icon icon-paper-plane"></i>
                     <span class="text"><mvc:message code="button.Send"/></span>
                 </button>

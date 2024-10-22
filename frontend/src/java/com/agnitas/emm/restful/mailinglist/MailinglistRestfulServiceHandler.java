@@ -17,30 +17,31 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
@@ -56,7 +57,6 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
-import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,38 +67,22 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/mailinglist
  */
 public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
-	
 	public static final String NAMESPACE = "mailinglist";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailinglistService mailinglistService;
-	private MailinglistDao mailinglistDao;
-	private ComRecipientDao recipientDao;
-	private ColumnInfoService columnInfoService;
+	private RecipientService recipientService;
+	private RecipientFieldService recipientFieldService;
 
-	@Required
-	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
+	public MailinglistRestfulServiceHandler(
+			RestfulUserActivityLogDao userActivityLogDao,
+			MailinglistService mailinglistService,
+			RecipientService recipientService,
+			RecipientFieldService recipientFieldService) {
 		this.userActivityLogDao = userActivityLogDao;
-	}
-	
-	@Required
-	public void setMailinglistDao(MailinglistDao mailinglistDao) {
-		this.mailinglistDao = mailinglistDao;
-	}
-	
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
-		this.recipientDao = recipientDao;
-	}
-	
-	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
-	}
-	
-	@Required
-	public void setMailinglistService(MailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
+		this.recipientService = recipientService;
+		this.recipientFieldService = recipientFieldService;
 	}
 
 	@Override
@@ -142,7 +126,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 
 			JsonArray mailinglistsJsonArray = new JsonArray();
 			
-			for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+			for (Mailinglist mailinglist : mailinglistService.getMailinglists(admin.getCompanyID())) {
 				JsonObject mailinglistJsonObject = new JsonObject();
 				mailinglistJsonObject.add("mailinglist_id", mailinglist.getId());
 				mailinglistJsonObject.add("name", mailinglist.getShortname());
@@ -155,9 +139,9 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 			// Show single mailinglist
 			Mailinglist mailinglist = null;
 			if (AgnUtils.isNumber(restfulContext[0])) {
-				mailinglist = mailinglistDao.getMailinglist(Integer.parseInt(restfulContext[0]), admin.getCompanyID());
+				mailinglist = mailinglistService.getMailinglist(Integer.parseInt(restfulContext[0]), admin.getCompanyID());
 			} else {
-				for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+				for (Mailinglist mailinglistItem : mailinglistService.getMailinglists(admin.getCompanyID())) {
 					if (mailinglistItem.getShortname().equals(restfulContext[0])) {
 						mailinglist = mailinglistItem;
 						break;
@@ -186,39 +170,44 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 				mailinglistJsonObject.add("change_date", mailinglist.getChangeDate());
 
 				JsonObject mailinglistStatisticsJsonObject = new JsonObject();
-				for (Entry<Integer, Integer> entry : mailinglistDao.getMailinglistWorldSubscribersStatistics(admin.getCompanyID(), mailinglist.getId()).entrySet()) {
+				for (Entry<Integer, Integer> entry : mailinglistService.getMailinglistWorldSubscribersStatistics(admin.getCompanyID(), mailinglist.getId()).entrySet()) {
 					mailinglistStatisticsJsonObject.add(UserStatus.getUserStatusByID(entry.getKey()).name().toLowerCase(), entry.getValue());
 				}
 				mailinglistJsonObject.add("statistics", mailinglistStatisticsJsonObject);
 				
 				if (showMailinglistRecipients) {
-					CaseInsensitiveMap<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
+					List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
+					CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>(recipientFields.stream().collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
 					
 					List<String> profileFieldsToShow = null;
 					String fieldsString = request.getParameter("fields");
 					if (StringUtils.isNotBlank(fieldsString)) {
 						if ("*".equals(fieldsString)) {
 							profileFieldsToShow = new ArrayList<>();
-							for (String profileField : profileFields.keySet()) {
-								profileFieldsToShow.add(profileField);
+							for (RecipientFieldDescription profileField : recipientFields) {
+								if (profileField.getAdminPermission(admin.getAdminID()) != ProfileFieldMode.NotVisible) {
+									profileFieldsToShow.add(profileField.getColumnName());
+								}
 							}
 						} else {
 							profileFieldsToShow = AgnUtils.splitAndTrimList(fieldsString);
-							for (String profileField : profileFieldsToShow) {
-								if (!profileFields.containsKey(profileField)) {
-									throw new RestfulClientException("Unknown profile field: " + profileField);
+							for (String profileFieldName : profileFieldsToShow) {
+								if (recipientFieldsMap.get(profileFieldName) == null || recipientFieldsMap.get(profileFieldName).getAdminPermission(admin.getAdminID()) == ProfileFieldMode.NotVisible) {
+									throw new RestfulClientException("Unknown profile field: " + profileFieldName);
 								}
 							}
 						}
 					}
 					
 					JsonArray recipientsArray = new JsonArray();
-					List<CaseInsensitiveMap<String, Object>> recipients = recipientDao.getMailinglistRecipients(admin.getCompanyID(), mailinglist.getId(), MediaTypes.EMAIL, null, profileFieldsToShow, Arrays.asList(new UserStatus[] { UserStatus.Active }), TimeZone.getTimeZone(admin.getAdminTimezone()));
+					List<CaseInsensitiveMap<String, Object>> recipients = recipientService.getMailinglistRecipients(admin.getCompanyID(), mailinglist.getId(), MediaTypes.EMAIL, null, profileFieldsToShow, Arrays.asList(new UserStatus[] { UserStatus.Active }), TimeZone.getTimeZone(admin.getAdminTimezone()));
 					for (CaseInsensitiveMap<String, Object> customerDataMap : recipients) {
 						JsonObject customerJsonObject = new JsonObject();
 						for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
-							if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+							if (recipientFieldsMap.get(key) != null && recipientFieldsMap.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+							} else if (recipientFieldsMap.get(key) != null && recipientFieldsMap.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(customerDataMap.get(key)));
 							} else {
 								customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 							}
@@ -236,7 +225,6 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 
 	/**
 	 * Delete a mailinglist
-	 * 
 	 */
 	private Object deleteMailinglist(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_DELETE)) {
@@ -301,8 +289,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(mailinglist.getShortname(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Mailinglist name contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailinglist name contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'name'. String expected");
@@ -313,8 +301,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(mailinglist.getDescription(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Mailinglist description contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailinglist description contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");
@@ -327,15 +315,15 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					if (StringUtils.isBlank(mailinglist.getShortname())) {
 						throw new RestfulClientException("Missing mandatory value for property value for 'name'");
 					} else {
-						for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+						for (Mailinglist mailinglistItem : mailinglistService.getMailinglists(admin.getCompanyID())) {
 							if (mailinglistItem.getShortname().equals(mailinglist.getShortname())) {
 								throw new RestfulClientException("Mailinglist with name '" + mailinglist.getShortname() + "' already exists");
 							}
 						}
 						
-						mailinglistDao.saveMailinglist(mailinglist);
+						mailinglistService.saveMailinglist(mailinglist);
 						
-						mailinglist = mailinglistDao.getMailinglist(mailinglist.getId(), admin.getCompanyID());
+						mailinglist = mailinglistService.getMailinglist(mailinglist.getId(), admin.getCompanyID());
 						
 						if (mailinglist != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
@@ -376,9 +364,9 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			String requestedMailinglistKeyValue = restfulContext[0];
 			if (AgnUtils.isNumber(requestedMailinglistKeyValue)) {
-				existingMailinglist = mailinglistDao.getMailinglist(Integer.parseInt(requestedMailinglistKeyValue), admin.getCompanyID());
+				existingMailinglist = mailinglistService.getMailinglist(Integer.parseInt(requestedMailinglistKeyValue), admin.getCompanyID());
 			} else {
-				for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+				for (Mailinglist mailinglistItem : mailinglistService.getMailinglists(admin.getCompanyID())) {
 					if (mailinglistItem.getShortname().equals(requestedMailinglistKeyValue)) {
 						existingMailinglist = mailinglistItem;
 						break;
@@ -398,7 +386,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					if (jsonObject.containsPropertyKey("mailinglist_id")) {
 						if (jsonObject.get("mailinglist_id") instanceof Integer) {
 							if (existingMailinglist == null) {
-								existingMailinglist = mailinglistDao.getMailinglist((Integer) jsonObject.get("mailinglist_id"), admin.getCompanyID());
+								existingMailinglist = mailinglistService.getMailinglist((Integer) jsonObject.get("mailinglist_id"), admin.getCompanyID());
 								if (existingMailinglist == null) {
 									throw new RestfulClientException("No such mailinglist for update");
 								}
@@ -418,7 +406,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 								throw new RestfulClientException("Invalid empty data for 'name'. String expected");
 							} else {
 								if (existingMailinglist == null) {
-									for (Mailinglist mailinglistItem : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+									for (Mailinglist mailinglistItem : mailinglistService.getMailinglists(admin.getCompanyID())) {
 										if (mailinglistItem.getShortname().equals(jsonObject.get("name"))) {
 											existingMailinglist = mailinglistItem;
 											break;
@@ -468,9 +456,9 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					if (StringUtils.isBlank(mailinglist.getShortname())) {
 						throw new RestfulClientException("Missing mandatory value for property value for 'name'");
 					} else {
-						mailinglistDao.saveMailinglist(mailinglist);
+						mailinglistService.saveMailinglist(mailinglist);
 						
-						mailinglist = mailinglistDao.getMailinglist(mailinglist.getId(), admin.getCompanyID());
+						mailinglist = mailinglistService.getMailinglist(mailinglist.getId(), admin.getCompanyID());
 						
 						if (mailinglist != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());

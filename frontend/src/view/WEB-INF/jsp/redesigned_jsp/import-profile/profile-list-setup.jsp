@@ -1,16 +1,12 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="agnNavigationKey" 		      value="none"		 			         scope="request" />
 <c:set var="agnTitleKey" 			      value="import.ImportProfile"	         scope="request" />
-<c:set var="agnSubtitleKey" 		      value="import.ImportProfile" 	         scope="request" />
 <c:set var="sidemenu_active" 		      value="ImportExport" 			         scope="request" />
 <c:set var="sidemenu_sub_active" 	      value="manage.tables.importProfiles" 	 scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	      value="ImportExport" 	                 scope="request" />
-<mvc:message var="agnHeadLineFirstCrumb"  code="manage.tables.importProfiles"    scope="request" />
-<c:set var="isBreadcrumbsShown" 	      value="true" 					         scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	      value="manage.tables.importProfiles" 	 scope="request" />
 <c:set var="agnHelpKey" 			      value="manageProfile" 			     scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

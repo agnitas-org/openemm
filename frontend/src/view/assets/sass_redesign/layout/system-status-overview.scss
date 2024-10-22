@@ -1,6 +1,4 @@
 #system-status-overview {
-  display: flex;
-
   #general-tile {
     flex: 1 0 min-content;
     .general-info__title {
@@ -13,7 +11,7 @@
     }
   }
 
-  #settings-tile, #system-status-tile, #db-status-tile {
+  #system-status-tile, #db-status-tile {
     flex: 1;
   }
 }

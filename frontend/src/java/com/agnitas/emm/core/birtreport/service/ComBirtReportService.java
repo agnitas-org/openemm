@@ -20,13 +20,17 @@ import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
 import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ComBirtReportService {
     boolean insert(ComBirtReport report) throws Exception;
@@ -43,9 +47,14 @@ public interface ComBirtReportService {
 
 	List<ComBirtReport> getReportsToSend(int maximumNumberOfReports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
+	void deleteExpired(Date expireDate, int companyId);
+
 	BirtReportDto getBirtReport(Admin admin, int reportId);
+	ComBirtReport getBirtReport(int reportId, int companyId);
 
 	BirtReportDownload evaluate(Admin admin, BirtReportForm form) throws Exception;
+	List<ReportSettingsType> getBirtReportSettingsTypesForEvaluation(Map<ReportSettingsType, Map<String, Object>> settings, int activeTab, Admin admin);
+	List<BirtReportDownload> evaluate(int id, int activeTab, Admin admin) throws Exception;
 
 	boolean deleteReport(int companyId, int reportId);
 
@@ -75,4 +84,15 @@ public interface ComBirtReportService {
 	BirtReportDto createSingleMailingStatisticsReport(int mailingId, Admin admin) throws Exception;
 
 	void copySampleReports(int toCompanyId, int fromCompanyId) throws Exception;
+
+	List<String> getNames(Set<Integer> ids, int companyID);
+
+	ServiceResult<UserAction> markDeleted(Set<Integer> ids, int companyID);
+
+    List<ReportEntry> findAllByEmailPart(String email, int companyID);
+    List<ReportEntry> findAllByEmailPart(String email);
+
+	void storeBirtReportEmailRecipients(List<String> emails, int reportId);
+
+	void restore(Set<Integer> bulkIds, int companyId);
 }

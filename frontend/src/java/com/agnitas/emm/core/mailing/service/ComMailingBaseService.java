@@ -51,13 +51,14 @@ public interface ComMailingBaseService {
     int getWorkflowId(int mailingId, int companyId);
 
     int saveMailingWithUndo(Mailing mailing, int adminId, boolean preserveTrackableLinks);
+    boolean saveUndoData(int mailingId, int adminId);
     void restoreMailingUndo(ApplicationContext ctx, int mailingId, int companyId) throws Exception;
 
     /**
      * Set target groups (see {@link Mailing#setTargetGroups(Collection)}) and their combining mode (see {@link Mailing#setTargetMode(int)}) if it's permitted.
      * Here are the reasons why target groups couldn't be updated:
      * - mailing doesn't exist or marked as deleted;
-     * - mailing is managed by campaign manager (see {@link com.agnitas.dao.ComMailingDao#usedInCampaignManager(int)});
+     * - mailing is managed by campaign manager (see {@link com.agnitas.dao.MailingDao#usedInCampaignManager(int)});
      *
      * @param mailingId an identifier of a mailing to be updated.
      * @param companyId an identifier of current user's company.
@@ -178,7 +179,7 @@ public interface ComMailingBaseService {
 	 */
 	boolean isAdvertisingContentType(int companyId, int mailingId);
 	
-	boolean isLimitedRecipientOverview(Admin admin, int mailingId);
+	boolean isLimitedRecipientOverview(Admin admin, int mailingId); // TODO: EMMGUI-714 remove after remove of old design (if not used)
 
     /**
      * Check if the given mailing content is blank (resolve all the dyn-tags (if any) and check if mail contains at least
@@ -223,7 +224,11 @@ public interface ComMailingBaseService {
      */
     SimpleServiceResult checkContentNotBlank(Mailing mailing);
 
-    void activateTrackingLinksOnEveryPosition(Admin admin, Mailing mailing, ApplicationContext context) throws Exception;
+    void activateTrackingLinksOnEveryPosition(Mailing mailing, ApplicationContext context) throws Exception;
     
 	List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
+
+    int getMailinglistId(int mailingId, int companyId);
+
+    boolean isTemplate(int companyId, int mailingId);
 }

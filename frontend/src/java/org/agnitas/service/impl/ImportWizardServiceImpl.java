@@ -28,6 +28,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.core.commons.dto.FileDto;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardFileStepForm;
@@ -183,6 +184,9 @@ public class ImportWizardServiceImpl implements ImportWizardService {
                 return ServiceResult.error(Message.of("error.duplicate.csvcolumn", duplicateCsvColumn));
             }
             return ServiceResult.success(firstLineHeaders.stream().map(CsvColInfo::new).collect(Collectors.toList()));
+        } catch (InvalidCharsetException e) {
+            logger.error("parseFirstLine: {}", e.getMessage(), e);
+            return ServiceResult.error(Message.of("error.import.charset"));
         } catch (ImportWizardContentParseException e) {
             logger.error("parseFirstline: {}  key: {}", e.getMessage(), e.getErrorMessageKey(), e);
             if (e.getAdditionalErrorData() != null && e.getAdditionalErrorData().length > 0) {

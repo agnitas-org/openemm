@@ -2,6 +2,7 @@
 
   const Node = AGN.Lib.WM.Node;
   const Def = AGN.Lib.WM.Definitions;
+  const ARROW_CLICK_STEP = 50;
 
   /**
    * Minimap Canvas element contains node prototypes scaled to fit into minimap box
@@ -235,50 +236,41 @@
   }
 
   class Minimap {
+
     constructor(canvas, options) {
       this.$container = $('#minimap');
       this.canvas = canvas;
-    
-      this.$collapseBtn = this.$container.find('.minimap-collapse');
       this.miniCanvas = new MinimapCanvas(this, '.minimap-canvas', options);
       this.miniPanner = new MinimapPanner(this, '.minimap-panner', options);
-    
       this.enabled = false;
-    
-      // const self = this;
-      this.$container.on('click', '.minimap-panner, .minimap-collapse', function(e) {
-        e.preventFocusOnArea = true;
-      });
-    
-      // this.$collapseBtn.on('click', function(e){
-      //   self.collapseMinimap();
-      // });
-      //
+      
+      const $collapseBtn = this.$container.find('.minimap-collapse');
+      const $enlargeBtn = $('#collapsed-navigator');
+      this.$container.on('click', '.minimap-panner, .minimap-collapse, .minimap-arrow', e => e.preventFocusOnArea = true);
+      $collapseBtn.on('click', () => this.toggleMinimap(false));
+      $enlargeBtn.on('click', () => this.toggleMinimap(true));
       this.$container.on('click', e => this.moveToClickPos(e));
-      // this.$container.find('.minimap-arrow').on('click', function (e) {
-      //   const direction = $(e.target).data('arrow');
-      //   var miniCanvasPosition = self.getMiniCanvasPosition();
-      //   var scale = self.getMiniPannerScale();
-      //   var x = (miniCanvasPosition.x) / scale;
-      //   var y = (miniCanvasPosition.y) / scale;
-      //   const newPos = self.#getStepPos(x, y, direction);
-      //   self.moveCanvasTo(newPos.x, newPos.y);
-      // });
+
+      this.$container.find('.minimap-arrow').on('click', e => {
+        const direction = $(e.currentTarget).data('arrow');
+        const newPos = this.#getStepPos(direction);
+        this.moveCanvasTo(newPos.x, newPos.y);
+      });
     }
     
-    // #getStepPos(x, y, direction) {
-    //   const step = 10;
-    //   switch (direction) {
-    //     case 'up':
-    //       return [x, y - step];
-    //     case 'right':
-    //       return [x + step, y];
-    //     case 'down':
-    //       return [x, y + step];
-    //     case 'left':
-    //       return [x - step, y];
-    //   }
-    // }
+    #getStepPos(direction) {
+      const {x, y} = this.canvas.getPosition();
+      switch (direction) {
+        case 'up':
+          return {x, y: y + ARROW_CLICK_STEP};
+        case 'right':
+          return {x: x - ARROW_CLICK_STEP, y};
+        case 'down':
+          return {x, y: y - ARROW_CLICK_STEP};
+        case 'left':
+          return {x: x + ARROW_CLICK_STEP, y};
+      }
+    }
 
     moveToClickPos(e) {
       if (e.preventFocusOnArea) {
@@ -332,9 +324,9 @@
       this.moveCanvasTo(-centeredX, -centeredY);
     }
   
-    collapseMinimap() {
-      this.$container.toggleClass('minimap-collapsed');
-      this.updateMinimap();
+    toggleMinimap(shown) {
+      $('#navigator').toggle(shown);
+      $('#collapsed-navigator').toggle(!shown);
     }
   
     getIcons() {

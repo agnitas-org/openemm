@@ -52,6 +52,10 @@
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
                             </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
+                            </label>
                         </li>
                         <li class="divider"></li>
                         <li>

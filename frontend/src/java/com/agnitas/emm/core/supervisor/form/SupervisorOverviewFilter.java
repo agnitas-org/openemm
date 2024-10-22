@@ -12,6 +12,8 @@ package com.agnitas.emm.core.supervisor.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class SupervisorOverviewFilter extends PaginationForm {
 
     private int companyId;
@@ -58,5 +60,9 @@ public class SupervisorOverviewFilter extends PaginationForm {
 
     public void setActive(Boolean active) {
         isActive = active;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || isNotBlank(fullname) || department != null || isActive != null;
     }
 }

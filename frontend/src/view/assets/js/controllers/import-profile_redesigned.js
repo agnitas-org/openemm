@@ -11,7 +11,6 @@ AGN.Lib.Controller.new('import-profile', function () {
   let isMailingListWasDisabled;
 
   // gender variables
-  let genderMappingRowTemplate;
   let $genderMappingsBlock;
   let availableGenderIntValues;
 
@@ -38,17 +37,17 @@ AGN.Lib.Controller.new('import-profile', function () {
     }
   });
 
-  this.addAction({change: 'change-new-recipients-action'}, function() {
+  this.addAction({change: 'change-new-recipients-action'}, function () {
     updateMailingListsSelectState();
   });
 
-  this.addAction({change: 'allMailinglists-toggle'}, function() {
+  this.addAction({change: 'allMailinglists-toggle'}, function () {
     updateMailingListsSelectState();
   });
 
   //all mailinglists slider parent is visible just for ${allowedModesForAllMailinglists} import modes
   //if all Malinglists slider is activated and is not visible just deactivate it
-  this.addAction({change: 'change-mode'}, function() {
+  this.addAction({change: 'change-mode'}, function () {
     const $allMalinglistsSlider = $('#allMalinglistsCheckbox');
     if (!$allMalinglistsSlider.exists()) {
       return;
@@ -66,7 +65,12 @@ AGN.Lib.Controller.new('import-profile', function () {
     const actionSelected = $newRecipientsAction.exists() && $newRecipientsAction.val() > 0;
     const isAllMailinglistsSelected = $allMalinglistsSlider.exists() && $allMalinglistsSlider.is(':checked');
 
-    $getRecipientMailinglists().prop('disabled', actionSelected || isMailingListWasDisabled || isAllMailinglistsSelected);
+    const isMailingListsSelectDisabled = actionSelected || isMailingListWasDisabled || isAllMailinglistsSelected;
+    const mailinglists = Select.get($getRecipientMailinglists());
+    mailinglists.toggleDisabled(isMailingListsSelectDisabled);
+    if (isMailingListsSelectDisabled) {
+      mailinglists.clear();
+    }
 
     if ($allMalinglistsSlider.exists()) {
       const shouldDisableAllMailinglistSlider = actionSelected || isMailingListWasDisabled;
@@ -171,7 +175,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   function replaceNewGenderMappingButtonWithDeleteButton() {
     const newBtn = $genderMappingsBlock.find('[data-action="add-gender-mapping"]');
     newBtn.after(`
-        <a href='#' class='btn btn-danger btn-icon-sm' data-action='delete-gender-mapping'>
+        <a href='#' class='btn btn-danger btn-icon' data-action='delete-gender-mapping'>
             <i class='icon icon-trash-alt'></i>
         </a>
     `);
@@ -191,8 +195,7 @@ AGN.Lib.Controller.new('import-profile', function () {
 
   function initGenderMappingTable(mappings) {
     $genderMappingsBlock = $('#gender-mappings-block');
-    genderMappingRowTemplate = Template.prepare('gender-settings-table-row');
-    _.each(mappings, function (mapping) {
+    _.each(mappings, mapping => {
       appendRowToGenderMappingTable(mapping[0], mapping[1]);
     });
     appendRowToGenderMappingTable('', '');
@@ -202,9 +205,9 @@ AGN.Lib.Controller.new('import-profile', function () {
     const mappingsCount = $genderMappingsBlock.find('[data-gender-settings-row]').length;
 
     const genders = _.map(availableGenderIntValues,
-      (value) => ({ value, selected: intValue == value, title: t(`import.gender.short.${value}`) }));
+      (value) => ({value, selected: intValue == value, title: t(`import.gender.short.${value}`)}));
 
-    $genderMappingsBlock.append(genderMappingRowTemplate({ intValue, textValues, mappingsCount, genders }));
+    $genderMappingsBlock.append(Template.text('gender-settings-table-row', {intValue, textValues, mappingsCount, genders}));
     CoreInitializer.run("select", $genderMappingsBlock.find('[data-gender-int-value]:last-child'));
   }
 
@@ -264,7 +267,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   this.addAction({click: 'upload-column-mappings'}, function () {
     const form = Form.get(this.el);
 
-    $.ajax(columnMappingsConfig.urls.READ, {
+    $.ajax(AGN.url('/import-profile/mappings/read.action'), {
       type: 'POST',
       dataType: 'json',
       enctype: 'multipart/form-data',
@@ -292,24 +295,10 @@ AGN.Lib.Controller.new('import-profile', function () {
     return [].concat(fileColumnMappings, nonDataFileColumns);
   }
 
-  this.addAction({change: 'select-all-columns-mappings'}, function () {
-    $('[data-mapping-checkbox]').prop('checked', this.el.prop('checked'));
-    controlBulkMappingsDeleteButtonVisibility();
-  });
-
-  this.addAction({change: 'select-column-mapping'}, function () {
-    controlBulkMappingsDeleteButtonVisibility();
-  });
-
   this.addAction({click: 'bulk-mappings-delete'}, function () {
-    _.each($('[data-mapping-checkbox]:checked'), el=> deleteColumnMapping($(el)));
-    controlBulkMappingsDeleteButtonVisibility();
+    _.each($('[data-mapping-checkbox]:checked'), el => deleteColumnMapping($(el)));
+    updateBulkActionsBlock();
   });
-
-  function controlBulkMappingsDeleteButtonVisibility() {
-    const selected = $('[data-mapping-checkbox]').is(':checked');
-    $('#bulk-mappings-delete-btn').toggleClass('hidden', !selected);
-  }
 
   this.addAction({change: 'change-database-column'}, function () {
     const previousSelectedColumn = this.el.data(DB_COLUMN_ATTR_NAME);
@@ -371,7 +360,7 @@ AGN.Lib.Controller.new('import-profile', function () {
     if (type === 'date') {
       AGN.runAll($inputCell);
     } else if (type === 'datetime') {
-      _.each($inputCell.find('[data-field]'), function(field) {
+      _.each($inputCell.find('[data-field]'), function (field) {
         AGN.Lib.Field.create($(field));
       });
     }
@@ -388,7 +377,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   }
 
   function getColumnDefValInputType(dbColumn) {
-    const type = profileFieldsColumns[dbColumn].dataType.toLowerCase();
+    const type = profileFieldsColumns[dbColumn].simpleDataType.toLowerCase();
     switch (type) {
       case 'date':
       case 'datetime':
@@ -523,8 +512,12 @@ AGN.Lib.Controller.new('import-profile', function () {
 
   this.addAction({click: 'delete-column-mapping'}, function () {
     deleteColumnMapping(this.el);
-    controlBulkMappingsDeleteButtonVisibility();
+    updateBulkActionsBlock();
   });
+
+  function updateBulkActionsBlock() {
+    $('.table-wrapper').trigger('table:updateBulkActions');
+  }
 
   function deleteColumnMapping($el) {
     const $mappingRow = $el.closest('[data-mapping-row]');

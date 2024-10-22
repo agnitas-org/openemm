@@ -100,7 +100,6 @@
                     <p class="help-block">
                         <mvc:message code="report.numberRecipients"/>:
                         <strong id="calculatedRecipientsBadge">?</strong>
-                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/NumberOfRecipients.xml" tabindex="-1" type="button"></button>
                     </p>
                     <button type="button" class="btn btn-regular" data-action="calculateRecipients">
                         <span><mvc:message code="button.Calculate"/></span>

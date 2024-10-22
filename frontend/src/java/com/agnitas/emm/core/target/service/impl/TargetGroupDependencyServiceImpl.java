@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.service.impl;
 
-import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.beans.TargetGroupDependencyType;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
@@ -40,14 +40,14 @@ public class TargetGroupDependencyServiceImpl implements TargetGroupDependencySe
     protected final MailingService mailingService;
 
     private final ExportPredefService exportPredefService;
-    private final ComMailingComponentDao componentDao;
+    private final MailingComponentDao componentDao;
     private final DynamicTagContentService dynamicTagContentService;
 
     @Autowired
     public TargetGroupDependencyServiceImpl(TargetDependentExportProfilesCollector exportProfilesCollector, TargetDependentMaildropsCollector maildropsCollector,
                                             TargetDependentMailingComponentsCollector mailingComponentsCollector, TargetDependentDynTagsCollector dynTagCollector,
                                             TargetDependentMailingsCollector mailingsCollector, ExportPredefService exportPredefService, MailingService mailingService,
-                                            ComMailingComponentDao componentDao, DynamicTagContentService dynamicTagContentService) {
+                                            MailingComponentDao componentDao, DynamicTagContentService dynamicTagContentService) {
         this.exportPredefService = exportPredefService;
         this.mailingService = mailingService;
         this.componentDao = componentDao;
@@ -63,7 +63,19 @@ public class TargetGroupDependencyServiceImpl implements TargetGroupDependencySe
     }
 
     @Override
-    public List<TargetGroupDependentEntry> findDependencies(int targetGroupId, int companyId) {
+    public boolean exists(int id, int companyId) {
+        return !findDependencies(id, companyId).isEmpty();
+    }
+
+    @Override
+    public Optional<TargetGroupDependentEntry> findAnyActualDependency(int targetId, int companyId) {
+        return this.findDependencies(targetId, companyId)
+                .stream()
+                .filter(TargetGroupDependentEntry::isActual)
+                .findAny();
+    }
+
+    protected List<TargetGroupDependentEntry> findDependencies(int targetGroupId, int companyId) {
         List<TargetGroupDependentEntry> dependencies = new ArrayList<>();
 
         for (TargetGroupDependenciesCollector collector : dependencyCollectors) {
@@ -71,13 +83,6 @@ public class TargetGroupDependencyServiceImpl implements TargetGroupDependencySe
         }
 
         return dependencies;
-    }
-
-    @Override
-    public Optional<TargetGroupDependentEntry> findAnyActualDependency(List<TargetGroupDependentEntry> dependencies) {
-        return dependencies.stream()
-                .filter(TargetGroupDependentEntry::isActual)
-                .findAny();
     }
 
     @Override

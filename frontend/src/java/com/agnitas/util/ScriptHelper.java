@@ -36,12 +36,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
@@ -75,7 +75,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
@@ -89,7 +89,7 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 
@@ -97,16 +97,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class ScriptHelper {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ScriptHelper.class);
+
+	private static final Logger logger = LogManager.getLogger(ScriptHelper.class);
 
 	/** Maximum length for valid email. This is a workaround for AGNEMM-2306. */
 	private static final int MAXIMUM_EMAIL_ADDRESS_LENGTH = 100;	// 100 is same size as of column CUSTOMER_?_TBL.email
 
 	/** DAO accessing mailing data. */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 
-	private MaildropStatusDao maildropStatusDao;
+	private MaildropService maildropService;
 	
 	private MailinglistService mailinglistService;
 
@@ -627,7 +627,7 @@ public class ScriptHelper {
 				return 0;
 			} else {
 				// Check if event-mailing entry already exists. Only one single event-mailing maildropStatus entry should exist.
-				final List<MaildropEntry> maildropStatusList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
+				final List<MaildropEntry> maildropStatusList = maildropService.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
 				for (final MaildropEntry entry : maildropStatusList) {
 					if (entry.getStatus() == MaildropStatus.ACTION_BASED.getCode()) {
 						return lastNewsletterMailingID;
@@ -645,7 +645,7 @@ public class ScriptHelper {
 				drop.setMailingID(lastNewsletterMailingID);
 				drop.setCompanyID(companyIdToCheck);
 
-				maildropStatusDao.saveMaildropEntry(drop);
+				maildropService.saveMaildropEntry(drop);
 
 				return lastNewsletterMailingID;
 			}
@@ -1160,7 +1160,7 @@ public class ScriptHelper {
 			return 0;
 		} else {
 			// Check if event-mailing entry already exists. Only one single event-mailing maildropStatus entry should exist.
-			final List<MaildropEntry> maildropStatusList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
+			final List<MaildropEntry> maildropStatusList = maildropService.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
 			for (final MaildropEntry entry : maildropStatusList) {
 				if (entry.getStatus() == MaildropStatus.ACTION_BASED.getCode()) {
 					return lastNewsletterMailingID;
@@ -1178,7 +1178,7 @@ public class ScriptHelper {
 			drop.setMailingID(lastNewsletterMailingID);
 			drop.setCompanyID(companyIdToCheck);
 
-			maildropStatusDao.saveMaildropEntry(drop);
+			maildropService.saveMaildropEntry(drop);
 
 			return lastNewsletterMailingID;
 		}
@@ -1482,7 +1482,7 @@ public class ScriptHelper {
 		}
 	}
 
-	public void setMailingDao(final ComMailingDao mailingDao) {
+	public void setMailingDao(final MailingDao mailingDao) {
 
     	/*
     	 * **************************************************
@@ -1495,17 +1495,8 @@ public class ScriptHelper {
 		this.mailingDao = mailingDao;
 	}
 
-	public void setMaildropStatusDao(final MaildropStatusDao maildropStatusDao) {
-
-    	/*
-    	 * **************************************************
-    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
-    	 * **************************************************
-    	 *
-    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
-    	 */
-
-		this.maildropStatusDao = maildropStatusDao;
+	public void setMaildropService(MaildropService maildropService) {
+		this.maildropService = maildropService;
 	}
 
 	public void setMailinglistService(final MailinglistService mailinglistService) {

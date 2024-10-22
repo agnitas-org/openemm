@@ -10,7 +10,9 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
 import com.agnitas.emm.core.components.service.MailingRecipientsService;
@@ -19,20 +21,30 @@ import com.agnitas.emm.core.mailing.dao.MailingRecipientsDao;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.SqlPreparedStatementManager;
+import org.agnitas.web.MailingRecipientsAdditionalColumn;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateTimeValue;
+import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateValue;
+import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDoubleValue;
 
 @Service("MailingRecipientsServiceImpl")
 public class MailingRecipientsServiceImpl implements MailingRecipientsService {
 
-    private final ComMailingDao mailingDao;
+    private final MailingDao mailingDao;
     private final MailingRecipientsDao mailingRecipientsDao;
     private final ComCompanyService companyService;
 
     @Autowired
-    public MailingRecipientsServiceImpl(ComMailingDao mailingDao, MailingRecipientsDao mailingRecipientsDao, ComCompanyService companyService) {
+    public MailingRecipientsServiceImpl(MailingDao mailingDao, MailingRecipientsDao mailingRecipientsDao, ComCompanyService companyService) {
         this.mailingDao = mailingDao;
         this.mailingRecipientsDao = mailingRecipientsDao;
         this.companyService = companyService;
@@ -72,13 +84,47 @@ public class MailingRecipientsServiceImpl implements MailingRecipientsService {
     }
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) throws Exception {
-        int maxRecipients = companyService.getCompany(companyId).getMaxRecipients();
-        return mailingRecipientsDao.getMailingRecipients(filter, maxRecipients, mailingId, companyId);
+    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, Map<String, ProfileField> profileFields, Admin admin) throws Exception {
+        Set<String> selectedRecipientsFields = filterSelectedRecipientsFields(filter);
+        int maxRecipients = companyService.getCompany(admin.getCompanyID()).getMaxRecipients();
+
+        PaginatedListImpl<MailingRecipientStatRow> recipients = mailingRecipientsDao.getMailingRecipients(filter, selectedRecipientsFields, maxRecipients, mailingId, admin.getCompanyID());
+
+        for (MailingRecipientStatRow recipient : recipients.getList()) {
+            for (String col : selectedRecipientsFields) {
+                recipient.setVal(col, getFieldFormattedValue(recipient.getVal(col), profileFields.get(col), admin));
+            }
+        }
+
+        return recipients;
+    }
+
+    private String getFieldFormattedValue(Object val, ProfileField profileField, Admin admin) {
+        if (profileField == null) {
+            return "";
+        }
+
+        switch (profileField.getSimpleDataType()) {
+            case Float:
+                return formatRecipientDoubleValue(admin, ((Number) val).doubleValue());
+            case Date:
+                return formatRecipientDateValue(admin, (Date) val);
+            case DateTime:
+                return formatRecipientDateTimeValue(admin, (Date) val);
+            default:
+                return Objects.isNull(val) ? "" : val.toString();
+        }
     }
 
     @Override
     public SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) {
-        return mailingRecipientsDao.prepareSqlStatement(filter, mailingId, companyId);
+        return mailingRecipientsDao.prepareSqlStatement(filter, filterSelectedRecipientsFields(filter), mailingId, companyId);
+    }
+
+    private Set<String> filterSelectedRecipientsFields(MailingRecipientsOverviewFilter filter) {
+        final Set<String> fields = new HashSet<>(filter.getSelectedFields());
+        fields.removeAll(MailingRecipientsAdditionalColumn.getColumns());
+
+        return fields;
     }
 }

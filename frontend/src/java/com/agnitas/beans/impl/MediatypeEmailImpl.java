@@ -13,6 +13,7 @@ package com.agnitas.beans.impl;
 import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,7 +100,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 	private boolean isEncryptedSend;
 
-	private boolean clearance;
+	private boolean requestApproval; // GWUA-5738 clearance
+
+	private String approvedBy;       // GWUA-5889 csv list of the approval recipient ids (approval counter)
 
 	/** Creates a new instance of MediatypeEmailImpl */
 	public MediatypeEmailImpl() {
@@ -463,6 +466,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		subject = parameters.get("subject");
 
 		preHeader = parameters.get("preHeader");
+		if (preHeader == null) {
+			preHeader = "";
+		}
 
 		mailFormat = NumberUtils.toInt(parameters.get("mailformat"), OFFLINE_HTML.getValue());
 
@@ -498,7 +504,11 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		String bcc = parameters.get(BCC_STRING_PARAM);
 		setBccRecipients(bcc);
 
-        setClearance(BooleanUtils.toBoolean(parameters.get("clearance")));
+        boolean clearance = BooleanUtils.toBoolean(parameters.get("clearance"));
+        setRequestApproval(clearance);
+        if (clearance) {
+            setApprovedBy(parameters.get("cleared_by"));
+        }
 	}
 
 	@Override
@@ -613,8 +623,11 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append("\"");
 		}
 
-        if (isClearance()) {
+        if (isRequestApproval()) {
             result.append(", clearance=\"true\"");
+            if (StringUtils.isNotBlank(getApprovedBy())) {
+                result.append(", cleared_by=\"").append(getApprovedBy().trim()).append("\"");
+            }
         }
 
 		super.setParam(result.toString());
@@ -741,13 +754,33 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	}
 
     @Override
-    public boolean isClearance() {
-        return clearance;
+    public boolean isRequestApproval() {
+        return requestApproval;
     }
 
     @Override
-    public void setClearance(boolean clearance) {
-        this.clearance = clearance;
+    public void setRequestApproval(boolean requestApproval) {
+        this.requestApproval = requestApproval;
+    }
+
+    @Override
+    public String getApprovedBy() {
+        return approvedBy;
+    }
+
+    @Override
+    public void setApprovedBy(String approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    @Override
+    public Set<Integer> getApprovers() {
+        return AgnUtils.csvStrToIntSet(approvedBy);
+    }
+    
+    @Override
+    public void setApprovers(Set<Integer> approvers) {
+        this.approvedBy = StringUtils.join(approvers, ",");
     }
 
     /**

@@ -10,80 +10,23 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import static org.agnitas.target.ConditionalOperator.CONTAINS;
-import static org.agnitas.target.ConditionalOperator.EQ;
-import static org.agnitas.target.ConditionalOperator.GEQ;
-import static org.agnitas.target.ConditionalOperator.GT;
-import static org.agnitas.target.ConditionalOperator.IS;
-import static org.agnitas.target.ConditionalOperator.LEQ;
-import static org.agnitas.target.ConditionalOperator.LIKE;
-import static org.agnitas.target.ConditionalOperator.LT;
-import static org.agnitas.target.ConditionalOperator.MOD;
-import static org.agnitas.target.ConditionalOperator.NEQ;
-import static org.agnitas.target.ConditionalOperator.NO;
-import static org.agnitas.target.ConditionalOperator.NOT_CONTAINS;
-import static org.agnitas.target.ConditionalOperator.NOT_LIKE;
-import static org.agnitas.target.ConditionalOperator.NOT_STARTS_WITH;
-import static org.agnitas.target.ConditionalOperator.STARTS_WITH;
-import static org.agnitas.target.ConditionalOperator.YES;
-
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.emm.core.components.service.MailingSendService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
-import com.agnitas.messages.I18nString;
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.target.ConditionalOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.common.ObjectUserType;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
@@ -105,12 +48,77 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
+import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.mvc.Popups;
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.company.service.CompanyService;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.target.ConditionalOperator;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbColumnType.SimpleDataType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
+import static org.agnitas.target.ConditionalOperator.CONTAINS;
+import static org.agnitas.target.ConditionalOperator.EQ;
+import static org.agnitas.target.ConditionalOperator.GEQ;
+import static org.agnitas.target.ConditionalOperator.GT;
+import static org.agnitas.target.ConditionalOperator.IS;
+import static org.agnitas.target.ConditionalOperator.LEQ;
+import static org.agnitas.target.ConditionalOperator.LIKE;
+import static org.agnitas.target.ConditionalOperator.LT;
+import static org.agnitas.target.ConditionalOperator.MOD;
+import static org.agnitas.target.ConditionalOperator.NEQ;
+import static org.agnitas.target.ConditionalOperator.NO;
+import static org.agnitas.target.ConditionalOperator.NOT_CONTAINS;
+import static org.agnitas.target.ConditionalOperator.NOT_LIKE;
+import static org.agnitas.target.ConditionalOperator.NOT_STARTS_WITH;
+import static org.agnitas.target.ConditionalOperator.STARTS_WITH;
+import static org.agnitas.target.ConditionalOperator.YES;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class ComWorkflowValidationService {
     private static final Logger logger = LogManager.getLogger(ComWorkflowValidationService.class);
@@ -245,12 +253,14 @@ public class ComWorkflowValidationService {
     private ComWorkflowService workflowService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private MaildropStatusDao maildropStatusDao;
     private ProfileFieldDao profileFieldDao;
     private MailingSendService mailingSendService;
     private MailingService mailingService;
-    private ComTargetDao targetDao;
+    private ComTargetService targetService;
+    private CompanyService companyService;
+    private ConfigService configService;
 
     static {
         FOLLOWED_MAILING_STATUSES.add(MailingStatus.ACTIVE.getDbKey());
@@ -258,6 +268,281 @@ public class ComWorkflowValidationService {
         FOLLOWED_MAILING_STATUSES.add(MailingStatus.SENT.getDbKey());
         FOLLOWED_MAILING_STATUSES.add(MailingStatus.NORECIPIENTS.getDbKey());
         FOLLOWED_MAILING_STATUSES.add(MailingStatus.SENDING.getDbKey());
+    }
+
+    public SimpleServiceResult validateStatusTransition(Workflow.WorkflowStatus currentStatus, Workflow.WorkflowStatus newStatus) {
+        switch (currentStatus) {
+            case STATUS_COMPLETE:
+                return SimpleServiceResult.simpleError(Message.of("error.workflow.campaignStatusHasNotBeUpdatedAfterCompleted"));
+
+            case STATUS_ACTIVE:
+                if (newStatus == Workflow.WorkflowStatus.STATUS_OPEN || newStatus == Workflow.WorkflowStatus.STATUS_INACTIVE || newStatus == STATUS_PAUSED) {
+                    return SimpleServiceResult.simpleSuccess();
+                }
+                return SimpleServiceResult.simpleError(Message.of("error.workflow.SaveActivatedWorkflow"));
+            case STATUS_TESTING:
+                if (newStatus == Workflow.WorkflowStatus.STATUS_OPEN || newStatus == Workflow.WorkflowStatus.STATUS_INACTIVE) {
+                    return SimpleServiceResult.simpleSuccess();
+                }
+                return SimpleServiceResult.simpleError(Message.of("error.workflow.SaveActivatedWorkflow"));
+            default:
+                switch (newStatus) {
+                    case STATUS_OPEN:
+                    case STATUS_INACTIVE:
+                    case STATUS_ACTIVE:
+                    case STATUS_TESTING:
+                        return SimpleServiceResult.simpleSuccess();
+
+                    default:
+                        return SimpleServiceResult.simpleError();
+                }
+        }
+    }
+
+    public SimpleServiceResult validate(int workflowId, List<WorkflowIcon> icons, Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus, Admin admin) throws Exception {
+        List<Message> messages = new ArrayList<>();
+
+        final int companyId = admin.getCompanyID();
+        final boolean isMailtrackingActive = companyService.isMailtrackingActive(companyId);
+        final TimeZone timezone = TimeZone.getTimeZone(admin.getAdminTimezone());
+        final boolean isTesting = newStatus == Workflow.WorkflowStatus.STATUS_TESTING;
+        final boolean isDuringPause = WorkflowUtils.isDuringPause(oldStatus, newStatus);
+        final boolean isUnpausing = WorkflowUtils.isUnpausing(oldStatus, newStatus);
+
+        if (!isAllIconsFilled(icons)) {
+            messages.add(Message.of("error.workflow.nodesShouldBeFilled"));
+            if (icons.isEmpty()) {
+                return SimpleServiceResult.simpleError(messages);
+            }
+        }
+        if (isStartIconMissing(icons) || isStopIconMissing(icons)) {
+            messages.add(Message.of("error.workflow.campaignShouldHaveAtLeastOneStartAndEnd"));
+        }
+        if (!validateReminderRecipients(icons)) {
+            messages.add(Message.of("error.email.invalid"));
+        }
+        if (!hasRecipient(icons)) {
+            messages.add(Message.of("error.workflow.campaignShouldHaveRecipient"));
+        }
+        if (isStartDateInPast(icons, timezone) && !isUnpausing && !isDuringPause) {
+            messages.add(Message.of("error.workflow.campaignShouldNotHaveStartDateInPast"));
+        }
+        if (!isNotStopDateInPast(icons, timezone)) {
+            messages.add(Message.of("error.workflow.campaignShouldNotHaveStopDateInPast"));
+        }
+        if (!noStartDateLaterEndDate(icons, timezone)) {
+            messages.add(Message.of("error.validation.enddate"));
+        }
+        if (isReminderDateInThePast(icons, timezone)) {
+            messages.add(Message.of("error.workflow.reminderDateInPast"));
+        }
+        if (!hasIconsConnections(icons)) {
+            messages.add(Message.of("error.workflow.nodesShouldHaveIncomingAndOutgoingArrows"));
+        }
+        if (isAutoImportMisused(icons)) {
+            messages.add(Message.of("error.workflow.autoImport.start.event"));
+        }
+        if (isAutoImportHavingShortDeadline(icons)) {
+            messages.add(Message.of("error.workflow.autoImport.delay.tooShort", WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT));
+        }
+        if (decisionsHaveTwoOutgoingConnections(icons)) {
+            if (!isMailtrackingActive && !decisionNegativePathConnectionShouldLeadToStopIcon(icons)) {
+                messages.add(Message.of("error.workflow.decisionNegativePathConnectionShouldLeadToStopIcon"));
+            }
+        } else {
+            messages.add(Message.of("error.workflow.decisionsShouldHaveTwoOutgoingConnections"));
+        }
+        if (!parametersSumNotHigher100(icons)) {
+            messages.add(Message.of("error.workflow.ParametersSumNotHigher100"));
+        }
+        if (moreThanOneStartPresented(icons)) {
+            messages.add(Message.of("error.workflow.start.one"));
+        }
+        if (!noMailingsBeforeRecipient(icons)) {
+            messages.add(Message.of("error.workflow.NoMailingsBeforeRecipient"));
+        }
+        if (!checkMailingTypesCompatible(icons)) {
+            messages.add(Message.of("error.workflow.mixedMailingTypes"));
+        }
+        if (!isFixedDeadlineUsageCorrect(icons)) {
+            messages.add(Message.of("error.workflow.fixedDeadlineIsNotPermitted"));
+        }
+        if (!isDeadlineDateCorrect(icons, timezone)) {
+            messages.add(Message.of("error.workflow.deadlineDateTooEarly"));
+        }
+        if (!mailingHasOnlyOneRecipient(icons)) {
+            messages.add(Message.of("error.workflow.mailingHasOneRecipient"));
+        }
+        if (!campaignHasOnlyOneMailingList(icons)) {
+            messages.add(Message.of("error.workflow.oneMailingList"));
+        }
+        if (!campaignHasOnlyMailingsAssignedToThisWorkflow(icons, companyId, workflowId)) {
+            messages.add(Message.of("error.workflow.mailingIsUsingInAnotherCampaign"));
+        }
+
+        if (!isImportIsNotActive(icons, companyId)) {
+            messages.add(Message.of("error.workflow.importIsActive"));
+        }
+
+        if (!isExportIsNotActive(icons, companyId)) {
+            messages.add(Message.of("error.workflow.exportIsActive"));
+        }
+
+        if (!isTesting && isInvalidDelayForDateBase(icons)) {
+            messages.add(Message.of("error.workflow.dateBased.invalid.delay"));
+        }
+
+        if (!isDateBaseCampaign(icons) && !isAnyTargetForDateBased(icons)) {
+            messages.add(Message.of("error.mailing.rulebased_without_target"));
+        }
+
+        if (workflowService.hasDeletedMailings(icons, companyId)) {
+            messages.add(Message.of("error.workflow.containsDeletedContent"));
+        }
+
+        int mailingTrackingDataExpirationPeriod = 0;
+        if (isMailtrackingActive) {
+            mailingTrackingDataExpirationPeriod = configService.getIntegerValue(ConfigValue.ExpireSuccess, companyId);
+        }
+
+        if (!noLoops(icons)) {
+            messages.add(Message.of("error.workflow.NoLoops"));
+            return SimpleServiceResult.simpleError(messages);
+        }
+
+        validateInvalidTargetGroups(companyId, icons, messages);
+
+        messages.addAll(validateAutoOptimization(icons));
+        messages.addAll(validateStartTrigger(icons, companyId));
+        messages.addAll(validateMailingTrackingUsage(icons, companyId, mailingTrackingDataExpirationPeriod));
+        messages.addAll(validateReferencedProfileFields(icons, companyId));
+        messages.addAll(validateOperatorsInDecisions(icons, companyId));
+        messages.addAll(validateMailingDataAndComponents(icons, admin));
+
+        if (admin.isRedesignedUiUsed()) {
+            messages.addAll(validateDuplicatedMailings(icons, admin));
+
+            if (messages.isEmpty()) {
+                return validateStatusTransition(oldStatus, newStatus);
+            }
+
+            return SimpleServiceResult.simpleError(messages);
+        } else {
+            return new SimpleServiceResult(messages.isEmpty(), messages);
+        }
+    }
+
+    private List<Message> validateDuplicatedMailings(List<WorkflowIcon> icons, Admin admin) {
+        List<Mailing> duplicatedMailings = mailingService.getDuplicateMailing(icons, admin.getCompanyID());
+        if (duplicatedMailings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ObjectUsage> usages = duplicatedMailings.stream()
+                .map(m -> new ObjectUsage(ObjectUserType.MAILING, m.getId(), m.getShortname()))
+                .collect(Collectors.toList());
+
+        return List.of(new ObjectUsages(usages).toMessage("error.workflow.mailingIsUsingInSeveralIcons", admin.getLocale()));
+    }
+
+    private void validateInvalidTargetGroups(int companyId, List<WorkflowIcon> icons, List<Message> messages) {
+        final Set<Integer> invalidTargets = getInvalidTargetGroups(companyId, icons);
+        if (CollectionUtils.isNotEmpty(invalidTargets)) {
+            final List<String> names = targetService.getTargetNamesByIds(companyId, invalidTargets);
+            messages.add(Message.of("error.workflow.targets.invalid", StringUtils.join(names, ", ")));
+        }
+    }
+
+    private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {
+        List<Message> messages = new ArrayList<>();
+
+        // It's possible to show a separate error message for each case (e.g. listing names of affected mailings)
+        // but for now just get rid of duplicated messages.
+        Set<ComWorkflowValidationService.MailingTrackingUsageErrorType> reportedErrors = new HashSet<>();
+
+        checkFollowupMailing(icons, companyId, trackingDays).forEach(e -> {
+            if (reportedErrors.add(e.getErrorType())) {
+                messages.add(translateToActionMessage(e, trackingDays));
+            }
+        });
+
+        checkMailingTrackingUsage(icons, trackingDays).forEach(e -> {
+            if (reportedErrors.add(e.getErrorType())) {
+                messages.add(translateToActionMessage(e, trackingDays));
+            }
+        });
+
+        checkMailingsReferencedInDecisions(icons, companyId, trackingDays).forEach(e -> {
+            if (reportedErrors.add(e.getErrorType())) {
+                messages.add(translateToActionMessage(e, trackingDays));
+            }
+        });
+
+        return messages;
+    }
+
+    private Message translateToActionMessage(ComWorkflowValidationService.MailingTrackingUsageError error, int trackingDays) {
+        MailingType mailingType = error.getMailingType();
+        switch (error.getErrorType()) {
+            case BASE_MAILING_NOT_FOUND:
+            case DECISION_MAILING_INVALID:
+                if (mailingType == MailingType.ACTION_BASED || mailingType == MailingType.DATE_BASED) {
+                    return Message.of("error.workflow.baseMailingNeedActivated", error.getMailingName());
+                } else {
+                    return Message.of("error.workflow.baseMailingNeedsSent", error.getMailingName());
+                }
+
+            case BASE_MAILING_DISORDERED:
+                return Message.of("error.workflow.baseMailingAtFirst", error.getMailingName());
+
+            case DECISION_MAILING_DISORDERED:
+                return Message.of("error.workflow.decision.requiresMailingBefore", error.getMailingName());
+
+            case MAILING_TRACKING_DISABLED:
+                return Message.of("error.workflow.trackingRequired");
+
+            case EXPIRATION_PERIOD_EXCEEDED:
+                return Message.of("error.workflow.trackingtime", trackingDays);
+
+            default:
+                return Message.of(ERROR_MSG);
+        }
+    }
+
+    private List<Message> validateReferencedProfileFields(List<WorkflowIcon> workflowIcons, int companyId) {
+        List<String> columns;
+        List<Message> messages = new ArrayList<>();
+
+        columns = checkTrackableProfileFields(workflowIcons, companyId);
+        if (!columns.isEmpty()) {
+            messages.add(Message.of("error.workflow.profiledb.missingTrackableColumns", "<br>" + StringUtils.join(columns, "<br>")));
+        }
+
+        columns = checkProfileFieldsUsedInConditions(workflowIcons, companyId);
+        if (!columns.isEmpty()) {
+            messages.add(Message.of("error.workflow.profiledb.missingColumnsForConditions", "<br>" + StringUtils.join(columns, "<br>")));
+        }
+
+        return messages;
+    }
+
+    private List<Message> validateOperatorsInDecisions(List<WorkflowIcon> icons, int companyId) {
+        List<Message> messages = new ArrayList<>();
+
+        for (WorkflowIcon icon : icons) {
+            if (icon.getType() == WorkflowIconType.DECISION.getId() && icon.isFilled()) {
+                WorkflowDecision decision = (WorkflowDecision) icon;
+                int criteriaId = decision.getDecisionCriteria().getId();
+                if (criteriaId == WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD.getId()) {
+                    messages.addAll(validateDecisionRules(decision, companyId));
+                }
+                if (criteriaId == WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION.getId()) {
+                    messages.addAll(validateDecisionReaction(decision, companyId));
+                }
+            }
+        }
+
+        return messages;
     }
 
     public boolean validateBasicStructure(List<WorkflowIcon> icons) {
@@ -555,14 +840,16 @@ public class ComWorkflowValidationService {
         return DateUtilities.parse(expression, new SimpleDateFormat(format)) != null;
     }
 
-    public boolean containsSentMailings(List<WorkflowIcon> workflowIcons, int companyId) {
+    public List<Integer> collectSentMailings(List<WorkflowIcon> workflowIcons, Admin admin) {
         return workflowIcons.stream()
                 .filter(WorkflowUtils::isMailingIcon)
                 .map(WorkflowUtils::getMailingId)
-                .filter(id -> id > 0)
-                .map(id -> maildropStatusDao.listMaildropStatus(id, companyId))
-                .flatMap(Collection::stream)
-                .anyMatch(this::hasForbiddenStatus);
+                .filter(id -> isSentMailing(id, admin.getCompanyID())).collect(Collectors.toList());
+    }
+
+    private boolean isSentMailing(Integer id, int companyId) {
+        return id != null && id > 0
+                && maildropStatusDao.listMaildropStatus(id, companyId).stream().anyMatch(this::hasForbiddenStatus);
     }
 
     public List<Message> validateMailingDataAndComponents(List<WorkflowIcon> workflowIcons, Admin admin) {
@@ -1072,6 +1359,26 @@ public class ComWorkflowValidationService {
         }
 
         return errors;
+    }
+
+    public void validateDeadlineBeforeDecision(List<WorkflowIcon> icons, Popups popups) {
+        if (anyDecisionIconWithReactionCriteriaMissesDelay(new WorkflowGraph(icons))) {
+            popups.warning("warning.workflow.decision.delay");
+        }
+    }
+
+    private static boolean anyDecisionIconWithReactionCriteriaMissesDelay(WorkflowGraph graph) {
+        return graph.getAllNodesByTypes(List.of(WorkflowIconType.Constants.DECISION_ID)).stream()
+                .map(decisionNode -> (WorkflowDecision) decisionNode.getNodeIcon())
+                .filter(WorkflowDecision::hasReactionCriteria)
+                .anyMatch(decisionIcon -> !containsDeadlineBetweenMailingAndDecision(decisionIcon, graph));
+    }
+
+    private static boolean containsDeadlineBetweenMailingAndDecision(WorkflowDecision decisionIcon, WorkflowGraph graph) {
+        return CollectionUtils.isEmpty(graph.getAllNextParallelIconsByType(decisionIcon,
+                ComWorkflowActivationService.ALL_MAILING_TYPES,
+                List.of(WorkflowIconType.DEADLINE.getId()),
+                true));
     }
 
     private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, int companyId) throws Exception {
@@ -1760,7 +2067,7 @@ public class ComWorkflowValidationService {
         targetExpressions.values().stream().map(TargetExpressionUtils::getTargetIds).forEach(targets::addAll);
         contentTargets.values().forEach(targets::addAll);
 
-        return targetDao.getInvalidTargets(companyId, targets);
+        return targetService.getInvalidTargets(companyId, targets);
     }
 
     // Make sure that given operator is applicable to data type that selected column belongs to.
@@ -1852,7 +2159,7 @@ public class ComWorkflowValidationService {
     }
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
@@ -1877,10 +2184,20 @@ public class ComWorkflowValidationService {
     }
 
     @Required
-    public void setTargetDao(ComTargetDao targetDao) {
-        this.targetDao = targetDao;
+    public void setTargetService(ComTargetService targetService) {
+        this.targetService = targetService;
     }
-    
+
+    @Required
+    public void setCompanyService(CompanyService companyService) {
+        this.companyService = companyService;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
+    }
+
     @Required
     public void setTrackableLinkService(TrackableLinkService trackableLinkService) {
         this.trackableLinkService = trackableLinkService;

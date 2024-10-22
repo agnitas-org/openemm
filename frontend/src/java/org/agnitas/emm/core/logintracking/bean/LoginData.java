@@ -22,7 +22,7 @@ import org.agnitas.emm.core.logintracking.LoginStatus;
 public final class LoginData {
 
 	/** Tracking ID. */
-	private final int trackId;
+	private final long trackId;
 	
 	/** Time of login attempt. */
 	private final Date loginTime;
@@ -47,7 +47,7 @@ public final class LoginData {
 	 * @param loginStatus the login status
 	 * @param usernameOrNull user name or <code>null</code>
 	 */
-	public LoginData(final int trackId, final Date loginTime, final String loginIP, final LoginStatus loginStatus, final String usernameOrNull) {
+	public LoginData(final long trackId, final Date loginTime, final String loginIP, final LoginStatus loginStatus, final String usernameOrNull) {
 		this.trackId = trackId;
 		this.loginTime = Objects.requireNonNull(loginTime);
 		this.loginIP = Objects.requireNonNull(loginIP);
@@ -55,7 +55,7 @@ public final class LoginData {
 		this.username = Optional.ofNullable(usernameOrNull);
 	}
 
-	public int getLoginTrackId() {
+	public long getLoginTrackId() {
 		return this.trackId;
 	}
 	

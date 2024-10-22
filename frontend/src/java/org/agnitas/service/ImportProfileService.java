@@ -11,9 +11,13 @@
 package org.agnitas.service;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.importvalues.ImportMode;
+import org.agnitas.web.forms.PaginationForm;
 
 import java.util.List;
 import java.util.Set;
@@ -34,8 +38,10 @@ public interface ImportProfileService {
 
     void deleteImportProfileById(int id);
 
-    List<ImportProfile> getAvailableImportProfiles(Admin admin);
+    PaginatedListImpl<ImportProfile> getOverview(PaginationForm form, Admin admin);
     List<ImportProfile> getAvailableImportProfiles(int companyId);
+    List<ImportProfile> findAllByEmailPart(String email, int companyID);
+    List<ImportProfile> findAllByEmailPart(String email);
 
     List<Integer> getSelectedMailingListIds(int id, int companyId);
 
@@ -55,10 +61,15 @@ public interface ImportProfileService {
 
     boolean isImportModeAllowed(int mode, Admin admin);
 
-    boolean isEcryptedImportAllowed(Admin admin);
+    boolean isEncryptedImportAllowed(Admin admin);
 
     Set<ImportMode> getAvailableImportModes(Admin admin);
 
     boolean isManageAllowed(ImportProfile profile, Admin admin);
 
+    void updateEmails(String emailForError, String emailForReport, int id);
+
+    ServiceResult<List<ImportProfile>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+
+    ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
 }

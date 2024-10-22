@@ -277,8 +277,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(target.getTargetName(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Targetgroup name contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Targetgroup name contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'name'. String expected");
@@ -289,8 +289,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForUnallowedHtmlTags(target.getTargetDescription(), false);
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Targetgroup description contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Targetgroup description contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");

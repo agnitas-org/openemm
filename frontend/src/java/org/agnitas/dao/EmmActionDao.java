@@ -11,8 +11,10 @@
 package org.agnitas.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.actions.EmmAction;
 
@@ -63,7 +65,10 @@ public interface EmmActionDao {
      * @return true==success
      *false==error
      */
-    boolean deleteEmmAction(int actionID, int companyID);
+    boolean markAsDeleted(int actionID, int companyID);
+
+    List<Integer> getMarkedAsDeletedBefore(Date date, int companyId);
+
     boolean deleteEmmActionReally(int actionID, int companyID);
     
     /**
@@ -158,4 +163,8 @@ public interface EmmActionDao {
     List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
 
     boolean isAdvertising(int id, int companyId);
+
+    boolean isActive(int id);
+
+    void restore(Set<Integer> ids, int companyId);
 }

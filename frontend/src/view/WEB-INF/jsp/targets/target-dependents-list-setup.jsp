@@ -30,7 +30,7 @@
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="default.Overview"/>
         <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/target/list.action" />
+            <c:url value="/target/list.action?restoreSort=true" />
         </c:set>
     </emm:instantiate>
 

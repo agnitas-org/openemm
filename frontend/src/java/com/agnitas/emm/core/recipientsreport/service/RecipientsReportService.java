@@ -10,19 +10,18 @@
 
 package com.agnitas.emm.core.recipientsreport.service;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.util.Date;
-import java.util.List;
-
-import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
-import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public interface RecipientsReportService {
 
@@ -30,18 +29,16 @@ public interface RecipientsReportService {
 
     RecipientsReport saveNewReport(Admin admin, int companyId, RecipientsReport report, String content) throws Exception;
 
-    RecipientsReport createAndSaveImportReport(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception;
-
-    RecipientsReport createAndSaveExportReport(int companyID, Admin admin, String filename, Date reportDate, String content, boolean isError) throws Exception;
-
     String getImportReportContent(int companyId, int reportId);
 
     String getImportReportZipFileContent(Admin admin, int reportId);
 
+    @Deprecated
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
     PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
 
+    @Deprecated
     PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
     @Transactional
@@ -49,15 +46,11 @@ public interface RecipientsReportService {
 
     RecipientsReport getReport(int companyId, int reportId);
     
-    RecipientsReport.RecipientReportType getReportType(int companyId, int reportId);
-    
-    DownloadRecipientReport getExportDownloadFileData(Admin admin, int reportId) throws UnsupportedEncodingException;
-    
-    DownloadRecipientReport getImportDownloadFileData(Admin admin, int reportId) throws Exception;
-    
-    void createSupplementalReportData(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception;
+    DownloadRecipientReport getRecipientReportForDownload(int reportId, Admin admin) throws Exception;
 
     void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception;
 
 	byte[] getImportReportFileData(int companyId, int reportId) throws Exception;
+
+    File getZipToDownload(Set<Integer> ids, Admin admin);
 }

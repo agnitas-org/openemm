@@ -10,21 +10,22 @@
 
 package com.agnitas.service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
+import com.agnitas.messages.Message;
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.agnitas.messages.Message;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ServiceResult<T> {
     private final T result;
     private final boolean success;
-    private final List<Message> successMessages;
-    private final List<Message> warningMessages;
-    private final List<Message> errorMessages;
-    private final List<Message> infoMessages;
+    private final Collection<Message> successMessages;
+    private final Collection<Message> warningMessages;
+    private final Collection<Message> errorMessages;
+    private final Collection<Message> infoMessages;
 
     public static <R> ServiceResult<R> success(final R result, final Message... successMessages) {
         return new ServiceResult<>(result, true, Arrays.asList(successMessages), null, null);
@@ -46,7 +47,15 @@ public class ServiceResult<T> {
         return new ServiceResult<>(null, false, null, null, Arrays.asList(errorMessages));
     }
 
-    public static <R> ServiceResult<R> error(final List<Message> errorMessages) {
+    public static <R> ServiceResult<R> errorKeys(final String... messageKeys) {
+        Collection<Message> messages = Stream.of(messageKeys)
+                .map(Message::of)
+                .collect(Collectors.toList());
+
+        return ServiceResult.error(messages);
+    }
+
+    public static <R> ServiceResult<R> error(final Collection<Message> errorMessages) {
         return new ServiceResult<>(null, false, null, null,  errorMessages);
     }
 
@@ -66,11 +75,11 @@ public class ServiceResult<T> {
         }
     }
 
-    public ServiceResult(T result, boolean success, List<Message> messages) {
+    public ServiceResult(T result, boolean success, Collection<Message> messages) {
         this.result = result;
         this.success = success;
         if(success) {
-            this.successMessages = Collections.unmodifiableList(messages);
+            this.successMessages = Collections.unmodifiableCollection(messages);
             this.warningMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.emptyList();
@@ -78,56 +87,67 @@ public class ServiceResult<T> {
             this.successMessages = Collections.emptyList();
             this.warningMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
-            this.errorMessages = Collections.unmodifiableList(messages);
+            this.errorMessages = Collections.unmodifiableCollection(messages);
         }
     }
 
-    public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
+    public ServiceResult (final T result, final boolean success, final Collection<Message> successMessages, final Collection<Message> warningMessages, final Collection<Message> errorMessages) {
         this(result, success, successMessages, warningMessages, errorMessages, Collections.emptyList());
     }
 
-    public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages, final List<Message> infoMessages) {
+    public ServiceResult (final T result, final boolean success, final Collection<Message> successMessages, final Collection<Message> warningMessages, final Collection<Message> errorMessages, final Collection<Message> infoMessages) {
         this.result = result;
         this.success = success;
 
         if (successMessages == null) {
             this.successMessages = Collections.emptyList();
         } else {
-            this.successMessages = Collections.unmodifiableList(successMessages);
+            this.successMessages = Collections.unmodifiableCollection(successMessages);
         }
 
         if (warningMessages == null) {
             this.warningMessages = Collections.emptyList();
         } else {
-            this.warningMessages = Collections.unmodifiableList(warningMessages);
+            this.warningMessages = Collections.unmodifiableCollection(warningMessages);
         }
 
         if (errorMessages == null) {
             this.errorMessages = Collections.emptyList();
         } else {
-            this.errorMessages = Collections.unmodifiableList(errorMessages);
+            this.errorMessages = Collections.unmodifiableCollection(errorMessages);
         }
 
         if (infoMessages == null) {
             this.infoMessages = Collections.emptyList();
         } else {
-            this.infoMessages = Collections.unmodifiableList(infoMessages);
+            this.infoMessages = Collections.unmodifiableCollection(infoMessages);
         }
     }
 
-    public List<Message> getSuccessMessages() {
+    public static <R> ServiceResult<R> from(ServiceResult<?> result) {
+        return new ServiceResult<>(
+                null,
+                result.isSuccess(),
+                result.getSuccessMessages(),
+                result.getWarningMessages(),
+                result.getErrorMessages(),
+                result.getInfoMessages()
+        );
+    }
+
+    public Collection<Message> getSuccessMessages() {
         return successMessages;
     }
 
-    public List<Message> getWarningMessages() {
+    public Collection<Message> getWarningMessages() {
         return warningMessages;
     }
 
-    public List<Message> getErrorMessages() {
+    public Collection<Message> getErrorMessages() {
         return errorMessages;
     }
 
-    public List<Message> getInfoMessages() {
+    public Collection<Message> getInfoMessages() {
         return infoMessages;
     }
 

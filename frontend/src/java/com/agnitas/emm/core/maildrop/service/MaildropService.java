@@ -10,82 +10,26 @@
 
 package com.agnitas.emm.core.maildrop.service;
 
-import java.util.Date;
-import java.util.List;
-
-import org.agnitas.util.importvalues.MailType;
-
-import com.agnitas.emm.core.maildrop.MaildropException;
+import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.util.importvalues.MailType;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public interface MaildropService {		// TODO: Complete JavaDoc
 
-	public boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID);
+	boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID);
 	
-	// TODO: Modify code to use this method
-	/**
-	 * Schedules mailing for immediate test delivery to admin recipients.
-	 * @throws Exception
-	 */
-	int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws Exception;
-
-	// TODO: Modify code to use this method
-	/**
-	 * Schedules mailing for immediate test delivery to test recipients.
-	 * @return
-	 */
-	int scheduleTestMailing(final int mailingID, final int companyID, final int testTargetID) throws Exception;
-	
-	// TODO: Modify code to use this method
-	/**
-	 * Schedules mailing for worlds delivery.
-	 */
-	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int stepping, final int blocksize) throws Exception;
-	
-	// TODO: Modify code to use this method
-	/**
-	 * Schedules mailing for worlds delivery.
-	 */
-	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws Exception;
-
-	// TODO: Modify code to use this method
-	/**
-	 * Activates date-based mailing.
-	 */
-	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int stepping, final int blocksize) throws Exception;
-
-	// TODO: Modify code to use this method
-	/**
-	 * Activates date-based mailing.
-	 */
-	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int mailsPerHour) throws Exception;
-
-	// TODO: Modify code to use this method
-	/**
-	 * Deactivates date-based mailing.
-	 */
-	void deactivateDatebasedMailing(final int mailingID, final int companyID) throws MaildropException;
-	
-	// TODO: Modify code to use this method
-	/**
-	 * Activates action-based mailing.
-	 */
-	void activateActionbasedMailing(final int mailingID, final int companyID) throws Exception;
-	
-	// TODO: Modify code to use this method
-	/**
-	 * Deactivates action-based mailing.
-	 */
-	void deactivateActionbasedMailing(final int mailingID, final int companyID) throws MaildropException;
-	
-	// TODO: Modify code to use this method
 	boolean hasMaildropStatus(final int mailingID, final int companyID, final MaildropStatus... statusList);
 	
 	/**
 	 * Returns <code>true</code> is world mailing is sent or scheduled to send or action-based/date-based mailing is activated.
-	 * @return
-	 * @throws Exception 
 	 */
 	boolean isActiveMailing(final int mailingID, final int companyID);
 
@@ -100,5 +44,25 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 
 	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
 
-	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
+	List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
+
+	Optional<MaildropEntry> findMaildrop(int mailingId, int companyId, MaildropStatus... statuses);
+
+	int saveMaildropEntry(final MaildropEntry entry) throws Exception;
+
+	void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays);
+
+	Map<Integer, List<Integer>> cleanupFailedTestDeliveries();
+
+	int cleanup(Collection<MaildropEntry> entries);
+
+	MaildropEntry getEntryForStatus(int mailingID, int companyID, char status);
+
+	MaildropEntry getMaildropEntry(int mailingId, int companyId, int statusId);
+
+	int getLastMaildropEntryId(int mailingId, int companyId);
+
+	List<MaildropEntry> getMaildropStatusEntriesForMailing(int companyID, int mailingID);
+
+	void saveMaildropEntries(int companyId, int mailingId, Set<MaildropEntry> maildropStatusList);
 }

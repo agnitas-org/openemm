@@ -275,7 +275,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 				props.put("mail.smtp.from", fromAddress);
 			}
 			
-			Session session = Session.getDefaultInstance(props, null);
+			Session session = Session.getInstance(props, null);
 
 			// create a message
 			DkimSignedMessage mimeMessage = new DkimSignedMessage(session);

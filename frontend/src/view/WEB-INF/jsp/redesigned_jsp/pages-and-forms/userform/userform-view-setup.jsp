@@ -1,9 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.userform.form.UserFormForm"--%>
+<%--@elvariable id="isActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
 
 <c:if test="${empty workflowParameters}">
@@ -11,10 +12,8 @@
 </c:if>
 
 <c:set var="agnTitleKey" 			value="Form" 					scope="request" />
-<c:set var="agnSubtitleKey" 		value="Form" 					scope="request" />
 <c:set var="sidemenu_active" 		value="Forms" 					scope="request" />
-<c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 	scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
+<c:set var="sidemenu_sub_active" 	value="Forms" 	                scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Forms" 					scope="request" />
 <c:url var="agnBreadcrumbsRootUrl" 	value="/webform/list.action"	scope="request" />
 <c:set var="agnHelpKey" 			value="createNewForm" 			scope="request" />
@@ -50,7 +49,6 @@
     <c:if test="${not empty workflowID and workflowID ne 0}">
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-            <c:set target="${element}" property="btnCls" value="btn"/>
             <c:set target="${element}" property="iconBefore" value="icon-angle-left"/>
             <c:set target="${element}" property="type" value="href"/>
             <c:set target="${element}" property="url">
@@ -70,9 +68,7 @@
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
         <emm:instantiate var="dropDownItems" type="java.util.LinkedHashMap"/>
-        <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
         <c:set target="${element}" property="cls" value="mobile-hidden"/>
-        <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
         <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
         <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -93,9 +89,25 @@
                 </emm:instantiate>
             </emm:ShowByPermission>
 
+            <emm:ShowByPermission token="forms.change">
+                <emm:instantiate var="option" type="java.util.LinkedHashMap">
+                    <c:set target="${optionList}" property="1" value="${option}"/>
+                    <c:set target="${option}" property="url">
+                        <c:url value="/webform/changeActiveness.action">
+                            <c:param name="ids" value="${form.formId}" />
+                            <c:param name="activate" value="${not isActive}" />
+                        </c:url>
+                    </c:set>
+                    <c:set target="${option}" property="name">
+                        <mvc:message code="${isActive ? 'btndeactivate' : 'button.Activate'}"/>
+                    </c:set>
+                    <c:set target="${option}" property="extraAttributes" value="data-ajax='post'"/>
+                </emm:instantiate>
+            </emm:ShowByPermission>
+
 			<emm:ShowByPermission token="forms.export">
 			    <emm:instantiate var="option" type="java.util.LinkedHashMap">
-			        <c:set target="${optionList}" property="1" value="${option}"/>
+			        <c:set target="${optionList}" property="2" value="${option}"/>
 			        <c:set target="${option}" property="url">
 			            <c:url value="/webform/${form.formId}/export.action"/>
 			        </c:set>
@@ -108,7 +120,7 @@
 
             <emm:ShowByPermission token="forms.delete">
                 <emm:instantiate var="option" type="java.util.LinkedHashMap">
-                    <c:set target="${optionList}" property="2" value="${option}"/>
+                    <c:set target="${optionList}" property="3" value="${option}"/>
                     <c:set target="${option}" property="url">
                         <c:url value="/webform/deleteRedesigned.action?bulkIds=${form.formId}"/>
                     </c:set>
@@ -124,7 +136,6 @@
      <emm:ShowByPermission token="forms.change">
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
-            <c:set target="${element}" property="btnCls" value="btn"/>
             <c:set target="${element}" property="extraAttributes" value="data-form-target='#userFormForm' data-form-submit-event"/>
             <c:set target="${element}" property="iconBefore" value="icon-save"/>
             <c:set target="${element}" property="name">

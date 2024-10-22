@@ -47,13 +47,9 @@ public final class ObjectUsagesToMessages {
 	 * @param messages list of messages to add new message
 	 * @param locale locale of current user
 	 */
-	public static final void objectUsagesToMessages(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final List<Message> messages, final Locale locale) {
+	public static void objectUsagesToMessages(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final List<Message> messages, final Locale locale) {
 		if(!usages.isEmpty()) {
-			if(usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
-				messages.add(Message.of(errorMessageKey, itemsToHtmlList(usages, locale)));
-			} else {
-				messages.add(Message.of(errorMessageWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE));
-			}
+			messages.add(objectUsagesToMessage(errorMessageKey, errorMessageWithMoreKey, usages, locale));
 		}
 	}
 
@@ -66,6 +62,17 @@ public final class ObjectUsagesToMessages {
                 itemsToHtmlList(usages, locale) +
                 getAndMorePart(usages.size(), locale));
     }
+
+	public static Message objectUsagesToMessage(String msgKey, String errorMsgWithMoreKey, ObjectUsages usages, Locale locale) {
+		if (usages.isEmpty()) {
+			return Message.exact("");
+		}
+		if (usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
+			return Message.of(msgKey, itemsToHtmlList(usages, locale));
+		}
+
+		return Message.of(errorMsgWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
+	}
 
     private static String getAndMorePart(int usagesCount, Locale locale) {
 	    if (usagesCount <= MAX_OBJECTS_PER_MESSAGE) {

@@ -61,11 +61,6 @@ public class BeanShellInterpreterFactory {
 		return createBeanShellInterpreter(companyID, nameSpace -> populateProfileFields(nameSpace, companyID, customerID));
 	}
 
-	public final Interpreter createBeanShellInterpreter(final int companyID, final Map<String, Object> recipientData,
-			final Map<String, ProfileField> profileFieldsInfo) throws Exception {
-		return createBeanShellInterpreter(companyID, nameSpace -> populateProfileFields(nameSpace, recipientData, profileFieldsInfo));
-	}
-
 	private Interpreter createBeanShellInterpreter(final int companyID, final PopulateFieldsConsumer populateFieldsConsumer) throws Exception {
 		final Interpreter interpreter = new Interpreter();
 		final NameSpace beanShellNameSpace = interpreter.getNameSpace();

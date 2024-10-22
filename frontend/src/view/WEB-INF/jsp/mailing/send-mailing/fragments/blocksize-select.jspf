@@ -1,8 +1,6 @@
 <%@ page import="com.agnitas.emm.core.components.service.MailingBlockSizeService" %>
 <%--@elvariable id="sendingSpeedOptions" type="java.util.List<java.lang.Integer>"--%>
 
-<c:set var="UNLIMITED_SPEED" value="<%= MailingBlockSizeService.UNLIMITED_SPEED %>" />
-
 <emm:ShowByPermission token="mailing.send.admin.options">
     <div class="form-group" id="blocksizeElement">
         <div class="col-sm-12 control-label-left">
@@ -16,7 +14,7 @@
                 <c:forEach var="sendingSpeedOption" items="${sendingSpeedOptions}">
                     <mvc:option value="${sendingSpeedOption}">
                         <c:choose>
-                            <c:when test="${sendingSpeedOption eq UNLIMITED_SPEED}">
+                            <c:when test="${sendingSpeedOption eq 0}">
                                 <mvc:message code="mailing.unlimited" />
                             </c:when>
                             <c:otherwise>

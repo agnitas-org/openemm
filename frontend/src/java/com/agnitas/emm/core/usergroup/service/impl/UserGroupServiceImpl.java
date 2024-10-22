@@ -10,22 +10,23 @@
 
 package com.agnitas.emm.core.usergroup.service.impl;
 
-import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
-import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
-import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GROUP_ID;
-import static com.agnitas.emm.core.usergroup.web.UserGroupController.ROOT_COMPANY_ID;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.AdminGroupDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionInfo;
+import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.admin.service.PermissionFilter;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.company.service.ComCompanyService;
+import com.agnitas.emm.core.permission.service.PermissionService;
+import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
+import com.agnitas.emm.core.usergroup.service.UserGroupService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -37,22 +38,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.AdminGroupDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.PermissionInfo;
-import com.agnitas.emm.core.PermissionType;
-import com.agnitas.emm.core.admin.service.PermissionFilter;
-import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.company.service.ComCompanyService;
-import com.agnitas.emm.core.permission.service.PermissionService;
-import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
-import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
-import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
+import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GROUP_ID;
+import static com.agnitas.emm.core.usergroup.web.UserGroupController.ROOT_COMPANY_ID;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class UserGroupServiceImpl implements UserGroupService {
 	private static final Logger logger = LogManager.getLogger(UserGroupServiceImpl.class);
@@ -65,21 +65,23 @@ public class UserGroupServiceImpl implements UserGroupService {
 	private ExtendedConversionService conversionService;
 	private PermissionFilter permissionFilter;
 	protected PermissionService permissionService;
+	private BulkActionValidationService<Integer, UserGroupDto> bulkActionValidationService;
 	
 	public UserGroupServiceImpl(
-			ConfigService configService,
-			AdminGroupDao userGroupDao,
-			ComCompanyService companyService,
-			ExtendedConversionService conversionService,
-			PermissionFilter permissionFilter,
-			PermissionService permissionService) {
+            ConfigService configService,
+            AdminGroupDao userGroupDao,
+            ComCompanyService companyService,
+            ExtendedConversionService conversionService,
+            PermissionFilter permissionFilter,
+            PermissionService permissionService, BulkActionValidationService<Integer, UserGroupDto> bulkActionValidationService) {
 		this.configService = configService;
 		this.userGroupDao = userGroupDao;
 		this.companyService = companyService;
 		this.conversionService = conversionService;
 		this.permissionFilter = permissionFilter;
 		this.permissionService = permissionService;
-	}
+        this.bulkActionValidationService = bulkActionValidationService;
+    }
 
 	@Override
 	public PaginatedListImpl<UserGroupDto> overview(UserGroupOverviewFilter filter) {
@@ -273,11 +275,6 @@ public class UserGroupServiceImpl implements UserGroupService {
 	}
 
 	@Override
-	public List<AdminGroup> getAdminGroupsByCompanyId(int companyID) {
-		return userGroupDao.getAdminGroupsByCompanyId(companyID);
-	}
-
-	@Override
 	public Collection<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyID, AdminGroup adminGroup) {
 		return userGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, adminGroup != null ? adminGroup.getParentGroupIds() : null);
 	}
@@ -308,32 +305,31 @@ public class UserGroupServiceImpl implements UserGroupService {
 	}
 
 	@Override
-	public List<UserGroupDto> validateDeletion(Set<Integer> ids, Admin admin) {
-		if (CollectionUtils.isEmpty(ids)) {
-			throw new RequestErrorException(NOTHING_SELECTED_MSG);
-		}
-		return ids.stream()
-				.map(id -> validateDeletion(id, admin))
-				.collect(Collectors.toList());
+	public ServiceResult<List<UserGroupDto>> getAllowedGroupsForDeletion(Set<Integer> ids, Admin admin) {
+		return bulkActionValidationService.checkAllowedForDeletion(ids, id -> getUserGroupForDeletion(id, admin));
 	}
 
 	@Override
-	public List<UserGroupDto> delete(Set<Integer> bulkIds, Admin admin) {
-		List<UserGroupDto> userGroups = validateDeletion(bulkIds, admin);
-		if (bulkIds.stream().anyMatch(id -> !deleteUserGroup(id, admin))) {
-			throw new RequestErrorException(ERROR_MSG);
-		}
-		return userGroups;
+	public List<UserGroupDto> markDeleted(Set<Integer> bulkIds, Admin admin) {
+		List<UserGroupDto> allowedGroups = getAllowedGroupsForDeletion(bulkIds, admin).getResult();
+		allowedGroups.forEach(g -> userGroupDao.markDeleted(g.getUserGroupId(), g.getCompanyId()));
+		return allowedGroups;
 	}
 
-	private UserGroupDto validateDeletion(int id, Admin admin) {
+	@Override
+	public void restore(Set<Integer> ids, int companyId) {
+		userGroupDao.restore(ids, companyId);
+	}
+
+	private ServiceResult<UserGroupDto> getUserGroupForDeletion(int id, Admin admin) {
 		int adminCompanyId = admin.getCompanyID();
 		UserGroupDto userGroup = getUserGroup(admin, id);
 		if (userGroup == null || userGroup.getUserGroupId() <= NEW_USER_GROUP_ID) {
-			throw new RequestErrorException(ERROR_MSG);
+			return ServiceResult.errorKeys("error.general.missing");
 		}
+
 		if (userGroup.getCompanyId() != adminCompanyId && adminCompanyId != ROOT_COMPANY_ID) {
-			throw new RequestErrorException(Message.of("Error"));
+			return ServiceResult.errorKeys(ERROR_MSG);
 		}
 
 		List<String> adminNames = getAdminNamesOfGroup(id, adminCompanyId);
@@ -341,17 +337,24 @@ public class UserGroupServiceImpl implements UserGroupService {
 
 		if (CollectionUtils.isNotEmpty(adminNames)) {
 			String adminNamesString = StringUtils.abbreviate(StringUtils.join(adminNames, ", "), 64);
-			throw new RequestErrorException(Message.of("error.group.delete.hasAdmins", adminNamesString));
+			return ServiceResult.error(Message.of("error.group.delete.hasAdmins", adminNamesString));
 		}
 		if (CollectionUtils.isNotEmpty(groupNames)) {
 			String groupNamesString = StringUtils.abbreviate(StringUtils.join(groupNames, ", "), 64);
-			throw new RequestErrorException(Message.of("error.group.delete.hasGroups", groupNamesString));
+			return ServiceResult.error(Message.of("error.group.delete.hasGroups", groupNamesString));
 		}
-		return userGroup;
+
+		return ServiceResult.success(userGroup);
 	}
 
 	private String generateUserGroupCopyName(String name, int companyId, Locale locale) {
 		return AgnUtils.getUniqueCloneName(name, I18nString.getLocaleString("mailing.CopyOf", locale) + " ",
 				USER_FORM_NAME_MAX_LENGTH, newName -> userGroupDao.adminGroupExists(companyId, newName));
+	}
+
+	@Override
+	public void removeMarkedAsDeletedBefore(Date date, int companyId) {
+		userGroupDao.getMarkedAsDeletedBefore(date, companyId)
+			.forEach(id -> userGroupDao.delete(companyId, id));
 	}
 }

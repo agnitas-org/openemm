@@ -12,6 +12,7 @@ package com.agnitas.dao;
 
 import java.util.List;
 
+import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -35,6 +36,8 @@ public interface ComTitleDao {
 	 */
 	boolean delete(int titleID, int companyID);
 
+    PaginatedListImpl<Title> overview(SalutationOverviewFilter filter);
+
     /**
      * Loads all titles of certain company and creates paginated list according to given criteria for sorting and pagination
      *
@@ -56,5 +59,5 @@ public interface ComTitleDao {
     
 	boolean deleteTitlesByCompanyID(int companyID);
 
-	List<Title> getTitles(int companyID);
+	List<Title> getTitles(int companyID, boolean includeGenders);
 }

@@ -1,13 +1,14 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
 <%@ page import="org.agnitas.web.MailingAdditionalColumn" %>
 <%@ page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="org.agnitas.dao.MailingStatus" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingOverviewForm" type="com.agnitas.emm.core.mailing.forms.MailingOverviewForm"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
@@ -15,8 +16,6 @@
 <%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="archives" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="contentSearchEnabled" type="java.lang.Boolean"--%>
-<%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
-<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="searchEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
@@ -48,10 +47,34 @@
 <c:set var="PLAN_DATE_FIELD" value="<%= MailingAdditionalColumn.PLAN_DATE %>"/>
 <c:set var="CHANGE_DATE_FIELD" value="<%= MailingAdditionalColumn.CHANGE_DATE %>"/>
 <c:set var="ARCHIVE_FIELD" value="<%= MailingAdditionalColumn.ARCHIVE %>"/>
+<c:set var="MAILING_ID_FIELD" value="<%= MailingAdditionalColumn.MAILING_ID %>"/>
+<c:set var="RECIPIENTS_COUNT_FIELD" value="<%= MailingAdditionalColumn.RECIPIENTS_COUNT %>"/>
+<c:set var="TARGET_GROUPS_FIELD" value="<%= MailingAdditionalColumn.TARGET_GROUPS %>"/>
+
+<c:set var="planDateFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, PLAN_DATE_FIELD.sortColumn)}" />
+<c:set var="mailingIdFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, MAILING_ID_FIELD.sortColumn)}" />
+<c:set var="changeDateFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, CHANGE_DATE_FIELD.sortColumn)}" />
+<c:set var="creationDateFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, CREATION_DATE_FIELD.sortColumn)}" />
+<c:set var="recipientsCountFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, RECIPIENTS_COUNT_FIELD.sortColumn)}" />
+<c:set var="targetGroupsFieldSelected" value="${fn:contains(mailingOverviewForm.selectedFields, TARGET_GROUPS_FIELD.sortColumn)}" />
 
 <c:set var="forTemplates" value="${mailingOverviewForm.forTemplates}"/>
+<c:choose>
+    <c:when test="${forTemplates}">
+        <c:set var="isDeleteAllowed" value="${emm:permissionAllowed('template.delete', pageContext.request)}" />
+        <mvc:message var="deleteTooltipMsg" code="template.delete" />
+        <mvc:message var="bulkDeleteMsg" code="bulkAction.delete.template" />
+        <c:url var="deleteUrl" value="/mailing/deleteTemplates.action"/>
+    </c:when>
+    <c:otherwise>
+        <c:set var="isDeleteAllowed" value="${emm:permissionAllowed('mailing.delete', pageContext.request)}" />
+        <mvc:message var="deleteTooltipMsg" code="mailing.MailingDelete" />
+        <mvc:message var="bulkDeleteMsg" code="bulkAction.delete.mailing" />
+        <c:url var="deleteUrl" value="/mailing/deleteMailings.action"/>
+    </c:otherwise>
+</c:choose>
 
-<mvc:form id="mailing-overview-form" cssClass="filter-overview hidden" servletRelativeAction="/mailing/list.action" method="GET" modelAttribute="mailingOverviewForm"
+<mvc:form id="mailing-overview-form" cssClass="filter-overview" servletRelativeAction="/mailing/list.action" method="GET" modelAttribute="mailingOverviewForm"
           data-form="search" data-controller="mailing-overview" data-initializer="mailing-overview" data-form-content="" data-editable-view="${agnEditViewKey}">
 
     <script id="config:mailing-overview" type="application/json">
@@ -74,66 +97,91 @@
                 </script>
             </c:when>
             <c:otherwise>
-                <script type="application/json" data-initializer="web-storage-persist">
-                    {
-                        "mailing-overview": {
-                            "page": ${mailingOverviewForm.page},
-                            "rows-count": ${mailingOverviewForm.numberOfRows},
-                            "fields": ${emm:toJson(mailingOverviewForm.selectedFields)},
-                            "mailing-types": ${emm:toJson(mailingOverviewForm.mailingTypes)},
-                            "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)},
-                            "use-recycle-bin": ${emm:toJson(mailingOverviewForm.useRecycleBin)}
+                <c:if test="${not mailingOverviewForm.inEditColumnsMode}">
+                    <script type="application/json" data-initializer="web-storage-persist">
+                        {
+                            "mailing-overview": {
+                                "page": ${mailingOverviewForm.page},
+                                "rows-count": ${mailingOverviewForm.numberOfRows},
+                                "fields": ${emm:toJson(mailingOverviewForm.selectedFields)},
+                                "mailing-types": ${emm:toJson(mailingOverviewForm.mailingTypes)},
+                                "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)}
+                            }
                         }
-                    }
-                </script>
+                    </script>
+                </c:if>
             </c:otherwise>
         </c:choose>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
-            <c:if test="${not forTemplates}">
-                <div class="tile-controls">
-                    <input type="checkbox" id="switch-table-view" class="icon-switch" data-preview-table="#mailings-table" checked>
-                    <label for="switch-table-view" class="icon-switch__label">
-                        <i class="icon icon-image"></i>
-                        <i class="icon icon-th-list"></i>
-                    </label>
-                </div>
-            </c:if>
-        </div>
-
         <div class="tile-body">
-            <c:if test="${not forTemplates}">
-                <c:set var="addAdditionalColumns">
-                    <div class="dropdown table-header-dropdown">
-                        <i class="icon icon-plus" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"></i>
+            <div class="table-wrapper" ${not forTemplate ? 'data-table-column-manager data-action="update-columns"' : ''}>
+                <c:if test="${not forTemplates}">
+                    <script type="application/json" data-table-column-manager-config>
+                        {
+                            "columns": [
+                                <c:forEach var="field" items="${ADDITIONAL_FIELDS}" varStatus="loop_status">
+                                    <mvc:message var="additionalFieldText" code="${field.messageKey}" />
+                                    {
+                                        "name": ${emm:toJson(field.sortColumn)},
+                                        "text": ${emm:toJson(additionalFieldText)},
+                                        "selected": ${fn:contains(mailingOverviewForm.selectedFields, field.sortColumn)}
+                                    }${loop_status.index + 1 lt fn:length(ADDITIONAL_FIELDS) ? ',' : ''}
+                                </c:forEach>
+                            ],
+                            "editMode": ${mailingOverviewForm.inEditColumnsMode}
+                        }
+                    </script>
+                </c:if>
 
-                        <ul class="dropdown-menu">
-                            <div class="d-flex flex-column gap-2">
-                                <mvc:select path="selectedFields" cssClass="form-control dropdown-select" multiple="multiple">
-                                    <c:forEach var="field" items="${ADDITIONAL_FIELDS}">
-                                        <mvc:option value="${field.sortColumn}">
-                                            <mvc:message code="${field.messageKey}"/>
-                                        </mvc:option>
-                                    </c:forEach>
-                                </mvc:select>
-                                <button class="btn btn-primary js-dropdown-close" type="button" data-form-change data-form-submit>
-                                    <i class="icon icon-sync"></i>
-                                    <span class="text"><mvc:message code="button.Refresh"/></span>
-                                </button>
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <c:if test="${isDeleteAllowed}">
+                            <div class="bulk-actions hidden">
+                                <p class="bulk-actions__selected">
+                                    <span><%-- Updates by JS --%></span>
+                                    <mvc:message code="default.list.entry.select" />
+                                </p>
+                                <div class="bulk-actions__controls">
+                                    <c:choose>
+                                        <c:when test="${mailingOverviewForm.useRecycleBin}">
+                                            <a href="#" class="icon-btn text-primary" data-tooltip="<mvc:message code="bulk.mailing.restore" />"
+                                               data-form-url="<c:url value="/mailing/bulkRestore.action" />" data-form-method="POST" data-form-submit>
+                                                <i class="icon icon-redo"></i>
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="#" class="icon-btn text-danger" data-tooltip="${bulkDeleteMsg}" data-form-url="${deleteUrl}" data-form-confirm>
+                                                <i class="icon icon-trash-alt"></i>
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
                             </div>
-                        </ul>
-                    </div>
-                </c:set>
-            </c:if>
+                        </c:if>
 
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table htmlId="mailings-table" class="table table-rounded ${mailingOverviewForm.useRecycleBin ? '' : 'table-hover'} js-table"
+                        <c:if test="${not forTemplates}">
+                            <jsp:include page="../../common/table/preview-switch.jsp">
+                                <jsp:param name="selector" value="#mailings-table"/>
+                            </jsp:include>
+
+                            <%@include file="../../common/table/edit-columns-btn.jspf" %>
+                        </c:if>
+
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${mailinglist.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${mailinglist.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
+
+                <div class="table-wrapper__body">
+                    <agnDisplay:table htmlId="mailings-table" class="table table--borderless ${mailingOverviewForm.useRecycleBin ? '' : 'table-hover'} js-table"
                         id="mailing" name="mailinglist" pagesize="${mailinglist.pageSize}" sort="external"
                         requestURI="/mailing/list.action" excludedParams="*" partialList="true" size="${mailinglist.fullListSize}">
 
-                        <%@ include file="../../displaytag/displaytag-properties.jspf" %>
+                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
 
                         <!-- Displays the invitation if the mailing list is empty. -->
                         <c:choose>
@@ -152,21 +200,19 @@
                         </c:choose>
 
                         <c:if test="${not forTemplates}">
-                            <display:column class="table-preview-visible w-100" headerClass="hidden">
-                                <div class="table-cell__preview-wrapper">
-                                    <img src="${previewImageSrc}" alt="" class="table-cell__preview">
-                                </div>
-                            </display:column>
+                            <agnDisplay:column class="thumbnail-cell" headerClass="hidden">
+                                <img src="${previewImageSrc}" alt="Thumbnail">
+                            </agnDisplay:column>
                         </c:if>
 
-                        <emm:ShowByPermission token="mailing.delete">
-                            <display:column title="<input type='checkbox' class='form-check-input' data-form-bulk='bulkIds'/>" class="js-checkable mobile-hidden" sortable="false" headerClass="bulk-ids-column mobile-hidden">
-                                <input type="checkbox" name="bulkIds" class="form-check-input js-bulk-ids" value="${mailing.mailingid}">
-                            </display:column>
-                        </emm:ShowByPermission>
+                        <c:if test="${isDeleteAllowed}">
+                            <agnDisplay:column title="<input type='checkbox' class='form-check-input' data-bulk-checkboxes />" class="mobile-hidden" headerClass="mobile-hidden">
+                                <input type="checkbox" name="bulkIds" class="form-check-input" value="${mailing.mailingid}" data-bulk-checkbox>
+                            </agnDisplay:column>
+                        </c:if>
 
-                        <c:if test="${not forTemplates}">
-                            <display:column titleKey="Status" sortable="true" sortProperty="work_status" headerClass="fit-content js-table-sort">
+                        <c:if test="${not forTemplates or mailingOverviewForm.useRecycleBin}">
+                            <agnDisplay:column titleKey="Status" sortable="true" sortProperty="work_status" headerClass="mobile-hidden fit-content js-table-sort" data-table-column="">
                                 <div class="flex-center gap-1">
                                     <c:choose>
                                         <c:when test="${mailingOverviewForm.useRecycleBin}">
@@ -194,124 +240,148 @@
 
                                     <%--icon for 'Used trigger'--%>
                                     <c:if test="${mailing.hasActions}">
-                                        <a href="<c:url value="/mailing/${mailing.mailingid}/actions.action"/>" class="status-badge mailing.status.trigger" data-tooltip="<mvc:message code="action.action_link"/>"></a>
+                                        <a href="<c:url value="/mailing/${mailing.mailingid}/actions.action"/>" class="status-badge mailing.status.trigger" data-tooltip="<mvc:message code="action.action_link"/>" data-confirm></a>
                                     </c:if>
                                 </div>
-                            </display:column>
+                            </agnDisplay:column>
 
-                            <display:column titleKey="Name" sortable="true" sortProperty="shortname" headerClass="js-table-sort" property="shortname" class="table-cell-nowrap"/>
-                            <display:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort" property="description" class="table-preview-hidden"/>
-                            <display:column titleKey="Mailinglist" sortable="true" sortProperty="mailinglist" headerClass="js-table-sort" class="table__cell-sub-info order-2">
-                                <div class="table-cell-wrapper">
-                                    <i class="icon icon-list mobile-visible table-preview-visible"></i>
-                                    <span>${mailing.mailinglist}</span>
-                                </div>
-                            </display:column>
+                            <agnDisplay:column titleKey="Name" sortable="true" sortProperty="shortname" headerClass="js-table-sort" class="fluid-cell" data-table-column="">
+                                <span>${mailing.shortname}</span>
+                            </agnDisplay:column>
+                            <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="mobile-hidden js-table-sort" class="table-preview-hidden mobile-hidden" data-table-column="">
+                                <span>${mailing.description}</span>
+                            </agnDisplay:column>
+                            <agnDisplay:column titleKey="Mailinglist" sortable="true" sortProperty="mailinglist" headerClass="mobile-hidden js-table-sort" class="secondary-cell" data-table-column="">
+                                <i class="icon icon-list"></i>
+                                <span>${mailing.mailinglist}</span>
+                            </agnDisplay:column>
 
-                            <display:column titleKey="mailing.senddate" format="{0,date,${adminDateTimeFormat}}"
-                                property="senddate" sortable="true" headerClass="js-table-sort" class="table-preview-hidden"/>
+                            <agnDisplay:column titleKey="mailing.senddate" sortable="true" sortProperty="senddate" headerClass="mobile-hidden js-table-sort" class="table-preview-hidden" data-table-column="">
+                                <span><emm:formatDate value="${mailing.senddate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
+
+                            <agnDisplay:column titleKey="${CREATION_DATE_FIELD.messageKey}" sortable="true" sortProperty="creation_date"
+                                               headerClass="mobile-hidden js-table-sort ${creationDateFieldSelected ? '' : 'hidden'}" class="table-preview-hidden ${creationDateFieldSelected ? '' : 'hidden'}"
+                                               data-table-column="${CREATION_DATE_FIELD.sortColumn}">
+                                <span><emm:formatDate value="${mailing.creationdate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
+
+                            <agnDisplay:column titleKey="Target-Groups" headerClass="mobile-hidden js-table-sort ${targetGroupsFieldSelected ? '' : 'hidden'}"
+                                               class="table-preview-hidden ${targetGroupsFieldSelected ? '' : 'hidden'}"
+                                               data-table-column="${TARGET_GROUPS_FIELD.sortColumn}">
+                                <span>
+                                   <c:forEach var="targetgroup" items="${mailing.targetgroups}" varStatus="loop_status">
+                                        <a href="<c:url value='/target/${targetgroup.target_id}/view.action'/>">
+                                            ${targetgroup.target_name}
+                                        </a>
+                                       <c:if test="${loop_status.index + 1 lt fn:length(mailing.targetgroups)}">
+                                           <br>
+                                           <br>
+                                       </c:if>
+                                   </c:forEach>
+                                </span>
+                            </agnDisplay:column>
 
                             <c:forEach var="selectedField" items="${mailingOverviewForm.selectedFields}">
                                 <c:forEach var="field" items="${ADDITIONAL_FIELDS}">
                                     <c:if test="${selectedField == field.sortColumn}">
                                         <c:choose>
-                                            <c:when test="${field == 'RECIPIENTS_COUNT'}">
-                                                <display:column titleKey="${field.messageKey}" sortable="true" sortProperty="${field.sortColumn}"
-                                                                headerClass="js-table-sort" class="table-preview-hidden">
-                                                    <c:choose>
-                                                        <c:when test="${mailing.mailing_type ne MAILING_TYPE_NORMAL.code}">
-                                                            <%-- Replace 0 values with "n/a" --%>
-                                                            <mvc:message code="NotAvailableShort"/>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            ${mailing.recipientsCount}
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </display:column>
-                                            </c:when>
-
-                                            <c:when test="${field == 'CREATION_DATE'}">
-                                                <display:column titleKey="${field.messageKey}" format="{0,date,${adminDateTimeFormat}}"
-                                                     property="creationdate" sortable="true" sortProperty="creation_date" headerClass="js-table-sort" class="table-preview-hidden"/>
-                                            </c:when>
-
-                                            <c:when test="${field == 'CHANGE_DATE'}">
-                                                <display:column titleKey="${field.messageKey}" format="{0,date,${adminDateTimeFormat}}"
-                                                     property="changedate" sortable="true" sortProperty="change_date" headerClass="js-table-sort" class="table-preview-hidden"/>
-                                            </c:when>
-
                                             <c:when test="${field == 'ARCHIVE'}">
-                                                <display:column titleKey="${field.messageKey}" sortable="true" sortProperty="campaign_id" headerClass="js-table-sort" property="archive" class="table-preview-hidden"/>
+                                                <agnDisplay:column titleKey="${field.messageKey}" sortable="true" sortProperty="campaign_id" headerClass="mobile-hidden js-table-sort" class="table-preview-hidden" data-table-column="${field.sortColumn}">
+                                                    <span>${mailing.archive}</span>
+                                                </agnDisplay:column>
                                             </c:when>
 
                                             <c:when test="${field == 'TEMPLATE'}">
-                                                <display:column titleKey="${field.messageKey}" sortable="true" sortProperty="template_name" headerClass="js-table-sort" property="templateName" class="table-preview-hidden"/>
+                                                <agnDisplay:column titleKey="${field.messageKey}" sortable="true" sortProperty="template_name" headerClass="mobile-hidden js-table-sort" class="table-preview-hidden" data-table-column="${field.sortColumn}">
+                                                    <span>${mailing.templateName}</span>
+                                                </agnDisplay:column>
                                             </c:when>
 
                                             <c:when test="${field == 'SUBJECT'}">
-                                                <display:column titleKey="${field.messageKey}" sortable="true" sortProperty="subject" headerClass="js-table-sort" property="subject" class="table-preview-hidden"/>
-                                            </c:when>
-
-                                            <c:when test="${field == 'TARGET_GROUPS'}">
-                                                <display:column titleKey="Target-Groups" headerClass="js-table-sort" class="table-preview-hidden">
-                                                    <div class="d-flex flex-column">
-                                                        <c:forEach var="targetgroup" items="${mailing.targetgroups}">
-                                                            <a href="<c:url value='/target/${targetgroup.target_id}/view.action'/>" class="text-truncate">
-                                                                ${targetgroup.target_name}
-                                                            </a>
-                                                        </c:forEach>
-                                                    </div>
-                                                </display:column>
-                                            </c:when>
-
-                                            <c:when test="${field == 'MAILING_ID'}">
-                                                <display:column titleKey="${field.messageKey}" sortable="true" sortProperty="mailing_id" headerClass="js-table-sort" property="mailingid" class="table-preview-hidden"/>
-                                            </c:when>
-
-                                            <c:when test="${field == 'PLAN_DATE'}">
-                                                <display:column titleKey="${field.messageKey}" format="{0,date,${adminDateTimeFormat}}"
-                                                                property="planDate" sortable="true" sortProperty="plan_date" headerClass="js-table-sort" class="table-preview-hidden"/>
+                                                <agnDisplay:column titleKey="${field.messageKey}" sortable="true" sortProperty="subject" headerClass="mobile-hidden js-table-sort" class="table-preview-hidden" data-table-column="${field.sortColumn}">
+                                                    <span>${mailing.subject}</span>
+                                                </agnDisplay:column>
                                             </c:when>
                                         </c:choose>
                                     </c:if>
                                 </c:forEach>
                             </c:forEach>
+
+                            <agnDisplay:column titleKey="${MAILING_ID_FIELD.messageKey}" sortable="true" sortProperty="mailing_id" property="mailingid"
+                                               headerClass="mobile-hidden js-table-sort ${mailingIdFieldSelected ? '' : 'hidden'}" class="table-preview-hidden ${mailingIdFieldSelected ? '' : 'hidden'}"
+                                               data-table-column="${MAILING_ID_FIELD.sortColumn}" />
+
+                            <c:set var="recipientsTitle">
+                                <span><mvc:message code="${RECIPIENTS_COUNT_FIELD.messageKey}"/></span>
+                                <button class="icon-btn" data-help="help_${helplanguage}/mailing/view_base/NumberOfRecipients.xml">
+                                    <i class="icon icon-question-circle"></i>
+                                </button>
+                            </c:set>
+                            <agnDisplay:column title="${recipientsTitle}" sortable="true" sortProperty="${RECIPIENTS_COUNT_FIELD.sortColumn}"
+                                               headerClass="mobile-hidden js-table-sort ${recipientsCountFieldSelected ? '' : 'hidden'}" class="table-preview-hidden ${recipientsCountFieldSelected ? '' : 'hidden'}"
+                                               data-table-column="${RECIPIENTS_COUNT_FIELD.sortColumn}">
+                                <span>
+                                    <c:choose>
+                                        <c:when test="${mailing.mailing_type ne MAILING_TYPE_NORMAL.code}">
+                                            <%-- Replace 0 values with "n/a" --%>
+                                            <mvc:message code="NotAvailableShort" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${mailing.recipientsCount}
+                                        </c:otherwise>
+                                    </c:choose>
+                                </span>
+                            </agnDisplay:column>
+
+                            <agnDisplay:column titleKey="${CHANGE_DATE_FIELD.messageKey}" sortable="true" sortProperty="change_date" headerClass="js-table-sort mobile-hidden ${changeDateFieldSelected ? '' : 'hidden'}" class="table-preview-hidden ${changeDateFieldSelected ? '' : 'hidden'}" data-table-column="${CHANGE_DATE_FIELD.sortColumn}">
+                                <span><emm:formatDate value="${mailing.changedate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
+
+                            <agnDisplay:column titleKey="${PLAN_DATE_FIELD.messageKey}" sortable="true" sortProperty="${PLAN_DATE_FIELD.sortColumn}"
+                                               headerClass="js-table-sort mobile-hidden ${planDateFieldSelected ? '' : 'hidden'}" class="table-preview-hidden ${planDateFieldSelected ? '' : 'hidden'}"
+                                               data-table-column="${PLAN_DATE_FIELD.sortColumn}">
+                                <span><emm:formatDate value="${mailing.planDate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
                         </c:if>
                         <c:if test="${forTemplates}">
-                            <display:column titleKey="Name" sortable="true" sortProperty="shortname" headerClass="js-table-sort" property="shortname"/>
-                            <display:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort" property="description"/>
-                            <display:column titleKey="Mailinglist" property="mailinglist" sortable="true" sortProperty="mailinglist" headerClass="js-table-sort" />
+                            <agnDisplay:column titleKey="Name" sortable="true" sortProperty="shortname" headerClass="js-table-sort">
+                                <span>${mailing.shortname}</span>
+                            </agnDisplay:column>
+                            <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort">
+                                <span>${mailing.description}</span>
+                            </agnDisplay:column>
+                            <agnDisplay:column titleKey="Mailinglist" sortable="true" sortProperty="mailinglist" headerClass="js-table-sort">
+                                <span>${mailing.mailinglist}</span>
+                            </agnDisplay:column>
 
-                            <display:column titleKey="default.creationDate" sortable="true"
-                                format="{0, date, ${adminDateFormat}}" property="creationdate"
-                                sortProperty="creation_date" headerClass="js-table-sort">
-                                ${mailing.creationdate}
-                            </display:column>
-                            <display:column titleKey="default.changeDate" sortable="true"
-                                format="{0, date, ${adminDateFormat}}" property="changedate"
-                                sortProperty="change_date" headerClass="js-table-sort">
-                                ${mailing.changedate}
-                            </display:column>
+                            <agnDisplay:column titleKey="default.creationDate" sortable="true" sortProperty="creation_date" headerClass="js-table-sort">
+                                <span><emm:formatDate value="${mailing.creationdate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
+
+                            <agnDisplay:column titleKey="default.changeDate" sortable="true" sortProperty="change_date" headerClass="js-table-sort">
+                                <span><emm:formatDate value="${mailing.changedate}" format="${adminDateTimeFormat}" /></span>
+                            </agnDisplay:column>
                         </c:if>
 
-                        <display:column class="table-actions order-1" title="${addAdditionalColumns}" headerClass="additional-columns">
+                        <agnDisplay:column class="table-actions mobile-hidden" headerClass="mobile-hidden fit-content ${forTemplates ? '' : 'columns-picker'}">
                             <script type="text/x-mustache-template" class="js-row-popover">
                                 <img src="${previewImageSrc}" style="max-width: 200px" alt="${fn:escapeXml(mailing.shortname)}" border="0">
                             </script>
 
                             <c:choose>
                                 <c:when test="${mailingOverviewForm.useRecycleBin}">
-                                    <a href="<c:url value="/mailing/${mailing.mailingid}/restore.action"/>" class="btn btn-icon-sm btn-primary" data-action="restore" data-tooltip="<mvc:message code="default.restore" />">
+                                    <a href="#" class="icon-btn text-primary" data-tooltip="<mvc:message code="default.restore" />" data-form-submit data-form-method="POST"
+                                         data-form-url="<c:url value="/mailing/${mailing.mailingid}/restore.action" />">
                                         <i class="icon icon-redo"></i>
                                     </a>
                                 </c:when>
                                 <c:otherwise>
-                                    <emm:ShowByPermission token="${forTemplates ? 'template.delete' : 'mailing.delete'}">
-                                        <c:set var="deleteTooltipMsgCode" value="${forTemplates ? 'template.delete' : 'mailing.MailingDelete'}"/>
-                                        <a href="<c:url value="/mailing/${forTemplates ? 'deleteTemplates' : 'deleteMailings'}.action?bulkIds=${mailing.mailingid}"/>" class="btn btn-icon-sm btn-danger js-row-delete" data-tooltip="<mvc:message code="${deleteTooltipMsgCode}"/>">
+                                    <c:if test="${isDeleteAllowed}">
+                                        <a href="${deleteUrl}?bulkIds=${mailing.mailingid}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteTooltipMsg}">
                                             <i class="icon icon-trash-alt"></i>
                                         </a>
-                                    </emm:ShowByPermission>
+                                    </c:if>
                                     <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
                                     <c:if test="${mailing.workstatus eq 'mailing.status.sent' or mailing.workstatus eq 'mailing.status.norecipients'}">
                                         <emm:ShowByPermission token="stats.mailing">
@@ -323,8 +393,8 @@
                                     <a href="${mailingViewLink}" class="hidden" data-view-row="page"></a>
                                 </c:otherwise>
                             </c:choose>
-                        </display:column>
-                    </display:table>
+                        </agnDisplay:column>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -333,17 +403,18 @@
     <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
                 <c:if test="${searchEnabled or contentSearchEnabled}">
                     <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/overview/SearchFor.xml"></a>
                 </c:if>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"
+                <a class="btn btn-icon btn-inverse" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"
                    data-form-persist="mailingTypes: '${MAILING_TYPE_NORMAL}', mediaTypes: '${MEDIA_TYPE_EMAIL}', filterName: '', filterDescription: '', filterContent: '', filterStatuses: '', filterBadges: '', filterMailingLists: '', filterSendDateBegin: '', filterSendDateEnd: '', filterCreationDateBegin: '', filterCreationDateEnd: '', filterPlanDateBegin: '', filterPlanDateEnd: '', filterChangeDateBegin: '', filterChangeDateEnd: '', filterArchives: '', useRecycleBin: false">
-                    <i class="icon icon-sync"></i>
+                    <i class="icon icon-undo-alt"></i>
                 </a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
@@ -376,6 +447,10 @@
                     <mvc:select id="mailinglists-filter" path="filterMailingLists" cssClass="form-control" multiple="true">
                         <mvc:options itemValue="id" itemLabel="shortname" items="${mailinglists}"/>
                     </mvc:select>
+
+                    <c:if test="${forTemplates}">
+                        <%@include file="./fragments/use-recycle-bin-option.jspf" %>
+                    </c:if>
                 </div>
 
                 <c:if test="${not forTemplates}">
@@ -385,47 +460,36 @@
                         <c:set var="mailingTypes" value="${mailingOverviewForm.mailingTypes}"/>
                         <c:set var="defaultFilterStatuses" value="${[MAILING_STATUS_NEW, MAILING_STATUS_EDIT, MAILING_STATUS_READY, MAILING_STATUS_ADMIN, MAILING_STATUS_TEST]}"/>
 
-                        <mvc:select id="status-filter" path="filterStatuses" cssClass="form-control" multiple="true" data-result-template="mailing-status-selection">
+                        <mvc:select id="status-filter" path="filterStatuses" cssClass="form-control" multiple="true" data-result-template="select2-badge-option">
                             <c:forEach var="status" items="${defaultFilterStatuses}">
                                 <mvc:option value="${status}" data-badge-class="${status.messageKey}"><mvc:message code="${status.messageKey}"/></mvc:option>
                             </c:forEach>
 
-                            <c:if test="${mailingTypes.contains(MAILING_TYPE_NORMAL) or mailingTypes.contains(MAILING_TYPE_FOLLOW_UP)}">
-                                <mvc:option value="${MAILING_STATUS_SCHEDULED}" data-badge-class="${MAILING_STATUS_SCHEDULED.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_SCHEDULED.messageKey}"/>
-                                </mvc:option>
+                            <mvc:option value="${MAILING_STATUS_SCHEDULED}" data-badge-class="${MAILING_STATUS_SCHEDULED.messageKey}" data-show-by-select="#mailingType-filter"
+                                        data-show-by-select-values="${MAILING_TYPE_NORMAL}, ${MAILING_TYPE_FOLLOW_UP}" data-show-if-no-selection="">
+                                <mvc:message code="${MAILING_STATUS_SCHEDULED.messageKey}"/>
+                            </mvc:option>
 
-                                <c:if test="${mailingTypes.contains(MAILING_TYPE_NORMAL)}">
-                                    <mvc:option value="${MAILING_STATUS_IN_GENERATION}" data-badge-class="${MAILING_STATUS_IN_GENERATION.messageKey}">
-                                        <mvc:message code="${MAILING_STATUS_IN_GENERATION.messageKey}"/>
-                                    </mvc:option>
-                                    <mvc:option value="${MAILING_STATUS_GENERATION_FINISHED}" data-badge-class="${MAILING_STATUS_GENERATION_FINISHED.messageKey}">
-                                        <mvc:message code="${MAILING_STATUS_GENERATION_FINISHED.messageKey}"/>
-                                    </mvc:option>
-                                </c:if>
+                            <c:forEach var="status" items="${[MAILING_STATUS_IN_GENERATION, MAILING_STATUS_GENERATION_FINISHED]}">
+                                <mvc:option value="${status}" data-badge-class="${status.messageKey}" data-show-by-select="#mailingType-filter"
+                                            data-show-by-select-values="${MAILING_TYPE_NORMAL}" data-show-if-no-selection="">
+                                    <mvc:message code="${status.messageKey}"/>
+                                </mvc:option>
+                            </c:forEach>
 
-                                <mvc:option value="${MAILING_STATUS_SENT}" data-badge-class="${MAILING_STATUS_SENT.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_SENT.messageKey}"/>
+                            <c:forEach var="status" items="${[MAILING_STATUS_SENT, MAILING_STATUS_NORECIPIENTS, MAILING_STATUS_CANCELED, MAILING_STATUS_SENDING]}">
+                                <mvc:option value="${status}" data-badge-class="${status.messageKey}" data-show-by-select="#mailingType-filter"
+                                            data-show-by-select-values="${MAILING_TYPE_NORMAL}, ${MAILING_TYPE_FOLLOW_UP}" data-show-if-no-selection="">
+                                    <mvc:message code="${status.messageKey}"/>
                                 </mvc:option>
-                                <mvc:option value="${MAILING_STATUS_NORECIPIENTS}" data-badge-class="${MAILING_STATUS_NORECIPIENTS.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_NORECIPIENTS.messageKey}"/>
-                                </mvc:option>
-                                <mvc:option value="${MAILING_STATUS_CANCELED}" data-badge-class="${MAILING_STATUS_CANCELED.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_CANCELED.messageKey}"/>
-                                </mvc:option>
-                                <mvc:option value="${MAILING_STATUS_SENDING}" data-badge-class="${MAILING_STATUS_SENDING.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_SENDING.messageKey}"/>
-                                </mvc:option>
-                            </c:if>
+                            </c:forEach>
 
-                            <c:if test="${mailingTypes.contains(MAILING_TYPE_ACTION_BASED) or mailingTypes.contains(MAILING_TYPE_DATE_BASED) or mailingTypes.contains(MAILING_TYPE_INTERVAL)}">
-                                <mvc:option value="${MAILING_STATUS_ACTIVE}" data-badge-class="${MAILING_STATUS_ACTIVE.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_ACTIVE.messageKey}"/>
+                            <c:forEach var="status" items="${[MAILING_STATUS_ACTIVE, MAILING_STATUS_DISABLE]}">
+                                <mvc:option value="${status}" data-badge-class="${status.messageKey}" data-show-by-select="#mailingType-filter"
+                                            data-show-by-select-values="${MAILING_TYPE_ACTION_BASED}, ${MAILING_TYPE_DATE_BASED}, ${MAILING_TYPE_INTERVAL}" data-show-if-no-selection="">
+                                    <mvc:message code="${status.messageKey}"/>
                                 </mvc:option>
-                                <mvc:option value="${MAILING_STATUS_DISABLE}" data-badge-class="${MAILING_STATUS_DISABLE.messageKey}">
-                                    <mvc:message code="${MAILING_STATUS_DISABLE.messageKey}"/>
-                                </mvc:option>
-                            </c:if>
+                            </c:forEach>
                         </mvc:select>
                     </div>
 
@@ -464,7 +528,7 @@
 
                     <div class="col-12">
                         <label class="form-label" for="mailingType-filter"><mvc:message code="mailing.types"/></label>
-                        <mvc:select id="mailingType-filter" path="mailingTypes" cssClass="form-control mb-1" multiple="true">
+                        <mvc:select id="mailingType-filter" path="mailingTypes" cssClass="form-control" multiple="true">
                             <mvc:option value="${MAILING_TYPE_NORMAL}"><mvc:message code="Normal"/></mvc:option>
                             <mvc:option value="${MAILING_TYPE_ACTION_BASED}"><mvc:message code="mailing.event"/></mvc:option>
                             <mvc:option value="${MAILING_TYPE_DATE_BASED}"><mvc:message code="mailing.date"/></mvc:option>
@@ -472,18 +536,13 @@
                             <%@include file="./fragments/filter-type-interval-option.jspf" %>
                         </mvc:select>
 
-                        <div class="form-check form-switch">
-                            <mvc:checkbox id="filter-use-recycle-bin" path="useRecycleBin" cssClass="form-check-input" role="switch"/>
-                            <label class="form-label form-check-label" for="filter-use-recycle-bin">
-                                <mvc:message code="mailing.deleted"/>
-                            </label>
-                        </div>
+                        <%@include file="./fragments/use-recycle-bin-option.jspf" %>
                     </div>
 
                     <%@include file="./fragments/mediatypes-filter.jspf" %>
 
                     <%-- Plan date filter --%>
-                    <c:if test="${fn:contains(mailingOverviewForm.selectedFields, PLAN_DATE_FIELD.sortColumn)}">
+                    <c:if test="${planDateFieldSelected}">
                         <div class="col-12" data-date-range>
                             <label class="form-label" for="planDate-filter-from">
                                 <mvc:message code="${PLAN_DATE_FIELD.messageKey}"/>
@@ -512,7 +571,7 @@
                 </c:if>
 
                 <%-- Creation date filter --%>
-                <c:if test="${forTemplates or fn:contains(mailingOverviewForm.selectedFields, CREATION_DATE_FIELD.sortColumn)}">
+                <c:if test="${forTemplates or creationDateFieldSelected}">
                     <div class="col-12" data-date-range>
                         <label class="form-label" for="creationDate-filter-from">
                             <mvc:message code="${CREATION_DATE_FIELD.messageKey}"/>
@@ -527,7 +586,7 @@
                 </c:if>
 
                 <%-- Change date filter --%>
-                <c:if test="${forTemplates or fn:contains(mailingOverviewForm.selectedFields, CHANGE_DATE_FIELD.sortColumn)}">
+                <c:if test="${forTemplates or changeDateFieldSelected}">
                     <div class="col-12" data-date-range>
                         <label class="form-label" for="changeDate-filter-from">
                             <mvc:message code="${CHANGE_DATE_FIELD.messageKey}"/>
@@ -545,9 +604,8 @@
     </div>
 </mvc:form>
 
-<script id="mailing-status-selection" type="text/x-mustache-template">
-    <div class="d-flex align-items-center gap-1">
-        <span class="status-badge {{- element.getAttribute('data-badge-class')}}"></span>
-        <span>{{- text }}</span>
-    </div>
-</script>
+<c:if test="${not forTemplates}">
+    <script id="new-mailing-modal-template" type="text/x-mustache-template">
+        <%@include file="../fragments/mailing-creation-modal.jspf" %>
+    </script>
+</c:if>

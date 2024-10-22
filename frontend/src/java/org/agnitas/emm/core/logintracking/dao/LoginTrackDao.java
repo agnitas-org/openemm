@@ -64,21 +64,13 @@ public interface LoginTrackDao {
 	 */
 	public List<LoginData> listLoginDataByUsername(final String username, final Date sinceOrNull);
 
-	/**
-	 * Deletes old login records. A record is supposed to be old, if its time stamp exceeds the given retention time.
-	 * To prevent locking the persistence system behind, a maximum number of records can be specified to be deleted 
-	 * with one method call.
-	 *  
-	 * @param retentionTime number of days a records must be stored
-	 * @param maxRecords maximum number of records to be deleted at one method call
-	 * @return number of records deleted
-	 */
-	public int deleteOldRecords(int retentionTime, int maxRecords);
 
 	/**
-	 * Same as {@link #deleteOldRecords(int, int)} but with hours instead of days.
-	 *  
-	 * @param retentionTime number of days a records must be stored
+	 * Deletes old login records. A record is supposed to be old, if its time stamp exceeds the given retention time.
+	 * To prevent locking the persistence system behind, a maximum number of records can be specified to be deleted
+	 * with one method call.
+	 *
+	 * @param retentionTimeHours number of hours a records must be stored
 	 * @param maxRecords maximum number of records to be deleted at one method call
 	 * @return number of records deleted
 	 */
@@ -92,6 +84,6 @@ public interface LoginTrackDao {
 	 * 
 	 * @return Optional containing tracking data or empty Optional
 	 */
-	public Optional<LoginData> findLoginDataByTrackingID(final int trackingID);
+	public Optional<LoginData> findLoginDataByTrackingID(final long trackingID);
 
 }

@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.util.Log;
+import org.agnitas.backend.exceptions.BackendException;
+import org.agnitas.backend.exceptions.InvalidTargetException;
 
 public class TargetExpression {
 	/**
@@ -41,6 +43,10 @@ public class TargetExpression {
 	 * the computed subselection for the receiver of this mailing
 	 */
 	private String subselect;
+	/**
+	 * the expression for altg restricition
+	 */
+	private String altgselect;
 	/**
 	 * force resolving of target expressions by database
 	 */
@@ -75,6 +81,10 @@ public class TargetExpression {
 		return subselect;
 	}
 	
+	public String altgselect () {
+		return altgselect;
+	}
+	
 	public void forceResolveByDatabase (boolean nForceResolveByDatabase) {
 		forceResolveByDatabase = nForceResolveByDatabase;
 	}
@@ -87,6 +97,7 @@ public class TargetExpression {
 		splitID = 0;
 		deliveryRestrictID = 0;
 		subselect = null;
+		altgselect = null;
 	}
 
 	/**
@@ -104,6 +115,7 @@ public class TargetExpression {
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.splitID = " + splitID);
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.deliveryRestrictID = " + deliveryRestrictID);
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.subselect = " + (subselect == null ? "*not set*" : subselect));
+		data.logging(Log.DEBUG, "init", "\ttargetExpression.altgselect = " + (altgselect == null ? "*not set*" : altgselect));
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.forceResolveByDatabase = " + forceResolveByDatabase);
 	}
 
@@ -119,10 +131,9 @@ public class TargetExpression {
 	/**
 	 * Retrieves all target expression realted information from available resources
 	 */
-	public void retrieveInformation() throws Exception {
+	public void retrieveInformation() throws InvalidTargetException {
 		String combinedExpression = expression;
 
-		subselect = null;
 		if (splitID > 0) {
 			if (!data.shouldRemoveDuplicateEMails()) {
 				if (expression == null) {
@@ -141,12 +152,29 @@ public class TargetExpression {
 				combinedExpression = "(" + combinedExpression + ") & " + deliveryRestrictID;
 			}
 		}
-		if (combinedExpression != null) {
+		subselect = resolve (combinedExpression);
+		altgselect = null;
+		if (data.maildropStatus.isAdminMailing () || data.maildropStatus.isTestMailing ()) {
+			List <Long>	altgRestriction = data.maildropStatus.getAltGRestriction ();
+			
+			if ((altgRestriction != null) && (altgRestriction.size () > 0)) {
+				String	altgExpression = altgRestriction.stream ()
+					.map (l -> l.toString ())
+					.reduce ((s, e) -> s + "|" + e).orElse (null);
+				altgselect = resolve (altgExpression);
+			}
+		}
+	}
+	
+	private String resolve (String expression) throws InvalidTargetException {
+		String	rc = null;
+		
+		if (expression != null) {
 			StringBuffer buf = new StringBuffer();
-			int elen = combinedExpression.length();
+			int elen = expression.length();
 
 			for (int n = 0; n < elen; ++n) {
-				char ch = combinedExpression.charAt(n);
+				char ch = expression.charAt(n);
 
 				if ((ch == '(') || (ch == ')')) {
 					buf.append(ch);
@@ -156,7 +184,7 @@ public class TargetExpression {
 					} else {
 						buf.append(" OR");
 					}
-					while (((n + 1) < elen) && (combinedExpression.charAt(n + 1) == ch)) {
+					while (((n + 1) < elen) && (expression.charAt(n + 1) == ch)) {
 						++n;
 					}
 				} else if (ch == '!') {
@@ -173,7 +201,7 @@ public class TargetExpression {
 						tid += pos;
 						++n;
 						if (n < elen) {
-							ch = combinedExpression.charAt(n);
+							ch = expression.charAt(n);
 						} else {
 							ch = '\0';
 						}
@@ -185,17 +213,19 @@ public class TargetExpression {
 					}
 				}
 			}
-			if (buf.length() >= 3) {
-				subselect = buf.toString();
+			rc = buf.toString().trim ();
+			if (rc.length () < 3) {
+				rc = null;
 			}
 		}
+		return rc;
 	}
 
 	/*
 	 * handle a missing target expression, give up, if the mailing type
 	 * requires one
 	 */
-	public void handleMissingTargetExpression() throws Exception {
+	public void handleMissingTargetExpression() throws BackendException {
 		if (expression == null) {
 			if (data.maildropStatus.isRuleMailing()) {
 				try {
@@ -204,14 +234,14 @@ public class TargetExpression {
 				} catch (SQLException e) {
 					data.logging(Log.ERROR, "init", "Failed to disable rule based mailing: " + e.toString(), e);
 				}
-				throw new Exception("Missing target: Rule based mailing generation aborted and disabled");
+				throw new BackendException("Missing target: Rule based mailing generation aborted and disabled");
 			} else if (data.maildropStatus.isOnDemandMailing()) {
 				try {
 					data.maildropStatus.setGenerationStatus(0, 4);
 				} catch (Exception e) {
 					data.logging(Log.ERROR, "init", "Failed to set genreation status: " + e.toString(), e);
 				}
-				throw new Exception("Missing target: On Demand mailing generation aborted and left in undefined condition");
+				throw new BackendException("Missing target: On Demand mailing generation aborted and left in undefined condition");
 			}
 		}
 	}
@@ -238,9 +268,9 @@ public class TargetExpression {
 	 * @param tid               the dyn_target_tbl.target_di
 	 * @param requireEvaluation if this target should be pre evaluated
 	 * @return an instance for the retrieved target
-	 * @throws Exception
+	 * @throws InvalidTargetException
 	 */
-	public Target getTarget(long tid, boolean requireEvaluation) throws Exception {
+	public Target getTarget(long tid, boolean requireEvaluation) throws InvalidTargetException {
 		if (targets == null) {
 			targets = new HashMap<>();
 		}
@@ -299,7 +329,7 @@ public class TargetExpression {
 			targets.put(tid, rc);
 		}
 		if (!rc.valid()) {
-			throw new Exception("TargetID " + tid + ": " + reason + " target found");
+			throw new InvalidTargetException("TargetID " + tid + ": " + reason + " target found");
 		}
 		if (requireEvaluation) {
 			rc.setNeedEvaluation();

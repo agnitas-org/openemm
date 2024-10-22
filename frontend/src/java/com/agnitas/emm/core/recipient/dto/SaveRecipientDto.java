@@ -18,7 +18,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class SaveRecipientDto {
 

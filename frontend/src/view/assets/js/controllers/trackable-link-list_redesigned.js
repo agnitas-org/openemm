@@ -10,7 +10,7 @@ AGN.Lib.Controller.new('mailing-trackable-links', function () {
     KEEP_UNCHANGED = this.config.KEEP_UNCHANGED;
     SAVE_ALL_URL = this.config.SAVE_ALL_URL;
     if (this.config.scrollToLinkId) {
-      scrollTo($('#link-' + this.config.scrollToLinkId));
+      scrollTo($(`#link-${this.config.scrollToLinkId}`));
     }
   });
 
@@ -53,10 +53,10 @@ AGN.Lib.Controller.new('mailing-trackable-links', function () {
 
   function scrollTo($target) {
     if ($target && $target.length > 0) {
-      var $scrollContainer = $target.closest('[data-sizing="scroll"]');
-      if ($scrollContainer.length > 0) {
-        var highestOffsetTop = $scrollContainer.find(':first-child').offset().top;
-        var targetOffsetTop = $target.offset().top;
+      const $scrollContainer = $target.closest('.table-wrapper__body');
+      if ($scrollContainer.exists()) {
+        const highestOffsetTop = $scrollContainer.find(':first-child').offset().top;
+        const targetOffsetTop = $target.offset().top;
         $scrollContainer.scrollTop(0);
         $scrollContainer.scrollTop(targetOffsetTop - highestOffsetTop);
       }

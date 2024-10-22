@@ -10,10 +10,8 @@
 
 package org.agnitas.dao.impl;
 
-import java.util.List;
-import java.util.Map;
-
-import org.agnitas.beans.BindingEntry;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -22,12 +20,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import java.util.List;
+import java.util.Map;
 
 public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	
-	private static final transient Logger logger = LogManager.getLogger( OnepixelDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(OnepixelDaoImpl.class);
 	
 	private static final String FIELD_OPEN_COUNT = "open_count";
 	private static final String FIELD_MOBILE_COUNT = "mobile_count";
@@ -146,22 +144,5 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
 					+ " WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))";
 		update(logger, sqlOpenDevice, mailingID, mailingID);
-    }
-
-    private String createDeleteAdminAndTestOpeningsQuery(String tableName, int companyId) {
-        String deleteAlias = "";
-        if (!isOracleDB()) {
-            deleteAlias = "lg";
-        }
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("DELETE ");
-        queryBuilder.append(deleteAlias);
-        queryBuilder.append(" FROM ");
-        queryBuilder.append(tableName);
-        queryBuilder.append(" lg WHERE lg.mailing_id = ? AND EXISTS (SELECT 1 FROM customer_");
-        queryBuilder.append(companyId);
-        queryBuilder.append("_binding_tbl bind WHERE bind.user_type IN ('" + BindingEntry.UserType.Admin.getTypeCode() + "', '" + BindingEntry.UserType.TestUser.getTypeCode() + "', '" + BindingEntry.UserType.TestVIP.getTypeCode() + "') ");
-        queryBuilder.append("AND lg.customer_id = bind.customer_id AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?))");
-        return queryBuilder.toString();
     }
 }

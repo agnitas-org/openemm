@@ -177,4 +177,5 @@ public interface ProfileFieldDao {
 
 	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;
 
+	Set<String> getCustomerColumns(int companyId) throws Exception;
 }

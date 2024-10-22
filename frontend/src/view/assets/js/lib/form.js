@@ -1,96 +1,96 @@
-/*doc
----
-title: Form
-name: form-features
-category: Javascripts - Forms
----
-*/
-
-/*doc
----
-title: Custom Loader
-name: form-features-01
-parent: form-features
----
-
-The `data-custom-loader` attribute makes (if specified) form trigger `form:loadershow` and `form:loaderhide` events (on form element)
-when loader is expected to be shown/hidden so listening those events you can provide custom loading indication.
-
-Also it enables `form:progress` event that is being thrown on form uploading progress.
-
-```htmlexample
-<form action="#form-features-01" id="customLoaderDemoForm" data-form="" data-custom-loader="">
-  <button type="submit" class="btn btn-regular btn-primary">Submit</button>
-</form>
-```
-
-```jsexample
-$('#customLoaderDemoForm').on({
-  'form:loadershow': function() {
-    AGN.Lib.Messages('Form', 'Form submission started!', 'success');
-  },
-  'form:loaderhide': function() {
-    AGN.Lib.Messages('Form', 'Form submission finished!', 'success');
-  }
-});
-```
-
-The `form:progress` event depends on browser so it's not quite reliable and may be missing. When fired it's supplied with the following data:
-
-Property | Description
----------|------------
-`loaded` | Number of bytes already loaded (only available if `progress !== true`).
-`total` | Total number of bytes to be loaded (only available if `progress !== true`).
-`progress` | Formatted progress percentage number or `true` (if detailed progress percentage is not supported).
-*/
-
-/*doc
----
-title: Controls disabling
-name: form-features-02
-parent: form-features
----
-
-The `data-disable-controls` attribute allows to disable some controls (the ones having `data-controls-group` attribute) during form submission (and enable them back afterwards).
-Use `data-disable-controls="*"` to refer all the elements having `data-controls-group` attribute or specify a particular value to refer a named group (group's name is defined by `data-controls-group` attribute).
-
-```htmlexample
-<form action="#form-features-02" id="controlsDisablingDemoForm" data-form="" data-disable-controls="group-1">
-  <div class="form-group">
-    <div class="col-sm-4">
-      <label class="control-label">
-        <label for="Name">First name</label>
-      </label>
-    </div>
-    <div class="col-sm-8">
-      <input type="text" name="firstname" class="form-control" data-controls-group="group-1"/>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <div class="col-sm-4">
-      <label class="control-label">
-        <label for="Name">Last name</label>
-      </label>
-    </div>
-    <div class="col-sm-8">
-      <input type="text" name="lastname" class="form-control" data-controls-group="group-2"/>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <div class="col-sm-4">
-      <label class="control-label">
-        <label for="Name">Last name</label>
-      </label>
-    </div>
-    <div class="col-sm-8">
-      <button type="submit" class="btn btn-regular btn-primary" data-controls-group="group-1">Submit</button>
-    </div>
-  </div>
-</form>
-```
-*/
+// /*doc
+// ---
+// title: Form
+// name: form-features
+// category: Javascripts - Forms
+// ---
+// */
+//
+// /*doc
+// ---
+// title: Custom Loader
+// name: form-features-01
+// parent: form-features
+// ---
+//
+// The `data-custom-loader` attribute makes (if specified) form trigger `form:loadershow` and `form:loaderhide` events (on form element)
+// when loader is expected to be shown/hidden so listening those events you can provide custom loading indication.
+//
+// Also it enables `form:progress` event that is being thrown on form uploading progress.
+//
+// ```htmlexample
+// <form action="#form-features-01" id="customLoaderDemoForm" data-form="" data-custom-loader="">
+//   <button type="submit" class="btn btn-regular btn-primary">Submit</button>
+// </form>
+// ```
+//
+// ```jsexample
+// $('#customLoaderDemoForm').on({
+//   'form:loadershow': function() {
+//     AGN.Lib.Messages('Form', 'Form submission started!', 'success');
+//   },
+//   'form:loaderhide': function() {
+//     AGN.Lib.Messages('Form', 'Form submission finished!', 'success');
+//   }
+// });
+// ```
+//
+// The `form:progress` event depends on browser so it's not quite reliable and may be missing. When fired it's supplied with the following data:
+//
+// Property | Description
+// ---------|------------
+// `loaded` | Number of bytes already loaded (only available if `progress !== true`).
+// `total` | Total number of bytes to be loaded (only available if `progress !== true`).
+// `progress` | Formatted progress percentage number or `true` (if detailed progress percentage is not supported).
+// */
+//
+// /*doc
+// ---
+// title: Controls disabling
+// name: form-features-02
+// parent: form-features
+// ---
+//
+// The `data-disable-controls` attribute allows to disable some controls (the ones having `data-controls-group` attribute) during form submission (and enable them back afterwards).
+// Use `data-disable-controls="*"` to refer all the elements having `data-controls-group` attribute or specify a particular value to refer a named group (group's name is defined by `data-controls-group` attribute).
+//
+// ```htmlexample
+// <form action="#form-features-02" id="controlsDisablingDemoForm" data-form="" data-disable-controls="group-1">
+//   <div class="form-group">
+//     <div class="col-sm-4">
+//       <label class="control-label">
+//         <label for="Name">First name</label>
+//       </label>
+//     </div>
+//     <div class="col-sm-8">
+//       <input type="text" name="firstname" class="form-control" data-controls-group="group-1"/>
+//     </div>
+//   </div>
+//
+//   <div class="form-group">
+//     <div class="col-sm-4">
+//       <label class="control-label">
+//         <label for="Name">Last name</label>
+//       </label>
+//     </div>
+//     <div class="col-sm-8">
+//       <input type="text" name="lastname" class="form-control" data-controls-group="group-2"/>
+//     </div>
+//   </div>
+//
+//   <div class="form-group">
+//     <div class="col-sm-4">
+//       <label class="control-label">
+//         <label for="Name">Last name</label>
+//       </label>
+//     </div>
+//     <div class="col-sm-8">
+//       <button type="submit" class="btn btn-regular btn-primary" data-controls-group="group-1">Submit</button>
+//     </div>
+//   </div>
+// </form>
+// ```
+// */
 
 (function(){
 
@@ -588,6 +588,9 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
   Form.prototype.submit = function(type) {
     var actionId = 0;
+    _.each(this.fields, function(field) {
+      field.onSubmit();
+    });
     var validationOptions = {};
     if ((type == 'confirm' || type == 'action') &&
         (typeof arguments[1] === 'number' || typeof arguments[1] === 'string')) {
@@ -771,6 +774,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     var anchor = $field;
     var editor = $field.data('_editor');
     var emojioneArea = $field.data('emojioneArea');
+    var isDateTimeField = $field.closest('[data-field="datetime"]').length;
     var showIcon = true;
 
     if (editor) {
@@ -801,7 +805,9 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
       if ($existingIcon) {
         $existingIcon.hide();
       }
-      anchor.after('<span class="icon icon-state-alert form-control-feedback js-form-error-ind"></span>');
+      if (!isDateTimeField) {
+        anchor.after('<span class="icon icon-state-alert form-control-feedback js-form-error-ind"></span>');
+      }
     }
     anchor.parent().append('<div class="form-control-feedback-message js-form-error-msg">' + message + '</div>');
   }

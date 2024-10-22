@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.agnitas.emm.common.exceptions.TooManyFilesInZipToImportException;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -139,26 +140,26 @@ public abstract class DataProvider implements Closeable {
 				if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".zip")) {
 					if (zipPassword != null) {
 						if (ZipUtilities.getZipFileEntries(importFile, zipPassword).size() != 1) {
-							throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+							throw new TooManyFilesInZipToImportException("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
 						} else {
 							inputStream = ZipUtilities.openPasswordSecuredZipFile(importFile.getAbsolutePath(), zipPassword);
 						}
 					} else {
 						if (ZipUtilities.getZipFileEntries(importFile).size() != 1) {
-							throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+							throw new TooManyFilesInZipToImportException("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
 						} else {
 							inputStream = ZipUtilities.openZipFile(importFile.getAbsolutePath());
 						}
 					}
 				} else if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".tar.gz")) {
 					if (TarGzUtilities.getFilesCount(importFile) != 1) {
-						throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+						throw new TooManyFilesInZipToImportException("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
 					} else {
 						inputStream = TarGzUtilities.openCompressedFile(importFile);
 					}
 				} else if (StringUtils.endsWithIgnoreCase(importFile.getAbsolutePath(), ".tgz")) {
 					if (TarGzUtilities.getFilesCount(importFile) != 1) {
-						throw new Exception("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
+						throw new TooManyFilesInZipToImportException("Compressed import file does not contain a single compressed file: " + importFile.getAbsolutePath());
 					} else {
 						inputStream = TarGzUtilities.openCompressedFile(importFile);
 					}

@@ -20,8 +20,9 @@ import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -51,9 +52,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -75,7 +76,7 @@ public class MailingPreviewController implements XssCheckAware {
     private static final Logger LOGGER = LogManager.getLogger(MailingPreviewController.class);
 
     protected final ComRecipientDao recipientDao;
-    private final ComMailingDao mailingDao;
+    private final MailingDao mailingDao;
     private final MailinglistDao mailinglistDao;
     private final ComMailingBaseService mailingBaseService;
     private final MailingService mailingService;
@@ -85,11 +86,13 @@ public class MailingPreviewController implements XssCheckAware {
     private final TAGCheckFactory tagCheckFactory;
     private final ConfigService configService;
     private final PdfService pdfService;
+    private final MaildropService maildropService;
+    private final MailinglistApprovalService mailinglistApprovalService;
 
-    public MailingPreviewController(ComMailingDao mailingDao, MailinglistDao mailinglistDao, ComRecipientDao recipientDao, MailingService mailingService,
+    public MailingPreviewController(MailingDao mailingDao, MailinglistDao mailinglistDao, ComRecipientDao recipientDao, MailingService mailingService,
                                     MailingWebPreviewService previewService, GridServiceWrapper gridService, MailingComponentDao mailingComponentDao,
                                     TAGCheckFactory tagCheckFactory, ComMailingBaseService mailingBaseService, ConfigService configService,
-                                    PdfService pdfService) {
+                                    PdfService pdfService, MaildropService maildropService, MailinglistApprovalService mailinglistApprovalService) {
         this.mailingDao = mailingDao;
         this.mailinglistDao = mailinglistDao;
         this.recipientDao = recipientDao;
@@ -101,6 +104,8 @@ public class MailingPreviewController implements XssCheckAware {
         this.mailingBaseService = mailingBaseService;
         this.configService = configService;
         this.pdfService = pdfService;
+        this.maildropService = maildropService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
     }
 
     @RequestMapping("/{mailingId:\\d+}/view.action")
@@ -111,8 +116,13 @@ public class MailingPreviewController implements XssCheckAware {
         initFormData(mailingId, form, mailing, companyId);
 
         model.addAttribute("availablePreviewFormats", previewService.getAvailablePreviewFormats(mailing));
-        model.addAttribute("isPostMailing", previewService.isPostMailing(mailing));
-        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, companyId));
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            model.addAttribute("isPostMailing", previewService.isPostMailing(mailing));
+            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
+        }
 
         if (!mailinglistDao.exist(mailing.getMailinglistID(), companyId)) {
             model.addAttribute("mailingListExist", false);
@@ -124,7 +134,7 @@ public class MailingPreviewController implements XssCheckAware {
         addPreviewRecipientsModelAttrs(model, recipientList, form.getPersonalizedTestRunRecipients(), admin);
 
         if ((form.getModeType() == ModeType.RECIPIENT || form.getModeType() == ModeType.MANUAL) && mailingDao.hasPreviewRecipients(mailingId, companyId)) {
-            boolean useCustomerEmail = admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION)
+            boolean useCustomerEmail = admin.isRedesignedUiUsed()
                     ? form.getModeType().equals(ModeType.MANUAL)
                     : form.isUseCustomerEmail();
             choosePreviewCustomerId(companyId, mailingId, form, useCustomerEmail, popups, recipientList);
@@ -195,7 +205,7 @@ public class MailingPreviewController implements XssCheckAware {
 
         String mailingName = mailingDao.getMailingName(form.getMailingId(), admin.getCompanyID());
 
-        File pdfFile = pdfService.generatePDF(admin, url, false, mailingName, "Mailing", "");
+        File pdfFile = pdfService.generatePDF(admin, url, false, mailingName, "Mailing");
 
         HttpUtils.setDownloadFilenameHeader(response, mailingName + ".pdf");
         return new DeleteFileAfterSuccessReadResource(pdfFile);

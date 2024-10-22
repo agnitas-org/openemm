@@ -1,0 +1,29 @@
+
+/*doc
+---
+title: Table badges
+name: badges_15_tables
+parent: badges_03_special
+---
+
+There is a special type of badge that is used in tables. For this you should use the class `.table-badge'.
+
+```htmlexample
+<span class="table-badge">PNG</span>
+```
+
+*/
+
+.table-badge {
+  @extend .badge;
+  padding: 3px $gap-sm;
+
+  font-size: $font-size-base;
+  font-weight: $font-weight-base;
+
+  border: $border-default;
+  border-radius: $border-radius-sm;
+
+  background-color: var(--table-head-bg-color);
+  color: var(--table-badge-color);
+}

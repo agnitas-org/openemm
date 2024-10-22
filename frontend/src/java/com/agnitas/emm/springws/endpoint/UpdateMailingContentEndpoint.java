@@ -28,7 +28,7 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.components.service.ComComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.springws.jaxb.UpdateMailingContentRequest;
@@ -40,11 +40,11 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
 	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
-    private final ComComponentService componentService;
+    private final ComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
 	private final SecurityContextAccess securityContextAccess;
 
-    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
+    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
         this.componentService = Objects.requireNonNull(componentService, "componentService");
 		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");

@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
@@ -46,8 +47,8 @@ import java.util.List;
 public class SoapUserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected SoapUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
-                                            UserActivityLogExportWorkerFactory exportWorkerFactory) {
-        super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
+                                            UserActivityLogExportWorkerFactory exportWorkerFactory, ConfigService configService) {
+        super(webStorage, adminService, userActivityLogService, exportWorkerFactory, configService);
     }
 
     @Override

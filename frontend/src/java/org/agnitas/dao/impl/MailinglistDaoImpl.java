@@ -10,17 +10,10 @@
 
 package org.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.agnitas.beans.ComTarget;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
@@ -34,12 +27,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
 
@@ -75,18 +74,22 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 
 	@Override
 	public Mailinglist getMailinglist(int listID, int companyId) {
-		if (listID == 0 || companyId == 0) {
+		return getMailinglist(listID, getMailinglistSqlFieldsForSelect(), companyId);
+	}
+
+	protected Mailinglist getMailinglist(int id, String columns, int companyId) {
+		if (id == 0 || companyId == 0) {
 			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Unable to load mailinglist (mailinglist ID %d, company ID %d)", listID, companyId));
+				logger.info(String.format("Unable to load mailinglist (mailinglist ID %d, company ID %d)", id, companyId));
 			}
-			
+
 			return null;
 		}
 
 		return selectObjectDefaultNull(logger,
-				"SELECT " + getMailinglistSqlFieldsForSelect() + " FROM mailinglist_tbl " +
+				"SELECT " + columns + " FROM mailinglist_tbl m " +
 						"WHERE mailinglist_id = ? AND deleted = 0 AND company_id = ?",
-				MAILINGLIST_ROW_MAPPER, listID, companyId);
+				MAILINGLIST_ROW_MAPPER, id, companyId);
 	}
 
 	@Override

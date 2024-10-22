@@ -419,13 +419,8 @@ public class AdminImpl implements Admin {
 	}
 
 	@Override
-	public boolean isRedesignedUiUsed(Permission permission) {
-		return isRedesignedUiUsed() && permissionAllowed(permission);
-	}
-
-	@Override
 	public boolean isRedesignedUiUsed() {
-		return permissionAllowed(Permission.UI_DESIGN_MIGRATION) && permissionAllowed(Permission.USE_REDESIGNED_UI);
+		return !permissionAllowed(Permission.USE_OLD_UI);
 	}
 
 	@Override

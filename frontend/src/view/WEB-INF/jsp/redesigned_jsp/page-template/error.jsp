@@ -1,7 +1,8 @@
-<%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" %>
+<%@ page isErrorPage="true" pageEncoding="UTF-8" %>
+
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <html>
 
@@ -25,11 +26,10 @@
         </div>
         <div class="tile-body">
             <h2><mvc:message code="error.global.headline"/></h2>
-            <div class="w-100">
-                <p><mvc:message code="error.global.message" /></p>
-            </div>
-
-            <a href="#" class="btn btn-primary w-100 flex-center gap-1" onclick="window.history.back(); return false;">
+            <p class="w-100"><mvc:message code="error.global.message" /></p>
+        </div>
+        <div class="tile-footer tile-footer--buttons">
+            <a href="#" class="btn btn-primary" onclick="window.history.back(); return false;">
                 <i class="icon icon-reply"></i>
                 <span class="text"> <mvc:message code="button.Back"/></span>
             </a>

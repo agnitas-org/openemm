@@ -878,6 +878,7 @@
 				<xs:element name="sendDate" type="xs:dateTime" />
 				<xs:element name="blocksize" type="xs:int" minOccurs="0" />
 				<xs:element name="stepping" type="xs:int" minOccurs="0" />
+				<xs:element name="doubleCheck" type="xs:boolean" minOccurs="0" />
 			</xs:all>
 		</xs:complexType>
 	</xs:element>

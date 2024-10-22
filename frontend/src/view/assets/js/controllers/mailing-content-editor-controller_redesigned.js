@@ -17,19 +17,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   let $targetGroups;
   let $interestGroups;
 
-  function fixEnlargedEditorScroll() {
-    $('#enlargeable-settings').on('enlarged', function (ev) {
-      $(ev.target).closest('.modal-body').css('overflow', 'hidden')
-    })
-  }
-
-  function addEditorListener($editor) {
-    $editor.on("dynTags:modify", function () {
-      getEditorsContent();
-      $editor.trigger("tile:hide"); // destroy current editors. wysiwyg-events.js
-    });
-  }
-
   this.addDomInitializer('mailing-content-editor-initializer', function ($editor) {
     const config = $('#dyn-tag-settings').data('conf');
     currentDynTag = config.dynTag;
@@ -44,6 +31,26 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     fixEnlargedEditorScroll();
     addEditorListener($editor);
   });
+
+
+  function fixEnlargedEditorScroll() {
+    $('#enlargeable-settings').on('enlarged', function (ev) {
+      $(ev.target).closest('.modal-body').css('overflow', 'hidden')
+    })
+  }
+
+  function addEditorListener($editor) {
+    $editor.on("dynTags:modify", function () {
+      getEditorsContent();
+      $editor.trigger("tile:hide"); // destroy current editors. wysiwyg-events.js
+    });
+    $editor.on("apply-ai-text-on-save", function (e, content) {
+      const selectedContentBlockId = getSelectedContentBlockId();
+      if (selectedContentBlockId > 0) {
+        currentDynTag.changeContent(selectedContentBlockId, content);
+      }
+    });
+  }
 
   function disabledCurrentEditBtn() {
     $targetsOrder.find(EDIT_BTN_SELECTOR).removeClass('disabled');
@@ -133,33 +140,35 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       }
       aceEditor.setValue(content, cursorPos);
     }
-
     if ($aiTextGenerationBlock.is(":visible")) {
       // when user selects another content block and 'Text generation' tab was opened, we should set of content to WYSIWYG and HTML tab
-      $aiTextGenerationBlock.closest('form').find('.js-wysiwyg').val(content);
+      $('#multi-editor').find('.js-wysiwyg').val(content);
     }
   };
 
+  function getContentFromEditors() {
+    const $wysiwygEditorBlock = $('#tab-content-wysiwyg');
+    const $htmlEditorBlock = $('#contentEditor');
+    const $aiEditorBlock = $('#tab-content-ai-text-generation');
+    
+    if ($aiEditorBlock.is(":visible")) {
+      return $wysiwygEditorBlock.exists()
+        ? $('#content').val()
+        : ace.edit("contentEditor").getValue();
+    }
+    if ($wysiwygEditorBlock.is(":visible")) {
+      return CKEDITOR.instances['content'].getData();
+    }
+    if ($htmlEditorBlock.is(":visible")) {
+      return ace.edit("contentEditor").getValue();
+    }
+  }
+
   var getEditorsContent = function() {
-    var selectedContentBlockId = getSelectedContentBlockId();
+    const selectedContentBlockId = getSelectedContentBlockId();
 
     if (selectedContentBlockId > 0) {
-      var $wysiwygEditorBlock = $('#tab-content-wysiwyg');
-      var $htmlEditorBlock = $('#contentEditor');
-      var content;
-
-      if ($wysiwygEditorBlock.is(":visible")) {
-        var wysiwygEditor = CKEDITOR.instances['content'];
-        content = wysiwygEditor.getData();
-      }
-
-      if ($htmlEditorBlock.is(":visible")) {
-        var htmlEditor = ace.edit("contentEditor");
-        if($("body").hasClass("dark-theme")) {
-          htmlEditor.setTheme("ace/theme/idle_fingers");
-        }
-        content = htmlEditor.getValue();
-      }
+      const content = getContentFromEditors();
 
       if (content !== undefined) {
         currentDynTag.changeContent(selectedContentBlockId, content);
@@ -220,9 +229,6 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   }
 
   this.addAction({'change': 'change-target'}, function() {
-    if (this?.data?.programmatic) { // options can be disabled with select lib select_redesigned.js
-      return;
-    }
     currentDynTag.changeTargetGroup(getElementId(this.el), parseInt(this.el.val()))
     disableUsedTargetOptionsInOrder();
   });
@@ -249,10 +255,10 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   function disableUsedTargetOptionsInOrder() {
     const selectedTargets = getSelectedTargets();
     $('#targets-order-box').find('select').each(function (i, el) {
-      const targetsSelect = Select.get($(el));
-      targetsSelect.disableOptions(selectedTargets);
+      Select.get($(el)).disableOptions(selectedTargets);
     });
     Select.get($targetGroups).disableOptions(selectedTargets, true);
+    Select.get($targetGroups).selectFirstValue();
   }
 
   function moveAllRecipientsTargetToEnd() {

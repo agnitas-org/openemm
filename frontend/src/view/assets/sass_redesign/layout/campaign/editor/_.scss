@@ -2,10 +2,14 @@
 $campaign-icon-height: 40px;
 $campaign-empty-icon-color: $gray-600;
 $campaign-icon-color: $blue;
-$campaign-selected-icon-color: $dark-blue;
+$campaign-focused-icon-color: $light-blue;
+$campaign-icon-title-color: var(--label-color);
+
+@import 'context-menu';
+@import 'comment';
+@import 'node-editor.scss';
 
 #pageCampaignEditorContainer {
-  @import 'campaign-manager';
   @import 'toolbar';
   @import 'canvas';
   @import 'node';
@@ -13,12 +17,17 @@ $campaign-selected-icon-color: $dark-blue;
   @import 'connection';
   @import 'minimap';
   @import 'zoom';
-  @import 'comment';
+}
+
+.ui-selectable {
+  touch-action: none;
 }
 
 .ui-selectable-helper { // blue rectangle on select
   border: 1px dotted blue !important;
   background-color: rgba(0, 0, 255, 0.05) !important;
+  position: absolute;
+  z-index: 100;
 }
 
 #navigator {

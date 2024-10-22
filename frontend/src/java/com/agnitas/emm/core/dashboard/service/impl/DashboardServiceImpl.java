@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
@@ -50,7 +50,7 @@ public class DashboardServiceImpl implements DashboardService {
     private static final int DEFAULT_STATISTIC_VALUE = 0;
 
     private MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private ComWorkflowService workflowService;
     private RecipientsReportService recipientsReportService;
 
@@ -63,7 +63,7 @@ public class DashboardServiceImpl implements DashboardService {
                 CommonKeys.CLICKER_SMARTTV_INDEX, CommonKeys.CLICKER_PC_AND_MOBILE_INDEX));
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
@@ -82,7 +82,7 @@ public class DashboardServiceImpl implements DashboardService {
         this.recipientsReportService = recipientsReportService;
     }
 
-    public ComMailingDao getMailingDao() {
+    public MailingDao getMailingDao() {
         return mailingDao;
     }
 
@@ -125,10 +125,10 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public JSONObject getStatisticsInfo(int mailingId, Locale locale, int companyId) throws Exception {
+    public JSONObject getStatisticsInfo(int mailingId, Locale locale, Admin admin) throws Exception {
         JSONObject statData = new JSONObject();
 
-        Map<Integer, Integer> data = getReportData(mailingId, companyId);
+        Map<Integer, Integer> data = getReportData(mailingId, admin.getCompanyID());
 
         int clickerTracked = data.getOrDefault(CommonKeys.CLICKER_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
         int openersTracked = data.getOrDefault(CommonKeys.OPENERS_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
@@ -145,9 +145,10 @@ public class DashboardServiceImpl implements DashboardService {
         statData.put("common", getCommonStat(data, locale));
         statData.put("clickers", getClickersStat(data, locale));
         statData.put("openers", getOpenersStat(data, locale));
-        statData.put("clickersPercent", Collections.singletonList(clickerPercent));
+        if (!admin.isRedesignedUiUsed()) {
+            statData.put("clickersPercent", Collections.singletonList(clickerPercent));
+        }
         statData.put("openersPercent", Collections.singletonList(openersPercent));
-
 
         return statData;
     }

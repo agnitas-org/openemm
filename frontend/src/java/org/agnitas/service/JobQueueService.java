@@ -416,6 +416,10 @@ public class JobQueueService implements ApplicationContextAware {
 		return jobQueueDao.getOverview(filter);
 	}
 
+	public int getCountForOverview() {
+		return jobQueueDao.getCountForOverview();
+	}
+
 	public List<JobDto> selectErroneousJobs() {
 		return jobQueueDao.selectErroneousJobs();
 	}

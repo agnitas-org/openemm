@@ -55,7 +55,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * redirect servlet for links within a user form
  */
 public class ComRdirUserForm extends HttpServlet {
-	private static final transient Logger logger = LogManager.getLogger(ComRdirUserForm.class);
+
+	private static final Logger logger = LogManager.getLogger(ComRdirUserForm.class);
 	private static final long serialVersionUID = -83951043191964625L;
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -315,9 +316,7 @@ public class ComRdirUserForm extends HttpServlet {
 					}
 					
 					// Replace customer and form placeholders
-					@SuppressWarnings("unchecked")
-					String replacedPropertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
-					propertyValue = replacedPropertyValue;
+                    propertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
 				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");

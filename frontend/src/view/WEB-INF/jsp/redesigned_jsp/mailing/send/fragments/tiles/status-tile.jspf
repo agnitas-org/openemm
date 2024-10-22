@@ -1,7 +1,7 @@
 
 <div id="status-tile" class="tile" data-editable-tile="">
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="Status" /></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="Status" /></h1>
 
         <div class="tile-controls">
             <c:set var="workstatusMsg" value="" />

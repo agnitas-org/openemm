@@ -10,16 +10,6 @@
 
 package com.agnitas.emm.core.mailing.forms;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
@@ -27,6 +17,16 @@ import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.apache.commons.collections4.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class MailingSettingsForm {
 
@@ -210,6 +210,14 @@ public class MailingSettingsForm {
         });    
     }
 
+    public Optional<MediatypeForm> getMediatypeForm(MediaTypes mediaType) {
+        if (MediaTypes.EMAIL.equals(mediaType)) {
+            return Optional.of(getEmailMediatype());
+        }
+
+        return Optional.empty();
+    }
+
     protected int getMediatypePriority() {
         Set<Integer> keys = getMediatypes().keySet();
         return CollectionUtils.isEmpty(keys) ? 0 : Collections.max(keys) + 1;
@@ -227,5 +235,11 @@ public class MailingSettingsForm {
         setTargetGroupIds(Collections.emptyList());
         setSplitBase(null);
         setSplitPart(null);
+    }
+
+    public boolean isMediaTypeActive(MediaTypes mediaType) {
+        return getMediatypeForm(mediaType)
+                .map(MediatypeForm::isActive)
+                .orElse(false);
     }
 }

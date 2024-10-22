@@ -27,9 +27,15 @@
                 <entry key="admin.saveNew" value="admin.new" />
                 <entry key="admin.exportCsv" value="admin.show" />
                 <entry key="admin.exportPdf" value="admin.show" />
-                <entry key="admin.confirmDelete" value="admin.delete" />
-                <entry key="admin.delete" value="admin.delete" />
+                <entry key="admin.confirmDelete" value="admin.delete|restfulUser.delete" />
+                <entry key="admin.delete" value="admin.delete|restfulUser.delete" />
                 <entry key="admin.sendWelcome" value="admin.sendWelcome" />
+
+                <entry key="address.management.view" value="admin.management.show" />
+                <entry key="address.management.deleteEntries" value="admin.management.show" />
+                <entry key="address.management.deleteAll" value="admin.management.show" />
+                <entry key="address.management.replaceEmail" value="admin.management.show" />
+                <entry key="address.management.replaceAll" value="admin.management.show" />
 
                 <entry key="restfulUser.view" value="restfulUser.show" />
                 <entry key="restfulUser.viewRights" value="restfulUser.show" />
@@ -45,6 +51,7 @@
                 <entry key="restfulUser.delete" value="restfulUser.delete" />
 
                 <entry key="user.group.list" value="role.show" />
+                <entry key="user.group.restore" value="role.change" />
                 <entry key="user.group.search" value="role.show" />
                 <entry key="user.group.copy" value="role.change"/>
                 <entry key="user.group.save" value="role.change" />
@@ -55,7 +62,7 @@
                 <!-- datasource tokens -->
                 <entry key="datasource.list" value="datasource.show" />
 
-                <!-- bounce filter permissions-->
+                <!-- bounce filter permissions -->
                 <entry key="bounce.filter.list" value="mailloop.show" />
                 <entry key="bounce.filter.search" value="mailloop.show" />
                 <entry key="bounce.filter.view" value="mailloop.show" />
@@ -80,10 +87,12 @@
                 <entry key="profiledb.newField" value="profileField.show" />
                 <entry key="profiledb.back_to_target" value="targets.show" />
                 <entry key="profiledb.unspecified" value="profileField.show" />
+                <entry key="profiledb.stat" value="profileField.show" />
 
                 <entry key="userform.save" value="forms.change" />
                 <entry key="userform.confirmDelete" value="forms.delete" />
                 <entry key="userform.delete" value="forms.delete" />
+                <entry key="userform.restore" value="forms.change" />
                 <entry key="userform.list" value="forms.show" />
                 <entry key="userform.view" value="forms.show" />
                 <entry key="userform.create" value="forms.change" />
@@ -91,6 +100,7 @@
                 <entry key="userform.confirmBulkDelete" value="forms.delete" />
                 <entry key="userform.clone" value="forms.change" />
                 <entry key="userform.saveActiveness" value="forms.change" />
+                <entry key="userform.changeActiveness" value="forms.change" />
                 <entry key="userform.activate" value="forms.change" />
                 <entry key="userform.import" value="forms.import" />
                 <entry key="userform.export" value="forms.export" />
@@ -118,8 +128,10 @@
                 <entry key="action.bulkDelete" value="actions.delete" />
                 <entry key="action.confirmDelete" value="actions.delete" />
                 <entry key="action.delete" value="actions.delete" />
+                <entry key="action.restore" value="actions.change" />
                 <entry key="action.usagesView" value="actions.show"/>
                 <entry key="action.saveActiveness" value="actions.change"/>
+                <entry key="action.changeActiveness" value="actions.change"/>
 
                 <!--Mailinglist permission-->
                 <entry key="mailinglist.list" value="mailinglist.show" />
@@ -136,6 +148,7 @@
 
                 <entry key="target.view" value="targets.show" />
                 <entry key="target.confirmBulkDelete" value="targets.delete" />
+                <entry key="target.restore" value="targets.delete" />
                 <entry key="target.bulkDelete" value="targets.delete" />
                 <entry key="target.confirmDelete" value="targets.delete" />
                 <entry key="target.delete" value="targets.delete" />
@@ -153,6 +166,7 @@
                 <entry key="target.dependents" value="targets.show" />
 
                 <entry key="recipient.list" value="recipient.show" />
+                <entry key="recipient.updateSelectedFields" value="recipient.show" />
                 <entry key="recipient.search" value="recipient.show" />
                 <entry key="recipient.createTargetGroup" value="recipient.show" />
                 <entry key="recipient.view" value="recipient.show" />
@@ -167,6 +181,7 @@
                 <entry key="recipient.bulkView" value="recipient.change.bulk" />
                 <entry key="recipient.calculateRecipients" value="recipient.change.bulk" />
                 <entry key="recipient.bulkSave" value="recipient.change.bulk" />
+                <entry key="recipient.confirmBulkSave" value="recipient.change.bulk" />
                 <entry key="recipient.contactHistory" value="recipient.history.mailing" />
                 <entry key="recipient.deliveryHistory" value="recipient.history.mailing.delivery" />
                 <entry key="recipient.successfulDeliveryHistory" value="recipient.history.mailing" />
@@ -180,6 +195,7 @@
                 <entry key="recipientsreport.search" value="wizard.import|wizard.export"/>
                 <entry key="recipientsreport.view" value="wizard.import|wizard.export"/>
                 <entry key="recipientsreport.download" value="wizard.import|wizard.export"/>
+                <entry key="recipientsreport.bulkDownload" value="wizard.import|wizard.export"/>
 
                 <entry key="newimportwizard.init" value="wizard.import|wizard.importclassic"/>
                 <entry key="newimportwizard.unspecified" value="wizard.import" />
@@ -221,19 +237,6 @@
                 <entry key="export.evaluate" value="wizard.export" />
                 <entry key="export.download" value="wizard.export" />
                 
-                <!-- Optimization -->
-                <entry key="optimization.list" value="campaign.autoopt"/>
-                <entry key="optimization.view" value="campaign.autoopt"/>
-                <entry key="optimization.create" value="campaign.autoopt"/>
-                <entry key="optimization.confirmDelete" value="campaign.autoopt"/>
-                <entry key="optimization.delete" value="campaign.autoopt"/>
-                <entry key="optimization.save" value="campaign.autoopt"/>
-                <entry key="optimization.schedule" value="campaign.autoopt"/>
-                <entry key="optimization.unSchedule" value="campaign.autoopt"/>
-
-                <entry key="optimization.ajax.splits" value="campaign.autoopt"/>
-                <entry key="optimization.ajax.loadStatistic" value="campaign.autoopt"/>
-
                 <!-- recipient blacklist -->
                 <entry key="blacklist.list" value="blacklist" />
                 <entry key="blacklist.save" value="blacklist" />
@@ -243,6 +246,9 @@
                 <entry key="blacklist.download" value="blacklist" />
 
                 <entry key="salutation.list" value="salutation.show" />
+                <entry key="salutation.listRedesigned" value="salutation.show" />
+                <entry key="salutation.search" value="salutation.show" />
+                <entry key="salutation.getListAsJson" value="salutation.show" />
                 <entry key="salutation.view" value="salutation.show" />
                 <entry key="salutation.save" value="salutation.change" />
                 <entry key="salutation.create" value="salutation.change" />
@@ -252,6 +258,7 @@
                 <!-- Statistics -> Mailing (separate)-->
                 <entry key="mailing.stat.list" value="stats.mailing" />
                 <entry key="mailing.stat.view" value="stats.mailing" />
+                <entry key="mailing.stat.updateSelectedFields" value="stats.mailing" />
 
                 <!-- GWUA-4277: permissions for Spring MVC controller -->
                 <entry key="mailing.comparison.statistics.list" value="stats.mailing" />
@@ -276,17 +283,23 @@
                 
                 <entry key="calendar.view" value="calendar.show" />
                 <entry key="calendar.getUnsentMailings" value="calendar.show" />
+                <entry key="calendar.unplannedMailings" value="calendar.show" />
+                <entry key="calendar.plannedUnsentMailings" value="calendar.show" />
                 <entry key="calendar.saveComment" value="calendar.show"/>
                 <entry key="calendar.removeComment" value="calendar.show"/>
                 <entry key="calendar.getAutoOptimization" value="calendar.show" />
                 <entry key="calendar.getPlannedMailings" value="calendar.show" />
                 <entry key="calendar.getComments" value="calendar.show" />
                 <entry key="calendar.getMailings" value="calendar.show" />
+                <entry key="calendar.mailingsLight" value="calendar.show"/>
+                <entry key="calendar.mailingsPopoverInfo" value="calendar.show" />
+                <entry key="calendar.clearMailingPlannedDate" value="calendar.show" />
                 <entry key="calendar.moveMailing" value="calendar.show" />
                 <entry key="calendar.getNotifications" value="calendar.show" />
                 <entry key="calendar.movePush" value="calendar.show" />
 
                 <entry key="mailing.list" value="mailing.show" />
+                <entry key="mailing.updateSelectedFields" value="mailing.show" />
                 <entry key="mailing.actions" value="mailing.show" />
                 <entry key="mailing.view" value="mailing.show" />
                 <entry key="mailing.confirmDelete" value="mailing.delete" />
@@ -311,12 +324,14 @@
 
                 <entry key="mailing.recipients.list" value="mailing.recipients.show" />
                 <entry key="mailing.recipients.search" value="mailing.recipients.show" />
+                <entry key="mailing.recipients.updateSelectedFields" value="mailing.recipients.show" />
                 <entry key="mailing.recipients.export" value="mailing.recipients.show" />
 
                 <entry key="mailing_ajax.tryToLock" value="mailing.content.show" />
                 <entry key="mailing_ajax.setStatusOnErrorOnly" value="mailing.send.world" />
                 <entry key="mailing_ajax.isAdvertisingContentType" value="mailing.show" />
                 <entry key="mailing_ajax.calculateRecipients" value="always.allowed" />
+                <entry key="mailing_ajax.getMailingLinks" value="mailing.show" />
 
                 <entry key="import.view" value="mailing.import|forms.import" />
                 <entry key="import.file" value="mailing.import|forms.import" />
@@ -339,20 +354,22 @@
 				<!-- workflow permissions-->
 				<entry key="workflow.list" value="workflow.show"/>
 				<entry key="workflow.view" value="workflow.show"/>
+				<entry key="workflow.statistic" value="workflow.show"/>
 				<entry key="workflow.viewOnlyElements" value="workflow.show"/>
 				<entry key="workflow.generatePDF" value="workflow.show"/>
-				<entry key="workflow.getMailingLinks" value="workflow.show"/>
 				<entry key="workflow.getMailingsByWorkStatus" value="workflow.show"/>
 				<entry key="workflow.getAllMailingSorted" value="workflow.show"/>
 				<entry key="workflow.getWorkflowContent" value="workflow.show"/>
 				<entry key="workflow.getSampleWorkflowContent" value="workflow.show"/>
+				<entry key="workflow.autoOptWorkflowSample" value="workflow.show"/>
 				<entry key="workflow.loadStatistics" value="workflow.show"/>
 				<entry key="workflow.getTotalStatistics" value="workflow.show"/>
 				<entry key="workflow.getCurrentAdminTime" value="workflow.show"/>
-				<entry key="workflow.getMailingContent" value="workflow.show"/>
+				<entry key="workflow.getMailingInfo" value="workflow.show"/>
 				<entry key="workflow.validateDependency" value="workflow.show"/>
 				<entry key="workflow.getMailingThumbnail" value="workflow.show"/>
 				<entry key="workflow.save" value="workflow.change"/>
+				<entry key="workflow.changeActiveness" value="workflow.change"/>
 				<entry key="workflow.create" value="workflow.change"/>
 				<entry key="workflow.copy" value="workflow.change"/>
 				<entry key="workflow.delete" value="workflow.delete"/>
@@ -361,6 +378,7 @@
 				<entry key="workflow.bulkDelete" value="workflow.delete"/>
 				<entry key="workflow.confirmBulkDelete" value="workflow.delete"/>
 				<entry key="workflow.bulkDeactivate" value="workflow.activate"/>
+				<entry key="workflow.confirmDeactivate" value="workflow.activate"/>
 				<entry key="workflow.confirmBulkDeactivate" value="workflow.activate"/>
 				<entry key="workflow.autoUnpause" value="workflow.activate"/>
 
@@ -417,6 +435,7 @@
                 <entry key="mailing.attachment.save" value="mailing.attachments.show" />
                 <entry key="mailing.attachment.upload" value="mailing.attachments.show" />
                 <entry key="mailing.attachment.confirmDelete" value="mailing.attachments.show" />
+                <entry key="mailing.attachment.bulkDownload" value="mailing.attachments.show" />
                 <entry key="mailing.attachment.delete" value="mailing.attachments.show" />
                 
                 <entry key="mailing.send.view" value="mailing.send.show" />
@@ -495,6 +514,7 @@
                 <entry key="report.statistics.save" value="report.birt.change" />
                 <entry key="report.statistics.confirmDelete" value="report.birt.delete" />
                 <entry key="report.statistics.delete" value="report.birt.delete" />
+                <entry key="report.statistics.restore" value="report.birt.change" />
                 <entry key="report.statistics.getFilteredMailing" value="report.birt.show" />
                 <entry key="report.statistics.createSingleMailingStatisticsReport" value="report.birt.show" />
                 <entry key="report.statistics.evaluate" value="report.birt.show" />
@@ -502,6 +522,7 @@
                 <entry key="report.statistics.deactivateAllDeliveries" value="report.birt.change" />
 
                 <entry key="wysiwyg.showAgnTags" value="always.allowed"/>
+                <entry key="wysiwyg.showAiTextGeneration" value="always.allowed"/>
                 <entry key="wysiwyg.getNamesUrlsJsonMap" value="always.allowed"/>
                 <entry key="wysiwyg.imageBrowser" value="always.allowed"/>
 
@@ -543,8 +564,6 @@
                 <entry key="support.sendFormReport" value="always.allowed"/>
                 <entry key="support.helpCenter" value="always.allowed"/>
                 <entry key="support.sendSupportMessage" value="ai.support.chat"/>
-
-                <entry key="ui.design.switchDesign" value="ui.design.migration"/>
             </map>
 		</property>
 		<!-- Below is a configuration of tokens in case of permission depends on several tokens

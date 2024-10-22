@@ -18,13 +18,13 @@ import org.agnitas.emm.core.logintracking.bean.LoginData;
 
 public final class BlockedAddressData {
 	
-	private final int trackingId;
+	private final long trackingId;
 	
 	private final String ipAddress;
 	
 	private final Optional<String> username;
 	
-	public BlockedAddressData(final int trackingId, final String ipAddress, final String usernameOrNull) {
+	public BlockedAddressData(final long trackingId, final String ipAddress, final String usernameOrNull) {
 		this.trackingId = trackingId;
 		this.ipAddress = Objects.requireNonNull(ipAddress, "IP address is null");
 		this.username = Optional.ofNullable(usernameOrNull);
@@ -40,7 +40,7 @@ public final class BlockedAddressData {
 		}
 	}
 
-	public int getTrackingId() {
+	public long getTrackingId() {
 		return this.trackingId;
 	}
 	

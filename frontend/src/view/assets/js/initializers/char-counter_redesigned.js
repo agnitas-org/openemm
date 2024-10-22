@@ -1,16 +1,44 @@
-/*
-EXAMPLE
-<div class="form-group">
-    <label class="form-label" for="message"><mvc:message code="default.message"/></label>
-    <textarea id="message" name="message" class="form-control v-resizable" data-show-char-counter></textarea>
+/*doc
+---
+title: Char counter
+name: char-counter
+category: Components - Char counter
+---
+
+Use data `.data-show-char-counter` with
+<a href="components_-_input_&_textarea.html">`<input>` or `<textarea>`</a>
+to display additional text next to the input, showing how many characters were entered into the field.
+
+```htmlexample
+<div class="d-flex gap-3">
+  <div class="flex-grow-1">
+      <label class="form-label" for="input">Input</label>
+      <input type="text" class="form-control" placeholder="Start typing" data-show-char-counter></textarea>
+  </div>
+  <div class="flex-grow-1">
+      <label class="form-label" for="textarea">Text area</label>
+      <textarea id="textarea" class="form-control" placeholder="Start typing" data-show-char-counter></textarea>
+  </div>
 </div>
-*/
+```
 
-AGN.Lib.CoreInitializer.new('char-counter', function ($scope) {
-  if (!$scope) {
-    $scope = $(document);
-  }
+It is also possible to display char counter in the <a href="components_-_tiles.html#tiles_08_footer">`.tile-footer`</a>.
+For this use `[data-show-char-counter="tile-footer"]`.
 
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h1 class="tile-title">Char counter for body input displayed in tile footer</h1>
+    </div>
+    <div class="tile-body">
+        <textarea class="form-control" placeholder="Start typing" data-show-char-counter="tile-footer"></textarea>
+    </div>
+    <div class="tile-footer"></div>
+</div>
+```
+ */
+
+AGN.Lib.CoreInitializer.new('char-counter', ['growing-textarea'], function ($scope = $(document)) {
   _.each($scope.find('[data-show-char-counter]'), function (el) {
     const $input = $(el);
     if (!$input.is("input") && !$input.is("textarea")) {
@@ -37,7 +65,8 @@ AGN.Lib.CoreInitializer.new('char-counter', function ($scope) {
     if ($input.data('show-char-counter') === 'tile-footer') {
       prependCharCounterForTileFooter($input.closest('.tile'), $charCounterVal);
     } else {
-      $input.before($(`<div class="char-counter"></div>`).append($charCounterVal));
+      const $container = $input.is('textarea') ? $input.parent() : $input;
+      $container.before($(`<div class="char-counter"></div>`).append($charCounterVal));
     }
     updateCharCounter($charCounterVal, $input);
     $input.on('change input editor:create editor:change', _.throttle(() => updateCharCounter($charCounterVal, $input), 100));

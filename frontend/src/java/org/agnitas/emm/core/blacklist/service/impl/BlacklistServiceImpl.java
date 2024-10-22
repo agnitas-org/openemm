@@ -10,34 +10,32 @@
 
 package org.agnitas.emm.core.blacklist.service.impl;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
+import com.agnitas.service.ExtendedConversionService;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.binding.service.BindingService;
+import com.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.core.binding.service.BindingServiceException;
 import org.agnitas.emm.core.blacklist.service.BlacklistAlreadyExistException;
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
-
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
-import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
-import com.agnitas.emm.core.globalblacklist.beans.GlobalBlacklistDto;
-import com.agnitas.service.ExtendedConversionService;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BlacklistServiceImpl implements BlacklistService {
 
@@ -125,7 +123,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 
 	@Override
 	public List<Mailinglist> getMailinglistsWithBlacklistedBindings( BlacklistModel model) {
-		return this.blacklistDao.getMailinglistsWithBlacklistedBindings( model.getCompanyId(), model.getEmail());
+		return this.blacklistDao.getMailinglistsWithBlacklistedBindings(Set.of(model.getEmail()), model.getCompanyId());
 	}
 
 	@Override
@@ -158,11 +156,6 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public void add(GlobalBlacklistDto globalBlacklistDto) {
-		blacklistDao.insertGlobal(globalBlacklistDto.getEmail(), globalBlacklistDto.getReason());
-	}
-
-	@Override
 	public boolean update(int companyId, String email, String reason) {
 		return blacklistDao.update(companyId, email, reason);
 	}
@@ -180,6 +173,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public List<Mailinglist> getBindedMailingLists(int companyId, String email) {
 		BlacklistModel blacklistModel = new BlacklistModel();
 		blacklistModel.setCompanyId(companyId);
@@ -189,6 +183,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
+	public List<Mailinglist> getBindedMailingLists(Set<String> emails, int companyId) {
+		return this.blacklistDao.getMailinglistsWithBlacklistedBindings(emails, companyId);
+	}
+
+	@Override
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public boolean delete(int companyId, String email, Set<Integer> mailinglistIds) {
 		boolean isDeleted = blacklistDao.delete(companyId, email);
 
@@ -212,7 +212,34 @@ public class BlacklistServiceImpl implements BlacklistService {
 
 		return false;
 	}
-	
+
+	@Override
+	public boolean delete(Set<String> emails, Set<Integer> mailinglistIds, int companyId) {
+		if (!delete(emails, companyId)) {
+			return false;
+		}
+
+		List<Integer> filteredMailinglistIds = mailinglistIds.stream()
+				.filter(id -> id > 0)
+				.collect(Collectors.toList());
+
+		emails.forEach(e -> blacklistDao.updateBlacklistedBindings(companyId, e, filteredMailinglistIds, UserStatus.AdminOut));
+		return true;
+	}
+
+	private boolean delete(Set<String> emails, int companyId) {
+		emails = emails.stream()
+				.filter(StringUtils::isNotBlank)
+				.map(AgnUtils::normalizeEmail)
+				.collect(Collectors.toSet());
+
+		if (emails.isEmpty()) {
+			return false;
+		}
+
+		return blacklistDao.delete(emails, companyId);
+	}
+
 	@Override
 	public boolean blacklistCheck(String email, int companyId) {
 		return blacklistDao.blacklistCheck(StringUtils.trimToEmpty(email), companyId);

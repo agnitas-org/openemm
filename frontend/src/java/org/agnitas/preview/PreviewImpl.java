@@ -12,8 +12,6 @@ package org.agnitas.preview;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -371,79 +369,38 @@ public class PreviewImpl implements Preview {
 		}
 	}
 
-	/**
-	 * create an ID for a optioanl given text
-	 *
-	 * @param text the text
-	 * @return id part of the text
-	 */
-	private String makeTextID(String text) {
-		String rc;
-
-		if (text.length() < 32) {
-			rc = text;
-		} else {
-			try {
-				MessageDigest sha512Digest = MessageDigest.getInstance("SHA-512");
-				byte[] digest;
-				StringBuffer buf;
-				String[] hd = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" };
-
-				sha512Digest.update(text.getBytes(StandardCharsets.UTF_8));
-				digest = sha512Digest.digest();
-				buf = new StringBuffer(sha512Digest.getDigestLength());
-				for (int n = 0; n < digest.length; ++n) {
-					buf.append(hd[(digest[n] >> 4) & 0xf]);
-					buf.append(hd[digest[n] & 0xf]);
-				}
-				rc = buf.toString();
-			} catch (Exception e) {
-				rc = text;
-			}
-		}
-		return rc;
-	}
-
 	@Override
-	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate, boolean onAnonPreserveLinks) {
-		long now;
-		String lid;
-		String error;
-		PCache pc;
-		Cache c;
-		Page rc;
+	public Builder build () {
+		return new Builder (this);
+	}
+	
+	@Override
+	public Page makePreview (Builder builder) {
+		long	now = System.currentTimeMillis () / 1000;
+		String	lid = builder.id ();
+		String	error = null;
+		PCache	pc = builder.anon () ? acache : pcache;
+		Cache	c;
+		Page	rc;
 
-		now = System.currentTimeMillis () / 1000;
-		lid = "[" + mailingID + "/" + customerID +
-				(convertEntities ? "&" : "") +
-				(ecsUIDs ? "^" : "") +
-				(createAll ? "*" : "") +
-				(selector == null ? "" : ":" + selector) +
-				(targetIDs == null || targetIDs.length == 0 ? "" : ">" + targetIDs) +
-				(isMobile ? "." : "") +
-				(sendDate > 0 ? sendDate : "") +
-				(onAnonPreserveLinks ? "$" : "") +
-			  "]" + (text == null ? "" : ", " + makeTextID (text));
-		error = null;
-		pc = anon ? acache : pcache;
-		if (cachable) {
+		if (builder.cachable ()) {
 			synchronized (pc) {
 				if (lastrep + 3600 < now) {
 					log.out(Log.INFO, "stat", "Mailing cache: " + msize + ", Page cache: " + pcache.getSize() + ", Anon cache: " + acache.getSize());
 					lastrep = now;
 				}
-				rc = pc.find(mailingID, customerID, selector, now);
+				rc = pc.find(builder.mailingID (), builder.customerID (), builder.selector (), now);
 				if (rc == null) {
-					if (text == null) {
+					if (builder.text () == null) {
 						for (c = mhead; c != null; c = c.next) {
-							if (c.mailingID == mailingID) {
+							if (c.mailingID == builder.mailingID ()) {
 								break;
 							}
 						}
 						if (c != null) {
 							pop(c);
 							if (c.ctime + maxAge < now) {
-								log.out(Log.DEBUG, "create", "Found entry for " + mailingID + "/" + customerID + " in mailout cache, but it is expired");
+								log.out(Log.DEBUG, "create", "Found entry for " + builder.mailingID () + "/" + builder.customerID () + " in mailout cache, but it is expired");
 								try {
 									c.release();
 									c = null;
@@ -451,24 +408,24 @@ public class PreviewImpl implements Preview {
 									log.out(Log.ERROR, "create", "Failed releasing cache: " + e.toString());
 								}
 							} else {
-								log.out(Log.DEBUG, "create", "Found entry for " + mailingID + "/" + customerID + " in mailout cache");
+								log.out(Log.DEBUG, "create", "Found entry for " + builder.mailingID () + "/" + builder.customerID () + " in mailout cache");
 								push(c);
 							}
 						}
 						if (c == null) {
 							try {
-								c = new Cache(mailingID, now, null, createAll, cachable, isMobile);
+								c = new Cache(builder.mailingID (), now, null, builder.createAll (), builder.cachable (), builder.isMobile ());
 								push(c);
-								log.out(Log.DEBUG, "create", "Created new mailout cache entry for " + mailingID + "/" + customerID);
+								log.out(Log.DEBUG, "create", "Created new mailout cache entry for " + builder.mailingID () + "/" + builder.customerID ());
 							} catch (Exception e) {
 								c = null;
 								error = getErrorMessage(e);
-								log.out(Log.ERROR, "create", "Failed to create new mailout cache entry for " + mailingID + "/" + customerID + ": " + error);
+								log.out(Log.ERROR, "create", "Failed to create new mailout cache entry for " + builder.mailingID () + "/" + builder.customerID () + ": " + error);
 							}
 						}
 						if (c != null) {
 							try {
-								rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
+								rc = c.makePreview(builder.customerID (), builder.sendDate (), builder.selector (), builder.anon (), builder.onAnonPreserveLinks (), builder.convertEntities (), builder.ecsUIDs (), builder.cachable (), builder.targetIDs ());
 								log.out(Log.DEBUG, "create", "Created new page for " + lid);
 							} catch (Exception e) {
 								error = getErrorMessage(e);
@@ -478,8 +435,8 @@ public class PreviewImpl implements Preview {
 					} else {
 						c = null;
 						try {
-							c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
-							rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
+							c = new Cache(builder.mailingID (), now, builder.text (), builder.createAll (), builder.cachable (), builder.isMobile ());
+							rc = c.makePreview(builder.customerID (), builder.sendDate (), builder.selector (), builder.anon (), builder.onAnonPreserveLinks (), builder.convertEntities (), builder.ecsUIDs (), builder.cachable (), builder.targetIDs ());
 							c.release();
 						} catch (Exception e) {
 							error = getErrorMessage(e);
@@ -487,7 +444,7 @@ public class PreviewImpl implements Preview {
 						}
 					}
 					if ((error == null) && (rc != null)) {
-						pc.store(mailingID, customerID, selector, now, rc);
+						pc.store(builder.mailingID (), builder.customerID (), builder.selector (), now, rc);
 					}
 				} else {
 					log.out(Log.DEBUG, "create", "Found page in page cache for " + lid);
@@ -496,8 +453,8 @@ public class PreviewImpl implements Preview {
 		} else {
 			rc = null;
 			try {
-				c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
-				rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
+				c = new Cache(builder.mailingID (), now, builder.text (), builder.createAll (), builder.cachable (), builder.isMobile ());
+				rc = c.makePreview(builder.customerID (), builder.sendDate (), builder.selector (), builder.anon (), builder.onAnonPreserveLinks (), builder.convertEntities (), builder.ecsUIDs (), builder.cachable (), builder.targetIDs ());
 				c.release();
 				log.out(Log.DEBUG, "create", "Created uncached preview for " + lid);
 			} catch (Exception e) {
@@ -513,71 +470,163 @@ public class PreviewImpl implements Preview {
 		}
 
 		if (rc != null && rc.getError() != null) {
-			log.out(Log.INFO, "create", "Found error for " + mailingID + "/" + customerID + ": " + rc.getError());
+			log.out(Log.INFO, "create", "Found error for " + builder.mailingID () + "/" + builder.customerID () + ": " + rc.getError());
 		}
 
 		return rc;
 	}
 
 	@Override
+	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate, boolean onAnonPreserveLinks) {
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .text (text)
+				    .anon (anon)
+				    .convertEntities (convertEntities)
+				    .ecsUIDs (ecsUIDs)
+				    .createAll (createAll)
+				    .cachable (cachable)
+				    .targetIDs (targetIDs)
+				    .isMobile (isMobile)
+				    .sendDate (sendDate)
+				    .onAnonPreserveLinks (onAnonPreserveLinks)
+		);
+	}
+		
+	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable, null, false, 0L, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .text (text)
+				    .anon (anon)
+				    .convertEntities (convertEntities)
+				    .ecsUIDs (ecsUIDs)
+				    .createAll (createAll)
+				    .cachable (cachable)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, shallCreateAll(), cachable, null, false, 0L, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .text (text)
+				    .anon (anon)
+				    .convertEntities (convertEntities)
+				    .ecsUIDs (ecsUIDs)
+				    .cachable (cachable)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, false, false, false, cachable, null, false, 0L, false);
-	}
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .text (text)
+				    .anon (anon)
+				    .cachable (cachable)
+		);
+ 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, 0L, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .anon (anon)
+				    .cachable (cachable)
+		);
 	}
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable, long sendDate) {
-		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, sendDate, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .selector (selector)
+				    .anon (anon)
+				    .cachable (cachable)
+				    .sendDate (sendDate)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, 0L, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .cachable (cachable)
+		);
 	}
 
 	@Override
 	public Page makeAnonPreview(long mailingId, boolean mobile) {
-		return makePreview(mailingId, 0, null, null, true, false, false, false, false, null, mobile, 0L, true);
+		return makePreview (build ()
+				    .mailingID (mailingId)
+				    .anon (true)
+				    .isMobile (mobile)
+				    .onAnonPreserveLinks (true)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable, long sendDate) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, sendDate, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .cachable (cachable)
+				    .sendDate (sendDate)
+		);
 	}
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile, boolean anon, boolean onAnonPreserveLinks) {
-		return makePreview(mailingID, customerID, null, null, anon, false, false, false, cachable, null, isMobile, 0L, onAnonPreserveLinks);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .anon (anon)
+				    .cachable (cachable)
+				    .isMobile (isMobile)
+				    .onAnonPreserveLinks (onAnonPreserveLinks)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, long targetID) {
-		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, false, 0L, false);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .targetID (targetID)
+		);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile, boolean anon, boolean onAnonPreserveLinks) {
-		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, anon, false, false, false, false, targetIDs, isMobile, 0L, onAnonPreserveLinks);
+		return makePreview (build ()
+				    .mailingID (mailingID)
+				    .customerID (customerID)
+				    .anon (anon)
+				    .targetID (targetID)
+				    .isMobile (isMobile)
+				    .onAnonPreserveLinks (onAnonPreserveLinks)
+		);
 	}
 
 	@Override
 	public String makePreview(long mailingID, long customerID, String text, boolean cachable) {
-		Page temp = makePreview(mailingID, customerID, null, text, false, false, false, false, cachable);
-
+		Page	temp = makePreview (build ()
+					    .mailingID (mailingID)
+					    .customerID (customerID)
+					    .text (text)
+					    .cachable (cachable)
+		);
 		return temp != null ? temp.getText() : null;
 	}
 

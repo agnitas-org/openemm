@@ -557,6 +557,10 @@ public class MailWriterMeta extends MailWriter {
 		writer.empty();
 		writer.cflush();
 		
+		virtuals();
+		writer.empty();
+		writer.cflush();
+		
 		writer.opennode("receivers");
 	}
 
@@ -1368,6 +1372,23 @@ public class MailWriterMeta extends MailWriter {
 			}
 		}
 		writer.cflush();
+	}
+
+	private void virtuals () throws IOException {
+		Map <String, String>	vMap = data.virtualMap ();
+		
+		if ((vMap != null) && (vMap.size () > 0)) {
+			writer.opennode ("virtuals", "count", vMap.size ());
+			for (Entry <String, String> entry : vMap.entrySet ()) {
+				writer.opennode ("virtual", "name", entry.getKey ());
+				writer.data (entry.getValue ());
+				writer.close ("virtual");
+			}
+			writer.close ("virtuals");
+		} else {
+			writer.comment ("no virtuals");
+		}
+		writer.cflush ();
 	}
 
 	/**

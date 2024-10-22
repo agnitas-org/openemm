@@ -32,7 +32,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
@@ -43,12 +43,9 @@ import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 @MultipartConfig // <-- required to get Tomcat parsing message with mimetype "multipart/form-data"
 public final class ComUnsubscribe extends HttpServlet {
 	
-	/** Serial version UID. */
 	private static final long serialVersionUID = -1335116656304676065L;
-	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComUnsubscribe.class);
-	
+
+	private static final Logger logger = LogManager.getLogger(ComUnsubscribe.class);
 	
 	/** Service handling UIDs. */
 	private ExtensibleUIDService uidService;
@@ -67,7 +64,7 @@ public final class ComUnsubscribe extends HttpServlet {
     	this.uidService = applicationContext.getBean( ExtensibleUIDConstants.SERVICE_BEAN_NAME, ExtensibleUIDService.class);
     	this.userFormExecuteService = applicationContext.getBean("UserFormExecutionService", UserFormExecutionService.class);
     	
-       	final ComMailingDao mailingDao = applicationContext.getBean("MailingDao", ComMailingDao.class);
+       	final MailingDao mailingDao = applicationContext.getBean("MailingDao", MailingDao.class);
     	final ComBindingEntryDao bindingEntryDao = applicationContext.getBean("BindingEntryDao", ComBindingEntryDao.class);
     	
     	this.unsubscription = new Unsubscription(mailingDao, bindingEntryDao);
@@ -104,14 +101,6 @@ public final class ComUnsubscribe extends HttpServlet {
 		final String remark = SafeString.getLocaleString("recipient.csa.optout.remark", loc);
 		
 		this.oneClickUnsubscription.performOneClickUnsubscription(uid, remark);
-	}
-	
-	@SuppressWarnings("unused")
-	private final void doUnsubscription(final ComExtensibleUID uid, final HttpServletRequest request) {
-		final Locale loc = request.getLocale();
-		final String remark = SafeString.getLocaleString("recipient.csa.optout.remark", loc);
-		
-		this.unsubscription.performUnsubscription(uid, remark);
 	}
 	
     private final ComExtensibleUID extractAndParseUID(final HttpServletRequest request) throws Exception {

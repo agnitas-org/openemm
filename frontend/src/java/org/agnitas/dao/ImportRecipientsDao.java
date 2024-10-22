@@ -10,12 +10,7 @@
 
 package org.agnitas.dao;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -24,22 +19,16 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.json.JsonObject;
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ImportRecipientsDao {
 	String VALIDATOR_RESULT_RESERVED = "VALIDATOR_RESULT_RESERVED";
 	String ERROR_EDIT_RECIPIENT_EDIT_RESERVED = "ERROR_EDIT_RECIPIENT_EDIT_RESERVED";
 	String ERROR_EDIT_REASON_KEY_RESERVED = "ERROR_EDIT_REASON_KEY_RESERVED";
 	String TYPE = "type";
-
-	/**
-	 * get list of table names whuch are still doesn't remove
-	 *
-	 * @param sessionId
-	 * @return list of tables name
-	 */
-	List<String> getTemporaryTableNamesBySessionId(String sessionId);
 
 	/**
 	 * Method checks if key column is indexed in database
@@ -54,8 +43,6 @@ public interface ImportRecipientsDao {
 
 	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
 	
-	String addIndexedStringColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
-
 	void dropTemporaryCustomerImportTable(int companyID, String tempTableName);
 
 	DataSource getDataSource();
@@ -86,18 +73,12 @@ public interface ImportRecipientsDao {
 
 	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);
 	
-	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);
-
-	void addErroneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
-	
 	void addErroneousDataItem(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, Map<String, Object> dataItem, int dataItemCount, ReasonCode reasonCode, String dataAttributeName);
 
 	Map<ImportErrorType, Integer> getReasonStatistics(String temporaryErrorTableName);
 
 	boolean hasRepairableErrors(String temporaryErrorTableName);
 
-	int dropLeftoverTables(int companyID, String hostName);
-	
 	int dropLeftoverTables(String hostName);
 
 	PaginatedListImpl<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize) throws Exception;
@@ -115,8 +96,6 @@ public interface ImportRecipientsDao {
 	int removeBlacklistedEmails(String tempTableName, int companyID);
 
 	CaseInsensitiveMap<String, DbColumnType> getCustomerDbFields(int companyId) throws Exception;
-
-	boolean checkUnboundCustomersExist(int companyID);
 
 	int getAllRecipientsCount(int companyId);
 

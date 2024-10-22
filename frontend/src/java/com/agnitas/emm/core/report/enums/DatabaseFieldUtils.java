@@ -17,31 +17,27 @@ import org.antlr.v4.runtime.misc.Nullable;
 
 public abstract class DatabaseFieldUtils {
 
-    @SuppressWarnings("rawtypes")
 	@Nullable
-    public static <T> DatabaseField<T, ? extends Enum> getByCode(final Object code, final DatabaseField<T, ? extends Enum>[] values) {
+    public static <T> DatabaseField<T, ? extends Enum<?>> getByCode(final Object code, final DatabaseField<T, ? extends Enum<?>>[] values) {
         return Arrays.stream(values)
                 .filter(field -> field.getCode().equals(code))
                 .findFirst().orElse(null);
     }
 
-    @SuppressWarnings("rawtypes")
     @Nullable
-    public static <T> DatabaseField<T, ? extends Enum> getByName(final String readableName, final DatabaseField<T, ? extends Enum>[] values) {
+    public static <T> DatabaseField<T, ? extends Enum<?>> getByName(final String readableName, final DatabaseField<T, ? extends Enum<?>>[] values) {
         return Arrays.stream(values)
                 .filter(field -> field.getReadableName().equals(readableName))
                 .findFirst().orElse(null);
     }
 
-    @SuppressWarnings("rawtypes")
     @Nullable
-    public static <T> String getTranslationKeyByCode(final Object code, final DatabaseField<T, ? extends Enum>[] values) {
-        DatabaseField<T, ? extends Enum> field = getByCode(code, values);
+    public static <T> String getTranslationKeyByCode(final Object code, final DatabaseField<T, ? extends Enum<?>>[] values) {
+        DatabaseField<T, ? extends Enum<?>> field = getByCode(code, values);
         return Objects.nonNull(field) ? field.getTranslationKey() : null;
     }
 
-    @SuppressWarnings("rawtypes")
-    public static <T> boolean isContainsCode(final Object code, final DatabaseField<T, ? extends Enum>[] values){
+    public static <T> boolean isContainsCode(final Object code, final DatabaseField<T, ? extends Enum<?>>[] values){
         return Objects.nonNull(getByCode(code, values));
     }
 }

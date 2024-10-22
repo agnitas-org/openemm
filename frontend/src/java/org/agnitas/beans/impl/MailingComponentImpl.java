@@ -73,6 +73,7 @@ public class MailingComponentImpl implements MailingComponent {
     protected Date endDate;
 
 	private int present;
+	private int size;
 
 	public MailingComponentImpl() {
 		id = 0;
@@ -396,7 +397,17 @@ public class MailingComponentImpl implements MailingComponent {
 	public boolean isMobileImage() {
 		return ImageUtils.isMobileImage(componentName);
 	}
-	
+
+	@Override
+	public int getSize() {
+		return this.size;
+	}
+
+	@Override
+	public void setSize(int size) {
+		this.size = size;
+	}
+
 	/**
 	 * This method encodes some parts of a URI. If in the given URI a "[", "]", "{" or "}" are found, they
 	 * will be replaced by appropriate HEX-Identifiers.

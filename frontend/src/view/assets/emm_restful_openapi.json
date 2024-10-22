@@ -9134,9 +9134,6 @@
           "clientID" : {
             "type" : "integer"
           },
-          "contactInfo" : {
-            "type" : "string"
-          },
           "email" : {
             "type" : "integer"
           },
@@ -9160,9 +9157,6 @@
           "username" : {
             "type" : "string"
           },
-          "contactInfo" : {
-            "type" : "string"
-          },
           "email" : {
             "type" : "integer"
           },
@@ -9183,9 +9177,6 @@
       "WebserviceUserItemPostWithUrlParam" : {
         "type" : "object",
         "properties" : {
-          "contactInfo" : {
-            "type" : "string"
-          },
           "email" : {
             "type" : "integer"
           },
@@ -9207,9 +9198,6 @@
         "type" : "object",
         "properties" : {
           "username" : {
-            "type" : "string"
-          },
-          "contactInfo" : {
             "type" : "string"
           },
           "email" : {
@@ -9236,9 +9224,6 @@
       "WebserviceUserItemPutWithUrlParam" : {
         "type" : "object",
         "properties" : {
-          "contactInfo" : {
-            "type" : "string"
-          },
           "email" : {
             "type" : "integer"
           },

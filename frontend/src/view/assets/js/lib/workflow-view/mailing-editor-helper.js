@@ -224,7 +224,6 @@
             $mailings.attr('readonly', 'readonly');
 
             $.ajax({
-                type: 'POST',
                 url: AGN.url('/workflow/getMailingsByWorkStatus.action'),
                 data: {
                     mailingTypes: this.mailingTypesForLoading.join(','),
@@ -364,6 +363,7 @@
         this.processCopyAndEditMailingForward = function(mailingId, forwardName, formNameJId, selectNameJId) {
             $('#forwardTargetItemId').val(mailingId);
             var additionalParams = [];
+            additionalParams.push('mailingType=' + self.mailingType);
             if (this.mailingType == this.MAILING_TYPE_FOLLOWUP) {
                 additionalParams.push('workflowFollowUpParentMailing=' + this.node.data.baseMailingId);
                 additionalParams.push('workflowFollowUpDecisionCriterion=' + this.node.data.decisionCriterion);
@@ -722,11 +722,7 @@
             return new Promise(function (resolve) {
                 _.defer(function() {
                     $.ajax({
-                        type: 'POST',
-                        url: AGN.url('/workflow/getMailingContent.action'),
-                        data: {
-                            mailingId: mailingId
-                        },
+                        url: AGN.url('/workflow/mailing/' + mailingId + '/info.action'),
                         success: function(data) {
                             resolve(data);
                         }

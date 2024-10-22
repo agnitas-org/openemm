@@ -1,22 +1,52 @@
+/*doc
+---
+title: Icon & Text Switch
+name: switches_03_icon_text
+parent: checkboxes
+---
 
-.icon-switch {
-  display: none !important;
-}
+Uses icons or a text instead of a toggle.
 
-.icon-switch__label, .text-switch__label {
+```htmlexample
+<div class="d-flex gap-1">
+  <label class="icon-switch">
+      <input type="checkbox">
+      <i class="icon icon-image"></i>
+      <i class="icon icon-th-list"></i>
+  </label>
+  <label class="text-switch">
+      <input type="checkbox" checked/>
+      <span>Basic</span>
+      <span>Extended</span>
+  </label>
+  <label class="text-switch">
+      <input type="checkbox" disabled/>
+      <span>Disabled</span>
+      <span>State</span>
+  </label>
+  <label class="text-switch">
+      <input type="checkbox" checked readonly/>
+      <span>Readonly</span>
+      <span>State</span>
+  </label>
+</div>
+```
+*/
+
+.icon-switch, .text-switch {
   display: flex;
   border: $border-default;
   border-radius: $border-radius;
-  background-color: var(--switch-inactive-color);
+  background-color: var(--switch-inactive-bg-color);
 
   > * {
-    color: $white;
+    color: var(--switch-color);
     border-radius: inherit;
     transition: all 0.15s ease-in-out;
     cursor: pointer;
 
     // off state
-    &:first-child {
+    &:not(:last-child) {
       background-color: $primary;
       margin: -1px -1px -1px -3px; // hide contrast pixels near border radius
     }
@@ -26,21 +56,51 @@
     }
   }
 
-  // on state
-  .icon-switch:checked + & {
-    > *:first-child {
-      background-color: transparent;
-      margin: 0;
+  > input[type=checkbox] {
+    display: none !important;
+
+    // on state
+    &:checked {
+      & ~ *:not(:last-child) {
+        background-color: transparent;
+        margin: 0;
+      }
+
+      & ~ *:last-child {
+        background-color: $primary;
+        margin: -1px -3px -1px -1px; // hide contrast pixels near border radius
+        color: var(--switch-selected-color);
+      }
     }
-    > *:last-child {
-      background-color: $primary;
-      margin: -1px -3px -1px -1px; // hide contrast pixels near border radius
+
+    // off state
+    &:not(:checked) ~ *:not(:last-child) {
+      color: var(--switch-selected-color);
+    }
+  }
+  
+  &:has(input:disabled), &:has(input[readonly]) {
+    background-color: $light-grey;
+    pointer-events: none;
+    
+    > input[type=checkbox] {
+      &:checked {
+        & ~ *:last-child {
+          background-color: $dark-grey;
+        }
+      }
+      &:not(:checked) {
+        & ~ *:not(:last-child) {
+          background-color: $dark-grey;
+        }
+      }
     }
   }
 }
 
-.icon-switch__label {
+.icon-switch {
   @include size(70px, 30px);
+  flex: none;
 
   > i {
     flex: 1;
@@ -49,7 +109,7 @@
   }
 }
 
-.icon-switch__label--sm {
+.icon-switch--sm {
   @include size(36px, 18px);
   border-radius: $border-radius-sm;
 
@@ -58,7 +118,7 @@
   }
 }
 
-.text-switch__label {
+.text-switch {
   min-width: 0; // to allow shrink and text truncation when not enough space to display completely
 
   > span {

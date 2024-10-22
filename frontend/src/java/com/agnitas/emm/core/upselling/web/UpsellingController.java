@@ -22,11 +22,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.upselling.form.UpsellingForm;
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @AlwaysAllowed
 public class UpsellingController implements XssCheckAware {
-    private static final String GENERAL_VIEW = "general_upselling";
 
     private static final String[] CUSTOM_VIEWS = new String[]{
             "grid_template_upselling",
@@ -35,7 +35,7 @@ public class UpsellingController implements XssCheckAware {
             "auto_import_upselling",
             "manage_tables_upselling",
             "mediapool_upselling",
-            "common_upselling"
+            "clients_upselling"
     };
 
     private final ConfigService configService;
@@ -45,6 +45,7 @@ public class UpsellingController implements XssCheckAware {
     }
 
     @GetMapping("/upselling.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String view(final Admin admin, final UpsellingForm form, final Model model) {
         String featureName = form.getFeatureNameKey();
         String activeSideMenu = StringUtils.defaultIfEmpty(form.getSidemenuActive(), featureName);
@@ -62,9 +63,15 @@ public class UpsellingController implements XssCheckAware {
             model.addAttribute("upgradeInfoKey", String.format("%s.teaser.upgradeInfo", messageKey));
         }
 
-        return getView(form);
+        return getView(form.getPage());
     }
 
+    @GetMapping("/upsellingRedesigned.action")
+    public String viewRedesigned(@RequestParam String page, Admin admin, Model model) {
+        model.addAttribute("adminLocale", admin.getLocale());
+        return getView(page);
+    }
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     private String featureNameToMessageKey(String featureName) {
         switch (featureName) {
             case "CompanyAdmin":
@@ -76,16 +83,17 @@ public class UpsellingController implements XssCheckAware {
         }
     }
 
-    private String getView(final UpsellingForm form) {
-        if (ArrayUtils.contains(CUSTOM_VIEWS, form.getPage())) {
-            return form.getPage();
+    private String getView(String page) {
+        if (ArrayUtils.contains(CUSTOM_VIEWS, page)) {
+            return page;
         }
 
-        return GENERAL_VIEW;
+        return "common_upselling";
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     private String getUpsellingInfoPageUrl(final Admin admin) {
-        if("en".equalsIgnoreCase(admin.getAdminLang())) {
+        if ("en".equalsIgnoreCase(admin.getAdminLang())) {
             return configService.getValue(ConfigValue.UpsellingInfoUrlEnglish);
         }
         return configService.getValue(ConfigValue.UpsellingInfoUrlGerman);

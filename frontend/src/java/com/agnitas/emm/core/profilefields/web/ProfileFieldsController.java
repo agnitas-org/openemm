@@ -10,26 +10,37 @@
 
 package com.agnitas.emm.core.profilefields.web;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
-import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
+import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldFormSearchParams;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -42,6 +53,7 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.MvcUtils;
 import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -57,31 +69,28 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
-import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
-import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
-import com.agnitas.emm.core.profilefields.form.ProfileFieldFormSearchParams;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpSession;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class ProfileFieldsController implements XssCheckAware {
 
@@ -97,10 +106,12 @@ public class ProfileFieldsController implements XssCheckAware {
     private final ObjectUsageService objectUsageService;
     private final ComWorkflowService workflowService;
     private final ComTargetService targetService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final BirtStatisticsService birtStatisticsService;
 
     public ProfileFieldsController(RecipientFieldService recipientFieldService, WebStorage webStorage, ConfigService configService,
                                    ProfileFieldValidationService validationService, UserActivityLogService userActivityLogService, ObjectUsageService objectUsageService,
-                                   ComWorkflowService workflowService, ComTargetService targetService) {
+                                   ComWorkflowService workflowService, ComTargetService targetService, MailinglistApprovalService mailinglistApprovalService, BirtStatisticsService birtStatisticsService) {
         this.recipientFieldService = recipientFieldService;
         this.webStorage = webStorage;
         this.configService = configService;
@@ -109,6 +120,8 @@ public class ProfileFieldsController implements XssCheckAware {
         this.objectUsageService = Objects.requireNonNull(objectUsageService, "ObjectUsageService is null");
         this.workflowService = workflowService;
         this.targetService = targetService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
+        this.birtStatisticsService = birtStatisticsService;
     }
 
     @ModelAttribute
@@ -122,8 +135,7 @@ public class ProfileFieldsController implements XssCheckAware {
         if (isRedesignedViewUsageAllowed(admin)) {
             FormUtils.syncSearchParams(searchParams, profileForm, true);
         }
-    	FormUtils.syncNumberOfRows(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
-        FormUtils.updateSortingState(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm, restoreSort);
+        FormUtils.syncPaginationData(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm, restoreSort);
 
     	int companyId = admin.getCompanyID();
 
@@ -168,7 +180,10 @@ public class ProfileFieldsController implements XssCheckAware {
 	        List<RecipientFieldDescription> partialFieldsList = recipientFields.subList(startIndex, endIndex);
 	    	
 	    	PaginatedListImpl<RecipientFieldDescription> paginatedFieldsList = new PaginatedListImpl<>(partialFieldsList, recipientFields.size(), profileForm.getNumberOfRows(), profileForm.getPage(), profileForm.getSort(), profileForm.getDir());
-	    	
+            if (profileForm.isUiFiltersSet()) {
+                paginatedFieldsList.setNotFilteredFullListSize(recipientFieldService.getCountForOverview(companyId));
+            }
+
 	        model.addAttribute("profileFields", paginatedFieldsList);
             if (!isRedesignedViewUsageAllowed(admin)) {
                 model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
@@ -187,7 +202,7 @@ public class ProfileFieldsController implements XssCheckAware {
 				maxFields = systemMaxFields;
 			}
 			
-			List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
+			List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
 			int currentFieldCount = companySpecificFields.size();
 			
 			boolean isNearLimit = maxFields - 5 <= currentFieldCount && currentFieldCount < maxFields;
@@ -244,6 +259,7 @@ public class ProfileFieldsController implements XssCheckAware {
 	            form.setLine(field.getLine() > 0);
 	            form.setInterest(field.getInterest() > 0);
 	            form.setFieldVisible(field.getDefaultPermission() != ProfileFieldMode.NotVisible);
+                form.setFieldMode(field.getDefaultPermission());
 	            form.setIncludeInHistory(field.isHistorized());
 	            form.setAllowedValues(field.getAllowedValues() == null ? null : field.getAllowedValues().toArray(new String[0]));
 	            form.setUseAllowedValues(form.getAllowedValues() != null && form.getAllowedValues().length > 0);
@@ -375,29 +391,24 @@ public class ProfileFieldsController implements XssCheckAware {
     @RequestMapping("/{column}/confirmDelete.action")
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String confirmDelete(Admin admin, @PathVariable String column, final Popups popups) {
-        if (!validationService.isValidToDelete(column, admin.getCompanyID(), admin.getLocale(), popups)) {
+        SimpleServiceResult validationResult = validationService.isValidToDelete(column, admin);
+        popups.addPopups(validationResult);
+
+        if (!validationResult.isSuccess()) {
         	return MESSAGES_VIEW;
         }
         return "settings_profile_field_delete_ajax";
     }
 
-    @GetMapping("/{column}/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(Admin admin, @PathVariable String column, Popups popups, Model model) {
-        if (!validationService.isValidToDelete(column, admin.getCompanyID(), admin.getLocale(), popups)) {
-            return MESSAGES_VIEW;
-        }
-
-        MvcUtils.addDeleteAttrs(model, column, "settings.profile.ProfileDelete", "settings.profile.field.delete.question");
-        return DELETE_VIEW;
-    }
-
     @RequestMapping(value = "/{fieldname}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     public String delete(Admin admin, @PathVariable("fieldname") String fieldName, Popups popups) {
     	try {
-            if (validationService.isValidToDelete(fieldName, admin.getCompanyID(), admin.getLocale(), popups)) {
+            SimpleServiceResult validationResult = validationService.isValidToDelete(fieldName, admin);
+            popups.addPopups(validationResult);
+
+            if (validationResult.isSuccess()) {
                 recipientFieldService.deleteRecipientField(admin.getCompanyID(), fieldName);
-	            popups.success("default.selection.deleted");
+	            popups.success(SELECTION_DELETED_MSG);
 	            writeUserActivityLog(admin, new UserAction("delete profile field", String.format("Profile field %s removed", fieldName)));
 	        }
 		} catch (Exception e) {
@@ -406,6 +417,50 @@ public class ProfileFieldsController implements XssCheckAware {
 		}
 
         return "redirect:/profiledb/profiledb.action?restoreSort=true";
+    }
+
+    @GetMapping(value = "/delete.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<String> columns, Admin admin, Model model, Popups popups) {
+        validateSelectedColumns(columns);
+
+        Map<String, SimpleServiceResult> validationResults = getDeleteValidationResults(columns, admin);
+        ServiceResult<List<String>> result = recipientFieldService.filterAllowedForDelete(validationResults, admin);
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        MvcUtils.addDeleteAttrs(model, result.getResult(),
+                "settings.profile.ProfileDelete", "settings.profile.field.delete.question",
+                "bulkAction.delete.profile", "bulkAction.delete.profile.question");
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @PermissionMapping("delete")
+    public String deleteRedesigned(@RequestParam(required = false) Set<String> columns, Admin admin, Popups popups) {
+        validateSelectedColumns(columns);
+
+        Map<String, SimpleServiceResult> validationResults = getDeleteValidationResults(columns, admin);
+        ServiceResult<UserAction> result = recipientFieldService.delete(validationResults, admin);
+
+        popups.addPopups(result);
+        userActivityLogService.writeUserActivityLog(admin, result.getResult());
+
+        return "redirect:/profiledb/profiledb.action?restoreSort=true";
+    }
+
+    private void validateSelectedColumns(Set<String> columns) {
+        if (CollectionUtils.isEmpty(columns)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
+    }
+
+    private Map<String, SimpleServiceResult> getDeleteValidationResults(Set<String> columns, Admin admin) {
+        return columns.stream()
+                .collect(Collectors.toMap(Function.identity(), c -> validationService.isValidToDelete(c, admin)));
     }
 
     @RequestMapping("/new.action")
@@ -446,7 +501,11 @@ public class ProfileFieldsController implements XssCheckAware {
         field.setShortName(form.getShortname());
         field.setDefaultValue(form.getFieldDefault());
         field.setSortOrder(form.getFieldSort());
-        field.setDefaultPermission(form.isFieldVisible() ? ProfileFieldMode.Editable : ProfileFieldMode.NotVisible);
+        if (isRedesignedViewUsageAllowed(admin)) {
+            field.setDefaultPermission(form.getFieldMode());
+        } else {
+            field.setDefaultPermission(form.isFieldVisible() ? ProfileFieldMode.Editable : ProfileFieldMode.NotVisible);
+        }
         field.setLine(form.getLine() ? 1 : 0);
         field.setInterest(form.isInterest() ? 1 : 0);
         field.setHistorized(form.isIncludeInHistory());
@@ -477,7 +536,7 @@ public class ProfileFieldsController implements XssCheckAware {
 
     private boolean updateField(Admin admin, RecipientFieldDescription field, ProfileFieldForm form) {
         UserAction openEmmChangeLog = getOpenEmmChangeLog(field, form);
-        UserAction emmChangeLog = getEmmChangeLog(field, form);
+        UserAction emmChangeLog = getEmmChangeLog(field, form, admin);
 
         if (Objects.nonNull(openEmmChangeLog)) {
             writeUserActivityLog(admin, openEmmChangeLog);
@@ -498,7 +557,11 @@ public class ProfileFieldsController implements XssCheckAware {
         field.setAllowedValues(form.getAllowedValues() == null ? null : Arrays.asList(form.getAllowedValues()));
 
         if (admin.permissionAllowed(Permission.PROFILEFIELD_VISIBLE)) {
-            field.setDefaultPermission(form.isFieldVisible() ? ProfileFieldMode.Editable : ProfileFieldMode.NotVisible);
+            if (isRedesignedViewUsageAllowed(admin)) {
+                field.setDefaultPermission(form.getFieldMode());
+            } else {
+                field.setDefaultPermission(form.isFieldVisible() ? ProfileFieldMode.Editable : ProfileFieldMode.NotVisible);
+            }
         }
         
         if (("NUMBER".equalsIgnoreCase(field.getDatabaseDataType()) ||
@@ -699,6 +762,10 @@ public class ProfileFieldsController implements XssCheckAware {
         userActivityLogService.writeUserActivityLog(admin, userAction, logger);
     }
 
+    private void writeUserActivityLog(Admin admin, String action, String description) {
+        userActivityLogService.writeUserActivityLog(admin, action, description, logger);
+    }
+
     @Override
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
         return ("allowedValues".equals(param) || "fieldDefault".equals(param))
@@ -806,18 +873,28 @@ public class ProfileFieldsController implements XssCheckAware {
         return deletedValues;
     }
 
-    public UserAction getEmmChangeLog(RecipientFieldDescription field, ProfileFieldForm form) {
+    public UserAction getEmmChangeLog(RecipientFieldDescription field, ProfileFieldForm form, Admin admin) {
         List<String> changes = new ArrayList<>();
         UserAction userAction = null;
 
         String existingShortName = field.getShortName();
 
-        //log if "Field visible" checkbox changed
-        if ((field.getDefaultPermission() == ProfileFieldMode.NotVisible) && (form.isFieldVisible())) {
-            changes.add("Field visible checked");
-        }
-        if ((field.getDefaultPermission() == ProfileFieldMode.Editable) && (!form.isFieldVisible())) {
-            changes.add("Field visible unchecked");
+        if (admin.isRedesignedUiUsed()) {
+            if (!field.getDefaultPermission().equals(form.getFieldMode())) {
+                changes.add(String.format(
+                        "Visibility changed from '%s' to '%s'",
+                        getTranslatedMode(field.getDefaultPermission()),
+                        getTranslatedMode(form.getFieldMode())
+                ));
+            }
+        } else {
+            //log if "Field visible" checkbox changed
+            if ((field.getDefaultPermission() == ProfileFieldMode.NotVisible) && (form.isFieldVisible())) {
+                changes.add("Field visible checked");
+            }
+            if ((field.getDefaultPermission() == ProfileFieldMode.Editable) && (!form.isFieldVisible())) {
+                changes.add("Field visible unchecked");
+            }
         }
         //log if "Line after this field" checkbox changed
         if ((field.getLine() == 0) && (form.getLine())) {
@@ -841,11 +918,26 @@ public class ProfileFieldsController implements XssCheckAware {
             changes.add("'Include field in history' is activated");
         }
 
-        if (changes.size() > 0) {
+        if (!changes.isEmpty()) {
             userAction = new UserAction("edit profile field", String.format("Short name: %s.%n%s",
                     existingShortName, StringUtils.join(changes, System.lineSeparator())));
         }
 
         return userAction;
+    }
+
+    @GetMapping("/statistic.action")
+    public String stat(ProfileFieldStatForm form, Model model, Admin admin, HttpSession session) throws Exception {
+        model
+            .addAttribute("profileFields", recipientFieldService.getRecipientFields(admin.getCompanyID()))
+            .addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin))
+            .addAttribute("targets", targetService.getTargetLights(admin))
+            .addAttribute("statUrl", birtStatisticsService.getProfileFieldEvalStatUrl(admin, session.getId(), form));
+        writeUserActivityLog(admin, "profile field statistics", "active submenu - evaluate profile fields");
+        return "profile_field_evaluation_stat";
+    }
+
+    private static String getTranslatedMode(ProfileFieldMode mode) {
+        return I18nString.getLocaleString(mode.getMessageKey(), Locale.UK);
     }
 }

@@ -1,0 +1,34 @@
+
+/*doc
+---
+title: Upload button
+name: buttons_04_upload
+parent: buttons
+---
+
+Decorator for the `input type="file"` HTML button.
+Typically used in a <a href="components_-_upload_&_dropzone.html#upload-zone-01">`.dropzone` component</a>.
+
+<small class="text-muted">See <a href="components_-_upload_&_dropzone.html"><i>uploads</i></a> for more js usage examples.</small>
+
+```htmlexample
+<span class="btn btn-primary btn-upload">
+    <i class="icon icon-file-upload"></i>
+    <span class="text">Click this to chose a file</span>
+    <input type="file" data-upload="uploadFile"/>
+</span>
+```
+*/
+
+.btn-upload {
+ padding-inline: 7px;
+ position: relative;
+ overflow: hidden;
+ cursor: pointer;
+
+ input[type="file"] {
+   position: absolute;
+   inset: 0;
+   opacity: 0;
+ }
+}

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public interface MailingParameterLogService {
     
     UserAction getMailingParameterCreateLog(int mailingId, ComMailingParameter parameterNew);
     
-    UserAction getMailingParameterDeleteLog(int parameterId, ComMailingParameter parameterOld);
+    UserAction getMailingParameterDeleteLog(Collection<Integer> ids);
     
     List<String> getParameterChanges(ComMailingParameter oldParameter, ComMailingParameter newParameter);
 }

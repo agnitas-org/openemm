@@ -16,6 +16,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
@@ -96,6 +97,7 @@ public interface MailingService {
 	boolean isMailingWorldSent(int mailingID, int companyID) throws MailingNotExistException;
 
 	boolean isActiveIntervalMailing(final int mailingID);
+	boolean isActiveIntervalMailing(int mailingID, int companyId);
 
 	int copyMailing(int mailingId, int companyId, String newMailingNamePrefix) throws Exception;
 
@@ -149,7 +151,7 @@ public interface MailingService {
 
 	List<Mailing> getTemplates(Admin admin);
 
-	List<MailingBase> getTemplatesWithPreview(Admin admin, String sort, String direction);
+	List<MailingBase> getTemplatesWithPreview(MediaTypes mediaType, Admin admin);
 
     List<MailingBase> getMailingsByStatusE(int companyId);
 
@@ -157,8 +159,10 @@ public interface MailingService {
 
 	boolean isThresholdClearanceExceeded(int companyId, int mailingId);
 
+	int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks) throws Exception;
+	int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
 	int saveMailing(final Mailing mailing, final boolean preserveTrackableLinks);
-	
+
     List<UserAction> deleteMailing(int mailingId, Admin admin) throws Exception;
 
     boolean usedInRunningWorkflow(int mailingId, int companyId);
@@ -166,8 +170,6 @@ public interface MailingService {
     void updateMailingsWithDynamicTemplate(Mailing mailing, ApplicationContext applicationContext);
 
     boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin);
-
-    Date getMailingPlanDate(int mailingId, int companyId);
 
     boolean checkMailingReferencesTemplate(int templateId, int companyId);
 
@@ -193,7 +195,7 @@ public interface MailingService {
 
     ServiceResult<List<Mailing>> getMailingsForDeletion(Collection<Integer> mailingIds, Admin admin);
 
-    ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> mailingIds, Admin admin);
+    ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> ids, Admin admin);
 
     void bulkRestore(Collection<Integer> mailingIds, Admin admin);
 
@@ -221,4 +223,14 @@ public interface MailingService {
 
 	List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
 
+    void clearPlanDate(int mailingId, int companyId);
+
+	String getEmailParameter(int mailingID);
+
+	String getMailingRdirDomain(int mailingID, int companyID);
+
+	MailingType getMailingType(final int mailingID) throws Exception;
+
+	boolean isSettingsReadonly(Admin admin, int mailingId);
+	boolean isSettingsReadonly(Admin admin, boolean isTemplate);
 }

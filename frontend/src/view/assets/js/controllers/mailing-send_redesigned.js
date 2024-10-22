@@ -24,6 +24,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
     updateWorkStatus: function (workStatus, tooltip) {
       const $statusIcon = $(Template.text('mailing-workstatus-icon', {workstatus: workStatus, tooltip: tooltip}));
       $('#workstatus-icon').replaceWith($statusIcon);
+      AGN.Lib.CoreInitializer.run('tooltip', $statusIcon);
     }
   };
 

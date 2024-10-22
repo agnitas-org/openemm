@@ -49,6 +49,7 @@ public interface ComBlacklistDao {
      * @return true on success.
      */
 	boolean delete(int companyID, String email);
+	boolean delete(Set<String> emails, int companyId);
 
     /**
      * Get full list of blacklisted recipients
@@ -81,11 +82,11 @@ public interface ComBlacklistDao {
      * Lists all mailinglists to these a recipient with given email address is bound with <i>blacklisted</i> state.
      * 
      * @param companyId company ID
-     * @param email email to search
+     * @param emails emails to search
      * 
      * @return list of all mailinglists with "blacklisted" binding for given address
      */
-	List<Mailinglist> getMailinglistsWithBlacklistedBindings(int companyId, String email);
+	List<Mailinglist> getMailinglistsWithBlacklistedBindings(Set<String> emails, int companyId);
 
 	/**
 	 * Updates all blacklisted bindings for a list of mailinglists for a given email to a given user status.
@@ -96,10 +97,6 @@ public interface ComBlacklistDao {
 	 * @param userStatus new user status
 	 */
 	void updateBlacklistedBindings(int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus);
-	
-	default boolean insertGlobal(String email, String reason) {
-		return false;
-	}
 	
 	/**
      * Load set of emails of customers from blacklist for given company

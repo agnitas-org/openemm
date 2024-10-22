@@ -1,0 +1,35 @@
+/*doc
+---
+title: Icon button
+name: buttons_02_icon
+parent: buttons
+---
+
+Differs from the <a href="components_-_buttons.html#buttons_01_icon">`.btn-icon`</a> component is that it has no borders and background.
+Uses <a href="components_-_icons.html">`.icon` component</a> inside.
+
+```htmlexample
+<a href="#" class="icon-btn text-primary">
+    <i class="icon icon-file-download"></i>
+</a>
+
+<button type="button" class="icon-btn">
+  <i class="icon icon-trash-alt text-danger"></i>
+</button>
+```
+*/
+
+.icon-btn {
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: $font-size-lg;
+  line-height: 0;
+
+  &.disable, &:disabled {
+    > .icon {
+      opacity: 0.7;
+    }
+  }
+}

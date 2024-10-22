@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("unchecked")
 public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
     @Override
     public void serialize(PopupsImpl popups, JsonGenerator generator, SerializerProvider provider) throws IOException {

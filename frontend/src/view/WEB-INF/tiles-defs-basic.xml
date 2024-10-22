@@ -147,38 +147,6 @@
 		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
 	</definition>
 
-	<definition name="campaign_autooptimization_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/autooptimization/campaign-autooptimization-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/campaign/autooptimization/campaign-autooptimization-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="campaign_autooptimization_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="campaign_autooptimization_confirm_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-confirm-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="campaign_autooptimization_stats" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-stats.jsp" type="template" />
-		<put-attribute name="page-setup" value="" type="string" />
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
 	<definition name="datasource_list" extends="base">
 		<put-attribute name="body" value="/WEB-INF/jsp/datasource/datasource-list.jsp" type="template"/>
 		<put-attribute name="page-setup" value="/WEB-INF/jsp/datasource/datasource-list-setup.jsp" type="template"/>
@@ -460,6 +428,22 @@
 	<definition name="stats_birt_domain_stat" extends="base">
 		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/birt-domain-stat.jsp" type="template"/>
 		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/birt-domain-stat-setup.jsp" type="template"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
+		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
+	</definition>
+
+	<definition name="profile_field_evaluation_stat" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/profile-field/profile-field-evaluation-stat.jsp" type="template"/>
+		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/profile-field/profile-field-evaluation-stat-setup.jsp" type="template"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
+		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
+	</definition>
+
+	<definition name="stats_birt_month_stat" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/birt-month-stats.jsp" type="template"/>
+		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/birt-month-stats-setup.jsp" type="template"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
 		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
@@ -1383,8 +1367,6 @@
 	<definition name="wysiwyg_agn_tags_window" extends="base_without_navigation" >
 		<put-attribute name="body" value="/WEB-INF/jsp/wysiwyg/image-browser.jsp" type="template" />
 	</definition>
-
-	<definition name="honeypot_confirm" template="/WEB-INF/jsp/honeypot/honeypot-confirm.jsp" />
 
 	<definition name="domains_entry_list" extends="base">
 		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domains-list.jsp" type="template"/>

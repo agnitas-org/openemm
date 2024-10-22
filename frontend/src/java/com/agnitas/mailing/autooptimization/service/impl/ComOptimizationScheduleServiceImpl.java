@@ -32,7 +32,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
@@ -45,7 +45,7 @@ import com.agnitas.mailing.autooptimization.service.OptimizationIsFinishedExcept
 
 public class ComOptimizationScheduleServiceImpl implements ComOptimizationScheduleService {
 	/** DAO accessing mailings. */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	/** DAO accessing target groups. */
 	private ComTargetDao targetDao;
@@ -212,7 +212,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 	 * 
 	 * @param mailingDao DAO accessing mailings
 	 */
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	

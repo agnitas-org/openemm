@@ -11,11 +11,10 @@
 package com.agnitas.emm.core.export.form;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.util.importvalues.DateFormat;
@@ -27,13 +26,14 @@ public class ExportForm {
     private String shortname = "";
     private String description;
     private int targetId;
-    private int mailinglistId;
+    private int mailinglistId;                             // GWUA-5878 openemm field 
+    private Set<Integer> mailinglistIds = new HashSet<>(); // GWUA-5878 extended scope field
     private String userType;
     private int userStatus;
     private String separator;
     private String delimiter;
     private String charset = "UTF-8";
-    private int[] mailinglists;
+    private int[] mailinglists;                            // mailinglists for recipient status
     private boolean alwaysQuote;
     private long exportStartTime;
     private DateFormat dateFormat = DateFormat.ddMMyyyy;
@@ -57,7 +57,8 @@ public class ExportForm {
 	private boolean mailinglistBindIncludeCurrentDay;
     private String[] userColumns;
     private List<ExportColumnMapping> customColumns = new ArrayList<>();
-	
+    private boolean inProgress;
+
     public String getShortname() {
         return shortname;
     }
@@ -88,6 +89,14 @@ public class ExportForm {
 
     public void setMailinglistId(int mailinglistId) {
         this.mailinglistId = mailinglistId;
+    }
+
+    public Set<Integer> getMailinglistIds() {
+        return mailinglistIds;
+    }
+
+    public void setMailinglistIds(Set<Integer> mailinglistIds) {
+        this.mailinglistIds = mailinglistIds;
     }
 
     public String getUserType() {
@@ -361,79 +370,12 @@ public class ExportForm {
         this.useDecodedValues = useDecodedValues;
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("shortname", shortname);
-        map.put("description", description);
-        map.put("targetId", targetId);
-        map.put("mailinglistId", mailinglistId);
-        map.put("userType", userType);
-        map.put("userStatus", userStatus);
-        map.put("separator", separator);
-        map.put("delimiter", delimiter);
-        map.put("charset", charset);
-        map.put("alwaysQuote", alwaysQuote);
-        map.put("exportStartTime", exportStartTime);
-        map.put("dateFormat", dateFormat);
-        map.put("dateTimeFormat", dateTimeFormat);
-        map.put("timezone", timezone);
-        map.put("decimalSeparator", decimalSeparator);
-        map.put("useDecodedValues", useDecodedValues);
-        map.put("locale", locale);
-        map.put("timestampStart", timestampStart);
-        map.put("timestampEnd", timestampEnd);
-        map.put("timestampLastDays", timestampLastDays);
-        map.put("timestampIncludeCurrentDay", timestampIncludeCurrentDay);
-        map.put("creationDateStart", creationDateStart);
-        map.put("creationDateEnd", creationDateEnd);
-        map.put("creationDateLastDays", creationDateLastDays);
-        map.put("creationDateIncludeCurrentDay", creationDateIncludeCurrentDay);
-        map.put("timeLimitsLinkedByAnd", timeLimitsLinkedByAnd);
-        map.put("mailinglistBindStart", mailinglistBindStart);
-        map.put("mailinglistBindEnd", mailinglistBindEnd);
-        map.put("mailinglistBindLastDays", mailinglistBindLastDays);
-        map.put("mailinglistBindIncludeCurrentDay", mailinglistBindIncludeCurrentDay);
-        map.put("mailinglists", mailinglists);
-        map.put("userColumns", userColumns);
-        map.put("customColumns", customColumns);
-        return map;
+    // in case of modification, adapt export-progress.jsp
+    public boolean isInProgress() {
+        return inProgress;
     }
 
-    public Object[] toArray() {
-        return Arrays.asList(
-                shortname,
-                description,
-                targetId,
-                mailinglistId,
-                userType,
-                userStatus,
-                separator,
-                delimiter,
-                charset,
-                alwaysQuote,
-                exportStartTime,
-                dateFormat,
-                dateTimeFormat,
-                timezone,
-                decimalSeparator,
-                useDecodedValues,
-                locale,
-                timestampStart,
-                timestampEnd,
-                timestampLastDays,
-                timestampIncludeCurrentDay,
-                creationDateStart,
-                creationDateEnd,
-                creationDateLastDays,
-                creationDateIncludeCurrentDay,
-                timeLimitsLinkedByAnd,
-                mailinglistBindStart,
-                mailinglistBindEnd,
-                mailinglistBindLastDays,
-                mailinglistBindIncludeCurrentDay,
-                Arrays.hashCode(mailinglists),
-                Arrays.hashCode(userColumns),
-                customColumns.stream().mapToInt(ExportColumnMapping::hashCode).sum()
-        ).toArray();
+    public void setInProgress(boolean inProgress) {
+        this.inProgress = inProgress;
     }
 }

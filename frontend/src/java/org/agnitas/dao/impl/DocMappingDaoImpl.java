@@ -19,14 +19,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class DocMappingDaoImpl extends BaseDaoImpl implements DocMappingDao{
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(DocMappingDaoImpl.class);
-	
-    @Override
-	public String getDocMapping(String pagekey) {
-    	return select(logger, "SELECT filename FROM doc_mapping_tbl WHERE pagekey = ?", String.class, pagekey);
-	}
 
+	private static final Logger logger = LogManager.getLogger(DocMappingDaoImpl.class);
+	
 	@Override
 	public Map<String, String> getDocMapping() {
 		List<Map<String, Object>> result = select(logger, "SELECT pagekey, filename FROM doc_mapping_tbl");

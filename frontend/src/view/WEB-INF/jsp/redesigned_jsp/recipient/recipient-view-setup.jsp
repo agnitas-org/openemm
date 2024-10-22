@@ -1,9 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="org.agnitas.web.forms.FormSearchParams" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="RESTORE_SEARCH_PARAM_NAME" value="<%= FormSearchParams.RESTORE_PARAM_NAME%>"/>
 
@@ -12,20 +12,18 @@
 
 <c:url var="recipientsOverviewLink" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+    <c:param name="restoreSort" value="true"/>
 </c:url>
 
 <c:url var="saveAndBackToListLink" value="/recipient/saveAndBackToList.action"/>
 
 <c:set var="recipientExists" value="${form.id gt 0}"/>
-<mvc:message var="reportTooltipMessage" code="recipient.report.rightOfAccess.mouseover"/>
 
 <c:set var="agnTitleKey" 			value="Recipient" 									scope="request" />
-<c:set var="agnSubtitleKey" 		value="Recipients" 									scope="request" />
 <c:set var="sidemenu_active" 		value="Recipients" 									scope="request" />
-<c:set var="sidemenu_sub_active" 	value="default.search" 								scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 										scope="request" />
+<c:set var="sidemenu_sub_active" 	value="default.Overview" 							scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Recipients" 									scope="request" />
-<c:url var="agnBreadcrumbsRootUrl"	value="/recipient/list.action" 						scope="request" />
+<c:url var="agnBreadcrumbsRootUrl"	value="/recipient/list.action?restoreSort=true"     scope="request" />
 <c:set var="agnEditViewKey" 	    value="recipient-view"                              scope="request" />
 
 <emm:sideMenuAdditionalParam name="${RESTORE_SEARCH_PARAM_NAME}" value="true" forSubmenuOnly="false"/>
@@ -70,7 +68,6 @@
         </emm:instantiate>
     </c:when>
     <c:otherwise>
-        <c:set var="agnNavigationKey" 	value="none" 					scope="request" />
         <c:set var="agnHighlightKey" 	value="recipient.NewRecipient" 	scope="request" />
         <c:set var="agnHelpKey" 		value="newRecipient" 			scope="request" />
 
@@ -91,9 +88,7 @@
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-            <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
             <c:set target="${element}" property="cls" value="mobile-hidden"/>
-            <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
             <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
             <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -106,8 +101,10 @@
                 <emm:instantiate var="option" type="java.util.LinkedHashMap">
                     <c:set target="${optionList}" property="0" value="${option}"/>
 
-                    <c:set var="reportTooltipOptions" value='{"content":"${reportTooltipMessage}", "placement": "bottom-end" }'/>
-                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load='' data-tooltip-help='${reportTooltipOptions}'"/>
+                    <c:set var="reportPopoverOptions" value='{"popperConfig": {"placement": "bottom-end"}}'/>
+                    <mvc:message var="reportPopoverMsg" code="recipient.report.rightOfAccess.mouseover"/>
+
+                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load='' data-popover='${reportPopoverMsg}' data-popover-options='${reportPopoverOptions}'"/>
                     <c:set target="${option}" property="url">
                         <c:url value="/report/recipients.action">
                             <c:param name="id" value="${form.id}"/>
@@ -123,7 +120,7 @@
 
                         <c:set target="${option}" property="extraAttributes" value="data-confirm=''"/>
                         <c:set target="${option}" property="url">
-                            <c:url value="/recipient/${form.id}/confirmDelete.action"/>
+                            <c:url value="/recipient/deleteRedesigned.action?bulkIds=${form.id}"/>
                         </c:set>
                         <c:set target="${option}" property="name">
                             <mvc:message code="button.Delete"/>
@@ -140,9 +137,8 @@
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                    <c:set target="${element}" property="btnCls" value="btn js-btn-dropdown ${isSaveButtonDisabled ? 'disabled' : ''}"/>
+                    <c:set target="${element}" property="btnCls" value="js-btn-dropdown ${isSaveButtonDisabled ? 'disabled' : ''}"/>
                     <c:set target="${element}" property="cls" value="mobile-hidden" />
-                    <c:set target="${element}" property="type" value="button"/>
                     <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipient-detail-view' data-form-submit-event"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
@@ -157,7 +153,6 @@
                         <c:set target="${optionList}" property="0" value="${option}"/>
 
                         <c:set target="${option}" property="extraAttributes" value="data-form-url='${saveAndBackToListLink}' data-form-target='#recipient-detail-view' data-form-submit-event"/>
-                        <c:set target="${option}" property="url" value="#"/>
                         <c:set target="${option}" property="name">
                             <mvc:message code="button.SaveAndBack"/>
                         </c:set>
@@ -169,7 +164,6 @@
 
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                    <c:set target="${element}" property="btnCls" value="btn"/>
                     <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipient-detail-view' data-form-submit-event"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">

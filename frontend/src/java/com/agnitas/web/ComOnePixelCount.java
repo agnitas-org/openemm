@@ -17,7 +17,7 @@ import java.util.Objects;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;

@@ -60,14 +60,12 @@
                     <div class="input-group">
                         <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven || isSettingsReadonly}"/>
                         <div class="input-group-controls">
-                            <input type="text" name="planDate" value="${mailingSettingsForm.planDate}"
-                                   id="mailingPlanDate" class="form-control datepicker-input js-datepicker"
-                                   data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'" ${isReadonlyDate ? "disabled='disabled'" : ""}/>
+                            <div id="mailingPlanDate" data-field="datetime" data-property="planDate"
+                                 data-field-options="value: '${mailingSettingsForm.planDate}', dateFormat: '${fn:toLowerCase(adminDateFormat)}', defaultSubmitTime:''"
+                                 data-field-extra-attributes="${workflowDriven or isReadonlyDate ? 'disabled' : ''}">
+                            </div>
                         </div>
                         <div class="input-group-btn">
-                            <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1" ${isReadonlyDate ? "disabled='disabled'" : ""}>
-                                <i class="icon icon-calendar-o"></i>
-                            </button>
                             <c:if test="${workflowDriven}">
                                 <c:url var="editWithCampaignLink" value="/workflow/${workflowId}/view.action">
                                     <c:param name="forwardParams"

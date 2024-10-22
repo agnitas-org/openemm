@@ -4,7 +4,7 @@ AGN.Lib.Controller.new('recipient-import-view', function () {
         const jqxhr = $.post(AGN.url('/recipient/import/file/delete.action'));
         jqxhr.done(function () {
             $('#uploaded-file-container').remove();
-            $('#uploadFile').removeClass('hidden');
+            $('#uploadFile').removeClass('hidden').prop('disabled', false);
         });
     });
 

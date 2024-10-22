@@ -3,18 +3,18 @@
 <%@ taglib prefix="emm"  uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <div id="help-center-modal" class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-scrollable modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="help" /></h1>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
             <div class="modal-header mt-1">
                 <nav class="navbar navbar-expand-lg">
                     <a class="chosen-tab btn btn-primary" href="#"><span class="text text-truncate"></span></a>
-                    <button class="navbar-toggler btn-icon-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#help-center-navbar" aria-controls="help-center-navbar" aria-expanded="false">
+                    <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#help-center-navbar" aria-controls="help-center-navbar" aria-expanded="false">
                         <i class="icon icon-bars"></i>
                     </button>
                     <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="help-center-navbar">

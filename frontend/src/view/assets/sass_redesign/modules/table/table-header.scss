@@ -1,0 +1,45 @@
+
+$table-control-font-weight: 500;
+
+.table-wrapper__header {
+  position: relative;
+  background-color: var(--table-head-bg-color);
+  padding: $table-spacing;
+
+  border: $table-border;
+  border-bottom: none;
+  @include border-top-radius($border-radius);
+
+  @include flex-row($gap-sm);
+  align-items: center;
+  justify-content: space-between;
+
+  // rounded backing under thead
+  &::after {
+    background-color: var(--table-head-bg-color);
+
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: -1px;
+    right: -1px;
+
+    height: $table-header-height;
+    border: $table-border;
+    border-top: none;
+    @include border-bottom-radius($border-radius);
+    z-index: 1;
+  }
+
+  &:empty {
+    padding: $gap-x-sm - 0.5px;
+    &::after {
+      height: $table-header-height - $table-spacing / 2;
+    }
+  }
+}
+
+.table-wrapper__title {
+  font-weight: 500;
+  color: var(--tile-title-color);
+}

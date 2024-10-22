@@ -32,9 +32,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.service.ColumnInfoService;
 
 /**
  * Helper-class for building the sql-query in /recipient/list.jsp
@@ -48,7 +47,6 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     protected ComTargetDao targetDao;
 
     /** Service for accessing DB column metadata. */
-    protected ColumnInfoService columnInfoService;
     protected MailinglistApprovalService mailinglistApprovalService;
 
     protected DataSource dataSource;
@@ -85,16 +83,6 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
         this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
     }
 
-    /**
-     * Set service for DB column meta data.
-     *
-     * @param service ColumnInfoService
-     */
-    @Required
-    public void setColumnInfoService(ColumnInfoService service) {
-        this.columnInfoService = service;
-    }
-
     @Required
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -103,10 +91,6 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     @Required
     public void setEqlFacade(EqlFacade eqlFacade) {
         this.eqlFacade = eqlFacade;
-    }
-
-    public final ColumnInfoService getColumnInfoService() {
-        return this.columnInfoService;
     }
 
     @Override

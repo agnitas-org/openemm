@@ -10,17 +10,15 @@
 
 package com.agnitas.emm.core.objectusage.common;
 
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToMessages;
+import com.agnitas.messages.Message;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToMessages;
-import com.agnitas.messages.Message;
 
 /**
  * Container for all object usages found.
@@ -46,7 +44,7 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 	 * 
 	 * @return instance without usage data
 	 */
-	public static final ObjectUsages empty() {
+	public static ObjectUsages empty() {
 		return new ObjectUsages(Collections.emptyList());
 	}
 	
@@ -57,7 +55,7 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 	 * 
 	 * @return list of object usages for given user types
 	 */
-	public final List<ObjectUsage> getUsagesByUserType(final ObjectUserType type) {
+	public List<ObjectUsage> getUsagesByUserType(final ObjectUserType type) {
 		return this.usages.stream().filter(u -> u.getObjectUserType() == type).collect(Collectors.toList());
 	}
 
@@ -66,7 +64,7 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 	 * 
 	 * @return <code>true</code> if collection contains no usage data
 	 */
-	public final boolean isEmpty() {
+	public boolean isEmpty() {
 		return usages.isEmpty();
 	}
 	
@@ -75,26 +73,20 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 	 * 
 	 * @return number of usage data contained in this collection
 	 */
-	public final int size() {
+	public int size() {
 		return this.usages.size();
 	}
 
 	@Override
-	public final Iterator<ObjectUsage> iterator() {
+	public Iterator<ObjectUsage> iterator() {
 		return usages.iterator();
 	}
 
-	public final Map<ObjectUserType, List<ObjectUsage>> mappedByType() {
-		final Map<ObjectUserType, List<ObjectUsage>> map = new HashMap<>();
-		
-		for(final ObjectUserType type : ObjectUserType.values()) {
-			map.put(type, getUsagesByUserType(type));
-		}
-
-		return map;
-	}
-
-	public Message toMessage(String msgKey, final Locale locale) {
+	public Message toMessage(String msgKey, Locale locale) {
         return ObjectUsagesToMessages.objectUsagesToMessage(msgKey, this, locale);
     }
+
+	public Message toMessage(String msgKey, String errorMsgWithMoreKey, Locale locale) {
+		return ObjectUsagesToMessages.objectUsagesToMessage(msgKey, errorMsgWithMoreKey, this, locale);
+	}
 }

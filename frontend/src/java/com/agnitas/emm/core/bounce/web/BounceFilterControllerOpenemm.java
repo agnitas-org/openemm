@@ -11,7 +11,7 @@ import com.agnitas.emm.core.bounce.form.validation.BounceFilterSearchParams;
 import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
@@ -24,7 +24,7 @@ public class BounceFilterControllerOpenemm extends BounceFilterController {
     public BounceFilterControllerOpenemm(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService,
                                           ComMailingBaseService mailingService,
                                           MailinglistApprovalService mailinglistApprovalService,
-                                          ComUserformService userFormService, ConversionService conversionService,
+                                          UserformService userFormService, ConversionService conversionService,
                                           WebStorage webStorage, UserActivityLogService userActivityLogService) {
         super(bounceFilterService, mailingService, mailinglistApprovalService, userFormService, conversionService, webStorage, userActivityLogService);
     }

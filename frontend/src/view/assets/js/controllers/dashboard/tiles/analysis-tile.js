@@ -1,6 +1,8 @@
-class AnalysisTile extends DraggableTile {
+(() => {
 
-  get id() {
-    return DraggableTile.def.TILE.ID.ANALYSIS;
+  class AnalysisTile extends AGN.Lib.Dashboard.DraggableTile {
+    static ID = 'analysis';
   }
-}
+
+  AGN.Lib.Dashboard.AnalysisTile = AnalysisTile;
+})();

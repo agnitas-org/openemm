@@ -10,31 +10,67 @@
 
 package com.agnitas.emm.core.components.web;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingSendOptions;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.impl.ComTargetImpl;
+import com.agnitas.dao.ComDkimDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.MailingStatisticsDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
+import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.emm.core.components.form.MailingSendForm;
+import com.agnitas.emm.core.components.form.MailingTestSendForm;
+import com.agnitas.emm.core.components.form.SecurityAndNotificationsSettingsForm;
+import com.agnitas.emm.core.components.service.MailingBlockSizeService;
+import com.agnitas.emm.core.components.service.MailingDependencyService;
+import com.agnitas.emm.core.components.service.MailingRecipientsService;
+import com.agnitas.emm.core.components.service.MailingSendService;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.bean.MailingDependentType;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
+import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.serverprio.server.ServerPrioService;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetCopyService;
+import com.agnitas.emm.premium.service.PremiumFeaturesService;
+import com.agnitas.emm.premium.web.SpecialPremiumFeature;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.NumericUtil;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
@@ -67,71 +103,37 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingSendOptions;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.beans.impl.ComTargetImpl;
-import com.agnitas.dao.ComDkimDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.MailingStatisticsDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.service.BounceFilterService;
-import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
-import com.agnitas.emm.core.components.entity.TestRunOption;
-import com.agnitas.emm.core.components.form.MailingSendForm;
-import com.agnitas.emm.core.components.form.MailingTestSendForm;
-import com.agnitas.emm.core.components.form.SecurityAndNotificationsSettingsForm;
-import com.agnitas.emm.core.components.service.MailingBlockSizeService;
-import com.agnitas.emm.core.components.service.MailingDependencyService;
-import com.agnitas.emm.core.components.service.MailingRecipientsService;
-import com.agnitas.emm.core.components.service.MailingSendService;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.MailingDependentType;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
-import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
-import com.agnitas.emm.core.mailing.service.MailingStopService;
-import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.serverprio.server.ServerPrioService;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.target.service.TargetCopyService;
-import com.agnitas.emm.premium.service.PremiumFeaturesService;
-import com.agnitas.emm.premium.web.SpecialPremiumFeature;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ComMailingLightService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.util.NumericUtil;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class MailingSendController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(MailingSendController.class);
     private static final String SEND_STATS_LOADING_KEY = "mailing_load_send_stats";
-    private static final String MESSAGES_VIEW = "messages";
     private static final String MAILING_SUBJECT_ATTR = "mailingSubject";
 
     protected final ConfigService configService;
@@ -155,21 +157,22 @@ public class MailingSendController implements XssCheckAware {
     private final ComTargetService targetService;
     private final GridServiceWrapper gridService;
     private final MailinglistDao mailinglistDao;
-    private final ComMailingDao mailingDao;
+    private final MailingDao mailingDao;
     private final ComTargetDao targetDao;
     private final WebStorage webStorage;
     private final ComDkimDao dkimDao;
     private final PremiumFeaturesService premiumFeatureService;
     private final ServerPrioService serverPrioService;
+    private final MailinglistApprovalService mailinglistApprovalService;
 
-    public MailingSendController(MailingRecipientsService mailingRecipientsService, ComMailingDao mailingDao, ComMailingBaseService mailingBaseService, GridServiceWrapper gridService,
+    public MailingSendController(MailingRecipientsService mailingRecipientsService, MailingDao mailingDao, ComMailingBaseService mailingBaseService, GridServiceWrapper gridService,
                                  ComTargetService targetService, ConfigService configService, MaildropService maildropService, ComMailingDeliveryStatService deliveryStatService,
                                  ComTargetDao targetDao, MailingService mailingService, MailingSizeCalculationService mailingSizeCalculationService,
                                  MailingDependencyService mailingDependencyService, WebStorage webStorage, UserActivityLogService userActivityLogService, MailingBlockSizeService blockSizeService,
                                  MailingStopService mailingStopService, MailinglistDao mailinglistDao, @Autowired(required = false) AutoImportService autoImportService, ComDkimDao dkimDao,
                                  MailingDeliveryBlockingService mailingDeliveryBlockingService, MailingStatisticsDao mailingStatisticsDao, @Qualifier("BounceFilterService") BounceFilterService bounceFilterService,
                                  MailingSendService mailingSendService, ConversionService conversionService, TargetCopyService targetCopyService,
-                                 final PremiumFeaturesService premiumFeaturesService, final ServerPrioService serverPrioService) {
+                                 final PremiumFeaturesService premiumFeaturesService, final ServerPrioService serverPrioService, MailinglistApprovalService mailinglistApprovalService) {
 
         this.mailingRecipientsService = mailingRecipientsService;
         this.mailingDao = mailingDao;
@@ -198,6 +201,7 @@ public class MailingSendController implements XssCheckAware {
         this.targetCopyService = targetCopyService;
         this.premiumFeatureService = Objects.requireNonNull(premiumFeaturesService, "premium feature service");
         this.serverPrioService = Objects.requireNonNull(serverPrioService, "server prio service");
+        this.mailinglistApprovalService = mailinglistApprovalService;
     }
 
     @RequestMapping("/{mailingId:\\d+}/view.action")
@@ -236,7 +240,7 @@ public class MailingSendController implements XssCheckAware {
     }
 
     protected boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     private void setSendButtonsControlAttributes(Admin admin, Mailing mailing, Model model) throws Exception {
@@ -470,19 +474,19 @@ public class MailingSendController implements XssCheckAware {
 	        MailingSendOptions sendOptions = MailingSendOptions.builder()
 	                .setAdminTargetGroupId(form.getAdminTargetGroupID())
 	                .build();
-	
+
 	        ServiceResult<UserAction> result = mailingSendService.sendAdminMailing(mailing, sendOptions);
 	        popups.addPopups(result);
-	
+
 	        if (!result.isSuccess()) {
 	            return MESSAGES_VIEW;
 	        }
-	
+
 	        UserAction userAction = result.getResult();
 	        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
 	        checkLimitationForSend(companyID, popups);
         }
-        
+
         return redirectToSendView(mailingId);
     }
 
@@ -504,8 +508,8 @@ public class MailingSendController implements XssCheckAware {
         checkLimitationForSend(companyID, popups);
 
         ra.addFlashAttribute("testForm", form);
-        
-        if (form.isClearance()) {
+
+        if (form.isRequestApproval()) {
             writeUserActivityLog(admin, getMailingApprovalUserAction(mailingId, form));
         }
         return redirectToSendView(mailingId);
@@ -578,12 +582,16 @@ public class MailingSendController implements XssCheckAware {
 
     private void fillFormForDeliverySettingsView(MailingSendForm form, Admin admin, Mailing mailing) throws Exception {
         int companyID = admin.getCompanyID();
-        Map<Integer, Integer> sentStatistics = mailingStatisticsDao.getSendStats(mailing, companyID);
-        String reportEmail = admin.getStatEmail();
 
-        if (reportEmail == null || reportEmail.isEmpty()) {
-            reportEmail = admin.getEmail();
+        if (!isRedesignedUiUsed(admin)) {
+            fillSendStatistics(form, mailing, companyID);
+            form.setTotalSentCount(form.getSentStatistics().values().stream()
+                    .reduce(0, Integer::sum));
         }
+
+        form.setReportSendEmail(StringUtils.defaultIfEmpty(admin.getStatEmail(), admin.getEmail()));
+        form.setCheckForDuplicateRecords(configService.getBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, companyID));
+        form.setCleanupTestsBeforeDelivery(configService.getBooleanValue(ConfigValue.CleanAdminAndTestRecipientsActivities, companyID));
 
         if (admin.getCompany().isAutoMailingReportSendActivated()) {
             form.setReportSendAfter24h(true);
@@ -591,19 +599,22 @@ public class MailingSendController implements XssCheckAware {
             form.setReportSendAfter1Week(true);
         }
 
-        fillSentStatistics(form, sentStatistics);
-        Integer totalSentCount = form.getSentStatistics().values()
-                .stream()
-                .reduce(0, Integer::sum);
+        if (isRedesignedUiUsed(admin)) {
+            Optional<MaildropEntry> maildrop = maildropService.findMaildrop(mailing.getId(), companyID, MaildropStatus.WORLD, MaildropStatus.DATE_BASED);
 
-        form.setTotalSentCount(totalSentCount);
-        form.setReportSendEmail(reportEmail);
-        form.setCheckForDuplicateRecords(configService.getBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, companyID));
-        form.setCleanupTestsBeforeDelivery(configService.getBooleanValue(ConfigValue.CleanAdminAndTestRecipientsActivities, companyID));
+            maildrop.ifPresent(m -> {
+                form.setBlocksize(AgnUtils.getSelectedBlocksizeByBlocksizeAndStepping(m.getBlocksize(), m.getStepping()));
+                form.setMaxRecipients(String.valueOf(m.getMaxRecipients()));
+                form.setSendDate(admin.getDateFormat().format(m.getSendDate()));
+                form.setSendTime(getTimeStrFromDate(m.getSendDate(), admin));
+            });
+        }
     }
 
-    // TODO: replace with model attributes
-    private void fillSentStatistics(MailingSendForm form, Map<Integer, Integer> sentStatistics) {
+    // TODO: EMMGUI-714: remove after remove of old design
+    private void fillSendStatistics(MailingSendForm form, Mailing mailing, int companyId) throws Exception {
+        Map<Integer, Integer> sentStatistics = mailingStatisticsDao.getSendStats(mailing, companyId);
+
         int textEmailsCount = sentStatistics.remove(MailingStatisticsDao.SEND_STATS_TEXT);
         int htmlEmailsCount = sentStatistics.remove(MailingStatisticsDao.SEND_STATS_HTML);
         int offlineHtmlEmailsCount = sentStatistics.remove(MailingStatisticsDao.SEND_STATS_OFFLINE);
@@ -617,6 +628,17 @@ public class MailingSendController implements XssCheckAware {
         form.setHtmlEmailsCount(htmlEmailsCount);
         form.setOfflineHtmlEmailsCount(offlineHtmlEmailsCount);
         form.setSentStatisticsItem(0, totalCount);
+    }
+
+    private void addRecipientsCountAttrs(Mailing mailing, int companyId, Model model) throws Exception {
+        Map<Integer, Integer> sentStatistics = mailingStatisticsDao.getSendStats(mailing, companyId);
+
+        model.addAttribute("totalSendCount", sentStatistics.values().stream().reduce(0, Integer::sum));
+        model.addAttribute("textEmailsCount", sentStatistics.remove(MailingStatisticsDao.SEND_STATS_TEXT));
+        model.addAttribute("htmlEmailsCount", sentStatistics.remove(MailingStatisticsDao.SEND_STATS_HTML));
+        model.addAttribute("offlineHtmlEmailsCount", sentStatistics.remove(MailingStatisticsDao.SEND_STATS_OFFLINE));
+
+        model.addAttribute("mediaTypesRecipientsCountMap", sentStatistics);
     }
 
     @GetMapping("/{mailingId:\\d+}/date-based/options/configure.action")
@@ -726,7 +748,7 @@ public class MailingSendController implements XssCheckAware {
         mailingSendService.checkIfMailingCanBeSend(mailing, sendDate, AgnUtils.getTimeZone(admin));
         fillFormWithMailingData(admin, mailing, form);
 
-        int recipientsCount = calculateRecipientsCount(form, mailing, companyID);
+        int recipientsCount = calculateRecipientsCount(form, mailing, admin);
         addModelAttributesForConfirmSending(mailing, admin, recipientsCount, sendDate, model);
 
         loadSteppingBlocksize(form, mailing.getMaildropStatus());
@@ -795,16 +817,21 @@ public class MailingSendController implements XssCheckAware {
         form.setBlocksize(calculatedBlockSize);
     }
 
-    private int calculateRecipientsCount(MailingSendForm form, Mailing mailing, int companyID) throws Exception {
-        int recipientsAmount = form.getTextEmailsCount() + form.getHtmlEmailsCount() + form.getOfflineHtmlEmailsCount();
+    private int calculateRecipientsCount(MailingSendForm form, Mailing mailing, Admin admin) throws Exception {
+        int recipientsAmount;
 
-        // Sum up other mediatypes
-        Map<Integer, Integer> sentStatistics = mailingStatisticsDao.getSendStats(mailing, companyID);
-        fillSentStatistics(form, sentStatistics);
+        if (admin.isRedesignedUiUsed()) {
+            recipientsAmount = mailingStatisticsDao.getSendStats(mailing, admin.getCompanyID()).values().stream()
+                    .reduce(0, Integer::sum);
+        } else {
+            recipientsAmount = form.getTextEmailsCount() + form.getHtmlEmailsCount() + form.getOfflineHtmlEmailsCount();
+            // Sum up other mediatypes
+            fillSendStatistics(form, mailing, admin.getCompanyID());
 
-        for (Map.Entry<Integer, Integer> entry : form.getSentStatistics().entrySet()) {
-            if (entry.getKey() > 0 && entry.getValue() > 0) {
-                recipientsAmount += entry.getValue();
+            for (Map.Entry<Integer, Integer> entry : form.getSentStatistics().entrySet()) {
+                if (entry.getKey() > 0 && entry.getValue() > 0) {
+                    recipientsAmount += entry.getValue();
+                }
             }
         }
 
@@ -819,7 +846,7 @@ public class MailingSendController implements XssCheckAware {
     public String sendWorldMailing(@ModelAttribute MailingSendForm form, Admin admin, Popups popups) throws Exception {
         int companyID = admin.getCompanyID();
         int mailingId = form.getMailingID();
-        
+
         if (form.isCleanupTestsBeforeDelivery()) {
         	mailingSendService.clearTestActionsData(mailingId, companyID);
         }
@@ -872,7 +899,7 @@ public class MailingSendController implements XssCheckAware {
     }
 
     @PostMapping("/deactivate.action")
-    public String deactivate(@ModelAttribute MailingSendForm form, Admin admin, HttpServletRequest req) throws Exception {
+    public String deactivate(@ModelAttribute MailingSendForm form, Admin admin, HttpServletRequest req) {
         int mailingId = form.getMailingID();
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
 
@@ -888,9 +915,11 @@ public class MailingSendController implements XssCheckAware {
     }
 
     @GetMapping("/{mailingId:\\d+}/delivery-status-box/load.action")
-    public String loadDeliveryStatusBox(@PathVariable("mailingId") int mailingId, Admin admin, @ModelAttribute("form") MailingSendForm form, Model model) {
+    public String loadDeliveryStatusBox(@PathVariable("mailingId") int mailingId, Admin admin, @ModelAttribute("form") MailingSendForm form, Model model)  throws Exception {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
+        boolean mailingLockedAndNotSent = mailingService.isMailingLocked(mailing) && !mailingSendService.isMailingActiveOrSent(mailing);
+        boolean adminCannotApproveOrSendAnyway = !admin.permissionAllowed(Permission.MAILING_CAN_ALLOW) && !admin.permissionAllowed(Permission.MAILING_CAN_SEND_ALWAYS);
 
         form.setMailingID(mailingId);
         form.setWorkStatus(mailingDao.getStatus(companyID, mailingId).getDbKey());
@@ -899,6 +928,8 @@ public class MailingSendController implements XssCheckAware {
         model.addAttribute("isPostMailing", isPostMailing(mailing));
         model.addAttribute("copyCancelledMailingEnabled", isCopyCancelledMailingEnabled(admin, mailing));
         model.addAttribute("isTransmissionRunning", mailingDao.isTransmissionRunning(mailingId));
+        model.addAttribute("needsOutsideApproval", adminCannotApproveOrSendAnyway && mailingLockedAndNotSent);
+
         if (isRedesignedUiUsed(admin)) {
             model.addAttribute("mailingType", mailing.getMailingType());
             model.addAttribute("worldMailingSend", maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID()));
@@ -914,7 +945,7 @@ public class MailingSendController implements XssCheckAware {
     }
     final boolean isCopyCancelledMailingEnabled(final Admin admin, final int mailingId) {
     	final Mailing mailing = this.mailingService.getMailing(admin.getCompanyID(), mailingId);
-    	
+
     	return isCopyCancelledMailingEnabled(admin, mailing);
     }
 
@@ -924,23 +955,23 @@ public class MailingSendController implements XssCheckAware {
     	} else {
     		final List<MaildropEntry> worldEntries = mailing.getMaildropStatus().stream()
     				.filter(entry -> entry.getStatus() == 'W')
-    				.collect(Collectors.toList());	
+    				.collect(Collectors.toList());
 
-    		final Date pauseDate = this.serverPrioService.getDeliveryPauseDate(0, mailing.getId()); 
+    		final Date pauseDate = this.serverPrioService.getDeliveryPauseDate(0, mailing.getId());
 
     		if(pauseDate != null) {
 	    		final ZonedDateTime pauseDateTime = ZonedDateTime.ofInstant(pauseDate.toInstant(), ZoneId.systemDefault());
-	    		
+
 	    		for(final MaildropEntry entry : worldEntries) {
 	    			if(entry.getGenStatus() == MaildropGenerationStatus.FINISHED.getCode() || entry.getGenStatus() == MaildropGenerationStatus.WORKING.getCode()) {
-	    				final ZonedDateTime sendDateLimit = ZonedDateTime.ofInstant(entry.getSendDate().toInstant(), ZoneId.systemDefault()).minusMinutes(5);    				
-	    				
+	    				final ZonedDateTime sendDateLimit = ZonedDateTime.ofInstant(entry.getSendDate().toInstant(), ZoneId.systemDefault()).minusMinutes(5);
+
 	    				return pauseDateTime.isBefore(sendDateLimit);
 	    			}
 	    		}
     		}
 
-    		
+
     		return true;
     	}
     }
@@ -1177,11 +1208,11 @@ public class MailingSendController implements XssCheckAware {
     	if(isCopyCancelledMailingEnabled(admin, mailingId)) {
 	        model.addAttribute("mailingId", mailingId);
 	        model.addAttribute("mailingShortname", mailingDao.getMailingName(mailingId, admin.getCompanyID()));
-	
+
 	        return "mailing_resume_generation_by_copy_question_ajax";
     	} else {
     		popups.alert("error.mailgeneration.resumeByCopy.generic");
-    		
+
     		return String.format("forward:/mailing/send/%d/view.action", mailingId);
     	}
     }
@@ -1193,7 +1224,7 @@ public class MailingSendController implements XssCheckAware {
     		return String.format("redirect:/mailing/%d/settings.action?keepForward=true", newMailingID);
     	} else {
     		popups.alert("error.mailgeneration.resumeByCopy.generic");
-    		
+
     		return String.format("forward:/mailing/send/%d/view.action", mailingId);
     	}
     }
@@ -1243,13 +1274,33 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
 
         model.addAttribute("templateId", form.getTemplateId());
-        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailing.getId()));
+        if (isRedesignedUiUsed(admin)) {
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailing.getId()));
+        }
         model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
+        model.addAttribute("sendDateStr", getPlanDateStr(mailing, admin));
+        model.addAttribute("sendTimeStr", getPlanTimeStr(mailing, admin));
+        if (mailing.getEmailParam() != null && mailing.getEmailParam().isRequestApproval()) {
+            model.addAttribute("approvalsCount", CollectionUtils.size(mailing.getEmailParam().getApprovers()));
+        }
         addMailingSizeAttributes(mailing, admin, model);
 
         if (isRedesignedUiUsed(admin)) {
+            MailingStatus status = mailingDao.getStatus(companyID, mailing.getId());
+
+            if (MailingStatus.SENT.equals(status)) {
+                maildropService.findMaildrop(mailing.getId(), companyID, MaildropStatus.WORLD).ifPresent(m -> {
+                    model.addAttribute("totalSentCount", deliveryStatService.getSentMails(m.getId()));
+                });
+            } else {
+                if (Stream.of(MailingStatus.SENDING, MailingStatus.IN_GENERATION, MailingStatus.GENERATION_FINISHED).noneMatch(s -> s.equals(status))) {
+                    addRecipientsCountAttrs(mailing, companyID, model);
+                }
+            }
+
             updateFollowupInfoIfNecessary(mailing, model);
-            model.addAttribute("targetGroupNames", targetDao.getTargetNamesByIds(companyID, getMailingTargets(mailing)));
             model.addAttribute("isMailtrackExtended", configService.getBooleanValue(ConfigValue.MailtrackExtended, companyID));
             model.addAttribute("sendingSpeedOptions", mailingSendService.getAvailableSendingSpeedOptions(companyID));
             loadDependents(admin, form, mailing, model);
@@ -1257,6 +1308,24 @@ public class MailingSendController implements XssCheckAware {
             AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
             model.addAttribute("adminTargetGroupList", targetDao.getTestAndAdminTargetLights(admin.getAdminID(), companyID));
         }
+    }
+
+    private static String getPlanDateStr(Mailing mailing, Admin admin) {
+        SimpleDateFormat dateFormat = DateUtilities.getFormat(admin.getDateFormat().toPattern(), TimeZone.getTimeZone(admin.getAdminTimezone()));
+        return mailing.getPlanDate() == null
+                ? dateFormat.format(new Date())
+                : dateFormat.format(mailing.getPlanDate());
+    }
+
+    private static String getPlanTimeStr(Mailing mailing, Admin admin) {
+        Date planDate = mailing.getPlanDate();
+        return planDate == null || new SimpleDateFormat("HH:mm:ss").format(planDate).equals("00:00:00") // plan time was not set
+                ? getTimeStrFromDate(new Date(), admin)
+                : getTimeStrFromDate(planDate, admin);
+    }
+
+    private static String getTimeStrFromDate(Date date, Admin admin) {
+        return DateUtilities.getFormat("HH:mm", TimeZone.getTimeZone(admin.getAdminTimezone())).format(date);
     }
 
     private void addMailingSizeAttributes(Mailing mailing, Admin admin, Model model) {

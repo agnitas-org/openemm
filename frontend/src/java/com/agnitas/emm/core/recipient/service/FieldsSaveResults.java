@@ -31,15 +31,8 @@ public class FieldsSaveResults {
         return affectedRecipients;
     }
     
-    public void setAffectedRecipients(int affectedRecipients) {
-        this.affectedRecipients = affectedRecipients;
-    }
-    
     public Map<String, Object> getAffectedFields() {
         return affectedFields;
     }
     
-    public void setAffectedFields(Map<String, Object> affectedFields) {
-        this.affectedFields = affectedFields;
-    }
 }

@@ -10,14 +10,14 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.forms;
 
+import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class MailingStatatisticListForm extends PaginationForm {
 
@@ -30,6 +30,7 @@ public class MailingStatatisticListForm extends PaginationForm {
     private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean searchNameChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean searchDescriptionChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
+    private boolean inEditColumnsMode;
     private String filterSendDateBegin;
     private String filterSendDateEnd;
 
@@ -52,6 +53,14 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     public boolean isSearchDescriptionChecked() {
         return searchDescriptionChecked;
+    }
+
+    public boolean isInEditColumnsMode() {
+        return inEditColumnsMode;
+    }
+
+    public void setInEditColumnsMode(boolean inEditColumnsMode) {
+        this.inEditColumnsMode = inEditColumnsMode;
     }
 
     public void setSearchDescriptionChecked(boolean searchDescriptionChecked) {
@@ -103,7 +112,7 @@ public class MailingStatatisticListForm extends PaginationForm {
             return Collections.emptySet();
         }
 
-        return new HashSet<>(Arrays.asList(additionalFields));
+        return Set.of(additionalFields);
     }
 
     public List<Integer> getFilteredMailingListsAsList() {

@@ -1,10 +1,12 @@
-class EmptyTile extends DraggableTile {
-  
-  get id() {
-    return DraggableTile.def.TILE.ID.EMPTY;
+(() => {
+  class EmptyTile extends AGN.Lib.Dashboard.DraggableTile {
+
+    static ID = 'empty';
+
+    getOverlay() {
+      return AGN.Lib.Template.text('dashboard-tile-empty-overlay');
+    }
   }
 
-  getOverlay() {
-    return AGN.Lib.Template.text('dashboard-tile-empty-overlay');
-  }
-}
+  AGN.Lib.Dashboard.EmptyTile = EmptyTile;
+})();

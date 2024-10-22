@@ -1,13 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/errorRedesigned.action" %>
 <%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
-<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"    uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
 <%--@elvariable id="selectedRemovedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
@@ -37,11 +36,10 @@
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
-<mvc:form cssClass="tiles-container hidden d-flex" servletRelativeAction="/mailing/${mailingId}/settings.action?isGrid=${isMailingGrid}&isTemplate=${isTemplate}" id="mailingSettingsForm" modelAttribute="mailingSettingsForm" data-form="resource" data-disable-controls="save"
+<mvc:form cssClass="tiles-container" servletRelativeAction="/mailing/${mailingId}/settings.action?isGrid=${isMailingGrid}&isTemplate=${isTemplate}" id="mailingSettingsForm" modelAttribute="mailingSettingsForm" data-form="resource" data-disable-controls="save"
           data-controller="mailing-settings-view"
           data-form-focus="${not isPostMailing and not isMailingGrid and mailingId ne 0 ? '' : 'shortname'}"
           data-action="save"
-          data-field="toggle-vis"
           data-editable-view="${agnEditViewKey}">
     <mvc:hidden path="parentId"/>
     <emm:workflowParameters/>
@@ -59,10 +57,7 @@
             "workflowDriven": ${workflowDriven},
             "mailingType": "${mailingSettingsForm.mailingType}",
             "selectedRemovedMailinglistId": ${emm:toJson(selectedRemovedMailinglist.id)},
-            <emm:ShowByPermission token="mailinglists.addresses">
-                "mailinglists": ${emm:toJson(mailinglists)},
-                "allowedMailinglistsAddresses": ${emm:toJson(mailinglists)},
-            </emm:ShowByPermission>
+            "mailinglists": ${emm:toJson(mailinglists)},
             "campaignEnableTargetGroups": ${isCampaignEnableTargetGroups},
             "TARGET_MODE_OR": "${TARGET_MODE_OR}"
         }

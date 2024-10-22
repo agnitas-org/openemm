@@ -1409,7 +1409,8 @@ public class DBase {
 			return true;
 		}
 		if ((t instanceof java.sql.SQLIntegrityConstraintViolationException) ||
-		    (t instanceof java.sql.SQLSyntaxErrorException)) {
+		    (t instanceof java.sql.SQLSyntaxErrorException) ||
+		    (t instanceof java.sql.SQLDataException)) {
 			return false;
 		}
 		if ((t instanceof java.sql.SQLRecoverableException) ||

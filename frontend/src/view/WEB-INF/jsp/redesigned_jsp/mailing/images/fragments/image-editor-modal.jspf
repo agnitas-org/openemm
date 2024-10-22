@@ -1,6 +1,6 @@
 
 <div id="image-editor-modal" class="modal modal-adaptive mobile-hidden" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog">
 
         <c:url var="actionUrl" value="/mailing/${mailingId}/images/:id:/editRedesigned.action" />
         {{ var action = '${actionUrl}'.replace(':id:', id); }}
@@ -12,7 +12,7 @@
             <input type="hidden" name="encodedFile"/>
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h1>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -28,7 +28,7 @@
                         <input id="link" class="form-control" placeholder="https://" value="{{- link}}" readonly/>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-6">
+                        <div class="col-5">
                             <label class="form-label" for="img-width"><mvc:message code="default.image.width"/></label>
                             <input id="img-width"
                                    type="number"
@@ -38,7 +38,7 @@
                                    onkeypress="return event.charCode >= 48 && event.charCode <= 57"
                                    onfocus="$(this).select()">
                         </div>
-                        <div class="col-6">
+                        <div class="col-5">
                             <label class="form-label" for="img-height"><mvc:message code="grid.mediapool.image.sizes.height"/></label>
                             <input id="img-height"
                                    type="number"
@@ -47,6 +47,13 @@
                                    data-action="change-size"
                                    onkeypress="return event.charCode >= 48 && event.charCode <= 57"
                                    onfocus="$(this).select()">
+                        </div>
+                        <div class="col-2">
+                            <label class="form-label">&nbsp;</label>
+                            <input type="checkbox" class="btn-check" id="btn-lock-proportions" autocomplete="off" data-action="lock-proportions">
+                            <label class="btn btn-icon btn-inverse" for="btn-lock-proportions" data-tooltip='<mvc:message code="image.editor.keep.proportions"/>'>
+                                <i class="icon icon-lock"></i>
+                            </label>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -99,11 +106,11 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-inverse flex-grow-1" data-form-reset data-action="reset">
+                <button type="button" class="btn btn-inverse" data-form-reset data-action="reset">
                     <i class="icon icon-sync-alt"></i>
                     <mvc:message code="button.Reset"/>
                 </button>
-                <button type="button" class="btn btn-primary flex-grow-1" data-action="save" data-controls-group="save">
+                <button type="button" class="btn btn-primary" data-action="save" data-controls-group="save">
                     <i class="icon icon-save"></i>
                     <mvc:message code="button.Save"/>
                 </button>

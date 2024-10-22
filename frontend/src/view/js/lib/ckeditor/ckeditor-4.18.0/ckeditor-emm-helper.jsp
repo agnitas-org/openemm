@@ -3,6 +3,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="CKEDITOR_PATH" value="${emm:ckEditorPath(pageContext.request)}" scope="page"/>
+<c:set var="showAiTextGenerationBtn" value="${not empty param.showAiTextGenerationBtn and param.showAiTextGenerationBtn}" />
 
 <script type="text/javascript">
     const baseUrl = "${pageContext.request.contextPath}";
@@ -26,7 +27,7 @@
             const config = {
                 customConfig: 'emm_config.js',
                 fullPage: fullPage,
-                toolbar: '${param.toolbarType}' ? '${param.toolbarType}' : 'EMM',
+                toolbar: '${param.toolbarType}' ? '${param.toolbarType}${showAiTextGenerationBtn ? '_AI' : ''}' : 'EMM${showAiTextGenerationBtn ? '_AI' : ''}',
                 width: editorWidth,
                 height: editorHeight,
                 language: '${emm:getLocale(pageContext.request).language}',

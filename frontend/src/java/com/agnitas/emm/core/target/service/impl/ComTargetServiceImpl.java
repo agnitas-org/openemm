@@ -10,42 +10,7 @@
 
 package com.agnitas.emm.core.target.service.impl;
 
-import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingComponentDao;
-import org.agnitas.dao.exception.target.TargetGroupLockedException;
-import org.agnitas.dao.exception.target.TargetGroupNotCompatibleWithContentBlockException;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.target.service.UserActivityLog;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.target.TargetFactory;
-import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
+import bsh.Interpreter;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
@@ -54,9 +19,11 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.dto.IntRange;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
@@ -91,13 +58,44 @@ import com.agnitas.emm.core.target.service.ReferencedItemsService;
 import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.messages.Message;
-import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.MailingContentService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.helger.collection.pair.Pair;
+import org.agnitas.beans.DynamicTagContent;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupLockedException;
+import org.agnitas.dao.exception.target.TargetGroupNotCompatibleWithContentBlockException;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.target.TargetFactory;
+import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
-import bsh.Interpreter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
 
 /**
  * Implementation of {@link ComTargetService} interface.
@@ -113,7 +111,7 @@ public class ComTargetServiceImpl implements ComTargetService {
     private MailingComponentDao mailingComponentDao;
 
     /** DAO for accessing mailing data. */
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
 
 	/** DAO for accessing recipient data. */
 	protected ComRecipientDao recipientDao;
@@ -128,45 +126,31 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private TargetComplexityEvaluator complexityEvaluator;
 	private EqlReferenceItemsExtractor eqlReferenceItemsExtractor;
 	private BeanShellInterpreterFactory beanShellInterpreterFactory;
-	private ColumnInfoService columnInfoService;
 	private ReferencedItemsService referencedItemsService;
 	private TargetFactory targetFactory;
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
     private EqlValidatorService eqlValidatorService;
     private MailingContentService mailingContentService;
+	private BulkActionValidationService<Integer, String> bulkActionValidationService;
 
     @Override
-	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin, boolean buildErrorMessages) {
+	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin) {
     	int companyID = admin.getCompanyID();
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Deleting target group {} of company {}", targetGroupID, companyID);
 		}
 
-		List<TargetGroupDependentEntry> dependencies = targetGroupDependencyService.findDependencies(targetGroupID, companyID);
-		Optional<TargetGroupDependentEntry> actualDependency = targetGroupDependencyService.findAnyActualDependency(dependencies);
+		Optional<TargetGroupDependentEntry> dependency = targetGroupDependencyService.findAnyActualDependency(targetGroupID, companyID);
 
-		if (actualDependency.isPresent()) {
-			if (buildErrorMessages) {
-				String targetName = getTargetName(targetGroupID, companyID);
-				Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName);
+		if (dependency.isPresent()) {
+			String targetName = getTargetName(targetGroupID, companyID);
+			Message errorMessage = targetGroupDependencyService.buildErrorMessage(dependency.get(), targetName);
 
-				return SimpleServiceResult.simpleError(errorMessage);
-			}
-
-			return SimpleServiceResult.simpleError();
+			return SimpleServiceResult.simpleError(errorMessage);
 		}
 
 		referencedItemsService.removeReferencedItems(companyID, targetGroupID);
-
-		if (dependencies.isEmpty()) {
-			if (targetDao.isTargetGroupLocked(targetGroupID, companyID)) {
-				return SimpleServiceResult.simpleError(Message.of("target.locked"));
-			}
-
-			targetDao.deleteTargetReally(targetGroupID, companyID);
-			return SimpleServiceResult.simpleSuccess();
-		}
 
 		try {
 			targetDao.deleteTarget(targetGroupID, companyID);
@@ -194,12 +178,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public SimpleServiceResult canBeDeleted(int targetId, Admin admin) {
 		int companyId = admin.getCompanyID();
 
-		List<TargetGroupDependentEntry> dependencies = targetGroupDependencyService.findDependencies(targetId, companyId);
-		Optional<TargetGroupDependentEntry> actualDependency = targetGroupDependencyService.findAnyActualDependency(dependencies);
+		Optional<TargetGroupDependentEntry> dependency = targetGroupDependencyService.findAnyActualDependency(targetId, companyId);
 
-		if (actualDependency.isPresent()) {
+		if (dependency.isPresent()) {
 			String targetName = getTargetName(targetId, companyId);
-			Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName);
+			Message errorMessage = targetGroupDependencyService.buildErrorMessage(dependency.get(), targetName);
 
 			return SimpleServiceResult.simpleError(errorMessage);
 		}
@@ -388,12 +371,13 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
+	// TODO: EMMGUI-714 remove after remove of old design
 	public ServiceResult<List<Integer>> bulkDelete(Set<Integer> targetIds, Admin admin) {
 		List<Integer> deletedTargets = new ArrayList<>();
 		List<Message> errorMessages = new ArrayList<>();
 
 		for (int targetId : targetIds) {
-			SimpleServiceResult deletionResult = deleteTargetGroup(targetId, admin, true);
+			SimpleServiceResult deletionResult = deleteTargetGroup(targetId, admin);
 
 			if (deletionResult.isSuccess()) {
 				deletedTargets.add(targetId);
@@ -403,6 +387,21 @@ public class ComTargetServiceImpl implements ComTargetService {
 		}
 
 		return new ServiceResult<>(deletedTargets, errorMessages.isEmpty(), errorMessages);
+	}
+
+	@Override
+	public List<Integer> bulkDeleteRedesigned(Set<Integer> ids, Admin admin) {
+		List<Integer> deletedTargets = new ArrayList<>();
+
+		for (int targetId : ids) {
+			SimpleServiceResult deletionResult = deleteTargetGroup(targetId, admin);
+
+			if (deletionResult.isSuccess()) {
+				deletedTargets.add(targetId);
+			}
+		}
+
+		return deletedTargets;
 	}
 
 	@Override
@@ -595,10 +594,15 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<String> getTargetNames(Collection<Integer> ids, int companyId) {
-		return ids.stream()
-				.map(id -> getTargetName(id, companyId))
-				.collect(Collectors.toList());
+	public ServiceResult<List<String>> getTargetNamesForDeletion(List<Integer> ids, Admin admin) {
+		return bulkActionValidationService.checkAllowedForDeletion(ids, id -> {
+			SimpleServiceResult result = canBeDeleted(id, admin);
+			if (result.isSuccess()) {
+				return ServiceResult.success(getTargetName(id, admin.getCompanyID()));
+			}
+
+			return ServiceResult.from(result);
+		});
 	}
 
 	@Override
@@ -627,12 +631,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public boolean isWorkflowManagerListSplit(final int companyID, final int targetID) throws UnknownTargetGroupIdException {
-		ComTarget target = this.getTargetGroup(targetID, companyID);
-		return target.isWorkflowManagerListSplit();
-	}
-
-	@Override
 	public List<TargetLight> getWsTargetLights(final int companyId) {
 		return targetDao.getTargetLights(companyId);
 	}
@@ -643,13 +641,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(int adminId, final int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	public List<TargetLight> getTargetLights(int adminId, final int companyID, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
                 .setAdminId(adminId)
 				.setCompanyId(companyID)
 				.setWorldDelivery(worldDelivery)
 				.setAdminTestDelivery(adminTestDelivery)
-				.setIncludeDeleted(includeDeleted)
 				.setContent(content)
 				.build();
 
@@ -663,9 +660,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 				.setCompanyId(admin.getCompanyID())
 				.setWorldDelivery(true)
 				.setAdminTestDelivery(true)
-				.setIncludeDeleted(false)
 				.setContent(false)
-				.setIncludeInvalid(true)
 				.build();
 		
 		final List<TargetLight> targets = getTargetLights(options);
@@ -683,13 +678,18 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), false, worldDelivery, adminTestDelivery, content);
+	public Set<Integer> getInvalidTargets(int companyId, Set<Integer> targets) {
+		return targetDao.getInvalidTargets(companyId, targets);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final Admin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content);
+	public void restore(Set<Integer> ids, Admin admin) {
+		targetDao.restore(ids, admin.getCompanyID());
+	}
+
+	@Override
+	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), worldDelivery, adminTestDelivery, content);
 	}
 
 	@Override
@@ -895,13 +895,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public final RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final Map<String, Object> recipientData, final int companyID) throws Exception {
-		final Interpreter beanShellInterpreter = this.beanShellInterpreterFactory.createBeanShellInterpreter(companyID, recipientData, columnInfoService.getColumnInfoMap(companyID));
-
-		return new BeanShellRecipientTargetGroupMatcher(companyID, beanShellInterpreter, this.eqlFacade);
-	}
-
-	@Override
 	public List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
 		return targetDao.getTargetLights(companyId, targetGroups, includeDeleted);
 	}
@@ -959,22 +952,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public void initializeComplexityIndex(int companyId) {
-		Map<Integer, Integer> complexities = new HashMap<>();
-		TargetComplexityEvaluationCache cache = new TargetComplexityEvaluationCacheImpl();
-
-		for (Pair<Integer, String> pair : targetDao.getTargetsToInitializeComplexityIndices(companyId)) {
-			try {
-				complexities.put(pair.getFirst(), calculateComplexityIndex(pair.getSecond(), companyId, cache));
-			} catch (Exception e) {
-				logger.error(String.format("Error occurred: %s", e.getMessage()), e);
-			}
-		}
-
-		targetDao.saveComplexityIndices(companyId, complexities);
-	}
-
-	@Override
 	public List<TargetLight> getAccessLimitationTargetLights(int companyId) {
 		return Collections.emptyList();
 	}
@@ -984,17 +961,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return Collections.emptyList();
 	}
 	
-    @Override
-    public List<TargetLight> getNoAccessLimitationTargetLights(int companyId) {
-        TargetLightsOptions options = TargetLightsOptions.builder()
- 				.setCompanyId(companyId)
- 				.setWorldDelivery(true)
- 				.setAdminTestDelivery(true)
- 				.setAltgMode(AltgMode.NO_ALTG)
- 				.build();
- 		return getTargetLights(options);
-    }
-    
     @Override
     public List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, Admin admin) {
         return Collections.emptyList();
@@ -1056,7 +1022,19 @@ public class ComTargetServiceImpl implements ComTargetService {
                 .collect(Collectors.toSet());
     }
 
-    @Override
+	@Override
+	public void removeMarkedAsDeletedBefore(Date date, int companyID) {
+		List<Integer> ids = targetDao.getMarkedAsDeletedBefore(date, companyID)
+				.stream()
+				.filter(id -> !targetGroupDependencyService.exists(id, companyID))
+				.collect(Collectors.toList());
+
+		if (!ids.isEmpty()) {
+			targetDao.deleteTargetsReally(ids);
+		}
+	}
+
+	@Override
     public boolean isValid(final int companyId, final int targetId) {
         return targetDao.isValid(companyId, targetId);
     }
@@ -1256,8 +1234,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final int companyId, boolean includeDeleted) {
-		return targetDao.getTargetLights(companyId, includeDeleted);
+	public List<TargetLight> getTargetLights(final int companyId) {
+		return targetDao.getTargetLights(companyId);
 	}
 
 	@Override
@@ -1288,7 +1266,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -1328,13 +1306,13 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
+	public void setReferencedItemsService(ReferencedItemsService service) {
+		this.referencedItemsService = Objects.requireNonNull(service, "ReferencedItemsService is null");
 	}
 
 	@Required
-	public void setReferencedItemsService(ReferencedItemsService service) {
-		this.referencedItemsService = Objects.requireNonNull(service, "ReferencedItemsService is null");
+	public void setBulkActionValidationService(BulkActionValidationService<Integer, String> bulkActionValidationService) {
+		this.bulkActionValidationService = bulkActionValidationService;
 	}
 
 	@Required

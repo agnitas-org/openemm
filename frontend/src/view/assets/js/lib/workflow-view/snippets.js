@@ -8,7 +8,6 @@
         if ([Def.NODE_TYPE_SC_ABTEST, Def.NODE_TYPE_SC_BIRTHDAY, Def.NODE_TYPE_SC_DOI].includes(type)) {
             $.ajax({
                 url: AGN.url('/workflow/getSampleWorkflowContent.action'),
-                type: 'POST',
                 async: false,
                 data: {
                     type: type,
@@ -21,10 +20,15 @@
         }
     };
 
+    Snippets.loadAutoOptSample = function (mailingsCount, gridEnabled, callback) {
+        $
+            .get(AGN.url('/workflow/autoOptWorkflowSample.action'), {mailingsCount: mailingsCount, gridEnabled: gridEnabled})
+            .done(asDeserializationCallback(callback));
+    };
+    
     Snippets.loadOwnWorkflow = function(workflowId, copyContent, callback) {
         $.ajax({
             url: AGN.url('/workflow/getWorkflowContent.action'),
-            type: 'POST',
             async: false,
             data: {
                 workflowId: workflowId,

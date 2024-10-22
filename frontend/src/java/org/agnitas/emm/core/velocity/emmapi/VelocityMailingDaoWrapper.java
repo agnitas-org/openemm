@@ -12,7 +12,7 @@ package org.agnitas.emm.core.velocity.emmapi;
 
 import java.util.Objects;
 
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 
 import com.agnitas.beans.Mailing;
 

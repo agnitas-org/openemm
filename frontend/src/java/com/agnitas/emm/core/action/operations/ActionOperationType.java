@@ -18,6 +18,7 @@ public enum ActionOperationType {
 	GET_ARCHIVE_MAILING("GetArchiveMailing"),
 	GET_CUSTOMER("GetCustomer"),
 	IDENTIFY_CUSTOMER("IdentifyCustomer"),
+	SEND_LAST_NEWSLETTER("SendLastNewsletter"),
 	SEND_MAILING("SendMailing"),
 	SERVICE_MAIL("ServiceMail"),
 	SUBSCRIBE_CUSTOMER("SubscribeCustomer"),

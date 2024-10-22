@@ -11,7 +11,7 @@
 	<context-param>
 		<description>spring context</description>
 		<param-name>contextConfigLocation</param-name>
-		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-actions-basic.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
+		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
 	</context-param>
 
 	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
@@ -136,27 +136,6 @@
 	<filter-mapping>
 		<filter-name>SessionHijackingPreventionFilter</filter-name>
 		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
-	<!-- interceptor for AjaxAnywhere library -->
-	<filter>
-		<filter-name>AjaxAnywhere</filter-name>
-		<filter-class>org.ajaxanywhere.AAFilter</filter-class>
-	</filter>
-
-	<filter-mapping>
-		<filter-name>AjaxAnywhere</filter-name>
-		<url-pattern>*.jsp</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>AjaxAnywhere</filter-name>
-		<url-pattern>*.do</url-pattern>
-		<!-- default Struts mapping -->
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>AjaxAnywhere</filter-name>
-		<url-pattern>*.htm</url-pattern>
-		<!-- other frameworks mapping -->
 	</filter-mapping>
 
 	<!-- Stores an original request URI to make it available within JSPs -->
@@ -375,7 +354,7 @@
 	     </init-param>
 	     <init-param>
 	         <param-name>destinationUrl</param-name>
-	         <param-value>/logon.action</param-value>
+	         <param-value>/logonRedesigned.action</param-value>
 	     </init-param>
 	</servlet>
 	<servlet-mapping>
@@ -419,17 +398,6 @@
 		<servlet-name>AnonymousView</servlet-name>
 		<url-pattern>/v.html</url-pattern>
 	</servlet-mapping>
-
-	<!-- File download
-	<servlet>
-		<servlet-name>FileDownloadServlet</servlet-name>
-		<servlet-class>org.agnitas.emm.core.download.web.FileDownloadServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>FileDownloadServlet</servlet-name>
-		<url-pattern>/download</url-pattern>
-	</servlet-mapping>
-	-->
 
 	<!-- Welcome File -->
 	<welcome-file-list>

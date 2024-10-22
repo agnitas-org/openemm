@@ -47,8 +47,10 @@ public class BirtReportFormToBirtReportDtoConverter implements Converter<BirtRep
         report.setEmailRecipientList(AgnUtils.removeObsoleteItemsFromList(AgnUtils.splitAndTrimList(form.getEmailAddresses())));
         report.setEmailSubject(form.getEmailSubject());
         report.setEmailDescription(form.getEmailDescription());
-        
-        resolveReportType(form, report);
+
+        if (hasActivatedDelivery(form)) {
+            resolveReportType(form, report);
+        }
         
         report.setFormat(form.getFormat());
         report.setActiveTab(form.getActiveTab());
@@ -138,6 +140,12 @@ public class BirtReportFormToBirtReportDtoConverter implements Converter<BirtRep
                 report.setType(reportTypeCode);
                 report.setIntervalpattern("");
         }
+    }
+
+    private static boolean hasActivatedDelivery(BirtReportForm form) {
+        return form.getSettings().values().stream()
+                .map(settings -> settings.get("enabled"))
+                .anyMatch("true"::equals);
     }
     
     private Map<String, Object> getReportSettings(ReportSettingsType type, Map<String, Object> settingsByType) {

@@ -15,17 +15,18 @@ import com.agnitas.beans.FormComponent;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
 import com.agnitas.emm.core.components.form.FormUploadComponentsForm;
 import com.agnitas.emm.core.components.form.FormZipUploadComponentsForm;
-import com.agnitas.emm.core.components.service.ComComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.UserFormImagesFormSearchParams;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
-import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.emm.core.userform.util.WebFormUtils;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
@@ -72,8 +73,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.agnitas.beans.FormComponent.FormComponentType.IMAGE;
 import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
@@ -85,18 +86,20 @@ public class UserFormComponentController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(UserFormComponentController.class);
 
-	private final ComUserformService userformService;
-	private final ComComponentService componentService;
+	private final UserformService userformService;
+	private final ComponentService componentService;
 	private final ConfigService configService;
 	private final UserActivityLogService userActivityLogService;
 	private final ExtendedConversionService conversionService;
+	private final WebStorage webStorage;
 
-	public UserFormComponentController(ComUserformService userformService, ComComponentService componentService, ConfigService configService, UserActivityLogService userActivityLogService, ExtendedConversionService conversionService) {
+	public UserFormComponentController(UserformService userformService, ComponentService componentService, ConfigService configService, UserActivityLogService userActivityLogService, ExtendedConversionService conversionService, WebStorage webStorage) {
 		this.userformService = userformService;
 		this.componentService = componentService;
 		this.configService = configService;
 		this.userActivityLogService = userActivityLogService;
 		this.conversionService = conversionService;
+		this.webStorage = webStorage;
 	}
 
 	@InitBinder
@@ -110,10 +113,12 @@ public class UserFormComponentController implements XssCheckAware {
 	}
 
 	@RequestMapping("/{formId:\\d+}/components/list.action")
-	public String list(Admin admin, @PathVariable int formId, @ModelAttribute("form") UserFormImagesOverviewFilter filter, @ModelAttribute UserFormImagesFormSearchParams searchParams, Model model) {
+	public String list(@PathVariable int formId, @ModelAttribute("form") UserFormImagesOverviewFilter filter, @ModelAttribute UserFormImagesFormSearchParams searchParams,
+					   @RequestParam(required = false) boolean restoreSort, Admin admin, Model model) {
 		if (admin.isRedesignedUiUsed()) {
 			FormUtils.syncSearchParams(searchParams, filter, true);
 		}
+		FormUtils.syncPaginationData(webStorage, WebStorage.USERFORM_IMAGES_OVERVIEW, filter, restoreSort);
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
 		String userFormInfo = StringUtils.join(Arrays.asList(userForm.getName(), StringUtils.trimToNull(userForm.getDescription())), " | ");
 
@@ -136,18 +141,18 @@ public class UserFormComponentController implements XssCheckAware {
 		return redirectToComponentList(formId);
 	}
 
-	@GetMapping("/{formId:\\d+}/components/{compName}/confirmDelete.action")
+	@GetMapping("/{formId:\\d+}/components/{id:\\d+}/confirmDelete.action")
 	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String confirmDelete(Admin admin, @PathVariable int formId, @PathVariable String compName,
+	public String confirmDelete(Admin admin, @PathVariable int formId, @PathVariable int id,
 								SimpleActionForm form, Model model, Popups popups) {
-		FormComponent formComponent = componentService.getFormComponent(formId, admin.getCompanyID(), compName, IMAGE);
-		if (formComponent == null) {
+		List<String> names = componentService.getComponentFileNames(Set.of(id), formId, admin.getCompanyID());
+		if (CollectionUtils.isEmpty(names)) {
 			popups.alert("bulkAction.nothing.userform");
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		model.addAttribute("formId", formId);
-		form.setShortname(formComponent.getName());
+		form.setShortname(names.get(0));
 		return "formcomponents_delete_ajax";
 	}
 
@@ -161,7 +166,7 @@ public class UserFormComponentController implements XssCheckAware {
 		}
 
 		popups.alert("changes_not_saved");
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	@GetMapping(value = "/{formId:\\d+}/components/deleteRedesigned.action")
@@ -186,8 +191,8 @@ public class UserFormComponentController implements XssCheckAware {
 		return redirectToComponentList(formId);
 	}
 
-    private String redirectToComponentList(@PathVariable int formId) {
-        return "redirect:/webform/" + formId + "/components/list.action";
+    private String redirectToComponentList(int formId) {
+        return "redirect:/webform/" + formId + "/components/list.action?restoreSort=true";
     }
 
 	@GetMapping(value = "/{formId:\\d+}/components/all/download.action")
@@ -235,7 +240,7 @@ public class UserFormComponentController implements XssCheckAware {
 	public String upload(Admin admin, @PathVariable int formId, FormUploadComponentsForm form, Popups popups) {
 		List<FormUploadComponentDto> components = getUploadedComponents(form);
 		if (!validate(components, popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		try {
@@ -258,7 +263,7 @@ public class UserFormComponentController implements XssCheckAware {
 			logger.error("Upload user form coponents failed!", e);
 		}
 		popups.alert("Error");
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	private List<FormUploadComponentDto> getUploadedComponents(FormUploadComponentsForm form) {
@@ -286,7 +291,7 @@ public class UserFormComponentController implements XssCheckAware {
 	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public String uploadZip(Admin admin, @PathVariable int formId, FormZipUploadComponentsForm form, Popups popups) {
 		if (!checkIfFileExists(form.getZipFile(), popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		List<UserAction> userActions = new ArrayList<>();

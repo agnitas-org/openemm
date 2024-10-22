@@ -10,19 +10,17 @@
 
 package org.agnitas.dao;
 
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.util.importvalues.MailType;
+
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.agnitas.util.importvalues.MailType;
-
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface MaildropStatusDao {
     /**
@@ -37,15 +35,6 @@ public interface MaildropStatusDao {
     boolean delete(int companyId, int id);
     
     boolean delete(final int companyId, final int mailingId, final MaildropStatus status, final MaildropGenerationStatus generationStatus);
-
-    /**
-     * Deletes unsent world maildrop entries for given mailing id.
-     *
-     * @param mailingID
-     *          The id of mailing.
-     * @return count of deleted entities.
-     */
-	int deleteUnsentWorldMailingEntries(int mailingID);
 
     /**
      * Deletes unsent maildrop entries for given mailing id.
@@ -79,8 +68,6 @@ public interface MaildropStatusDao {
 
 	List<Integer> getMaildropEntryIds(int mailingID, int companyID);
 	
-	List<Integer> getMaildropEntryIds(int mailingID, int companyID, MaildropStatus maildropStatus);
-	
 	/**
 	 * Returns maildrop entry for given status field or <code>null</code> if no such entry exists.
 	 *
@@ -91,16 +78,6 @@ public interface MaildropStatusDao {
 	 * @return maildrop entry or <code>null</code>
 	 */
 	MaildropEntry getEntryForStatus(final int mailingID, final int companyID, final char status);
-
-	/**
-	 * Saves given maildrop entry. If entry ID is 0 or no entry with given ID exists, a new entry is created.
-	 * Otherwise, existing entry is updated.
-	 * 
-	 * @param entry entry to save
-	 * 
-	 * @return ID of maildrop entry
-	 */
-	int saveMaildropEntry(final MaildropEntry entry) throws Exception;
 
 	List<MaildropEntry> getMaildropStatusEntriesForMailing(int companyID, int mailingID);
 
@@ -125,11 +102,10 @@ public interface MaildropStatusDao {
 	 */
     void setTestRecipients(int maildropStatusId, List<Integer> customerIds);
     
-    // TODO Remove "companyID" and "mailingID" from method. Both arguments are superfluous, because they are already included in the MaildropEntry items of the list
-	void saveMaildropEntries(int companyId, int mailingId, Set<MaildropEntry> maildropStatusList);
+	void batchInsertMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries);
 
-	boolean reactivateMaildropStatusEntry(int maildropStatusID);
-	
+	void batchUpdateMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries);
+
 	void removeOutdatedFindLastNewsletterEntries(final int companyID, final ZonedDateTime olderThan);
 
 	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
@@ -139,4 +115,10 @@ public interface MaildropStatusDao {
 	Map<Integer, List<Integer>> cleanupFailedTestDeliveries();
 
 	void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays);
+
+    void deleteByMailingId(int mailingID);
+
+	int insertMaildropEntry(MaildropEntry entry);
+
+	void updateMaildropEntry(MaildropEntry entry);
 }

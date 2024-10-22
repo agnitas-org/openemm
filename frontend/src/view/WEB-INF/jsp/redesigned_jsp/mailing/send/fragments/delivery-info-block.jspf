@@ -1,6 +1,8 @@
 <%@ page import="com.agnitas.beans.DeliveryStat" %>
 <c:set var="STATUS_SENT" value="<%= DeliveryStat.STATUS_SENT %>" scope="page" />
 
+<%--@elvariable id="approvalsCount" type="java.lang.Integer"--%>
+
 <c:set var="infoMsg">
     <c:choose>
         <c:when test="${isNormalMailing}">
@@ -57,6 +59,9 @@
             </c:if>
         </c:when>
     </c:choose>
+    <c:if test="${not empty approvalsCount}">
+        <p><mvc:message code="mailing.approval.grant" arguments="${approvalsCount}"/></p>
+    </c:if>
 </c:set>
 
 <c:if test="${not empty infoMsg}">

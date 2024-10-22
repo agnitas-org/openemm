@@ -13,7 +13,6 @@ package org.agnitas.dao.impl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
 import org.agnitas.dao.JobQueueDao;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.service.JobDto;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -36,8 +35,8 @@ import java.util.Map;
  * DAO handler for JobDto-Objects
  */
 public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(JobQueueDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(JobQueueDaoImpl.class);
 	
 	@Override
 	public List<JobDto> readUpcomingJobsForExecution() {
@@ -258,6 +257,11 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 		return select(logger, query.toString(), new Job_RowMapper(), params.toArray());
 	}
 
+	@Override
+	public int getCountForOverview() {
+		return selectInt(logger, "SELECT COUNT(*) FROM job_queue_tbl WHERE deleted <= 0");
+	}
+
 	private List<Object> applyOverviewFilter(JobQueueOverviewFilter filter, StringBuilder query) {
 		query.append(" WHERE deleted <= 0");
 		List<Object> params = new ArrayList<>();
@@ -334,38 +338,6 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 		}
 	}
 	
-	@Override
-	public boolean setStartCompanyForNextCleanupStart(int currentCompanyID) {
-		try {
-			return update(logger, "INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (SELECT id, 'startcompany', ? FROM job_queue_tbl WHERE runclass = 'org.agnitas.util.quartz.DBCleanerJobWorker')", currentCompanyID) == 1;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-	
-	@Override
-	public int getStartCompanyForCleanup() {
-		String result = selectObjectDefaultNull(logger, "SELECT parameter_value FROM job_queue_parameter_tbl WHERE parameter_name = 'startcompany' AND job_id = (SELECT id FROM job_queue_tbl WHERE runclass = 'org.agnitas.util.quartz.DBCleanerJobWorker')", StringRowMapper.INSTANCE);
-		if (StringUtils.isNotEmpty(result)) {
-			return Integer.parseInt(result);
-		} else {
-			return 0;
-		}
-	}
-	
-	@Override
-	public boolean deleteCleanupStartEntry() {
-		try {
-			return update(logger, "DELETE FROM job_queue_parameter_tbl WHERE parameter_name = 'startcompany' AND job_id = (SELECT id FROM job_queue_tbl WHERE runclass = 'org.agnitas.util.quartz.DBCleanerJobWorker')") == 1;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	protected String getTargetTempPrefix() {
-		return AgnUtils.getRandomString(10);
-	}
-
 	/**
 	 * Update Job Status in DB
 	 * Do not update the fields "description", "created", "lastStart", "deleted", "nextstart", "interval", "hostname", "runClass", "runonlyonhosts", "startAfterError" and "emailonerror",
@@ -401,8 +373,10 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 					// If there was a problem in updating the job status, this must be logged and retried for unlimited times until success.
 					try {
 						Thread.sleep(1000 * 60);
-					} catch (@SuppressWarnings("unused") InterruptedException e1) {
-						// Do nothing
+					} catch (InterruptedException e1) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("InterruptedException: " + e1.getMessage());
+						}
 					}
 				}
 			}

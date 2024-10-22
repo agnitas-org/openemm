@@ -33,13 +33,13 @@
 	</bean>
 	-->
 	
-    <bean id="configService" class="org.agnitas.emm.core.commons.util.ConfigService">
+    <bean id="ConfigService" class="org.agnitas.emm.core.commons.util.ConfigService">
    		<property name="permissionService" ref="permissionService" />
    		<property name="licenseDao" ref="licenseDao" />
    		<property name="configTableDao" ref="configTableDao" />
    		<property name="companyInfoDao" ref="companyInfoDao" />
    		<property name="serverMessageDao" ref="serverMessageDao" />
-   		<property name="profileFieldService" ref="profileFieldService" />
+   		<property name="recipientFieldService" ref="RecipientFieldService" />
    	</bean>
 
 	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.ComWorkflowDataParser" />
@@ -55,14 +55,6 @@
     <bean id="licenseDao" class="com.agnitas.dao.impl.LicenseDaoImpl">
         <property name="dataSource" ref="dataSource" />
     </bean>
-
-    <bean id="profileFieldDao" class="com.agnitas.dao.impl.ProfileFieldDaoImpl">
-   		<property name="dataSource" ref="dataSource" />
-   	</bean>
-    
-    <bean id="profileFieldService" class="com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl">
-   		<property name="profileFieldDao" ref="profileFieldDao" />
-    </bean>
     
     <bean id="configTableDao" class="com.agnitas.dao.impl.ConfigTableDaoImpl">
    		<property name="dataSource" ref="dataSource" />
@@ -75,4 +67,38 @@
     <bean id="serverMessageDao" class="com.agnitas.dao.impl.ComServerMessageDaoImpl">
    		<property name="dataSource" ref="dataSource" />
    	</bean>
+	
+	<bean id="RecipientFieldService" class="com.agnitas.emm.core.service.impl.RecipientFieldServiceImpl">
+		<property name="configService" ref="ConfigService" />
+		<property name="recipientFieldsCache" ref="RecipientFieldsCache"/>
+		<property name="recipientFieldDao" ref="RecipientFieldDao"/>
+		<property name="profileFieldDao" ref="ProfileFieldDao"/>
+		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService"/>
+	</bean>
+
+	<bean id="RecipientProfileHistoryService" class="com.agnitas.emm.core.recipient.service.impl.RecipientProfileHistoryServiceImpl">
+		<property name="recipientProfileHistoryDao" ref="RecipientProfileHistoryDao" />
+		<property name="configService" ref="ConfigService" />
+		<property name="profileFieldDao" ref="ProfileFieldDao" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
+	</bean>
+	
+	<bean id="RecipientFieldsCache" class="com.agnitas.emm.core.service.impl.RecipientFieldsCacheImpl">
+		<constructor-arg ref="ConfigService" />
+	</bean>
+
+	<bean id="RecipientFieldDao" class="com.agnitas.emm.core.dao.impl.RecipientFieldDaoImpl">
+		<constructor-arg ref="dataSource" />
+		<constructor-arg name="javaMailService">
+			<null />
+		</constructor-arg>
+	</bean>
+
+    <bean id="ProfileFieldDao" class="com.agnitas.dao.impl.ProfileFieldDaoImpl">
+   		<property name="dataSource" ref="dataSource" />
+   	</bean>
+
+	<bean id="RecipientProfileHistoryDao" class="com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
 </beans>

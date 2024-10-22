@@ -3,7 +3,7 @@
 package com.agnitas.emm.core.admin.web;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.component.service.ComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 

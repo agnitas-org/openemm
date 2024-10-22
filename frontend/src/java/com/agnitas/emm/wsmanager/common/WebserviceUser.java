@@ -29,20 +29,7 @@ public interface WebserviceUser extends WebserviceUserListItem {
 	 * @param active <i>active</i>-flag of user
 	 */
 	void setActive(final boolean active);
-	
-	/**
-	 * Returns the contact information of the webservice user.
-	 * 
-	 * @return contact information
-	 */
-	String getContact();
-	
-	/**
-	 * Set contact information of webservice user.
-	 * 
-	 * @param contact contact information
-	 */
-	void setContact(final String contact);
+
 	/**
 	 * Returns the contact information of the webservice user.
 	 * 

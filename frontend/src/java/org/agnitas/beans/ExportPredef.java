@@ -10,17 +10,18 @@
 
 package org.agnitas.beans;
 
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.importvalues.DateFormat;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.importvalues.DateFormat;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class ExportPredef {
 
@@ -36,9 +37,11 @@ public class ExportPredef {
 
 	protected String description = "";
 
-	protected String mailinglists = "";
+	protected String mailinglists = "";    // mailinglists for recipient status
 
-	protected int mailinglistID;
+	protected int mailinglistID;           // GWUA-5878 openemm field
+    
+	protected Set<Integer> mailinglistIds; // GWUA-5878 extended scope field
 
 	protected String delimiter = "";
 	
@@ -112,6 +115,14 @@ public class ExportPredef {
 	public void setMailinglistID(int mailinglistID) {
 		this.mailinglistID = mailinglistID;
 	}
+
+    public Set<Integer> getMailinglistIds() {
+        return mailinglistIds;
+    }
+
+    public void setMailinglistIds(Set<Integer> mailinglistIds) {
+        this.mailinglistIds = mailinglistIds;
+    }
 
 	public void setDelimiter(String delimiter) {
 		this.delimiter = delimiter;

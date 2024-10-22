@@ -143,6 +143,11 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
+    public List<Integer> getDisabledMailinglists(Admin admin) {
+        return getDisabledMailinglistsForAdmin(admin.getCompanyID(), admin.getAdminID());
+    }
+
+    @Override
     public boolean isAdminHaveAccess(Admin admin, int mailingListId) {
         return mailingListId <= 0 || mailinglistApprovalDao.isAdminHaveAccess(admin.getCompanyID(), admin.getAdminID(), mailingListId);
     }

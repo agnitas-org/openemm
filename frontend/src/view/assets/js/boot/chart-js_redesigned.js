@@ -3,6 +3,7 @@
   const $root = $('html');
   let labelColor;
 
+  Chart.register(ChartZoom);
   Chart.register(ChartDataLabels);
 
   Chart.defaults.color = () => {
@@ -154,7 +155,8 @@
         formatter: (value, context) => {
           const exactPercentages = getChartController(context.chart)._exactPercentages;
           const percent = exactPercentages[context.dataIndex];
-          return percent > 0 ? `${percent.toFixed(1)}%` : '';
+
+          return percent >= 10 && context.chart.width > 200 ? `${percent.toFixed(1)}%` : '';
         }
       },
       tooltip: {

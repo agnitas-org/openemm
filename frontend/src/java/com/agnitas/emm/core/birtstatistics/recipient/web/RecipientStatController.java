@@ -36,7 +36,6 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,21 +51,17 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
-@Controller
-@RequestMapping("/statistics/recipient")
-@PermissionMapping("recipient.stats")
 public class RecipientStatController implements XssCheckAware {
     
     private static final Logger logger = LogManager.getLogger(RecipientStatController.class);
 
-    private final BirtStatisticsService birtStatisticsService;
+    protected final BirtStatisticsService birtStatisticsService;
     private final ComTargetService targetService;
     private final RecipientReportService recipientReportService;
     private final MediaTypesService mediaTypesService;
     private final ConversionService conversionService;
-    private final MailinglistApprovalService mailinglistApprovalService;
+    protected final MailinglistApprovalService mailinglistApprovalService;
     private final UserActivityLogService userActivityLogService;
     private final ConfigService configService;
 
@@ -122,9 +117,9 @@ public class RecipientStatController implements XssCheckAware {
         model.addAttribute("yearlist", AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         if (StringUtils.equals(form.getReportName(), "remarks")) {
-            Map<String, Integer> remarks = recipientReportService.getRecipientRemarksStat(form.getMailingListId(), form.getTargetId(), admin.getCompanyID());
-            model.addAttribute("summedRemarks", recipientReportService.getFilteredRemarksJson(remarks, true));
-            model.addAttribute("notSummedRemarks", recipientReportService.getFilteredRemarksJson(remarks, false));
+            Map<String, Integer> statusStat = recipientReportService.getRecipientStatusStat(form.getMailingListId(), form.getTargetId(), admin.getCompanyID());
+            model.addAttribute("summedStatuses", recipientReportService.getFilteredRecipientStatusesJson(statusStat, true));
+            model.addAttribute("notSummedStatuses", recipientReportService.getFilteredRecipientStatusesJson(statusStat, false));
         }
         writeUAL(admin, "recipient statistics", "active submenu - recipient overview");
 
@@ -201,7 +196,7 @@ public class RecipientStatController implements XssCheckAware {
 
     @RequestMapping("/remarks-csv.action")
     public Object remarksCsv(Admin admin, int mailingListId, int targetId, Popups popups) throws Exception {
-        byte[] csv = recipientReportService.getRecipientRemarksCSV(admin, mailingListId, targetId);
+        byte[] csv = recipientReportService.getRecipientStatusesCSV(admin, mailingListId, targetId);
         if (ArrayUtils.isEmpty(csv)) {
             popups.alert("error.export.file_not_ready");
             return MESSAGES_VIEW;
@@ -222,7 +217,7 @@ public class RecipientStatController implements XssCheckAware {
         return String.format("mailinglistId = %s, target id = %s", mailinglist, target);
     }
 
-    private void writeUAL(Admin admin, String action, String description) {
+    protected void writeUAL(Admin admin, String action, String description) {
         UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
     }
 }

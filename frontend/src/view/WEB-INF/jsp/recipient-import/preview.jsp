@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
 <%--@elvariable id="parsedContent" type="java.util.List<java.ulit.List<java.lang.String>>"--%>
@@ -36,7 +37,7 @@
                     <c:forEach var="row" items="${parsedContent}" begin="1" end="5">
                         <tr>
                             <c:forEach var="element" items="${row}">
-                                <td>${element}</td>
+                                <td>${fn:escapeXml(element)}</td>
                             </c:forEach>
                         </tr>
                     </c:forEach>

@@ -16,7 +16,7 @@ public class UserFormForm {
 	private int formId;
 	private String formName;
 	private String description;
-	private boolean active;
+	private boolean active; // TODO: EMMGUI-714 remove after remove of old design
 	private ResultSettings successSettings = new ResultSettings(true);
 	private ResultSettings errorSettings = new ResultSettings(false);
 	

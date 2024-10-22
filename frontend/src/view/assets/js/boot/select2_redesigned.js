@@ -45,12 +45,19 @@
   }
 
   const SingleSelection = $.fn.select2.amd.require('select2/selection/single');
-  const _update = SingleSelection.prototype.update;
+  const MultipleSelection = $.fn.select2.amd.require('select2/selection/multiple');
+
+  const _singleUpdate = SingleSelection.prototype.update;
+  const _multipleUpdate = MultipleSelection.prototype.update;
 
   // Removes 'title' attribute cuz browser displays tooltip with own styles
   SingleSelection.prototype.update = function (decorated, placeholder) {
-    _update.apply(this, Array.prototype.slice.apply(arguments));
+    _singleUpdate.apply(this, Array.prototype.slice.apply(arguments));
     this.$selection.find('.select2-selection__rendered').removeAttr('title');
+  }
+  MultipleSelection.prototype.update = function (data) {
+    _multipleUpdate.apply(this, Array.prototype.slice.apply(arguments));
+    this.$selection.find('.select2-selection__choice').removeAttr('title');
   }
 
 })(window.jQuery);

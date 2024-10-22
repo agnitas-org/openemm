@@ -11,6 +11,13 @@
 
       * {
         display: none;
+        display: none;
+      }
+    }
+    
+    &--hovered {
+      .tile-overlay {
+        background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(174, 199, 209, 0.3) 5px, rgba(174, 199, 209, 0.3) 10px);
       }
     }
   }

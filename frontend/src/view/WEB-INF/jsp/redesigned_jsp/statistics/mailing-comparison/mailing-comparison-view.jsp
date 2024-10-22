@@ -12,7 +12,7 @@
         <mvc:hidden path="bulkIds"/>
 
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="default.Overview"/></h1>
             <div class="tile-controls">
                 <button class="btn btn-sm btn-primary" type="button" data-form-submit>
                     <i class="icon icon-sync"></i><span class="text"><mvc:message code="button.Refresh"/></span>

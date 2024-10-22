@@ -13,8 +13,11 @@ package com.agnitas.emm.core.userform.form;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class UserFormImagesOverviewFilter extends PaginationForm {
 
@@ -130,5 +133,10 @@ public class UserFormImagesOverviewFilter extends PaginationForm {
 
     public void setMimetypes(List<String> mimetypes) {
         this.mimetypes = mimetypes;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(fileName) || isNotBlank(description) || uploadDate.isPresent() || fileSizeMin != null || fileSizeMax != null
+                || heightMin != null || heightMax != null || widthMin != null || widthMax != null || CollectionUtils.isNotEmpty(mimetypes);
     }
 }

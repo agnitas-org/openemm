@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
     <property name="comments">Copyright (c) 2007 &lt;&lt;Your Company Name here>></property>
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <html-property name="description">Creates a grouped report with a chart giving a visual representation of each group data.</html-property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
     <property name="units">in</property>
-    <method name="initialize"><![CDATA[reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);]]></method>
+    <method name="initialize"><![CDATA[reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
+
+function tr(key) {
+	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
+}
+]]></method>
     <method name="beforeRender"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
@@ -174,12 +179,12 @@ return false;]]></method>
             <list-property name="resultSetHints">
                 <structure>
                     <property name="position">1</property>
-                    <property name="name">mailing_count</property>
+                    <property name="name">totalMailingsCount</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
                     <property name="position">2</property>
-                    <property name="name">email_count</property>
+                    <property name="name">totalEmailsCount</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
@@ -187,28 +192,92 @@ return false;]]></method>
                     <property name="name">kilobyte</property>
                     <property name="dataType">string</property>
                 </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">worldMailingsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">actionBasedMailingsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">dateBasedMailingsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">intervalMailingsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">worldEmailsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">actionBasedEmailsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">dateBasedEmailsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">intervalEmailsCount</property>
+                    <property name="dataType">integer</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
-                    <property name="columnName">mailing_count</property>
+                    <property name="columnName">totalMailingsCount</property>
                 </structure>
                 <structure>
-                    <property name="columnName">email_count</property>
+                    <property name="columnName">totalEmailsCount</property>
                 </structure>
                 <structure>
                     <property name="columnName">kilobyte</property>
+                </structure>
+                <structure>
+                    <property name="columnName">worldMailingsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">actionBasedMailingsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">dateBasedMailingsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">intervalMailingsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">worldEmailsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">actionBasedEmailsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">dateBasedEmailsCount</property>
+                </structure>
+                <structure>
+                    <property name="columnName">intervalEmailsCount</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
                 <list-property name="resultSet">
                     <structure>
                         <property name="position">1</property>
-                        <property name="name">mailing_count</property>
+                        <property name="name">totalMailingsCount</property>
                         <property name="dataType">integer</property>
                     </structure>
                     <structure>
                         <property name="position">2</property>
-                        <property name="name">email_count</property>
+                        <property name="name">totalEmailsCount</property>
                         <property name="dataType">integer</property>
                     </structure>
                     <structure>
@@ -216,16 +285,64 @@ return false;]]></method>
                         <property name="name">kilobyte</property>
                         <property name="dataType">string</property>
                     </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">worldMailingsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">actionBasedMailingsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">dateBasedMailingsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">intervalMailingsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">worldEmailsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">actionBasedEmailsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">dateBasedEmailsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">intervalEmailsCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
 mailCount = monthStatDataSet.getMailingCounts(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
 currentrow = 0;]]></method>
-            <method name="fetch"><![CDATA[if( currentrow < mailCount.size() ) {
-	row["mailing_count"] = mailCount.get(currentrow).getMailingCount();
-	row["email_count"] = mailCount.get(currentrow).getEMailCount();
-	row["kilobyte"] = mailCount.get(currentrow).getKilobyte();
+            <method name="fetch"><![CDATA[if (currentrow < mailCount.size()) {
+	row["totalMailingsCount"] = mailCount.get(currentrow).getTotalMailingsCount();
+	row["worldMailingsCount"] = mailCount.get(currentrow).getWorldMailingsCount();
+	row["actionBasedMailingsCount"] = mailCount.get(currentrow).getActionBasedMailingsCount();
+	row["dateBasedMailingsCount"] = mailCount.get(currentrow).getDateBasedMailingsCount();
+	row["intervalMailingsCount"] = mailCount.get(currentrow).getIntervalMailingsCount();
+	row["totalEmailsCount"] = mailCount.get(currentrow).getTotalEmailsCount();
+	row["worldEmailsCount"] = mailCount.get(currentrow).getWorldEmailsCount();
+	row["actionBasedEmailsCount"] = mailCount.get(currentrow).getActionBasedEmailsCount();
+	row["dateBasedEmailsCount"] = mailCount.get(currentrow).getDateBasedEmailsCount();
+	row["intervalEmailsCount"] = mailCount.get(currentrow).getIntervalEmailsCount();
+	row["kilobyte"] = mailCount.get(currentrow).getEmailKilobytes();
 	currentrow++;
 	return true;
 }
@@ -494,7 +611,7 @@ return false;]]></method>
                                         <property name="textAlign">left</property>
                                         <text-data id="379">
                                             <property name="style">datum</property>
-                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.MonthStats", reportContext.getLocale())</expression>
+                                            <expression name="valueExpr">tr("birt.MonthStats")</expression>
                                         </text-data>
                                     </cell>
                                     <cell id="378">
@@ -576,7 +693,7 @@ return false;]]></method>
                     <property name="verticalAlign">middle</property>
                     <text-data id="348">
                         <property name="style">ReportText</property>
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.MonthStats", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">tr("birt.MonthStats")</expression>
                     </text-data>
                 </cell>
                 <cell id="338">
@@ -603,7 +720,7 @@ return false;]]></method>
                                             <cell id="261">
                                                 <text-data id="213">
                                                     <property name="style">ReportText</property>
-                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.Company", reportContext.getLocale())</expression>
+                                                    <expression name="valueExpr">tr("settings.Company")</expression>
                                                 </text-data>
                                             </cell>
                                         </row>
@@ -629,7 +746,7 @@ return false;]]></method>
                                             <cell id="342">
                                                 <text-data id="343">
                                                     <property name="style">ReportText</property>
-                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("startDate", reportContext.getLocale())</expression>
+                                                    <expression name="valueExpr">tr("startDate")</expression>
                                                 </text-data>
                                             </cell>
                                         </row>
@@ -665,7 +782,7 @@ return false;]]></method>
                                             <cell id="294">
                                                 <text-data id="300">
                                                     <property name="style">ReportText</property>
-                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("workflow.stop.EndDate", reportContext.getLocale())</expression>
+                                                    <expression name="valueExpr">tr("workflow.stop.EndDate")</expression>
                                                 </text-data>
                                             </cell>
                                         </row>
@@ -697,90 +814,139 @@ return false;]]></method>
                 </cell>
             </row>
         </grid>
-        <grid id="847">
+        <grid id="1132">
             <property name="style">block-table</property>
-            <column id="848"/>
-            <column id="849"/>
-            <row id="850">
-                <cell id="851">
-                    <property name="colSpan">2</property>
-                    <property name="rowSpan">1</property>
+            <column id="1133"/>
+            <row id="1134">
+                <cell id="1135">
+                    <property name="style">half-width</property>
+                    <text-data id="880">
+                        <property name="style">headline</property>
+                        <expression name="valueExpr">tr('report.summary')</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+            <row id="1136">
+                <cell id="1137">
                     <property name="style">full-width</property>
-                    <table id="69">
+                    <table id="1024">
                         <property name="style">table table-striped</property>
                         <property name="dataSet">MailCounterDataSet</property>
                         <list-property name="boundDataColumns">
                             <structure>
-                                <property name="name">mailing_count</property>
-                                <expression name="expression">dataSetRow["mailing_count"]</expression>
+                                <property name="name">totalMailingsCount</property>
+                                <text-property name="displayName">totalMailingsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["totalMailingsCount"]</expression>
                                 <property name="dataType">integer</property>
                             </structure>
                             <structure>
-                                <property name="name">email_count</property>
-                                <expression name="expression">dataSetRow["email_count"]</expression>
+                                <property name="name">actionBasedMailingsCount</property>
+                                <text-property name="displayName">actionBasedMailingsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["actionBasedMailingsCount"]</expression>
                                 <property name="dataType">integer</property>
                             </structure>
                             <structure>
-                                <property name="name">kilobyte</property>
-                                <expression name="expression">dataSetRow["kilobyte"]</expression>
-                                <property name="dataType">string</property>
+                                <property name="name">dateBasedMailingsCount</property>
+                                <text-property name="displayName">dateBasedMailingsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["dateBasedMailingsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">intervalMailingsCount</property>
+                                <text-property name="displayName">intervalMailingsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["intervalMailingsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">worldMailinsCount</property>
+                                <expression name="expression" type="javascript">dataSetRow["worldMailingsCount"]</expression>
+                                <property name="dataType">integer</property>
+                                <property name="allowExport">true</property>
                             </structure>
                         </list-property>
-                        <property name="pageBreakInterval">50</property>
-                        <column id="85"/>
-                        <column id="86"/>
+                        <column id="1053"/>
+                        <column id="1054"/>
+                        <header>
+                            <row id="1025">
+                                <cell id="1026">
+                                    <text-data id="1118">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">tr('NumberOfMailings')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1028">
+                                    <data id="1038">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">totalMailingsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </header>
                         <detail>
-                            <row id="73">
-                                <cell id="74">
-                                    <text-data id="88">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NumberOfMailings", reportContext.getLocale())</expression>
+                            <row id="1036">
+                                <cell id="1037">
+                                    <property name="whiteSpace">normal</property>
+                                    <text-data id="1119">
+                                        <property name="paddingLeft">40px</property>
+                                        <property name="textAlign">left</property>
+                                        <property name="whiteSpace">pre</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.world')</expression>
+                                        <property name="contentType">html</property>
                                     </text-data>
                                 </cell>
-                                <cell id="75">
-                                    <data id="403">
-                                        <property name="numberAlign">right</property>
-                                        <structure name="numberFormat">
-                                            <property name="category">Fixed</property>
-                                            <property name="pattern">#,##0</property>
-                                        </structure>
-                                        <property name="textAlign">right</property>
-                                        <property name="resultSetColumn">mailing_count</property>
+                                <cell id="1039">
+                                    <property name="textAlign">right</property>
+                                    <data id="1040">
+                                        <property name="resultSetColumn">worldMailinsCount</property>
                                     </data>
                                 </cell>
                             </row>
-                            <row id="76">
-                                <property name="style">even</property>
-                                <cell id="77">
-                                    <text-data id="89">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NumberOfMails", reportContext.getLocale())</expression>
+                            <row id="1061">
+                                <cell id="1062">
+                                    <property name="paddingLeft">1pt</property>
+                                    <text-data id="1120">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.date')</expression>
+                                        <property name="contentType">html</property>
                                     </text-data>
                                 </cell>
-                                <cell id="78">
-                                    <data id="404">
-                                        <property name="numberAlign">right</property>
-                                        <structure name="numberFormat">
-                                            <property name="category">Fixed</property>
-                                            <property name="pattern">#,##0</property>
-                                        </structure>
-                                        <property name="textAlign">right</property>
-                                        <property name="resultSetColumn">email_count</property>
+                                <cell id="1063">
+                                    <property name="textAlign">right</property>
+                                    <data id="1044">
+                                        <property name="resultSetColumn">dateBasedMailingsCount</property>
                                     </data>
                                 </cell>
                             </row>
-                            <row id="397">
-                                <cell id="398">
-                                    <text-data id="401">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("AverageMailSize", reportContext.getLocale())</expression>
+                            <row id="1067">
+                                <cell id="1068">
+                                    <text-data id="1121">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.action')</expression>
+                                        <property name="contentType">html</property>
                                     </text-data>
                                 </cell>
-                                <cell id="399">
-                                    <data id="436">
-                                        <structure name="numberFormat">
-                                            <property name="category">Fixed</property>
-                                            <property name="pattern">#,##0.0</property>
-                                        </structure>
+                                <cell id="1069">
+                                    <data id="1042">
                                         <property name="textAlign">right</property>
-                                        <property name="resultSetColumn">kilobyte</property>
+                                        <property name="resultSetColumn">actionBasedMailingsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="1073">
+                                <cell id="1074">
+                                    <property name="paddingLeft">1px</property>
+                                    <text-data id="1122">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.interval')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1075">
+                                    <data id="1046">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">intervalMailingsCount</property>
                                     </data>
                                 </cell>
                             </row>
@@ -788,9 +954,158 @@ return false;]]></method>
                     </table>
                 </cell>
             </row>
+            <row id="1140">
+                <cell id="1141">
+                    <property name="style">full-width</property>
+                    <table id="1142">
+                        <property name="style">table table-striped</property>
+                        <property name="dataSet">MailCounterDataSet</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">worldEmailsCount</property>
+                                <text-property name="displayName">worldEmailsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["worldEmailsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">totalEmailsCount</property>
+                                <text-property name="displayName">totalEmailsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["totalEmailsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">dateBasedEmailsCount</property>
+                                <text-property name="displayName">dateBasedEmailsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["dateBasedEmailsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">actionBasedEmailsCount</property>
+                                <text-property name="displayName">actionBasedEmailsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["actionBasedEmailsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">intervalEmailsCount</property>
+                                <text-property name="displayName">intervalEmailsCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["intervalEmailsCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">kilobyte</property>
+                                <text-property name="displayName">kilobyte</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["kilobyte"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <column id="1161"/>
+                        <column id="1162"/>
+                        <header>
+                            <row id="1143">
+                                <cell id="1144">
+                                    <text-data id="1123">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">tr('NumberOfMails')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1145">
+                                    <data id="1164">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">totalEmailsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </header>
+                        <detail>
+                            <row id="1146">
+                                <cell id="1147">
+                                    <property name="paddingLeft">1px</property>
+                                    <text-data id="1124">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.world')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1148">
+                                    <data id="1163">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">worldEmailsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="1149">
+                                <cell id="1150">
+                                    <text-data id="1125">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.date')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1151">
+                                    <data id="1165">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">dateBasedEmailsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="1152">
+                                <cell id="1153">
+                                    <text-data id="1126">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.action')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1154">
+                                    <data id="1166">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">actionBasedEmailsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="1155">
+                                <cell id="1156">
+                                    <text-data id="1127">
+                                        <property name="paddingLeft">40px</property>
+                                        <expression name="valueExpr">tr('statistic.month.mailing.interval')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1157">
+                                    <data id="1167">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">intervalEmailsCount</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </detail>
+                        <footer>
+                            <row id="1158">
+                                <cell id="1159">
+                                    <text-data id="1128">
+                                        <expression name="valueExpr">tr("AverageMailSize")</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1160">
+                                    <data id="1168">
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">kilobyte</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </footer>
+                    </table>
+                </cell>
+            </row>
+        </grid>
+        <grid id="847">
+            <property name="style">block-table</property>
+            <column id="848"/>
             <row id="866">
                 <cell id="867">
-                    <property name="colSpan">2</property>
+                    <property name="colSpan">1</property>
                     <property name="rowSpan">1</property>
                     <property name="style">full-width</property>
                     <grid id="859">
@@ -2481,7 +2796,7 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
             </row>
             <row id="853">
                 <cell id="854">
-                    <property name="colSpan">2</property>
+                    <property name="colSpan">1</property>
                     <property name="rowSpan">1</property>
                     <property name="style">full-width</property>
                     <table id="160">
@@ -2573,32 +2888,32 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
                                 <cell id="162">
                                     <text-data id="431">
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Date", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("Date")</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="163">
                                     <text-data id="174">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailing", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("Mailing")</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="817">
                                     <text-data id="820">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Description", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("Description")</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="425">
                                     <text-data id="448">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailtype", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("Mailtype")</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="428">
                                     <text-data id="433">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("default.Size", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("default.Size")</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="444">
                                     <text-data id="445">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Amount", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("statistic.Amount")</expression>
                                     </text-data>
                                 </cell>
                             </row>

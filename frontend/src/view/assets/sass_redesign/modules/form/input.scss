@@ -1,10 +1,45 @@
+/*doc
+---
+title: Input & TextArea
+name: input-textarea
+category: Components - Input & TextArea
+---
+
+Most common, the text-based input fields.
+
+<small class="text-muted">You can apply a <a href="components_-_char_counter.html"><i>char counter</i></a> component to this.</small>
+
+```htmlexample
+<input type="text" id="1col-form-input-one" class="form-control" placeholder="Text input"/>
+<br>
+<textarea class="form-control" rows="2" placeholder="Textarea input"></textarea>
+```
+*/
+
+/*doc
+---
+title: Checkbox
+name: checkbox
+parent: checkboxes
+---
+
+<small class="text-muted">You can apply a <a href="components_-_show%7Chide_by_checkbox%7Cselect.html#checkbox-hider"><i>show|hide by checkbox</i></a> component to this.</small>
+
+```htmlexample
+  <div class="d-flex gap-1"> 
+      <input class="form-check-input" type="checkbox"/>
+      <input class="form-check-input" type="checkbox" checked/>
+      <input class="form-check-input" type="checkbox" disabled/>
+  </div> 
+```
+*/
 
 $input-height: 30px;
 
 .form-control {
   &, &:focus {
     background-color: var(--main-bg-color);
-    color: var(--default-text-color);
+    color: var(--text-color-default);
   }
   // Disabled and read-only inputs
   //
@@ -26,6 +61,7 @@ $input-height: 30px;
 
   &.text-truncate {
     display: block;
+    max-width: min-content;
   }
 }
 

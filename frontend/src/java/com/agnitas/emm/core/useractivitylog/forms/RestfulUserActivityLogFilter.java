@@ -12,6 +12,8 @@ package com.agnitas.emm.core.useractivitylog.forms;
 
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class RestfulUserActivityLogFilter extends UserActivityLogFilterBase {
 
     private String requestUrl;
@@ -50,5 +52,10 @@ public class RestfulUserActivityLogFilter extends UserActivityLogFilterBase {
         map.put("description", description);
 
         return map;
+    }
+
+    @Override
+    public boolean isUiFiltersSet() {
+        return isNotBlank(requestUrl) || isNotBlank(requestMethod) || isNotBlank(description) || super.isUiFiltersSet();
     }
 }

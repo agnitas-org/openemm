@@ -20,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
@@ -42,7 +42,7 @@ public class MailloopServiceImpl implements MailloopService {
 	private MailloopDao mailloopDao;
 
 	/** DAO for accessing mailing data. */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 
 	/** Service for sending action-based mailings. */
 	private SendActionbasedMailingService sendActionbasedMailingService;
@@ -141,7 +141,7 @@ public class MailloopServiceImpl implements MailloopService {
 	 * @param dao DAO for accessing mailing data
 	 */
 	@Required
-	public void setMailingDao(final ComMailingDao dao) {
+	public void setMailingDao(final MailingDao dao) {
 		this.mailingDao = dao;
 	}
 }

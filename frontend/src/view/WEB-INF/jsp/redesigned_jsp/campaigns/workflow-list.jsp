@@ -1,14 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action"%>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action"%>
 <%@ page import="com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
-<%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop.WorkflowEndType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType" %>
+<%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop.WorkflowEndType" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.stream.Collectors" %>
-<%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -18,10 +16,10 @@
 <%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
 
 <c:set var="STATUSES" value="<%= WorkflowForm.WorkflowStatus.values() %>"/>
-<c:set var="REACTIONS" value="<%= Arrays.stream(WorkflowReactionType.values()).map(WorkflowReactionType::getName).collect(Collectors.toList()) %>"/>
 <c:set var="STATUS_ACTIVE" value="<%= WorkflowStatus.STATUS_ACTIVE %>" scope="page"/>
 <c:set var="STATUS_INACTIVE" value="<%= WorkflowStatus.STATUS_INACTIVE %>" scope="page"/>
 <c:set var="STATUS_OPEN" value="<%= WorkflowStatus.STATUS_OPEN %>" scope="page"/>
+<c:set var="STATUS_PAUSED" value="<%= WorkflowStatus.STATUS_PAUSED %>" scope="page"/>
 <c:set var="STATUS_COMPLETE" value="<%= WorkflowStatus.STATUS_COMPLETE %>" scope="page"/>
 <c:set var="STATUS_TESTING" value="<%= WorkflowStatus.STATUS_TESTING %>" scope="page"/>
 <c:set var="STATUS_TESTED" value="<%= WorkflowStatus.STATUS_TESTED %>" scope="page"/>
@@ -47,129 +45,154 @@
 <c:set var="STOP_TYPE_AUTOMATIC" value="<%= WorkflowEndType.AUTOMATIC %>"/>
 <c:set var="STOP_TYPE_DATE" value="<%= WorkflowEndType.DATE %>"/>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <div id="table-tile" class="tile js-data-table" data-table="workflow-list-table" data-controller="workflow-list" data-editable-tile="main">
-        <script type="application/json" data-initializer="workflow-list">
+<mvc:message var="deactivateMsg" code="btndeactivate" />
+<mvc:message var="activateMsg"   code="button.Activate" />
+
+<c:set var="deleteAllowed" value="${emm:permissionAllowed('workflow.delete', pageContext.request)}" />
+<c:set var="changeAllowed" value="${emm:permissionAllowed('workflow.change', pageContext.request)}" />
+
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <div id="table-tile" class="tile" data-controller="workflow-list" data-editable-tile="main">
+
+        <script type="application/json" data-initializer="activeness-overview">
             {
-                "reactions": ${emm:toJson(REACTIONS)},
-                "urls": {
-                    "WORKFLOW_BULK_DELETE": "<c:url value="/workflow/bulkDelete.action"/>",
-                    "WORKFLOW_BULK_DEACTIVATE": "<c:url value="/workflow/confirmBulkDeactivate.action"/>"
-                }
+                "url": "<c:url value="/workflow/changeActiveness.action" />"
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
-        </div>
-
         <div class="tile-body">
-            <div class="js-data-table-body" data-web-storage="workflow-overview"></div>
+            <div class="table-wrapper" data-web-storage="workflow-overview" data-js-table="workflow-list-table">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <c:if test="${deleteAllowed or changeAllowed}">
+                            <div class="bulk-actions hidden">
+                                <p class="bulk-actions__selected">
+                                    <span><%-- Updates by JS --%></span>
+                                    <mvc:message code="default.list.entry.select" />
+                                </p>
+                                <div class="bulk-actions__controls">
+                                    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-workflow">
+                                        <i class="icon icon-check-circle"></i>
+                                    </a>
+                                    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-workflow">
+                                        <i class="icon icon-times-circle"></i>
+                                    </a>
+                                    <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.workflow" />" data-bulk-action="delete-workflow" data-action="bulk-delete">
+                                        <i class="icon icon-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </c:if>
+                        <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <c:forEach var="entry" items="${workflowsJson}">
-            <c:url var="viewLink" value="/workflow/${entry['id']}/view.action"/>
-            <c:set target="${entry}" property="show" value="${viewLink}"/>
-            <emm:ShowByPermission token="workflow.delete">
-                <c:url var="deleteLink" value="/workflow/bulkDelete.action">
-                    <c:param name="bulkIds" value="${entry['id']}"/>
-                </c:url>
-                <c:set target="${entry}" property="delete" value="${deleteLink}"/>
-            </emm:ShowByPermission>
-        </c:forEach>
-
     </div>
+
     <script id="workflow-list-table" type="application/json">
         {
             "columns": [
                 {
                     "field": "select",
-                    "type": "bulkSelectColumn"
+                    "type": "bulkSelectColumn",
+                    "hide": ${not changeAllowed and not deleteAllowed}
                 },
                 {
                     "headerName": "<mvc:message code='Status'/>",
-                        "editable": false,
-                        "field": "status",
-                        "sortable": false,
-                        "cellRenderer": "MustacheTemplateCellRender",
-                        "cellRendererParams": {"templateName": "status-cell"},
-                        "type": "setColumn"
-                    },
-                    {
-                        "headerName": "<mvc:message code='default.Name'/>",
-                        "editable": false,
-                        "cellRenderer": "NotEscapedStringCellRenderer",
-                        "field": "shortname"
-                    },
-                    {
-                        "headerName": "<mvc:message code='Description'/>",
-                        "editable": false,
-                        "cellRenderer": "NotEscapedStringCellRenderer",
-                        "field": "description"
-                    },
-                    {
-                        "headerName": "<mvc:message code='Start'/>",
-                        "editable": false,
-                        "field": "startDate",
-                        "sortable": false,
-                        "cellRenderer": "MustacheTemplateCellRender",
-                        "cellRendererParams": {"templateName": "start-cell"},
-                        "suppressSizeToFit": true,
-                        "type": "customColumn",
-                        "filter": "WorkflowStartFilter"
-                    },
-                    {
-                        "headerName": "<mvc:message code='report.stopDate'/>",
-                        "editable": false,
-                        "field": "stopDate",
-                        "sortable": false,
-                        "cellRenderer": "MustacheTemplateCellRender",
-                        "cellRendererParams": {"templateName": "end-cell"},
-                        "type": "customColumn",
-                        "suppressSizeToFit": true,
-                        "filter": "WorkflowStopFilter"
-                    },
-                    {
-                        "headerName": "<mvc:message code='workflow.Reaction'/>",
-                        "editable": false,
-                        "field": "reaction",
-                        "sortable": false,
-                        "type": "setColumn",
-                        "cellRenderer": "MustacheTemplateCellRender",
-                        "cellRendererParams": {"templateName": "reaction-cell"}
-                    },
-                    {
-                        "field": "delete",
-                        "type": "deleteColumn"
-                    }
-                ],
-                "data": ${workflowsJson}
+                    "editable": false,
+                    "field": "status",
+                    "suppressSizeToFit": true,
+                    "sortable": false,
+                    "cellStyle": {"display": "flex", "align-items": "center"},
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "status-cell"},
+                    "type": "setColumn"
+                },
+                {
+                    "headerName": "<mvc:message code='default.Name'/>",
+                    "editable": false,
+                    "cellRenderer": "NotEscapedStringCellRenderer",
+                    "field": "shortname"
+                },
+                {
+                    "headerName": "<mvc:message code='Description'/>",
+                    "editable": false,
+                    "cellRenderer": "NotEscapedStringCellRenderer",
+                    "field": "description"
+                },
+                {
+                    "headerName": "<mvc:message code='Start'/>",
+                    "editable": false,
+                    "field": "startDate",
+                    "sortable": false,
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "start-cell"},
+                    "suppressSizeToFit": true,
+                    "type": "customColumn",
+                    "filter": "WorkflowStartFilter"
+                },
+                {
+                    "headerName": "<mvc:message code='report.stopDate'/>",
+                    "editable": false,
+                    "field": "stopDate",
+                    "sortable": false,
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "end-cell"},
+                    "type": "customColumn",
+                    "suppressSizeToFit": true,
+                    "filter": "WorkflowStopFilter"
+                },
+                {
+                    "headerName": "<mvc:message code='workflow.Reaction'/>",
+                    "editable": false,
+                    "field": "reaction",
+                    "sortable": false,
+                    "type": "setColumn",
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "reaction-cell"}
+                },
+                {
+                    "type": "tableActionsColumn",
+                    "buttons": [
+                       {"name": "activate-workflow",   "template": "workflow-activate-btn",   "hide": ${not changeAllowed}},
+                       {"name": "deactivate-workflow", "template": "workflow-deactivate-btn", "hide": ${not changeAllowed}},
+                       {"name": "delete-workflow",     "template": "workflow-delete-btn",     "hide": ${not deleteAllowed}}
+                    ],
+                    "hide": ${not changeAllowed and not deleteAllowed}
+                }
+            ],
+            "data": ${workflowsJson},
+            "options": {"viewLinkTemplate": "/workflow/{{- id }}/view.action"}
         }
     </script>
 
     <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
                 <div class="col-12">
                     <label class="form-label" for="status-filter"><mvc:message code="Status" /></label>
-                    <select id="status-filter" multiple class="form-control">
+                    <select id="status-filter" multiple class="form-control" data-result-template="select2-badge-option">
                         <c:forEach var="status" items="${STATUSES}">
                             <c:if test="${status.name ne 'NONE'}">
                                 <c:choose>
                                     <c:when test="${status.name eq 'failed'}">
-                                        <option value="${status.name}">Failed</option>
+                                        <option value="${status.name}" data-badge-class="campaign.status.failed">Failed</option>
                                     </c:when>
                                     <c:otherwise>
-                                        <option value="${status.name}"><mvc:message code="${status.messageKey}"/></option>
+                                        <option value="${status.name}" data-badge-class="campaign.status.${status.name}"><mvc:message code="${status.messageKey}"/></option>
                                     </c:otherwise>
                                 </c:choose>
                             </c:if>
@@ -195,7 +218,7 @@
                         <div class="date-picker-container mb-1">
                             <input type="text" id="startDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
                         </div>
-                        <div class="date-picker-container mb-1">
+                        <div class="date-picker-container">
                             <input type="text" id="startDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
                         </div>
                     </div>
@@ -210,15 +233,17 @@
                         <div class="date-picker-container mb-1">
                             <input type="text" id="stopDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
                         </div>
-                        <div class="date-picker-container mb-1">
+                        <div class="date-picker-container">
                             <input type="text" id="stopDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
                         </div>
                     </div>
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="reaction-filter"><mvc:message code="workflow.Reaction" /></label>
-                    <select id="reaction-filter" multiple class="form-control">
-                        <%--options added with js--%>
+                    <select id="reaction-filter" multiple class="form-control" data-result-template="workflow-reaction-option" data-selection-template="workflow-reaction-option">
+                        <c:forEach var="reactionType" items="${WorkflowReactionType.values()}">
+                            <option value="${reactionType.name}">${reactionType.name}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -227,14 +252,11 @@
 </div>
 
 <script id="status-cell" type="text/x-mustache-template">
-    <div class="d-inline-block d-flex align-items-center gap-1">
-        <span class="status-badge campaign.status.{{- value.name }}"></span>
-        <span class="text-truncate">{{- t('workflow.status.' + value.name) }}</span>
-    </div>
+    <span class="status-badge campaign.status.{{- value }}" data-tooltip="{{- t('workflow.status.' + value) }}"></span>
 </script>
 
 <script id="reaction-cell" type="text/x-mustache-template">
-    <div class="text-truncate">
+    <div class="text-truncate-table">
         {{ if (value) { }}
             {{ if (value.iconClass) { }}
                 <i class="icon {{- value.iconClass}}"></i>
@@ -249,7 +271,7 @@
 <script id="start-cell" type="text/x-mustache-template">
     {{ if (value) { }}
         {{ if (!['${EVENT_REACTION}', '${EVENT_DATE}'].includes(value.type)) { }}
-            {{- AGN.Lib.DateFormat.formatAdminDateTime(value.date) }}
+            <span class="text-truncate-table">{{- AGN.Lib.DateFormat.formatAdminDateTime(value.date) }}</span>
         {{ } else { }}
             {{ const type = value.type === 'EVENT_REACTION' ? 'action_based' : 'date_based'; }}
             <span class="badge badge-campaign-start-{{- type }}">
@@ -262,10 +284,43 @@
 
 <script id="end-cell" type="text/x-mustache-template">
     {{ if (value) { }}
-        {{ if (value.type === '${STOP_TYPE_AUTOMATIC}') { }}
-            {{- t('workflow.stop.automatic_end') }}
-        {{ } else { }}
-            {{- AGN.Lib.DateFormat.formatAdminDateTime(value.date) }}
-        {{ } }}
+        <span class="text-truncate-table">
+            {{ if (value.type === '${STOP_TYPE_AUTOMATIC}') { }}
+                {{- t('workflow.stop.automatic_end') }}
+            {{ } else { }}
+                {{- AGN.Lib.DateFormat.formatAdminDateTime(value.date) }}
+            {{ } }}
+        </span>
     {{ } }}
+</script>
+
+<script id="workflow-delete-btn" type="text/x-mustache-template">
+    <a href="{{= AGN.url('/workflow/bulkDelete.action?bulkIds=' + id) }}" type="button" class="icon-btn text-danger js-data-table-delete" data-tooltip="<mvc:message code="Delete" />">
+        <i class="icon icon-trash-alt"></i>
+    </a>
+</script>
+
+<script id="workflow-activate-btn" type="text/x-mustache-template">
+    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
+        <i class="icon icon-check-circle"></i>
+    </a>
+</script>
+
+<script id="workflow-deactivate-btn" type="text/x-mustache-template">
+    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
+        <i class="icon icon-times-circle"></i>
+    </a>
+</script>
+
+<script id="workflow-reaction-option" type="text/x-mustache-template">
+    <span>{{- t('workflow.reaction.' + value) }}</span>
+</script>
+
+<script type="text/javascript">
+  AGN.Opt.TableActionsConditions['activate-workflow'] = data => {
+    return ['${STATUS_INACTIVE.name}', '${STATUS_OPEN.name}', '${STATUS_PAUSED.name}'].includes(data.status);
+  };
+  AGN.Opt.TableActionsConditions['deactivate-workflow'] = data => {
+    return ['${STATUS_ACTIVE.name}', '${STATUS_TESTING.name}', '${STATUS_PAUSED.name}'].includes(data.status);
+  };
 </script>

@@ -1,4 +1,4 @@
-(function(){
+(() => {
 
   class Colorpicker {
 
@@ -54,7 +54,7 @@
     #updatePipetteColor(selectedColor) {
       const color = selectedColor
         ? this.#invertColor(selectedColor.toHexString())
-        : this.$el.css('--default-text-color');
+        : this.$el.css('--text-color-default');
 
       this.$el.parent().find('.sp-preview').css('color', color);
     }

@@ -4,9 +4,8 @@
 $ag-theme: 'bootstrap';
 
 .ag-theme-#{$ag-theme} {
-  --ag-row-border-style: none;
   --ag-border-radius: $border-radius;
-  --ag-row-height: 39px;
+  --ag-row-height: calc(#{$table-row-height} - #{$table-spacing} - 1px);
   --ag-cell-horizontal-padding: #{$table-spacing};
   --ag-row-hover-color: rgba(75, 75, 75, 0.30);
   --ag-font-size: #{$font-size-base};
@@ -14,7 +13,12 @@ $ag-theme: 'bootstrap';
   --ag-border-color: var(--table-border-color);
 
   --ag-background-color: var(--main-bg-color);
-  --ag-data-color: var(--default-text-color);
+  --ag-data-color: var(--text-color-default);
+  --ag-selected-row-background-color: var(--ag-background-color);
+
+  .ag-row-no-hover {
+    --ag-row-hover-color: transparent !important;
+  }
 
   .ag-root-wrapper {
     border: none;
@@ -25,18 +29,20 @@ $ag-theme: 'bootstrap';
 
   //header separator
   --ag-header-column-separator-display: block;
-  --ag-header-column-separator-height: 75%;
+  --ag-header-column-separator-height: 55%;
   --ag-header-column-separator-width: 1px;
   --ag-header-column-separator-color: var(--table-border-color);
 
   //resizable separator
-  --ag-header-column-resize-handle-display: block;
-  --ag-header-column-resize-handle-height: 75%;
-  --ag-header-column-resize-handle-width: 1px;
-  --ag-header-column-resize-handle-color: var(--table-border-color);
+  --ag-header-column-resize-handle-display: var(--ag-header-column-separator-display);
+  --ag-header-column-resize-handle-height: var(--ag-header-column-separator-height);
+  --ag-header-column-resize-handle-width: var(--ag-header-column-separator-width);
+  --ag-header-column-resize-handle-color: var(--ag-header-column-separator-color);
 
   .ag-header {
-    border-bottom: none;
+    border: $table-border;
+    border-top: none;
+    @include border-bottom-radius;
   }
 
   .ag-header-cell-label {
@@ -54,15 +60,15 @@ $ag-theme: 'bootstrap';
     }
 
     &[aria-sort=ascending], &[aria-sort=descending] {
-      color: $primary;
+      color: var(--table-sortable-color);
       .ag-header-icon {
-        color: $primary;
+        color: var(--table-sortable-color);
       }
     }
   }
 
   .ag-header-icon {
-    padding-right: $table-spacing;
+    padding-right: $table-spacing / 2;
     &:empty {
       display: none;
     }
@@ -73,6 +79,45 @@ $ag-theme: 'bootstrap';
   // To remove this minimum height, add the following CSS:
   .ag-center-cols-clipper {
     min-height: unset !important;
+  }
+
+  .ag-row:last-child {
+    border-bottom: none;
+  }
+
+  .ag-cell {
+    --ag-internal-calculated-line-height: #{$line-height-base};
+    padding: 0;
+    @include flex-column; // this is necessary for .ag-cell-value. it should occupy the whole cell
+  }
+
+  .ag-cell-wrapper {
+    flex: 1 0 $table-row-height - 2px; // - borders
+    justify-content: center;
+  }
+
+  .ag-cell-value {
+    height: 100%;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+
+    > div {
+      height: 100%;
+      flex-grow: 1;
+      padding: $gap-x-sm $gap-sm - 1;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  // custom element
+  .ag-grid-cell-link {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    padding: $gap-x-sm $gap-sm - 1;
   }
 
   .ag-cell-focus {
@@ -86,6 +131,10 @@ $ag-theme: 'bootstrap';
 
   .ag-selection-checkbox {
     margin-right: 0;
+
+    & + .ag-cell-value {
+      display: none;
+    }
   }
 
   .ag-checkbox-input-wrapper {
@@ -96,6 +145,14 @@ $ag-theme: 'bootstrap';
       -webkit-appearance: unset;
       opacity: 1;
       margin-top: 0;
+
+      &:not(:checked) {
+        background-color: var(--table-checkbox-bg-color);
+
+        &:disabled {
+          background-color: var(--input-disabled-bg-color);
+        }
+      }
     }
     &::after {
       content: '';
@@ -117,13 +174,13 @@ $ag-theme: 'bootstrap';
     padding-inline: $table-spacing;
   }
 
-  [col-id="delete"] {
-    span {
-      padding-right: 0;
+  .ag-body:not(.no-truncate) {
+    .ag-row {
+      height: $table-row-height - 1 !important;
     }
-    div {
-      height: 100%;
-      @include flex-center;
+
+    .text-truncate-table {
+      @include table-text-truncation;
     }
   }
 }

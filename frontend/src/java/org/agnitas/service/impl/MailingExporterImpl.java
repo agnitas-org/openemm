@@ -48,7 +48,7 @@ import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -64,7 +64,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	protected ComCompanyDao companyDao;
 	
 	@Resource(name="MailingDao")
-	protected ComMailingDao mailingDao;
+	protected MailingDao mailingDao;
 	
 	@Resource(name="MailinglistDao")
 	protected MailinglistDao mailinglistDao;

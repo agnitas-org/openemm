@@ -2,7 +2,7 @@
 @use "../../WEB-INF/node_modules/ag-grid-community/styles" as ag;
 
 @include ag.grid-styles();
-@import "../../WEB-INF/node_modules/perfect-scrollbar/css/perfect-scrollbar";
+@import "vendor/perfect-scrollbar";
 @import "../../WEB-INF/node_modules/spectrum-colorpicker/spectrum";
 @import "custom-bootstrap-variables";
 @import "custom-font-awesome-variables";

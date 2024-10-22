@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 /**
  * Represents set of fields for displaying upselling page
  */
+// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 public class UpsellingForm {
     private String page;
     private String featureNameKey;

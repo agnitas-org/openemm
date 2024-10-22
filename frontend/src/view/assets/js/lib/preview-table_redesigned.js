@@ -19,8 +19,8 @@
     }
 
     static #toggleUI($toggle) {
-      const tableSelector = $toggle.data('preview-table');
-      $(tableSelector).toggleClass('table-preview', PreviewTable.#isPreviewEnabled($toggle));
+      const $table = $($toggle.data('preview-table'));
+      $table.toggleClass('table--preview', PreviewTable.#isPreviewEnabled($toggle));
     }
 
     static #isPreviewEnabled($toggle) {

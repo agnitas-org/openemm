@@ -1,6 +1,8 @@
-class ImportExportTile extends DraggableTile {
+(() => {
 
-  get id() {
-    return DraggableTile.def.TILE.ID.IMPORTS_EXPORTS;
+  class ImportExportTile extends AGN.Lib.Dashboard.DraggableTile {
+    static ID = 'imports-exports';
   }
-}
+
+  AGN.Lib.Dashboard.ImportExportTile = ImportExportTile;
+})();

@@ -1,7 +1,7 @@
 <%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -14,17 +14,14 @@
 <%-- Note: there's a group having id = 0, invalid ids are negative --%>
 <c:set var="userGroupIsNew" value="${userGroupForm.id < 0}"/>
 
-<c:set var="isTabsMenuShown" 		value="false" 								scope="request" />
-<c:set var="agnNavigationKey" 		value="none" 							    scope="request" />
-<c:set var="agnTitleKey" 			value="settings.Usergroup" 					scope="request" />
-<c:set var="agnSubtitleKey" 		value="settings.Usergroup" 					scope="request" />
-<c:set var="sidemenu_active" 		value="Administration" 						scope="request" />
-<c:set var="sidemenu_sub_active" 	value="settings.Usergroups" 				scope="request" />
-<c:set var="agnHighlightKey" 		value="settings.NewUsergroup" 				scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 								scope="request" />
-<c:set var="agnBreadcrumbsRootKey" 	value="Administration" 		                scope="request" />
-<c:set var="agnHelpKey" 			value="managingUserGroups" 					scope="request" />
-<c:set var="agnEditViewKey" 	    value="usergroup-view" 	                    scope="request" />
+<c:set var="agnTitleKey" 			value="settings.Usergroup" 					                    scope="request" />
+<c:set var="sidemenu_active" 		value="Administration" 						                    scope="request" />
+<c:set var="sidemenu_sub_active" 	value="settings.Usergroups" 				                    scope="request" />
+<c:set var="agnHighlightKey" 		value="settings.NewUsergroup" 				                    scope="request" />
+<c:set var="agnBreadcrumbsRootKey" 	value="settings.Usergroups" 		                            scope="request" />
+<c:url var="agnBreadcrumbsRootUrl" 	value="/administration/usergroup/list.action?restoreSort=true" 	scope="request" />
+<c:set var="agnHelpKey" 			value="managingUserGroups" 					                    scope="request" />
+<c:set var="agnEditViewKey" 	    value="usergroup-view" 	                                        scope="request" />
 
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="userGroupId" value="${userGroupForm.id}"/>
@@ -33,14 +30,6 @@
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="textKey" value="settings.Usergroups"/>
-        <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/administration/usergroup/list.action"/>
-        </c:set>
-    </emm:instantiate>
-
-    <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-        <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:choose>
             <c:when test="${userGroupIsNew}">
                 <c:set target="${agnBreadcrumb}" property="textKey" value="settings.NewUsergroup"/>
@@ -58,7 +47,6 @@
             <emm:ShowByPermission token="role.change">
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">
                     <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-                    <c:set target="${element}" property="btnCls" value="btn"/>
                     <c:set target="${element}" property="extraAttributes" value="data-form-target='#userGroupForm' data-form-submit"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
@@ -72,9 +60,7 @@
             <emm:instantiate var="element" type="java.util.LinkedHashMap">
                 <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-                <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
                 <c:set target="${element}" property="cls" value="mobile-hidden"/>
-                <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
                 <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
                 <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -121,7 +107,6 @@
                     <emm:instantiate var="element" type="java.util.LinkedHashMap">
                         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                        <c:set target="${element}" property="btnCls" value="btn"/>
                         <c:set target="${element}" property="extraAttributes" value="data-form-target='#userGroupForm' data-form-submit"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">

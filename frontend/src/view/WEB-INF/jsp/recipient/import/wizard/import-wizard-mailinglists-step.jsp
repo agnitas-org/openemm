@@ -9,7 +9,7 @@
 <mvc:form servletRelativeAction="/recipient/import/wizard/step/mailinglists.action" modelAttribute="importWizardSteps" data-form="resource">
     <c:set var="tileContent">
         <div class="tile-notification tile-notification-info">
-            <mvc:message code="SubscribeLists"/>
+            <mvc:message code="import.SubscribeLists"/>
             <button type="button" class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_6/SubscribeLists.xml"></button>
         </div>
         <div class="tile-content tile-content-forms">

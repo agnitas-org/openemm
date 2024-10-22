@@ -73,20 +73,42 @@ public class BirtReportFormValidator {
 	}
 
     public boolean isValidToEvaluate(BirtReportForm form, Admin admin, Popups popups) {
-        ReportSettingsType activeType = ReportSettingsType.getTypeByCode(form.getActiveTab());
-        return isValidCommonSettings(form, popups)
-                && validateBirtReport(activeType, form, popups, admin);
+		if (admin.isRedesignedUiUsed()) {
+			if (!isValidCommonSettings(form, popups)) {
+				return false;
+			}
+
+			return birtReportService.getBirtReportSettingsTypesForEvaluation(form.getSettings(), form.getActiveTab(), admin)
+					.stream()
+					.allMatch(type -> validateBirtReport(type, form, popups, admin));
+		} else {
+			ReportSettingsType activeType = ReportSettingsType.getTypeByCode(form.getActiveTab());
+			return isValidCommonSettings(form, popups)
+					&& validateBirtReport(activeType, form, popups, admin);
+		}
     }
 
     private boolean isValidCommonSettings(BirtReportForm form, Popups popups) {
         validateShortname(form.getShortname(), popups);
         validateDescription(form.getDescription(), popups);
+        if (hasActivatedDelivery(form)) {
+            validateDeliverySettings(form, popups);
+        }
+        return !popups.hasAlertPopups();
+    }
+
+    private void validateDeliverySettings(BirtReportForm form, Popups popups) {
         validateEmailAddresses(form.getEmailAddresses(), popups);
         validateEmailSubject(form.getEmailSubject(), popups);
         validateEmailDescription(form.getEmailDescription(), popups);
         validateType(form, popups);
         validateSendDate(form, popups);
-        return !popups.hasAlertPopups();
+    }
+
+    private static boolean hasActivatedDelivery(BirtReportForm form) {
+        return form.getSettings().values().stream()
+                .map(settings -> settings.get("enabled"))
+                .anyMatch("true"::equals);
     }
 
     private boolean isDeliveryActivated(BirtReportForm form, ReportSettingsType settingsType) {

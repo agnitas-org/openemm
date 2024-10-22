@@ -21,6 +21,7 @@ public class DbColumnType {
 	public static final String GENERIC_TYPE_DATE = "DATE";
 	public static final String GENERIC_TYPE_DATETIME = "DATETIME";
 	public static final String GENERIC_TYPE_BLOB = "BLOB";
+	public static final String GENERIC_TYPE_TIMESTAMP = "TIMESTAMP";
 
 	private String typeName;
 	private long characterLength; // only for VARCHAR and VARCHAR2 types
@@ -31,7 +32,7 @@ public class DbColumnType {
 	public enum SimpleDataType {
 		Characters("settings.fieldType.VARCHAR", "VARCHAR"),
 		Numeric("settings.fieldType.INTEGER", "INTEGER"),
-		Float("settings.fieldType.FLOAT", "FLOAT"),
+		Float("settings.fieldType.DOUBLE", "DOUBLE"),
 		Date("settings.fieldType.DATE", "DATE"),
 		DateTime("settings.fieldType.DATETIME", "DATETIME"),
 		Blob("settings.fieldType.Blob", "BLOB");

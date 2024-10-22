@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTitleDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
@@ -57,7 +57,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
 
     private ComCompanyDao companyDao;
     private RecipientService recipientService;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private ComTitleDao titleDao;
     private TagDao tagDao;
     private ConfigService configService;
@@ -94,7 +94,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     }
 
     @Required
-    public final void setMailingDao(final ComMailingDao dao) {
+    public final void setMailingDao(final MailingDao dao) {
         this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
     }
 
@@ -256,7 +256,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     						companyTokenOpt.get(),
     						formName)
     				: String.format(
-    						"%s/formaction?agnCI=%d&agnFN=%s&agnUID=##AGNUID##",
+    						"%s/form.action?agnCI=%d&agnFN=%s&agnUID=##AGNUID##",
     						getRedirectDomain(),
     						companyId,
     						formName);

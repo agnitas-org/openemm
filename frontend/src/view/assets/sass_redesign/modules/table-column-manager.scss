@@ -1,0 +1,48 @@
+
+[data-table-column-manager].is-edit-mode {
+  tbody, .table-wrapper__rows-selection {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+  }
+
+  td > *, .pagination {
+    filter: grayscale(1);
+  }
+
+  .table-wrapper__body {
+    background: var(--table-head-bg-color);
+  }
+}
+
+.dropdown-menu--table-column {
+  .select2-container .select2-selection.form-control {
+    border: none;
+    padding: 0;
+
+    .select2-selection__rendered {
+      display: none;
+    }
+
+    .select2-search {
+      position: relative; // fix for search icon displaying when no choises made
+      padding-block: $dropdown-spacer;
+      padding-right: 25px;
+
+      &:after {
+        content: fa-content($fa-var-search);
+        top: 7px;
+        right: $gap-sm;
+        line-height: 1;
+      }
+    }
+
+    &[aria-expanded="true"] .select2-search::after {
+      transform: rotate(0deg);
+    }
+  }
+}

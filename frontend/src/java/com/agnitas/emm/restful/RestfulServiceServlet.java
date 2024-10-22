@@ -394,8 +394,7 @@ public class RestfulServiceServlet extends HttpServlet {
 	}
 
 	public final Map<String, String> getRequestParameterMap(HttpServletRequest request) {
-		@SuppressWarnings("unchecked")
-		Map<String, String> parameterMap = (Map<String, String>) request.getAttribute(REQUEST_ATTRIBUTE_PARAMETER_MAP);
+		Map<String, String> parameterMap = getRequestAttributeParameterMap(request);
 		return parameterMap;
 	}
 
@@ -455,8 +454,7 @@ public class RestfulServiceServlet extends HttpServlet {
 
 		List<FileItem> uploadParts = uploadHelper.parseRequest(request);
 		
-		@SuppressWarnings("unchecked")
-		Map<String, String> parameterMap = (Map<String, String>) request.getAttribute(REQUEST_ATTRIBUTE_PARAMETER_MAP);
+		Map<String, String> parameterMap = getRequestAttributeParameterMap(request);
 		for (FileItem part : uploadParts) {
 			if (part.isFormField()) {
 				try {
@@ -565,8 +563,7 @@ public class RestfulServiceServlet extends HttpServlet {
 		if (!parameterNames.isEmpty()) {
 			for (String parameterName : parameterNames) {
 				// URLDecoding happens automatically
-				@SuppressWarnings("unchecked")
-				Map<String, String> parameterMap = (Map<String, String>) request.getAttribute(REQUEST_ATTRIBUTE_PARAMETER_MAP);
+				Map<String, String> parameterMap = getRequestAttributeParameterMap(request);
 				parameterMap.put(parameterName, request.getParameter(parameterName));
 			}
 		} else {
@@ -583,8 +580,7 @@ public class RestfulServiceServlet extends HttpServlet {
 					if (matcher.find()) {
 						String[] valuePairs = requestDataString.split("&");
 
-						@SuppressWarnings("unchecked")
-						Map<String, String> parameterMap = (Map<String, String>) request.getAttribute(REQUEST_ATTRIBUTE_PARAMETER_MAP);
+						Map<String, String> parameterMap = getRequestAttributeParameterMap(request);
 						
 						for (String valuePair : valuePairs) {
 							String[] valuePairParts = valuePair.split("=");
@@ -601,6 +597,18 @@ public class RestfulServiceServlet extends HttpServlet {
 			} catch (IOException e) {
 				throw new Exception("Error while reading request data: " + e.getMessage(), e);
 			}
+		}
+	}
+
+	public Map<String, String> getRequestAttributeParameterMap(HttpServletRequest request) {
+		Object requestAttributeParameterObject = request.getAttribute(REQUEST_ATTRIBUTE_PARAMETER_MAP);
+		if (!(requestAttributeParameterObject instanceof Map)) {
+			throw new RuntimeException("Invalid internal value for " + REQUEST_ATTRIBUTE_PARAMETER_MAP);
+		} else {
+			// This @SuppressWarnings cannot be removed for current eclipse
+			@SuppressWarnings("unchecked")
+			Map<String, String> requestAttributeParameterMap = (Map<String, String>) requestAttributeParameterObject;
+			return requestAttributeParameterMap;
 		}
 	}
 

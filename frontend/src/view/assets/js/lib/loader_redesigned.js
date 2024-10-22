@@ -1,4 +1,4 @@
-(function(){
+(() => {
 
   let Loader = {},
       hiding,
@@ -20,10 +20,9 @@
     requestCount -= 1;
 
     if (requestCount <= 0) {
-      hiding = window.setTimeout(function() {
+      hiding = window.setTimeout(() => {
         $('.loader--main').addClass('hidden');
       }, 5);
-
       requestCount = 0;
     }
   }
@@ -31,7 +30,6 @@
   Loader.prevent = function() {
     prevent = true;
   }
-
 
   AGN.Lib.Loader = Loader;
 

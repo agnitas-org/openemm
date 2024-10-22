@@ -1,13 +1,11 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="agnTitleKey" 			value="ImportExport"				scope="request" />
-<c:set var="agnSubtitleKey" 		value="import.templates.div" 		scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 				scope="request" />
 <c:set var="sidemenu_sub_active" 	value="import.templates.div" 		scope="request" />
 <c:set var="agnHighlightKey" 		value="import.templates.div" 		scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="ImportExport" 				scope="request" />
 <c:set var="agnHelpKey" 			value="importing-templates" 		scope="request" />
 <c:set var="agnEditViewKey" 	    value="import-templates"            scope="request" />

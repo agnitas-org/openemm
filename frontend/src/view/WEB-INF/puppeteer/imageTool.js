@@ -18,7 +18,7 @@ let width  = args[2]; // px
   if (width) {
     await page.setViewport({width: +width, height: 1});
   }
-  await page.goto(url);
+  await page.goto(url, { timeout: 60000 });
   await page.screenshot({path: path, fullPage: true});
   await browser.close();
 })();

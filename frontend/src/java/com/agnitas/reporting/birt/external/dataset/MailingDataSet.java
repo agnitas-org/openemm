@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.dao.impl.CampaignDaoImpl;
-import com.agnitas.dao.impl.ComMailingComponentDaoImpl;
+import com.agnitas.dao.impl.MailingComponentDaoImpl;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
@@ -297,7 +297,7 @@ public class MailingDataSet extends BIRTDataSet {
     }
 
     private byte[] getThumbnailImage(int mailingId, int companyId) {
-		ComMailingComponentDaoImpl componentDao = new ComMailingComponentDaoImpl();
+		MailingComponentDaoImpl componentDao = new MailingComponentDaoImpl();
 		componentDao.setDataSource(getDataSource());
 		componentDao.setMailingComponentFactory(new MailingComponentFactoryImpl());
 

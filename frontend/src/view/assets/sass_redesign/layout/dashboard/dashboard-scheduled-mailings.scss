@@ -25,7 +25,7 @@
 .schedule__mailing-name {
   @include flex-row($gap-sm);
   align-items: center;
-  color: var(--default-text-color);
+  color: var(--text-color-default);
 
   .mailing-badge {
     flex: none;

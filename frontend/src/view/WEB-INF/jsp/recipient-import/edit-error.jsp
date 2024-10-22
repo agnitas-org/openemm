@@ -4,6 +4,7 @@
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
 <%--@elvariable id="columns" type="org.agnitas.service.impl.CSVColumnState[]"--%>
@@ -50,6 +51,10 @@
                             <label class="label">
                                 <mvc:radiobutton path="numberOfRows" value="100" />
                                 <span class="label-text">100</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
                             </label>
                         </li>
                         <li class="divider"></li>
@@ -105,7 +110,7 @@
                                             <input type="hidden" name="${inputNamePrefix}.index" value="${recipient.ERROR_EDIT_RECIPIENT_EDIT_RESERVED.temporaryId}">
                                             <input type="hidden" name="${inputNamePrefix}.fieldName" value="${column.colName}">
 
-                                            <input type="text" class="form-control" name="${inputNamePrefix}.value" value="${recipient[column.colName]}">
+                                            <input type="text" class="form-control" name="${inputNamePrefix}.value" value="${fn:escapeXml(recipient[column.colName])}">
                                             <span class="icon icon-state-warning form-control-feedback"></span>
                                         </c:otherwise>
                                     </c:choose>

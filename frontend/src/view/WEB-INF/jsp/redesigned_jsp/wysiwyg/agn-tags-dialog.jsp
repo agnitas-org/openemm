@@ -6,7 +6,7 @@
 <%--@elvariable id="tags" type="java.util.List<com.agnitas.beans.AgnTagDto>"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog">
         <div class="modal-content" data-controller="wysiwyg-agn-tags">
             <script type="application/json" data-initializer="wysiwyg-agn-tags">
                 ${emm:toJson(tags)}
@@ -14,7 +14,7 @@
 
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="htmled.agntagsWindowTitle" /></h1>
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -41,7 +41,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary flex-grow-1" data-action="insert-agn-tag">
+                <button type="button" class="btn btn-primary" data-action="insert-agn-tag">
                     <i class="icon icon-save"></i>
                     <span class="text">
                         <mvc:message code="button.Apply"/>

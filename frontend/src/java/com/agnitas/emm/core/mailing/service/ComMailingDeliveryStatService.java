@@ -14,5 +14,8 @@ import com.agnitas.beans.DeliveryStat;
 import com.agnitas.emm.common.MailingType;
 
 public interface ComMailingDeliveryStatService {
+
     DeliveryStat getDeliveryStats(int companyID, int mailingID, MailingType mailingType);
+    int getSentMails(int maildropId);
+
 }

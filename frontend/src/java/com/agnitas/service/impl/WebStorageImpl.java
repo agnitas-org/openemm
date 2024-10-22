@@ -69,7 +69,7 @@ public class WebStorageImpl implements WebStorage {
 
         synchronized (key) {
             try {
-                return (T) access(key).clone();
+                return (T) access(key).clone(); // suppress warning for this cast
             } catch (CloneNotSupportedException e) {
                 throw new RuntimeException(e);
             }

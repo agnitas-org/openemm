@@ -14,14 +14,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.IntStream;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
+import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowMailingAware;
-import com.agnitas.emm.core.workflow.beans.WorkflowParameter;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowRecipient;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
@@ -29,45 +30,68 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowActionBasedMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowArchiveImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowConnectionImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
 
 public class ComSampleWorkflowFactory {
+
 	public enum SampleWorkflowType {
-		BIRTHDAY("scBirthday"),
-		DOI("scDOI"),
-		AB_TEST("scABTest");
+        AB_TEST("scABTest", "mailing.autooptimization"),
+        DOI("scDOI", "workflow.icon.DOI"),
+        BIRTHDAY("scBirthday", "workflow.icon.birthday"),
+        BIRTHDAY_WITH_COUPON("birthdayWithCoupon", "workflow.icon.birthday.coupon"),
+        WELCOME_TRACK("welcomeTrack", "workflow.icon.welcome"),
+        WELCOME_TRACK_WITH_INCENTIVE("welcomeTrackWithIncentive", "workflow.icon.welcome.incentive"),
+        SHOPPING_CART_ABANDONERS_SMALL("shoppingCartAbandonersSmall", "workflow.icon.sca.small"),
+        SHOPPING_CART_ABANDONERS_LARGE("shoppingCartAbandonersLarge", "workflow.icon.sca.large");
 
-		private String value;
+		private final String value;
+		private final String message;
 
-		SampleWorkflowType(String value) {
+		SampleWorkflowType(String value, String message) {
 			this.value = value;
-		}
+            this.message = message;
+        }
+
+        public static SampleWorkflowType from(String value) {
+            for (SampleWorkflowType enumConstant : SampleWorkflowType.values()) {
+                if (enumConstant.getValue().equals(value)) {
+                    return enumConstant;
+                }
+            }
+            throw new IllegalArgumentException("No SampleWorkflowType constant with value " + value);
+        }
 
 		public String getValue() {
 			return value;
 		}
-	}
 
-	public static List<WorkflowIcon> createSampleWorkflow(String type, boolean gridEnabled, Admin admin) {
-		if (SampleWorkflowType.BIRTHDAY.getValue().equals(type)) {
-			return createSampleWorkflowBirthday(gridEnabled);
-		}
-		if (SampleWorkflowType.DOI.getValue().equals(type)) {
-			return createSampleWorkflowDOI(gridEnabled);
-		}
-		if (SampleWorkflowType.AB_TEST.getValue().equals(type)) {
-			return createSampleWorkflowABTest(gridEnabled, admin);
-		}
-		return null;
+        public String getMessage() {
+            return message;
+        }
+    }
+
+	public static List<WorkflowIcon> createSampleWorkflow(SampleWorkflowType type, boolean gridEnabled) {
+        switch (type) {
+            case DOI:
+                return createSampleWorkflowDOI(gridEnabled);
+            case BIRTHDAY_WITH_COUPON:
+            case SHOPPING_CART_ABANDONERS_LARGE:
+                return createBirthdayWithCouponSample(gridEnabled);
+            case WELCOME_TRACK:
+                return createWelcomeTrackSample(gridEnabled);
+            case WELCOME_TRACK_WITH_INCENTIVE:
+                return createWelcomeTrackWithIncentiveSample(gridEnabled);
+            case BIRTHDAY:
+            case SHOPPING_CART_ABANDONERS_SMALL:
+                return createSampleWorkflowBirthday(gridEnabled);
+            default:
+                return null;
+        }
 	}
 
 	private static List<WorkflowIcon> createSampleWorkflowDOI(boolean gridEnabled) {
@@ -99,107 +123,143 @@ public class ComSampleWorkflowFactory {
         return Arrays.asList(connect(start, recipient, actionMailing, stop));
 	}
 
-	private static List<WorkflowIcon> createSampleWorkflowABTest(boolean gridEnabled, Admin admin) {
-		WorkflowStart start = new WorkflowStartImpl();
-		start.setId(1);
-		start.setX(0);
-		start.setY(gridEnabled ? 2 : 3);
-		start.setStartType(WorkflowStartType.DATE);
+    public static List<WorkflowIcon> autoOptWorkflowSample(int mailingsCount, boolean gridEnabled, Locale locale) {
+        int centerRowY = gridEnabled ? (mailingsCount - 1) : ((mailingsCount - 1) * 3);
 
-		WorkflowRecipient recipient = new WorkflowRecipientImpl();
-		recipient.setId(2);
-		recipient.setX(gridEnabled ? 2 : 4);
-		recipient.setY(gridEnabled ? 2 : 3);
+        WorkflowIcon start = getIcon(WorkflowIconType.START, 0, centerRowY);
+        WorkflowIcon recipient = getIcon(WorkflowIconType.RECIPIENT, gridEnabled ? 2 : 4, centerRowY);
+        WorkflowIcon archive = getIcon(WorkflowIconType.ARCHIVE, gridEnabled ? 4 : 8, centerRowY);
+        WorkflowIcon decision = getIcon(WorkflowIconType.DECISION, gridEnabled ? 10 : 20, centerRowY);
+        WorkflowIcon finalParameter = getIcon(WorkflowIconType.PARAMETER, gridEnabled ? 12 : 24, centerRowY);
+        WorkflowIcon finalMailing = getIcon(WorkflowIconType.MAILING, gridEnabled ? 14 : 28, centerRowY);
+        WorkflowIcon stop = getIcon(WorkflowIconType.STOP, gridEnabled ? 16 : 32, centerRowY);
+        List<WorkflowIcon> parameterIcons = getAutoOptTestIcon(WorkflowIconType.PARAMETER, mailingsCount, gridEnabled, gridEnabled ? 6 : 12);
+        List<WorkflowIcon> mailingIcons = getAutoOptTestIcon(WorkflowIconType.MAILING, mailingsCount, gridEnabled, gridEnabled ? 8 : 16);
+        
+        ((WorkflowStart) start).setStartType(WorkflowStartType.DATE);
+        ((WorkflowStopImpl) stop).setEndType(WorkflowStop.WorkflowEndType.AUTOMATIC);
+        ((WorkflowDecision) decision).setDecisionType(WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION);
+        finalMailing.setIconTitle(I18nString.getLocaleString("resultMailing", locale));
+        finalMailing.setEditable(false);
+        finalParameter.setEditable(false);
+        mailingIcons.forEach(mailingIcon -> mailingIcon.setIconTitle(""));
 
-		WorkflowArchive archive = new WorkflowArchiveImpl();
-		archive.setId(3);
-		archive.setX(gridEnabled ? 4 : 8);
-		archive.setY(gridEnabled ? 2 : 3);
+        List<WorkflowIcon> icons = new ArrayList<>(7 + mailingsCount * 2);
+        icons.addAll(List.of(start, recipient, archive));
+        icons.addAll(parameterIcons);
+        icons.addAll(mailingIcons);
+        icons.addAll(List.of(decision, finalParameter, finalMailing,  stop));
 
-		WorkflowParameter parameter1 = new WorkflowParameterImpl();
-		parameter1.setId(4);
-		parameter1.setX(gridEnabled ? 7 : 12);
-		parameter1.setY(0);
-
-		WorkflowParameter parameter2 = new WorkflowParameterImpl();
-		parameter2.setId(5);
-		parameter2.setX(gridEnabled ? 7 : 12);
-		parameter2.setY(gridEnabled ? 4 : 6);
-
-		WorkflowMailingImpl mailing1 = new WorkflowMailingImpl();
-		mailing1.setId(6);
-		mailing1.setIconTitle("");
-		mailing1.setX(gridEnabled ? 9 : 16);
-		mailing1.setY(0);
-
-		WorkflowMailingImpl mailing2 = new WorkflowMailingImpl();
-		mailing2.setId(7);
-		mailing2.setIconTitle("");
-		mailing2.setX(gridEnabled ? 9 : 16);
-		mailing2.setY(gridEnabled ? 4 : 6);
-
-		WorkflowDecision decision = new WorkflowDecisionImpl();
-		decision.setId(8);
-        decision.setDecisionType(WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION);
-		decision.setX(gridEnabled ? 12 : 20);
-		decision.setY(gridEnabled ? 2 : 3);
-
-		WorkflowParameter parameter3 = new WorkflowParameterImpl();
-		parameter3.setId(9);
-		parameter3.setX(gridEnabled ? 14 : 24);
-		parameter3.setY(gridEnabled ? 2 : 3);
-        parameter3.setEditable(false);
-
-		WorkflowMailingImpl mailing3 = new WorkflowMailingImpl();
-		mailing3.setId(10);
-		mailing3.setIconTitle(I18nString.getLocaleString("resultMailing", admin.getLocale()));
-		mailing3.setX(gridEnabled ? 16 : 28);
-		mailing3.setY(gridEnabled ? 2 : 3);
-		mailing3.setEditable(false);
-
-		WorkflowStopImpl stop = new WorkflowStopImpl();
-		stop.setId(11);
-        stop.setEndType(WorkflowStop.WorkflowEndType.AUTOMATIC);
-		stop.setX(gridEnabled ? 18 : 32);
-		stop.setY(gridEnabled ? 2 : 3);
-
+        IntStream.range(0, icons.size()).forEach(i -> icons.get(i).setId(i + 1));
+        
 		connect(start, recipient, archive);
-		connect(archive, parameter1, mailing1, decision);
-		connect(archive, parameter2, mailing2, decision);
-		connect(decision, parameter3, mailing3, stop);
+        for (int i = 0; i < mailingsCount; i++) {
+            connect(archive, parameterIcons.get(i), mailingIcons.get(i), decision);
+        }
+		connect(decision, finalParameter, finalMailing, stop);
+        return icons;
+    }
 
-		return Arrays.asList(start, recipient, archive, decision, parameter1, parameter2, parameter3, mailing1, mailing2, mailing3, stop);
-	}
+    private static WorkflowIcon getIcon(WorkflowIconType type, int x, int y) {
+        return getIcon(type, x, y, null);
+    }
+
+    private static WorkflowIcon getIcon(WorkflowIconType type, int x, int y, Integer id) {
+        WorkflowIcon icon = WorkflowUtils.getEmptyIcon(type);
+        icon.setX(x);
+        icon.setY(y);
+        if (id != null) {
+            icon.setId(id);
+        }
+        return icon;
+    }
+    
+    private static List<WorkflowIcon> getAutoOptTestIcon(WorkflowIconType type, int count, boolean gridEnabled, int x) {
+        List<WorkflowIcon> icons = new ArrayList<>(count);
+        int y = 0;
+        for (int i = 0; i < count; i++) {
+            WorkflowIcon parameter = getIcon(type, x, y);
+            icons.add(parameter);
+            y += gridEnabled ? 2 : 6;
+        }
+        return icons;
+    }
 
 	private static List<WorkflowIcon> createSampleWorkflowBirthday(boolean gridEnabled) {
-		WorkflowStart start = new WorkflowStartImpl();
-		start.setId(1);
-		start.setX(0);
-		start.setY(0);
-        start.setStartType(WorkflowStartType.EVENT);
-        start.setEvent(WorkflowStartEventType.EVENT_DATE);
-        start.setDate(new Date());
-
-		WorkflowRecipientImpl recipient = new WorkflowRecipientImpl();
-		recipient.setId(2);
-		recipient.setX(gridEnabled ? 3 : 4);
-		recipient.setY(0);
-
-		WorkflowMailingAware mailing = new WorkflowDateBasedMailingImpl();
-		mailing.setId(3);
-		mailing.setIconTitle("");
-		mailing.setX(gridEnabled ? 6 : 8);
-		mailing.setY(0);
-
-		WorkflowStopImpl stop = new WorkflowStopImpl();
-		stop.setId(4);
-		stop.setX(gridEnabled ? 9 : 12);
-		stop.setY(0);
+        WorkflowStart start = getEventDateStartIcon();
+        WorkflowIcon recipient = getIcon(WorkflowIconType.RECIPIENT, gridEnabled ? 3 : 4, 0, 2);
+        WorkflowIcon mailing = getIcon(WorkflowIconType.DATE_BASED_MAILING, gridEnabled ? 6 : 8, 0, 3);
+        WorkflowIcon stop = getIcon(WorkflowIconType.STOP, gridEnabled ? 9 : 12, 0, 4);
 
 		return Arrays.asList(connect(start, recipient, mailing, stop));
 	}
 
-	private static WorkflowIcon[] connect(WorkflowIcon... icons) {
+    private static List<WorkflowIcon> createBirthdayWithCouponSample(boolean gridEnabled) {
+        WorkflowStart start = getEventDateStartIcon();
+        return getDefaultDecisionChain(gridEnabled, start);
+    }
+
+    private static WorkflowDecision getDecisionBoughtIcon(boolean gridEnabled) {
+        WorkflowDecision decision = (WorkflowDecision) getIcon(WorkflowIconType.DECISION, gridEnabled ? 12 : 16, 0, 5);
+        decision.setDecisionType(WorkflowDecision.WorkflowDecisionType.TYPE_DECISION);
+        decision.setDecisionCriteria(WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION);
+        decision.setReaction(WorkflowReactionType.BOUGHT);
+        return decision;
+    }
+
+    private static WorkflowStart getEventDateStartIcon() {
+        WorkflowStart start = (WorkflowStart) getIcon(WorkflowIconType.START, 0, 0, 1);
+        start.setStartType(WorkflowStartType.EVENT);
+        start.setEvent(WorkflowStartEventType.EVENT_DATE);
+        start.setDate(new Date());
+        return start;
+    }
+
+    private static WorkflowDeadline get7daysDeadlineIcon(boolean gridEnabled) {
+        WorkflowDeadline deadline = (WorkflowDeadline) getIcon(WorkflowIconType.DEADLINE, gridEnabled ? 9 : 12, 0, 4);
+        deadline.setDeadlineType(WorkflowDeadline.WorkflowDeadlineType.TYPE_DELAY);
+        deadline.setTimeUnit(WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY);
+        deadline.setDelayValue(7);
+        return deadline;
+    }
+
+    private static List<WorkflowIcon> createWelcomeTrackSample(boolean gridEnabled) {
+        WorkflowStart start = (WorkflowStart) getIcon(WorkflowIconType.START, 0, 0, 1);
+        start.setStartType(WorkflowStartType.EVENT);
+        start.setEvent(WorkflowStartEventType.EVENT_REACTION);
+        start.setDate(new Date());
+
+        WorkflowIcon recipient = getIcon(WorkflowIconType.RECIPIENT, gridEnabled ? 3 : 4, 0, 2);
+
+        WorkflowIcon mailing = getIcon(WorkflowIconType.DATE_BASED_MAILING, gridEnabled ? 6 : 8, 0, 3);
+        mailing.setIconTitle("");
+
+        WorkflowIcon stop = getIcon(WorkflowIconType.STOP, gridEnabled ? 9 : 12, 0, 4);
+
+        return Arrays.asList(connect(start, recipient, mailing, stop));
+    }
+
+    private static List<WorkflowIcon> createWelcomeTrackWithIncentiveSample(boolean gridEnabled) {
+        WorkflowStart start = (WorkflowStart) getIcon(WorkflowIconType.START, 0, 0, 1);
+        start.setStartType(WorkflowStartType.EVENT);
+        start.setEvent(WorkflowStartEventType.EVENT_REACTION);
+        return getDefaultDecisionChain(gridEnabled, start);
+    }
+
+    private static List<WorkflowIcon> getDefaultDecisionChain(boolean gridEnabled, WorkflowStart start) {
+        WorkflowIcon recipient = getIcon(WorkflowIconType.RECIPIENT, gridEnabled ? 3 : 4, 0, 2);
+        WorkflowIcon mailing = getIcon(WorkflowIconType.DATE_BASED_MAILING, gridEnabled ? 6 : 8, 0, 3);
+        WorkflowIcon deadline = get7daysDeadlineIcon(gridEnabled);
+        WorkflowIcon decision = getDecisionBoughtIcon(gridEnabled);
+        WorkflowIcon reminderMailing = getIcon(WorkflowIconType.DATE_BASED_MAILING, gridEnabled ? 12 : 16, gridEnabled ? 2 : 6, 7);
+        WorkflowIcon stop = getIcon(WorkflowIconType.STOP, gridEnabled ? 15 : 20, 0, 6);
+
+        connect(start, recipient, mailing, deadline, decision, stop);
+        connect(decision, reminderMailing, stop);
+        return List.of(start, recipient, mailing, deadline, decision, reminderMailing, stop);
+    }
+
+    private static WorkflowIcon[] connect(WorkflowIcon... icons) {
 		for (int i = 0; i < icons.length - 1; i++) {
 			connectIcons(icons[i], icons[i + 1]);
 		}

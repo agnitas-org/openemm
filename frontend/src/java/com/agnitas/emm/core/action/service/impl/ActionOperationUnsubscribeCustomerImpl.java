@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
@@ -42,7 +42,7 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
     private static final Logger LOGGER = LogManager.getLogger(ActionOperationUnsubscribeCustomerImpl.class);
 
     private RecipientService recipientService;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
 
     @Override
     public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) throws Exception {
@@ -170,7 +170,7 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
     }
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 

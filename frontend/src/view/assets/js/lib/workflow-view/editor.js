@@ -75,6 +75,8 @@
             self.instance.setZoom(scale);
             if (self.canvasZoomHandler) {
                 self.canvasZoomHandler.call(null, scale);
+                self.updateBackgroundCellSize(scale);
+                self.moveGridBackground(self.canvas.getPosition());
             }
         });
 
@@ -663,8 +665,8 @@
 
         if (this.editable) {
             if (Node.isExpandableType(type)) {
+                const newUnchangedWorkflow = Def.workflowId === 0 && self._isInInitialState();
                 switch (type) {
-                    case Def.NODE_TYPE_SC_ABTEST:
                     case Def.NODE_TYPE_SC_BIRTHDAY:
                     case Def.NODE_TYPE_SC_DOI:
                         if(Def.workflowId === 0 && this._isInInitialState()) {
@@ -673,16 +675,23 @@
 
                         this.newSnippetFromSample(type, position);
                         break;
-
-                    case Def.NODE_TYPE_OWN_WORKFLOW:
-                        Dialogs.confirmOwnWorkflowExpanding()
-                            .done(function(params) {
-                                if (Def.workflowId === 0 && self._isInInitialState()) {
-                                    self.deleteAllNodes();
-                                }
-
-                                self.newSnippetFromOwnWorkflow(params.workflowId, params.copyContent, position);
+                    case Def.NODE_TYPE_SC_ABTEST:
+                        Dialogs.createAutoOpt().done(function (mailingsCount) {
+                            if (newUnchangedWorkflow) {
+                                self.deleteAllNodes();
+                            }
+                            Snippets.loadAutoOptSample(mailingsCount, self.isGridDisplayed(), function (nodes, connections) {
+                              self.newSnippet(nodes, connections, position)
                             });
+                        });
+                        break;
+                    case Def.NODE_TYPE_OWN_WORKFLOW:
+                        Dialogs.confirmOwnWorkflowExpanding().done(function(params) {
+                            if (newUnchangedWorkflow) {
+                                self.deleteAllNodes();
+                            }
+                            self.newSnippetFromOwnWorkflow(params.workflowId, params.copyContent, position);
+                        });
                         break;
                 }
             } else {
@@ -2288,7 +2297,7 @@
         this.clearSelectedSource();
 
         if (isEnabled) {
-            var source = this.getSelection().shift();
+            var source = this.getSelectedNodes$().shift();
             if (source) {
                 this.deselectAll();
                 this.setNodeSelected(source, true);
@@ -2339,7 +2348,7 @@
                     EditorsHelper.showEditDialog(node, Utils.checkActivation(!Node.isMailingNode(node)));
                 }
             } else {
-                var $nodes = this.getSelection();
+                var $nodes = this.getSelectedNodes$();
                 if ($nodes.length == 1) {
                     this.deselectAll();
                     const node = Node.get($nodes[0]);

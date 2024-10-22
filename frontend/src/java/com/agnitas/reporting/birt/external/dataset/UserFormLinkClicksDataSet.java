@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,10 +26,15 @@ import com.agnitas.reporting.birt.external.beans.UserFormLinkClicksStatisticRow;
 public class UserFormLinkClicksDataSet extends BIRTDataSet {
 
 	private static final Logger logger = LogManager.getLogger(UserFormLinkClicksDataSet.class);
-	
-	public List<UserFormLinkClicksStatisticRow> getClicksPerUrl(int formID, int companyID) {
+
+	// used in form_click_statistics.rptdesign
+	public List<UserFormLinkClicksStatisticRow> getClicksPerUrl(int formID, int companyID,
+																String startDate, String endDate) {
 		List<UserFormLinkClicksStatisticRow> urlClickList = new ArrayList<>();
-		
+		List<Object> params = new ArrayList<>();
+		params.add(formID);
+		String periodFilter = getPeriodFilter(new DateFormats(startDate, endDate, false), params);
+
 		String queryMeasured =
 			"SELECT"
 			+ " COALESCE(formurl.shortname, formurl.full_url) AS url,"
@@ -37,11 +43,11 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 			+ " COUNT(DISTINCT rlog.customer_id) AS clicks_net"
 			+ " FROM rdir_url_userform_tbl formurl"
 			+ " JOIN rdirlog_userform_" + companyID + "_tbl rlog ON rlog.url_id = formurl.url_id"
-			+ " WHERE rlog.form_id = ?"
+			+ " WHERE rlog.form_id = ?" + periodFilter
 			+ " AND (rlog.customer_id IS NOT NULL AND rlog.customer_id != 0)"
 			+ " GROUP BY formurl.url_id, COALESCE(formurl.shortname, formurl.full_url)";
 		
-		List<Map<String, Object>> resultMeasured = select(logger, queryMeasured, formID);
+		List<Map<String, Object>> resultMeasured = select(logger, queryMeasured, params.toArray());
 		for (Map<String, Object> row : resultMeasured) {
 			UserFormLinkClicksStatisticRow statisticRow = new UserFormLinkClicksStatisticRow();
 			
@@ -61,11 +67,11 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 			+ " COUNT(*) AS clicks_anonym"
 			+ " FROM rdir_url_userform_tbl formurl"
 			+ " JOIN rdirlog_userform_" + companyID + "_tbl rlog ON rlog.url_id = formurl.url_id"
-			+ " WHERE rlog.form_id = ?"
+			+ " WHERE rlog.form_id = ?" + periodFilter
 			+ " AND (rlog.customer_id IS NULL OR rlog.customer_id = 0)"
 			+ " GROUP BY formurl.url_id, COALESCE(formurl.shortname, formurl.full_url)";
 		
-		List<Map<String, Object>> resultAnonymous = select(logger, queryAnonymous, formID);
+		List<Map<String, Object>> resultAnonymous = select(logger, queryAnonymous, params.toArray());
 		for (Map<String, Object> row : resultAnonymous) {
 			int urlID = ((Number) row.get("url_id")).intValue();
 			
@@ -95,4 +101,13 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 		
 		return urlClickList;
 	}
+
+	private static String getPeriodFilter(DateFormats dateFormats, List<Object> params) {
+        if (StringUtils.isBlank(dateFormats.getStartDate())) {
+			return "";
+		}
+		params.add(dateFormats.getStartDateAsDate());
+		params.add(dateFormats.getStopDateAsDate());
+		return " AND rlog.timestamp >= ? AND rlog.timestamp < ?";
+    }
 }

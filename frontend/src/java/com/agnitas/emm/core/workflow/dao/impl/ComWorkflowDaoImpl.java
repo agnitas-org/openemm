@@ -10,6 +10,37 @@
 
 package com.agnitas.emm.core.workflow.dao.impl;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.beans.WorkflowStart;
+import com.agnitas.emm.core.workflow.beans.WorkflowStop;
+import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.PredicateUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,39 +57,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.PredicateUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
-import com.agnitas.emm.core.workflow.beans.WorkflowStart;
-import com.agnitas.emm.core.workflow.beans.WorkflowStop;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
-import org.springframework.transaction.annotation.Transactional;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	
@@ -232,7 +230,13 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         update(logger, "DELETE FROM undo_workflow_tbl WHERE undo_id = ? AND company_id = ?", undoId, companyId);
     }
 
-	@Override
+    @Override
+    public boolean isDependencyExists(int entityId, WorkflowDependencyType entityType) {
+        String query = "SELECT 1 FROM workflow_dependency_tbl WHERE entity_id = ? AND type = ?";
+        return !select(logger, query, IntegerRowMapper.INSTANCE, entityId, entityType.getId()).isEmpty();
+    }
+
+    @Override
 	@DaoUpdateReturnValueCheck
 	public void deleteWorkflow(int workflowId, int companyId) {
         update(logger, "UPDATE workflow_tbl SET pause_undo_id = NULL WHERE workflow_id = ? AND company_id = ?", workflowId, companyId);
@@ -742,44 +746,6 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         };
 
         return select(logger, sqlGetDependentWorkflows, new WorkflowRowMapper(), sqlParameters);
-    }
-    
-    @Override
-    public List<Integer> getAllWorkflowUsedTargets(int companyId) {
-        List<Integer> targetConditionsInUse = new ArrayList<>();
-    
-        List<Integer> targetIdsUsedByReactionDecl =
-                select(logger, "SELECT target_id FROM workflow_reaction_decl_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
-        
-        List<Integer> targetIdsUsedByOptimization =
-                select(logger, "SELECT target_id FROM auto_optimization_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
-        
-        List<Integer> targetIdsUsedByExportPredef =
-                select(logger, "SELECT target_id FROM export_predef_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
-    
-        targetConditionsInUse.addAll(targetIdsUsedByReactionDecl);
-        targetConditionsInUse.addAll(targetIdsUsedByOptimization);
-        targetConditionsInUse.addAll(targetIdsUsedByExportPredef);
-        
-        return targetConditionsInUse;
-    }
-    
-    @Override
-    public int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId) {
-        if(targetIds.size() > 0) {
-        	/*
-            String sql = "DELETE FROM dyn_target_tbl WHERE " +
-                    makeBulkInClauseForInteger("target_id", targetIds) +
-                    " AND company_id = ?";
-            */
-            
-        	// TODO deleted=5 is a special marker for EMM-6545!
-        	final String sql = "UPDATE dyn_target_tbl SET deleted=5 WHERE " + makeBulkInClauseForInteger("target_id", targetIds) + " AND company_id=?";
-            
-            return update(logger, sql, companyId);
-        }
-        
-        return 0;
     }
     
     @Override

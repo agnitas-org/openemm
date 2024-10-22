@@ -1,7 +1,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
 <%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
@@ -14,9 +14,9 @@
     <c:set var="isParamsReadonly" value="${isSettingsReadonly or not MAILING_EDITABLE}"/>
 </emm:ShowByPermission>
 
-<div class="tile" style="flex: 1" data-editable-tile>
+<div class="tile" data-editable-tile>
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="mailing.send.settings.extended"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="mailing.send.settings.extended"/></h1>
     </div>
     <div class="tile-body grid gap-3 js-scrollable" style="--bs-columns:1">
 
@@ -28,12 +28,18 @@
                     <i class="icon icon-external-link-alt"></i>
                     <span><mvc:message code="mailing.frame.edit" /></span>
                 </a>
-                <%@ include file="fragments/mailing-frame-content-modal.jspf" %> 
+                <%@ include file="fragments/mailing-frame-content-modal.jspf" %>
+
+                <script id="gsm-7-bit-chars" type="application/json">
+                    {
+                      "chars": ${emm:toJson(gsm7BitChars)}
+                    }
+                </script>
                 
                 <mvc:hidden path="emailMediatype.textTemplate" id="textTemplate"/>
                 <c:if test="${mailingSettingsForm.emailMediatype.mailFormat != 0 and not isMailingGrid}">
                     <mvc:hidden path="emailMediatype.htmlTemplate" id="htmlTemplate"/>
-                    <mvc:hidden path="smsMediatype.textTemplate" id="smsTemplate"/>
+                    <%@ include file="fragments/extended-mediatypes-template-inputs.jspf" %>
                     <mvc:hidden path="useDynamicTemplate" id="dynamic-template"/>
                 </c:if>
 
@@ -58,7 +64,7 @@
                         }
                     </script>
                     <div class="tile-header border-bottom">
-                        <span class="text-dark fw-500"><mvc:message code="MailingParameter"/></span>
+                        <h2 class="tile-title text-dark"><mvc:message code="MailingParameter"/></h2>
                     </div>
                     <div class="tile-body">
                         <div id="mailingParamsTable" data-input-table>

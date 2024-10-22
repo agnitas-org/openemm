@@ -56,6 +56,7 @@
         <script id="config:calendar-table" type="application/json">
             {
                 "localeDatePattern": "${localeDatePattern}",
+                "showALlMailingsPerDay": ${showALlCalendarEntries},
                 "currentServerTime": "${currentServerTime}",
                 "firstDayOfWeek": ${firstDayOfWeek},
                 "adminId": ${admin.adminID},

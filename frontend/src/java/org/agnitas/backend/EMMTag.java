@@ -113,7 +113,7 @@ public class EMMTag {
 	/**
 	 * Names of all internal tags
 	 */
-	protected final static String[] TAG_INTERNALS = { null, "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null, "agnFULLVIEW", "agnWEBVIEW" };
+	protected final static String[] TAG_INTERNALS = { "agnDBV", "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null, "agnFULLVIEW", "agnWEBVIEW" };
 	/**
 	 * The generic tag reference for an extrernal implementation
 	 */

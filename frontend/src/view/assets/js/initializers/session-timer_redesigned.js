@@ -6,7 +6,6 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
 
   /* data transferred from the backend side */
   const config = this.config;
-  const sessionInfoUrl = this.config.sessionInfoUrl;
   const creationTimeMs = this.config.creationTime;
   const lastAccessedTimeMs = this.config.lastAccessedTime;
   let maxInactiveIntervalS = this.config.maxInactiveInterval;
@@ -56,7 +55,7 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
    */
   function checkIsReallyExpired() {
     $.ajax({
-      url: sessionInfoUrl,
+      url: AGN.url('/session/info.action'),
       global: false,
       beforeSend: beforeRequest,
       success: successResponse,
@@ -133,7 +132,7 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
 
       if (!this.isSessionExpiredNotification) {
         const $modal = AGN.Lib.Modal.fromTemplate('session-expired');
-        $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logon.action')));
+        $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logonRedesigned.action')));
 
         this.isSessionExpiredNotification = true;
       }
@@ -148,11 +147,18 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
       let timeString = '00:00';
       if (timeMs > 0) {
         const time = new Date(timeMs);
-        timeString = time.getMinutes() > 0 ? d3.format('02')(time.getUTCMinutes()) + ':' : '00:';
-        timeString += time.getSeconds() > 0 ? d3.format('02')(time.getUTCSeconds()) : '00';
+
+        const minutesStr = this.formatTimeComponent(time.getUTCMinutes());
+        const secondsStr = this.formatTimeComponent(time.getUTCSeconds());
+
+        timeString = `${minutesStr}:${secondsStr}`;
       }
 
       this.changeTimeFieldContent(timeString);
+    }
+
+    formatTimeComponent(component) {
+      return component > 0 ? (component < 10 ? '0' + component : component) : '00';
     }
 
     changeTimeFieldContent(content) {

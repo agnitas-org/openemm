@@ -34,7 +34,6 @@ public class CompanyImpl implements Company {
 	private String localeTimezone;
 	private String localeLanguage;
 	private int enabledUIDVersion;
-	private int exportNotifyAdmin;
 	private Date creationDate;
 	private boolean autoMailingReportActivated;
 	private boolean forceSending = false;
@@ -237,16 +236,6 @@ public class CompanyImpl implements Company {
 	@Override
 	public void setEnabledUIDVersion(int uidVersion) {
 		this.enabledUIDVersion = uidVersion;
-	}
-
-	@Override
-	public int getExportNotifyAdmin() {
-		return exportNotifyAdmin;
-	}
-
-	@Override
-	public void setExportNotifyAdmin(int exportNotifyAdmin) {
-		this.exportNotifyAdmin = exportNotifyAdmin;
 	}
 
 	@Override

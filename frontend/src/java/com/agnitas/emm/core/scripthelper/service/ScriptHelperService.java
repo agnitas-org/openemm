@@ -16,10 +16,10 @@ import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 
 public class ScriptHelperService {
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private PreviewFactory previewFactory;
 	
 	/**
@@ -117,7 +117,7 @@ public class ScriptHelperService {
 		return page.getHTML();
 	}
 	
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 

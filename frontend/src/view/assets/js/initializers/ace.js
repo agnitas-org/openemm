@@ -1,20 +1,8 @@
 /*doc
 ---
-title: View Directives
-name: directives
-category: Javascripts - View Directives
----
-
-A directive usually consists of a css class name or an html attribute which is hooked to a initializer function or a listener, thus automatically wiring html with extended javascript functionality.
-
-*/
-
-
-/*doc
----
-title: Code Editor Directive
-name: ace-directive
-parent: directives
+title: Code Editors
+name: code-editors
+category: Components - Code Editors
 ---
 
 A textarea can be decorated with a code editor using the following classes:
@@ -24,20 +12,11 @@ Class           | Used for
 `js-editor`     | Html
 `js-editor-text`| Text only
 `js-editor-css` | CSS
-`js-editor-eql` | ?
+`js-editor-eql` | EQL builder
 
 
 ```html
-<div class="form-group">
-  <div class="col-sm-4">
-    <label class="form-label">
-      Code Editor
-    </label>
-  </div>
-  <div class="col-sm-8">
-    <textarea class="form-control js-editor"></textarea>
-  </div>
-</div>
+<textarea class="form-control js-editor"></textarea>
 ```
 */
 

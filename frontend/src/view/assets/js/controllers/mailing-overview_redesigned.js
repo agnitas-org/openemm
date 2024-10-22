@@ -53,18 +53,27 @@ AGN.Lib.Controller.new('mailing-overview', function () {
     $form.off('submitted');
   }
 
-  this.addAction({click: 'restore'}, function () {
+  this.addAction({'table-column-manager:add': 'update-columns'}, function () {
     const form = Form.get(this.el);
-    $.post(this.el.attr('href')).done(resp => form.updateHtml(resp));
+    form.setValueOnce('selectedFields', this.data.columns);
+    form.setValueOnce('inEditColumnsMode', true);
+    form.submit();
   });
 
-  this.addAction({click: 'bulk-restore'}, function () {
-    const form = Form.get(this.el);
+  this.addAction({'table-column-manager:apply': 'update-columns'}, function () {
+    const selectedFields = this.data.columns;
 
-    $.ajax(AGN.url('/mailing/bulkRestore.action'), {
-      method: 'POST',
-      data: form.data()
-    }).done(resp => form.updateHtml(resp));
+    $.ajax({
+      type: 'POST',
+      url: AGN.url('/mailing/setSelectedFields.action'),
+      traditional: true,
+      data: {selectedFields}
+    }).done(resp => {
+      if (resp.success) {
+        AGN.Lib.WebStorage.extend('mailing-overview', {'fields': selectedFields});
+      }
+      AGN.Lib.JsonMessages(resp.popups);
+    });
   });
 
   this.addAction({click: 'send-date-filter-period'}, function () {

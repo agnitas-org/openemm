@@ -37,8 +37,8 @@ import com.agnitas.util.Version;
  * 	Default language "en" is listed as "default" within the map
  */
 public class DBMessagesResource {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(DBMessagesResource.class);
+
+	private static final Logger logger = LogManager.getLogger(DBMessagesResource.class);
 
 	private static final String DEFAULT_LANGUAGE = "en";
 	private static final String DEFAULT_LANGUAGE_MAPKEY = "default";

@@ -29,6 +29,8 @@ import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 
+import net.sf.json.JSONObject;
+
 /**
  * Service interface for trackable links.
  */
@@ -71,14 +73,9 @@ public interface TrackableLinkService {
 	
 	void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames);
 	
-	/**
-	 * Gets trackable links
-	 * @param mailingID mailing id
-	 * @param companyId company id
-     * @return list of trackable links. Returns empty list if mailing doesn't belong to the company or
-	 * trackable links don't exist for the company and mailing.
-     */
-    List<TrackableLinkListItem> getMailingLinks(int mailingID, int companyId);
+    Map<Integer, String> getMailingLinks(int mailingId, int companyId);
+
+    JSONObject getMailingLinksJson(int mailingId, int companyId);
 
 	/**
 	 * Gets trackable links

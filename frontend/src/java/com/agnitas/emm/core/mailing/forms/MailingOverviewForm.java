@@ -28,6 +28,7 @@ public class MailingOverviewForm extends PaginationForm {
 
     private boolean numberOfRowsChanged;
     private boolean forTemplates;
+    private boolean inEditColumnsMode;
     private boolean searchInName = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean searchInContent = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean searchInDescription = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
@@ -252,11 +253,20 @@ public class MailingOverviewForm extends PaginationForm {
         this.filterContent = filterContent;
     }
 
+    public boolean isInEditColumnsMode() {
+        return inEditColumnsMode;
+    }
+
+    public void setInEditColumnsMode(boolean inEditColumnsMode) {
+        this.inEditColumnsMode = inEditColumnsMode;
+    }
+
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> map = super.toMap();
         map.put("page", getPage());
         map.put("forTemplates", forTemplates);
+        map.put("inEditColumnsMode", inEditColumnsMode);
         map.put("searchInName", searchInName);
         map.put("searchInContent", searchInContent);
         map.put("searchInDescription", searchInDescription);
@@ -285,6 +295,7 @@ public class MailingOverviewForm extends PaginationForm {
     public Object[] toArray() {
         return ArrayUtils.addAll(Arrays.asList(
                 forTemplates,
+                inEditColumnsMode,
                 searchInName,
                 searchInContent,
                 searchInDescription,

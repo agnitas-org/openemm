@@ -1,0 +1,11 @@
+
+<script id="module-SendLastNewsletter" type="text/x-mustache-template">
+    <div class="tile-body" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="SendLastNewsletter"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+
+        <div class="notification-simple notification-simple--lg notification-simple--info">
+            <span><mvc:message code="action.op.SendLastNewsletter.hint" /></span>
+        </div>
+    </div>
+</script>

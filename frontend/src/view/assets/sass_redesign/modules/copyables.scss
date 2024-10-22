@@ -1,10 +1,20 @@
 
-[data-copyable]:not(.btn) {
-  cursor: pointer;
+.copy-box {
+  display: inline-flex;
+  gap: $gap-sm;
+  align-items: center;
 
-  &:hover {
-    .icon-copy {
-      color: var(--default-text-color);
+  border: $border-default;
+  border-radius: var(--bs-border-radius-2xl);
+  padding: $gap-x-sm $gap-sm;
+
+  color: var(--text-gray-color);
+
+  .icon-btn {
+    font-size: $font-size-base;
+
+    &:hover {
+      color: var(--text-color-default);
     }
   }
 }

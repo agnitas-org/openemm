@@ -9,7 +9,13 @@
          data-controller="mailing-content-editor-controller"
          data-initializer="mailing-content-editor-initializer">
         <div class="tile-header">
-            <h1 class="tile-title">{{- dynTag.name }}</h1>
+            <h1 class="tile-title">
+                <span class="text-truncate">{{- dynTag.name }}</span>
+                {{ if (usedInSmsContent) { }}
+                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/SmsCharacters.xml"
+                       data-help-config="#gsm-7-bit-chars"></a>
+                {{ } }}
+            </h1>
         </div>
         <div id="enlargeable-settings" class="tile-body" data-multi-editor>
             <div id="multi-editor" class="tile">
@@ -18,7 +24,7 @@
                     <ul class="tile-title-controls gap-1">
                         <emm:HideByPermission token="mailing.editor.hide.html">
                             <li>
-                                <a href="#" class="btn btn-icon-sm btn-inverse active" data-toggle-tab="#tab-content-html">
+                                <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#tab-content-html">
                                     <i class="icon icon-code"></i>
                                 </a>
                             </li>
@@ -26,7 +32,7 @@
                         <emm:HideByPermission token="mailing.editor.hide">
                             {{ if (showHTMLEditor) { }}
                             <li>
-                                <a href="#" class="btn btn-icon-sm btn-inverse" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
+                                <a href="#" class="btn btn-icon btn-inverse" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
                                     <i class="icon icon-font"></i>
                                 </a>
                             </li>
@@ -60,13 +66,16 @@
                         <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height-ck-editor h-100">
                             <textarea id="content" name="content"
                                       class="form-control js-editor js-wysiwyg hidden"
+                                      {{ usedInSmsContent ? print(`data-action="validate-sms-content" data-feedback-anchor=".tile-body"`) : print('') }}
                                       data-show-char-counter="tile-footer"
                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                       {{- readonly }}></textarea>
                         </div>
                         
                         <!-- AI EDITOR -->
-                        <jsp:include page="/WEB-INF/jsp/redesigned_jsp/mailing/fragments/ai-text-generation-tab-content.jsp" flush="true"/>
+                        <jsp:include page="/WEB-INF/jsp/redesigned_jsp/mailing/fragments/ai/ai-text-generation-tab.jsp" flush="true">
+                            <jsp:param name="mustacheTemplate" value="true" />
+                        </jsp:include>
                     </emm:HideByPermission>
                 </div>
                 <div class="tile-footer" data-tab-related="#tab-content-html"><%-- char counter added with js. see char-counter.js --%></div>
@@ -88,7 +97,7 @@
                                 <option value="${target.id}">${target.targetName}</option>
                             </c:forEach>
                         </select>
-                        <a href="#" class="btn btn-icon-sm btn-primary" data-action="addDynContent" data-tooltip="<mvc:message code="button.Add"/>">
+                        <a href="#" class="btn btn-icon btn-primary" data-action="addDynContent" data-tooltip="<mvc:message code="button.Add"/>">
                             <i class="icon icon-plus"></i>
                         </a>
                     </div>
@@ -113,7 +122,7 @@
 
 <script id="mailing-target-content-template" type="text/x-mustache-template">
     <div id="{{-id}}" class="d-flex gap-1 target-row w-100">
-        <a href="#" class="btn btn-icon-sm btn-inverse target-row-handle">
+        <a href="#" class="btn btn-icon btn-inverse target-row-handle">
             <i class="icon icon-arrows-alt"></i>
         </a>
         <select class="form-control js-select" data-action="change-target">
@@ -122,10 +131,10 @@
                 <option value="${target.id}" {{- ${target.id} === targetId ? 'selected' : '' }}>${target.targetName}</option>
             </c:forEach>
         </select>
-        <a href="#" class="btn btn-icon-sm btn-primary" data-action="edit-content-for-target">
+        <a href="#" class="btn btn-icon btn-primary" data-action="edit-content-for-target">
             <i class="icon icon-pen"></i>
         </a>
-        <a href="#" class="btn btn-icon-sm btn-danger" data-action="deleteContentEntry">
+        <a href="#" class="btn btn-icon btn-danger" data-action="deleteContentEntry">
             <i class="icon icon-trash-alt"></i>
         </a>
     </div>

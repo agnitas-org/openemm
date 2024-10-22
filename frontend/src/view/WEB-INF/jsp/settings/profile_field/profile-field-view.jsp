@@ -87,8 +87,8 @@
 								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<mvc:message code="settings.fieldType.INTEGER"/>
 								</mvc:option>
-								<mvc:option value="FLOAT" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<mvc:message code="settings.fieldType.Float"/>
+								<mvc:option value="DOUBLE" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
+									<mvc:message code="settings.fieldType.DOUBLE"/>
 								</mvc:option>
 								<mvc:option value="VARCHAR" data-field-vis-hide="#interestDiv" data-field-vis-show="#fieldLengthDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<mvc:message code="settings.fieldType.VARCHAR"/>

@@ -7,70 +7,83 @@
 
 <%--@elvariable id="followupFor" type="java.lang.String"--%>
 <%--@elvariable id="followUpType" type="java.lang.String"--%>
+<%--@elvariable id="textEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="totalSendCount" type="java.lang.Integer"--%>
+<%--@elvariable id="totalSentCount" type="java.lang.Integer"--%>
+<%--@elvariable id="htmlEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="offlineHtmlEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="mediaTypesRecipientsCountMap" type="java.util.Map<java.lang.Integer, java.lang.Integer>"--%>
 
-<c:if test="${isNormalMailing or (isFollowUpMailing and not empty followupFor)}">
-    <div class="${isFollowUpMailing ? 'col-12' : 'col'}">
+<c:if test="${(totalSendCount ne null or totalSentCount ne null) and (isNormalMailing or (isFollowUpMailing and not empty followupFor))}">
+    <div class="${isFollowUpMailing or totalSentCount ne null ? 'col-12' : 'col'}">
         <label class="form-label"><mvc:message code="Recipients" /></label>
 
         <c:choose>
-            <c:when test="${isFollowUpMailing}">
-                <div class="notification-simple notification-simple--lg">
-                    <span>
-                        <mvc:message code="RecipientsFollowupXplain1" />
-                        <strong>${form.totalSentCount}</strong>
-                        <mvc:message code="RecipientsFollowupXplain2" />
-                        <br/>
-                       <mvc:message code="mailing.RecipientsRecieved" />
-                        <strong>
-                            <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_OPENER}">
-                                <mvc:message code="noneOpeners" />.
-                            </c:if>
-                            <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_CLICKER}">
-                                <mvc:message code="noneClickers" />.
-                            </c:if>
-                            <c:if test="${followUpType eq TYPE_FOLLOWUP_OPENER}">
-                                <mvc:message code="openers" />.
-                            </c:if>
-                            <c:if test="${followUpType eq TYPE_FOLLOWUP_CLICKER}">
-                                <mvc:message code="clickers" />.
-                            </c:if>
-                        </strong>
-                    </span>
-                </div>
+            <c:when test="${totalSendCount ne null}">
+                <c:choose>
+                    <c:when test="${isFollowUpMailing}">
+                        <div class="notification-simple notification-simple--lg">
+                            <span>
+                                <mvc:message code="RecipientsFollowupXplain1" />
+                                <strong>${totalSendCount}</strong>
+                                <mvc:message code="RecipientsFollowupXplain2" />
+                                <br/>
+                               <mvc:message code="mailing.RecipientsRecieved" />
+                                <strong>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_OPENER}">
+                                        <mvc:message code="noneOpeners" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_CLICKER}">
+                                        <mvc:message code="noneClickers" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_OPENER}">
+                                        <mvc:message code="openers" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_CLICKER}">
+                                        <mvc:message code="clickers" />.
+                                    </c:if>
+                                </strong>
+                            </span>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="input-groups">
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text--disabled"><mvc:message code="Text"/></span>
+                                <input type="text" class="form-control commaSplitInput" value="${textEmailsCount}" disabled>
+                            </div>
+
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text--disabled"><mvc:message code="HTML"/></span>
+                                <input type="text" class="form-control commaSplitInput" value="${htmlEmailsCount}" disabled>
+                            </div>
+
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text--disabled"><mvc:message code="OfflineHTML"/></span>
+                                <input type="text" class="form-control commaSplitInput" value="${offlineHtmlEmailsCount}" disabled>
+                            </div>
+
+                            <c:forEach var="mediaTypeRecipientCountEntry" items="${mediaTypesRecipientsCountMap}">
+                                <c:if test="${mediaTypeRecipientCountEntry.value gt 0}">
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text--disabled"><mvc:message code="mailing.MediaType.${mediaTypeRecipientCountEntry.key}" /></span>
+                                        <input type="text" class="form-control commaSplitInput" value="${mediaTypeRecipientCountEntry.value}" disabled>
+                                    </div>
+                                </c:if>
+                            </c:forEach>
+
+                            <div class="input-group">
+                                <span class="input-group-text input-group-text--disabled fw-semibold"><mvc:message code="report.total"/></span>
+                                <input type="text" class="form-control commaSplitInput fw-semibold" value="${totalSendCount}" disabled>
+                            </div>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </c:when>
             <c:otherwise>
-                <div class="input-groups">
-                    <div class="input-group">
-                        <span class="input-group-text input-group-text--disabled"><mvc:message code="Text"/></span>
-                        <input type="text" class="form-control commaSplitInput" value="${form.textEmailsCount}" disabled>
-                    </div>
-
-                    <div class="input-group">
-                        <span class="input-group-text input-group-text--disabled"><mvc:message code="HTML"/></span>
-                        <input type="text" class="form-control commaSplitInput" value="${form.htmlEmailsCount}" disabled>
-                    </div>
-
-                    <div class="input-group">
-                        <span class="input-group-text input-group-text--disabled"><mvc:message code="OfflineHTML"/></span>
-                        <input type="text" class="form-control commaSplitInput" value="${form.offlineHtmlEmailsCount}" disabled>
-                    </div>
-
-                    <c:forEach var="sendStatKey" items="${form.sentStatistics.keySet()}">
-                        <c:if test="${sendStatKey gt 0}">
-                            <c:set var="sendStat" value="${form.getSendStatisticsItem(sendStatKey)}" />
-                            <c:if test="${sendStat gt 0}">
-                                <div class="input-group">
-                                    <span class="input-group-text input-group-text--disabled"><mvc:message code="mailing.MediaType.${sendStatKey}" /></span>
-                                    <input type="text" class="form-control commaSplitInput" value="${sendStat}" disabled>
-                                </div>
-                            </c:if>
-                        </c:if>
-                    </c:forEach>
-
-                    <div class="input-group">
-                        <span class="input-group-text input-group-text--disabled fw-semibold"><mvc:message code="report.total"/></span>
-                        <input type="text" class="form-control commaSplitInput fw-semibold" value="${form.totalSentCount}" disabled>
-                    </div>
+                <div class="input-group">
+                    <span class="input-group-text input-group-text--disabled fw-semibold"><mvc:message code="report.total"/></span>
+                    <input type="text" class="form-control commaSplitInput fw-semibold" value="${totalSentCount}" disabled>
                 </div>
             </c:otherwise>
         </c:choose>

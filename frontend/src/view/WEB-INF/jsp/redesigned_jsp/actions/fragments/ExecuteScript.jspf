@@ -6,7 +6,7 @@
 
         <div class="tile tile--sm">
             <div class="tile-header">
-                <label class="form-label m-0"><mvc:message code="Script" /></label>
+                <h3 class="tile-title text-dark"><mvc:message code="Script" /></h3>
 
                 <div class="tile-controls">
                     <a href="#" data-modal="action-modal-editor" data-modal-set="title: <mvc:message code="Script"/>, target: module_{{-index}}_script, id: textTemplateLarge, type: text"

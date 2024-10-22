@@ -39,6 +39,13 @@ public class CampaignImpl implements Campaign {
 		companyID = 0;
 	}
 
+	public CampaignImpl(int id, int companyID, String shortname, String description) {
+		this.id = id;
+		this.companyID = companyID;
+		this.shortname = shortname;
+		this.description = description;
+	}
+
 	/**
 	 * Returns the CampaignStats with lazy creation.
 	 */

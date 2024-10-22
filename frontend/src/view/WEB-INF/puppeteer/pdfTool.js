@@ -1,7 +1,7 @@
 'use strict';
 
 /*
-Usage: node pdfTool.js [PATH] [LANDSCAPE] [URL] [CUSTOM_STYLES_PATH]
+Usage: node pdfTool.js [PATH] [LANDSCAPE] [URL] [CUSTOM_STYLES_PATH] [WINDOW_WAIT_STATUS]
 Example: node pdfTool.js ./example.pdf false https://example.com ./custom-styles.css
 */
 
@@ -20,14 +20,23 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
   const landscape = args[1];
   const url = args[2];
   const customCssPath = args[3];
+  const windowWaitStatus = args[4];
 
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto(url, {waitUntil: 'networkidle2'})
+  await page.goto(url, {waitUntil: 'networkidle2', timeout: 60000})
   await sleep(500); // wait for js render
   await page.addStyleTag({content: "body{-webkit-print-color-adjust: exact;}"}) // force rendering of the original colors
   if (customCssPath) {
-    await page.addStyleTag({path: customCssPath})
+    await page.addStyleTag({path: customCssPath});
+  }
+
+  if (windowWaitStatus) {
+    await page.waitForFunction(
+      (expectedStatus) => window.status === expectedStatus,
+      {},
+      windowWaitStatus
+    );
   }
 
   const contentWidth = await page.evaluate(() => {

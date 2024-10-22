@@ -1,27 +1,13 @@
 AGN.Lib.Controller.new('profile-field-view', function() {
 
+  let fieldType;
   let $fixedValuesContainer;
 
   this.addDomInitializer('profile-field-view', function() {
     $fixedValuesContainer = $('#fixed-values-container');
-
-    const fixedValues = this.config.fixedValues ?? [];
-    drawFixedValues(fixedValues);
+    fieldType = this.config.fieldType;
+    drawFixedValues(this.config.fixedValues ?? []);
   });
-
-  function drawFixedValues(fixedValues) {
-    _.each(fixedValues, val=> appendRow(false, val));
-    appendRow(true);
-  }
-
-  function appendRow(isLastRow, value) {
-    var $row = AGN.Lib.Template.dom('fixed-value-row', {isLastRow: isLastRow});
-    if (value) {
-      $row.find('input').val(value);
-    }
-
-    $fixedValuesContainer.append($row);
-  }
 
   this.addAction({click: 'delete-fixed-value'}, function() {
     this.el.closest('[data-fixed-value-row]').remove();
@@ -29,10 +15,35 @@ AGN.Lib.Controller.new('profile-field-view', function() {
 
   this.addAction({click: 'add-fixed-value'}, function() {
     const $row = this.el.closest('[data-fixed-value-row]');
-    const fixedValue = $row.find('input').val();
+    const fixedValue = $row.find('[name="allowedValues"]').val();
 
     $row.remove();
     appendRow(false, fixedValue);
     appendRow(true);
   });
+
+  this.addAction({change: 'change-field-type'}, function() {
+    fieldType = this.el.val();
+    const fixedValues = AGN.Lib.Form.get(this.el).getValues('allowedValues');
+    drawFixedValues(fixedValues);
+  });
+
+  function drawFixedValues(fixedValues) {
+    $fixedValuesContainer.empty();
+    _.each(fixedValues, val=> {
+      if (val.trim() !== '') {
+        appendRow(false, val)
+      }
+    });
+    appendRow(true);
+  }
+
+  function appendRow(isLastRow, value = '') {
+    const $row = AGN.Lib.Template.dom('fixed-value-row', {isLastRow, value, fieldType});
+    $fixedValuesContainer.append($row);
+
+    AGN.Lib.Form.get($fixedValuesContainer).initFields();
+    AGN.runAll($row);
+  }
+
 });

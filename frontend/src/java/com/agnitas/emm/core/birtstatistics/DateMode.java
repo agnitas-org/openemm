@@ -22,5 +22,6 @@ public enum DateMode {
     LAST_WEEK,
     SELECT_DAY,
     SELECT_MONTH,
-    SELECT_PERIOD
+    SELECT_PERIOD,
+    SELECT_YEAR
 }

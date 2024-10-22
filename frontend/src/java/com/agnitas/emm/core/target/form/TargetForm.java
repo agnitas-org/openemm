@@ -28,6 +28,7 @@ public class TargetForm extends PaginationForm {
     private TargetGroupDeliveryOption searchDeliveryOption;
     private DateRange searchCreationDate = new DateRange();
     private DateRange searchChangeDate = new DateRange();
+    private boolean showDeleted;
 
     public boolean isShowWorldDelivery() {
         return showWorldDelivery || !showTestAndAdminDelivery;
@@ -115,5 +116,13 @@ public class TargetForm extends PaginationForm {
 
     public void setSearchDeliveryOption(TargetGroupDeliveryOption searchDeliveryOption) {
         this.searchDeliveryOption = searchDeliveryOption;
+    }
+
+    public boolean isShowDeleted() {
+        return showDeleted;
+    }
+
+    public void setShowDeleted(boolean showDeleted) {
+        this.showDeleted = showDeleted;
     }
 }

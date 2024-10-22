@@ -1,4 +1,4 @@
-<%@page import="com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField"%>
+<%@page import="com.agnitas.emm.core.service.RecipientStandardField"%>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="org.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>

@@ -41,6 +41,14 @@
             <span><strong><mvc:message code="mailing.DistribStatus"/>:</strong> <mvc:message code="statistic.DeliveryStatus.${deliveryStatus}"/></span>
         </div>
     </div>
+    
+    <c:if test="${needsOutsideApproval}">
+        <div class="col-12">
+            <div class="notification-simple notification-simple--lg">
+                <span><strong><mvc:message code="ENTW.Note"/>:</strong> <mvc:message code="ENTW.needs.approval"/></span>
+            </div>
+        </div>
+    </c:if>
 
     <c:set var="isAdminOrTest" value="${form.deliveryStat.lastType eq MAILDROP_STATUS_ADMIN or form.deliveryStat.lastType eq MAILDROP_STATUS_TEST}" />
 
@@ -48,7 +56,7 @@
         <div class="col-12">
             <div class="tile tile--sm tile--highlighted">
                 <div class="tile-header">
-                    <h3><mvc:message code="mailing.LastDelivery"/>: <mvc:message code="mailing.send.delivery.status.${deliveryStat.lastType}"/></h3>
+                    <h3 class="tile-title"><mvc:message code="mailing.LastDelivery"/>: <mvc:message code="mailing.send.delivery.status.${deliveryStat.lastType}"/></h3>
                 </div>
 
                 <div class="tile-body">
@@ -80,7 +88,7 @@
         <div class="col-12">
             <div class="tile tile--sm tile--highlighted">
                 <div class="tile-header">
-                    <h3><mvc:message code="mailing.Generation"/></h3>
+                    <h3 class="tile-title"><mvc:message code="mailing.Generation"/></h3>
                 </div>
 
                 <div class="tile-body">
@@ -114,7 +122,7 @@
         <div class="col-12">
             <div class="tile tile--sm tile--highlighted">
                 <div class="tile-header">
-                    <h3><mvc:message code="mailing.Delivery"/></h3>
+                    <h3 class="tile-title"><mvc:message code="mailing.Delivery"/></h3>
                 </div>
 
                 <div class="tile-body">

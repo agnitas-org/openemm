@@ -18,12 +18,14 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
@@ -41,7 +43,7 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.MapUtils;
 
@@ -55,7 +57,8 @@ public class RecipientUtils {
     public static int COLUMN_SECOND_ORDER = 2;
     public static int COLUMN_THIRD_ORDER = 3;
     public static int COLUMN_OTHER_ORDER = 4;
-    
+
+    // TODO: EMMGUI-714 Removed usage after remove of old design (in not needed)
     public static final int MAX_SELECTED_FIELDS_COUNT = 8;
     
     public static String getRecipientDescription(Map<String, Object> data) {
@@ -283,13 +286,26 @@ public class RecipientUtils {
         }
     }
 
-    public static void syncSelectedFields(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, RecipientListBaseForm form) {
+    // TODO: EMMGUI-714: Remove after remove of old design
+    public static void syncSelectedFieldsOld(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, RecipientListBaseForm form) {
         webStorage.access(bundle, storage -> {
-            if (form.getNumberOfRows() <= 0 || form.getSelectedFields().size() > MAX_SELECTED_FIELDS_COUNT) {
+            if (form.getSelectedFields().isEmpty() || form.getSelectedFields().size() > MAX_SELECTED_FIELDS_COUNT) {
 				form.setSelectedFields(storage.getSelectedFields());
             } else {
 				storage.setSelectedFields(form.getSelectedFields());
             }
+        });
+    }
+
+    public static void syncSelectedFields(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, RecipientListBaseForm form) {
+        webStorage.access(bundle, storage -> {
+            form.setSelectedFields(storage.getSelectedFields());
+        });
+    }
+
+    public static void updateSelectedFields(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, List<String> selectedFields) {
+        webStorage.access(bundle, storage -> {
+            storage.setSelectedFields(Objects.requireNonNullElse(selectedFields, Collections.emptyList()));
         });
     }
 }

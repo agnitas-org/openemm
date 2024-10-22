@@ -22,7 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
-	private static final transient Logger logger = LogManager.getLogger(BaseTrackableLinkImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(BaseTrackableLinkImpl.class);
 
 	protected int id;
 	protected String shortname;
@@ -148,9 +149,7 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 				String propertyValue = linkProperty.getPropertyValue();
 				if (propertyValue != null && propertyValue.contains("##")) {
 					// Replace customer and form placeholders
-					@SuppressWarnings("unchecked")
-					String replacedPropertyValue = AgnUtils.replaceHashTags(propertyValue);
-					propertyValue = replacedPropertyValue;
+                    propertyValue = AgnUtils.replaceHashTags(propertyValue);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
 				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");

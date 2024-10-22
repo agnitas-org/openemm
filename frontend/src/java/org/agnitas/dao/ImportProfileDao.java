@@ -73,8 +73,11 @@ public interface ImportProfileDao {
      * @return The list of ImportProfiles or empty list.
      */
 	List<ImportProfile> getAllImportProfilesByCompanyId( int companyId);
+	List<ImportProfile> findAllByEmailPart(String email, int companyID);
+	List<ImportProfile> findAllByEmailPart(String email);
 
-    /**
+
+	/**
      * Deletes import profile by ID with column and gender mappings.
      *
      * @param id
@@ -95,4 +98,6 @@ public interface ImportProfileDao {
 	boolean isColumnWasImported(String columnName, int id);
 
 	List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName);
+
+    void updateEmails(String emailForError, String emailForReport, int id);
 }

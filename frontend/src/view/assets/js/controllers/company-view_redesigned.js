@@ -20,4 +20,8 @@ AGN.Lib.Controller.new('company-view', function () {
     $('#password').attr('data-rule', policy);
   }
 
+  this.addAction({change: 'change-password-expire'}, function () {
+    this.el.find('[data-default-password-expire-option="false"]').remove();
+  });
+
 });

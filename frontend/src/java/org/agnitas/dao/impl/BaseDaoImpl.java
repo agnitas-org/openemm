@@ -10,6 +10,32 @@
 
 package org.agnitas.dao.impl;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.JavaMailService;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.agnitas.util.Tuple;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
+import org.springframework.jdbc.object.BatchSqlUpdate;
+import org.springframework.jdbc.object.SqlUpdate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.support.lob.DefaultLobHandler;
+import org.springframework.jdbc.support.lob.LobCreator;
+
+import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,37 +55,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import javax.sql.DataSource;
-
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.QueryTimeoutException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
-import org.springframework.jdbc.object.BatchSqlUpdate;
-import org.springframework.jdbc.object.SqlUpdate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.jdbc.support.lob.DefaultLobHandler;
-import org.springframework.jdbc.support.lob.LobCreator;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.JavaMailService;
 
 /**
  * Helper class which hides the dependency injection variables and eases some select and update actions and logging.
@@ -69,10 +68,6 @@ import com.agnitas.emm.core.JavaMailService;
  * Therefore every simplified update and select method demands an logger delivered as parameter.
  */
 public abstract class BaseDaoImpl {
-	/**
-	 * General logger of this class. This logger is not used for the select and update actions.
-	 */
-	private static final Logger baseDaoImplLogger = LogManager.getLogger(BaseDaoImpl.class);
 
 	private static Integer MYSQL_MAXPACKETSIZE = null;
 	
@@ -238,39 +233,6 @@ public abstract class BaseDaoImpl {
 	}
 	
 	/**
-	 * Closes SQL Statement object without throwing Exceptions.
-	 * Exceptions are still loged as errors.
-	 */
-	protected void closeSilently(Statement... statements) {
-		for (Statement statement : statements) {
-			if (statement != null) {
-				try {
-					statement.close();
-				} catch (SQLException e) {
-					baseDaoImplLogger.error(MessageFormat.format("Error occurred: {0}", e.getMessage()), e);
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Closes SQL Statement object without throwing Exceptions.
-	 * Exceptions are still logged as errors.
-	 * @param connections JDBC connections to close
-	 */
-	protected void closeSilently(Connection... connections) {
-		for (Connection connection : connections) {
-			if (connection != null) {
-				try {
-					connection.close();
-				} catch (SQLException e) {
-					baseDaoImplLogger.error(MessageFormat.format("Error occurred: {0}", e.getMessage()), e);
-				}
-			}
-		}
-	}
-	
-	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 *
 	 * @return List of db entries represented as caseinsensitive maps
@@ -286,7 +248,7 @@ public abstract class BaseDaoImpl {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
@@ -374,6 +336,17 @@ public abstract class BaseDaoImpl {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
 		}
+	}
+
+	protected <K, V> Map<K, V> selectMap(Logger logger, String statement, RowMapper<Tuple<K, V>> rowMapper, Object ... params) {
+		List<Tuple<K, V>> resultList = select(logger, statement, rowMapper, params);
+
+		Map<K, V> map = new HashMap<>();
+		for (int index = 0; index < resultList.size(); index++) {
+			Tuple<K, V> tuple = resultList.get(index);
+			map.put(tuple.getFirst(), tuple.getSecond());
+		}
+		return map;
 	}
 	
 	/**
@@ -1023,13 +996,17 @@ public abstract class BaseDaoImpl {
 	protected String makeBulkInClauseForString(final String columnName, Collection<String> values) {
 		return makeBulkInClauseWithDelimiter(columnName, values, "'");
 	}
+
+	protected String makeBulkNotInClauseForInteger(final String columnName, Collection<Integer> values) {
+		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, "", false);
+	}
 	
 	protected String makeBulkInClauseForInteger(final String columnName, Collection<Integer> values) {
 		return makeBulkInClauseWithDelimiter(columnName, values, "");
 	}
 	
 	private <T> String makeBulkInClauseWithDelimiter(String columnName, Collection<T> values, String delimiter) {
-		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, delimiter);
+		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, delimiter, true);
 	}
 
 	protected String getIsEmpty(String column) {

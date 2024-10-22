@@ -114,6 +114,9 @@ public interface Preview {
 
 	void setMaxEntries(int nMaxEntries);
 
+	public Builder build ();
+	public Page makePreview (Builder builder);
+	
 	/**
 	 * makePreview
 	 * The main entrance for this class, a preview for all

@@ -16,7 +16,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class RowsCountAndSelectedFieldsWebStorageEntry extends RowsCountWebStorageEntry {
+public class RowsCountAndSelectedFieldsWebStorageEntry extends SortingWebStorageEntry {
     @JsonProperty("fields")
     private List<String> selectedFields = Collections.emptyList();
 

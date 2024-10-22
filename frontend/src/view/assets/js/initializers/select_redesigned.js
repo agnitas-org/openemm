@@ -1,84 +1,11 @@
-/*doc
----
-title: Select Directive
-name: select-directive
-parent: directives
----
-
-All selects are automatically decorated with select2. When setting the `js-select` class on a select tag a search field will be enabled if there are at least 10 options present.
-
-```htmlexample
-<div class="form-group">
-  <div class="col-sm-4">
-    <label class="form-label">
-      Select
-    </label>
-  </div>
-  <div class="col-sm-8">
-    <select class="form-control">
-      <option>An Option</option>
-    </select>
-  </div>
-</div>
-<div class="form-group">
-  <div class="col-sm-4">
-    <label class="form-label">
-      Select with Search
-    </label>
-  </div>
-  <div class="col-sm-8">
-    <select class="form-control js-select">
-      <option value="1">Option 1</option>
-      <option value="2">Option 2</option>
-      <option value="3">Option 3</option>
-      <option value="4">Option 4</option>
-      <option value="5">Option 5</option>
-      <option value="6">Option 6</option>
-      <option value="7">Option 7</option>
-      <option value="8">Option 8</option>
-      <option value="9">Option 9</option>
-      <option value="10">Option 10</option>
-    </select>
-  </div>
-</div>
-```
-
-For multi-selects you can also use `data-url` attributes on `<option>` elements in order to turn selected items into links:
-
-```htmlexample
-<div class="form-group">
-  <div class="col-sm-4">
-    <label class="form-label">
-      Select with Links
-    </label>
-  </div>
-  <div class="col-sm-8">
-    <select class="form-control js-select" multiple="multiple">
-      <option value="1" data-url="https://www.google.com?q=alaska">Alaska</option>
-      <option value="2" data-url="https://www.google.com?q=hawaii">Hawaii</option>
-      <option value="3" data-url="https://www.google.com?q=california">California</option>
-      <option value="4" data-url="https://www.google.com?q=nevada">Nevada</option>
-      <option value="5" data-url="https://www.google.com?q=oregon">Oregon</option>
-    </select>
-  </div>
-</div>
-```
-
-*/
-
-;(function(){
-  const Popover = AGN.Lib.Popover,
-    Template = AGN.Lib.Template,
-    Page = AGN.Lib.Page;
+;(() => {
+  const Template = AGN.Lib.Template;
+  const Select = AGN.Lib.Select;
 
   const SCROLLBAR_DATA_KEY = 'agn:select-scrollbar';
 
-  AGN.Lib.CoreInitializer.new('select', ['template'], function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
-    _.each($scope.all('select'), function(el) {
+  AGN.Lib.CoreInitializer.new('select', ['template'], function($scope = $(document)) {
+    _.each($scope.all('select'), el=> {
       const $el = $(el);
 
       if ($el.data('select2')) {
@@ -97,36 +24,15 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         searchInputPlaceholder: t('tables.searchOoo'),
         dropdownCssClass: ':all:',
         selectionCssClass: ':all:',
-        dropdownParent: $('#main-view').exists() ? '#main-view' : 'body',
+        dropdownParent: getDropdownParent($el),
         preventPlaceholderClear: false // custom option
       };
 
-      if ( $el.closest('.modal').exists() ) {
-        options.dropdownParent = $el.closest('.modal');
-      }
-
-      if ( $el.closest('.dropdown-menu').exists() ) {
-        options.dropdownParent = $el.closest('.dropdown-menu');
-      }
-
-      if ( !$el.hasClass('js-select')) {
+      if (!$el.hasClass('js-select')) {
         options.minimumResultsForSearch = 0;
       }
 
-      if ( $el.hasClass('dropdown-select') ) {
-        options.placeholder = t('tables.searchOoo');
-        options.preventPlaceholderClear = true;
-
-        // prevents opening of select2 after removing of selected tag
-        $el.on('select2:unselecting', function (e) {
-          $el.on('select2:opening', function (ev) {
-            ev.preventDefault();
-            $el.off('select2:opening');
-          });
-        });
-      }
-
-      if ( $el.is('[data-sort]') ) {
+      if ($el.is('[data-sort]') ) {
         if ($el.data('sort') === 'alphabetic') {
           options.sorter = function (data) {
             data.sort((a, b) => {
@@ -148,78 +54,57 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         options.matcher = multiSelectMatcher;
       }
 
-      if ( $el.is('[data-result-template]') ) {
-        const resultTemplateId = $el.data('result-template');
+      const resultTemplateId = $el.data('result-template');
 
-        options.templateResult = function(data) {
-          if (data.loading) {
-            return data.text;
-          }
+      options.templateResult = function(data) {
+        if (data.loading) {
+          return data.text;
+        }
 
-          return Template.dom(resultTemplateId, {
-            element: data.element,
-            isDisabled: data.disabled,
-            text: data.text,
-            title: data.title,
-            value: data.id
-          });
-        };
-      }
+        if ($(data.element).hasClass('hidden')) {
+          return null;
+        }
 
-      // if (resultSelectionTemplateId) {
+        if (!resultTemplateId) {
+          return data.text;
+        }
+
+        return Template.dom(resultTemplateId, {
+          element: data.element,
+          isDisabled: data.disabled,
+          text: data.text,
+          title: data.title,
+          value: data.id
+        });
+      };
+
       const customSelectionTemplate = $el.data('selection-template');
-      const createResult = Template.prepare(customSelectionTemplate || 'select2-result');
       options.templateSelection = function(data) {
-        const selection = createResult({
+        return Template.dom(customSelectionTemplate || 'select2-result', {
           element: Array.isArray(data.element) ? data.element[0] : data.element,
           isDisabled: data.disabled,
           text: data.text,
           title: data.title,
           value: data.id
         });
-        return $(selection);
       };
-      // } else if ($el.hasClass('js-option-popovers')) {
-        // TODO: remove if not necessary
-        // options.formatResult = function(data, $label, query, escapeMarkup) {
-        //   var text = '<span style="white-space: nowrap;">' + escapeMarkup(data.text) + '</span>';
-        //
-        //   Popover.new($label, {
-        //     trigger: 'hover',
-        //     delay: {
-        //       show: 300,
-        //       hide: 100
-        //     },
-        //     html: true,
-        //     template: '<div class="popover popover-wide" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
-        //     content: text
-        //   });
-        //
-        //   return text;
-        // };
-        //
-        // $el.on('select2-close', function() {
-        //   // Hide and remove abandoned popovers (stuck in shown state when trigger element has been removed)
-        //   Popover.validate();
-        // });
-      // }
 
-      // TODO: remove if not necessary
-      // var currentFormatSelection = options.formatSelection;
-      // options.formatSelection = function(data) {
-      //   var text = data.text;
-      //   if (text) {
-      //     data.text = text.trim();
-      //   }
-      //   if(currentFormatSelection instanceof Function) {
-      //     return currentFormatSelection.apply(this, arguments);
-      //   }
-      //   return $.fn.select2.defaults.formatSelection.apply(this, arguments);
-      // };
+      if ( $el.hasClass('dynamic-tags') ) {
+        options.tags = true;
+        options.preventPlaceholderClear = true;
+      }
 
       if ( $el.is('[data-select-options]') ) {
         const additionalOptions = AGN.Lib.Helpers.objFromString($el.data('select-options'));
         options = _.extend(options, additionalOptions);
+      }
+      
+      if (options.alignDropdownRight) {
+        $(options.dropdownParent).addClass('align-dropdown-right-container');
+      }
+
+      if (options.tags && !options.tokenSeparators) {
+        options.tokenSeparators = [',', ' ', ';'];
       }
 
       if ( $el.is('[data-select-tree]') ) {
@@ -227,6 +112,17 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         $el.select2ToTree(options);
       } else {
         $el.select2(options);
+      }
+
+      if ($el.is('[data-show-create-btn]') || options.tags) {
+        const $btn = addCreateBtn($el);
+        if (options.tags) {
+          AGN.Lib.Tooltip.createTip($btn, t('defaults.add'));
+          $btn.on('click', function () {
+            const value = $el.data('select2').selection.$search.val();
+            AGN.Lib.Select.get($el).selectOption(value);
+          });
+        }
       }
 
       $el.on('select2:open', e => {
@@ -238,40 +134,39 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         // this is a hack to display scrollbar rails when open dropdown
         window.setTimeout(() => {
           const $options = $el.data('select2').$dropdown.find('.select2-results__options');
-          $el.data(SCROLLBAR_DATA_KEY, new AGN.Lib.Scrollbar($options));
-        }, 0);
+          $el.data(SCROLLBAR_DATA_KEY, new AGN.Lib.Scrollbar($options, {wheelSpeed: 0.2}));
+        }, 20);
       });
 
-      $el.on('selec2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
+      $el.on('select2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
       // focusing by label is now handled in listener/label-events
 
-      // TODO: remove if not necessary
-      // var $exclusiveOption = $el.find('option[data-exclusive]');
-      // if ($exclusiveOption.length > 0){
-      //   $el.on('select2-selecting', function (e) {
-      //     var exclusiveIsChosen = $el.find("option[value='"+e.val+"'][data-exclusive]").length > 0;
-      //
-      //     if (exclusiveIsChosen){
-      //       var needUpdate = false;
-      //       $el.find('option:selected:not([data-exclusive])').each(function (){
-      //         needUpdate = true;
-      //         $(this).removeAttr("selected");
-      //       });
-      //       if (needUpdate) {
-      //         $el.trigger('change');
-      //       }
-      //     } else {
-      //       needUpdate = false;
-      //       $el.find('option:selected[data-exclusive]').each(function (){
-      //         needUpdate = true;
-      //         $(this).removeAttr("selected");
-      //       });
-      //       if (needUpdate) {
-      //         $el.trigger('change');
-      //       }
-      //     }
-      //   })
-      // }
+      const $exclusiveOption = $el.find('option[data-exclusive]');
+      if ($exclusiveOption.length > 0){
+        $el.on('select2:select', function (e) {
+          var exclusiveIsChosen = $el.find(`option[value='${e.params.data?.element?.value}'][data-exclusive]`).length > 0;
+
+          if (exclusiveIsChosen){
+            var needUpdate = false;
+            $el.find('option:selected:not([data-exclusive])').each(function (){
+              needUpdate = true;
+              Select.get($el).unselectValue($(this).val());
+            });
+            if (needUpdate) {
+              $el.trigger('change');
+            }
+          } else {
+            needUpdate = false;
+            $el.find('option:selected[data-exclusive]').each(function (){
+              needUpdate = true;
+              Select.get($el).unselectValue($(this).val());
+            });
+            if (needUpdate) {
+              $el.trigger('change');
+            }
+          }
+        })
+      }
     });
   });
 
@@ -309,6 +204,36 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
     const searchText = params.term.toLowerCase();
     const optionText = data.text.toLowerCase();
     return optionText.includes(searchText) ? data : null;
+  }
+
+  function addCreateBtn($el) {
+    const $btn = getCreateBtn$($el.data('show-create-btn'));
+    $el.next('.select2-container')
+      .find('.select2-search')
+      .addClass('flex-grow-1')
+      .wrap($('<div class="d-flex gap-1"></div>'))
+      .parent()
+      .append($btn);
+
+    return $btn;
+  }
+
+  function getCreateBtn$(attrs) {
+    return $(`
+        <button type="button" class="btn btn-icon btn-primary" ${attrs}>
+          <i class="icon icon-plus"></i>
+        </button>
+    `);
+  }
+
+  function getDropdownParent($el) {
+    if ( $el.closest('.modal').exists() ) {
+      return $el.closest('.modal');
+    }
+    if ($el.closest('.dropdown-menu').exists() ) {
+      return $el.closest('.dropdown-menu');
+    }
+    return $('#main-view').exists() ? '#main-view' : 'body';
   }
 
   class SelectWithArrows {
@@ -352,7 +277,7 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
 
     #createArrowBtn(prev) {
       return $(`
-         <button class="btn btn-outline-primary btn-icon-sm btn-select-control">
+         <button class="btn btn-outline-primary btn-icon btn-select-control">
            <i class="icon icon-caret-${prev ? 'left' : 'right'}"></i>
          </button>
        `);

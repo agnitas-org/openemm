@@ -10,8 +10,9 @@
 
 package com.agnitas.emm.core.wsmanager.form;
 
-import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.PaginationForm;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class WebserviceUserOverviewFilter extends PaginationForm {
 
@@ -52,8 +53,8 @@ public class WebserviceUserOverviewFilter extends PaginationForm {
         this.defaultDataSourceId = defaultDataSourceId;
     }
 
-    @Override
-    public boolean ascending() {
-        return AgnUtils.sortingDirectionToBoolean(getOrder(), false);
+    public boolean isUiFiltersSet() {
+        return isNotBlank(username) || status != null || companyId != null || defaultDataSourceId != null;
     }
+
 }

@@ -10,15 +10,15 @@
 
 package com.agnitas.emm.core.mailing.dao;
 
+import com.agnitas.beans.IntEnum;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
+
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
-
-
-import com.agnitas.beans.IntEnum;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
 
 public interface ComMailingParameterDao {
     enum ReservedMailingParam {
@@ -74,7 +74,7 @@ public interface ComMailingParameterDao {
 
     List<ComMailingParameter> getMailingParameters(int companyID, int mailingID);
 
-    List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith, DateRange changeDate);
+    PaginatedListImpl<ComMailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID);
 
     ComMailingParameter getParameter(int mailingInfoID);
 

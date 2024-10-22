@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   const Tile = AGN.Lib.Tile;
   const Tab = AGN.Lib.Tab;

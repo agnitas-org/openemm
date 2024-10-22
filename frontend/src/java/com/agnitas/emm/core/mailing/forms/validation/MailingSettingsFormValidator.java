@@ -11,10 +11,12 @@
 package com.agnitas.emm.core.mailing.forms.validation;
 
 import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -73,7 +75,6 @@ public class MailingSettingsFormValidator {
     private LinkService linkService;
 
     public boolean isValidFormBeforeMailingSave(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, Admin admin, Popups popups) {
-        int mailingId = mailing.getId();
         validateShortname(form.getShortname(), popups);
         validateDescription(form.getDescription(), popups);
         validateEmailMediatype(form.getEmailMediatype(), options.getCompanyId(), popups);
@@ -83,7 +84,7 @@ public class MailingSettingsFormValidator {
         containIllegalScriptElement(form, popups);
         validateMailingParams(form, admin, popups);
         if (!options.isActiveOrSent()) {
-            validatePlanDate(mailingId, workflowDriven(options.getWorkflowId()), form, admin, popups);
+            tryValidatePlanDate(mailing, form, workflowDriven(options.getWorkflowId()), admin, popups);
             validateTargets(options, form, admin, popups);
             validateMailingMod(form, mailing, popups);
             validateHtmlTemplate(mailing, form, options, popups);
@@ -276,31 +277,41 @@ public class MailingSettingsFormValidator {
         }
     }
 
-    private void validatePlanDate(int mailingId, boolean workflowDriven, MailingSettingsForm form, Admin admin, Popups popups) {
-        if (isNotEmpty(form.getPlanDate())) {
-            tryValidatePlanDate(mailingId, workflowDriven, form, admin, popups);
-        }
-    }
-
-    private void tryValidatePlanDate(int mailingId, boolean workflowDriven, MailingSettingsForm form, Admin admin, Popups popups) {
+    private void tryValidatePlanDate(Mailing mailing, MailingSettingsForm form, boolean workflowDriven, Admin admin, Popups popups) {
         try {
-            TimeZone timeZone = AgnUtils.getTimeZone(admin);
-            Date planDate = admin.getDateFormat().parse(form.getPlanDate());
-            Date today = DateUtilities.midnight(timeZone);
-
-            if (planDate.before(today)) {
-                // Untouched plan date should not be validated (whether or not it is in the past)
-                Date originPlanDate = DateUtilities.midnight(mailingService.getMailingPlanDate(mailingId, admin.getCompanyID()), timeZone);
-                if (!planDate.equals(originPlanDate)) {
-                    form.setPlanDate(admin.getDateFormat().format(today));
-                    popups.fieldError(PLAN_DATE_FIELD, workflowDriven
-                            ? "error.mailing.plan.date.pastSetWithCampaignEditor"
-                            : "error.mailing.plan.date.past");
-                }
-            }
+            validatePlanDate(mailing, workflowDriven, form, admin, popups);
         } catch (ParseException e) {
             popups.fieldError(PLAN_DATE_FIELD, "error.mailing.wrong.plan.date.format");
         }
+    }
+
+    private void validatePlanDate(Mailing mailing, boolean workflowDriven, MailingSettingsForm form, Admin admin, Popups popups) throws ParseException {
+        if (isBlank(form.getPlanDate())) {
+            return;
+        }
+        String formPlanDate = StringUtils.trimToEmpty(form.getPlanDate());
+        boolean includesTime = formPlanDate.split(" ").length == 2; // time entered in form filed
+        SimpleDateFormat format = includesTime ? admin.getDateTimeFormat() : admin.getDateFormat();
+        Date newPlanDate = format.parse(formPlanDate);
+        Date originPlanDate = mailing.getPlanDate() == null ? null : new Date(mailing.getPlanDate().getTime());
+        
+        if (planDateInPast(newPlanDate, includesTime, originPlanDate, admin)) {
+            popups.fieldError(PLAN_DATE_FIELD, getPlanDateInPastMsgCode(workflowDriven));
+        }
+    }
+
+    private boolean planDateInPast(Date planDate, boolean includesTime, Date originPlanDate, Admin admin) {
+        TimeZone timeZone = AgnUtils.getTimeZone(admin);
+        Date now = includesTime ? new Date() : DateUtilities.midnight(new Date(), timeZone);
+        if (!planDate.before(now)) {
+            return false;
+        }
+        originPlanDate = includesTime ? originPlanDate : DateUtilities.midnight(originPlanDate, timeZone);
+        return !planDate.equals(originPlanDate); // Untouched plan date should not be validated (even if it in the past)
+    }
+
+    private static String getPlanDateInPastMsgCode(boolean workflowDriven) {
+        return workflowDriven ? "error.mailing.plan.date.pastSetWithCampaignEditor" : "error.mailing.plan.date.past";
     }
 
     private void validateMailingMod(MailingSettingsForm form, Mailing mailing, Popups popups) {

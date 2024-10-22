@@ -37,7 +37,7 @@ import com.agnitas.emm.util.html.HtmlCheckerException;
 @Endpoint
 public class AddMailingEndpoint extends BaseEndpoint {
 
-	private static final Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	private static final Logger LOGGER = LogManager.getLogger(AddMailingEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
@@ -56,12 +56,12 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		// Check for unallowed html tags
 		try {
 			HtmlChecker.checkForNoHtmlTags(request.getShortname());
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+		} catch(HtmlCheckerException e) {
 			throw new RestfulClientException("Mailing name contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(request.getDescription(), false);
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+		} catch(HtmlCheckerException e) {
 			throw new RestfulClientException("Mailing description contains unallowed HTML tags");
 		}
 		

@@ -6,6 +6,7 @@
 
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="isCopying" type="java.lang.Boolean"--%>
+<%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="companyDomainAddresses" type="java.util.List<com.agnitas.emm.core.companydomain.beans.impl.DomainAddressEntryDto>"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
@@ -18,19 +19,18 @@
 <c:set var="emailSettingsDisabled" value="${not MAILING_EDITABLE or not emailSettingsEditable}"/>
 <c:set var="MAILING_TYPE_DATE_BASED" value="<%= MailingType.DATE_BASED %>"/>
 
-<div class="tile" style="flex: 1" data-editable-tile>
+<div class="tile" data-editable-tile>
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="mailing.settings.sender"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="mailing.settings.sender"/></h1>
     </div>
     <div class="tile-body grid gap-3 js-scrollable" style="--bs-columns: 1">
         <c:if test="${not isTemplate}">
             <div>
                 <label class="form-label" for="mailingPlanDate"><mvc:message code="mailing.plan.date"/></label>
                 <c:set var="isReadonlyDate" value="${worldMailingSend || workflowDriven || isSettingsReadonly}"/>
-                <div class="date-picker-container">
-                    <input type="text" name="planDate" value="${mailingSettingsForm.planDate}"
-                           id="mailingPlanDate" class="form-control js-datepicker" data-workflow-driven="${workflowDriven}"
-                           data-datepicker-options="dateFormat: '${fn:toLowerCase(adminDateFormat)}'" ${isReadonlyDate ? "disabled='disabled'" : ""}/>
+                <div id="mailingPlanDate" data-field="datetime" data-property="planDate"
+                     data-field-options="value: '${mailingSettingsForm.planDate}', defaultSubmitTime:''"
+                     data-field-extra-attributes="${workflowDriven or isReadonlyDate ? 'disabled' : ''}">
                 </div>
             </div>
         </c:if>
@@ -58,7 +58,7 @@
                         <mvc:text path="emailMediatype.fromEmail" id="emailSenderMail"
                                   cssClass="form-control" readonly="${emailSettingsDisabled}"
                                   disabled="${isSettingsReadonly}"
-                                  data-field="required"/>
+                                  data-field="required" data-field-options="ignoreHidden: true"/>
                     </c:when>
                     <c:otherwise>
                         ${domainAddressesDropdown}
@@ -111,15 +111,7 @@
                 <mvc:hidden path="emailMediatype.bccRecipients"/>
             </emm:HideByPermission>
 
-            <c:if test="${not isMailingGrid}">
-                <emm:ShowByPermission token="mediatype.sms">
-                    <div class="form-group" data-field="validator" id="sms-address-field">
-                        <label class="form-label" for="mediaSmsSender"><mvc:message code="mailing.Sender_Adress"/></label>
-                        <mvc:text path="smsMediatype.fromAdr" id="mediaSmsSender" cssClass="form-control" maxlength="50"
-                                  data-field-validator="length" data-validator-options="required: true, min: 3, max: 50" disabled="${isSettingsReadonly}"/>
-                    </div>
-                </emm:ShowByPermission>
-            </c:if>
+            <%@include file="fragments/mailing-settings-sms-sender-address.jspf" %>
         </c:if>
     </div>
 </div>

@@ -134,7 +134,6 @@ public class BirtReportSettingsUtils {
     
     public static final List<BirtReportSettingsUtils.Properties> TOP_DOMAIN_WITHOUT_GROUP = Arrays.asList(SENT_MAILS, HARD_BOUNCES, SOFT_BOUNCES, OPENERS, CLICKING_RECIPIENT);
     
-    @SuppressWarnings("unchecked")
     public static List<String> getSettingsPropertyList(Map<String, Object> properties, String propertyName) {
         List<String> result = new ArrayList<>();
         if(properties == null || properties.isEmpty()) {
@@ -148,7 +147,15 @@ public class BirtReportSettingsUtils {
             } else if(value instanceof String[]){
                 result.addAll(Arrays.asList((String[]) value));
             } else if(value instanceof Collection) {
-                result.addAll((Collection<? extends String>) value);
+                Collection<?> objects = (Collection<?>) value;
+                for (Object obj : objects) {
+                    if (obj instanceof String) {
+                        result.add((String) obj);
+                    }
+                    if (obj instanceof Integer) {
+                        result.add(String.valueOf(obj));
+                    }
+                }
             }
         }
         

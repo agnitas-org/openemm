@@ -1,14 +1,4 @@
 
-#mailingSettingsForm {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
-  @include mobile {
-    grid-template-rows: unset;
-    grid-auto-rows: min-content;
-  }
-}
-
 #mediatypes-list {
   gap: $gap-x-sm;
 
@@ -25,11 +15,12 @@
       display: flex;
       align-items: center;
       gap: $gap-x-sm;
-      color: var(--default-text-color);
+      color: var(--text-color-default);
     }
     
     &.disabled {
       background-color: var(--input-disabled-bg-color);
+      --bs-list-group-disabled-color: var(--text-color-default);
     }
   }
 

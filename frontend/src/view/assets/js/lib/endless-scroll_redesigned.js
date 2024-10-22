@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   class EndlessScroll {
 
@@ -12,11 +12,18 @@
       this.allPagesLoaded = false;
       this.$loader = options.loader ? $(options.loader) : null;
 
+      this.$content = $el.find('[data-endless-scroll-content]');
+      if (!this.$content.exists()) {
+        this.$content = $el.find('> div:first');
+      }
+
+      this.$content.wrap('<div class="endless_scroll_inner_wrap"></div>')
+
       $el.endlessScroll({
         fireOnce: true,
         fireDelay: 1000,
         loader: '',
-        insertAfter: '.js-endless-scroll .js-endless-scroll-content',
+        insertAfter: '',
         callback: () => this.loadContent()
       });
 
@@ -30,7 +37,7 @@
     }
 
     load(url) {
-      this.$el.find('.js-endless-scroll-content').empty();
+      this.$content.empty();
 
       if (url) {
         this.url = url;
@@ -60,9 +67,13 @@
         const $resp = $(resp);
         const $items = $(resp).children();
 
-        this.$el.find('.js-endless-scroll-content').append($items);
+        // for styleguide
+        if (resp instanceof Array) {
+          this.$content.append(JSON.stringify(resp));
+        }
+
+        this.$content.append($items);
         this.allPagesLoaded = $resp.is('[data-endless-scroll-stop]');
-        AGN.Lib.Scrollbar.get(this.$el)?.update();
 
         if (displayLoader) {
           this.$loader.addClass('hidden');
@@ -75,7 +86,7 @@
 
       return jqhxr;
     }
-  };
+  }
 
   AGN.Lib.EndlessScroll = EndlessScroll;
 

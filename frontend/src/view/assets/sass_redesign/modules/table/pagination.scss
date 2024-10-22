@@ -1,13 +1,14 @@
 .pagination {
   li {
     @include flex-center;
-    @include size(30px);
+    @include size($pageBtnWidth);
     font-weight: $font-weight-semibold;
     color: var(--table-head-text-color);
 
     &.active, &:hover {
       color: $white;
       background-color: var(--pagination-active-bg-color);
+      border-radius: $border-radius;
     }
 
     &.disabled {
@@ -20,11 +21,5 @@
       width: 100%;
       text-align: center;
     }
-  }
-}
-
-.hide-pagination {
-  .pagination {
-    display: none;
   }
 }

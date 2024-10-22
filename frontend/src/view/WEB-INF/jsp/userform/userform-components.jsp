@@ -29,6 +29,14 @@
               id="userform-components-from"
               modelAttribute="form">
 
+        <script type="application/json" data-initializer="web-storage-persist">
+            {
+                "userform-images-overview": {
+                    "rows-count": ${form.numberOfRows}
+                }
+            }
+        </script>
+
         <!-- Tile BEGIN -->
         <div class="tile">
 
@@ -40,6 +48,43 @@
                 </h2>
 
                 <ul class="tile-header-actions">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="icon icon-eye"></i>
+                            <span class="text"><mvc:message code="button.Show"/></span>
+                            <i class="icon icon-caret-down"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                            <li>
+                                <label class="label">
+                                    <mvc:radiobutton path="numberOfRows" value="20"/>
+                                    <span class="label-text">20</span>
+                                </label>
+                                <label class="label">
+                                    <mvc:radiobutton path="numberOfRows" value="50"/>
+                                    <span class="label-text">50</span>
+                                </label>
+                                <label class="label">
+                                    <mvc:radiobutton path="numberOfRows" value="100"/>
+                                    <span class="label-text">100</span>
+                                </label>
+                                <label class="label">
+                                    <mvc:radiobutton path="numberOfRows" value="200"/>
+                                    <span class="label-text">200</span>
+                                </label>
+                            </li>
+                            <li class="divider"></li>
+                            <li>
+                                <p>
+                                    <button class="btn btn-block btn-secondary btn-regular" data-form-change data-form-submit type="button">
+                                        <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
+                                    </button>
+                                </p>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="icon icon-pencil"></i>
@@ -66,6 +111,7 @@
                             class="table table-bordered table-striped js-table"
                             id="component"
                             name="components"
+                            requestURI="/webform/${formId}/components/list.action"
                             pagesize="${form.numberOfRows}"
                             excludedParams="*">
 
@@ -88,7 +134,7 @@
                         <display:column titleKey="htmled.link" sortable="false">${imageLink}</display:column>
 
                         <display:column titleKey="mailing.Graphics_Component.AddDate" headerClass="js-table-sort"
-                                        sortable="true" sortProperty="creationDate" >
+                                        sortable="true" sortProperty="creation_date" >
                             <i class="icon icon-calendar"></i>
                             <fmt:formatDate value="${component.creationDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
                             &nbsp;
@@ -101,14 +147,14 @@
                             ${component.width} x ${component.height} px
                         </display:column>
 
-                        <display:column titleKey="default.Size" sortable="false">
+                        <display:column titleKey="default.Size" sortable="true" sortProperty="data_size" headerClass="js-table-sort">
                             <c:if test="${not empty component.dataSize}">
                                 ${emm:makeUnitSignNumber(component.dataSize, 'B', false, pageContext.request)}
                             </c:if>
                         </display:column>
 
                         <display:column titleKey="report.data.type" headerClass="js-table-sort"
-                                        sortable="true" sortProperty="mimeType" >
+                                        sortable="true" sortProperty="mimetype" >
 
                              <c:if test="${not empty component.mimeType and fn:startsWith(component.mimeType, 'image/')}">
                                 <span class="badge uppercase">
@@ -120,14 +166,14 @@
                         <display:column class="table-actions align-center"
                                         sortable="false">
 
-                            <c:url var="confirmDeleteLink" value="/webform/${formId}/components/${component.name}/confirmDelete.action"/>
+                            <c:url var="confirmDeleteLink" value="/webform/${formId}/components/${component.id}/confirmDelete.action"/>
                             <a href="${confirmDeleteLink}"
                                class="btn btn-regular btn-alert js-row-delete"
                                data-tooltip="<mvc:message code="mailing.Graphics_Component.delete"/>">
                                 <i class="icon icon-trash-o"></i>
                             </a>
 
-                            <a href="${imageLinkNoCache}" class="btn btn-regular btn-info" data-prevent-load="" download="${component.name}"
+                            <a href="${imageLinkNoCache}?download=true" class="btn btn-regular btn-info" data-prevent-load="" download="${component.name}"
                                data-tooltip="<mvc:message code='button.Download'/>">
                                 <i class="icon icon-cloud-download"></i>
                             </a>

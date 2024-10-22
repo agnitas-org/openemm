@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -42,13 +43,7 @@ public class DataEncryptor {
 	private String saltFilePathOverride = null;
 	
 	private ConfigService configService;
-	
-	public static final void main(final String...encryptorPassword) throws Exception {
-		final DataEncryptor enc = new DataEncryptor();
-		enc.setSaltFilePathOverride(AgnUtils.getUserHomeDir() + "/emm.salt");
-		System.out.println(enc.encrypt("12345678901234567890"));
-	}
-	
+
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
@@ -61,7 +56,6 @@ public class DataEncryptor {
 	/**
 	 * Only the files first line of text is used as password
 	 * 
-	 * @param passwordFile
 	 * @throws IOException
 	 */
 	private void init() throws IOException {
@@ -82,11 +76,11 @@ public class DataEncryptor {
 	}
 	
 	public String encrypt(String dataToEncrypt) throws Exception {
-		return encryptByCompatibilityMode(dataToEncrypt);
+		return encryptByLiveMode(dataToEncrypt);
     }
 	
 	public String encrypt(byte[] dataToEncrypt) throws Exception {
-		return encryptByCompatibilityMode(dataToEncrypt);
+		return encryptByLiveMode(dataToEncrypt);
 	}
 
 	public String decrypt(String encryptedDataBase64) throws Exception {
@@ -114,7 +108,8 @@ public class DataEncryptor {
 			return decryptToByteArrayByCompatibilityMode(encrypted);
 		}
 	}
-	
+
+	/*
 	public String encryptByCompatibilityMode(String dataToEncrypt) throws Exception {
 		return encryptByCompatibilityMode(dataToEncrypt.getBytes(StandardCharsets.UTF_8));
     }
@@ -129,6 +124,7 @@ public class DataEncryptor {
         pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));
         return AgnUtils.encodeBase64(pbeCipher.doFinal(dataToEncrypt));
     }
+    */
 
 	public String encryptByLiveMode(String dataToEncrypt) throws Exception {
 		return encryptByLiveMode(dataToEncrypt.getBytes(StandardCharsets.UTF_8));

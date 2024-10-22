@@ -13,6 +13,7 @@ package com.agnitas.dao;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
 
 import java.util.List;
 import java.util.Set;
@@ -50,15 +51,7 @@ public interface FormComponentDao {
 	 */
 	boolean saveFormComponent(FormComponent formComponent);
 
-	/**
-	 * Gets the component descriptions.
-	 * This returns FormComponent items with all fields filled except for the data byte[]
-	 *
-	 * @param companyID the company id
-	 * @param componentType the component type
-	 * @return the component descriptions
-	 */
-	List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter);
+	PaginatedListImpl<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter);
 
 	/**
 	 * Delete form component.

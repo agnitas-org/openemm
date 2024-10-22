@@ -24,8 +24,6 @@ public class WebserviceUserDto {
 
     private String email;
 
-    private String contactInfo;
-
     private boolean active;
     
     private Set<String> grantedPermissions;
@@ -66,14 +64,6 @@ public class WebserviceUserDto {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getContactInfo() {
-        return contactInfo;
-    }
-
-    public void setContactInfo(String contactInfo) {
-        this.contactInfo = contactInfo;
     }
 
     public boolean isActive() {

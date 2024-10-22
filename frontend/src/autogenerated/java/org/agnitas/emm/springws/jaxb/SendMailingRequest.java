@@ -36,6 +36,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *         &lt;element name="sendDate" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
  *         &lt;element name="blocksize" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/&gt;
  *         &lt;element name="stepping" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/&gt;
+ *         &lt;element name="doubleCheck" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
  *       &lt;/all&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -61,6 +62,7 @@ public class SendMailingRequest {
     protected Date sendDate;
     protected Integer blocksize;
     protected Integer stepping;
+    protected Boolean doubleCheck;
 
     /**
      * Gets the value of the mailingID property.
@@ -172,6 +174,30 @@ public class SendMailingRequest {
      */
     public void setStepping(Integer value) {
         this.stepping = value;
+    }
+
+    /**
+     * Gets the value of the doubleCheck property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public Boolean isDoubleCheck() {
+        return doubleCheck;
+    }
+
+    /**
+     * Sets the value of the doubleCheck property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setDoubleCheck(Boolean value) {
+        this.doubleCheck = value;
     }
 
 }

@@ -12,7 +12,9 @@ package org.agnitas.emm.springws.endpoint.mailing;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import com.agnitas.emm.core.components.service.MailingSendService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -38,12 +40,14 @@ public class SendMailingEndpoint extends BaseEndpoint {
 	private ConfigService configService;
 	private SecurityContextAccess securityContextAccess;
 	private UserActivityLogAccess userActivityLogAccess;
+	private MailingSendService mailingSendService;
 
-	public SendMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, ConfigService configService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+	public SendMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, ConfigService configService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess, final MailingSendService mailingSendService) {
 		this.mailingService = mailingService;
 		this.configService = configService;
 		this.securityContextAccess = securityContextAccess;
 		this.userActivityLogAccess = userActivityLogAccess;
+		this.mailingSendService = Objects.requireNonNull(mailingSendService, "mailing send service");
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "SendMailingRequest")
@@ -60,6 +64,15 @@ public class SendMailingEndpoint extends BaseEndpoint {
 			model.setStepping(null != request.getStepping() ? request.getStepping() : 0);
 	
 			List<UserAction> userActions = new ArrayList<>();
+
+			if(request.isDoubleCheck() != null && request.isDoubleCheck()) {
+				final boolean result = this.mailingSendService.updateDoubleCheckOnSending(this.securityContextAccess.getWebserviceUserCompanyId(), request.getMailingID(), request.isDoubleCheck());
+
+				if(!result) {
+					throw new Exception("Unable to enable double check on sending");
+				}
+			}
+
 			mailingService.sendMailing(model, userActions);
 			this.userActivityLogAccess.writeLog(userActions);
 	

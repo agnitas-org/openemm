@@ -12,6 +12,8 @@ package com.agnitas.emm.core.usergroup.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class UserGroupOverviewFilter extends PaginationForm {
 
     private int currentAdminCompanyId;
@@ -20,6 +22,7 @@ public class UserGroupOverviewFilter extends PaginationForm {
     private String description;
     private String clientName;
     private String groupName;
+    private boolean showDeleted;
 
     public int getCurrentAdminId() {
         return currentAdminId;
@@ -67,5 +70,17 @@ public class UserGroupOverviewFilter extends PaginationForm {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(description) || isNotBlank(clientName) || isNotBlank(groupName) || clientId != null;
+    }
+
+    public boolean isShowDeleted() {
+        return showDeleted;
+    }
+
+    public void setShowDeleted(boolean showDeleted) {
+        this.showDeleted = showDeleted;
     }
 }

@@ -12,25 +12,25 @@ package com.agnitas.emm.core.mailing.service.impl;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.dao.MailingDeliveryBlockingDao;
-import com.agnitas.emm.core.mailing.service.MaildropStatusService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class MailingDeliveryBlockingServiceImpl implements MailingDeliveryBlockingService {
 
     private final MailingDeliveryBlockingDao mailingDeliveryBlockingDao;
-    private final MaildropStatusService maildropStatusService;
+    private final MaildropService maildropService;
 
     @Autowired
-    public MailingDeliveryBlockingServiceImpl(MailingDeliveryBlockingDao mailingDeliveryBlockingDao, MaildropStatusService maildropStatusService) {
+    public MailingDeliveryBlockingServiceImpl(MailingDeliveryBlockingDao mailingDeliveryBlockingDao, MaildropService maildropService) {
         this.mailingDeliveryBlockingDao = mailingDeliveryBlockingDao;
-        this.maildropStatusService = maildropStatusService;
+        this.maildropService = maildropService;
     }
 
     @Override
     public void blockDeliveryByAutoImport(int autoImportId, int mailingId, int companyId) {
-        int maildropStatusId = maildropStatusService.getLastMaildropEntryId(mailingId, companyId);
+        int maildropStatusId = maildropService.getLastMaildropEntryId(mailingId, companyId);
         blockByAutoImport(mailingId, autoImportId, maildropStatusId);
     }
 
@@ -51,8 +51,8 @@ public class MailingDeliveryBlockingServiceImpl implements MailingDeliveryBlocki
     @Override
     public void resumeBlockingIfNeeded(int mailingId, int companyId) {
         if (mailingDeliveryBlockingDao.isAutoImportBlockingEntryExists(mailingId)) {
-            int maildropStatusId = maildropStatusService.getLastMaildropEntryId(mailingId, companyId);
-            MaildropEntry maildropEntry = maildropStatusService.getMaildropEntry(mailingId, companyId, maildropStatusId);
+            int maildropStatusId = maildropService.getLastMaildropEntryId(mailingId, companyId);
+            MaildropEntry maildropEntry = maildropService.getMaildropEntry(mailingId, companyId, maildropStatusId);
 
             if (maildropEntry.getGenStatus() < MaildropGenerationStatus.WORKING.getCode()) {
                 mailingDeliveryBlockingDao.updateMaildropStatus(maildropStatusId, mailingId);

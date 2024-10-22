@@ -1,8 +1,7 @@
 
 .node {
   position: absolute;
-  width: 64px;
-  height: 64px;
+  @include size(64px);
   padding: 0;
   margin: 0;
   z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON */
@@ -15,14 +14,28 @@
   .node-image {
     height: $campaign-icon-height;
   }
+  
+  &.under-edit {
+    .node-image {
+      color: $dark-blue;
 
+      body.dark-theme & {
+        color: $light-blue;
+      }
+    }
+  }
+  
+  .node-image {
+    height: $campaign-icon-height;
+  }
+  
   &.active {
     color: $campaign-icon-color;
   }
 
   &:hover {
     z-index: 13; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_HOVER */
-    color: $grey-blue; // todo
+    color: $campaign-focused-icon-color;
   }
 
   &:hover:not(.jtk-drag-hover):not(.jtk-dragged) .node-connect-button,
@@ -31,34 +44,48 @@
   }
 
   &.ui-selected, &.ui-selecting {
-    color: $campaign-selected-icon-color;
+    color: $campaign-focused-icon-color;
   }
 
   &.js-collision-detected {
     opacity: 0.2;
   }
+
+  .icon-overlay-title {
+    display: block;
+    position: absolute;
+    @include size(100%);
+    top: 0;
+    left: 0;
+    margin: 0;
+    text-align: center;
+    line-height: 64px; /* Same width as node */
+    font-weight: bold;
+  }
+
+  .icon-overlay-title:empty {
+    display: none;
+  }
 }
 
 .draggable-node {
-  cursor: grabbing;
+  pointer-events: none;
   opacity: 0.8;
   svg {
     @include size(64px);
   }
-}
 
-.draggable-node.js-collision-detected {
-  opacity: 0.4;
-  cursor: no-drop !important;
+  &.js-collision-detected {
+    opacity: 0.4;
+  }
 }
 
 .node.jtk-dragged {
-  cursor: grabbing;
+  pointer-events: none !important;
   z-index: 20; /* be careful modifying this, synchronize with JS: Z_INDEX_DRAGGED_ICON_NODE */
 }
 
 .node.jtk-drag-hover,
 .node.jtk-drag-selected.jtk-drag-active {
-  background-color: rgba(255, 180, 0, 0.5) !important;
-  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#80FFB400', endColorstr='#80FFB400') !important; /* IE */
+  color: $yellow !important;
 }

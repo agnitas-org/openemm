@@ -16,7 +16,7 @@
 <c:set var="agnSubtitleValue" scope="request">
     <ul class="breadcrumbs">
         <li>
-            <c:url var="link" value="/statistics/mailing/comparison/list.action"/>
+            <c:url var="link" value="/statistics/mailing/comparison/list.action?restoreSort=true"/>
             <a href="${link}"> <mvc:message code="default.Overview"/></a>
         </li>
         <li>

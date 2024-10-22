@@ -1,110 +1,24 @@
-AGN.Opt.Templates['select2-result'] = '<span>{{- title ? title : text }}</span>'
+AGN.Opt.Templates['select2-result'] = '<span>{{- title ? title : text }}</span>';
 
-// AGN.Opt.Templates['modal'] = '\
-// <div class="modal"> \
-//   <div class="modal-dialog {{= modalClass }}"> \
-//     <div class="modal-content"> \
-//       <div class="modal-header"> \
-//         <button type="button" class="close-icon close" data-dismiss="modal"> \
-//           <i aria-hidden="true" class="icon icon-times-circle"></i> \
-//         </button> \
-//         <h4 class="modal-title">{{= title }}</h4> \
-//       </div> \
-//       <div class="modal-body"> \
-//         {{= content }} \
-//       </div> \
-//     </div> \
-//   </div> \
-// </div>';
-//
-// AGN.Opt.Templates['modal-yes-no-cancel'] = '\
-// <div class="modal"> \
-//   <div class="modal-dialog"> \
-//     <div class="modal-content"> \
-//       <form action="{{= action }}" method="{{= method }}"> \
-//         <div class="modal-header"> \
-//           <button type="button" class="close-icon close" data-dismiss="modal"> \
-//             <i aria-hidden="true" class="icon icon-times-circle"></i> \
-//           </button> \
-//           <h4 class="modal-title">{{= title }}</h4> \
-//         </div> \
-//         <div class="modal-body"> \
-//           {{= content }} \
-//         </div> \
-//         <div class="modal-footer"> \
-//           <div class="btn-group"> \
-//             <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal"> \
-//               <i class="icon icon-times"></i> \
-//               <span class="text">{{= t(\'defaults.no\') }}</span> \
-//             </button> \
-//             <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal"> \
-//               <i class="icon icon-check"></i> \
-//               <span class="text">{{= t(\'defaults.yes\') }}</span> \
-//             </button> \
-//           </div> \
-//         </div> \
-//       </form> \
-//     </div> \
-//   </div> \
-// </div>';
-//
-// AGN.Opt.Templates['modal-yes-no-cancel-save-choice'] = '\
-// <div class="modal"> \
-//   <div class="modal-dialog {{= modalClass }}"> \
-//     <div class="modal-content"> \
-//       <div class="modal-header"> \
-//         <button type="button" class="close-icon close" data-dismiss="modal"> \
-//           <i aria-hidden="true" class="icon icon-times-circle"></i> \
-//         </button> \
-//         <h4 class="modal-title">{{= title }}</h4> \
-//       </div> \
-//       <div class="modal-body"> \
-//         <div class="form-group"> \
-//           <div class="col-sm-12"> \
-//           {{= content }} \
-//           </div> \
-//         </div> \
-//         <div class="form-group"> \
-//           <div class="col-sm-8"> \
-//             <label class="control-label-left"> \
-//               {{ if(!choiceContent) { }} \
-//                 {{= t(\'defaults.remember.choice\') }} \
-//               {{ } else { }} \
-//                 {{= choiceContent }} \
-//               {{ } }} \
-//             </label> \
-//           </div> \
-//           <div class="col-sm-4"> \
-//             <label class="toggle"> \
-//               <input type="checkbox" name="confirm-save-choice"> \
-//               <div class="toggle-control"></div> \
-//             </label> \
-//           </div> \
-//         </div> \
-//       </div> \
-//       <div class="modal-footer"> \
-//         <div class="btn-group"> \
-//           <button type="button" class="btn btn-default btn-large pull-left" data-confirm-negative="cancel" data-dismiss="modal"> \
-//             <i class="icon icon-times"></i> \
-//             <span class="text">{{= t(\'defaults.cancel\') }}</span> \
-//           </button> \
-//           <button type="button" class="btn btn-default btn-large" data-confirm-negative="no" data-dismiss="modal"> \
-//             <i class="icon icon-times"></i> \
-//             <span class="text">{{= t(\'defaults.no\') }}</span> \
-//           </button> \
-//           <button type="button" class="btn btn-primary btn-large" data-confirm-positive="yes" data-dismiss="modal"> \
-//             <i class="icon icon-check"></i> \
-//             <span class="text">{{= t(\'defaults.yes\') }}</span> \
-//           </button> \
-//         </div> \
-//       </div> \
-//     </div> \
-//   </div> \
-// </div>';
+AGN.Opt.Templates['select2-badge-option'] = `
+<div class="d-flex align-items-center gap-1">
+    {{ if (value) { }}
+        <span class="status-badge {{- element.getAttribute('data-badge-class')}}"></span>
+    {{ } }}
+    <span>{{- text }}</span>
+</div>
+`;
+
+AGN.Opt.Templates['input-feedback'] = `
+<div class="form-control-feedback-message">
+    <i class="icon icon-state-{{- type === 'success' ? 'success' : 'warning' }}"></i>
+    {{ print(message); }}
+</div>
+`;
 
 AGN.Opt.Templates['error'] = `
    <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -112,7 +26,7 @@ AGN.Opt.Templates['error'] = `
                         {{= headline }}
                     </h1>
   
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -122,7 +36,7 @@ AGN.Opt.Templates['error'] = `
                 </div>
                 
                 <div class="modal-footer">
-                   <button class="btn btn-primary flex-grow-1" data-bs-dismiss="modal" onclick="location.reload();">
+                   <button class="btn btn-primary" data-bs-dismiss="modal" onclick="location.reload();">
                         <i class="icon icon-redo"></i>
                         <span class="text">{{= reload }}</span>
                     </button>
@@ -134,7 +48,7 @@ AGN.Opt.Templates['error'] = `
 
 AGN.Opt.Templates['permission-denied'] = `
    <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -148,7 +62,7 @@ AGN.Opt.Templates['permission-denied'] = `
                 </div>
                 
                 <div class="modal-footer">
-                     <button class="btn btn-primary flex-grow-1" data-bs-dismiss="modal">
+                     <button class="btn btn-primary" data-bs-dismiss="modal">
                         <i class="icon icon-check"></i>
                         <span class="text">{{= btn }}</span>
                     </button>
@@ -160,11 +74,11 @@ AGN.Opt.Templates['permission-denied'] = `
 
 AGN.Opt.Templates['autosave-restore'] = `
   <div class="modal" tabIndex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <h1 class="modal-title">{{= title }}</h1>
-          <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+          <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
             <span class="sr-only"><mvc:message code="button.Cancel"/></span>
           </button>
         </div>
@@ -173,11 +87,11 @@ AGN.Opt.Templates['autosave-restore'] = `
         </div>
   
         <div class="modal-footer">
-            <button type="button" class="btn btn-danger js-confirm-negative flex-grow-1" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-danger js-confirm-negative" data-bs-dismiss="modal">
               <i class="icon icon-times"></i>
               <span class="text">{{= negative }}</span>
             </button>
-            <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-primary js-confirm-positive" data-bs-dismiss="modal">
                 <i class="icon icon-check"></i>
                 <span class="text">{{= positive }}</span>
             </button>
@@ -194,70 +108,83 @@ AGN.Opt.Templates['tooltip-template'] = `
   </div>
 `;
 
-
-// AGN.Opt.Templates['tooltip-message-with-title'] = '\
-// <div class="helper-popup-header">{{= title }}</div> \
-// <div class="helper-popup-content">{{= content }}</div>';
-//
-// AGN.Opt.Templates['tooltip-message-just-content'] = '<div class="helper-popup-content">{{= content }}</div>';
-
-AGN.Opt.Templates['table-controls'] = `
-<div class="table-controls pages-{{- totalPages }}">
-  {{ if (showRecordsCount === 'simple') { }}
-    <span>{{- itemTotal }} {{= t('defaults.entries') }}</span>    
-  {{ } else if (showRecordsCount) { }}
-    <div class="table-controls__entries-wrapper">
-      <span>${t('defaults.listShowMax')}</span>
-        <select name="numberOfRows" class="form-control compact" data-select-options="minimumResultsForSearch: -1, width: 'auto', dropdownAutoWidth: true">
-          {{ _.each([20, 50, 100], function(numberOfRows) { }}       
-            <option value="{{- numberOfRows }}" {{- pageSize == numberOfRows ? 'selected="selected"' : ''}}>{{- numberOfRows }} ${t('defaults.entries')}</option>
+AGN.Opt.Templates['table-footer'] = `
+ {{ if (showRecordsCount === 'simple') { }}
+    <div class="table-wrapper__footer"></div>
+ {{ } else { }}
+    <div class="table-wrapper__footer table-wrapper__footer--pages-{{- totalPages }}">
+      {{ if (showRecordsCount) { }}
+        <div class="table-wrapper__rows-selection">
+          <select data-number-of-rows class="form-control compact js-select" data-select-options="width: 'auto', dropdownAutoWidth: true">
+            {{ _.each([20, 50, 100, 200], numberOfRows => { }}       
+              <option value="{{- numberOfRows }}" {{- pageSize == numberOfRows ? 'selected="selected"' : ''}}>{{- numberOfRows }}</option>
+            {{ }) }}
+          </select>       
+          <span>${t('defaults.rowsToDisplay')}</span>
+        </div>
+      {{ } }}
+    
+      {{ if (pagination && totalPages > 1) { }}
+        <ul class="pagination">
+          <li class="js-data-table-first-page {{= currentPage == 1 ? 'disabled' : '' }}">
+            <span><i class="icon icon-angle-double-left"></i></span>
+          </li>
+          <li class="js-data-table-prev-page {{= currentPage == 1 ? 'disabled' : '' }}">
+            <span><i class="icon icon-angle-left"></i></span>
+          </li>
+          {{ _.each(pageSelects, page => { }} 
+            <li class="{{= page == currentPage ? 'active' : 'js-data-table-page' }}" data-page="{{= page - 1 }}">
+              <span>{{= page }}</span>
+            </li>
           {{ }) }}
-        </select>       
-      <span>${t('defaults.OutOf')} {{- itemTotal }} ${t('defaults.entries')}</span>
+          <li class="js-data-table-next-page {{= currentPage == totalPages ? 'disabled' : '' }}">
+            <span><i class="icon icon-angle-right"></i></span>
+          </li>
+          <li class="js-data-table-last-page {{= currentPage == totalPages ? 'disabled' : '' }}">
+            <span><i class="icon icon-angle-double-right"></i></span>
+          </li>
+        </ul>
+      {{ } }}
     </div>
-  {{ } }}
+ {{ } }}
+`;
 
-  {{ if (pagination && totalPages > 1) { }}
-    <ul class="pagination">
-      <li class="js-data-table-first-page {{= currentPage == 1 ? 'disabled' : '' }}">
-        <span><i class="icon icon-fast-backward"></i></span>
-      </li>
-      <li class="js-data-table-prev-page {{= currentPage == 1 ? 'disabled' : '' }}">
-        <span><i class="icon icon-step-backward"></i></span>
-      </li>
-      {{ _.each(pageSelects, function(page) { }} 
-      <li class="{{= page == currentPage ? 'active' : 'js-data-table-page' }}" data-page="{{= page - 1 }}">
-        <span>{{= page }}</span>
-      </li>
-      {{ }) }}
-      <li class="js-data-table-next-page {{= currentPage == totalPages ? 'disabled' : '' }}">
-        <span><i class="icon icon-step-forward"></i></span>
-      </li>
-      <li class="js-data-table-last-page {{= currentPage == totalPages ? 'disabled' : '' }}">
-        <span><i class="icon icon-fast-forward"></i></span>
-      </li>
-    </ul>
-  {{ } }}
-</div>`
+AGN.Opt.Templates['js-table-wrapper'] = `
+  <div class="table-wrapper">
+    <div class="table-wrapper__header justify-content-end">
+        <div class="table-wrapper__controls">
+          <button type="button" class="btn btn-inverse" data-toggle-table-truncation>
+            <i class="icon icon-ellipsis-h"></i>
+            <span>${t('defaults.toggleTruncation')}</span>
+          </button>
+          
+          <p class="table-wrapper__entries-label">
+            <b></b>
+            <span class="text-truncate">${t('defaults.entries')}</span>
+          </p>
+        </div>
+    </div>
+  </div>
+`;
 
 AGN.Opt.Templates['session-expired'] = `
 <div class="modal modal-warning" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">
                     <i class="icon icon-state-warning"></i>
-                    {{= t(\'logon.session.expired\') }}
+                    ${t('logon.session.expired')}
                 </h1>
             </div>
 
             <div class="modal-body">
-                <p>{{= t(\'logon.session.notification\') }}</p>
+                <p>${t('logon.session.notification')}</p>
             </div>
             
             <div class="modal-footer">
-               <button class="btn btn-primary flex-grow-1" data-bs-dismiss="modal">
-                  {{= t(\'defaults.relogin\') }}
+               <button class="btn btn-primary" data-bs-dismiss="modal">
+                  ${t('defaults.relogin')}
               </button>
             </div>
         </div>
@@ -268,21 +195,22 @@ AGN.Opt.Templates['session-expired'] = `
 AGN.Opt.Templates['datetime-picker'] = `
   <div class="date-time-container">
       <div class="date-picker-container">
-        <input type="text" id="{{- property }}_date" class="form-control js-datepicker" value="{{- date}}"/>
+        <input type="text" class="form-control js-datepicker" value="{{- date }}" placeholder="{{- window.adminDateFormat }}" {{- extraAttrs }} />
       </div>
-     <div class="time-picker-container">
-         <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" data-timepicker-options="mask: 'h:s'"/>
+      {{ var timeMask = timeMask ? timeMask : 'h:s' }}
+      <div class="time-picker-container">
+         <input type="text" class="form-control js-timepicker" value="{{- time }}" data-timepicker-options="mask: '{{- timeMask }}'" {{- extraAttrs }} />
       </div>
   </div>
 `;
 
 AGN.Opt.Templates['plus-btn'] = `
-<a href="#" class="btn btn-icon-sm btn-primary" {{= attrs }}>
+<a href="#" class="btn btn-icon btn-primary" {{= attrs }}>
     <i class="icon icon-plus"></i>
 </a>`;
 
 AGN.Opt.Templates['trash-btn'] = `
-<a href="#" class="btn btn-icon-sm btn-danger" {{= attrs }}>
+<a href="#" class="btn btn-icon btn-danger" {{= attrs }}>
     <i class="icon icon-trash-alt"></i>
 </a>`;
 
@@ -332,13 +260,41 @@ AGN.Opt.Templates['tile-overlay'] = `
   </div>
 `;
 
+AGN.Opt.Templates['deletable-table-column'] = `
+  <div class="d-flex gap-1 align-items-center hidden">
+    {{ if (!permanent) { }}
+      <button type="button" class="icon-btn" data-remove-table-column>
+        <i class="icon icon-times-circle text-danger"></i>
+      </button>
+    {{ } }}
+    <span class="text-truncate">{{= text }}</span>
+  </div>
+`;
+
+AGN.Opt.Templates['table-column-picker'] = `
+  <div class="dropdown dropstart hidden">
+      <button type="button" class="icon-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+        <i class="icon icon-plus-circle text-primary"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu--table-column mt-4">
+          <select class="form-control" multiple data-select-options="preventPlaceholderClear: true, placeholder: '${t('tables.searchOoo')}'">
+            {{ _.each(columns, col => { }}
+              <option value="{{- col.name }}" {{ col.selected ? print('selected') : print('') }}>
+                {{- col.text }}
+              </option>
+            {{ }); }}
+          </select>
+      </ul>
+  </div>
+`;
+
 AGN.Opt.Templates['multi-editor-modal'] = `
 <div class="modal modal-adaptive modal-editor">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">{{= title }}</h1>
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only">${t('defaults.cancel')}</span>
                 </button>
             </div>
@@ -348,9 +304,9 @@ AGN.Opt.Templates['multi-editor-modal'] = `
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="#" class="btn btn-primary flex-grow-1" data-apply-enlarged>
+                <a href="#" class="btn btn-primary" data-apply-enlarged>
                     <i class="icon icon-save"></i>
-                    <span class="text">${t('defaults.apply')}</span>
+                    <span class="text">{{- btnText }}</span>
                 </a>
             </div>
         </div>
@@ -360,7 +316,7 @@ AGN.Opt.Templates['multi-editor-modal'] = `
 
 AGN.Opt.Templates['mailing-locked'] = `
 <div class="modal modal-warning" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">
@@ -368,7 +324,7 @@ AGN.Opt.Templates['mailing-locked'] = `
                     {{= t(\'defaults.warning\') }}
                 </h1>
                 
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
                   <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -379,4 +335,12 @@ AGN.Opt.Templates['mailing-locked'] = `
         </div>
     </div>
 </div>
+`;
+
+AGN.Opt.Templates['double-select-options'] = `
+{{ _.forEach(opts, (name, value) => { }}
+    <option value="{{- value }}" {{ value == valueSelected ? print('selected') : print('') }}>
+      {{- name }}
+    </option>
+{{ }); }}
 `;

@@ -1,64 +1,64 @@
-/*doc
----
-title: Helpers
-name: js-helpers
-category: Javascripts - Helpers
----
-
-`AGN.Lib.Helpers` provides helper functions
-*/
-
-/*doc
----
-title: paramsFromUrl
-name: js-helpers-01
-parent: js-helpers
----
-
-`AGN.Lib.Helpers.paramsFromUrl(url)` extracts parameters from the url and returns an object
-
-```
-var url = 'http://localhost:8080/css/mailing/list.action?forTemplates=false&page=1';
-AGN.Lib.Helpers.paramsFromUrl(url) 
--> Object {action: "1", isTemplate: "false", page: "1"}
-```
-*/
-
-/*doc
----
-title: objFromString
-name: js-helpers-02
-parent: js-helpers
----
-
-`AGN.Lib.Helpers.objFromString(string)` parses a string and returns an object
-
-```
-var string = "number: 9, float: 2.2, boolean: true, string: someString, forcedString: 'true'";
-AGN.Lib.Helpers.objFromString(string) 
--> Object {number: 9, float: 2.2, boolean: true, string: "someString", forcedString: "true"}
-```
-*/
-
-/*doc
----
-title: Animations
-name: js-helpers-03
-parent: js-helpers
----
-
-`AGN.Lib.Helpers.disableCSSAnimations()` and `AGN.Lib.Helpers.enableCSSAnimations()` allow to globally toggle css animations.
-*/
-
-/*doc
----
-title: formatBytes
-name: js-helpers-04
-parent: js-helpers
----
-`AGN.Lib.Helpers.formatBytes(bytes, unit ) format a bytes to number with prefix by chosen metrics system
-by default using SI
-* */
+// /*doc
+// ---
+// title: Helpers
+// name: js-helpers
+// category: Javascripts - Helpers
+// ---
+//
+// `AGN.Lib.Helpers` provides helper functions
+// */
+//
+// /*doc
+// ---
+// title: paramsFromUrl
+// name: js-helpers-01
+// parent: js-helpers
+// ---
+//
+// `AGN.Lib.Helpers.paramsFromUrl(url)` extracts parameters from the url and returns an object
+//
+// ```
+// var url = 'http://localhost:8080/css/mailing/list.action?forTemplates=false&page=1';
+// AGN.Lib.Helpers.paramsFromUrl(url) 
+// -> Object {action: "1", isTemplate: "false", page: "1"}
+// ```
+// */
+//
+// /*doc
+// ---
+// title: objFromString
+// name: js-helpers-02
+// parent: js-helpers
+// ---
+//
+// `AGN.Lib.Helpers.objFromString(string)` parses a string and returns an object
+//
+// ```
+// var string = "number: 9, float: 2.2, boolean: true, string: someString, forcedString: 'true'";
+// AGN.Lib.Helpers.objFromString(string) 
+// -> Object {number: 9, float: 2.2, boolean: true, string: "someString", forcedString: "true"}
+// ```
+// */
+//
+// /*doc
+// ---
+// title: Animations
+// name: js-helpers-03
+// parent: js-helpers
+// ---
+//
+// `AGN.Lib.Helpers.disableCSSAnimations()` and `AGN.Lib.Helpers.enableCSSAnimations()` allow to globally toggle css animations.
+// */
+//
+// /*doc
+// ---
+// title: formatBytes
+// name: js-helpers-04
+// parent: js-helpers
+// ---
+// `AGN.Lib.Helpers.formatBytes(bytes, unit ) format a bytes to number with prefix by chosen metrics system
+// by default using SI
+// * */
 
 (function () {
     AGN.Lib.Helpers = {
@@ -309,7 +309,13 @@ by default using SI
         isValidEmail: function(email) {
           var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
           return re.test(String(email).toLowerCase());
-        }
+        },
+
+        isUrl: function(url) {
+            // starts with HTTP/HTTPS
+            const re = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
+            return re.test(url);
+        },
     };
 
     /*

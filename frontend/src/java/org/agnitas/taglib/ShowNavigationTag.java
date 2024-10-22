@@ -10,26 +10,25 @@
 
 package org.agnitas.taglib;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Vector;
-
+import com.agnitas.emm.core.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
-
 import org.agnitas.emm.core.navigation.ConditionsHandler;
+import org.agnitas.emm.core.navigation.condition.NavItemCondition;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.emm.core.Permission;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Vector;
 
 /**
  *  Display the navigation for a page. the navigation is specified by a
@@ -45,7 +44,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
-	private String redesigned;
+	private String redesigned; // TODO: EMMGUI-714 remove after old design will be removed
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
@@ -62,10 +61,11 @@ public class ShowNavigationTag extends BodyTagSupport {
 		private final String hideForToken;
 		private final String upsellingRef;
 		private final boolean conditionSatisfied;
+		private final String conditionMessage;
 
 		public NavigationData(String message, String token, String href, Boolean hideForMysqlKey, String iconClass,
 							  String subMenu, String hideForToken, String itemClass,
-							  String upsellingRef, boolean conditionSatisfied) {
+							  String upsellingRef, boolean conditionSatisfied, String conditionMessage) {
             this.message = message;
             this.token = token;
             this.href = href;
@@ -76,6 +76,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 			this.hideForToken = hideForToken;
 			this.upsellingRef = upsellingRef;
 			this.conditionSatisfied = conditionSatisfied;
+			this.conditionMessage = conditionMessage;
 		}
 
         public String getMessage() { return message; }
@@ -93,7 +94,11 @@ public class ShowNavigationTag extends BodyTagSupport {
 		public String getUpsellingRef() { return upsellingRef; }
         public boolean isConditionSatisfied() { return conditionSatisfied; }
 
-        @Override
+		public String getConditionMessage() {
+			return conditionMessage;
+		}
+
+		@Override
         public String toString() {
             return "message[" + getMessage() + "], token[" + getToken() + "], " +
 					"hideForMysqlKey[" + getHideForMysqlKey().toString() + "], iconClass[" + getIconClass()
@@ -101,6 +106,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 					+ "], subMenu[" + (subMenu != null ? subMenu : "")
 					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "")
                     + "], conditionId[" + isConditionSatisfied()
+                    + "], conditionMessage[" + getConditionMessage()
 					+ "], itemClass[" + getItemClass() + "]";
         }
 	}
@@ -227,11 +233,13 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 			String conditionId = "conditionId_" + i;
 
-            NavigationData navigationData = new NavigationData(resourceBundle.getString(msgKey), securityToken,
+			NavItemCondition.ConditionResult conditionResult = checkCondition(getDataQuietly(resourceBundle, conditionId));
+
+			NavigationData navigationData = new NavigationData(resourceBundle.getString(msgKey), securityToken,
                 resourceBundle.getString(hrefKey),
 				getDataQuietly(resourceBundle, hideForMysqlKey).equals("true"), getDataQuietly(resourceBundle, iconClass),
                 getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken), getDataQuietly(resourceBundle, itemClass),
-				getDataQuietly(resourceBundle, upsellingRef), isConditionSatisfied(getDataQuietly(resourceBundle, conditionId)));
+				getDataQuietly(resourceBundle, upsellingRef), conditionResult.isSatisfied(), conditionResult.getMessage());
 
             navigationDataList.add(navigationData);
         }
@@ -245,16 +253,16 @@ public class ShowNavigationTag extends BodyTagSupport {
         }
     }
 
-    private boolean isConditionSatisfied(String conditionId){
-	    if(StringUtils.isBlank(conditionId)){
-	        return true;
+    private NavItemCondition.ConditionResult checkCondition(String conditionId){
+	    if (StringUtils.isBlank(conditionId)){
+	        return new NavItemCondition.ConditionResult(true);
         }
         final ConditionsHandler conditionsHandler = WebApplicationContextUtils.getRequiredWebApplicationContext(pageContext.getServletContext()).getBean(ConditionsHandler.class);
         if(conditionsHandler == null){
             logger.error("Conditions handler is not allowed!!!");
-            return false;
+			return new NavItemCondition.ConditionResult(false);
         }
-        return conditionsHandler.checkCondition(conditionId, (HttpServletRequest) pageContext.getRequest());
+		return conditionsHandler.checkCondition(conditionId, (HttpServletRequest) pageContext.getRequest());
     }
 
 	private void setBodyAttributes() {
@@ -264,10 +272,14 @@ public class ShowNavigationTag extends BodyTagSupport {
 		logger.info("setting navigation attributes {}_navigation_href = {}", prefix, navigationData.getHref());
 
 		if (StringUtils.isNotBlank(highlightKey) && StringUtils.equals(navigationData.getMessage(), highlightKey)) {
-            pageContext.setAttribute(prefix + "_navigation_switch", "on");
+			if (!BooleanUtils.toBoolean(redesigned)) {
+				pageContext.setAttribute(prefix + "_navigation_switch", "on");
+			}
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.TRUE);
         } else {
-            pageContext.setAttribute(prefix + "_navigation_switch", "off");
+			if (!BooleanUtils.toBoolean(redesigned)) {
+				pageContext.setAttribute(prefix + "_navigation_switch", "off");
+			}
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.FALSE);
         }
 
@@ -283,5 +295,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));
 		pageContext.setAttribute(prefix + "_navigation_upsellingRef", StringUtils.trimToEmpty(navigationData.getUpsellingRef()));
         pageContext.setAttribute(prefix + "_navigation_conditionSatisfied", navigationData.isConditionSatisfied());
+        pageContext.setAttribute(prefix + "_navigation_conditionMsg", navigationData.getConditionMessage());
 	}
 }

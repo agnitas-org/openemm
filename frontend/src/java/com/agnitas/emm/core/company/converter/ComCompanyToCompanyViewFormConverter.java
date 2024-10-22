@@ -10,10 +10,14 @@
 
 package com.agnitas.emm.core.company.converter;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import com.agnitas.beans.Company;
+import com.agnitas.emm.core.company.dto.CompanyInfoDto;
+import com.agnitas.emm.core.company.dto.CompanySettingsDto;
+import com.agnitas.emm.core.company.enums.LoginlockSettings;
+import com.agnitas.emm.core.company.form.CompanyViewForm;
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
+import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.post.PostalField;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -22,13 +26,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.Company;
-import com.agnitas.emm.core.company.dto.CompanyInfoDto;
-import com.agnitas.emm.core.company.dto.CompanySettingsDto;
-import com.agnitas.emm.core.company.enums.LoginlockSettings;
-import com.agnitas.emm.core.company.form.CompanyViewForm;
-import com.agnitas.emm.core.components.entity.TestRunOption;
-import com.agnitas.post.PostalField;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import static org.agnitas.util.AgnUtils.unescapeForRFC5322;
 
 @Component
 public class ComCompanyToCompanyViewFormConverter implements Converter<Company, CompanyViewForm> {
@@ -55,93 +58,103 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         return companyInfoDto;
     }
 
-    private CompanySettingsDto convertSettings(Company comCompany) {
+    private CompanySettingsDto convertSettings(Company company) {
         CompanySettingsDto settingsDto = new CompanySettingsDto();
-        settingsDto.setListHelpUrl(comCompany.getListHelpUrl());
-        settingsDto.setHasMailTracking(BooleanUtils.toBoolean(comCompany.getMailtracking()));
-        settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
-        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
-        settingsDto.setBusiness(comCompany.getBusiness());
-        settingsDto.setHasActivatedAccessAuthorization(configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, comCompany.getId()));
-        settingsDto.setHasExtendedSalutation(BooleanUtils.toBoolean(comCompany.getSalutationExtended()));
-        settingsDto.setExecutiveAdministrator(comCompany.getStatAdmin());
-        settingsDto.setTechnicalContacts(comCompany.getContactTech());
-        settingsDto.setHasDataExportNotify(BooleanUtils.toBoolean(comCompany.getExportNotifyAdmin()));
+        settingsDto.setListHelpUrl(company.getListHelpUrl());
+        settingsDto.setHasMailTracking(BooleanUtils.toBoolean(company.getMailtracking()));
+        settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, company.getId()));
+        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, company.getId()));
+        settingsDto.setBusiness(company.getBusiness());
+        settingsDto.setHasActivatedAccessAuthorization(configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, company.getId()));
+        settingsDto.setHasExtendedSalutation(BooleanUtils.toBoolean(company.getSalutationExtended()));
+        settingsDto.setExecutiveAdministrator(company.getStatAdmin());
+        settingsDto.setTechnicalContacts(company.getContactTech());
 
         // todo: check is it necessary. the reason is: comCompany.getLocaleLanguage()
-        String localeLanguage = configService.getValue(ConfigValue.LocaleLanguage, comCompany.getId());
+        String localeLanguage = configService.getValue(ConfigValue.LocaleLanguage, company.getId());
         settingsDto.setLanguage(StringUtils.defaultIfEmpty(localeLanguage, "none"));
 
         // todo: check is it necessary. the reason is: comCompany.getLocaleTimezone()
-        String localeTimezone = configService.getValue(ConfigValue.LocaleTimezone, comCompany.getId());
+        String localeTimezone = configService.getValue(ConfigValue.LocaleTimezone, company.getId());
         settingsDto.setTimeZone(StringUtils.defaultIfEmpty(localeTimezone, "none"));
 
         // todo: check is it necessary. the reason is: comCompany.isForceSending()
-        settingsDto.setHasForceSending(configService.getBooleanValue(ConfigValue.ForceSending, comCompany.getId()));
+        settingsDto.setHasForceSending(configService.getBooleanValue(ConfigValue.ForceSending, company.getId()));
 
-        settingsDto.setCleanRecipientsWithoutBinding(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, comCompany.getId()));
-        settingsDto.setRecipientAnonymization(configService.getIntegerValue(ConfigValue.CleanRecipientsData, comCompany.getId()));
-        settingsDto.setRecipientCleanupTracking(configService.getIntegerValue(ConfigValue.CleanTrackingData, comCompany.getId()));
-        settingsDto.setRecipientDeletion(configService.getIntegerValue(ConfigValue.DeleteRecipients, comCompany.getId()));
-        settingsDto.setHasTrackingVeto(configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, comCompany.getId()));
-        settingsDto.setSector(comCompany.getSector());
-        settingsDto.setBusiness(comCompany.getBusiness());
-        settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, comCompany.getId()));
-        settingsDto.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails, comCompany.getId()));
-        settingsDto.setMaxFields(configService.getIntegerValue(ConfigValue.MaxFields, comCompany.getId()));
+        settingsDto.setCleanRecipientsWithoutBinding(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, company.getId()));
+        settingsDto.setRecipientAnonymization(configService.getIntegerValue(ConfigValue.CleanRecipientsData, company.getId()));
+        settingsDto.setRecipientCleanupTracking(configService.getIntegerValue(ConfigValue.CleanTrackingData, company.getId()));
+        settingsDto.setRecipientDeletion(configService.getIntegerValue(ConfigValue.DeleteRecipients, company.getId()));
+        settingsDto.setHasTrackingVeto(configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, company.getId()));
+        settingsDto.setSector(company.getSector());
+        settingsDto.setBusiness(company.getBusiness());
+        settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, company.getId()));
+        settingsDto.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails, company.getId()));
+        settingsDto.setMaxFields(configService.getIntegerValue(ConfigValue.MaxFields, company.getId()));
         
         // Settings for login tracking
         final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromSettings(
-        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()),
-        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, comCompany.getId()) / 60);
+        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, company.getId()),
+        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, company.getId()) / 60);
         settingsDto.setLoginlockSettingsName(settingsOptional.isPresent() ? settingsOptional.get().getName() : "UNDEFINED");
         
         // Password policy
-        settingsDto.setPasswordPolicyName(getPasswordPolicyName(comCompany.getId()));
-        settingsDto.setPasswordExpireDays(this.configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, comCompany.getId()));
+        settingsDto.setPasswordPolicyName(getPasswordPolicyName(company.getId()));
+        settingsDto.setPasswordExpireDays(this.configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, company.getId()));
         
         // 2FA cookie
-        settingsDto.setHostauthCookieExpireDays(this.configService.getIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, comCompany.getId()));
+        settingsDto.setHostauthCookieExpireDays(this.configService.getIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, company.getId()));
 
-        settingsDto.setSendPasswordChangedNotification(configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, comCompany.getId()));
-        settingsDto.setSendEncryptedMailings(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, comCompany.getId()));
+        settingsDto.setSendPasswordChangedNotification(configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, company.getId()));
+        settingsDto.setSendEncryptedMailings(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, company.getId()));
 
-        settingsDto.setDefaultLinkExtension(configService.getValue(ConfigValue.DefaultLinkExtension, comCompany.getId()));
-        settingsDto.setLinkcheckerLinktimeout(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout, comCompany.getId()));
-        settingsDto.setLinkcheckerThreadcount(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount, comCompany.getId()));
-        settingsDto.setMailingUndoLimit(configService.getIntegerValue(ConfigValue.MailingUndoLimit, comCompany.getId()));
-        settingsDto.setPrefillCheckboxSendDuplicateCheck(configService.getBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, comCompany.getId()));
-        settingsDto.setFullviewFormName(configService.getValue(ConfigValue.FullviewFormName, comCompany.getId()));
+        settingsDto.setDefaultLinkExtension(configService.getValue(ConfigValue.DefaultLinkExtension, company.getId()));
+        settingsDto.setLinkcheckerLinktimeout(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout, company.getId()));
+        settingsDto.setLinkcheckerThreadcount(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount, company.getId()));
+        settingsDto.setMailingUndoLimit(configService.getIntegerValue(ConfigValue.MailingUndoLimit, company.getId()));
+        settingsDto.setPrefillCheckboxSendDuplicateCheck(configService.getBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, company.getId()));
+        settingsDto.setFullviewFormName(configService.getValue(ConfigValue.FullviewFormName, company.getId()));
 
-        settingsDto.setTrackingVetoAllowTransactionTracking(configService.getBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, comCompany.getId()));
-        settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, comCompany.getId()));
-        settingsDto.setEnableAltgExtended(configService.isExtendedAltgEnabled(comCompany.getId()));
-        settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, comCompany.getId()));
-        settingsDto.setNormalizeEmails(!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, comCompany.getId()));
-        settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, comCompany.getId()));
-        settingsDto.setBccEmail(configService.getValue(ConfigValue.DefaultBccEmail, comCompany.getId()));
-        settingsDto.setAnonymizeAllRecipients(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, comCompany.getId()));
-        settingsDto.setRecipientEmailInUseWarning(configService.getBooleanValue(ConfigValue.RecipientEmailInUseWarning, comCompany.getId()));
-        settingsDto.setAllowEmailWithWhitespace(configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, comCompany.getId()));
-        settingsDto.setAllowEmptyEmail(configService.getBooleanValue(ConfigValue.AllowEmptyEmail, comCompany.getId()));
-        settingsDto.setExpireStatistics(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
-        settingsDto.setExpireSuccess(configService.getIntegerValue(ConfigValue.ExpireSuccess, comCompany.getId()));
-        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
-        settingsDto.setExpireBounce(configService.getIntegerValue(ConfigValue.ExpireBounce, comCompany.getId()));
-        settingsDto.setExpireUpload(configService.getIntegerValue(ConfigValue.ExpireUpload, comCompany.getId()));
-        settingsDto.setWriteCustomerOpenOrClickField(configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, comCompany.getId()));
-        settingsDto.setDefaultCompanyLinkTrackingMode(configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, comCompany.getId()));
-        settingsDto.setDefaultBlockSize(configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, comCompany.getId()));
-        settingsDto.setDefaultTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, comCompany.getId())));
-        settingsDto.setUserBasedFavoriteTargets(configService.isUserBasedFavoriteTargets(comCompany.getId()));
-        settingsDto.setFilterRecipientsOverviewForActiveRecipients(configService.getBooleanValue(ConfigValue.FilterRecipientsOverviewForActiveRecipients, comCompany.getId()));
-        settingsDto.setCleanAdminAndTestRecipientsActivity(configService.getBooleanValue(ConfigValue.CleanAdminAndTestRecipientsActivities, comCompany.getId()));
-        settingsDto.setAutoDeeptracking(configService.isAutoDeeptracking(comCompany.getId()));
+        settingsDto.setTrackingVetoAllowTransactionTracking(configService.getBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, company.getId()));
+        settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, company.getId()));
+        settingsDto.setEnableAltgExtended(configService.isExtendedAltgEnabled(company.getId()));
+        settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, company.getId()));
+        settingsDto.setNormalizeEmails(!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, company.getId()));
+        settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, company.getId()));
+        settingsDto.setBccEmail(configService.getValue(ConfigValue.DefaultBccEmail, company.getId()));
+        settingsDto.setAnonymizeAllRecipients(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, company.getId()));
+        settingsDto.setRecipientEmailInUseWarning(configService.getBooleanValue(ConfigValue.RecipientEmailInUseWarning, company.getId()));
+        settingsDto.setAllowEmailWithWhitespace(configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, company.getId()));
+        settingsDto.setAllowEmptyEmail(configService.getBooleanValue(ConfigValue.AllowEmptyEmail, company.getId()));
+        settingsDto.setExpireStatistics(configService.getIntegerValue(ConfigValue.ExpireStatistics, company.getId()));
+        settingsDto.setExpireSuccess(configService.getIntegerValue(ConfigValue.ExpireSuccess, company.getId()));
+        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, company.getId()));
+        settingsDto.setExpireBounce(configService.getIntegerValue(ConfigValue.ExpireBounce, company.getId()));
+        settingsDto.setExpireUpload(configService.getIntegerValue(ConfigValue.ExpireUpload, company.getId()));
+        settingsDto.setWriteCustomerOpenOrClickField(configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, company.getId()));
+        settingsDto.setDefaultCompanyLinkTrackingMode(configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, company.getId()));
+        settingsDto.setDefaultBlockSize(configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, company.getId()));
+        settingsDto.setDefaultTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, company.getId())));
+        settingsDto.setUserBasedFavoriteTargets(configService.isUserBasedFavoriteTargets(company.getId()));
+        settingsDto.setFilterRecipientsOverviewForActiveRecipients(configService.getBooleanValue(ConfigValue.FilterRecipientsOverviewForActiveRecipients, company.getId()));
+        settingsDto.setCleanAdminAndTestRecipientsActivity(configService.getBooleanValue(ConfigValue.CleanAdminAndTestRecipientsActivities, company.getId()));
+        settingsDto.setIndividualLinkTrackingForMailings(configService.getBooleanValue(ConfigValue.IndividualLinkTrackingForAllMailings, company.getId()));
+        settingsDto.setAutoDeeptracking(configService.isAutoDeeptracking(company.getId()));
         
-        settingsDto.setHtmlContentAllowed(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, comCompany.getId()));
+        settingsDto.setHtmlContentAllowed(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, company.getId()));
 
-        settingsDto.setUseDefaultAddressFieldsForPost(configService.getBooleanValue(ConfigValue.UseDefaulAdressFieldsForPost, comCompany.getId()));
-        settingsDto.setPostalFieldsMappings(getPostalFieldsMappings(comCompany.getId()));
+        settingsDto.setUseDefaultAddressFieldsForPost(configService.getBooleanValue(ConfigValue.UseDefaulAdressFieldsForPost, company.getId()));
+        settingsDto.setPostalFieldsMappings(getPostalFieldsMappings(company.getId()));
+        settingsDto.setMailingMinimumApprovals(configService.getIntegerValue(ConfigValue.MailingMinimumApprovals, company.getId()));
+        settingsDto.setShowAllDashboardCalendarMailings(configService.getBooleanValue(ConfigValue.DashboardCalendarShowALlEntries, company.getId()));
+
+        settingsDto.setAdminTestMarkPlacement(AdminTestMarkPlacementOption.find(configService.getValue(ConfigValue.Backend_AdminTestMark, company.getId())));
+
+        executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkSubjectAdmin, company.getId(), settingsDto::setAdminMailSubjectMark);
+        executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkSubjectTest, company.getId(), settingsDto::setTestMailSubjectMark);
+        executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkToAdmin, company.getId(), val -> settingsDto.setAdminMailToAddressMark(unescapeForRFC5322(val)));
+        executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkToTest, company.getId(), val -> settingsDto.setTestMailToAddressMark(unescapeForRFC5322(val)));
+        settingsDto.setResponseInboxEnabled(configService.getBooleanValue(ConfigValue.EnableResponseInbox, company.getId()));
 
         return settingsDto;
     }
@@ -159,4 +172,11 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
 		final String policyName = configService.getValue(ConfigValue.PasswordPolicy, companyId);
 		return PasswordPolicies.findByName(policyName).getPolicyName();
 	}
+
+    private void executeIfNotDefaultValueSet(ConfigValue configValue, int companyId, Consumer<String> function) {
+        String adminSubjectMark = configService.getValue(configValue, companyId);
+        if (!adminSubjectMark.equals(configValue.getDefaultValue())) {
+            function.accept(adminSubjectMark);
+        }
+    }
 }

@@ -17,12 +17,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.AnonymizeStatisticsDao;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements AnonymizeStatisticsDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AnonymizeStatisticsDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(AnonymizeStatisticsDaoImpl.class);
 	
 	@Override
 	public void anonymizeStatistics(final int companyID, final boolean anonymizeAll) throws Exception {
@@ -61,7 +60,7 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 			MailingContentType.advertising.name());
 
 		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
-			// Anonymize table rdirlog_<CID>_tbl
+			// Anonymize table rdirlog_<CID>_val_num_tbl
 			update(logger, "UPDATE rdirlog_" + companyID + "_val_num_tbl SET customer_id = 0, ip_adr = NULL"
 				+ " WHERE " +  trackingVetoSubSelect
 				+ " mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
@@ -69,7 +68,7 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 		}
 
 		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
-			// Anonymize table rdirlog_<CID>_tbl
+			// Anonymize table rdirlog_<CID>_val_alpha_tbl
 			update(logger, "UPDATE rdirlog_" + companyID + "_val_alpha_tbl SET customer_id = 0, ip_adr = NULL"
 				+ " WHERE " +  trackingVetoSubSelect
 				+ " mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
@@ -77,7 +76,7 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 		}
 
 		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
-			// Anonymize table rdirlog_<CID>_tbl
+			// Anonymize table rdirlog_<CID>_ext_link_tbl
 			update(logger, "UPDATE rdirlog_" + companyID + "_ext_link_tbl SET customer_id = 0, ip_adr = NULL"
 				+ " WHERE " +  trackingVetoSubSelect
 				+ " mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",

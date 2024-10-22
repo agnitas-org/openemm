@@ -12,7 +12,6 @@ package com.agnitas.emm.core.target.web;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
@@ -39,7 +38,6 @@ import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -58,7 +56,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -73,9 +70,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Controller
-@RequestMapping("/target")
-@PermissionMapping("target")
 public class QueryBuilderTargetController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(QueryBuilderTargetController.class);
@@ -86,7 +80,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
 
     private final ConfigService configService;
     private final MailinglistApprovalService mailinglistApprovalService;
-    private final ComTargetService targetService;
+    protected final ComTargetService targetService;
     private final RecipientService recipientService;
     private final EditorContentSynchronizer editorContentSynchronizer;
     private final EqlFacade eqlFacade;
@@ -127,7 +121,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
             boolean exists = fillFormIfTargetExists(admin, form);
             if (!exists) {
                 logger.warn("Target group does not exists. Company ID: {} Target ID: {}", admin.getCompanyID(), form.getTargetId());
-                return "redirect:/target/list.action";
+                return "redirect:/target/list.action?restoreSort=true";
             }
         }
 
@@ -283,7 +277,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     public String dependents(@PathVariable int targetId, Admin admin, @ModelAttribute("dependentsForm") TargetDependentsListForm form, Model model) {
         final int companyId = admin.getCompanyID();
 
-        if (admin.isRedesignedUiUsed(Permission.TARGET_GROUPS_UI_MIGRATION)) {
+        if (admin.isRedesignedUiUsed()) {
             FormUtils.syncNumberOfRows(webStorage, WebStorage.TARGET_DEPENDENTS_OVERVIEW, form);
         } else {
             webStorage.access(WebStorage.TARGET_DEPENDENTS_OVERVIEW, entry -> {
@@ -388,7 +382,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         return StringUtils.EMPTY;
     }
 
-    private void setupCommonViewPageParams(Admin admin, int targetId, String eql, Model model) {
+    protected void setupCommonViewPageParams(Admin admin, int targetId, String eql, Model model) {
         boolean isLocked = targetService.isLocked(admin.getCompanyID(), targetId) || targetService.isEqlContainsInvisibleFields(eql, admin.getCompanyID(), admin.getAdminID());
 
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -396,6 +390,9 @@ public class QueryBuilderTargetController implements XssCheckAware {
         model.addAttribute("isValid", targetService.isValid(admin.getCompanyID(), targetId));
         model.addAttribute("hidden", targetService.isHidden(targetId, admin.getCompanyID()));
         model.addAttribute("isLocked", isLocked);
+        if (admin.isRedesignedUiUsed()) {
+            AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+        }
     }
 
     private boolean fillFormIfTargetExists(Admin admin, TargetEditForm form) {

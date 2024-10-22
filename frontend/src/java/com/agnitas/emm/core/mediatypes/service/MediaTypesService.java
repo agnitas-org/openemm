@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.core.mediatypes.service;
 
-import java.util.List;
-import java.util.Map;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
+import java.util.List;
+import java.util.Map;
 
 public interface MediaTypesService {
     
@@ -26,4 +27,6 @@ public interface MediaTypesService {
     boolean saveEncryptedState(int mailingId, int companyId, boolean isEncryptedSend);
 
     void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception;
+
+    List<MediaTypes> getActiveMediaTypes(Mailing mailing);
 }

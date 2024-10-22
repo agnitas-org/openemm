@@ -21,6 +21,7 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.user.form.UserSelfForm;
 import com.agnitas.emm.core.user.service.UserSelfService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
@@ -33,7 +34,6 @@ import org.agnitas.emm.core.commons.password.util.PasswordUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -137,11 +137,16 @@ public class UserSelfController implements XssCheckAware {
     }
 
     private void saveData(Admin admin, UserSelfForm form, AdminPreferences adminPreferences) {
+        final String adminLangBefore = admin.getAdminLang();
+        final String adminTimeZoneBefore = admin.getAdminTimezone();
+
         admin.setFullname(form.getFullname());
 
         if (StringUtils.isNotBlank(form.getFirstname())) {
             admin.setFirstName(form.getFirstname());
         }
+
+        admin.setTitle(form.getTitle());
 
         if (StringUtils.isNotBlank(form.getEmployeeID())) {
             admin.setEmployeeID(form.getEmployeeID());
@@ -174,6 +179,10 @@ public class UserSelfController implements XssCheckAware {
 
         try {
             adminService.save(admin);
+            if (!adminLangBefore.equals(admin.getAdminLang())
+                || !adminTimeZoneBefore.equals(admin.getAdminTimezone())) {
+                AgnUtils.updateBrowserCacheMarker();
+            }
         } catch (Exception e) {
             logger.error("Error occurred during save of admin!", e);
         }

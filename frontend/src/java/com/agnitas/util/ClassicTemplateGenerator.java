@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

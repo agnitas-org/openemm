@@ -1,7 +1,7 @@
 
 <div id="db-status-tile" class="tile" data-editable-tile>
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="settings.DB" /></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="settings.DB" /></h1>
 
         <div class="tile-controls">
             <span class="status-badge status.${serverStatus.dbStatus ? 'success' : 'error'}"></span>

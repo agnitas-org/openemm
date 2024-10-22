@@ -12,11 +12,11 @@ package com.agnitas.service;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.web.mvc.Popups;
-
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.DynTagException;
 
@@ -34,4 +34,6 @@ public interface MailingContentService {
     DynTagDto getDynTag(int companyId, int dynNameId);
 	void buildDependencies(int mailingID, int companyID) throws Exception;
 	List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(ComTarget target);
+
+    Set<String> findDynNamesUsedInContent(String content, List<DynamicTag> dynTags);
 }

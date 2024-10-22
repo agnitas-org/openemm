@@ -292,7 +292,7 @@ public abstract class JobWorker implements Runnable {
 		pause = false;
 	}
 
-	protected CompaniesConstraints getCompaniesConstrains() {
+	protected CompaniesConstraints getCompaniesConstraints() {
 		Map<String, String> parameters = job.getParameters();
 		return new CompaniesConstraints(parameters.get("includedCompanyIds"), parameters.get("excludedCompanyIds"));
 	}
@@ -318,8 +318,8 @@ public abstract class JobWorker implements Runnable {
 		if (StringUtils.isNotBlank(listAsString)) {
 			try {
 				return AgnUtils.splitAndTrimList(listAsString).stream().filter(x -> StringUtils.isNotBlank(x)).map(x -> StringUtils.trim(x)).map(Integer::parseInt).collect(Collectors.toList());
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new Exception("Invalid content for list of integer parameter '" + parameterName + "': " + listAsString);
+			} catch (Exception e) {
+				throw new Exception("Invalid content for list of integer parameter '" + parameterName + "': " + listAsString, e);
 			}
 		} else {
 			return null;

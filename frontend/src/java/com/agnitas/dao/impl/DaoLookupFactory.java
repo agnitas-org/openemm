@@ -10,19 +10,9 @@
 
 package com.agnitas.dao.impl;
 
-import javax.sql.DataSource;
-
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.dao.RdirTrafficAmountDao;
-import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
-import org.agnitas.service.ImportModeHandlerFactory;
-import org.agnitas.web.ProfileImportReporter;
-
 import com.agnitas.dao.AnonymizeStatisticsDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ComUndoDynContentDao;
@@ -34,8 +24,17 @@ import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
+import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.RdirTrafficAmountDao;
+import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
+import org.agnitas.service.ImportModeHandlerFactory;
+import org.agnitas.web.ProfileImportReporter;
+
+import javax.sql.DataSource;
 
 public abstract class DaoLookupFactory {
 	
@@ -43,8 +42,8 @@ public abstract class DaoLookupFactory {
 	abstract public DatasourceDescriptionDao getBeanDatasourceDescriptionDao();
 	abstract public ComCompanyDao getBeanCompanyDao();
 	abstract public DynamicTagDao getBeanDynamicTagDao();
-	abstract public ComMailingDao getBeanMailingDao();
-	abstract public MaildropStatusDao getBeanMaildropStatusDao();
+	abstract public MailingDao getBeanMailingDao();
+	abstract public MaildropService getBeanMaildropService();
 	abstract public ComMailingParameterDao getBeanMailingParameterDao();
 	abstract public LoginTrackDao getBeanGuiLoginTrackDao();
 	abstract public LoginTrackDao getBeanWsLoginTrackDao();

@@ -42,6 +42,8 @@
 
     <definition name="login_complete" template="/WEB-INF/jsp/redesigned_jsp/login/login-complete.jsp"/>
 
+    <definition name="honeypot_confirm" template="/WEB-INF/jsp/redesigned_jsp/honeypot/honeypot-confirm.jsp" />
+
     <definition name="base_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/template.jsp">
         <put-attribute name="head-tag" value="head_tag_default_redesigned" type="definition"/>
         <put-attribute name="newresource" value="/WEB-INF/jsp/redesigned_jsp/page-template/new-resource.jsp" type="template"/>
@@ -51,12 +53,12 @@
         <put-attribute name="usermessage" value="/WEB-INF/jsp/usermessage-tiles.jsp" type="template"/>
         <put-attribute name="sidemenu" value="/WEB-INF/jsp/redesigned_jsp/page-template/sidemenu-tile.jsp" type="template"/>
         <put-attribute name="topmenu" value="/WEB-INF/jsp/topmenu-tiles.jsp" type="template"/>
-        <put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
+        <put-attribute name="messages" value="/WEB-INF/jsp/redesigned_jsp/page-template/messages.jsp" type="template"/>
         <put-attribute name="footer_matomo" value="/WEB-INF/jsp/additional.jsp" type="template"/>
     </definition>
     
     <definition name="base_ajax_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/ajax-response-template.jsp">
-   		<put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
+   		<put-attribute name="messages" value="/WEB-INF/jsp/redesigned_jsp/page-template/messages.jsp" type="template"/>
    	</definition>
 
     <definition name="head_tag_base_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/head-tag.jsp"/>
@@ -70,13 +72,20 @@
         <put-attribute name="head-tag" value="head_tag_default_redesigned" type="definition"/>
     </definition>
 
+    <definition name="messages_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="" type="string"/>
+    </definition>
+
     <definition name="permission_denied_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/permission-denied/permissionDenied.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/permission-denied/permissionDenied-setup.jsp" type="template" />
     </definition>
 
+    <definition name="help_center" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/page-template/help-center/help-center-modal.jsp" type="template"/>
+    </definition>
+
     <definition name="dashboard_view_redesigned" extends="base_redesigned">
-        <put-attribute name="newresource" value="/WEB-INF/jsp/redesigned_jsp/dashboard/new-resource.jsp" type="template"/>
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/dashboard/dashboard.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/dashboard/dashboard-setup.jsp" type="template"/>
     </definition>
@@ -144,14 +153,6 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/administration/user/restfuluser-list-setup.jsp" type="template"/>
     </definition>
 
-    <definition name="settings_admin_delete_ajax_redesigned" extends="base_ajax_redesigned">
-        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/administration/user/admin-delete.jsp" type="template"/>
-    </definition>
-
-    <definition name="settings_restfuluser_delete_ajax_redesigned" extends="base_ajax_redesigned">
-        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/administration/user/restfuluser-delete.jsp" type="template"/>
-    </definition>
-
     <definition name="recipient_list_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/recipient-list.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/recipient/recipient-list-setup.jsp" type="template"/>
@@ -160,10 +161,6 @@
     <definition name="recipient_view_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/recipient-view.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/recipient/recipient-view-setup.jsp" type="template"/>
-    </definition>
-
-    <definition name="recipient_delete_redesigned" extends="base_ajax_redesigned">
-        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/recipient-delete.jsp" type="template"/>
     </definition>
 
     <definition name="recipient_history_redesigned" extends="base_redesigned">
@@ -180,7 +177,7 @@
    		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/history/recipient-successful-delivery-history-modal.jsp" type="template"/>
    	</definition>
 
-    <definition name="recipient_mailing_licks_history_redesigned" extends="base_ajax_redesigned">
+    <definition name="recipient_mailing_clicks_history_redesigned" extends="base_ajax_redesigned">
    		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/history/recipient-mailing-clicks-modal.jsp" type="template"/>
    	</definition>
 
@@ -229,6 +226,15 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/export/export-list-setup.jsp" type="template"/>
     </definition>
 
+    <definition name="export_view_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/export/export-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/export/export-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="export_progress_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/export/export-progress.jsp" type="template"/>
+    </definition>
+
     <definition name="settings_profile_field_list_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/recipient/profile-field/profile-field-list.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/recipient/profile-field/profile-field-list-setup.jsp" type="template"/>
@@ -243,6 +249,10 @@
    		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/overview/mailing-list.jsp" type="template"/>
    		<put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/mailing/overview/mailing-list-setup.jsp" type="template"/>
    	</definition>
+
+    <definition name="mailing_actions_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/overview/mailing-actions.jsp" type="template"/>
+    </definition>
 
     <definition name="import_modal_redesigned" extends="base_ajax_redesigned">
    		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/common/modal/import-modal.jsp" type="template"/>
@@ -333,6 +343,22 @@
         <put-attribute name="head-tag" value="workflow_head_tag_redesigned" type="definition"/>
     </definition>
 
+    <definition name="workflow_stat_view" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-stat.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-stat-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="workflow_only_elements_head_tag_redesigned" template="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-only-elements-head-tag.jsp">
+        <put-attribute name="head-extra-links" value="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-head-extra-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="" type="string"/>
+    </definition>
+    
+    <definition name="workflow_view_only_elements_redesigned" template="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-view-only-elements.jsp">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/campaigns/workflow-view-only-elements.jsp" type="template"/>
+        <put-attribute name="page-setup" value="" type="template"/>
+        <put-attribute name="head-tag" value="workflow_only_elements_head_tag_redesigned" type="definition"/>
+    </definition>
+    
     <definition name="mailing_templates_redesigned" extends="base_ajax_redesigned">
    		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/mailing-templates-modal.jsp" type="template"/>
    	</definition>
@@ -352,11 +378,11 @@
    	</definition>
 
     <definition name="mailing_trackablelink_bulk_actions_redesigned" extends="base_ajax_redesigned">
-   		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/links/trackablelink-bulk-actions.jsp" type="template"/>
+   		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/common/trackablelink/trackablelink-bulk-actions.jsp" type="template"/>
    	</definition>
     
     <definition name="mailing_trackablelink_bulk_clear_extensions_redesigned" extends="base_ajax_redesigned">
-   		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/links/trackablelink-bulk-clear-extensions.jsp" type="template"/>
+   		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/links/mailing-trackablelink-bulk-clear-extensions.jsp" type="template"/>
    	</definition>
 
     <definition name="mailing_send_redesigned" extends="base_redesigned">
@@ -516,6 +542,11 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/statistics/domain/domain-stat-setup.jsp" type="template"/>
     </definition>
 
+    <definition name="profile_field_evaluation_stat_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/statistics/profile-field/profile-field-evaluation-stat.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/statistics/profile-field/profile-field-evaluation-stat-setup.jsp" type="template"/>
+    </definition>
+
     <definition name="stats_birt_month_stat_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/statistics/monthly/month-stats.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/statistics/monthly/month-stats-setup.jsp" type="template"/>
@@ -594,6 +625,130 @@
     <definition name="mailing_recipients_list_redesigned" extends="base_redesigned">
         <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/recipients/mailing-recipients-list.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/mailing/recipients/mailing-recipients-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="user_selfservice_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/self-service/user_selfservice.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/self-service/user_selfservice-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_method_choose_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/method-choose.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/method-choose-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_start_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/start-import.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/start-import-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_preview_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/preview.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/preview-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_edit_error_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/edit-error.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/edit-error-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_result_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/result.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/result-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_progress_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/manual/progress.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_bulk_change_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/edit-field-content/recipient-bulk-change.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/edit-field-content/recipient-bulk-change-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_bulk_change_apply_confirm_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/edit-field-content/recipient-bulk-change-apply-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="common_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/common-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="auto_export_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/auto-export-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="auto_import_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/auto-import-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_predelivery_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/mailing-predelivery-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="mediapool_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/mediapool-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="manage_tables_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/manage-tables-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="grid_template_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/template-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="clients_upselling_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/upselling/clients-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_file_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-file-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mode_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-mode-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mapping_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-mapping-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_verify_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-verify-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_verify_missing_fields_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-verify-missing-fields-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_preScan_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-preScan-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mailinglists_step_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-mailinglists-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_progress_redesigned" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-progress.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_result_redesigned" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-result.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/data-management/import/wizard/import-wizard-result-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="address_management_view" extends="base_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/administration/address-management/address-management-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/administration/address-management/address-management-view-setup.jsp" type="template"/>
     </definition>
 
 </tiles-definitions>

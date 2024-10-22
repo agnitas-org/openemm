@@ -1,5 +1,4 @@
-AGN.Lib.Dashboard.Definitions = {
-  // TILES_CONTAINER defined in initializer
+AGN.Lib.Dashboard.Def = {
   LAYOUT: {
     DEFAULT: {
       COLS_COUNT: 3,
@@ -7,21 +6,22 @@ AGN.Lib.Dashboard.Definitions = {
       SCHEMA: [{id: "mailings"}, {id: "statistics"}, {id: "imports-exports"}, {id: "calendar"}, {id: "news"}]
     }
   },
-  TILE: AGN.Lib.Helpers.deepFreeze({
-    TYPE: {REGULAR: 'regular', TALL: 'tall', WIDE: 'wide'},
-    ID: {
-      EMPTY: 'empty',
-      CALENDAR: 'calendar',
-      MAILINGS: 'mailings',
-      STATISTICS: 'statistics',
-      CLICKERS: 'clickers',
-      OPENERS: 'openers',
-      NEWS: 'news',
-      ADD_ONS: 'add-ons',
-      ANALYSIS: 'analysis',
-      IMPORTS_EXPORTS: 'imports-exports',
-      PLANNING: 'planning',
-      WORKFLOWS: 'workflows',
-    },
-  })
-}
+
+  TileSize: {
+    REGULAR: {dimensions: [1, 1], name: 'regular'},
+    TALL: {dimensions: [2, 1], name: 'tall'},
+    WIDE: {dimensions: [1, 2], name: 'wide'},
+    X_WIDE: {dimensions: [1, 3], name: 'x-wide'},
+    // LARGE: {dimensions: [2, 2], name: 'lg'}, keep for future
+    X_LARGE: {dimensions: [2, 3], name: 'xl'},
+
+    from: function(name) {
+      for (let key in this) {
+        if (this[key].name === name) {
+          return this[key];
+        }
+      }
+      return null;
+    }
+  }
+};

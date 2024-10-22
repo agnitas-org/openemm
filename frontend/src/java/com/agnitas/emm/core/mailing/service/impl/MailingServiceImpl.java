@@ -10,33 +10,47 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-
-import java.beans.PropertyDescriptor;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.beans.impl.MediatypeEmailImpl;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ListMailingFilter;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.validation.MailingModelValidator;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToActionMessages;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.service.MailingContentService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.OneOf;
+import jakarta.mail.internet.InternetAddress;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
@@ -80,53 +94,39 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.beans.impl.MediatypeEmailImpl;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ListMailingFilter;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.validation.MailingModelValidator;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.objectusage.web.ObjectUsagesToActionMessages;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ComMailingLightService;
-import com.agnitas.service.MailingContentService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.OneOf;
+import java.beans.PropertyDescriptor;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import jakarta.mail.internet.InternetAddress;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 
 public class MailingServiceImpl implements MailingService, ApplicationContextAware {
 
 	private static final Logger logger = LogManager.getLogger(MailingServiceImpl.class);
 	private static final int DEFAULT_LOCKING_DURATION_SECONDS = 60; // 1 minute
 
-	protected ComMailingDao mailingDao;
+	protected MailingDao mailingDao;
 	protected ConfigService configService;
     private MailingService selfReference; // self reference for transaction management
 	private JavaMailService javaMailService;
@@ -134,7 +134,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	private MailinglistDao mailinglistDao;
 	private ComTargetDao targetDao;
 	private DynamicTagDao dynamicTagDao;
-	private ComMailingComponentDao mailingComponentDao;
+	private MailingComponentDao mailingComponentDao;
 	private MaildropService maildropService;
 	private MailingFactory mailingFactory;
 	private MailingComponentFactory mailingComponentFactory;
@@ -147,6 +147,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     private UserActivityLogService userActivityLogService;
 	private CopyMailingService copyMailingService;
     private MediatypesDao mediatypesDao;
+	private BulkActionValidationService<Integer, Mailing> bulkActionValidationService;
 
 	@Override
 	@Transactional
@@ -154,7 +155,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	    mailingModelValidator.assertIsValidToUpdate(model);
         List<String> actions = new LinkedList<>();
         Mailing aMailing = prepareMailingForAddOrUpdate(model, getMailing(model), actions, true);
-		
+
        	List<String> dynNamesForDeletion = new Vector<>();
 		try {
 			aMailing.buildDependencies(true, dynNamesForDeletion, applicationContext);
@@ -249,8 +250,8 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	/*
 	 * TODO: Rework method for transaction support
-	 * 
-	 * Removed @Transactional. 
+	 *
+	 * Removed @Transactional.
 	 * Running this method in a transaction affects the backend, that does
 	 * not see the entry created in maildrop_status_tbl.
 	 */
@@ -290,17 +291,17 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		mailingBaseService.deleteMailing(model.getMailingId(), model.getCompanyId());
         mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.DISABLE, null);
 	}
-	
+
 	@Override
 	public List<MailingComponent> getMailingComponents(int mailingID, int companyID)
 			throws MailingNotExistException {
-		
+
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
-		
+
 		if (mailing == null || mailing.getId() != mailingID || mailing.getCompanyID() != companyID) {
 			throw new MailingNotExistException(companyID, mailingID);
 		}
-		
+
 		return mailingComponentDao.getMailingComponents(mailingID, companyID, MailingComponentType.Template);
 	}
 
@@ -369,7 +370,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
             }
 			aMailing.setTargetGroups(null);
 		}
-		
+
 		if (actions != null && actionMessage.length() != editKeyword.length()) {
 			actionMessage.delete(actionMessage.length()-2,actionMessage.length()); //remove last two characters: comma and space
 			actionMessage.insert(editKeyword.length(),"target groups ");
@@ -387,21 +388,21 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         }
         aMailing.setMailingType(model.getMailingType());
 
-        
+
         MediatypeEmail paramEmail = aMailing.getEmailParam();
-        
+
         if (paramEmail == null) {
         	paramEmail = new MediatypeEmailImpl();
-        	
+
         	if(!isUpdate) {
         		paramEmail.setStatus(MediaTypeStatus.Active.getCode());
         	}
-        	
+
 			final Map<Integer, Mediatype> mediatypes = aMailing.getMediatypes();
         	mediatypes.put(0, paramEmail);
 			aMailing.setMediatypes(mediatypes);
         }
-        
+
 		paramEmail.setSubject(model.getSubject());
 		try {
 			InternetAddress adr = new InternetAddress(model.getSenderAddress(), model.getSenderName());
@@ -436,10 +437,15 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	protected String getMailingDescription(Mailing mailing) {
 		return mailing.getShortname() + " (" + mailing.getId() + ")";
 	}
-	
+
 	@Override
 	public boolean isActiveIntervalMailing(final int mailingID) {
 		return mailingDao.isActiveIntervalMailing(mailingID);
+	}
+
+	@Override
+	public boolean isActiveIntervalMailing(int mailingID, int companyId) {
+		return mailingDao.isActiveIntervalMailing(companyId, mailingID);
 	}
 
 	@Override
@@ -449,11 +455,11 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		if (!DateUtil.isValidSendDate(model.getSendDate())) {
 			throw new SendDateNotInFutureException();
 		}
-		
+
         Calendar now = Calendar.getInstance();
-        
+
 		Mailing mailing = getMailing(model);
-		
+
 		if (model.getMaildropStatus() == MaildropStatus.WORLD && maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
 			throw new WorldMailingAlreadySentException();
 		}
@@ -467,7 +473,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		maildrop.setBlocksize(model.getBlocksize());
 
 		maildrop.setSendDate(model.getSendDate());
-		
+
 		Calendar tmpGen = Calendar.getInstance();
         tmpGen.setTime(model.getSendDate());
         tmpGen.add(Calendar.MINUTE, -this.getMailGenerationMinutes(model.getCompanyId()));
@@ -476,7 +482,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         }
         maildrop.setGenDate(tmpGen.getTime());
 		maildrop.setGenChangeDate(now.getTime());
-		
+
 		if( model.getMaildropStatus() == MaildropStatus.WORLD) {
 			maildrop.setGenStatus(DateUtil.isDateForImmediateGeneration(maildrop.getGenDate()) ? 1 : 0);
 		} else if( model.getMaildropStatus() == MaildropStatus.TEST || model.getMaildropStatus() == MaildropStatus.ADMIN) {
@@ -503,14 +509,14 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	@Override
 	public boolean isMailingWorldSent(int mailingID, int companyID) throws MailingNotExistException {
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
-		
+
 		if(mailing == null || mailing.getId() == 0) {
 			throw new MailingNotExistException(companyID, mailingID);
 		}
 
 		return this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
 	}
-	
+
 	@Override
 	@Transactional
 	public int addMailingFromTemplate(MailingModel model) {
@@ -537,13 +543,13 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 				MailingComponent compNew = cloneBean(compOrg, "MailingComponent");
 				compNew.setId(0);
 				compNew.setMailingID(0);
-				
+
 				if (compOrg.getBinaryBlock() != null) {
 					compNew.setBinaryBlock(compOrg.getBinaryBlock(), compOrg.getMimeType());
 				} else {
 					compNew.setEmmBlock(compOrg.getEmmBlock(), compOrg.getMimeType());
 				}
-				
+
 				aMailing.getComponents().put(compNew.getComponentName(), compNew);
 			}
 
@@ -582,8 +588,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			}
 
 			aMailing.setUseDynamicTemplate(model.isAutoUpdate());
-
-	        mailingDao.saveMailing(aMailing, false);
+			saveMailingWithNewContent(aMailing, false);
 
 	        return aMailing.getId();
 		} catch (Exception e) {
@@ -593,7 +598,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	@SuppressWarnings("unchecked")
 	private <T> T cloneBean(T orig, String beanName) throws IllegalAccessException, InvocationTargetException {
-		return cloneBean((T) applicationContext.getBean(beanName), orig);
+		return cloneBean((T) applicationContext.getBean(beanName), orig); // suppress warning for this cast
 	}
 
 	private <T> T cloneBean(T dest, T orig) throws IllegalAccessException, InvocationTargetException {
@@ -625,18 +630,18 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		}
 		return mailing;
 	}
-	
+
 	@Override
 	public Mailing getMailing(final int companyID, final int mailingID) {
 		final Mailing mailing = mailingDao.getMailing(mailingID, companyID);
-		
+
 		if (mailing == null || mailing.getId() == 0) {
 			throw new MailingNotExistException(companyID, mailingID);
 		} else {
 			return mailing;
 		}
 	}
-	
+
 	@Override
     public int getFollowUpFor(int mailingId) {
         try {
@@ -780,13 +785,13 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	public boolean tryToLock(Admin admin, int mailingId) {
 		return mailingDao.tryToLock(mailingId, admin.getAdminID(), admin.getCompanyID(), DEFAULT_LOCKING_DURATION_SECONDS, TimeUnit.SECONDS);
 	}
-	
+
 	@Override
 	public Admin getMailingLockingAdmin(int mailingId, int companyId) {
 	    int lockingAdminId = mailingDao.getMailingLockingAdminId(mailingId, companyId);
 	    return adminService.getAdmin(lockingAdminId, companyId);
     }
-	
+
 	@Override
 	public boolean isDeliveryComplete(final int companyID, final int mailingID) {
 		final LightweightMailing mailing = this.mailingDao.getLightweightMailing(companyID, mailingID);
@@ -850,14 +855,14 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		if (mailing == null) {
 			return false;
 		}
-		
+
 		try {
 			mailingContentService.generateTextContent(mailing);
 		} catch (DynTagException e) {
 			logger.error("Error occurred while generating text content: " + e.getMessage(), e);
 			return false;
 		}
-		
+
 		List<String> dynNamesForDeletion = new ArrayList<>();
 		try {
 			mailing.buildDependencies(true, dynNamesForDeletion, applicationContext);
@@ -865,11 +870,11 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			logger.error("Error occurred while building dependencies: " + e.getMessage(), e);
         	throw e;
 		}
-		
+
 		dynamicTagDao.cleanupContentForDynNames(mailingId, admin.getCompanyID(), dynNamesForDeletion);
 		dynamicTagDao.markNamesAsDeleted(mailingId, dynNamesForDeletion);
 		mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
-		
+
 		return true;
     }
 
@@ -889,8 +894,8 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
-	public List<MailingBase> getTemplatesWithPreview(final Admin admin, final String sort, final String direction) {
-		return mailingDao.getMailingTemplatesWithPreview(admin, sort, direction);
+	public List<MailingBase> getTemplatesWithPreview(MediaTypes mediaType, Admin admin) {
+		return mailingDao.getMailingTemplatesWithPreview(mediaType, admin, "", "");
 	}
 
     @Override
@@ -913,42 +918,79 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     }
 
 	@Override
+	public int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks) throws Exception {
+		activateTrackingEachLinkIfNecessary(mailing);
+		return saveMailing(mailing, preserveTrackableLinks);
+	}
+
+	@Override
+	public int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception {
+		activateTrackingEachLinkIfNecessary(mailing);
+		return mailingDao.saveMailing(mailing, preserveTrackableLinks, errorTolerant, removeUnusedContent);
+	}
+
+	private void activateTrackingEachLinkIfNecessary(Mailing mailing) throws Exception {
+		if (!configService.getBooleanValue(ConfigValue.IndividualLinkTrackingForAllMailings, mailing.getCompanyID())) {
+			return;
+		}
+
+		Optional<Date> changeDate = configService.getChangeDate(ConfigValue.IndividualLinkTrackingForAllMailings, mailing.getCompanyID());
+		if (changeDate.isEmpty()) {
+			return;
+		}
+
+		if (changeDate.get().compareTo(Optional.ofNullable(mailing.getCreationDate()).orElse(new Date())) < 0) {
+			mailingBaseService.activateTrackingLinksOnEveryPosition(mailing, applicationContext);
+		}
+	}
+
+	@Override
 	public int saveMailing(Mailing mailing, boolean preserveTrackableLinks) {
 		return mailingDao.saveMailing(mailing, preserveTrackableLinks);
 	}
-	
+
     @Override
     public List<UserAction> deleteMailing(int mailingId, Admin admin) throws Exception {
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         mailingBaseService.deleteMailing(mailingId, admin.getCompanyID());
         return Collections.singletonList(getDeleteUserAction(mailing));
     }
-    
+
     @Override
     @Transactional
-    public ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> mailingIds, Admin admin) {
-        ServiceResult<List<Mailing>> mailingsResult = selfReference.getMailingsForDeletion(mailingIds, admin);
+    public ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> ids, Admin admin) {
+        ServiceResult<List<Mailing>> mailingsResult = selfReference.getMailingsForDeletion(ids, admin);
         if (!mailingsResult.isSuccess()) {
             return ServiceResult.error(mailingsResult.getErrorMessages());
         }
-        // It only changes the 'deleted' column value
-        mailingBaseService.bulkDelete(new HashSet<>(mailingIds), admin.getCompanyID());
+
+		if (admin.isRedesignedUiUsed()) {
+			// It only changes the 'deleted' column value
+			Set<Integer> allowedIds = mailingsResult.getResult().stream()
+					.map(Mailing::getId)
+					.collect(Collectors.toSet());
+			mailingBaseService.bulkDelete(allowedIds, admin.getCompanyID());
+		} else {
+			// It only changes the 'deleted' column value
+			mailingBaseService.bulkDelete(new HashSet<>(ids), admin.getCompanyID());
+		}
+
         return ServiceResult.success(mailingsResult.getResult().stream()
                 .map(this::getDeleteUserAction)
                 .collect(Collectors.toList()));
     }
-    
+
     private UserAction getDeleteUserAction(Mailing mailing) {
         return new UserAction(
                 "delete " + (mailing.isIsTemplate() ? "template" : "mailing"),
                 mailing.getShortname() + " (" + mailing.getId() + ")");
     }
-    
+
     @Override
     public boolean usedInRunningWorkflow(final int mailingId, final int companyId) {
         return mailingDao.usedInRunningWorkflow(mailingId, companyId);
     }
-    
+
     @Override
     public void updateMailingsWithDynamicTemplate(Mailing template, ApplicationContext context) {
         List<Integer> referencingMailings = mailingDao.getTemplateReferencingMailingIds(template);
@@ -983,25 +1025,20 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
             try {
                 mailing.buildDependencies(true, context);
-                mailingDao.saveMailing(mailing, false);
+				saveMailingWithNewContent(mailing, false);
             } catch (Exception e) {
                 logger.error("unable to update mailing ID {}", mailingId, e);
             }
         }
     }
-    
+
     @Override
     public boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin) {
         return mailingDao.getMailings(admin.getCompanyID(), admin.getAdminID(),
                 ComMailingLightService.TAKE_ALL_MAILINGS, "W", true).stream()
                 .anyMatch(mailing -> mailing.getId() == baseMailingId);
     }
-    
-    @Override
-    public Date getMailingPlanDate(final int mailingId, final int companyId) {
-        return mailingDao.getMailingPlanDate(mailingId, companyId);
-    }
-    
+
     @Override
     public boolean checkMailingReferencesTemplate(int templateId, int companyId) {
         try {
@@ -1025,10 +1062,10 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
             return false;
         }
     }
-    
+
 	@Override
     public boolean hasMediaType(int mailingId, MediaTypes type, int companyId) {
-	    return mailingDao.hasMediaType(companyId, mailingId, type);    
+	    return mailingDao.hasMediaType(companyId, mailingId, type);
     }
 
 	@Override
@@ -1054,17 +1091,17 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 		return mailingDao.filterNotSentMailings(mailings);
 	}
-	
+
 	@Override
     public boolean isBasicFullTextSearchSupported() {
         return mailingDao.isBasicFullTextSearchSupported();
     }
-    
+
 	@Override
     public boolean isContentFullTextSearchSupported() {
         return mailingDao.isContentFullTextSearchSupported();
     }
-    
+
     @Override
     public ServiceResult<PaginatedListImpl<Map<String, Object>>> getOverview(Admin admin, MailingsListProperties props) {
         try {
@@ -1085,22 +1122,27 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         if (CollectionUtils.isEmpty(mailingIds)) {
             return ServiceResult.error(Message.of(NOTHING_SELECTED_MSG));
         }
-        List<ServiceResult<Mailing>> results = mailingIds.stream()
-                .map(mailingId -> getMailingForDeletion(mailingId, admin))
-                .collect(Collectors.toList());
-        List<Message> errors = results.stream()
-                .map(ServiceResult::getErrorMessages)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-        List<Message> warns = results.stream()
-                .map(ServiceResult::getWarningMessages)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-        return new ServiceResult<>(
-                results.stream().map(ServiceResult::getResult).collect(Collectors.toList()),
-                errors.isEmpty(), Collections.emptyList(), warns, errors);
+
+		if (admin.isRedesignedUiUsed()) {
+			return bulkActionValidationService.checkAllowedForDeletion(mailingIds, id -> getMailingForDeletion(id, admin));
+		} else {
+			List<ServiceResult<Mailing>> results = mailingIds.stream()
+					.map(mailingId -> getMailingForDeletion(mailingId, admin))
+					.collect(Collectors.toList());
+			List<Message> errors = results.stream()
+					.map(ServiceResult::getErrorMessages)
+					.filter(Objects::nonNull)
+					.flatMap(Collection::stream)
+					.collect(Collectors.toList());
+			List<Message> warns = results.stream()
+					.map(ServiceResult::getWarningMessages)
+					.filter(Objects::nonNull)
+					.flatMap(Collection::stream)
+					.collect(Collectors.toList());
+			return new ServiceResult<>(
+					results.stream().map(ServiceResult::getResult).collect(Collectors.toList()),
+					errors.isEmpty(), Collections.emptyList(), warns, errors);
+		}
     }
 
     private SimpleServiceResult checkIfMailingUsed(int mailingId, Admin admin) {
@@ -1119,7 +1161,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         }
         return new SimpleServiceResult(errors.isEmpty(), null, warnings, errors);
     }
-    
+
     @Override
     @Transactional
     public ServiceResult<Mailing> getMailingForDeletion(int mailingId, Admin admin) {
@@ -1131,18 +1173,24 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
                     usingResult.getWarningMessages(),
                     usingResult.getErrorMessages());
         } catch (MailingNotExistException ex) {
-            return ServiceResult.error(Message.of(ERROR_MSG));
+            return ServiceResult.errorKeys("error.general.missing");
         }
     }
 
 	@Override
+	@Transactional
 	public void restoreMailing(int mailingId, Admin admin) {
-		mailingDao.restoreMailing(mailingId, admin.getCompanyID());
+		restoreMailings(Set.of(mailingId), admin);
 	}
 
 	@Override
+	@Transactional
 	public void bulkRestore(Collection<Integer> mailingIds, Admin admin) {
-		mailingDao.restoreMailings(mailingIds, admin.getCompanyID());
+		restoreMailings(mailingIds, admin);
+	}
+
+	protected void restoreMailings(Collection<Integer> ids, Admin admin) {
+		mailingDao.restoreMailings(ids, admin.getCompanyID());
 	}
 
 	@Override
@@ -1200,7 +1248,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -1235,7 +1283,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Required
-	public void setMailingComponentDao(ComMailingComponentDao mailingComponentDao) {
+	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
 	}
 
@@ -1300,7 +1348,12 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         this.mediatypesDao = mediatypesDao;
     }
 
-    @Required
+	@Required
+	public void setBulkActionValidationService(BulkActionValidationService<Integer, Mailing> bulkActionValidationService) {
+		this.bulkActionValidationService = bulkActionValidationService;
+	}
+
+	@Required
     public void setSelfReference(MailingService mailingService) {
         this.selfReference = mailingService;
     }
@@ -1319,5 +1372,36 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	@Override
 	public List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID) {
 		return mailingDao.getMailingsUsingEmmAction(actionId, companyID);
+	}
+
+    @Override
+    public void clearPlanDate(int mailingId, int companyId) {
+        mailingDao.clearPlanDate(mailingId, companyId);
+    }
+
+	@Override
+	public String getEmailParameter(int mailingID) {
+		return mailingDao.getEmailParameter(mailingID);
+	}
+
+	@Override
+	public String getMailingRdirDomain(int mailingID, int companyID) {
+		return mailingDao.getMailingRdirDomain(mailingID, companyID);
+	}
+
+	@Override
+	public MailingType getMailingType(int mailingID) throws Exception {
+		return mailingDao.getMailingType(mailingID);
+	}
+
+	@Override
+	public boolean isSettingsReadonly(Admin admin, int mailingId) {
+		return isSettingsReadonly(admin, mailingDao.isTemplate(mailingId, admin.getCompanyID()));
+	}
+
+	@Override
+	public boolean isSettingsReadonly(Admin admin, boolean isTemplate) {
+		return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY)
+				|| !admin.permissionAllowed(isTemplate ? Permission.TEMPLATE_CHANGE : Permission.MAILING_CHANGE);
 	}
 }

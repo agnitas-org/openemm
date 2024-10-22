@@ -15,8 +15,11 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class ProfileFieldForm extends PaginationForm {
-    private boolean fieldVisible = true;
+    private boolean fieldVisible = true; // EMMGUI-714 remove after old design will be removed
+    private ProfileFieldMode fieldMode = ProfileFieldMode.Editable;
     private int fieldSort = 1000;
     private boolean line;
     private boolean isInterest;
@@ -195,5 +198,18 @@ public class ProfileFieldForm extends PaginationForm {
 
     public void setFilterDescription(String filterDescription) {
         this.filterDescription = filterDescription;
+    }
+
+    public ProfileFieldMode getFieldMode() {
+        return fieldMode;
+    }
+
+    public void setFieldMode(ProfileFieldMode fieldMode) {
+        this.fieldMode = fieldMode;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(filterFieldName) || isNotBlank(filterDbFieldName) || isNotBlank(filterDescription)
+                || filterType != null || filterMode != null;
     }
 }

@@ -25,5 +25,4 @@ public interface ActionOperationFactory {
 
     List<ActionOperationType> getTypesList();
 
-    String[] getTypeNames();
 }

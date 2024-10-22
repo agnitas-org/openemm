@@ -63,6 +63,8 @@ public class EmmActionImpl implements EmmAction {
 
     private boolean isAdvertising;
 
+    private boolean deleted;
+
     /** Getter for property companyID.
      *
      * @return Value of property companyID.
@@ -234,5 +236,15 @@ public class EmmActionImpl implements EmmAction {
     @Override
     public boolean isAdvertising() {
         return isAdvertising;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    @Override
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

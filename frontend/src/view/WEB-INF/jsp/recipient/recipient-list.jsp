@@ -108,6 +108,10 @@
                                     <mvc:radiobutton path="numberOfRows" value="100"/>
                                     <span class="label-text">100</span>
                                 </label>
+                                <label class="label">
+                                    <mvc:radiobutton path="numberOfRows" value="200"/>
+                                    <span class="label-text">200</span>
+                                </label>
                             </li>
 
                             <li class="divider"></li>
@@ -134,16 +138,13 @@
                             <li>
                                 <p>
                                     <mvc:select path="selectedFields" cssClass="form-control js-select" multiple="multiple">
+                                        <option title="email" value="email" data-locked="true" selected>email</option>
                                         <c:forEach var="field" items="${fieldsMap}" varStatus="rowCounter">
                                             <c:set var="column" value="${field.key}"/>
                                             <c:set var="fieldName" value="${field.value}"/>
 
                                             <c:set var="isDefaultField" value="${listForm.isDefaultColumn(column)}"/>
                                             <c:set var="fieldSelected" value="${listForm.isSelectedColumn(column)}"/>
-
-                                            <c:if test="${isDefaultField}">
-                                                <option title="${column}" value="${column}" disabled>${fieldName}</option>
-                                            </c:if>
 
                                             <c:if test="${not isDefaultField}">
                                                 <option title="${column}" value="${column}" ${fieldSelected ? 'selected' : ''}>${fieldName}</option>
@@ -193,9 +194,7 @@
                                     </display:caption>
                                 </c:if>
                                 <c:if test="${not empty recipient}">
-        
-                                    <%@include file="/WEB-INF/jsp/recipient/additional-fields.jspf"%>
-        
+
                                     <display:column headerClass="js-table-sort" titleKey="mailing.MediaType.0"
                                                     sortable="true" sortProperty="email">
                                         <emm:ShowByPermission token="mailing.encrypted.send">
@@ -211,6 +210,8 @@
 
                                         ${recipient.email}
                                     </display:column>
+
+                                    <%@include file="/WEB-INF/jsp/recipient/additional-fields.jspf"%>
         
                                     <display:column class="table-actions" headerClass="${allowedDeletion ? '' : 'hidden'}" sortable="false">
                                         <span class="hidden" data-recipient-id="${recipient.id}"></span>

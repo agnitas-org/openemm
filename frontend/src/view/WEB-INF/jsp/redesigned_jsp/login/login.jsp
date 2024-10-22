@@ -1,7 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:if test="${afterLogout}">
     <c:set var="logoutInfoMsg">
@@ -13,8 +14,9 @@
 </c:if>
 
 <mvc:form cssClass="row g-3" servletRelativeAction="/logonRedesigned.action" modelAttribute="form"
-          data-form-focus="username" data-disable-controls="login" data-initializer="logon">
-    <script id="config:logon" type="application/json">
+          data-form-focus="username" data-disable-controls="login">
+
+    <script data-initializer="login" type="application/json">
         {
             "SHOW_TAB_HINT": ${SHOW_TAB_HINT},
             "logoutMsg": ${emm:toJson(logoutInfoMsg)}
@@ -38,7 +40,7 @@
                     <mvc:message code="logon.password"/>
                 </label>
 
-                <mvc:password path="password" id="password" cssClass="form-control" showPassword="true" data-controls-group="login" autocomplete="current-password"/>
+                <mvc:password path="password" id="password" cssClass="form-control" showPassword="true" data-controls-group="login" autocomplete="current-password" data-action="password-change" />
             </div>
 
             <div class="col-12">

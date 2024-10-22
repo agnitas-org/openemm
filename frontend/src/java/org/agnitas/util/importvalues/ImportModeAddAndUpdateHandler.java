@@ -38,10 +38,11 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
-    private static final transient Logger logger = LogManager.getLogger(ImportModeAddAndUpdateHandler.class);
+
+	private static final Logger logger = LogManager.getLogger(ImportModeAddAndUpdateHandler.class);
     
     protected ImportRecipientsDao importRecipientsDao;
     private ConfigService configService;
@@ -177,6 +178,7 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 		                    Map<String, Object> requestParams = new HashMap<>();
 		                    requestParams.put("agnSUBSCRIBE", Integer.toString(UserStatus.Active.getStatusCode()));
 		                    requestParams.put("agnMAILINGLIST", Integer.toString(mailingListId));
+							requestParams.put("DATASOURCE_ID", Integer.toString(datasourceId));
 		                    requestParams.put("agnFN", "ProfileImport");
 		                    
 		                    params.put("requestParameters", requestParams);

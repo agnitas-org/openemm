@@ -1,35 +1,28 @@
 package org.agnitas.service;
 
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import org.agnitas.beans.ExportPredef;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ColumnInfoService;
 
 public class OpenemmRecipientExportWorkerFactory implements RecipientExportWorkerFactory {
+	public OpenemmRecipientExportWorkerFactory(
+			ComTargetService targetService,
+			RecipientFieldService recipientFieldService,
+			MailinglistService mailinglistService) {
+		this.targetService = targetService;
+		this.recipientFieldService = recipientFieldService;
+		this.mailinglistService = mailinglistService;
+	}
+
 	private ComTargetService targetService;
-	private ColumnInfoService columnInfoService;
+	private RecipientFieldService recipientFieldService;
 	private MailinglistService mailinglistService;
 
 	@Override
 	public RecipientExportWorker newWorker(ExportPredef exportProfile, Admin admin) throws Exception {
-		return new RecipientExportWorker(exportProfile, admin, targetService, columnInfoService, mailinglistService);
-	}
-
-	@Required
-	public void setTargetService(final ComTargetService targetService) {
-		this.targetService = targetService;
-	}
-
-	@Required
-	public void setColumnInfoService(final ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
-	}
-
-	@Required
-	public void setMailinglistService(MailinglistService mailinglistService) {
-		this.mailinglistService = mailinglistService;
+		return new RecipientExportWorker(exportProfile, admin, targetService, recipientFieldService, mailinglistService);
 	}
 }

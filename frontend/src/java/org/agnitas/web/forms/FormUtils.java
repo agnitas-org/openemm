@@ -15,6 +15,8 @@ import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.beans.SortingWebStorageEntry;
 import org.agnitas.service.WebStorageBundle;
 import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.displaytag.pagination.PaginatedList;
 
 public class FormUtils {
@@ -24,25 +26,36 @@ public class FormUtils {
     }
 
     public static <T extends RowsCountWebStorageEntry> void syncNumberOfRows(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form) {
+        webStorage.access(bundle, entry -> syncNumberOfRows(entry, form));
+    }
+
+    public static <T extends SortingWebStorageEntry> void updateSortingState(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form, Boolean restore) {
+        webStorage.access(bundle, entry -> updateSortingState(entry, form, restore));
+    }
+
+    public static <T extends SortingWebStorageEntry> void syncPaginationData(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form, Boolean restoreSort) {
         webStorage.access(bundle, entry -> {
-            if (form.getNumberOfRows() > 0) {
-                entry.setRowsCount(form.getNumberOfRows());
-            } else {
-                form.setNumberOfRows(entry.getRowsCount());
-            }
+            syncNumberOfRows(entry, form);
+            updateSortingState(entry, form, restoreSort);
         });
     }
 
-    public static <T extends SortingWebStorageEntry> void updateSortingState(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form, boolean restore) {
-        webStorage.access(bundle, entry -> {
-            if (restore) {
-                form.setSort(entry.getSortColumn());
-                form.setDir(entry.isAscendingOrder() ? "asc" : "desc");
-            }
+    private static void syncNumberOfRows(RowsCountWebStorageEntry entry, PaginationForm form) {
+        if (form.getNumberOfRows() > 0) {
+            entry.setRowsCount(form.getNumberOfRows());
+        } else {
+            form.setNumberOfRows(entry.getRowsCount());
+        }
+    }
 
-            entry.setSortColumn(form.getSort());
-            entry.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getDir()));
-        });
+    private static void updateSortingState(SortingWebStorageEntry entry, PaginationForm form, Boolean restore) {
+        if (BooleanUtils.isTrue(restore) && StringUtils.isNotBlank(entry.getSortColumn())) {
+            form.setSort(entry.getSortColumn());
+            form.setDir(entry.isAscendingOrder() ? "asc" : "desc");
+        }
+
+        entry.setSortColumn(form.getSort());
+        entry.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getDir()));
     }
 
     public static void setPaginationParameters(PaginationForm form, PaginatedList paginatedList) {

@@ -15,7 +15,8 @@ import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.FormComponentDao;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
-import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -39,7 +40,7 @@ import java.util.Set;
 /**
  * The Class FormComponentDaoImpl.
  */
-public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDao {
+public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormComponentDao {
 	
 	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(FormComponentDaoImpl.class);
@@ -131,25 +132,23 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 		}
 	}
 
-	/**
-	 * Gets the component descriptions.
-	 * This returns FormComponent items with all fields filled except for the data byte[]
-	 *
-	 * @param companyID     the company id
-	 * @param componentType the component type
-	 * @return the component descriptions
-	 */
 	@Override
-	public List<FormComponent> getFormComponentDescriptions(UserFormImagesOverviewFilter filter) {
+	public PaginatedListImpl<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter) {
 		StringBuilder query = new StringBuilder("SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl");
 		List<Object> params = applyOverviewFilter(filter, query);
 
-		return select(logger, query.toString(), new FormComponentRowMapperWithoutData(), params.toArray());
+		PaginatedListImpl<FormComponent> list = selectPaginatedList(logger, query.toString(), "form_component_tbl", filter.getSort(), filter.ascending(),
+				filter.getPage(), filter.getNumberOfRows(), new FormComponentRowMapperWithoutData(), params.toArray());
+
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter));
+		}
+
+		return list;
 	}
 
 	private List<Object> applyOverviewFilter(UserFormImagesOverviewFilter filter, StringBuilder query) {
-		query.append(" WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?");
-		List<Object> params = new ArrayList<>(List.of(filter.getCompanyId(), filter.getFormId(), filter.getType().getId()));
+		List<Object> params = applyRequiredOverviewFilter(query, filter);
 
 		if (StringUtils.isNotBlank(filter.getFileName())) {
 			query.append(getPartialSearchFilterWithAnd("name"));
@@ -203,6 +202,18 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 		}
 
 		return params;
+	}
+
+	private int getTotalUnfilteredCountForOverview(UserFormImagesOverviewFilter filter) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM form_component_tbl");
+		List<Object> params = applyRequiredOverviewFilter(query, filter);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, UserFormImagesOverviewFilter filter) {
+		query.append(" WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?");
+		return new ArrayList<>(List.of(filter.getCompanyId(), filter.getFormId(), filter.getType().getId()));
 	}
 
 	/**

@@ -33,6 +33,29 @@
 
   // May not work with inline elements
   $.expr[':'].truncated = function(el) {
-    return el.clientWidth < el.scrollWidth;
+    return el.scrollWidth - el.clientWidth > 1 || el.scrollHeight - el.clientHeight > 2;
+  }
+
+  // An alternative to :truncated that may be more accurate but requires more calculations
+  $.expr[':'].truncatedAlt = function(el) {
+    const temp = el.cloneNode(true);
+
+    temp.style.width = "auto";
+    temp.style.height = "auto";
+    temp.style.position = "fixed";
+    temp.style.overflow = "visible";
+    temp.style.whiteSpace = "nowrap";
+    temp.style.visibility = "hidden";
+
+    el.parentElement.appendChild(temp);
+
+    try {
+      const fullWidth = temp.getBoundingClientRect().width;
+      const displayWidth = el.getBoundingClientRect().width;
+
+      return fullWidth > displayWidth;
+    } finally {
+      temp.remove();
+    }
   }
 })(jQuery);

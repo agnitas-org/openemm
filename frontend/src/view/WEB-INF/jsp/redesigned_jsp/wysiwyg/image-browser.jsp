@@ -1,12 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="ext" uri="https://emm.agnitas.de/jsp/jstl/extended" %>
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="fmt"        uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="ext"        uri="https://emm.agnitas.de/jsp/jstl/extended" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div class="tile" style="height: 100vh" data-controller="wysiwyg-image-browser">
     <script data-initializer="wysiwyg-image-browser" type="application/json">
@@ -19,7 +19,7 @@
     <div class="tile-header p-2">
         <nav class="navbar navbar-expand-lg">
             <a class="chosen-tab btn btn-primary" href="#"><span class="text text-truncate"></span></a>
-            <button class="navbar-toggler btn-icon-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#wysiwyg-image-browse" aria-controls="wysiwyg-image-browse" aria-expanded="false">
+            <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#wysiwyg-image-browse" aria-controls="wysiwyg-image-browse" aria-expanded="false">
                 <i class="icon icon-bars"></i>
             </button>
             <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="wysiwyg-image-browse">
@@ -39,12 +39,12 @@
     <%@include file="./fragments/other-images-tab-content.jspf" %>
     <%@include file="./fragments/mediapool-images-tab-content.jspf" %>
 
-    <div class="tile-footer tile-footer--buttons">
-        <button type="button" class="btn btn-danger flex-grow-1" data-action="close-window">
+    <div class="tile-footer tile-footer--buttons border-top">
+        <button type="button" class="btn btn-danger" data-action="close-window">
             <i class="icon icon-times"></i>
             <span class="text"><mvc:message code="button.Cancel" /></span>
         </button>
-        <button type="button" class="btn btn-primary flex-grow-1" data-action="submit-image">
+        <button type="button" class="btn btn-primary" data-action="submit-image">
             <i class="icon icon-save"></i>
             <span class="text"><mvc:message code="button.Apply"/></span>
         </button>

@@ -72,7 +72,7 @@
 		<lookup-method name="getBeanBirtStatisticsService" bean="BirtStatisticsService" />
 		<lookup-method name="getBeanCompanyService" bean="ComCompanyService" />
 		<lookup-method name="getBeanAdminService" bean="AdminService" />
-		<lookup-method name="getBeanMaildropStatusService" bean="MaildropStatusService" />
+		<lookup-method name="getBeanMaildropService" bean="MaildropService" />
 		<lookup-method name="getBeanServerStatusService" bean="ServerStatusService" />
 	</bean>
 
@@ -105,10 +105,12 @@
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
-		<property name="targetDao" ref="TargetDao" />
+		<property name="targetService" ref="targetService" />
 		<property name="trackableLinkService" ref="TrackableLinkService"/>
         <property name="mailingSendService" ref="MailingSendService"/>
         <property name="mailingService" ref="MailingService"/>
+		<property name="companyService" ref="CompanyService"/>
+		<property name="configService" ref="ConfigService"/>
 	</bean>
 
 	<bean id="WorkflowActivationService" class="com.agnitas.emm.core.workflow.service.ComWorkflowActivationService">
@@ -142,9 +144,9 @@
 
 <!-- ============================================================================================================================== Export -->
 	<bean id="RecipientExportWorkerFactory" class="org.agnitas.service.OpenemmRecipientExportWorkerFactory">
-		<property name="targetService" ref="targetService"/>
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="mailinglistService" ref="MailinglistService" />
+		<constructor-arg name="targetService" ref="targetService"/>
+		<constructor-arg name="recipientFieldService" ref="RecipientFieldService" />
+		<constructor-arg name="mailinglistService" ref="MailinglistService" />
 	</bean>
 
 	<bean id="ExportPredefService" class="com.agnitas.service.impl.ExportPredefServiceImpl">
@@ -152,6 +154,7 @@
         <property name="recipientExportWorkerFactory" ref="RecipientExportWorkerFactory" />
         <property name="dataSource" ref="dataSource"/>
         <property name="configService" ref="ConfigService"/>
+		<property name="bulkActionValidationService" ref="bulkActionValidationService"/>
     </bean>
 
 <!-- ============================================================================================================================== Company -->
@@ -175,7 +178,7 @@
 		<property name="importModeHandlerFactory" ref="ImportModeHandlerFactory" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 		<property name="mailinglistDao" ref="MailinglistDao" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
 		<property name="importQuotaCheckService" ref="ImportQuotaService" />
 	</bean>
 
@@ -212,10 +215,16 @@
 	
 	<bean id="MaildropService" class="com.agnitas.emm.core.maildrop.service.MaildropServiceImpl">
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
-		<property name="mailingDao" ref="MailingDao" />
+		<property name="mailingService" ref="MailingService" />
+		<property name="dkimDao" ref="DkimDao" />
+		<property name="mediaTypesService" ref="MediaTypesService" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="companyService" ref="CompanyService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="adminService" ref="AdminService" />
 	</bean>
 	
-	<bean id="userformService" class="com.agnitas.emm.core.userform.service.impl.ComUserformServiceImpl">
+	<bean id="userformService" class="com.agnitas.emm.core.userform.service.impl.UserformServiceImpl">
 		<property name="userFormDao" ref="UserFormDao" />
         <property name="emmActionDao" ref="EmmActionDao"/>
 		<property name="conversionService" ref="conversionService"/>
@@ -228,7 +237,11 @@
 		<property name="companyTokenService" ref="CompanyTokenService" />
 		<property name="recipientService" ref="recipientService" />
         <property name="userFormImporter" ref="UserFormImporter"/>
-    </bean>
+        <property name="velocityValidator" ref="VelocityDirectiveScriptValidator"/>
+        <property name="linkService" ref="LinkService"/>
+		<property name="bulkActionValidationService" ref="bulkActionValidationService" />
+	</bean>
 	
 	<bean id="HoneypotLinkService" class="com.agnitas.honeypot.service.NullHoneypotLinkServiceImpl" />
+	
 </beans>

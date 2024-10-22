@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import org.agnitas.beans.CompaniesConstraints;
 
 
@@ -189,10 +190,6 @@ public interface ComWorkflowDao {
      */
     List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, boolean isUseRules);
     
-    List<Integer> getAllWorkflowUsedTargets(int companyId);
-    
-    int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId);
-    
     void removeMailingsTargetExpressions(int companyId, Set<Integer> mailingIds);
 
     void savePausedSchemaForUndo(Workflow workflow, int adminId);
@@ -206,4 +203,6 @@ public interface ComWorkflowDao {
     void setActualEndDate(int workflowId, Date date, int companyId);
 
     List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin);
+
+    boolean isDependencyExists(int entityId, WorkflowDependencyType entityType);
 }

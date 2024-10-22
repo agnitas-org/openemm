@@ -8,3 +8,6 @@
 #
 
 # Add new jobs here. Leave a comment on each job (JIRA issue, short description, ...)
+
+#Create column 'id' in non-voucher reference tables where not exists
+com.agnitas.startuplistener.api.ReferenceTableIdColumnStartupJob

@@ -16,6 +16,10 @@ public class DataResponseDto<D> extends BooleanResponseDto {
 
     private D data;
 
+    public DataResponseDto(D data, Popups popups) {
+        this(data, popups, !popups.hasAlertPopups());
+    }
+
     public DataResponseDto(D data, Popups popups, boolean success) {
         super(popups, success);
         this.data = data;

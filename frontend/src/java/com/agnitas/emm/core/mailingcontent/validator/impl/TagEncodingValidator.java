@@ -16,7 +16,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
 import org.agnitas.exceptions.EncodingError;
 import org.agnitas.util.AgnUtils;

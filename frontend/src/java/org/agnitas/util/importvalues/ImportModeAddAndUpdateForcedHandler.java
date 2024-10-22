@@ -63,6 +63,7 @@ public class ImportModeAddAndUpdateForcedHandler extends ImportModeAddAndUpdateH
 		                    Map<String, Object> requestParams = new HashMap<>();
 		                    requestParams.put("agnSUBSCRIBE", Integer.toString(UserStatus.Active.getStatusCode()));
 		                    requestParams.put("agnMAILINGLIST", Integer.toString(mailingListId));
+							requestParams.put("DATASOURCE_ID", Integer.toString(datasourceId));
 		                    requestParams.put("agnFN", "ProfileImport");
 		                    params.put("requestParameters", requestParams);
 		        			params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);

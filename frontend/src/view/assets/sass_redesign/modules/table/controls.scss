@@ -1,0 +1,100 @@
+
+.table-wrapper__controls {
+  @include flex-row($gap-sm);
+  align-items: center;
+  overflow: hidden;
+
+  &--stretchable {
+    min-width: 0;
+    flex-grow: 1;
+  }
+
+  .icon-switch {
+    margin-left: 2px; // prevents truncation of the part of the switch
+    width: 66px;
+    border-radius: $table-control-radius;
+    --switch-inactive-bg-color: var(--table-head-control-bg-color);
+    --switch-selected-color: #{$white};
+    --switch-color: var(--table-head-text-color);
+  }
+
+  .btn {
+    @extend .btn-sm-horizontal;
+
+    border-radius: $table-control-radius;
+    font-weight: $table-control-font-weight;
+
+    i {
+      font-size: $font-size-lg;
+    }
+
+    span {
+      @extend .text-truncate;
+    }
+  }
+
+  .form-switch {
+    label {
+      color: var(--table-head-text-color);
+      font-weight: $table-control-font-weight;
+    }
+
+    background: var(--table-head-control-bg-color);
+
+    border: $border-default;
+    border-radius: $table-control-radius;
+
+    padding: $gap-x-sm;
+  }
+
+  .input-group-text {
+    @include border-start-radius($table-control-radius);
+    background: var(--table-head-control-bg-color);
+    color: var(--table-head-text-color);
+    font-weight: $table-control-font-weight;
+  }
+}
+
+.table-wrapper__entries-label {
+  @include flex-row($gap-x-sm);
+  color: var(--table-head-text-color);
+  background: var(--table-head-control-bg-color);
+
+  font-weight: $table-control-font-weight;
+
+  border: $border-default;
+  border-radius: $table-control-radius;
+
+  padding: $gap-x-sm;
+}
+
+.bulk-actions {
+  @include flex-row($gap-sm);
+  align-items: center;
+
+  border: $border-default;
+  border-radius: $table-control-radius;
+  padding: $gap-x-sm $gap-sm;
+
+  @include mobile {
+    display: none;
+  }
+
+  &::before {
+    content: "";
+    @include size(1px, 15px);
+    background-color: var(--table-border-color);
+  }
+
+  &__selected {
+    font-weight: $font-weight-semibold;
+    color: var(--table-head-text-color);
+    order: -1;
+    @extend .text-truncate;
+  }
+
+  &__controls {
+    @include flex-row($gap-sm);
+    align-items: center;
+  }
+}

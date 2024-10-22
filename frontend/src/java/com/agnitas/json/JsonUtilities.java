@@ -12,7 +12,9 @@ package com.agnitas.json;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
@@ -20,9 +22,17 @@ import java.util.TimeZone;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.XmlUtilities;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -34,6 +44,9 @@ import net.sf.json.JsonConfig;
 import net.sf.json.processors.DefaultValueProcessorMatcher;
 
 public class JsonUtilities {
+
+    private static final Logger logger = LogManager.getLogger(JsonUtilities.class);
+    
 	public static JsonObject convertXmlDocument(Document xmlDocument, boolean throwExceptionOnError) throws Exception {
 		try {
 			JsonObject jsonObject = new JsonObject();
@@ -291,4 +304,22 @@ public class JsonUtilities {
 
 		return mapper;
 	}
+    
+    public static Map<String, Object> strToMap(String json) {
+        try {
+            return new ObjectMapper().readValue(json, new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            logger.error("Cant convert json string to a map: {}", e.getMessage(), e);            
+            return Collections.emptyMap();
+        }
+    }
+
+    public static String mapToStr(Map<String, Object> json) {
+        try {
+            return new JsonMapper().writeValueAsString(json);
+        } catch (JsonProcessingException e) {
+            logger.error("Cant convert a map to json string: {}", e.getMessage(), e);
+            return "";
+        }
+    }
 }

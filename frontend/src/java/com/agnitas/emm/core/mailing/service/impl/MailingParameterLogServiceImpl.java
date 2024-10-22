@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.mailing.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -72,21 +73,9 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
     }
     
     @Override
-    public UserAction getMailingParameterDeleteLog(int parameterId, ComMailingParameter parameterOld) {
-        if (parameterOld == null) {
-            return new UserAction("delete mailing parameter",
-                    String.format("Delete mailing parameter ID (%d)", parameterId));
-        }
-    
-        UserAction userAction = null;
-        List<String> changes = getParameterChanges(parameterOld, null);
-        if (!changes.isEmpty()) {
-            userAction = new UserAction("delete mailing parameter",
-                    String.format("Mailing ID (%d). Mailing parameter ID (%d) %n%s", parameterOld.getMailingID(), parameterId,
-                            StringUtils.join(changes, "; ")));
-        }
-        
-        return userAction;
+    public UserAction getMailingParameterDeleteLog(Collection<Integer> ids) {
+		return new UserAction("delete mailing parameters",
+				String.format("Delete mailing parameter with IDs: (%s)", StringUtils.join(ids, ", ")));
     }
     
     @Override

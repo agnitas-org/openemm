@@ -1,80 +1,129 @@
-(function(){
+(() => {
 
-  var Table = AGN.Lib.Table,
-      WebStorage = AGN.Lib.WebStorage;
+  const Table = AGN.Lib.Table;
+  const WebStorage = AGN.Lib.WebStorage;
+  const Confirm = AGN.Lib.Confirm;
+  const RESTORE_ROW_SELECTOR = '[data-restore-row]';
+  const BULK_RESTORE_ROWS_SELECTOR = '[data-bulk-action="restore"]';
 
   $(document).on('click', '.js-data-table-first-page', function(e) {
-    Table.get($(this)).api.paginationGoToFirstPage();
+    handlePagination($(this), api => api.paginationGoToFirstPage());
   });
 
   $(document).on('click', '.js-data-table-prev-page', function(e) {
-    Table.get($(this)).api.paginationGoToPreviousPage();
+    handlePagination($(this), api => api.paginationGoToPreviousPage());
   });
 
   $(document).on('click', '.js-data-table-page', function(e) {
-    Table.get($(this)).api.paginationGoToPage($(this).data('page'));
+    const $el = $(this);
+    handlePagination($el, api => api.paginationGoToPage($el.data('page')));
   });
 
   $(document).on('click', '.js-data-table-next-page', function(e) {
-    Table.get($(this)).api.paginationGoToNextPage();
+    handlePagination($(this), api => api.paginationGoToNextPage());
   });
 
   $(document).on('click', '.js-data-table-last-page', function(e) {
-    Table.get($(this)).api.paginationGoToLastPage();
+    handlePagination($(this), api => api.paginationGoToLastPage());
   });
 
-  $(document).on('change', ".js-data-table [name='numberOfRows']", function(e) {
-    var $e = $(this);
-    var pageSize = $e.val();
-    var api = Table.get($e).api;
+  function handlePagination($el, callback) {
+    const api = Table.get($el).api;
+    callback(api);
+    api.deselectAll();
+  }
 
-    api.paginationSetPageSize(pageSize);
+  $(document).on('change', "[data-js-table] [data-number-of-rows]", function(e) {
+    const $e = $(this);
+    const pageSize = $e.val();
 
-    var bundle = $e.closest('.js-data-table-body').data('web-storage');
+    Table.get($e).api.paginationSetPageSize(pageSize);
+
+    const bundle = $e.closest('.table-wrapper').data('web-storage');
     if (bundle) {
       WebStorage.extend(bundle, {"paginationPageSize": parseInt(pageSize)});
     }
   });
 
   $(window).on('viewportChanged', function(e) {
-    $(document).all('.js-data-table-body').each(function() {
-      AGN.Lib.Table.get($(this)).redraw();
+    $(document).all('.table-wrapper').each(function() {
+      AGN.Lib.Table.get($(this))?.redraw();
     })
   });
 
-  $(document).on('click', '.js-data-table-bulk-delete', function(e) {
-    var $e = $(this);
-    bulkDelete($e, false);
+  $(document).on('click', '.js-data-table-delete', function(e) {
+    const $el = $(this);
+    const table = Table.get($el);
+
+    $.get($el.attr('href')).done(resp => {
+      if ($(resp).all('.modal').exists()) {
+        Confirm.create(resp).done(positiveResp => {
+          const row = table?.findRowByElement($el);
+          if (row) {
+            row.data.deleted = true;
+            row.data.active = 'false';
+            table.api?.applyTransaction(isRestoreModeAvailable() ? { update: [ row.data ] } : { remove: [ row.data ] });
+          }
+          if (typeof positiveResp === 'object') {
+            AGN.Lib.JsonMessages(positiveResp.popups, true);
+          } else {
+            AGN.Lib.RenderMessages($(positiveResp));
+          }
+        });
+      } else {
+        AGN.Lib.Page.render(resp);
+      }
+    });
+
+    e.preventDefault();
   });
 
-  function bulkDelete($e) {
-    const field = $e.data('bulk-field') || 'id';
-    const requestField = $e.data('bulk-request-field') || 'bulkIds';
+  $(document).on('click', '.js-data-table-bulk-delete', e => deleteRows($(e.currentTarget)));
 
-    const api = Table.get($e).api;
-    const rows = api.getSelectedRows();
-    const ids = rows.map(row => row[field]);
+  $(document).on('click', `${BULK_RESTORE_ROWS_SELECTOR},
+                           ${RESTORE_ROW_SELECTOR}`, e => restoreRows($(e.currentTarget)));
 
-    const data = {};
-    data[requestField] = ids;
-
-    requestBulkDelete(ids, $e.data('bulk-url'), data)
-      .done(() => api.applyTransaction({remove: rows}));
+  function deleteRows($el) {
+    hideRowsAfterAction($el, false);
   }
 
-  function requestBulkDelete(ids, url, data) {
+  function restoreRows($el) {
+    hideRowsAfterAction($el, true);
+  }
+
+  function hideRowsAfterAction($el, restore) {
+    const table = Table.get($el);
+    const tableApi = table.api;
+    const rows = $el.is(RESTORE_ROW_SELECTOR) ? [table?.findRowByElement($el)?.data] : tableApi.getSelectedRows();
+    const ids = rows.map(row => row.id);
+
+    requestAction(ids, $el.data('bulk-url'), restore ? 'POST' : $el.data('method'))
+      .done(() => removeRows(tableApi, rows, restore));
+  }
+
+  function removeRows(tableApi, rows, restore) {
+    rows.forEach(row => {
+      row.active = 'false';
+      row.deleted = !restore;
+    });
+    tableApi.applyTransaction(isRestoreModeAvailable() ? { update: rows } : { remove: rows });
+  }
+
+  function isRestoreModeAvailable() {
+    return $(BULK_RESTORE_ROWS_SELECTOR).exists();
+  }
+
+  function requestAction(bulkIds, url, method = 'GET') {
     const deferred = $.Deferred();
 
-    if (ids && ids.length) {
+    if (bulkIds && bulkIds.length) {
       const jqxhr = $.ajax(url, {
-        method: 'GET',
+        method,
         traditional: true,
-        data: data
-      }).fail(() =>{
-        deferred.reject();
-      });
+        data: { bulkIds }
+      }).fail(() => deferred.reject());
 
-      AGN.Lib.Confirm.request(jqxhr)
+      Confirm.request(jqxhr)
         .then(deferred.resolve, deferred.reject)
     } else {
       deferred.reject();

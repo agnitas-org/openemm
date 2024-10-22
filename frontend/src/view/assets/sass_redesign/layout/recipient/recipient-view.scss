@@ -1,0 +1,5 @@
+body:has(#recipient-detail-view) {
+  .popover:has(.input-groups) {
+    --bs-popover-max-width: 100vw;
+  }
+}

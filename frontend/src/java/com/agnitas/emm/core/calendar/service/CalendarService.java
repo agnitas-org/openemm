@@ -11,11 +11,15 @@
 package com.agnitas.emm.core.calendar.service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
 
 import net.sf.json.JSONArray;
 
@@ -23,11 +27,19 @@ public interface CalendarService {
 
     PaginatedListImpl<Map<String, Object>> getUnsentMailings(Admin admin, int listSize);
 
+    List<CalendarUnsentMailing> getUnplannedMailings(Admin admin);
+
+    List<CalendarUnsentMailing> getPlannedUnsentMailings(Admin admin);
+
     PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, int listSize);
 
-    JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate);
+    List<MailingPopoverInfo> mailingsPopoverInfo(Set<Integer> mailingIds, Admin admin);
 
-    JSONArray getMailingsRedesigned(Admin admin, LocalDate startDate, LocalDate endDate);
+    JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate, int limit);
+
+    JSONArray getMailingsLight(Admin admin, LocalDate startDate, LocalDate endDate);
 
     boolean moveMailing(Admin admin, int mailingId, LocalDate date);
+
+    boolean clearMailingPlannedDate(int mailingId, int companyId);
 }

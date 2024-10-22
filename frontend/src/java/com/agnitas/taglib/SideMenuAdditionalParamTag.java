@@ -61,7 +61,7 @@ public class SideMenuAdditionalParamTag extends TagSupport {
 
     private List<MenuAdditionalParams> getMenuAdditionalParams(){
         @SuppressWarnings("unchecked")
-		List<MenuAdditionalParams> additionalParams = (List<MenuAdditionalParams>) pageContext.getRequest().getAttribute(SIDE_MENU_ATTRIBUTE_NAME);
+		List<MenuAdditionalParams> additionalParams = (List<MenuAdditionalParams>) pageContext.getRequest().getAttribute(SIDE_MENU_ATTRIBUTE_NAME); // suppress warning for this cast
         if(additionalParams == null) {
             additionalParams = new ArrayList<>();
             pageContext.getRequest().setAttribute(SIDE_MENU_ATTRIBUTE_NAME, additionalParams);

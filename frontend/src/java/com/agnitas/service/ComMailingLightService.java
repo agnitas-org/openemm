@@ -13,7 +13,7 @@ package com.agnitas.service;
 import java.util.List;
 
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 
@@ -42,7 +42,7 @@ public interface ComMailingLightService {
 
     boolean isMailtrackingActive(int companyID);
 
-    void setMailingDao(ComMailingDao mailingDao);
+    void setMailingDao(MailingDao mailingDao);
     void setCompanyDao(ComCompanyDao companyDao);
     void setMaildropService(MaildropService service);
 }

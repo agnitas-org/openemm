@@ -1,8 +1,8 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="sec"   uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="agnRefresh" type="java.lang.String"--%>
 <%--@elvariable id="agnTitleKey" type="java.lang.String"--%>
@@ -25,22 +25,18 @@
 
     <tiles:insertAttribute name="head-extra-meta-tags"/>
 
-    <c:set var="title" scope="page"><mvc:message code="default.A_EMM"/></c:set>
-    <c:set var="subtitle" value="" scope="page"/>
+    <mvc:message var="pageTitle" code="${empty agnTitleKey ? 'default.A_EMM' : agnTitleKey}" scope="page" />
 
-    <c:if test="${not empty agnTitleKey}">
-        <c:set var="title"><mvc:message code="${agnTitleKey}"/></c:set>
-    </c:if>
     <c:if test="${not empty agnHighlightKey}">
-        <c:set var="subtitle"><mvc:message code="${agnHighlightKey}"/></c:set>
+        <mvc:message var="pageSubTitle" code="${agnHighlightKey}" scope="page" />
     </c:if>
 
     <c:choose>
-        <c:when test="${not empty subtitle}">
-            <title>${title} - ${subtitle}</title>
+        <c:when test="${not empty pageSubTitle and pageTitle ne pageSubTitle}">
+            <title>${pageTitle} - ${pageSubTitle}</title>
         </c:when>
         <c:otherwise>
-            <title>${title}</title>
+            <title>${pageTitle}</title>
         </c:otherwise>
     </c:choose>
 

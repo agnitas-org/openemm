@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.logon.service;
 
 import java.util.Date;
+import java.util.Set;
 
 import com.agnitas.beans.EmmLayoutBase;
 
@@ -73,6 +74,7 @@ public interface ComLogonService {
     String getPasswordResetLink(String linkPattern, String username, String token);
     
     SimpleServiceResult sendWelcomeMail(Admin admin, String clientIp, String linkPattern);
+	void sendWelcomeMail(Set<Integer> ids, String clientIp, int companyID, String passwordResetLinkPattern);
 
 	boolean existsPasswordResetTokenHash(String username, String token);
 

@@ -172,6 +172,13 @@
 				<entry key="ContentView" value-ref="actionOperationContentViewDao"/>
 				<entry key="IdentifyCustomer" value-ref="actionOperationIdentifyCustomerDao"/>
 				<entry key="ActivateDoubleOptIn" value-ref="actionOperationActivateDOIDao"/>
+				
+				<entry key="SendLastNewsletter">
+					<bean class="com.agnitas.emm.core.action.dao.impl.ActionOperationSendLastNewsletterDaoImpl">
+						<property name="dataSource" ref="dataSource" />
+						<property name="javaMailService" ref="JavaMailService" />
+					</bean>	
+				</entry>
 			</map>
 		</property>
 	</bean>
@@ -242,12 +249,6 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 	
-<!-- ============================================================================================================================== Export -->
-	<bean id="ExportPredefDao" class="org.agnitas.dao.impl.ExportPredefDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-	
 <!-- ============================================================================================================================== Host authentication -->
 	<bean id="HostAuthenticationDao_commonSQL" class="com.agnitas.emm.core.logon.dao.ComHostAuthenticationDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -309,7 +310,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Mailing component -->
-	<bean id="MailingComponentDao" class="com.agnitas.dao.impl.ComMailingComponentDaoImpl">
+	<bean id="MailingComponentDao" class="com.agnitas.dao.impl.MailingComponentDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="trackableLinkDao" ref="TrackableLinkDao" />
@@ -586,11 +587,6 @@
         <property name="javaMailService" ref="JavaMailService" />
     </bean>
     	
-	<bean id="ShowTableTagDao" class="com.agnitas.dao.impl.ShowTableTagDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-
 	<bean id="RdirTrafficAmountDao" class="com.agnitas.dao.impl.RdirTrafficAmountDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />

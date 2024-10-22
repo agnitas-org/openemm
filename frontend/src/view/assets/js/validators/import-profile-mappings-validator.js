@@ -20,8 +20,17 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
         }
     });
 
+    function getMaxColumnLength(columnInfo) {
+        const dataType = columnInfo.simpleDataType.toLowerCase();
+        if (dataType === 'float' || dataType === 'numeric') {
+            return columnInfo.numericPrecision + columnInfo.numericScale;
+        }
+
+        return columnInfo.characterLength;
+    }
+
     function isValidDataLength(columnInfo, value) {
-        return value.length <= columnInfo.maxDataSize;
+        return value.length <= getMaxColumnLength(columnInfo);
     }
 
     function getDefValFieldValue($defValField) {
@@ -36,9 +45,9 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
         const value = getDefValFieldValue($defValField);
         if (value && getColNameByDefValField($defValField) !== DONT_IMPORT_COL_OPTION) {
             const columnInfo = getValFieldColumnInfo($defValField);
-            const dataType = columnInfo.dataType.toLowerCase();
+            const dataType = columnInfo.simpleDataType.toLowerCase();
 
-            if (columnInfo.column === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
+            if (columnInfo.columnName === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
                 errors.push({field: $defValField, msg: t('import.columnMapping.error.invalidEmail')});
             } else if (dataType === 'date' || dataType === 'datetime') {
                 if (isDbDateFunction($defValField.val().trim())) {
@@ -48,7 +57,7 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
             } else if (!isValidValueForDataType(dataType, value)) {
                 errors.push({field: $defValField, msg: t('import.columnMapping.error.type', dataType)});
             } else if (!isValidDataLength(columnInfo, value)) {
-                errors.push({field: $defValField, msg: t('import.columnMapping.error.length', columnInfo.maxDataSize)});
+                errors.push({field: $defValField, msg: t('import.columnMapping.error.length', getMaxColumnLength(columnInfo))});
             }
         }
     }

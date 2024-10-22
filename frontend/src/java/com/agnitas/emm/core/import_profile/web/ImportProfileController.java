@@ -11,9 +11,7 @@
 package com.agnitas.emm.core.import_profile.web;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.import_profile.bean.ImportProfileColumnMapping;
@@ -25,8 +23,10 @@ import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
 import com.agnitas.emm.core.import_profile.service.ImportProfileMappingsReadService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.service.ColumnInfoService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
@@ -52,6 +52,7 @@ import org.agnitas.util.importvalues.NullValuesAction;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +62,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -68,13 +70,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -82,6 +85,7 @@ import static com.agnitas.emm.core.import_profile.component.ImportProfileColumnM
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
 
@@ -95,43 +99,41 @@ public class ImportProfileController {
     private final UserActivityLogService userActivityLogService;
     private final AdminService adminService;
     private final WebStorage webStorage;
-    private final ColumnInfoService columnInfoService;
+    private final RecipientFieldService recipientFieldService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final ExtendedConversionService conversionService;
     private final ImportProfileChangesDetector changesDetector;
     private final ImportProfileColumnMappingChangesDetector mappingsChangesDetector;
     private final ImportProfileFormValidator formValidator;
     private final RecipientService recipientService;
-    private final ProfileFieldDao profileFieldDao;
     private final ImportProfileColumnMappingsValidator mappingsValidator;
     private final ImportProfileMappingsReadService mappingsReadService;
 
     public ImportProfileController(ImportProfileService importProfileService, UserActivityLogService userActivityLogService, AdminService adminService, WebStorage webStorage,
-                                   ColumnInfoService columnInfoService, MailinglistApprovalService mailinglistApprovalService, ExtendedConversionService conversionService,
-                                   ImportProfileChangesDetector changesDetector, ImportProfileColumnMappingChangesDetector mappingsChangesDetector, ImportProfileFormValidator formValidator,
-                                   RecipientService recipientService, ProfileFieldDao profileFieldDao, ImportProfileColumnMappingsValidator mappingsValidator,
-                                   ImportProfileMappingsReadService mappingsReadService) {
+    		RecipientFieldService recipientFieldService, MailinglistApprovalService mailinglistApprovalService, ExtendedConversionService conversionService,
+    		ImportProfileChangesDetector changesDetector, ImportProfileColumnMappingChangesDetector mappingsChangesDetector, ImportProfileFormValidator formValidator,
+    		RecipientService recipientService, ImportProfileColumnMappingsValidator mappingsValidator,
+    		ImportProfileMappingsReadService mappingsReadService) {
 
         this.importProfileService = importProfileService;
         this.userActivityLogService = userActivityLogService;
         this.adminService = adminService;
         this.webStorage = webStorage;
-        this.columnInfoService = columnInfoService;
+        this.recipientFieldService = recipientFieldService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.conversionService = conversionService;
         this.changesDetector = changesDetector;
         this.mappingsChangesDetector = mappingsChangesDetector;
         this.formValidator = formValidator;
         this.recipientService = recipientService;
-        this.profileFieldDao = profileFieldDao;
         this.mappingsValidator = mappingsValidator;
         this.mappingsReadService = mappingsReadService;
     }
 
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute("form") PaginationForm form, Admin admin, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_PROFILE_OVERVIEW, form);
-        model.addAttribute("profiles", importProfileService.getAvailableImportProfiles(admin));
+    public String list(@RequestParam(required = false) boolean restoreSort, @ModelAttribute("form") PaginationForm form, Admin admin, Model model) {
+        FormUtils.syncPaginationData(webStorage, WebStorage.IMPORT_PROFILE_OVERVIEW, form, restoreSort);
+        model.addAttribute("profiles", importProfileService.getOverview(form, admin));
         model.addAttribute("defaultProfileId", admin.getDefaultImportProfileID());
 
         return "import_wizard_profile_list";
@@ -150,7 +152,7 @@ public class ImportProfileController {
             popups.success(CHANGES_SAVED_MSG);
         }
 
-        return "redirect:/import-profile/list.action";
+        return "redirect:/import-profile/list.action?restoreSort=true";
     }
 
     @GetMapping("/create.action")
@@ -220,23 +222,15 @@ public class ImportProfileController {
             if (redesignedUiUsageAllowed) {
                 model.addAttribute("profileFields", getProfileFieldsMap(importProfile, admin));
                 model.addAttribute("columnMappings", importProfile.getColumnMapping());
-                model.addAttribute("isEncryptedImportAllowed", importProfileService.isEcryptedImportAllowed(admin));
+                model.addAttribute("isEncryptedImportAllowed", importProfileService.isEncryptedImportAllowed(admin));
             }
         }
     }
 
-    private List<ProfileField> getAvailableImportProfileFields(Admin admin) throws Exception {
-        List<ProfileField> dbColumnsAvailable = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), true);
+    private List<RecipientFieldDescription> getAvailableImportProfileFields(Admin admin) throws Exception {
+        List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
         List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
-
-        return dbColumnsAvailable.stream()
-                .filter(pf -> !isHiddenProfileField(pf.getColumn(), hiddenColumns))
-                .collect(Collectors.toList());
-    }
-
-    private boolean isHiddenProfileField(String fieldName, List<String> hiddenFields) {
-        return hiddenFields.stream()
-                .anyMatch(hf -> hf.equalsIgnoreCase(fieldName));
+        return recipientFields.stream().filter(pf -> !hiddenColumns.contains(pf.getColumnName())).collect(Collectors.toList());
     }
 
     private List<Integer> getAvailableGenders(Admin admin) {
@@ -274,21 +268,20 @@ public class ImportProfileController {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, ProfileField> getProfileFieldsMap(ImportProfile profile, Admin admin) throws Exception {
-        TreeMap<String, ProfileField> profileFieldsMap = new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID()));
-        return filterHiddenColumns(profileFieldsMap, profile.getKeyColumns(), admin);
-    }
-
-    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, List<String> keyColumns, Admin admin) {
-        for (String hiddenColumn : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
-            profileFields.remove(hiddenColumn);
-        }
-
-        // User may also map readonly columns, but in import action, those are are checked to be only used as keycolumns
-        return profileFields.entrySet().stream()
-                .filter(e -> e.getValue().getModeEdit() == ProfileFieldMode.Editable
-                        || (e.getValue().getModeEdit() == ProfileFieldMode.ReadOnly && keyColumns.contains(e.getValue().getColumn())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    private Map<String, RecipientFieldDescription> getProfileFieldsMap(ImportProfile profile, Admin admin) throws Exception {
+    	List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
+    	Map<String, RecipientFieldDescription> recipientFieldsMap = new HashMap<>();
+    	for (RecipientFieldDescription recipientField : recipientFields) {
+    		if (!RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)).contains(recipientField.getColumnName())) {
+    			ProfileFieldMode adminPermission = recipientField.getAdminPermission(admin.getAdminID());
+    	        // User may also map readonly columns, but in import action, those are checked to be only used as keycolumns
+    			if (adminPermission == ProfileFieldMode.Editable
+    					|| (adminPermission == ProfileFieldMode.ReadOnly && profile.getKeyColumns().contains(recipientField.getColumnName()))) {
+    				recipientFieldsMap.put(recipientField.getColumnName(), recipientField);
+    			}
+            }
+    	}
+        return recipientFieldsMap;
     }
 
     private Map<Integer, String> prepareSelectedMailinglistsMap(ImportProfile profile) {
@@ -310,7 +303,8 @@ public class ImportProfileController {
     }
 
     @PostMapping("/save.action")
-    public String save(@ModelAttribute ImportProfileForm form, @RequestParam(required = false) boolean start, Admin admin, Popups popups) throws Exception {
+    public String save(@ModelAttribute ImportProfileForm form, @RequestParam(required = false) boolean start, @RequestParam(required = false) boolean createNewAutoImport,
+                       Admin admin, Popups popups) throws Exception {
         boolean isRedesignedUiUsageAllowed = isRedesignedUiUsageAllowed(admin);
         if (isRedesignedUiUsageAllowed) {
             form.setCheckForDuplicates(form.isShouldCheckForDuplicates() ? CheckForDuplicates.COMPLETE.getIntValue() : CheckForDuplicates.NO_CHECK.getIntValue());
@@ -326,7 +320,7 @@ public class ImportProfileController {
         List<ColumnMapping> mappings = conversionService.convert(form.getColumnsMappings(), ImportProfileColumnMapping.class, ColumnMapping.class);
         if (isRedesignedUiUsageAllowed && existingProfile != null && !profile.isAutoMapping()) {
             profile.setColumnMapping(existingProfile.getColumnMapping()); // for validation process
-            if (!mappingsValidator.validate(mappings, profile, admin, popups)) {
+            if ((start || createNewAutoImport || !mappings.isEmpty()) && !mappingsValidator.validate(mappings, profile, admin, popups)) {
                 return MESSAGES_VIEW;
             }
         }
@@ -346,6 +340,10 @@ public class ImportProfileController {
 
         if (start) {
             return String.format("redirect:/recipient/import/view.action?profileId=%d", profile.getId());
+        }
+
+        if (createNewAutoImport) {
+            return String.format("redirect:/auto-import/create.action?profileId=%d", profile.getId());
         }
 
         return String.format("redirect:/import-profile/%d/view.action", profile.getId());
@@ -392,15 +390,8 @@ public class ImportProfileController {
         return "import_wizard_profile_delete";
     }
 
-    @GetMapping("/{id:\\d+}/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@PathVariable("id") int id, Model model) {
-        ImportProfile profile = importProfileService.getImportProfileById(id);
-        MvcUtils.addDeleteAttrs(model, profile.getName(), "import.profile.delete", "import.profile.delete.question");
-        return DELETE_VIEW;
-    }
-
     @PostMapping("/{id:\\d+}/delete.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String delete(@PathVariable("id") int id, Admin admin, Popups popups) {
         ImportProfile importProfile = importProfileService.getImportProfileById(id);
 
@@ -421,10 +412,51 @@ public class ImportProfileController {
             writeUserActivityLog(admin, "delete import profile", getImportProfileDescription(importProfile));
         }
 
-        return "redirect:/import-profile/list.action";
+        return "redirect:/import-profile/list.action?restoreSort=true";
     }
 
-    protected AutoImportLight findDependentAutoImport(int profileId) {
+    @GetMapping(value = "/delete.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDelete(@RequestParam(required = false) Set<Integer> ids, Admin admin, Model model, Popups popups) {
+        validateSelectedIds(ids);
+
+        ServiceResult<List<ImportProfile>> result = importProfileService.getAllowedForDeletion(ids, admin);
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        List<String> names = result.getResult().stream()
+                .map(ImportProfile::getName)
+                .collect(Collectors.toList());
+
+        MvcUtils.addDeleteAttrs(model, names,
+                "import.profile.delete", "import.profile.delete.question",
+                "bulkAction.delete.import", "bulkAction.delete.import.question");
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @PermissionMapping("delete")
+    public String delete(@RequestParam(required = false) Set<Integer> ids, Admin admin, Popups popups) {
+        validateSelectedIds(ids);
+        ServiceResult<UserAction> result = importProfileService.delete(ids, admin);
+
+        popups.addPopups(result);
+        userActivityLogService.writeUserActivityLog(admin, result.getResult());
+
+        return "redirect:/import-profile/list.action?restoreSort=true";
+    }
+
+    private void validateSelectedIds(Set<Integer> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    protected AutoImportLight findDependentAutoImport(@SuppressWarnings("unused") int profileId) {
         return null;
     }
 
@@ -545,6 +577,6 @@ public class ImportProfileController {
     }
 
     private boolean isRedesignedUiUsageAllowed(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.IMPORT_PROFILE_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 }

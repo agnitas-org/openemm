@@ -1,8 +1,24 @@
 
+/*doc
+---
+title: Complexity Badges
+name: badges_08_complexity
+parent: badges_04_status
+---
+
+`.complexity.status` should always be combined with the following colors: `green`, `yellow`, `red`.
+
+```htmlexample
+<span class="status-badge complexity.status.green"></span>
+<span class="status-badge complexity.status.yellow"></span>
+<span class="status-badge complexity.status.red"></span>
+```
+*/
+
 $complexity-status-badges-defs: (
-        green:    (background: #0ACD70, icon: $fa-var-circle),
-        yellow:   (background: #F8CE39, icon: $fa-var-adjust),
-        red:      (background: #880010, icon: $fa-var-circle)
+        green:    (background: $stat-or-badge-lime,   icon: $fa-var-circle),
+        yellow:   (background: $stat-or-badge-orange, icon: $fa-var-adjust),
+        red:      (background: #880010,               icon: $fa-var-circle)
 );
 
 @mixin complexity-status-badge($state) {

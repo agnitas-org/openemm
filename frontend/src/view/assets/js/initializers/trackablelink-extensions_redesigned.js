@@ -1,7 +1,5 @@
 AGN.Lib.CoreInitializer.new('trackable-link-extensions', function($scope = $(document)) {
-  const InputTable = AGN.Lib.InputTable;
-
-  class TrackableLinkExtensionsTable extends InputTable {
+  class TrackableLinkExtensionsTable extends AGN.Lib.InputTable {
     constructor($container) {
       super($container);
     };
@@ -15,6 +13,15 @@ AGN.Lib.CoreInitializer.new('trackable-link-extensions', function($scope = $(doc
       `;
     }
 
+    get headerTemplate() {
+      return `
+        <tr>
+            <th>${t('defaults.name')}</th>
+            <th>${t('defaults.value')}</th>
+        </tr>
+      `;
+    }
+
     addActions() {
       super.addActions();
       AGN.Lib.Action.new({click: '[data-delete-all-extensions]'}, this.clean.bind(this), this.$container);
@@ -22,7 +29,7 @@ AGN.Lib.CoreInitializer.new('trackable-link-extensions', function($scope = $(doc
     }
 
     addDefaultExtensions() {
-      const $lastRow = this.$table.find('tr:last');
+      const $lastRow = this.$table.find('tbody tr:last');
       if (this.isEmptyRow$($lastRow)) {
         $lastRow.remove();
       }

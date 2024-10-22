@@ -10,6 +10,7 @@
 
 package com.agnitas.service.impl;
 
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -21,7 +22,6 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.company.service.ComCompanyService;
-import com.agnitas.emm.core.mailing.service.MaildropStatusService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
@@ -46,6 +46,6 @@ public abstract class ServiceLookupFactory {
 	abstract public ComCompanyService getBeanCompanyService();
 	abstract public AdminService getBeanAdminService();
 	abstract public MailingService getBeanMailingService();
-	abstract public MaildropStatusService getBeanMaildropStatusService();
+	abstract public MaildropService getBeanMaildropService();
     abstract public ServerStatusService getBeanServerStatusService();
 }

@@ -23,7 +23,7 @@ import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.userforms.UserformService;
+import com.agnitas.emm.core.userform.service.UserformService;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

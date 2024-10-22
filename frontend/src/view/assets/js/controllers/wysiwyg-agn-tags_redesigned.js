@@ -7,8 +7,6 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function () {
   const insertTagsHandlers = {};
   const selectTagsHandlers = {};
 
-  let createSelect;
-  let createTextInput;
   let $tagSelect;
 
   insertTagsHandlers["agnFULLVIEW"] = () => {
@@ -81,11 +79,15 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function () {
       attributes.forEach(function (attribute, index) {
         switch (attribute.type) {
           case 'SELECT':
-            $inputs.append(createSelect({index: index, name: attribute.name, options: attribute.options}));
+            $inputs.append(Template.text('agn-tag-select-attribute', {
+              index,
+              name: attribute.name,
+              options: attribute.options
+            }));
             break;
 
           case 'TEXT':
-            $inputs.append(createTextInput({index: index, name: attribute.name}));
+            $inputs.append(Template.text('agn-tag-text-attribute', {index, name: attribute.name}));
             break;
         }
       });
@@ -128,8 +130,6 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function () {
   }
 
   this.addDomInitializer('wysiwyg-agn-tags', function () {
-    createSelect = Template.prepare('agn-tag-select-attribute');
-    createTextInput = Template.prepare('agn-tag-text-attribute');
     $tagSelect = $('#agn-tag-name');
 
     this.config.forEach(function (tag) {

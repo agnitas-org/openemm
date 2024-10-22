@@ -94,7 +94,7 @@ AGN.Lib.Controller.new('side-menu', function() {
 
     if ($submenu.hasClass('open')) {
       const $link = $(this.event.target).closest('a');
-      if ($link.exists()) {
+      if ($link.exists() && !$link.is('[data-confirm]')) {
         AGN.Lib.Page.reload($link.attr('href'));
       }
     } else {

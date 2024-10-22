@@ -139,11 +139,9 @@ public class DevicesStatDataSet extends BIRTDataSet {
 					deviceStatistic.addAll(devicesStat);
 
 					//calculate Other row
-					if (selectInt(logger, "SELECT COUNT(device_id) FROM device_tbl WHERE class = ?", deviceClass.getName()) > devicesMax) {
-						String otherName = I18nString.getLocaleString("statistic.Other", language);
-						List<MailingDevicesStatRow> otherRows = calculateOtherDeviceRow(rowSum, totals, mailingId, deviceClass, otherName, categoryIndex, category, targets);
-						deviceStatistic.addAll(otherRows);
-					}
+                    String otherName = I18nString.getLocaleString("statistic.Other", language);
+                    List<MailingDevicesStatRow> otherRows = calculateOtherDeviceRow(rowSum, totals, mailingId, deviceClass, otherName, categoryIndex, category, targets);
+                    deviceStatistic.addAll(otherRows);
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-(function(){
+(() => {
 
   class Action {
     constructor(events, action, $scope) {
@@ -18,7 +18,7 @@
           self.trigger = trigger;
           self.el = $(this);
           self.data = data;
-          action();
+          action(self.el, self.event, self.data, self.trigger);
 
           const $target = $(self.event.target);
           if ($target.is("a") || $target.parent("a").length === 1) {

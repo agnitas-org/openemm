@@ -13,7 +13,7 @@ package org.agnitas.backend;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 /**
  * Keeps track of some customer relevant data

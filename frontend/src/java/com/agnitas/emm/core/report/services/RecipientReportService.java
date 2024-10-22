@@ -91,11 +91,11 @@ public interface RecipientReportService {
      */
     RecipientEntity getRecipientInfo(int recipientId, int companyId);
 
-    Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId);
+    Map<String, Integer> getRecipientStatusStat(int mailinglistId, int targetId, int companyId);
 
-    JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summary);
+    JSONArray getFilteredRecipientStatusesJson(Map<String, Integer> remarks, boolean summary);
 
-    byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) throws Exception;
+    byte[] getRecipientStatusesCSV(Admin admin, int mailingListId, int targetId) throws Exception;
 
     String getRecipientTxtReport(int recipientId, int companyId, Locale locale);
 }

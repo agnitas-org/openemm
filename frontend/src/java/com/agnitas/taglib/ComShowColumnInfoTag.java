@@ -37,7 +37,7 @@ import jakarta.servlet.jsp.tagext.TagSupport;
 public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 	private static final long serialVersionUID = -1235292192519826728L;
 	
-	private static final transient Logger logger = LogManager.getLogger(ComShowColumnInfoTag.class);
+	private static final Logger logger = LogManager.getLogger(ComShowColumnInfoTag.class);
 	
 	private BodyContent bodyContent = null;
 
@@ -145,9 +145,9 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 	}
 
 	@Override
-	public int doAfterBody() throws JspException {
+	public int doAfterBody() {
 		@SuppressWarnings("unchecked")
-		Iterator<ProfileField> profileFieldIterator = (Iterator<ProfileField>) pageContext.getAttribute("__" + iteratorID + "_data");
+		Iterator<ProfileField> profileFieldIterator = (Iterator<ProfileField>) pageContext.getAttribute("__" + iteratorID + "_data"); // suppress warning for this cast
 		try {
 			while (profileFieldIterator.hasNext()) {
 				ProfileField fieldMap = profileFieldIterator.next();

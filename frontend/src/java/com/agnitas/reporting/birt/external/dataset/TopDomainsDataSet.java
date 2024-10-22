@@ -703,7 +703,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-			for (@SuppressWarnings("unused") LightTarget ignored : targets) {
+            for (int i = 0; i < targets.size(); i++) {
 				totalSentEmails = mailtrackingDataAvailable ? getTotalSentEmails(tempTableID, targetGroupIndex) : -1;
 				updateRates(tempTableID, targetGroupIndex, totalSentEmails, CATEGORY_SENT_EMAILS, CATEGORY_SOFTBOUNCES, CATEGORY_HARDBOUNCES);
 				targetGroupIndex++;
@@ -716,7 +716,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-			for (@SuppressWarnings("unused") LightTarget ignored : targets) {
+            for (int i = 0; i < targets.size(); i++) {
 				totalClickers = getTotalClickers(tempTableID, targetGroupIndex);
 				updateRates(tempTableID, targetGroupIndex, totalClickers, CATEGORY_CLICKERS);
 				targetGroupIndex++;
@@ -729,7 +729,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-			for (@SuppressWarnings("unused") LightTarget ignored : targets) {
+            for (int i = 0; i < targets.size(); i++) {
 				totalOpeners = getTotalOpeners(tempTableID, targetGroupIndex);
 				updateRates(tempTableID, targetGroupIndex, totalOpeners, CATEGORY_OPENERS);
 				targetGroupIndex++;

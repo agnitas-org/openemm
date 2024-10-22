@@ -10,23 +10,37 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
-import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
+import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
+import com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm;
+import com.agnitas.emm.core.trackablelinks.form.TrackableLinksForm;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpServletRequest;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -53,32 +67,19 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
-import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
-import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
-import com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm;
-import com.agnitas.emm.core.trackablelinks.form.TrackableLinksForm;
-import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.exception.ClearLinkExtensionsException;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/mailing/{mailingId:\\d+}/trackablelink")
@@ -95,24 +96,28 @@ public class MailingTrackableLinkController implements XssCheckAware {
     private static final String EDIT_MESSAGE = "edit mailing links";
 
     private final ComMailingBaseService mailingBaseService;
+    private final MailingService mailingService;
     private final GridServiceWrapper gridService;
     private final ConfigService configService;
     private final LinkService linkService;
     private final MailingDao mailingDao;
     private final WebStorage webStorage;
     private final UserActivityLogService userActivityLogService;
-    private final ComEmmActionService actionService;
+    private final EmmActionService actionService;
     private final TrackableLinkService trackableLinkService;
     private final ExtendedConversionService conversionService;
     private final LinkcheckService linkcheckService;
+    private final MaildropService maildropService;
+    private final MailinglistApprovalService mailinglistApprovalService;
     private final ApplicationContext applicationContext;
 
     public MailingTrackableLinkController(UserActivityLogService userActivityLogService, TrackableLinkService trackableLinkService,
-                                          ExtendedConversionService conversionService, ComMailingBaseService mailingBaseService,
-                                          ComEmmActionService actionService, GridServiceWrapper gridService, ConfigService configService,
+                                          ExtendedConversionService conversionService, ComMailingBaseService mailingBaseService, MailingService mailingService,
+                                          EmmActionService actionService, GridServiceWrapper gridService, ConfigService configService,
                                           LinkService linkService, MailingDao mailingDao, WebStorage webStorage, LinkcheckService linkcheckService,
-                                          ApplicationContext applicationContext) {
+                                          MaildropService maildropService, MailinglistApprovalService mailinglistApprovalService, ApplicationContext applicationContext) {
         this.mailingBaseService = mailingBaseService;
+        this.mailingService = mailingService;
         this.gridService = gridService;
         this.configService = configService;
         this.linkService = linkService;
@@ -123,6 +128,8 @@ public class MailingTrackableLinkController implements XssCheckAware {
         this.trackableLinkService = trackableLinkService;
         this.conversionService = conversionService;
         this.linkcheckService = linkcheckService;
+        this.maildropService = maildropService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
         this.applicationContext = applicationContext;
     }
 
@@ -153,11 +160,11 @@ public class MailingTrackableLinkController implements XssCheckAware {
         model.addAttribute("SHOW_CREATE_SUBSTITUTE_LINK", configService.getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, companyId));
         model.addAttribute("isTrackingOnEveryPositionAvailable", trackableLinkService.isTrackingOnEveryPositionAvailable(companyId, mailingId));
         model.addAttribute("isAutoDeeptrackingEnabled", configService.isAutoDeeptracking(companyId));
-        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin, mailingId));
     }
 
-    private boolean isSettingsReadonly(Admin admin) {
-        return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY);
+    private boolean isSettingsReadonly(Admin admin, int mailingId) {
+        return mailingService.isSettingsReadonly(admin, mailingId);
     }
 
     private void addDefaultExtensionsModelAttr(Model model, int companyId) {
@@ -209,7 +216,12 @@ public class MailingTrackableLinkController implements XssCheckAware {
         model.addAttribute("isTemplate", mailing.isIsTemplate());
         model.addAttribute("mailingShortname", mailing.getShortname());
         model.addAttribute("gridTemplateId", gridService.getGridTemplateIdByMailingId(mailingId));
-        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, admin.getCompanyID()));
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
+        }
         if (mailingId > 0) {
             model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
             model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
@@ -236,7 +248,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @PostMapping("/bulkClearExtensions.action")
     public String bulkClearExtensions(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups) {
-        if (isSettingsReadonly(admin)) {
+        if (isSettingsReadonly(admin, mailingId)) {
             throw new UnsupportedOperationException();
         }
 
@@ -287,13 +299,14 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/activateTrackingLinksOnEveryPosition.action")
     public String activateTrackingLinksOnEveryPosition(@PathVariable int mailingId, TrackableLinksForm form,
                                                        Admin admin, Popups popups, HttpServletRequest req) {
-        if (isSettingsReadonly(admin)) {
+        if (isSettingsReadonly(admin, mailingId)) {
             throw new UnsupportedOperationException();
         }
 
         try {
-            mailingBaseService.activateTrackingLinksOnEveryPosition(admin,
-                    mailingDao.getMailing(mailingId, admin.getCompanyID()), getApplicationContext(req));
+            Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
+            mailingBaseService.activateTrackingLinksOnEveryPosition(mailing, getApplicationContext(req));
+            mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
         } catch (Exception e) {
             popups.alert(ERROR_CODE);
             return MESSAGES_VIEW;
@@ -304,7 +317,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @PostMapping("/saveAll.action")
     public String saveAll(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Popups popups) {
-        if (isSettingsReadonly(admin)) {
+        if (isSettingsReadonly(admin, mailingId)) {
             throw new UnsupportedOperationException();
         }
 
@@ -410,13 +423,13 @@ public class MailingTrackableLinkController implements XssCheckAware {
         model.addAttribute(NOT_FORM_ACTIONS_ATTR, actionService.getEmmNotFormActions(companyId, false));
         model.addAttribute("isUrlEditingAllowed", trackableLinkService.isUrlEditingAllowed(admin, mailingId));
         model.addAttribute("SHOW_CREATE_SUBSTITUTE_LINK", configService.getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, companyId));
-        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+        model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin, mailingId));
         addDefaultExtensionsModelAttr(model, companyId);
     }
 
     @PostMapping("/{linkId:\\d+}/save.action")
     public String save(@PathVariable int mailingId, @PathVariable int linkId, TrackableLinkForm form, Admin admin, Popups popups, HttpServletRequest req, RedirectAttributes redirectAttrs) throws TrackableLinkException {
-        if (isSettingsReadonly(admin)) {
+        if (isSettingsReadonly(admin, mailingId)) {
             throw new UnsupportedOperationException();
         }
 
@@ -425,7 +438,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
             popups.alert(ERROR_CODE);
             return MESSAGES_VIEW;
         }
-        if (StringUtils.isNotBlank(form.getUrl()) && !tryUpdateLinkUrl(linkId, form.getUrl(), admin)) {
+        if (StringUtils.isNotBlank(form.getUrl()) && !tryUpdateLinkUrl(link, form.getUrl(), admin)) {
             popups.alert("error.permissionDenied");
             return MESSAGES_VIEW;
         }
@@ -436,9 +449,9 @@ public class MailingTrackableLinkController implements XssCheckAware {
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
-    private boolean tryUpdateLinkUrl(int linkId, String newUrl, Admin admin) throws TrackableLinkException {
+    private boolean tryUpdateLinkUrl(final TrackableLink link, String newUrl, Admin admin) throws TrackableLinkException {
         try {
-            updateLinkUrl(linkId, newUrl, admin);
+            updateLinkUrl(link, newUrl, admin);
             return true;
         } catch (InsufficientPermissionException e) {
             return false;
@@ -448,14 +461,13 @@ public class MailingTrackableLinkController implements XssCheckAware {
     /**
      * Update link target including permission checks, ...
      *
-     * @param linkId id of the trackable link
+     * @param link trackable link
      * @param newUrl URL to be updated
      * @param admin  current admin
      * @throws InsufficientPermissionException if user does not have sufficient permissions to change link target
      * @throws TrackableLinkException          on errors updating link target
      */
-    private void updateLinkUrl(int linkId, String newUrl, Admin admin) throws InsufficientPermissionException, TrackableLinkException {
-        TrackableLink link = trackableLinkService.getTrackableLink(admin.getCompanyID(), linkId);
+    private void updateLinkUrl(final TrackableLink link, String newUrl, Admin admin) throws InsufficientPermissionException, TrackableLinkException {
         if (!newUrl.equals(link.getFullUrl())) {
             if (admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
                 trackableLinkService.updateLinkTarget(link, newUrl);

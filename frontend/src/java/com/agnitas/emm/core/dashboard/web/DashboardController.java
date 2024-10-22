@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
@@ -50,10 +52,12 @@ public class DashboardController implements XssCheckAware {
 
     private final AdminService adminService;
     private final DashboardService dashboardService;
+    private final ConfigService configService;
 
-    public DashboardController(AdminService adminService, DashboardService dashboardService) {
+    public DashboardController(AdminService adminService, DashboardService dashboardService, ConfigService configService) {
         this.adminService = adminService;
         this.dashboardService = dashboardService;
+        this.configService = configService;
     }
 
     @RequestMapping("/dashboard.action")
@@ -91,7 +95,7 @@ public class DashboardController implements XssCheckAware {
         JSONObject result;
 
         try {
-            result = dashboardService.getStatisticsInfo(mailingId, admin.getLocale(), admin.getCompanyID());
+            result = dashboardService.getStatisticsInfo(mailingId, admin.getLocale(), admin);
         } catch (Exception e) {
             logger.error("execute: ", e);
 
@@ -141,11 +145,13 @@ public class DashboardController implements XssCheckAware {
         model.addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimeFormat", admin.getTimeFormat().toPattern());
 
-        //other
-        model.addAttribute("firstDayOfWeek", Calendar.getInstance(locale).getFirstDayOfWeek() - 1);
         if (!admin.isRedesignedUiUsed()) {
+            //other
+            model.addAttribute("firstDayOfWeek", Calendar.getInstance(locale).getFirstDayOfWeek() - 1);
+
             model.addAttribute("monthlist", AgnUtils.getMonthList());
             model.addAttribute("yearlist", AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM));
         }
+        model.addAttribute("showALlCalendarEntries", configService.getBooleanValue(ConfigValue.DashboardCalendarShowALlEntries, companyId));
     }
 }

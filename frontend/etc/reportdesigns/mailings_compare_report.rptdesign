@@ -162,7 +162,7 @@ importPackage(Packages.org.springframework.web.context.support);
 var sc = reportContext.getHttpServletRequest().getSession().getServletContext();
 //ApplicationContext 
 spring = WebApplicationContextUtils.getWebApplicationContext(sc);
-var configService = spring.getBean("configService");
+var configService = spring.getBean("ConfigService");
 reportContext.setPersistentGlobalVariable("logo", configService.getValue(Packages.org.agnitas.emm.core.commons.util.ConfigValue.SystemUrl)  + "/layout/0/report_logo.png");]]></method>
     <method name="afterRender"><![CDATA[compareDataSet.dropTempTable(reportContext.getPersistentGlobalVariable("tempTableID"));]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>

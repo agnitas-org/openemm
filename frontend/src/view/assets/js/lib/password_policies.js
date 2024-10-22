@@ -1,12 +1,12 @@
-/*doc
----
-title: Password Policies
-name: password-policies
-category: Javascripts - Password Policies
----
-
-Password policies are rules for checking validity of new user / supervisor password.
-*/
+// /*doc
+// ---
+// title: Password Policies
+// name: password-policies
+// category: Javascripts - Password Policies
+// ---
+//
+// Password policies are rules for checking validity of new user / supervisor password.
+// */
 
 (function(){
 

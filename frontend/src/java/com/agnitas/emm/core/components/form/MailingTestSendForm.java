@@ -18,7 +18,7 @@ public class MailingTestSendForm {
     private String[] mailingTestRecipients = new String[] {};
     private TestRunOption testRunOption;
     private String targetName;
-    private boolean clearance; // GWUA-5738 approval via mailing link
+    private boolean requestApproval; // GWUA-5738 approval via mailing link
 
     public int getAdminTargetGroupID() {
         return adminTargetGroupID;
@@ -52,11 +52,11 @@ public class MailingTestSendForm {
         this.targetName = targetName;
     }
 
-    public boolean isClearance() {
-        return clearance;
+    public boolean isRequestApproval() {
+        return requestApproval;
     }
 
-    public void setClearance(boolean clearance) {
-        this.clearance = clearance;
+    public void setRequestApproval(boolean requestApproval) {
+        this.requestApproval = requestApproval;
     }
 }

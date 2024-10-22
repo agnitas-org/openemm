@@ -1,0 +1,7 @@
+<HelpBalloon>
+        <title><![CDATA[Link extensions:]]></title>
+        <content><![CDATA[You can use the "Link extensions" field to transfer additional parameters to a URL contained in the form. 
+This is useful if, for example, you are carrying out web or store tracking and do not want to check the links manually every time. You can add link extensions via the "Link 
+Add extensions" section by setting the desired extensions with name and value. With the "Add extension" button you can add a new line. If one of the parameters is to be deleted, 
+remove the corresponding line by clicking on the recycle bin symbol.]]></content>
+    </HelpBalloon>

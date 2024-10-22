@@ -1,4 +1,34 @@
 
+/*doc
+---
+title: Loaders
+name: loaders
+category: Components - Loaders
+---
+*/
+
+/*doc
+---
+title: Basic Example
+name: loaders_01_example
+parent: loaders
+---
+
+```htmlexample
+<div class="loader">
+  <i class="icon icon-spinner icon-pulse"></i>
+  <span>Loading</span>
+</div>
+```
+
+```htmlexample
+<div class="loader">
+  <i class="icon icon-sync icon-spin"></i>
+  <span>Loading</span>
+</div>
+```
+*/
+
 .loader {
   z-index: 1003;
 
@@ -22,6 +52,14 @@
       top: 8.5px;
       left: 50%;
       transform: translateX(-50%);
+    }
+
+    @include mobile {
+      @include size(30px);
+      font-size: $font-size-lg;
+      span {
+        display: none;
+      }
     }
   }
 }

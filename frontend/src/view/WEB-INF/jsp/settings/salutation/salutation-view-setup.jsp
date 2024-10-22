@@ -10,6 +10,8 @@
 <emm:CheckLogon/>
 <emm:Permission token="salutation.show"/>
 
+<c:url var="switchDesignUrl" value="/salutation/listRedesigned.action" scope="request" />
+
 <c:set var="isTabsMenuShown" 		value="false"                               scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&salutationID=${id}"                 scope="request" />
 <c:set var="agnTitleKey" 			value="settings.FormsOfAddress"             scope="request" />
@@ -37,7 +39,7 @@
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="settings.FormsOfAddress"/>
         <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/salutation/list.action"/>
+            <c:url value="/salutation/list.action?restoreSort=true"/>
         </c:set>
     </emm:instantiate>
 

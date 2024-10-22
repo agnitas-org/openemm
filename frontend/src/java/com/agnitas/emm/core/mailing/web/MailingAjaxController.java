@@ -19,6 +19,7 @@ import com.agnitas.emm.core.mailing.forms.SaveMailStatusSettingsForm;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.XssCheckAware;
 import net.sf.json.JSONArray;
@@ -30,12 +31,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -50,12 +54,14 @@ public class MailingAjaxController implements XssCheckAware {
     private final UserActivityLogService userActivityLogService;
     private final ComMailingBaseService mailingBaseService;
     private final ComTargetService targetService;
-
-    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService, ComMailingBaseService mailingBaseService, ComTargetService targetService) {
+    private final TrackableLinkService trackableLinkService;
+    
+    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService, ComMailingBaseService mailingBaseService, ComTargetService targetService, TrackableLinkService trackableLinkService) {
         this.mailingService = Objects.requireNonNull(mailingService, "Mailing service is null");
         this.userActivityLogService = userActivityLogService;
         this.mailingBaseService = mailingBaseService;
         this.targetService = targetService;
+        this.trackableLinkService = trackableLinkService;
     }
 
     @RequestMapping(value = "/listActionBasedForMailinglist.action", produces = "application/json")
@@ -183,5 +189,10 @@ public class MailingAjaxController implements XssCheckAware {
         config.setSplitId(targetService.getTargetListSplitId(form.getSplitBase(), form.getSplitPart(), isWmSplit));
         config.setConjunction(form.getTargetMode() != Mailing.TARGET_MODE_OR);
         return config;
+    }
+
+    @GetMapping(value = "/{mailingId:\\d+}/links.action", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody JSONObject getMailingLinks(@PathVariable int mailingId, Admin admin) {
+        return trackableLinkService.getMailingLinksJson(mailingId, admin.getCompanyID());
     }
 }

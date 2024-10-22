@@ -10,24 +10,20 @@
 
 package com.agnitas.emm.core.recipientsreport.dao;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 
 public interface RecipientsReportDao {
 
     List<DashboardRecipientReport> getReportsForDashboard(int companyId);
 
-    @Deprecated
-    void createReport(int companyId, RecipientsReport report, String fileContent) throws Exception;
-
-    void createNewReport(int companyId, RecipientsReport report, String fileContent) throws Exception;
+    void createNewReport(int companyId, RecipientsReport report, String fileContent);
 
     String getReportTextContent(int companyId, int reportId);
 
@@ -41,12 +37,9 @@ public interface RecipientsReportDao {
     
     boolean deleteReportsByCompany(int companyId);
 
-    @Deprecated
-	void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
-
 	void createNewSupplementalReport(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
 
 	byte[] getReportFileData(int companyId, int reportId) throws Exception;
     
-    RecipientsReport.RecipientReportType getReportType(int companyId, int reportId);
+    RecipientsReport.EntityType getReportType(int companyId, int reportId);
 }

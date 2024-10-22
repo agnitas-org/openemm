@@ -16,7 +16,7 @@ public class UpdatePasswordReminderJobWorker extends JobWorker { // GWUA-5746
 
     @Override
     public String runJob() throws Exception {
-        serviceLookupFactory.getBeanAdminService().warnAdminsAboutPasswordExpiration(getCompaniesConstrains());
+        serviceLookupFactory.getBeanAdminService().warnAdminsAboutPasswordExpiration(getCompaniesConstraints());
         return null;
     }
 }

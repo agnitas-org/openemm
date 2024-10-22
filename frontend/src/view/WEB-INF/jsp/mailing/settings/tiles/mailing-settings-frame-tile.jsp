@@ -205,7 +205,7 @@
                 <div class="modal-body">
                     <textarea id="{{= id }}" data-sync="\#{{= target}}"
                               data-action="count-textarea-chars"
-                              class="form-control js-editor{{- (typeof(type) == 'undefined') ? '' : '-' + type }}"></textarea>
+                              class="form-control js-editor{{- (typeof(type) == 'undefined') ? '' : '-' + type }}" ${not MAILING_EDITABLE or isSettingsReadonly ? 'readonly' : ''}></textarea>
                     <div class="modal-char-counter" data-char-counter-for="{{= id }}" style="display: block">
                         <span class="small status">&nbsp;</span>
                     </div>
@@ -228,7 +228,7 @@
                         <emm:ShowByPermission token="${permToken}">
                             <button type="button" class="btn btn-primary btn-large" data-sync-from="\#{{= id }}"
                                     data-sync-to="\#{{= target }}" data-dismiss="modal"
-                                    data-form-target='#mailingSettingsForm' ${not isSettingsReadonly ? 'data-form-submit-event' : 'disabled'} data-controls-group='save'>
+                                    data-form-target='#mailingSettingsForm' ${MAILING_EDITABLE and not isSettingsReadonly ? 'data-form-submit-event' : 'disabled'} data-controls-group='save'>
                                 <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.Save"/></span>
                             </button>

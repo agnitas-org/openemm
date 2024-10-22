@@ -3,74 +3,70 @@ AGN.Lib.Controller.new('recipient-list', function () {
   const Action = AGN.Lib.Action,
     Messages = AGN.Lib.Messages,
     Form = AGN.Lib.Form,
-    Modal = AGN.Lib.Modal,
     Storage = AGN.Lib.Storage;
 
   const NO_MAILINGLIST_VALUE = '-1';
   const QUERY_BUILDER_SELECTOR = '#targetgroup-querybuilder';
   const QUERY_BUILDER_FILTER_FIELDS = ['firstname', 'lastname', 'email', 'gender'];
 
-  let $filterQueryBuilderBlock;
   let $queryBuilder;
 
   let initialRules = {};
   let searchFieldsUpdatingRequired = false;
-  let maxSelectedColumns;
 
   Action.new({'qb:invalidrules': QUERY_BUILDER_SELECTOR}, function () {
     Messages.alert('querybuilder.errors.invalid_definition');
   });
 
   this.addDomInitializer('recipient-list', function () {
-    $filterQueryBuilderBlock = $('#filter-query-builder-block');
     $queryBuilder = $(QUERY_BUILDER_SELECTOR);
 
-    maxSelectedColumns = this.config.maxSelectedColumns;
     initialRules = $.extend({}, JSON.parse(this.config.initialRules));
-    Storage.restoreChosenFields($getAdvancedFilterToggle());
+    if (!this.config.forceShowAdvancedSearchTab) {
+      Storage.restoreChosenFields($getAdvancedFilterToggle());
+    }
 
-    // waits till query builder will be initialized
-    window.setTimeout(() => {
-      adjustAdvancedFilterBtnText();
-      adjustUIAccordingToFilterSearchState();
-      updateMailinglistDependentFieldsStates();
-    }, 0);
+    adjustUIAccordingToFilterSearchState();
+    updateMailinglistDependentFieldsStates();
 
-    $queryBuilder.on('change', () => {
-      $getTargetGroupSaveBtn().toggleClass('hidden', !containsNotEmptyRule());
-    });
+    $queryBuilder.on('afterClear.queryBuilder', () => updateTargetSaveBtnVisibility(true));
 
-    $queryBuilder.on('afterClear.queryBuilder', () => {
-      $getTargetGroupSaveBtn().toggleClass('hidden', true);
-    });
-
-    $queryBuilder.on('afterReset.queryBuilder afterDeleteGroup.queryBuilder afterDeleteRule.queryBuilder afterSetRules.queryBuilder afterUpdateRuleFilter.queryBuilder', () => {
-      $getTargetGroupSaveBtn().toggleClass('hidden', !containsNotEmptyRule());
-    });
+    $queryBuilder.on(
+      'change afterReset.queryBuilder afterDeleteGroup.queryBuilder afterDeleteRule.queryBuilder afterSetRules.queryBuilder afterUpdateRuleFilter.queryBuilder',
+      () => updateTargetSaveBtnVisibility()
+    );
   });
-
-  function $getTargetGroupSaveBtn() {
-    return $('#target-group-save-button');
-  }
 
   this.addAction({change: 'toggle-filter'}, function () {
     adjustUIAccordingToFilterSearchState();
     Storage.saveChosenFields(this.el);
   });
 
-  this.addAction({change: 'change-table-columns'}, function () {
-    const selectedColumns = this.el.val();
-    if (selectedColumns.length > maxSelectedColumns) {
-      Messages.warn('recipient.maxColumnsSelected');
-      selectedColumns.pop();
-      this.el.val(selectedColumns).trigger('change');
-    }
+  this.addAction({'table-column-manager:apply': 'save-selected-columns'}, function () {
+    const selectedFields = this.data.columns;
+
+    $.ajax({
+      type: 'POST',
+      url: AGN.url('/recipient/setSelectedFields.action'),
+      traditional: true,
+      data: {selectedFields}
+    }).done(resp => {
+      if (resp.success) {
+        AGN.Lib.WebStorage.extend('recipient-overview', {'fields': selectedFields});
+      }
+      AGN.Lib.JsonMessages(resp.popups);
+    });
   });
 
   function adjustUIAccordingToFilterSearchState() {
     const isAdvancedSearchEnabled = isAdvancedSearch();
     $('#basic-filters-block').toggleClass('hidden', isAdvancedSearchEnabled);
-    $('#advanced-filter-btn').toggleClass('hidden', !isAdvancedSearchEnabled);
+    $('#filter-query-builder-block').toggleClass('hidden', !isAdvancedSearchEnabled);
+    updateTargetSaveBtnVisibility();
+  }
+
+  function updateTargetSaveBtnVisibility(forceHide = false) {
+    $('#target-group-save-button').toggleClass('hidden', forceHide || !isAdvancedSearch() || !containsNotEmptyRule());
   }
 
   function isAdvancedSearch() {
@@ -81,13 +77,6 @@ AGN.Lib.Controller.new('recipient-list', function () {
     return $('#use-advanced-filter');
   }
 
-  this.addAction({click: 'advanced-filter'}, function () {
-    const $modal = Modal.fromTemplate('recipient-advanced-filter-modal', {showTargetSaveBtn: containsNotEmptyRule()});
-    $modal.on('modal:close', () => $queryBuilder.appendTo($filterQueryBuilderBlock));
-
-    $queryBuilder.appendTo($modal.find('.modal-body'));
-  });
-
   this.addAction({click: 'create-new-target'}, function () {
     getQbApi()?.clearErrors();
 
@@ -97,34 +86,11 @@ AGN.Lib.Controller.new('recipient-list', function () {
     }
   });
 
-  this.addAction({click: 'set-advanced-filter'}, function () {
-    if (validateQbRules(true)) {
-      Modal.getInstance(this.el).hide();
-      performSearch();
-    }
-  });
-
   function validateQbRules(skipEmpty = false) {
     const validationEvent = $.Event('qb:validation');
     $queryBuilder.trigger(validationEvent, {ignore_qb_validation: false, skip_empty: skipEmpty});
 
     return !validationEvent.isDefaultPrevented();
-  }
-
-  function adjustAdvancedFilterBtnText() {
-    const $btnTextLabel = $('#advanced-filter-btn').find('span');
-    const activeTextSuffix = ` (${t('defaults.active')})`;
-
-    $btnTextLabel.text($btnTextLabel.text().replace(activeTextSuffix, ''));
-    if (hasQueryBuilderRules()) {
-      $btnTextLabel.text($btnTextLabel.text() + activeTextSuffix);
-    }
-  }
-
-  function hasQueryBuilderRules() {
-    const avancedFilterRules = $queryBuilder.find('#queryBuilderRules').val();
-    const rules = JSON.parse(avancedFilterRules).rules;
-    return Array.isArray(rules) && rules.length > 0;
   }
 
   this.addAction({change: 'change-mailinglist-id'}, updateMailinglistDependentFieldsStates);
@@ -167,23 +133,20 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   this.addAction({click: 'search'}, function () {
-    performSearch();
-  });
-
-  function performSearch() {
     if (!isAdvancedSearch()) {
       updateQbRulesBasedOnBasicFields();
     }
     submitForm({ignore_qb_validation: false});
-  }
+  });
 
   function submitForm(options) {
     const form = getForm();
+    form.setActionOnce(AGN.url('/recipient/search.action'));
     form.submit('', _.merge({ignore_qb_validation: true, skip_empty: true}, form.validatorOptions, options));
   }
 
   function getForm() {
-    return Form.get($('#listForm'));
+    return Form.get($('#recipients-overview'));
   }
 
   function updateQbRulesBasedOnBasicFields() {
@@ -241,7 +204,7 @@ AGN.Lib.Controller.new('recipient-list', function () {
     if (api) {
       const qbRules = api.getRules({allow_invalid: true, skip_empty: true});
 
-      fieldNames.forEach(function (field) {
+      fieldNames.forEach(field=> {
         const rule = api.findRuleByField(qbRules, field, true);
         result[field] = rule?.value || '';
       });

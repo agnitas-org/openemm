@@ -33,7 +33,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.Company;
 import com.agnitas.beans.EmmLayoutBase;
-import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import com.agnitas.emm.responseheaders.common.UsedFor;
@@ -67,7 +67,7 @@ public class ShowImageServlet extends HttpServlet {
 	/** Serial version UID: */
 	private static final long serialVersionUID = -595094416663851734L;
 
-	protected ComMailingComponentDao componentDao;
+	protected MailingComponentDao componentDao;
 	protected ComDeviceService deviceService;
 	protected ImageCache imageCache;
 	protected CdnCache cdnCache;
@@ -83,7 +83,7 @@ public class ShowImageServlet extends HttpServlet {
 		this.imageCache = imageCache;
 	}
 
-	public void setComponentDao(ComMailingComponentDao componentDao) {
+	public void setComponentDao(MailingComponentDao componentDao) {
 		this.componentDao = componentDao;
 	}
 
@@ -572,9 +572,9 @@ public class ShowImageServlet extends HttpServlet {
 	/**
 	 * @return the componentDao
 	 */
-	private ComMailingComponentDao getComponentDao() {
+	private MailingComponentDao getComponentDao() {
 		if (componentDao == null) {
-			componentDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("MailingComponentDao", ComMailingComponentDao.class);
+			componentDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("MailingComponentDao", MailingComponentDao.class);
 		}
 		return componentDao;
 	}

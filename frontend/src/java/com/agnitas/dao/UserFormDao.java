@@ -11,7 +11,9 @@
 package com.agnitas.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 
 import org.agnitas.util.Tuple;
@@ -52,7 +54,15 @@ public interface UserFormDao {
      */
     boolean deleteUserForm(int formID, int companyID);
 
+    void markDeleted(int formId, int companyId);
+
+    void restore(Set<Integer> ids, int companyId);
+
+    List<Integer> getMarkedAsDeletedBefore(Date date, int companyId);
+
     boolean deleteUserFormByCompany(int companyID);
+
+	List<UserForm> overview(int companyID);
 
     /**
      * Load all user forms for company id.
@@ -86,4 +96,6 @@ public interface UserFormDao {
 	String getUserFormName(int formId, int companyId);
 
 	boolean existsUserForm(int companyId, int userFormId);
+
+    boolean isActive(int formId);
 }

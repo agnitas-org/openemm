@@ -31,7 +31,7 @@
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
                 <c:set target="${agnBreadcrumb}" property="textKey" value="mailing.archive"/>
-                <c:url var="campaignOverviewLink" value="/mailing/archive/list.action"/>
+                <c:url var="campaignOverviewLink" value="/mailing/archive/list.action?restoreSort=true"/>
                 <c:set target="${agnBreadcrumb}" property="url" value="${campaignOverviewLink}"/>
             </emm:instantiate>
 
@@ -50,7 +50,7 @@
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
                 <c:set target="${agnBreadcrumb}" property="textKey" value="mailing.archive"/>
-                <c:url var="campaignOverviewLink" value="/mailing/archive/list.action"/>
+                <c:url var="campaignOverviewLink" value="/mailing/archive/list.action?restoreSort=true"/>
                 <c:set target="${agnBreadcrumb}" property="url" value="${campaignOverviewLink}"/>
             </emm:instantiate>
 

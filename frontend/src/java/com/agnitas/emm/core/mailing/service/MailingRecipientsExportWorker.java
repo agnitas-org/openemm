@@ -16,6 +16,7 @@ import com.agnitas.messages.I18nString;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.service.GenericExportWorker;
 import org.agnitas.util.SqlPreparedStatementManager;
+import org.agnitas.web.MailingRecipientsAdditionalColumn;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -60,6 +61,7 @@ public class MailingRecipientsExportWorker extends GenericExportWorker {
     public GenericExportWorker call() throws Exception {
         try {
             List<String> csvheaders = new ArrayList<>(filter.getSelectedFields());
+            csvheaders.removeAll(MailingRecipientsAdditionalColumn.getColumns());
             csvheaders.remove("title");
 
             csvheaders.add(I18nString.getLocaleString("Title", locale));

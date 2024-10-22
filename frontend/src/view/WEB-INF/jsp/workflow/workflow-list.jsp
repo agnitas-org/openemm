@@ -92,6 +92,9 @@
                         <label class="label js-data-table-paginate" data-page-size="100" data-table-body=".js-data-table-body" data-web-storage="workflow-overview">
                             <span class="label-text">100</span>
                         </label>
+                        <label class="label js-data-table-paginate" data-page-size="200" data-table-body=".js-data-table-body" data-web-storage="workflow-overview">
+                            <span class="label-text">200</span>
+                        </label>
                     </li>
                 </ul>
             </li>

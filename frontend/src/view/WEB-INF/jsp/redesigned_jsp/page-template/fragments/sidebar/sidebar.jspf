@@ -14,8 +14,6 @@
     </ul>
 </div>
 
-<%@ include file="session-timer.jspf" %>
-
 <div id="switch-design-block" class="sidebar__block sidebar__block-item" data-action="display-tooltip">
     <div id="switch-design__toggle-block" class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" id="switch-to-classic-design" data-action="switch-to-classic-design" data-switch-url="${switchDesignUrl}" checked>
@@ -24,7 +22,6 @@
         <label for="switch-to-classic-design" class="text-truncate">
             <mvc:message code="redesign.switch.classic" />
         </label>
-        <span class="badge badge--beta">BETA</span>
     </div>
 </div>
 
@@ -48,6 +45,8 @@
     </div>
 </div>
 
+<%@ include file="session-timer.jspf" %>
+
 <div id="account-data-block" class="sidebar__block">
     <div data-action="display-tooltip">
         <c:set var="selfViewUrl" value="/user/self/view.action" />
@@ -68,7 +67,6 @@
                 <c:if test="${versionNumber ne null}">
                     <div class="version-container">
                         <span class="account-data__label">${versionNumber}</span>
-                        <span class="badge badge--beta">BETA</span>
                     </div>
                 </c:if>
             </div>

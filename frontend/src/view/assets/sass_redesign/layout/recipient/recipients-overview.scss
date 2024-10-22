@@ -1,0 +1,7 @@
+#recipients-overview {
+  &:has(#use-advanced-filter:checked) {
+    > .tile {
+      flex: 1;
+    }
+  }
+}

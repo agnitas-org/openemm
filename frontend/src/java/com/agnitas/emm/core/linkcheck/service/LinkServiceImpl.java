@@ -51,7 +51,7 @@ import com.agnitas.beans.Company;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.hashtag.HashTagContext;
@@ -132,7 +132,7 @@ public class LinkServiceImpl implements LinkService {
 
 	private ComCompanyDao companyDao;
 	
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	private ComMailingParameterDao mailingParameterDao;
 	
@@ -168,7 +168,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	

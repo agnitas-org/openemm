@@ -54,8 +54,7 @@ import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(TrackableLinkDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(TrackableLinkDaoImpl.class);
 	
 	private ConfigService configService;
 
@@ -167,16 +166,6 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			return links;
 		}
     }
-
-    /**
-     * Legacy for EMM-7037: To be removed in near future
-     */
-    private List<TrackableLink> getTrackableLinks(String sql, Object ... params) {
-		List<TrackableLink> links = select(logger, sql, new TrackableLink_RowMapper(), params);
-		links.forEach(link -> link.setProperties(getLinkProperties(link)));
-
-		return links;
-	}
 
     @Override
 	@DaoUpdateReturnValueCheck
@@ -315,8 +304,8 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		String sqlSetDeleted = "UPDATE rdir_url_tbl SET deleted = 1 " +
 				"WHERE company_id = ? AND mailing_id = ? AND from_mailing = 1";
 
-		if (ids.size() > 0) {
-			sqlSetDeleted += " AND url_id NOT IN (" + StringUtils.join(ids, ',') + ")";
+		if (!ids.isEmpty()) {
+			sqlSetDeleted += " AND " + makeBulkNotInClauseForInteger("url_id", ids);
 		}
 
 		int rows = update(logger, sqlSetDeleted, companyID, mailingID);
@@ -419,7 +408,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		return affectedRows > 0;
 	}
 
-	private class TrackableLink_RowMapper implements RowMapper<TrackableLink> {
+	private static class TrackableLink_RowMapper implements RowMapper<TrackableLink> {
 		@Override
 		public TrackableLink mapRow(ResultSet resultSet, int row) throws SQLException {
 			final TrackableLink trackableLink = new TrackableLinkImpl();
@@ -446,7 +435,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		}
 	}
 
-	private class TrackableLinkProperty_RowMapper implements RowMapper<LinkProperty> {
+	private static class TrackableLinkProperty_RowMapper implements RowMapper<LinkProperty> {
 		@Override
 		public LinkProperty mapRow(ResultSet resultSet, int row) throws SQLException {
 			PropertyType type;
@@ -604,7 +593,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 					distributeTrackableLink(comLink, update, create, existingLinkIds);
 				});
 		
-		updateTrackableLinks(companyId, mailingId, update, trackableLinkIdsInUse);
+		updateTrackableLinks(companyId, update, trackableLinkIdsInUse);
 		insertTrackableLinks(companyId, mailingId, create, trackableLinkIdsInUse);
 		
 		return trackableLinkIdsInUse;
@@ -619,7 +608,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		}
 	}
 
-	private void updateTrackableLinks(int companyId, int mailingId, List<TrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
+	private void updateTrackableLinks(int companyId, List<TrackableLink> trackableLinks, Set<Integer> trackableLinkIdsInUse) {
 		if (trackableLinks.isEmpty()) {
 			return;
 		}

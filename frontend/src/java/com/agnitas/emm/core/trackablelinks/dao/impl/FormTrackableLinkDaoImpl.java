@@ -32,8 +32,7 @@ import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImp
 
 public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackableLinkDao {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(FormTrackableLinkDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(FormTrackableLinkDaoImpl.class);
 
 	@Override
 	public boolean existsDummyFormLink(int companyId, int userFormId) {

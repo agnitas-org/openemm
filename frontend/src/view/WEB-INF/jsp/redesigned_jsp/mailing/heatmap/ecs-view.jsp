@@ -22,12 +22,12 @@
 <mvc:form cssClass="tiles-container" servletRelativeAction="/mailing/${mailing.id}/heatmap/view.action" data-form="resource" modelAttribute="form">
     <div class="tile">
         <div class="tile-header flex-wrap border-bottom">
-            <h1 class="tile-title"><mvc:message code="ecs.Heatmap" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="ecs.Heatmap" /></h1>
 
             <div class="tile-controls">
                 <c:if test="${form.recipientId > 0}">
                     <c:url var="exportUrl" value="/mailing/${mailing.id}/heatmap/export.action"/>
-                    <a href="#" class="btn btn-icon-sm btn-inverse" data-tooltip="<mvc:message code='export.message.pdf'/>"
+                    <a href="#" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code='export.message.pdf'/>"
                        data-prevent-load data-form-url="${exportUrl}" data-form-submit-static>
                         <i class="icon icon-file-pdf"></i>
                     </a>
@@ -84,7 +84,7 @@
                     <div class="d-flex gap-2 flex-grow-1">
                         <c:forEach var="color" items="${rangeColors}" varStatus="rowCounter">
                             <div class="d-flex align-items-center gap-1">
-                                <span class="color-badge" style="background:${color.color};"></span>
+                                <span class="square-badge" style="background:${color.color};"></span>
                                 <span><mvc:message code="Heatmap.max"/>&nbsp;${color.rangeEnd}%</span>
                             </div>
                         </c:forEach>
@@ -103,7 +103,7 @@
                             <c:param name="deviceType" value="${form.deviceType}"/>
                         </c:url>
 
-                        <iframe src="${heatmapURL}" class="mailing-preview-frame js-simple-iframe"
+                        <iframe src="${heatmapURL}" class="default-iframe js-simple-iframe"
                                 data-height-extra="20" data-max-width="${previewWidth}" style="width: ${previewWidth}px">
                         </iframe>
                     </div>

@@ -151,6 +151,11 @@
 			<classpath refid="build.classpath" />
 			<classpath refid="build.containerPath" />
 			<include name="com/agnitas/reporting/**" />
+			<include name="com/agnitas/emm/core/service/**/RecipientFieldsCache*" />
+			<include name="com/agnitas/emm/core/dao/**/RecipientFieldDao*" />
+			<include name="com/agnitas/emm/core/dao/**/RecipientProfileHistory*" />
+			<include name="com/agnitas/dao/**/ProfileFieldDao*" />
+			<include name="com/agnitas/emm/core/recipient/service/**/RecipientProfileHistoryService*" />
 		</javac>
 	</target>
 
@@ -411,7 +416,7 @@
 		
 		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml">
 			<!-- Springframework insert -->
-			<insert path="/:web-app/:display-name[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='display-name'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- Springframework -->
 	<context-param>
@@ -422,12 +427,12 @@
 			</insert>
 
 			<!-- See https://bugs.eclipse.org/bugs/show_bug.cgi?id=538142 -->
-			<replace path="/:web-app/:context-param[:param-name='BIRT_VIEWER_DOCUMENT_FOLDER']/:param-value">
-				<![CDATA[<param-value>${birt.viewer.working.path}/WEB-INF/documents</param-value>]]>
+			<replace path="/*[local-name()='web-app']/*[local-name()='context-param'][*[local-name()='param-name']/text()='BIRT_VIEWER_DOCUMENT_FOLDER']/*[local-name()='param-value']/text()">
+				<![CDATA[${birt.viewer.working.path}/WEB-INF/documents]]>
 			</replace>
 
 			<!-- See https://bugs.eclipse.org/bugs/show_bug.cgi?id=538142 -->
-			<insert path="/:web-app/:context-param[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='context-param'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- See https://bugs.eclipse.org/bugs/show_bug.cgi?id=538142 -->
 	<filter>
@@ -445,10 +450,10 @@
 				]]>
 			</insert>
 
-			<insert path="/:web-app/:display-name[last()]" position="after" xml="&#10;&#10;&#09;&lt;!-- *.properties --&gt;&#10;&#09;" />
+			<insert path="/*[local-name()='web-app']/*[local-name()='display-name'][last()]" position="after" xml="&#10;&#10;&#09;&lt;!-- *.properties --&gt;&#10;&#09;" />
 
 			<!-- SecurityInterceptor insert -->
-			<insert path="/:web-app/:context-param[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='context-param'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- SecurityInterceptor -->
 	<filter>
@@ -463,7 +468,7 @@
 			</insert>
 			
 			<!-- Language filter insert -->
-			<insert path="/:web-app/:context-param[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='context-param'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- Language filter -->
 	<filter>
@@ -478,7 +483,7 @@
 			</insert>
 			
 			<!-- Viewer Auto Reports Listener insert -->
-			<insert path="/:web-app/:filter-mapping[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='filter-mapping'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- Viewer Auto Reports Listener -->
 	<listener>
@@ -487,7 +492,7 @@
 				]]>
 			</insert>
 
-			<insert path="/:web-app/:listener[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='listener'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- Birt Messages Listener -->
 	<listener>
@@ -496,7 +501,7 @@
 				]]>
 			</insert>
 
-			<insert path="/:web-app/:servlet-mapping[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='servlet-mapping'][last()]" position="after">
 				<![CDATA[<servlet>
 		<servlet-name>DashboardInfo</servlet-name>
 		<servlet-class>com.agnitas.reporting.birt.external.web.ajax.DashboardInfo</servlet-class>
@@ -508,7 +513,7 @@
 				]]>
 			</insert>
 
-			<insert path="/:web-app/:jsp-config[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='jsp-config'][last()]" position="after">
 				<![CDATA[&#09;
 	<!-- Welcomepages -->
 	<welcome-file-list>
@@ -516,7 +521,7 @@
 	</welcome-file-list>]]>
 			</insert>
 
-			<insert path="/:web-app/:jsp-config[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='jsp-config'][last()]" position="after">
 				 <![CDATA[&#09;
 	<security-constraint>
 		<web-resource-collection>
@@ -653,10 +658,9 @@
 	<target name="applicationContext" depends="deploy">
 		<echo message="rewriting applicationContext for statistics" />
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
-		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext.xml" preserveType="true">
-			<!-- Remove beans not wanted/needed in statistics -->
-			<!-- Nothing to remove applicationContext.action.xml is not loaded for birt application-->
-		</xmltask>
+		<copy file="${emmSourcePath}/view/WEB-INF/applicationContext.xml" tofile="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
+		<!-- Remove beans not wanted/needed in statistics -->
+		<!-- Nothing to remove applicationContext.action.xml is not loaded for birt application-->
 		<echo message="...applicationContext.xml done" />
 	</target>
 

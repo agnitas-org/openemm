@@ -1,8 +1,29 @@
 
+/*doc
+---
+title: Default badges
+name: badges_05_default-status
+parent: badges_04_status
+---
+
+`.status` should always be combined with the default statuses, e.g. `.status.success`, `.status.warning`, `.status.error`.
+
+These can exist in text elements or standalone and denote the status of a mailing.
+
+```htmlexample
+<span class="status-badge status.success"></span>
+<span class="status-badge status.warning"></span>
+<span class="status-badge status.error"></span>
+```
+
+*/
+
 $default-status-badges-defs: (
-  success:        (background: $stat-or-badge-dark-green, icon: $fa-var-check),
-  error:          (background: $stat-or-badge-red,        icon: $fa-var-times),
-  warning:        (background: $yellow,                   icon: $fa-var-times),
+  success:        (background: $stat-or-badge-dark-green,     icon: $fa-var-check),
+  error:          (background: $stat-or-badge-red,            icon: $fa-var-times),
+  warning:        (background: $yellow,                       icon: $fa-var-times),
+  comment:        (background: $stat-light-blue,              icon: $fa-var-comment),
+  push:           (background: $stat-or-badge-violet-darken,  icon: $fa-var-bell),
 );
 
 @mixin default-status-badge($state) {

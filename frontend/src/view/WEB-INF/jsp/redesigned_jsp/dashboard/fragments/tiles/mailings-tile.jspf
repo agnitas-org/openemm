@@ -2,18 +2,18 @@
 <script id="dashboard-tile-mailings" type="text/x-mustache-template">
     <div class="tile draggable-tile" id="dashboard-mailings">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
         </div>
         <div class="tile-body grid js-scrollable" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
-            <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
-                <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
-                <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
-                    <emm:ShowByPermission token="stats.mailing">
-                        <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
-                    </emm:ShowByPermission>
-                </c:if>
-                <div class="col">
-                    <a href="${mailingLink}">
+            <c:choose>
+                <c:when test="${fn:length(mailinglist.list) gt 0}">
+                    <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
+                        <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                        <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
+                            <emm:ShowByPermission token="stats.mailing">
+                                <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
+                            </emm:ShowByPermission>
+                        </c:if>
                         <c:choose>
                             <c:when test="${mailing.isOnlyPostType}">
                                 <c:url var="previewUrl" value="assets/core/images/facelift/post_thumbnail.jpg"/>
@@ -28,27 +28,52 @@
                                 <c:url var="previewUrl" value="assets/core/images/facelift/no_preview.svg"/>
                             </c:otherwise>
                         </c:choose>
-                        <div class="card mailing-card">
-                            <img src="${previewUrl}" class="mailing-preview-card-image" />
+
+                        <a href="${mailingLink}" class="card mailing-card" data-mailing-id="${mailing.mailingid}">
+
+                            <img src="${previewUrl}" class="mailing-preview-card-image"/>
+
                             <div class="card-body">
-                                <strong class="card-title">
-                                    <c:set var="mailingWorkStatus">
-                                        <c:if test="${mailing.workstatus ne null}">
-                                            <mvc:message code="${mailing.workstatus}"/>
-                                        </c:if>
-                                    </c:set>
-                                    <span class="status-badge ${mailing.workstatus} small" data-tooltip="${mailingWorkStatus}"></span>
-                                    <span class="d-inline-block text-truncate">${mailing.shortname}</span>
-                                </strong>
+                                <div class="card-title">
+                                    <div class="card-title--name">
+                                        <c:set var="mailingWorkStatus">
+                                            <c:if test="${mailing.workstatus ne null}">
+                                                <mvc:message code="${mailing.workstatus}"/>
+                                            </c:if>
+                                        </c:set>
+                                        <span class="status-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
+                                        <span class="d-inline-block text-truncate">${mailing.shortname}</span>
+                                    </div>
+                                    <div class="card-title--buttons">
+                                        <emm:ShowByPermission token="mailing.change">
+                                            <emm:HideByPermission token="mailing.content.readonly">
+                                                <button class="icon-btn" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                    <i class="icon icon-copy text-primary"></i>
+                                                </button>
+                                            </emm:HideByPermission>
+                                        </emm:ShowByPermission>
+                                        <emm:ShowByPermission token="mailing.delete">
+                                            <button class="icon-btn" data-action="delete-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingDelete"/>">
+                                                <i class="icon icon-trash-alt text-danger"></i>
+                                            </button>
+                                        </emm:ShowByPermission>
+                                    </div>
+                                </div>
                                 <div class="card-text">
                                     <i class="icon icon-list" data-tooltip="<mvc:message code='birt.mailinglist'/>"></i>
                                     <span class="d-inline-block text-truncate">${mailing.mailinglist}</span>
                                 </div>
                             </div>
-                        </div>
-                    </a>
-                </div>
-            </c:forEach>
+                        </a>
+                    </c:forEach>
+                </c:when>
+                <c:otherwise>
+                    <div class="notification-simple">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="noResultsFound" /></span>
+                    </div>
+                </c:otherwise>
+            </c:choose>
         </div>
         {{= overlay }}
     </div>

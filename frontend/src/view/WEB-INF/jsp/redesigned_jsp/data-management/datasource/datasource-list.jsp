@@ -1,22 +1,20 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page import="com.agnitas.emm.core.datasource.enums.DataSourceType" %>
+<%@ page import="org.agnitas.dao.SourceGroupType" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="datasources" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.datasource.bean.DataSource>"--%>
+<%--@elvariable id="datasources" type="net.sf.json.JSONArray"--%>
 <%--@elvariable id="datasourceForm" type="com.agnitas.emm.core.datasource.form.DatasourceForm"--%>
 
-<mvc:message var="datasourceIdMsg" code="recipient.DatasourceId"/>
-<mvc:message var="descriptionMsg" code="Description"/>
+<mvc:message var="datasourceIdMsg" code="recipient.DatasourceId" />
+<mvc:message var="descriptionMsg"  code="Description" />
+<mvc:message var="timestampMsg"    code="recipient.Timestamp" />
+<mvc:message var="typeMsg"         code="default.Type" />
 
-<c:forEach var="datasource" items="${datasources}">
-    <c:url var="viewLink" value="/recipient/list.action?dataSourceId=${datasource['id']}"/>
-    <c:set target="${datasource}" property="show" value="${viewLink}"/>
-</c:forEach>
-
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "datasource-overview": {
@@ -25,15 +23,20 @@
         }
     </script>
     
-    <div id="table-tile" class="tile js-data-table" data-table="datasource-id-overview" data-editable-tile="main">
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
-        </div>
+    <div id="table-tile" class="tile" data-editable-tile="main">
         <div class="tile-body d-flex flex-column gap-3">
             <div class="notification-simple notification-simple--info">
                 <p><mvc:message code="recipient.datasource.info"/></p>
             </div>
-            <div class="js-data-table-body" data-web-storage="datasource-overview" style="height: 100%;">
+            <div class="table-wrapper" data-web-storage="datasource-overview" data-js-table="datasource-id-overview">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+
                 <script id="datasource-id-overview" type="application/json">
                     {
                         "columns": [
@@ -51,9 +54,25 @@
                                 "cellStyle": {"user-select": "text"},
                                 "editable": false,
                                 "cellRenderer": "NotEscapedStringCellRenderer"
+                            },
+                            {
+                                "field": "type",
+                                "headerName": "${typeMsg}",
+                                "editable": false,
+                                "suppressSizeToFit": true,
+                                "cellRenderer": "MustacheTemplateCellRender",
+                                "cellRendererParams": {"templateName": "datasource-type"}
+                            },
+                            {
+                                "headerName": "${timestampMsg}",
+                                "editable": false,
+                                "field": "timestamp",
+                                "type": "dateColumn",
+                                "suppressSizeToFit": true
                             }
                         ],
-                        "data": ${datasources}
+                        "data": ${datasources},
+                        "options": {"viewLinkTemplate": "datasource-view-link"}
                     }
                 </script>
             </div>
@@ -62,11 +81,12 @@
     <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">
@@ -79,7 +99,47 @@
                     <label class="form-label" for="description-filter">${descriptionMsg}</label>
                     <input type="text" id="description-filter" class="form-control" placeholder="${descriptionMsg}"/>
                 </div>
+                <div class="col-12" data-date-range>
+                    <label class="form-label" for="timestamp-from-filter">${timestampMsg}</label>
+                    <div class="date-picker-container mb-1">
+                        <input type="text" id="timestamp-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="timestamp-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="type-filter" class="form-label">${typeMsg}</label>
+                    <select id="type-filter" class="form-control">
+                        <option value=""><mvc:message code="default.All"/></option>
+                        <c:forEach var="type" items="${DataSourceType.values()}">
+                            <option value="${type}"><mvc:message code="${type.messageKey}" /></option>
+                        </c:forEach>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script id="datasource-type" type="text/x-mustache-template">
+    <c:forEach var="type" items="${DataSourceType.values()}">
+        {{ if ('${type}' === value) { }}
+            <span class="text-truncate-table"><mvc:message code="${type.messageKey}" /></span>
+        {{ } }}
+    </c:forEach>
+</script>
+
+<script id="datasource-view-link" type="text/x-mustache-template">
+   {{ if (sourceGroupType === '${SourceGroupType.SoapWebservices}') { }}
+      {{ if (extraData) { }}
+        /administration/wsmanager/user/{{- extraData }}/view.action
+      {{ } else { }}
+        /administration/wsmanager/usersRedesigned.action
+      {{ } }}
+   {{ } else if (sourceGroupType === '${SourceGroupType.AutoinsertForms}') { }}
+      /webform/list.action
+   {{ } else { }}
+      /recipient/list.action?dataSourceId={{- id }}
+   {{ } }}
+</script>

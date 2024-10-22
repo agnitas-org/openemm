@@ -72,7 +72,8 @@ public final class EmmActionOperationErrors {
 		/** Access to different company denied. */
 		ACCESS_TO_COMPANY_DENIED,
 		
-
+		/** Missing UID. */
+		MISSING_UID,
 
 		// ------------------------------------------------------------------------------------------------------- Subscriber related errors
 		/** Invalid customer ID. */

@@ -10,13 +10,12 @@
 
 package com.agnitas.web.mvc;
 
-import java.util.Map;
-
-import com.agnitas.exception.DetailedRequestErrorException;
-import com.agnitas.exception.RequestErrorException;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import com.agnitas.exception.DetailedRequestErrorException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.exception.NoPreviewImageException;
 import org.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -26,12 +25,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
 
-import com.agnitas.web.exception.NoPreviewImageException;
+import java.util.Map;
+
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {
-
-    private final String MESSAGES_VIEW = "messages";
 
     @ExceptionHandler(HttpStatusCodeException.class)
     public ResponseEntity<?> onHttpStatusCodeException(HttpStatusCodeException exception) {
@@ -68,6 +67,12 @@ public class ControllerExceptionHandler {
     public String onRequestErrorException(RequestErrorException e, Popups popups) {
         e.getErrors().forEach(popups::alert);
         e.getFieldsErrors().forEach(popups::fieldError);
+        return MESSAGES_VIEW;
+    }
+
+    @ExceptionHandler(UnsupportedOperationException.class)
+    public String onUnsupportedOperationException(Popups popups) {
+        popups.alert("Error");
         return MESSAGES_VIEW;
     }
 

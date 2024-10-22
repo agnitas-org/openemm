@@ -9,6 +9,7 @@
     background-color: transparent;
     border: none;
     height: unset;
+    position: relative;
 
     .ui-slider-handle {
       @include border(50%);
@@ -16,9 +17,10 @@
       border: 3px solid transparent !important;
       top: 0;
       margin-left: -4px;
-      height: 8px;
-      width: 8px;
+      @include size(8px);
       outline: none !important;
+      position: absolute;
+      cursor: pointer;
     }
   }
 

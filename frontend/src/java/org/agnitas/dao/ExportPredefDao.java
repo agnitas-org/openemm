@@ -10,10 +10,11 @@
 
 package org.agnitas.dao;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.agnitas.beans.ExportPredef;
+
+import com.agnitas.beans.Admin;
 
 public interface ExportPredefDao {
 
@@ -73,49 +74,28 @@ public interface ExportPredefDao {
     /**
      * Loads all export definitions of certain company.
      *
-     * @param companyId
-     *                The id of the company for export definitions.
+     * @param companyId id of the company for export definitions.
      * @return  List of ExportPredef or empty list.
      */
-    List<ExportPredef> getAllByCompany( int companyId);
+    List<ExportPredef> getAllExports(int companyId);
 
     List<Integer> findTargetDependentExportProfiles(int targetGroupId, int companyId);
 
     /**
      * Loads all export definitions of certain company (except the entries using disabled mailing lists only).
      *
-     * @param companyId
-     *                The id of the company for export definitions.
-     * @param disabledMailingListIds
-     *                The list of ids of disabled mailing lists.
-     * @param targetId
-     *                The target id.
+     * @param admin emm user to check ALML.
      * @return  List of ExportPredef or empty list.
      */
-    List<ExportPredef> getAllByCompany(int companyId, Collection<Integer> disabledMailingListIds,
-            int targetId);
-
-    /**
-     * Loads ids of all export definitions of certain company.
-     *
-     * @param companyId
-     *                The id of the company for export definitions.
-     * @return  List of ids or empty list.
-     */
-    List<Integer> getAllIdsByCompany(int companyId);
+    List<ExportPredef> getAllExports(Admin admin);
 
     /**
      * Loads ids of all export definitions of certain company (except the entries using disabled mailing lists only).
      *
-     * @param companyId
-     *                The id of the company for export definitions.
-     * @param disabledMailingListIds
-     *                The list of ids of disabled mailing lists.
-     * @param targetId
-     *                The target id.
+     * @param admin emm user to check ALML.
      * @return  List of ids or empty list.
      */
-	List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds, int targetId);
+	List<Integer> getAllExportIds(Admin admin);
 
 	List<Integer> getExportsContainingProfileField(int companyID, String profileFieldName);
 }

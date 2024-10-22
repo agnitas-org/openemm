@@ -17,6 +17,9 @@ import org.agnitas.web.forms.PaginationForm;
 
 import java.util.List;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class AutoImportOverviewFilter extends PaginationForm {
 
     private String name;
@@ -81,5 +84,10 @@ public class AutoImportOverviewFilter extends PaginationForm {
 
     public void setBadges(List<AutoImportBadge> badges) {
         this.badges = badges;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || isNotBlank(description) || lastStartDate.isPresent() || isNotEmpty(types)
+                || isNotEmpty(badges) || success != null || active != null;
     }
 }

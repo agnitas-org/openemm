@@ -40,7 +40,7 @@
   padding: 3px;
   color: var(--label-color);
   &:hover {
-    background-color: rgba(0, 113, 185, 0.3);
+    color: $primary;
   }
 }
 
@@ -71,4 +71,29 @@
 
 [data-arrow="left"] {
   left: 0;
+}
+
+.minimap-collapse {
+  color: var(--label-color);
+  position: absolute;
+  top: -4px;
+  right: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  z-index: 49;
+
+  &:before {
+    content: "\2012";
+  }
+  
+  &:hover {
+    color: $primary;
+  }
+}
+
+#collapsed-navigator {
+  position: absolute;
+  font-size: 10px;
+  top: 25px;
+  right: 25px;
 }

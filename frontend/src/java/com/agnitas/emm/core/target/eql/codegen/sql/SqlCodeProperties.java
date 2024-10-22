@@ -50,5 +50,11 @@ public interface SqlCodeProperties {
 	 * @see #isUsingReferenceTables()
 	 */
 	boolean isUsingSubselects();
-	
+
+	/**
+	 * Returns <code>true</code> if the generated code uses date arithmetics.
+	 *
+	 * @return <code>true</code> if generated code uses date arithmetics.
+	 */
+	boolean isUsingDateArithmetics();
 }

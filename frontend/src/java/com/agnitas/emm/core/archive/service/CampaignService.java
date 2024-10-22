@@ -12,12 +12,14 @@ package com.agnitas.emm.core.archive.service;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
-
-import java.util.List;
-
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.web.forms.PaginationForm;
+
+import java.util.List;
+import java.util.Set;
 
 public interface CampaignService {
     PaginatedListImpl<Campaign> getOverview(Admin admin, PaginationForm form);
@@ -32,9 +34,13 @@ public interface CampaignService {
 
     boolean delete(Campaign campaign);
 
+    ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
+
     boolean isContainMailings(int campaignId, Admin admin);
 
     boolean isDefinedForAutoOptimization(int campaignId, Admin admin);
 
     boolean copySampleCampaigns(int newCompanyId, int fromCompanyId);
+
+    ServiceResult<List<Campaign>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
 }

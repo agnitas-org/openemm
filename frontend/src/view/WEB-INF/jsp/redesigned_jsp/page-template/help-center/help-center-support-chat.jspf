@@ -21,7 +21,7 @@
 
     <div class="chat-footer">
         <input id="support-message" type="text" name="content" class="form-control form-control--lg" data-controls-group="sendChatMsg">
-        <button type="button" class="btn btn-icon-lg btn-primary" data-form-submit-event data-controls-group="sendChatMsg">
+        <button type="button" class="btn btn-icon btn-icon--lg btn-primary" data-form-submit-event data-controls-group="sendChatMsg">
             <i class="icon icon-paper-plane"></i>
         </button>
     </div>

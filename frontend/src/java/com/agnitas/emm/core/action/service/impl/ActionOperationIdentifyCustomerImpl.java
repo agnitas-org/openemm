@@ -41,7 +41,6 @@ import jakarta.servlet.http.HttpSession;
 
 public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ActionOperationIdentifyCustomerImpl.class);
 
 	private ComCompanyDao companyDao;
@@ -64,7 +63,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 		String keyVal = null;
 		String passVal = null;
 		@SuppressWarnings("unchecked")
-		CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters"));
+		CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters")); // suppress warning for this cast
         aCust.setCompanyID(companyID);
         
         if (configService.getBooleanValue(ConfigValue.UseRecipientFieldService, companyID)) {
@@ -102,7 +101,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
                     }
                     HttpSession session = ((HttpServletRequest)params.get("_request")).getSession();
                     @SuppressWarnings("unchecked")
-					Map<String, Object> sessPar = (Map<String, Object>) session.getAttribute("agnFormParams");
+					Map<String, Object> sessPar = (Map<String, Object>) session.getAttribute("agnFormParams"); // suppress warning for this cast
 					if (sessPar == null) {
 						sessPar = new HashMap<>();
 					}

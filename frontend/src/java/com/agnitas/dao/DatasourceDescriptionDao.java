@@ -30,5 +30,7 @@ public interface DatasourceDescriptionDao {
 
     List<DataSource> getDataSources(final int companyId);
 
+    DatasourceDescription getDatasourceDescription(int datasourceId);
+
     DatasourceDescription getDatasourceDescription(int datasourceId, int companyId);
 }

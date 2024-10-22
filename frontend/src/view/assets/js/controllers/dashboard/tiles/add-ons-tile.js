@@ -1,6 +1,7 @@
-class AddOnsTile extends DraggableTile {
+(() => {
 
-  get id() {
-    return DraggableTile.def.TILE.ID.ADD_ONS;
+  class AddOnsTile extends AGN.Lib.Dashboard.DraggableTile {
+    static ID = 'add-ons';
   }
-}
+  AGN.Lib.Dashboard.AddOnsTile = AddOnsTile;
+})();

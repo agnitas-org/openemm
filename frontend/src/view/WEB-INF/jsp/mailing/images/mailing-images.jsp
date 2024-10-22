@@ -48,7 +48,19 @@
     </div>
 </div>
 
-<mvc:form servletRelativeAction="/mailing/${mailingId}/images/list.action" class="form-vertical" data-form="resource" method="GET">
+<mvc:form servletRelativeAction="/mailing/${mailingId}/images/list.action" class="form-vertical" data-form="resource" method="GET" modelAttribute="filter">
+    <script type="application/json" data-initializer="web-storage-persist">
+        {
+            "mailing-images-overview": {
+                "rows-count": ${filter.numberOfRows}
+            }
+        }
+    </script>
+
+    <mvc:hidden path="page"/>
+    <mvc:hidden path="sort"/>
+    <mvc:hidden path="dir"/>
+
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
@@ -56,6 +68,42 @@
                 <mvc:message code="mailing.Graphics_Components"/>
             </h2>
             <ul class="tile-header-actions">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="icon icon-eye"></i>
+                        <span class="text"><mvc:message code="button.Show"/></span>
+                        <i class="icon icon-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                        <li>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="20"/>
+                                <span class="label-text">20</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="50"/>
+                                <span class="label-text">50</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="100"/>
+                                <span class="label-text">100</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
+                            </label>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <p>
+                                <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
+                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
+                                </button>
+                            </p>
+                        </li>
+                    </ul>
+                </li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-pencil"></i>
@@ -84,7 +132,8 @@
                                id="image"
                                name="images"
                                requestURI="/mailing/${mailingId}/images/list.action"
-                               pagesize="${form.numberOfRows}">
+                               excludedParams="*"
+                               pagesize="${filter.numberOfRows}">
 
                     <!-- Prevent table controls/headers collapsing when the table is empty -->
                     <display:setProperty name="basic.empty.showtable" value="true"/>
@@ -106,7 +155,7 @@
                         </a>
                     </display:column>
 
-                    <display:column titleKey="settings.FileName" sortable="true" sortProperty="name" headerClass="js-table-sort">
+                    <display:column titleKey="settings.FileName" sortable="true" sortProperty="compname" headerClass="js-table-sort">
                         <span class="multiline-auto">${image.name}</span>
                     </display:column>
 
@@ -122,7 +171,7 @@
                         </c:if>
                     </display:column>
 
-                    <display:column titleKey="mailing.Graphics_Component.AddDate" sortable="true" sortProperty="creationDate" headerClass="js-table-sort">
+                    <display:column titleKey="mailing.Graphics_Component.AddDate" sortable="true" sortProperty="timestamp" headerClass="js-table-sort">
                         <i class="icon icon-calendar"></i>
                         <fmt:formatDate value="${image.creationDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
                         &nbsp;<i class="icon icon-clock-o"></i>
@@ -138,13 +187,13 @@
                         <span data-dimensions></span>
                     </display:column>
                     
-                    <display:column titleKey="default.Size" sortable="false">
+                    <display:column titleKey="default.Size" sortable="true" sortProperty="comp_size" headerClass="js-table-sort">
                         <c:if test="${not empty image.size}">
                             ${emm:formatBytes(image.size, 1, '', emm:getLocale(pageContext.request))}
                         </c:if>
                     </display:column>
  
-                    <display:column titleKey="report.data.type" sortable="true" sortProperty="mimeType" headerClass="js-table-sort">
+                    <display:column titleKey="report.data.type" sortable="true" sortProperty="mtype" headerClass="js-table-sort">
                         <c:if test="${not empty image.mimeType and fn:startsWith(image.mimeType, 'image')}">
                             <span class="badge">${fn:toUpperCase(fn:substring(image.mimeType, 6, -1))}</span>
                         </c:if>

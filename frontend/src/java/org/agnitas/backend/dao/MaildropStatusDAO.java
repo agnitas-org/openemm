@@ -12,12 +12,14 @@ package org.agnitas.backend.dao;
 
 import	java.sql.SQLException;
 import	java.sql.Timestamp;
+import	java.util.ArrayList;
 import	java.util.Date;
 import	java.util.HashMap;
 import	java.util.List;
 import	java.util.Map;
 
 import	org.agnitas.backend.DBase;
+import	org.agnitas.backend.Data;
 import	org.agnitas.util.Log;
 import	org.agnitas.util.Systemconfig;
 
@@ -44,22 +46,27 @@ public class MaildropStatusDAO {
 	private boolean		dependsOnAutoImportID;
 	private boolean		autoImportOK;
 	private Date		realSendDate;
+	private List <Long>	altgRestriction;
 		
 	public MaildropStatusDAO (DBase dbase, long forStatusID, long forMailingID) throws SQLException {
 		List <Map <String, Object>>	rq;
 		Map <String, Object>		row;
 	
 		try (DBase.With with = dbase.with ()) {
-			row = dbase.querys (with.cursor (),
-					    /*
-					    "SELECT status_id, company_id, mailing_id, status_field, senddate, " +
-					    "       step, blocksize, genstatus, max_recipients, " +
-					    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients, overwrite_test_recipient " +
-					     */
-					    "SELECT * " +
-					    "FROM maildrop_status_tbl " +
-					    "WHERE status_id = :statusID",
-					    "statusID", forStatusID);
+			if (forStatusID > 0L) {
+				row = dbase.querys (with.cursor (),
+						    /*
+						    "SELECT status_id, company_id, mailing_id, status_field, senddate, " +
+						    "       step, blocksize, genstatus, max_recipients, " +
+						    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients, overwrite_test_recipient " +
+						     */
+						    "SELECT * " +
+						    "FROM maildrop_status_tbl " +
+						    "WHERE status_id = :statusID",
+						    "statusID", forStatusID);
+			} else {
+				row = null;
+			}
 			if (row != null) {
 				statusID = dbase.asLong (row.get ("status_id"));
 				companyID = dbase.asLong (row.get ("company_id"));
@@ -102,12 +109,18 @@ public class MaildropStatusDAO {
 			if (mailingID > 0) {
 				determinateRealSendDate (dbase);
 			}
+			determinateAltGRestriction (dbase);
 		}
 	}
 	public MaildropStatusDAO (DBase dbase, long forStatusID) throws SQLException {
 		this (dbase, forStatusID, 0);
 	}
-
+	public long findStatusID (DBase dbase, String statusField) throws SQLException {
+		return dbase.queryLong ("SELECT MAX(status_id) " +
+					"FROM maildrop_status_tbl " +
+					"WHERE mailing_id = :mailingID AND status_field = :statusField",
+					"mailingID", mailingID, "statusField", statusField);
+	}
 	public long statusID () {
 		return statusID;
 	}
@@ -155,6 +168,9 @@ public class MaildropStatusDAO {
 	}
 	public Date realSendDate () {
 		return realSendDate;
+	}
+	public List <Long> getAltGRestriction () {
+		return altgRestriction;
 	}
 
 	private void determinateRealSendDate (DBase dbase) throws SQLException {
@@ -205,6 +221,34 @@ public class MaildropStatusDAO {
 		}
 		if (realSendDate == null) {
 			realSendDate = new Date ();
+		}
+	}
+	
+	private void determinateAltGRestriction (DBase dbase) throws SQLException {
+		altgRestriction = null;
+		if (Data.emm && (statusID != 0)) {
+			try (DBase.With with = dbase.with ()) {
+				List <Map <String, Object>>	rq;
+				Map <String, Object>		row;
+
+				rq = dbase.query (with.cursor (),
+						  "SELECT targetgroup_id " +
+						  "FROM maildrop_altg_list_tbl " +
+						  "WHERE maildrop_id = :maildropID",
+						  "maildropID", statusID);
+				for (int n = 0; n < rq.size (); ++n) {
+					row = rq.get (n);
+					
+					long	targetID = dbase.asLong (row.get ("targetgroup_id"));
+					
+					if (targetID != 0) {
+						if (altgRestriction == null) {
+							altgRestriction = new ArrayList <> ();
+						}
+						altgRestriction.add (targetID);
+					}
+				}
+			}
 		}
 	}
 

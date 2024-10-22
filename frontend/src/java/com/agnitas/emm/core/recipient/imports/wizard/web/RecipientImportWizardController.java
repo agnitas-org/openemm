@@ -10,33 +10,30 @@
 
 package com.agnitas.emm.core.recipient.imports.wizard.web;
 
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.imports.wizard.exception.NotAllowedImportWizardStepException;
+import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
+import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps.Step;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
@@ -52,12 +49,13 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.service.ImportWizardService;
-import org.agnitas.service.ProfileImportWorkerFactory;
 import org.agnitas.service.ProfileImportWorker;
+import org.agnitas.service.ProfileImportWorkerFactory;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.impl.ImportWizardContentParseException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.CsvDataBreakInsideCellException;
 import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.EmmCalendar;
@@ -90,31 +88,32 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipient.imports.wizard.exception.NotAllowedImportWizardStepException;
-import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
-import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps.Step;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/recipient/import/wizard")
@@ -123,6 +122,7 @@ import jakarta.servlet.http.HttpSession;
 public class RecipientImportWizardController implements XssCheckAware {
 
     public static final String RECIPIENTS_IMPORT_WIZARD_KEY = "RECIPIENTS_IMPORT_WIZARD";
+    private final Map<PollingUid, Date> importStartDates = new ConcurrentHashMap<>();
     private static final Logger logger = LogManager.getLogger(RecipientImportWizardController.class);
     private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
     private static final String EMAIL_STR = "email";
@@ -285,6 +285,8 @@ public class RecipientImportWizardController implements XssCheckAware {
             popups.alert(e.getErrorMessageKey());
         } catch (CsvDataInvalidItemCountException e) {
             popups.alert("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber());
+        } catch (CsvDataBreakInsideCellException e) {
+            popups.alert("error.import.file.linebreak", e.getCellIndex(), e.getErrorLineNumber());
         } catch (Exception e) {
             logger.error("Exception caught: {}", e.getMessage(), e);
             popups.alert("error.import.exception", e.getMessage());
@@ -372,31 +374,46 @@ public class RecipientImportWizardController implements XssCheckAware {
     }
 
     @RequestMapping("/run.action")
-    public Object run(Model model, Admin admin, ImportWizardSteps steps, HttpServletRequest req, Popups popups) {
+    public Object run(Model model, Admin admin, ImportWizardSteps steps, HttpSession session, Popups popups) {
         ImportWizardHelper helper = steps.getHelper();
-        String sessionId = req.getSession(false).getId();
+        boolean isRedesignedUI = admin.isRedesignedUiUsed();
+        PollingUid pollingUid = Pollable.uid(session.getId(), RECIPIENTS_IMPORT_WIZARD_KEY, steps.getImportUID());
 
         Callable<ModelAndView> importWorker = () -> {
-            steps.setImportRunning(true);
-            tryRunImport(model, admin, steps, popups, helper, sessionId);
+            try {
+                importStartDates.put(pollingUid, new Date());
 
-            helper.addDbInsertStatusMessageAndParameters("import.csv_completed");
-            helper.setDbInsertStatus(1000);
-            model.addAttribute("importIsDone", true);
-            writeClassicImportLog(admin, helper);
-            loadResultPageAttrs(model, helper, admin.getCompanyID());
-            return new ModelAndView("recipient_import_wizard_result", model.asMap());
+                steps.setImportRunning(true);
+                tryRunImport(model, admin, steps, popups, helper, session);
+
+                helper.addDbInsertStatusMessageAndParameters("import.csv_completed");
+                helper.setDbInsertStatus(1000);
+                if (!isRedesignedUI) {
+                    model.addAttribute("importIsDone", true);
+                }
+                writeClassicImportLog(admin, helper);
+                loadResultPageAttrs(model, helper, admin.getCompanyID());
+                return new ModelAndView("recipient_import_wizard_result", model.asMap());
+            } finally {
+                importStartDates.remove(pollingUid);
+            }
         };
+
         return new Pollable<>(
-                Pollable.uid(sessionId, RECIPIENTS_IMPORT_WIZARD_KEY, steps.getImportUID()),
-                Pollable.DEFAULT_TIMEOUT,
-                new ModelAndView("recipient_import_wizard_result"),
+                pollingUid,
+                isRedesignedUI ? Pollable.SHORT_TIMEOUT : Pollable.DEFAULT_TIMEOUT,
+                new ModelAndView(isRedesignedUI ? "recipient_import_wizard_progress" : "recipient_import_wizard_result", "completedPercent", calculateImportProgressPercentage(pollingUid)),
                 importWorker);
     }
 
-    private void tryRunImport(Model model, Admin admin, ImportWizardSteps steps, Popups popups, ImportWizardHelper helper, String sessionId) {
+    private int calculateImportProgressPercentage(PollingUid pollingUid) {
+        Date date = importStartDates.get(pollingUid);
+        return AgnUtils.calculateProgressPercentage(date);
+    }
+
+    private void tryRunImport(Model model, Admin admin, ImportWizardSteps steps, Popups popups, ImportWizardHelper helper, HttpSession session) {
         try {
-            runImport(admin, steps, helper, sessionId);
+            runImport(admin, steps, helper, session);
         } catch (Exception e) {
             logger.error("import wizard: {}", e.getMessage(), e);
             // do not refresh when an error has occurred
@@ -415,8 +432,8 @@ public class RecipientImportWizardController implements XssCheckAware {
         }
     }
 
-    private void runImport(Admin admin, ImportWizardSteps steps, ImportWizardHelper helper, String sessionId) throws Exception {
-    	ProfileImportWorker worker = getProfileImportWorker(admin, sessionId, steps);
+    private void runImport(Admin admin, ImportWizardSteps steps, ImportWizardHelper helper, HttpSession session) throws Exception {
+    	ProfileImportWorker worker = getProfileImportWorker(admin, session.getId(), steps);
         worker.call();
 
         if (worker.getError() != null) {
@@ -481,16 +498,7 @@ public class RecipientImportWizardController implements XssCheckAware {
             }
         }
         helper.setResultMailingListAdded(resultMailingListAdded);
-
-        if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, admin.getCompanyID())) {
-            createRecipientReport(admin, profileImportWorker, helper, isError);
-        } else {
-            Date time = getTimeForResultCsv(admin);
-            String filename = time.getTime() + ".csv";
-            String csvFile = generateLocalizedImportCSVReport(admin.getLocale(), time, profileImportWorker.getStatus(), helper.getMode());
-
-            reportService.createAndSaveImportReport(admin.getCompanyID(), admin, filename, helper.getStatus().getDatasourceID(), new Date(), csvFile, -1, isError);
-        }
+        createRecipientReport(admin, profileImportWorker, helper, isError);
     }
 
     private Date getTimeForResultCsv(Admin admin) {

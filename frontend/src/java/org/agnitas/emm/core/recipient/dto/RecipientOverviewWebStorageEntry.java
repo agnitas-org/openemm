@@ -10,18 +10,17 @@
 
 package org.agnitas.emm.core.recipient.dto;
 
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.agnitas.beans.SortingWebStorageEntry;
+import org.agnitas.emm.core.recipient.RecipientUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.agnitas.emm.core.recipient.RecipientUtils;
-
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-public class RecipientOverviewWebStorageEntry extends RowsCountWebStorageEntry {
+public class RecipientOverviewWebStorageEntry extends SortingWebStorageEntry {
     private static final int MAX_FIELDS_COUNT = RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
     private static final List<String> DEFAULT_FIELDS = Arrays.asList(RecipientStandardField.Gender.getColumnName(), RecipientStandardField.Firstname.getColumnName(), RecipientStandardField.Lastname.getColumnName());
 

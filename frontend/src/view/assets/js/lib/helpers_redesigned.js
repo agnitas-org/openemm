@@ -60,7 +60,28 @@ parent: js-helpers
 by default using SI
 * */
 
-(function () {
+/*doc
+---
+title: isMobileView
+name: js-helpers-05
+parent: js-helpers
+---
+
+`AGN.Lib.Helpers.isMobileView()` check if the current screen resolution matches the mobile version.
+*/
+
+/*doc
+---
+title: openHelpModal
+name: js-helpers-06
+parent: js-helpers
+---
+
+`AGN.Lib.Helpers.openHelpModal(tab, options)` allows to open help modal with specified tab.
+If you want to open manual with specified helpKey, you can use it like this `AGN.Lib.Helpers.openHelpModal('manual', {key: '<helpKey>'})`
+*/
+
+(() => {
     let mobileViewThreshold = 0;
 
     AGN.Lib.Helpers = {
@@ -241,7 +262,7 @@ by default using SI
         replaceAgnTags: function(html, replacementFn) {
             try {
                 return html.replace(
-                    /\[(agn[A-Z0-9]+)(?:[^'"\]]|'.*?'|".*?")+]/g,
+                    /\[(agn[A-Z0-9_]+)(?:[^'"\]]|'.*?'|".*?")+]/g,
                     function(whole, tagName) {
                         var tag = $('<' + whole.substring(1, whole.length - 1) + '>')[0];
 
@@ -307,18 +328,22 @@ by default using SI
 
             return html;
         },
-        
+
         isValidEmail: function(email) {
           const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
           return re.test(String(email).toLowerCase());
         },
-      
+
         isUrl: function(url) {
           // starts with HTTP/HTTPS
           const re = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
           return re.test(url);
         },
-        
+
+        isNumber: val => {
+          return typeof val === 'number';
+        },
+
         deepFreeze: function (obj) {
           Object.freeze(obj);
 
@@ -340,17 +365,19 @@ by default using SI
       },
 
       openHelpModal: function (tab = '', options = {}) {
-        const jqxhr = $.get(AGN.url(`/support/help-center.action?helpKey=${window.helpKey}`));
-        jqxhr.done((resp) => {
-            AGN.Lib.Confirm.create(resp)
-              .done((resp) => Page.render(resp));
-
+        const helpKey = tab === 'manual' ? options.key : window.helpKey;
+        $.get(AGN.url(`/support/help-center.action?helpKey=${helpKey}`)).done(resp => {
+            AGN.Lib.Confirm.create(resp).done(resp => Page.render(resp));
             if (tab) {
               $(`[data-help-tab="${tab}"]`).trigger('help-tab:open', options)
             }
         });
       },
      getColorLuminance: function (hex) {
+        if (hex === undefined || hex === null) {
+          return hex;
+        }
+
          hex = hex.replace('#', '');
 
          const r = parseInt(hex.substring(0, 2), 16);
@@ -382,7 +409,7 @@ by default using SI
         }
         return false;
       },
-      
+
       retrieveTextElement: function (node) {
         if (this.isFilledTextNode(node)) {
           return node.parentElement;

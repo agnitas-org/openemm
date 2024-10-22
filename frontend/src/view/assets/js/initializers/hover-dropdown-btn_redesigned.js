@@ -2,42 +2,38 @@
 ---
 title: Hover-controlled Dropdown
 name: dropdowns_03_on_hover
-parent: dropdowns
+parent: buttons
 ---
 
 It's the same as regular dropdown, but it's activated (shown) by hover, not by click. And it automatically hides when mouse cursor goes out.
 
 All you need to do is to add `js-btn-dropdown` class to a dropdown button.
 
-```html
+```htmlexample
 <ul>
     <li class="dropdown">
         <button class="btn btn-primary btn-sm js-btn-dropdown" data-action="Save">Save</button>
 
         <ul class="dropdown-menu">
-            <div class="dropdown__items-container">
-                <li>
-                    <a href="#" class="dropdown-item" data-action="saveAndBack">Save and back</a>
-                </li>
-                <li>
-                    <a href="#" class="dropdown-item" data-action="saveAndDownload">Save and download</a>
-                </li>
-            </div>
+            <li>
+                <a href="#" class="dropdown-item" data-action="saveAndBack">Save and back</a>
+            </li>
+            <li>
+                <a href="#" class="dropdown-item" data-action="saveAndDownload">Save and download</a>
+            </li>
         </ul>
     </li>
 </ul>
-```
+``` 
 */
 
-AGN.Lib.CoreInitializer.new('hover-dropdown-btn', function($scope) {
-  if (!$scope) {
-    $scope = $(document);
-  }
+AGN.Lib.CoreInitializer.new('hover-dropdown-btn', function($scope = $(document)) {
 
   const isActiveMenuAttrName = 'agn-isActivedDropdownMenu';
 
-  _.each($scope.find('.js-btn-dropdown'), function(el) {
+  _.each($scope.find('.js-btn-dropdown'), el => {
     const $el = $(el);
+    $el.removeAttr('data-bs-toggle');
     const $dropdown = $el.closest(".dropdown");
     const $dropdownMenu = $dropdown.find('.dropdown-menu');
 

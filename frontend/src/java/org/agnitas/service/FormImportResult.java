@@ -14,6 +14,8 @@ package org.agnitas.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.agnitas.messages.Message;
+
 public class FormImportResult {
 	public static Builder builder() {return new Builder();}
 	
@@ -45,6 +47,17 @@ public class FormImportResult {
 		return isSuccess;
 	}
 	
+    public static FormImportResult error(String errorMsgCode) {
+        return FormImportResult.error(Message.of(errorMsgCode));
+    }
+    
+    public static FormImportResult error(Message error) {
+        Builder builder = FormImportResult.builder();
+        builder.addErrors(Map.of(error.getCode(), error.getArguments()));
+        builder.setSuccess(false);
+        return builder.build();
+    }
+    
 	public static class Builder {
 		private FormImportResult options = new FormImportResult();
 		private Map<String, Object[]> errors = new HashMap<>();

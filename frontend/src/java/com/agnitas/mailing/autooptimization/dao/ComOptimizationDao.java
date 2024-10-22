@@ -16,13 +16,12 @@
 
 package com.agnitas.mailing.autooptimization.dao;
 
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
-
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public interface ComOptimizationDao {
 
@@ -41,17 +40,10 @@ public interface ComOptimizationDao {
 	boolean delete(ComOptimization optimization);
 
 	/**
-	 * Retrieve all entities except ones created by workflow manager.
-	 */
-	List<ComOptimization> list(int campaignID, int companyID);
-
-	/**
 	 * Retrieve only entries created by workflow manager.
 	 */
 	List<ComOptimization> listWorkflowManaged(int workflowId, int companyID);
 
-	Map<Integer, String> getGroups(int campaignID, int companyID , int optimizationID);
-	
 	Map<Integer, Integer> getDueOnDateOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 	
 	List<ComOptimization> getDueOnThresholdOptimizationCandidates(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
@@ -61,8 +53,6 @@ public interface ComOptimizationDao {
 	int countByCompanyID(int companyID);
 
 	List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate);
-
-	List<ComOptimization> getOptimizationsForCalendar_New(int companyId, Date startDate, Date endDate);
     
     int getOptimizationByFinalMailingId(int finalMailingId, int companyId);
 }

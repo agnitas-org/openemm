@@ -10,22 +10,23 @@
 
 package org.agnitas.util;
 
-import java.util.List;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.ui.Model;
+
+import java.util.Collection;
+import java.util.List;
 
 public final class MvcUtils {
 
     private MvcUtils() {}
 
-    public static void addDeleteAttrs(Model model, List<String> items,
+    public static void addDeleteAttrs(Model model, Collection<String> items,
                                       String singleTitle, String singleQuestion,
                                       String bulkTitle, String bulkQuestion) {
         boolean bulk = CollectionUtils.size(items) > 1;
         model.addAttribute("title", bulk ? bulkTitle : singleTitle);
         model.addAttribute("question", bulk ? bulkQuestion : singleQuestion);
-        model.addAttribute("items", bulk ? items : items.get(0));
+        model.addAttribute("items", bulk ? items : items.iterator().next());
     }
 
     public static void addDeleteAttrs(Model model, String item,

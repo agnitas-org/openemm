@@ -10,22 +10,21 @@
 
 package com.agnitas.dao;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
-import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.helger.collection.pair.Pair;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ComTargetDao {
     /**
@@ -180,22 +179,12 @@ public interface ComTargetDao {
 
     void updateTargetLockState(int targetID, int companyID, boolean locked);
 
-    boolean deleteTargetReally(int targetID, int companyId);
-
     boolean deleteTargetsReally(int companyID);
+
+    void deleteTargetsReally(Collection<Integer> ids);
 
     List<TargetLight> getTargetLights(int companyID);
     
-    List<TargetLight> getTargetLights(int companyID, boolean includeDeleted);
-    
-    List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
-
-    List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
-    
-	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
-
-	List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
-
 	List<TargetLight> getTargetLights(int companyID, Collection<Integer> targetIds, boolean includeDeleted);
 
 	List<TargetLight> getTargetLightsBySearchParameters(TargetLightsOptions options);
@@ -239,10 +228,6 @@ public interface ComTargetDao {
 
 	Integer getTargetComplexityIndex(int companyId, int targetId);
 
-	List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(int companyId);
-
-	void saveComplexityIndices(int companyId, Map<Integer, Integer> complexities);
-
     boolean isValid(int companyId, int targetId);
 
     void addToFavorites(int targetId, int companyId);
@@ -264,4 +249,8 @@ public interface ComTargetDao {
     boolean isLinkUsedInTarget(TrackableLink link);
 
     boolean isTargetFavoriteForAdmin(ComTarget target, int adminId);
+
+    void restore(Set<Integer> ids, int companyID);
+
+    List<Integer> getMarkedAsDeletedBefore(Date date, int companyID);
 }

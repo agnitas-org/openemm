@@ -26,6 +26,13 @@
     <div class="well block">
         <b><mvc:message code="mailing.DistribStatus"/>:</b> <mvc:message code="statistic.DeliveryStatus.${deliveryStatus}"/>
     </div>
+    
+    <c:if test="${needsOutsideApproval}">
+        <br />
+        <div class="well block">
+            <b><mvc:message code="ENTW.Note"/>:</b> <mvc:message code="ENTW.needs.approval"/>
+        </div>
+    </c:if>
 
     <c:set var="isAdminOrTest" value="${form.deliveryStat.lastType eq MAILDROP_STATUS_ADMIN or form.deliveryStat.lastType eq MAILDROP_STATUS_TEST}" />
     

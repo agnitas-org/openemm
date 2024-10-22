@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.web.mvc.Popups;
 import jakarta.mail.internet.InternetAddress;
 import org.agnitas.service.ImportProfileService;

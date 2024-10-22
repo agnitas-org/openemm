@@ -12,14 +12,16 @@ package com.agnitas.emm.core.trackablelinks.service.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
@@ -50,6 +52,7 @@ import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 import jakarta.annotation.Resource;
+import net.sf.json.JSONObject;
 
 /**
  * Service class dealing with trackable links.
@@ -131,8 +134,41 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     }
 
     @Override
-    public List<TrackableLinkListItem> getMailingLinks(int mailingID, int companyId) {
-        return trackableLinkDao.listTrackableLinksForMailing(companyId, mailingID);
+    public Map<Integer, String> getMailingLinks(int mailingId, int companyId) {
+        List<TrackableLink> trackableLinks = trackableLinkDao.getTrackableLinks(companyId, mailingId);
+
+        //productive links (A-Z), SWYN links (A-Z), administrative links (A-Z)"
+        Comparator<TrackableLink> byAdministrative = (l1, l2) -> Boolean.compare(l1.isAdminLink(), l2.isAdminLink());
+        Comparator<TrackableLink> bySWYN = Comparator.comparing(this::isLinkSWYN);
+        Comparator<TrackableLink> byUrl = Comparator.comparing(TrackableLink::getFullUrl);
+        trackableLinks.sort(byAdministrative.thenComparing(bySWYN).thenComparing(byUrl));
+
+        Map<Integer, String> resultMap = new LinkedHashMap<>();
+        for (TrackableLink trackableLink : trackableLinks) {
+            resultMap.put(trackableLink.getId(), trackableLink.getFullUrl());
+        }
+        return resultMap;
+    }
+
+    private Boolean isLinkSWYN(TrackableLink link) {
+        return StringUtils.startsWith(link.getShortname(), "SWYN");
+    }
+
+    @Override
+    public JSONObject getMailingLinksJson(int mailingId, int companyId) {
+        Map<Integer, String> links = getMailingLinks(mailingId, companyId);
+        JSONObject orderedLinks = new JSONObject();
+        int index = 0;
+
+        for (Map.Entry<Integer, String> entry : links.entrySet()) {
+            JSONObject data = new JSONObject();
+
+            data.element("id", entry.getKey());
+            data.element("url", entry.getValue());
+
+            orderedLinks.element(Integer.toString(index++), data);
+        }
+        return orderedLinks;
     }
 
     @Override

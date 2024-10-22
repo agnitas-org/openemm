@@ -10,21 +10,35 @@
 
 package com.agnitas.emm.core.bounce.web;
 
-import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
-import java.net.IDN;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
-import com.agnitas.emm.core.Permission;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterForm;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.emm.core.bounce.form.validation.BounceFilterFormValidator;
 import com.agnitas.emm.core.bounce.form.validation.BounceFilterSearchParams;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedAutoResponderEmailException;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
+import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
+import com.agnitas.emm.core.bounce.util.BounceUtils;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.MvcUtils;
 import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,29 +53,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterForm;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.emm.core.bounce.form.validation.BounceFilterFormValidator;
-import com.agnitas.emm.core.bounce.service.BounceFilterService;
-import com.agnitas.emm.core.bounce.service.impl.BlacklistedAutoResponderEmailException;
-import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
-import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
-import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
-import com.agnitas.emm.core.bounce.util.BounceUtils;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-
-import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.net.IDN;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
+import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 
 public class BounceFilterController implements XssCheckAware {
 
@@ -78,7 +81,7 @@ public class BounceFilterController implements XssCheckAware {
     private final BounceFilterService bounceFilterService;
     private final ComMailingBaseService mailingService;
     private final MailinglistApprovalService mailinglistApprovalService;
-    private final ComUserformService userFormService;
+    private final UserformService userFormService;
     private final ConversionService conversionService;
     private final WebStorage webStorage;
     private final UserActivityLogService userActivityLogService;
@@ -87,7 +90,7 @@ public class BounceFilterController implements XssCheckAware {
 
     public BounceFilterController(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, @Qualifier("MailingBaseService") ComMailingBaseService mailingService,
                                   final MailinglistApprovalService mailinglistApprovalService,
-                                  ComUserformService userFormService, ConversionService conversionService,
+                                  UserformService userFormService, ConversionService conversionService,
                                   WebStorage webStorage,
                                   UserActivityLogService userActivityLogService) {
         this.bounceFilterService = bounceFilterService;
@@ -100,17 +103,18 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     private boolean responseProcessingRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.RESPONSE_PROCESSING_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     @RequestMapping(value = "/list.action")
-    public Pollable<ModelAndView> list(Admin admin, HttpSession session, BounceFilterListForm form, BounceFilterSearchParams searchParams, Model model) {
+    public Pollable<ModelAndView> list(Admin admin, HttpSession session, BounceFilterListForm form, BounceFilterSearchParams searchParams,
+                                       @RequestParam(required = false) boolean restoreSort, Model model) {
         if (responseProcessingRedesign(admin)) {
             form.setCompanyId(admin.getCompanyID());
             form.setCompanyDomain(admin.getCompany().getMailloopDomain());
             FormUtils.syncSearchParams(searchParams, form, true);
         }
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.BOUNCE_FILTER_OVERVIEW, form);
+        FormUtils.syncPaginationData(webStorage, WebStorage.BOUNCE_FILTER_OVERVIEW, form, restoreSort);
 
         PollingUid uid = PollingUid.builder(session.getId(), "bounceFilterList")
             .arguments(form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows())
@@ -138,7 +142,7 @@ public class BounceFilterController implements XssCheckAware {
     public String search(BounceFilterListForm listForm, BounceFilterSearchParams searchParams, RedirectAttributes ra) {
         FormUtils.syncSearchParams(searchParams, listForm, false);
         ra.addFlashAttribute("bounceFilterListForm", listForm);
-        return REDIRECT_TO_OVERVIEW;
+        return REDIRECT_TO_OVERVIEW + "?restoreSort=true";
     }
 
     @GetMapping(value = "/{id:\\d+}/view.action")
@@ -208,49 +212,78 @@ public class BounceFilterController implements XssCheckAware {
 
     protected String redirectAfterSave(int filterId, int forAddress, Admin admin) {
         return responseProcessingRedesign(admin)
-                ? REDIRECT_TO_OVERVIEW
+                ? REDIRECT_TO_OVERVIEW + "?restoreSort=true"
                 : "redirect:/administration/bounce/" + filterId + "/view.action";
     }
 
     @GetMapping(value = "/{id:\\d+}/confirmDelete.action")
-    public String confirmDelete(Admin admin, @PathVariable int id, Model model) {
-        bounceFilterService.validateDeletion(Set.of(id));
+    // TODO: EMMGUI-714: remove when old design will be removed
+    public String confirmDelete(Admin admin, @PathVariable int id, Popups popups, Model model) {
+        ServiceResult<List<BounceFilterDto>> result = bounceFilterService.getAllowedForDeletion(Set.of(id), admin.getCompanyID());
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
         loadBounceFilter(admin.getCompanyID(), id, model);
+        model.addAttribute("containsReplies", bounceFilterService.containsReply(id));
         return "bounce_filter_delete_ajax";
     }
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(Admin admin, BounceFilterForm form, Popups popups) {
+    // TODO: EMMGUI-714: remove when old design will be removed
+    public String delete(Admin admin, @ModelAttribute("bounceFilterForm") BounceFilterForm form, Popups popups) {
         int id = form.getId();
-        if(id > 0 && bounceFilterService.deleteBounceFilter(id, admin.getCompanyID())){
+        if (id <= 0) {
+            popups.alert("Error");
+            return REDIRECT_TO_OVERVIEW + "?restoreSort=true";
+        }
+
+        if(bounceFilterService.deleteBounceFilter(id, admin.getCompanyID())){
             writeUserActivityLog(admin, "delete bounce filter", getBounceFilterDescription(form));
             popups.success("default.selection.deleted");
         } else {
             popups.alert("Error");
         }
-        return REDIRECT_TO_OVERVIEW;
+        return REDIRECT_TO_OVERVIEW + "?restoreSort=true";
     }
 
     @GetMapping(value = "/deleteRedesigned.action")
-    public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
-        bounceFilterService.validateDeletion(bulkIds);
-        List<String> items = bounceFilterService.getBounceFilterNames(bulkIds, admin.getCompanyID());
-        MvcUtils.addDeleteAttrs(model, items,
-                "mailloop.mailloopDelete", "settings.mailloop.delete.question",
+    public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups, Model model) {
+        validateSelectedIds(bulkIds);
+
+        ServiceResult<List<BounceFilterDto>> result = bounceFilterService.getAllowedForDeletion(bulkIds, admin.getCompanyID());
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        String singleDeletionQuestion = bulkIds.size() == 1 && bounceFilterService.containsReply(bulkIds.iterator().next())
+                ? "mailloop.delete.inbox.question" : "settings.mailloop.delete.question";
+
+        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(BounceFilterDto::getShortName).collect(Collectors.toList()),
+                "mailloop.mailloopDelete", singleDeletionQuestion,
                 "mailloop.mailloopDelete", "bulkAction.settings.mailloop.delete");
         return DELETE_VIEW;
     }
 
     @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
-        bounceFilterService.delete(bulkIds, admin.getCompanyID());
-        writeUserActivityLog(admin, "delete mediapool files", getDeleteUalDescription(bulkIds));
-        popups.success(SELECTION_DELETED_MSG);
-        return REDIRECT_TO_OVERVIEW;
+        validateSelectedIds(bulkIds);
+
+        ServiceResult<UserAction> result = bounceFilterService.delete(bulkIds, admin.getCompanyID());
+        popups.addPopups(result);
+        writeUserActivityLog(result.getResult(), admin);
+
+        return REDIRECT_TO_OVERVIEW + "?restoreSort=true";
     }
 
-    private static String getDeleteUalDescription(Set<Integer> bulkIds) {
-        return "deleted mediapool files with following ids: " + StringUtils.join(bulkIds, ",");
+    private void validateSelectedIds(Set<Integer> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
     }
 
     private BounceFilterForm loadBounceFilter(int companyId, int id, Model model) {
@@ -308,6 +341,10 @@ public class BounceFilterController implements XssCheckAware {
 
     private void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, action, description);
+    }
+
+    private void writeUserActivityLog(UserAction userAction, Admin admin) {
+        userActivityLogService.writeUserActivityLog(admin, userAction);
     }
 
     private String getBounceFilterDescription(BounceFilterForm form) {

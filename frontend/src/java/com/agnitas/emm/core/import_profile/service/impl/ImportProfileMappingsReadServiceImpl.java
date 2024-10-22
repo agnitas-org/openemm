@@ -17,15 +17,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ColumnMappingImpl;
+import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.CsvDataInvalidItemCountException;
-import org.agnitas.util.CsvReader;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.Separator;
@@ -90,8 +91,21 @@ public class ImportProfileMappingsReadServiceImpl implements ImportProfileMappin
             errorMessages.add(Message.of("error.import.column.name.empty"));
         }
 
-        if (CsvReader.checkForDuplicateCsvHeader(dataPropertyNames, importProfile.isAutoMapping()) != null) {
-            errorMessages.add(Message.of("error.import.column.csv.duplicate"));
+        Set<String> processedColumns = new CaseInsensitiveSet();
+		Set<String> duplicateColumns = new CaseInsensitiveSet();
+        for (String dataPropertyName : dataPropertyNames) {
+            if (StringUtils.isBlank(dataPropertyName)) {
+            	errorMessages.add(Message.of("error.import.column.name.empty"));
+            	break;
+            } else if (processedColumns.contains(dataPropertyName)) {
+            	duplicateColumns.add(dataPropertyName);
+            } else {
+            	processedColumns.add(dataPropertyName);
+            }
+        }
+        
+        if (duplicateColumns.size() > 0) {
+        	errorMessages.add(Message.of("error.import.column.name.duplicate", StringUtils.join(duplicateColumns, ", ")));
         }
 
         Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(admin.getCompanyID(), admin.getAdminID(), importProfile.getKeyColumns());

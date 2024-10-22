@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">UrlClicksCube.UrlClicksDataSet.x</property>
@@ -42,7 +42,12 @@ if(reportContext.getOutputFormat() != "csv" ) {
 
 if(reportContext.getOutputFormat() == "csv" ) {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("generalElements").drop();
-}]]></method>
+}
+
+function tr(key) {
+	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
+}
+]]></method>
     <method name="beforeRender"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
@@ -225,8 +230,8 @@ if(reportContext.getOutputFormat() == "csv" ) {
                 </structure>
                 <structure>
                     <property name="position">13</property>
-                    <property name="name">clicks_anonym</property>
-                    <property name="dataType">integer</property>
+                    <property name="name">anonymous</property>
+                    <property name="dataType">blob</property>
                 </structure>
             </list-property>
             <list-property name="columnHints">
@@ -267,7 +272,7 @@ if(reportContext.getOutputFormat() == "csv" ) {
                     <property name="columnName">deleted</property>
                 </structure>
                 <structure>
-                    <property name="columnName">clicks_anonym</property>
+                    <property name="columnName">anonymous</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -334,8 +339,8 @@ if(reportContext.getOutputFormat() == "csv" ) {
                     </structure>
                     <structure>
                         <property name="position">13</property>
-                        <property name="name">clicks_anonym</property>
-                        <property name="dataType">integer</property>
+                        <property name="name">anonymous</property>
+                        <property name="dataType">blob</property>
                     </structure>
                 </list-property>
             </structure>
@@ -358,11 +363,11 @@ currentrow = 0;]]></method>
 	row["admin_link"] = mailingClicksData.get(currentrow).isAdminLink();
 	row["mobile"] = mailingClicksData.get(currentrow).isMobile();
 	row["deleted"] = mailingClicksData.get(currentrow).isDeleted();
-	row["clicks_anonym"] = mailingClicksData.get(currentrow).getClicksAnonymous();
+	row["anonymous"] = mailingClicksData.get(currentrow).isAnonymous();
 	
 	// do some i18n stuff 
 	if(mailingClicksData.get(currentrow).getColumnIndex() == 1) {
-		row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+		row["targetgroup"] = tr("statistic.all_subscribers");
 	}
 	else {
 		row["targetgroup"] = mailingClicksData.get(currentrow).getTargetgroup();
@@ -561,6 +566,20 @@ return false;]]></method>
                         </tabular-hierarchy>
                     </property>
                 </tabular-dimension>
+                <tabular-dimension name="anonymousGroup" id="2959">
+                    <property name="defaultHierarchy">NewTabularHierarchy5</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy5" id="2960">
+                            <property name="levels">
+                                <tabular-level name="anonymous" id="2961">
+                                    <property name="dataType">boolean</property>
+                                    <property name="levelType">dynamic</property>
+                                    <property name="columnName">anonymous</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
             </property>
             <property name="measureGroups">
                 <tabular-measure-group name="Summary Field" id="666">
@@ -587,11 +606,12 @@ return false;]]></method>
                             <expression name="measureExpression" type="javascript">dataSetRow["mobile"]</expression>
                             <property name="dataType">boolean</property>
                         </tabular-measure>
-                        <tabular-measure name="clicks_anonym" id="1580">
-                            <property name="function">sum</property>
+                        <tabular-measure name="anonymous" id="2958">
+                            <property name="function">first</property>
                             <property name="isCalculated">false</property>
-                            <expression name="measureExpression" type="javascript">dataSetRow["clicks_anonym"]</expression>
-                            <property name="dataType">integer</property>
+                            <expression name="measureExpression" type="javascript">dataSetRow["anonymous"]</expression>
+                            <property name="dataType">boolean</property>
+                            <property name="isVisible">true</property>
                         </tabular-measure>
                     </property>
                 </tabular-measure-group>
@@ -624,7 +644,7 @@ return false;]]></method>
                         <property name="style">parametersheadline</property>
                         <property name="fontFamily">sans-serif</property>
                         <property name="fontWeight">bold</property>
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.parameters", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">tr("report.parameters")</expression>
                     </text-data>
                 </cell>
                 <cell id="150"/>
@@ -632,7 +652,7 @@ return false;]]></method>
             <row id="244">
                 <cell id="245">
                     <text-data id="253">
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.Company", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">tr("settings.Company")</expression>
                     </text-data>
                 </cell>
                 <cell id="246">
@@ -653,7 +673,7 @@ return false;]]></method>
             <row id="638">
                 <cell id="639">
                     <text-data id="433">
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Targets", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">tr("Targets")</expression>
                     </text-data>
                 </cell>
                 <cell id="640">
@@ -725,6 +745,7 @@ allTargets</expression>
                                                         <expression name="testExpr" type="javascript">data["mobile"]</expression>
                                                     </structure>
                                                 </list-property>
+                                                <structure name="toc"/>
                                                 <property name="resultSetColumn">clicks_gross_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
                                             </data>
                                         </property>
@@ -740,7 +761,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1277">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("statistic.Clicks")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -789,7 +810,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1283">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksGrossInPercent", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("report.clicksGrossInPercent")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -834,7 +855,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1290">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("statistic.clicker")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -883,55 +904,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1296">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                        <property name="style">table-head</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                            <extended-item extensionName="ComputedMeasureView" name="clicks_anonym" id="1564">
-                                <property name="measure">clicks_anonym</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="1565">
-                                        <property name="aggregationOnRow">mobileGroup/mobile</property>
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">is-true</property>
-                                                <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                <property name="style">noTopBorder</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="content">
-                                            <data id="1579">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Unformatted</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">is-false</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">clicks_anonym_mobileTergetGroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="aggregations">
-                                    <extended-item extensionName="AggregationCell" id="1566">
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                    </extended-item>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="1567">
-                                        <property name="content">
-                                            <text-data id="1581">
-                                                <property name="textAlign">center</property>
-                                                <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicks.anonym", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("report.clicksNetInPercent")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -1013,10 +986,23 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">!data["deleted"]</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("target.Deleted", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("target.Deleted")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="textAlign">left</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                    <extended-item extensionName="DimensionView" id="3030">
+                                        <property name="dimension">anonymousGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View8" id="3031">
+                                                <property name="level">anonymousGroup/anonymous</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="3032">
+                                                        <property name="style">hidden</property>
                                                     </extended-item>
                                                 </property>
                                             </extended-item>
@@ -1038,7 +1024,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==true</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr(data["anonymous"] == true ? "statistics.share.anonymous" : "report.total")</expression>
                                                             </text-data>
                                                             <text-data id="1461">
                                                                 <property name="fontWeight">normal</property>
@@ -1048,7 +1034,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==false</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mobile", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.mobile")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="textAlign">left</property>
@@ -1104,7 +1090,7 @@ allTargets</expression>
                                 <property name="content">
                                     <text-data id="842">
                                         <property name="paddingTop">1px</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.leadingLinks", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("report.leadingLinks")</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>
@@ -1408,34 +1394,9 @@ allTargets</expression>
                                 <property name="dataType">boolean</property>
                             </structure>
                             <structure>
-                                <property name="name">clicks_anonym_mobileTergetGroup</property>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>mobileGroup/mobile</value>
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["clicks_anonym"]</expression>
-                                    </structure>
-                                </list-property>
-                            </structure>
-                            <structure>
-                                <property name="name">clicks_anonym_TargetGroup</property>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["clicks_anonym"]</expression>
-                                    </structure>
-                                </list-property>
-                                <expression name="filterExpr" type="javascript">measure["mobile"]==false</expression>
+                                <property name="name">anonymous</property>
+                                <expression name="expression">dimension["anonymousGroup"]["anonymous"]</expression>
+                                <property name="dataType">boolean</property>
                             </structure>
                         </list-property>
                         <property name="style">table table-striped</property>
@@ -1490,7 +1451,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1489">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("statistic.Clicks")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -1539,7 +1500,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1495">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksGrossInPercent", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("report.clicksGrossInPercent")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -1584,7 +1545,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1502">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("statistic.clicker")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -1633,55 +1594,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1508">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                        <property name="style">table-head</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                            <extended-item extensionName="MeasureView" id="1582">
-                                <property name="measure">clicks_anonym</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="1583">
-                                        <property name="aggregationOnRow">mobileGroup/mobile</property>
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">is-true</property>
-                                                <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                <property name="style">noTopBorder</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="content">
-                                            <data id="1586">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Unformatted</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">is-false</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">clicks_anonym_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="aggregations">
-                                    <extended-item extensionName="AggregationCell" id="1584">
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                    </extended-item>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="1587">
-                                        <property name="content">
-                                            <text-data id="1589">
-                                                <property name="textAlign">center</property>
-                                                <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicks.anonym", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("report.clicksNetInPercent")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -1763,10 +1676,23 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">!data["deleted"]</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("target.Deleted", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("target.Deleted")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="textAlign">left</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                    <extended-item extensionName="DimensionView" id="3033">
+                                        <property name="dimension">anonymousGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View1" id="3034">
+                                                <property name="level">anonymousGroup/anonymous</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="3035">
+                                                        <property name="style">hidden</property>
                                                     </extended-item>
                                                 </property>
                                             </extended-item>
@@ -1788,7 +1714,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==true</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr(data["anonymous"] == true ? "statistics.share.anonymous" : "report.total")</expression>
                                                             </text-data>
                                                             <text-data id="1521">
                                                                 <property name="fontWeight">normal</property>
@@ -1798,7 +1724,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==false</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mobile", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.mobile")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="textAlign">left</property>
@@ -1853,7 +1779,7 @@ allTargets</expression>
                             <extended-item extensionName="CrosstabCell" id="1527">
                                 <property name="content">
                                     <text-data id="1071">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.adminLinks", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("report.adminLinks")</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>
@@ -2157,29 +2083,9 @@ allTargets</expression>
                                 <property name="dataType">boolean</property>
                             </structure>
                             <structure>
-                                <property name="name">clicks_anonym_TargergroupGroup/targetgroup</property>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["clicks_anonym"]</expression>
-                                    </structure>
-                                </list-property>
-                                <expression name="filterExpr" type="javascript">measure["mobile"]==false</expression>
-                            </structure>
-                            <structure>
-                                <property name="name">clicks_anonym_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                <expression name="expression">measure["clicks_anonym"]</expression>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>mobileGroup/mobile</value>
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
+                                <property name="name">anonymous</property>
+                                <expression name="expression">dimension["anonymousGroup"]["anonymous"]</expression>
+                                <property name="dataType">boolean</property>
                             </structure>
                         </list-property>
                         <property name="style">table table-striped</property>
@@ -2192,7 +2098,7 @@ allTargets</expression>
                     <text-data id="2800">
                         <property name="style">info_box</property>
                         <structure name="toc"/>
-                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clickers.infoBox", reportContext.getLocale())</expression>
+                        <expression name="valueExpr">tr("report.clickers.infoBox")</expression>
                         <property name="contentType">plain</property>
                     </text-data>
                     <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="standardElements222"
@@ -2244,7 +2150,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1426">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("statistic.clicker")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -2293,7 +2199,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1432">
                                                 <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("report.clicksNetInPercent")</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -2308,7 +2214,7 @@ allTargets</expression>
                                         <property name="content">
                                             <text-data id="1435">
                                                 <property name="textAlign">left</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("GrandTotal", reportContext.getLocale())</expression>
+                                                <expression name="valueExpr">tr("GrandTotal")</expression>
                                             </text-data>
                                         </property>
                                     </extended-item>
@@ -2335,7 +2241,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["admin_link"] == true</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.leadingLinks", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.leadingLinks")</expression>
                                                             </text-data>
                                                             <text-data id="1455">
                                                                 <property name="fontWeight">bold</property>
@@ -2350,9 +2256,22 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["admin_link"] == false</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.adminLinks", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.adminLinks")</expression>
                                                             </text-data>
                                                         </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                    <extended-item extensionName="DimensionView" id="3037">
+                                        <property name="dimension">anonymousGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View5" id="3038">
+                                                <property name="level">anonymousGroup/anonymous</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="3039">
+                                                        <property name="style">hidden</property>
                                                     </extended-item>
                                                 </property>
                                             </extended-item>
@@ -2374,7 +2293,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==true</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr(data["anonymous"] == true ? "statistics.share.anonymous" : "report.total")</expression>
                                                             </text-data>
                                                             <text-data id="1457">
                                                                 <property name="fontWeight">normal</property>
@@ -2384,7 +2303,7 @@ allTargets</expression>
                                                                         <expression name="valueExpr" type="javascript">data["mobile"]==false</expression>
                                                                     </structure>
                                                                 </list-property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mobile", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.mobile")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="textAlign">left</property>
@@ -2439,7 +2358,7 @@ allTargets</expression>
                             <extended-item extensionName="CrosstabCell" id="1449">
                                 <property name="content">
                                     <text-data id="843">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.summary", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">tr("report.summary")</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>
@@ -2618,7 +2537,7 @@ allTargets</expression>
                                         <expression name="value" type="javascript">measure["clicks_net"]</expression>
                                     </structure>
                                 </list-property>
-                                <expression name="filterExpr" type="javascript">measure["mobile"]==false</expression>
+                                <expression name="filterExpr" type="javascript">measure["mobile"]==false &amp;&amp; measure["anonymous"]==false</expression>
                             </structure>
                             <structure>
                                 <property name="name">clicks_percent_net_TargergroupGroup/targetgroup_2</property>
@@ -2680,29 +2599,9 @@ allTargets</expression>
                                 <property name="dataType">boolean</property>
                             </structure>
                             <structure>
-                                <property name="name">clicks_anonym_TargergroupGroup/targetgroup</property>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
-                                <list-property name="arguments">
-                                    <structure>
-                                        <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["clicks_anonym"]</expression>
-                                    </structure>
-                                </list-property>
-                                <expression name="filterExpr" type="javascript">measure["mobile"]==false</expression>
-                            </structure>
-                            <structure>
-                                <property name="name">clicks_anonym_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                <expression name="expression">measure["clicks_anonym"]</expression>
-                                <property name="dataType">integer</property>
-                                <simple-property-list name="aggregateOn">
-                                    <value>mobileGroup/mobile</value>
-                                    <value>TargergroupGroup/targetgroup</value>
-                                </simple-property-list>
-                                <property name="aggregateFunction">SUM</property>
+                                <property name="name">anonymous</property>
+                                <expression name="expression">dimension["anonymousGroup"]["anonymous"]</expression>
+                                <property name="dataType">boolean</property>
                             </structure>
                         </list-property>
                         <property name="style">table table-striped</property>
@@ -2776,13 +2675,6 @@ allTargets</expression>
                     <text-property name="displayName">mobile</text-property>
                     <expression name="expression" type="javascript">dataSetRow["mobile"]</expression>
                     <property name="dataType">boolean</property>
-                </structure>
-                <structure>
-                    <property name="name">clicks_anonym</property>
-                    <text-property name="displayName">clicks_anonym</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["clicks_anonym"]</expression>
-                    <property name="dataType">integer</property>
-                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">admin_link</property>
@@ -2872,13 +2764,13 @@ allTargets</expression>
                 </structure>
                 <structure>
                     <property name="name">leading_links_header</property>
-                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("report.leadingLinks", reportContext.getLocale())</expression>
+                    <expression name="expression" type="javascript">tr("report.leadingLinks")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">admin_links_header</property>
-                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("report.adminLinks", reportContext.getLocale())</expression>
+                    <expression name="expression" type="javascript">tr("report.adminLinks")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
@@ -2969,38 +2861,6 @@ allTargets</expression>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
-                    <property name="name">clicks_anonym_grandtotal</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>summaryGroup</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">SUM</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">dataSetRow["clicks_anonym"]</expression>
-                        </structure>
-                    </list-property>
-                    <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == false</expression>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">clicks_anonym_total_group</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>targetGroups</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">SUM</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">dataSetRow["clicks_anonym"]</expression>
-                        </structure>
-                    </list-property>
-                    <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == false</expression>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
                     <property name="name">clicks_percent_gross_mobile_group</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
@@ -3027,22 +2887,6 @@ allTargets</expression>
                         <structure>
                             <property name="name">Expression</property>
                             <expression name="value" type="javascript">dataSetRow["clicks_percent_net"]</expression>
-                        </structure>
-                    </list-property>
-                    <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == true</expression>
-                    <property name="allowExport">true</property>
-                </structure>
-                <structure>
-                    <property name="name">clicks_anonym_mobile_group</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>targetGroups</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">SUM</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">dataSetRow["clicks_anonym"]</expression>
                         </structure>
                     </list-property>
                     <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == true</expression>
@@ -3080,22 +2924,6 @@ allTargets</expression>
                     <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == false</expression>
                     <property name="allowExport">true</property>
                 </structure>
-                <structure>
-                    <property name="name">clicks_anonym_grandtotal_group</property>
-                    <property name="dataType">float</property>
-                    <simple-property-list name="aggregateOn">
-                        <value>TypeLinksGroup</value>
-                    </simple-property-list>
-                    <property name="aggregateFunction">SUM</property>
-                    <list-property name="arguments">
-                        <structure>
-                            <property name="name">Expression</property>
-                            <expression name="value" type="javascript">dataSetRow["clicks_anonym"]</expression>
-                        </structure>
-                    </list-property>
-                    <expression name="filterExpr" type="javascript">dataSetRow["mobile"] == false</expression>
-                    <property name="allowExport">true</property>
-                </structure>
             </list-property>
             <structure name="toc"/>
             <property name="repeatHeader">true</property>
@@ -3128,13 +2956,12 @@ allTargets</expression>
             </column>
             <column id="1660"/>
             <column id="1661"/>
-            <column id="1662"/>
             <header>
                 <row id="1611">
                     <cell id="1612">
                         <property name="fontWeight">normal</property>
                         <text-data id="1613">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("URL", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("URL")</expression>
                         </text-data>
                     </cell>
                     <cell id="2565">
@@ -3143,44 +2970,37 @@ allTargets</expression>
                     <cell id="1614">
                         <property name="fontWeight">normal</property>
                         <text-data id="1615">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("MobileOrTotal", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("MobileOrTotal")</expression>
                         </text-data>
                     </cell>
                     <cell id="1616">
                         <property name="fontWeight">normal</property>
                         <text-data id="1617">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.Target", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("birt.Target")</expression>
                         </text-data>
                     </cell>
                     <cell id="1618">
                         <property name="fontWeight">normal</property>
                         <text-data id="1619">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("statistic.Clicks")</expression>
                         </text-data>
                     </cell>
                     <cell id="1620">
                         <property name="fontWeight">normal</property>
                         <text-data id="1621">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksGrossInPercent", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("report.clicksGrossInPercent")</expression>
                         </text-data>
                     </cell>
                     <cell id="1622">
                         <property name="fontWeight">normal</property>
                         <text-data id="1623">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("statistic.clicker")</expression>
                         </text-data>
                     </cell>
                     <cell id="1624">
                         <property name="fontWeight">normal</property>
                         <text-data id="1625">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
-                        </text-data>
-                    </cell>
-                    <cell id="1626">
-                        <property name="fontWeight">normal</property>
-                        <text-data id="1627">
-                            <property name="textAlign">right</property>
-                            <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicks.anonym", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("report.clicksNetInPercent")</expression>
                         </text-data>
                     </cell>
                 </row>
@@ -3193,7 +3013,7 @@ allTargets</expression>
                     <row id="2782">
                         <cell id="2783">
                             <text-data id="2792">
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.summary", reportContext.getLocale()) + "(" +  Packages.com.agnitas.messages.I18nString.getLocaleString("report.clickers.infoBox", reportContext.getLocale()) + ")"</expression>
+                                <expression name="valueExpr">tr("report.summary") + "(" +  tr("report.clickers.infoBox") + ")"</expression>
                             </text-data>
                         </cell>
                         <cell id="2784"/>
@@ -3208,7 +3028,6 @@ allTargets</expression>
                             </data>
                         </cell>
                         <cell id="2790"/>
-                        <cell id="2791"/>
                     </row>
                 </footer>
             </group>
@@ -3254,9 +3073,6 @@ allTargets</expression>
                         <cell id="1680">
                             <property name="fontWeight">normal</property>
                         </cell>
-                        <cell id="1681">
-                            <property name="fontWeight">normal</property>
-                        </cell>
                     </row>
                 </footer>
             </group>
@@ -3285,7 +3101,7 @@ allTargets</expression>
                         <cell id="2499">
                             <property name="fontWeight">normal</property>
                             <text-data id="2797">
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr("report.total")</expression>
                             </text-data>
                         </cell>
                         <cell id="1982">
@@ -3331,12 +3147,6 @@ allTargets</expression>
                                 <property name="resultSetColumn">clicks_net_percent_total_group</property>
                             </data>
                         </cell>
-                        <cell id="1987">
-                            <property name="fontWeight">normal</property>
-                            <data id="2590">
-                                <property name="resultSetColumn">clicks_anonym_total_group</property>
-                            </data>
-                        </cell>
                     </row>
                     <row id="2525">
                         <cell id="2526">
@@ -3351,7 +3161,7 @@ allTargets</expression>
                         <cell id="2527">
                             <property name="fontWeight">normal</property>
                             <text-data id="2798">
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mobile", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr("report.mobile")</expression>
                             </text-data>
                         </cell>
                         <cell id="2528">
@@ -3400,12 +3210,6 @@ allTargets</expression>
                                 <property name="resultSetColumn">clicks_net_percent_mobile_group</property>
                             </data>
                         </cell>
-                        <cell id="2533">
-                            <property name="fontWeight">normal</property>
-                            <data id="2593">
-                                <property name="resultSetColumn">clicks_anonym_mobile_group</property>
-                            </data>
-                        </cell>
                     </row>
                 </footer>
             </group>
@@ -3433,7 +3237,7 @@ allTargets</expression>
                                     <expression name="valueExpr" type="javascript">row["mobile"] == true</expression>
                                 </structure>
                             </list-property>
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("report.total")</expression>
                         </text-data>
                         <text-data id="1633">
                             <list-property name="visibility">
@@ -3442,7 +3246,7 @@ allTargets</expression>
                                     <expression name="valueExpr" type="javascript">row["mobile"] == false</expression>
                                 </structure>
                             </list-property>
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mobile", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">tr("Mobile")</expression>
                         </text-data>
                     </cell>
                     <cell id="1634">
@@ -3493,12 +3297,6 @@ allTargets</expression>
                             </structure>
                             <property name="textAlign">left</property>
                             <property name="resultSetColumn">clicks_percent_net</property>
-                        </data>
-                    </cell>
-                    <cell id="1644">
-                        <property name="fontWeight">normal</property>
-                        <data id="1645">
-                            <property name="resultSetColumn">clicks_anonym</property>
                         </data>
                     </cell>
                 </row>

@@ -16,9 +16,8 @@ import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -40,9 +39,7 @@ import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.stat.CampaignStatEntry;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.agnitas.util.beans.impl.SelectOption;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,10 +47,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -75,13 +70,13 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	
 	private final ComOptimizationDao optimizationDao;
 	private final ComTargetDao targetDao;
-	private final ComMailingDao mailingDao;
+	private final MailingDao mailingDao;
 	private final ComOptimizationCommonService optimizationCommonService;
 	private final ComOptimizationStatService optimizationStatService;
 	private final ComMailingParameterService mailingParameterService;
 	private final CopyMailingService copyMailingService;
 
-	public ComOptimizationServiceImpl(ComOptimizationDao optimizationDao, ComTargetDao targetDao, ComMailingDao mailingDao,
+	public ComOptimizationServiceImpl(ComOptimizationDao optimizationDao, ComTargetDao targetDao, MailingDao mailingDao,
 									  ComOptimizationCommonService optimizationCommonService, ComOptimizationStatService optimizationStatService,
 									  ComMailingParameterService mailingParameterService, CopyMailingService copyMailingService) {
 		this.optimizationDao = optimizationDao;
@@ -133,41 +128,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		return optimizationDao.save(optimization);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.agnitas.mailing.autooptimization.service.ComOptimizationService#get(int,
-	 *      int)
-	 */
-	@Override
-	public ComOptimization get(int optimizationID, int companyID) {
-		ComOptimization comOptimization = null;
-
-		try {
-			 comOptimization = optimizationDao.get(optimizationID, companyID);
-
-			// For the send date use the 1st testmailing and take the maildrop status entry where the status_field = 'W' or 'T'
-			int firstTestMailingID = comOptimization.getGroup1();
-			if( firstTestMailingID != 0) {
-				Mailing mailing = mailingDao.getMailing(firstTestMailingID, companyID);
-				MaildropEntry entry = getEffectiveMaildrop(mailing.getMaildropStatus(), comOptimization.isTestRun());
-
-				// set the testmailings senddate
-				if (entry != null) {
-					comOptimization.setTestMailingsSendDate(entry.getGenDate());
-				}
-			}
-
-			// refresh the state from maildrop_status_tbl;
-
-			comOptimization.setStatus(getState(comOptimization));
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return comOptimization;
-	}
-    
     @Override
     public int getOptimizationIdByFinalMailing(int finalMailingId, int companyId) {
         if (finalMailingId > 0 && companyId > 0) {
@@ -189,17 +149,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 			}
 		}
 		return null;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.agnitas.mailing.autooptimization.service.ComOptimizationService#list(int,
-	 *      int)
-	 */
-	@Override
-	public List<ComOptimization> list(int campaignID, int companyID) {
-		return optimizationDao.list(campaignID, companyID);
 	}
 
 	/*
@@ -543,145 +492,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	}
 
 	@Override
-	public List<String[]> getSplitTypeList(int companyID, String splitType, String language) {
-		List<String> splitNames = targetDao.getSplitNames(companyID);
-
-		Map<String, Integer> splitTypes = new HashMap<>();
-		Map<String, Integer> decimalSplitTypes = new HashMap<>();
-
-		for (String splitName : splitNames) {
-			boolean decimal = false;
-
-			if (splitName.startsWith(TargetLight.LIST_SPLIT_PREFIX)) {
-				splitName = splitName.substring(TargetLight.LIST_SPLIT_PREFIX.length());
-			} else if (splitName.startsWith(TargetLight.LIST_SPLIT_CM_PREFIX)) {
-				splitName = splitName.substring(TargetLight.LIST_SPLIT_CM_PREFIX.length());
-				decimal = true;
-			} else {
-				logger.error("Invalid split list name prefix: " + splitName);
-				continue;
-			}
-
-			int splitPartPos = splitName.lastIndexOf('_');
-			if (splitPartPos < 0) {
-				logger.error("Invalid split list name format: " + splitName);
-				continue;
-			}
-
-			String splitBase = splitName.substring(0, splitPartPos);
-
-			if (decimal) {
-				Integer entries = decimalSplitTypes.get(splitBase);
-				decimalSplitTypes.put(splitBase, entries == null ? 1 : entries + 1);
-			} else {
-				Integer entries = splitTypes.get(splitBase);
-				splitTypes.put(splitBase, entries == null ? 1 : entries + 1);
-			}
-		}
-
-		Map<String, String> mergedSplitTypes = new HashMap<>();
-
-		for (Entry<String, Integer> entry : splitTypes.entrySet()) {
-			// Auto-optimization requires at least 3 targets - two test mailings and a final mailing
-			if (entry.getValue() < 3) {
-				continue;
-			}
-			String splitBase = entry.getKey();
-			String decimalBase = convertSplitBaseToDecimal(splitBase);
-			if (decimalBase != null) {
-				mergedSplitTypes.put(decimalBase, splitBase);
-			}
-		}
-
-		for (Entry<String, Integer> entry : decimalSplitTypes.entrySet()) {
-			// Auto-optimization requires at least 3 targets - two test mailings and a final mailing
-			if (entry.getValue() < 3) {
-				continue;
-			}
-			String decimalSplitBase = entry.getKey();
-			// Force to overwrite an existing non-custom split type
-			if (!mergedSplitTypes.containsKey(decimalSplitBase) || decimalSplitBase.equals(splitType)) {
-				mergedSplitTypes.put(decimalSplitBase, decimalSplitBase);
-			}
-		}
-
-		return mergedSplitTypes.entrySet()
-				.stream()
-				.sorted((a, b) -> a.getKey().compareTo(b.getKey()))
-				.map(e -> {
-					String value = e.getValue();
-					if (StringUtils.equals(e.getKey(), value)) {
-						String label = createLabelForDecimalSplitBase(value);
-						return new String[]{ value, null, label };
-					} else {
-						String labelKey = "listsplit." + value;
-						return new String[]{ value, labelKey, null };
-					}
-				})
-				.collect(Collectors.toList());
-	}
-
-	// XXYYZZ -> XX.0;YY.0;ZZ.0
-	private String convertSplitBaseToDecimal(String splitBase) {
-		String decimalSplitBase = null;
-		try {
-			List<String> groups = new ArrayList<>();
-			for (int i = 0; (i + 1) < splitBase.length(); i += 2) {
-				double value = Integer.valueOf(splitBase.substring(i, i + 2));
-				groups.add(String.valueOf(value));
-			}
-			decimalSplitBase = StringUtils.join(groups, ';');
-		} catch (NumberFormatException e) {
-			logger.error("Invalid split list name format: " + splitBase, e);
-		}
-		return decimalSplitBase;
-	}
-
-	// XX.0;YY.0;ZZ.0 -> XX% / YY% / ZZ%
-	private String createLabelForDecimalSplitBase(String decimalSplitBase) {
-		List<String> groups = new ArrayList<>();
-		for (String value : decimalSplitBase.split(";")) {
-			Double v = Double.valueOf(value);
-			groups.add(v.intValue() + "%");
-		}
-		return StringUtils.join(groups, " / ");
-	}
-
-	@Override
-	public List<TargetLight> getTargetGroupList(int companyID) {
-		return targetDao.getTargetLights(companyID);
-	}
-
-	@Override
-    public List<TargetLight> getTargets(String targetExpression, int companyID){
-        Collection<Integer> targetIds = new ArrayList<>();
-
-        if (StringUtils.isNotBlank(targetExpression)) {
-            for (String targetId : targetExpression.split(",")) {
-				if (StringUtils.isNotEmpty(targetId)) {
-					targetIds.add(Integer.parseInt(targetId));
-				}
-			}
-        }
-
-        return targetDao.getUnchoosenTargetLights(companyID, targetIds);
-    }
-
-	@Override
-    public List<TargetLight> getChosenTargets(String targetExpression, final int companyID){
-        return targetExpression != null && !targetExpression.equals("") ? targetDao.getChoosenTargetLights(targetExpression, companyID) : new ArrayList<>();
-    }
-
-	@Override
-	public List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate) {
-		if (startDate != null && endDate != null) {
-			return optimizationDao.getOptimizationsForCalendar(companyId, startDate, endDate);
-		} else {
-			return Collections.emptyList();
-		}
-	}
-
-	@Override
 	public JSONArray getOptimizationsAsJson(Admin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter) {
 		JSONArray result = new JSONArray();
 
@@ -693,7 +503,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		Date start = DateUtilities.toDate(startDate, zoneId);
 		Date end = DateUtilities.toDate(endDate.plusDays(1).atStartOfDay().minusNanos(1), zoneId);
 
-		List<ComOptimization> optimizations = optimizationDao.getOptimizationsForCalendar_New(admin.getCompanyID(), start, end);
+		List<ComOptimization> optimizations = optimizationDao.getOptimizationsForCalendar(admin.getCompanyID(), start, end);
 
 		for (ComOptimization optimization : optimizations) {
             JSONObject object = new JSONObject();
@@ -709,25 +519,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
         }
 
 		return result;
-	}
-
-	@Override
-	public List<SelectOption> getTestMailingList(ComOptimization optimization) {
-		Map<Integer, String> groups = optimizationDao.getGroups(optimization.getCampaignID(), optimization.getCompanyID(), optimization.getId());
-
-		if (MapUtils.isEmpty(groups)) {
-			return Collections.emptyList();
-		}
-
-		List<SelectOption> options = new ArrayList<>(groups.size());
-		groups.forEach((mailingId, shortname) -> options.add(new SelectOption(Integer.toString(mailingId), shortname)));
-		return options;
-	}
-
-	// helper methods
-	@Override
-	public int getSplitNumbers(int companyID, String splitType) {
-		return targetDao.getSplits(companyID, splitType);
 	}
 
 	@Override

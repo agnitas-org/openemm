@@ -6,7 +6,7 @@
 
     <div class="tile draggable-tile" id="dashboard-statistics">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
             <c:if test="${mailingsAvailable}">
                 <div class="tile-controls min-w-0">
                     <%@ include file="../statistics-mailing-dropdown.jspf" %>

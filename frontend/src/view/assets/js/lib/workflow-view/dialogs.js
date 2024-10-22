@@ -9,6 +9,7 @@
         confirmTestingStartStop: confirmTestingStartStop,
         confirmMailingDataTransfer: confirmMailingDataTransfer,
         confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding,
+        createAutoOpt: createAutoOpt,
         confirmCopy: confirmCopy
     };
 
@@ -79,6 +80,10 @@
         return Confirm.createFromTemplate({}, 'own-workflow-expanding-modal');
     }
 
+    function createAutoOpt() {
+        return Confirm.createFromTemplate({}, 'create-auto-opt-modal');
+    }
+
     function confirmSaveBeforePdfGeneratingDialog(onSuccess, message) {
         var $beforePdfGeneratingDialog = $('#workflow-save-before-pdf-dialog');
 
@@ -89,7 +94,7 @@
             return false;
         });
 
-        if (_.isFunction(onSuccess)) {
+        if (!_.isFunction(onSuccess)) {
             onSuccess = _.noop;
         }
 

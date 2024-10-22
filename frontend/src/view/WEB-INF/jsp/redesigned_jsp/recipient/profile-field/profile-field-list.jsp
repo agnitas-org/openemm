@@ -1,16 +1,15 @@
 <%@page import="com.agnitas.beans.ProfileFieldMode"%>
 <%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 <%--@elvariable id="fields" type="com.agnitas.beans.impl.ProfileFieldImpl"--%>
-
-<c:set var="FIELD_MODES" value="<%= ProfileFieldMode.values() %>"/>
 
 <c:set var="TYPE_NUMBERIC" value="<%= DbColumnType.SimpleDataType.Numeric %>"/>
 <c:set var="TYPE_FLOAT" value="<%= DbColumnType.SimpleDataType.Float %>"/>
@@ -18,13 +17,11 @@
 <c:set var="TYPE_DATE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
 <c:set var="TYPE_DATE_TIME" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
 
-<mvc:message var="deleteTooltip" code="settings.profile.ProfileDelete"/>
+<mvc:message var="deleteMsg" code="settings.profile.ProfileDelete" />
+<c:url var="deleteUrl" value="/profiledb/delete.action" />
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <mvc:form id="table-tile" servletRelativeAction="/profiledb/profiledb.action" modelAttribute="profileForm" cssClass="tile" data-editable-tile="main">
-        <input type="hidden" name="page" value="${profileFields.pageNumber}"/>
-        <input type="hidden" name="sort" value="${profileFields.sortCriterion}"/>
-        <input type="hidden" name="dir" value="${profileFields.sortDirection}"/>
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <mvc:form id="table-tile" servletRelativeAction="/profiledb/profiledb.action" modelAttribute="profileForm" method="GET" cssClass="tile" data-editable-tile="main">
 
         <script type="application/json" data-initializer="web-storage-persist">
             {
@@ -34,55 +31,84 @@
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-        </div>
         <div class="tile-body">
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table class="table table-hover table-rounded js-table" id="fields" name="profileFields"
+            <div class="table-wrapper">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <div class="bulk-actions hidden">
+                            <p class="bulk-actions__selected">
+                                <span><%-- Updates by JS --%></span>
+                                <mvc:message code="default.list.entry.select" />
+                            </p>
+                            <div class="bulk-actions__controls">
+                                <a href="#" class="icon-btn text-danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-confirm>
+                                    <i class="icon icon-trash-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${profileFields.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${profileFields.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
+
+                <div class="table-wrapper__body">
+                    <agnDisplay:table class="table table-hover table--borderless js-table" id="field" name="profileFields"
                                    sort="external" requestURI="/profiledb/profiledb.action" partialList="true"
                                    size="${profileForm.numberOfRows}" excludedParams="*">
 
-                        <%@ include file="../../displaytag/displaytag-properties.jspf" %>
+                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
 
-                        <display:column titleKey="settings.FieldName" sortable="true" sortProperty="shortname" property="shortName"/>
-                        <display:column titleKey="settings.FieldNameDB" sortable="true" sortProperty="column" property="columnName"/>
-                        <display:column titleKey="Description" sortable="true" sortProperty="description" property="description"/>
+                        <c:set var="checkboxSelectAll">
+                            <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
+                        </c:set>
 
-                        <display:column titleKey="default.Type" sortable="true" sortProperty="dataType">
-                            <mvc:message code="${fields.simpleDataType.messageKey}"/>
-                        </display:column>
+                        <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                            <input class="form-check-input" type="checkbox" name="columns" value="${field.columnName}" ${field.standardField ? 'disabled' : 'data-bulk-checkbox'} />
+                        </agnDisplay:column>
 
-                        <display:column titleKey="settings.Length" headerClass="fit-content" sortable="true" sortProperty="dataTypeLength">
-                            <c:if test="${fields.characterLength > 0}">
-                                ${fields.characterLength}
+                        <agnDisplay:column titleKey="settings.FieldName" sortable="true" sortProperty="shortname" headerClass="js-table-sort">
+                            <span>${field.shortName}</span>
+                        </agnDisplay:column>
+                        <agnDisplay:column titleKey="settings.FieldNameDB" sortable="true" sortProperty="column" headerClass="js-table-sort">
+                            <span>${field.columnName}</span>
+                        </agnDisplay:column>
+                        <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort">
+                            <span>${field.description}</span>
+                        </agnDisplay:column>
+
+                        <agnDisplay:column titleKey="default.Type" sortable="true" sortProperty="dataType" headerClass="js-table-sort">
+                            <span><mvc:message code="${field.simpleDataType.messageKey}"/></span>
+                        </agnDisplay:column>
+
+                        <agnDisplay:column titleKey="settings.Length" headerClass="fit-content js-table-sort" sortable="true" sortProperty="dataTypeLength">
+                            <c:if test="${field.characterLength > 0}">
+                                <span>${field.characterLength}</span>
                             </c:if>
-                        </display:column>
+                        </agnDisplay:column>
 
-                        <display:column titleKey="settings.Default_Value" sortable="true" sortProperty="defaultValue">
-                            ${fn:escapeXml(fields.defaultValue)}
-                        </display:column>
+                        <agnDisplay:column titleKey="settings.Default_Value" sortable="true" sortProperty="defaultValue" headerClass="js-table-sort">
+                            <span>${fn:escapeXml(field.defaultValue)}</span>
+                        </agnDisplay:column>
 
-                        <display:column titleKey="visibility" headerClass="fit-content" sortable="true" sortProperty="modeEdit">
-                            <mvc:message code="${fields.defaultPermission.messageKey}"/>
-                        </display:column>
+                        <agnDisplay:column titleKey="visibility" headerClass="fit-content js-table-sort" sortable="true" sortProperty="modeEdit">
+                            <span><mvc:message code="${field.defaultPermission.messageKey}"/></span>
+                        </agnDisplay:column>
 
-                        <display:column headerClass="fit-content">
-                            <c:if test="${fields.standardField == false}">
-                                <c:url var="viewProfileLink" value="/profiledb/${fields.columnName}/view.action"/>
-                                <a href="${viewProfileLink}" class="hidden" data-view-row="page"></a>
+                        <agnDisplay:column headerClass="fit-content">
+                            <c:if test="${not field.standardField}">
+                                <a href="<c:url value="/profiledb/${field.columnName}/view.action" />" class="hidden" data-view-row="page"></a>
 
-                                <c:url var="deleteProfileLink" value="/profiledb/${fields.columnName}/delete.action">
-                                    <c:param name="from_list_page" value="true" />
-                                </c:url>
-
-                                <a href="${deleteProfileLink}" class="btn btn-icon-sm btn-danger js-row-delete" data-tooltip="${deleteTooltip}">
+                                <a href="${deleteUrl}?columns=${field.columnName}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
                                     <i class="icon icon-trash-alt"></i>
                                 </a>
                             </c:if>
-                        </display:column>
-                    </display:table>
+                        </agnDisplay:column>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -92,11 +118,12 @@
               data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
@@ -123,9 +150,7 @@
                         <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
 
                         <c:forEach var="type" items="${[TYPE_NUMBERIC, TYPE_FLOAT, TYPE_CHARS, TYPE_DATE, TYPE_DATE_TIME]}">
-                            <mvc:option value="${type}">
-                                <mvc:message code="${type.messageKey}"/>
-                            </mvc:option>
+                            <mvc:option value="${type}"><mvc:message code="${type.messageKey}"/></mvc:option>
                         </c:forEach>
                     </mvc:select>
                 </div>
@@ -134,10 +159,8 @@
                     <label class="form-label" for="filter-visibility"><mvc:message code="visibility" /></label>
                     <mvc:select id="filter-visibility" path="filterMode" cssClass="form-control">
                         <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
-                        <c:forEach var="mode" items="${FIELD_MODES}">
-                            <mvc:option value="${mode.name()}">
-                                <mvc:message code="${mode.messageKey}"/>
-                            </mvc:option>
+                        <c:forEach var="mode" items="${ProfileFieldMode.values()}">
+                            <mvc:option value="${mode}"><mvc:message code="${mode.messageKey}"/></mvc:option>
                         </c:forEach>
                     </mvc:select>
                 </div>

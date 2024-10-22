@@ -1,6 +1,8 @@
 @import "table";
-@import "table-container";
-@import "table-controls";
+@import "table-wrapper";
+@import "table-header";
+@import "table-footer";
+@import "controls";
 @import "input-table";
 @import "pagination";
 @import "ag-grid-theme-bootstrap";

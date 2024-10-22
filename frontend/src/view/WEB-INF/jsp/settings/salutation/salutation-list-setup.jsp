@@ -13,6 +13,8 @@
 <c:set var="agnBreadcrumbsRootKey" 	value="Mailings" 				scope="request" />
 <c:set var="agnHelpKey" 			value="salutationForms" 		scope="request" />
 
+<c:url var="switchDesignUrl" value="/salutation/listRedesigned.action" scope="request" />
+
 <emm:ShowByPermission token="salutation.change">
 	<c:set var="createNewItemUrl" scope="request">
         <c:url value='/salutation/create.action'/>

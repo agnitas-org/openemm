@@ -6,11 +6,11 @@
 <script id="modal-editor" type="text/x-mustache-template">
     {{ var showExpandBtn = (showText && showHtml) || (showText && showSms) || (showHtml && showSms); }}
     <div class="modal modal-adaptive modal-editor">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <form id="content-form" class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="mailing.frame.edit"/></h1>
-                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -33,6 +33,7 @@
                                     <textarea id="htmlTemplateLarge" data-sync="#htmlTemplate"
                                               class="form-control js-editor"
                                               ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                              data-action="validate-on-change"
                                               data-show-char-counter="tile-footer"
                                               data-field-validator="reject-script-element"></textarea>
                                 </div>
@@ -77,6 +78,7 @@
                                 <textarea id="textTemplateLarge" data-sync="#textTemplate"
                                           class="form-control js-editor-text"
                                           ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                          data-action="validate-on-change"
                                           data-show-char-counter="tile-footer"
                                           data-field-validator="reject-script-element"></textarea>
                             </div>
@@ -86,7 +88,11 @@
                         {{ if (showSms) { }}
                         <div class="tile" data-hide-by-checkbox="#html-version-editor-checkbox, #text-version-editor-checkbox" data-field="validator">
                             <div class="tile-header px-3 py-2 border-bottom text-dark">
-                                <h1><mvc:message code="mailing.version.sms"/></h1>
+                                <h1 class="tile-title text-reset">
+                                    <span><mvc:message code="mailing.version.sms"/></span>
+                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/SmsCharacters.xml"
+                                       data-help-config="#gsm-7-bit-chars"></a>
+                                </h1>
                                 {{ if (showExpandBtn) { }}
                                 <div class="tile-controls">
                                     <label class="icon-checkbox">
@@ -101,27 +107,28 @@
                                 <textarea id="smsTemplateLarge" data-sync="#smsTemplate"
                                           class="form-control js-editor-text"
                                           ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'readonly'}
+                                          data-action="validate-on-change"
                                           data-show-char-counter="tile-footer"
-                                          data-field-validator="reject-script-element"></textarea>
+                                          data-feedback-anchor=".tile-body"
+                                          data-field-validator="reject-script-element, reject-not-allowed-chars"
+                                          data-validator-options="msgKey: 'error.mailing.smsSymbolsProhibited', chars: '#gsm-7-bit-chars'"></textarea>
                             </div>
                         </div>
                         {{ } }}
                     </div>
                 </div>
-                <emm:ShowByPermission token="${isTemplate ? 'template.change' : 'mailing.change'}">
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary flex-grow-1"
-                                data-sync-from="#htmlTemplateLarge,#textTemplateLarge,#smsTemplateLarge,#dynamic-template-large"
-                                data-sync-to="#htmlTemplate,#textTemplate,#smsTemplate,#dynamic-template"
-                                data-form-target='#mailingSettingsForm'
-                                data-action="${isSettingsReadonly ? '' : 'save-content'}"
-                                <c:if test="${isSettingsReadonly}">disabled</c:if>
-                                data-controls-group='save'>
-                            <i class="icon icon-save"></i>
-                            <span class="text"><mvc:message code="button.Save"/></span>
-                        </button>
-                    </div>
-                </emm:ShowByPermission>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary"
+                            data-sync-from="#htmlTemplateLarge,#textTemplateLarge,#smsTemplateLarge,#dynamic-template-large"
+                            data-sync-to="#htmlTemplate,#textTemplate,#smsTemplate,#dynamic-template"
+                            data-form-target='#mailingSettingsForm'
+                            data-action="${MAILING_EDITABLE and not isSettingsReadonly ? 'save-content' : ''}"
+                            ${MAILING_EDITABLE and not isSettingsReadonly ? '' : 'disabled'}
+                            data-controls-group='save'>
+                        <i class="icon icon-save"></i>
+                        <span class="text"><mvc:message code="button.Save"/></span>
+                    </button>
+                </div>
             </form>
         </div>
     </div>

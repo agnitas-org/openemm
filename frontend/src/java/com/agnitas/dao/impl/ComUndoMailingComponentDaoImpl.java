@@ -147,11 +147,11 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
                     			preparedStatement.setInt(i++, resultSet.getInt("mailtemplate_id"));
                     			preparedStatement.setInt(i++, resultSet.getInt("mailing_id"));
                     			preparedStatement.setInt(i++, resultSet.getInt("component_id"));
-                    			preparedStatement.setString(i++, resultSet.getString("mtype"));
+                    			preparedStatement.setNString(i++, resultSet.getString("mtype"));
                     			preparedStatement.setInt(i++, resultSet.getInt("required"));
                     			preparedStatement.setInt(i++, resultSet.getInt("comptype"));
                     			preparedStatement.setInt(i++, resultSet.getInt("comppresent"));
-                    			preparedStatement.setString(i++, resultSet.getString("compname"));
+                    			preparedStatement.setNString(i++, resultSet.getString("compname"));
                     			preparedStatement.setClob(i++, resultSet.getClob("emmblock"));
                     			preparedStatement.setBlob(i++, resultSet.getBlob("binblock"));
                     			preparedStatement.setInt(i++, resultSet.getInt("target_id"));

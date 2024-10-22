@@ -39,7 +39,7 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 
 		@Override
 		public LoginData mapRow(ResultSet rs, int row) throws SQLException {
-			final int trackId = rs.getInt("login_track_id");
+			final long trackId = rs.getInt("login_track_id");
 			final Date loginTime = new Date(rs.getTimestamp("creation_date").getTime());	// Required. Otherwise java.util.Date.before() does not work correctly
 			final String loginIP = rs.getString("ip_address");
 			final LoginStatus loginStatus = LoginStatus.getLoginStatusFromStatusCode(rs.getInt( "login_status"));
@@ -106,23 +106,6 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int deleteOldRecords(int holdBackDays, int maxRecords) {
-		if(holdBackDays < 0) {
-			throw new IllegalArgumentException("holdBackDays must be >= 0");
-		}
-		if(maxRecords < 0) {
-			throw new IllegalArgumentException("maxRecords must be >= 0");
-		}
-		
-		final String sql = isOracleDB()
-				? String.format("DELETE FROM %s WHERE (sysdate - creation_date) > ? AND ROWNUM <= ?", getTrackingTableName())
-				: String.format("DELETE FROM %s WHERE DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY) > creation_date LIMIT ?", getTrackingTableName());
-
-		return update(getLogger(), sql, Math.max(holdBackDays, 0), Math.max(maxRecords, 0));
-	}
-	
-	@Override
-	@DaoUpdateReturnValueCheck
 	public int deleteOldRecordsHours(int holdBackHours, int maxRecords) {
 		if(holdBackHours < 0) {
 			throw new IllegalArgumentException("holdBackHours must be >= 0");
@@ -139,7 +122,7 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 	}
 	
 	@Override
-	public Optional<LoginData> findLoginDataByTrackingID(final int trackingId) {
+	public Optional<LoginData> findLoginDataByTrackingID(final long trackingId) {
 		final String sql = String.format("SELECT * FROM %s WHERE login_track_id=?", getTrackingTableName());
 		
 		final List<LoginData> list = select(getLogger(), sql, LOGIN_DATA_ROW_MAPPER, trackingId);

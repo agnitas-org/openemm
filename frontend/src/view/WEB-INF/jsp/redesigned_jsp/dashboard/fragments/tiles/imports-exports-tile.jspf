@@ -6,7 +6,7 @@
 <script id="dashboard-tile-imports-exports" type="text/x-mustache-template">
     <div class="tile draggable-tile scheduled-items">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
         </div>
         <div class="tile-body grid js-scrollable" style="--bs-columns: 1">
             <c:choose>
@@ -18,7 +18,7 @@
                 </c:when>
                 <c:otherwise>
                     <c:forEach var="report" items="${recipientReports}">
-                        <a class="list-item overflow-hidden" href="<c:url value="/recipientsreport/${report.id}/view.action"/>" ${emm:permissionAllowed('recipientsreport.ui.migration', pageContext.request) ? 'data-confirm' : ''}>
+                        <a class="list-item overflow-hidden" href="<c:url value="/recipientsreport/${report.id}/view.action"/>" data-confirm>
                             <div class="item__info-container">
                                 <span class="multi-icon-badge" data-tooltip="<mvc:message code="${report.type.messageKey}" />">
                                     <i class="icon icon-file-${report.hasImportType() ? 'import' : 'export'}"></i>
@@ -29,10 +29,10 @@
 
                                 <c:choose>
                                     <c:when test="${report.successful}">
-                                        <span class="status-badge small status.success" data-tooltip="<mvc:message code="default.Success" />"></span>
+                                        <span class="status-badge status.success" data-tooltip="<mvc:message code="default.Success" />"></span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span class="status-badge small status.error" data-tooltip="<mvc:message code="Error" />"></span>
+                                        <span class="status-badge status.error" data-tooltip="<mvc:message code="Error" />"></span>
                                     </c:otherwise>
                                 </c:choose>
                                 <span class="item__name-label text-truncate">

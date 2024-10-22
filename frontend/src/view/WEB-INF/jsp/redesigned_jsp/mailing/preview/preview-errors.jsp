@@ -23,25 +23,25 @@
 <body class="flex-center ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
 <emm:messagesPresent type="error">
 
-    <div class="notification notification--alert flex-grow-1" style="max-width: 800px">
-        <div class="notification-header">
-            <h2 class="notification-title">
+    <div class="tile tile--xs tile--alert flex-grow-1" style="max-width: 800px">
+        <div class="tile-header">
+            <h2 class="tile-title fw-semibold">
                 <i class="icon icon-state-alert"></i>
                 <emm:messages var="msg_key" type="error">
-                    <span>${msg_key}</span>
+                    <span class="text-truncate">${msg_key}</span>
                 </emm:messages>
             </h2>
         </div>
 
         <c:if test="${not empty errorReport}">
-            <div class="notification-content">
-                <div class="notification notification--alert">
-                    <div class="notification-header gap-1">
+            <div class="tile-body">
+                <div class="tile tile--xs tile--alert">
+                    <div class="tile-header">
                         <h3 class="w-50"><mvc:message code="Text_Module" /></h3>
                         <h3 class="w-50"><mvc:message code="mailing.tag" /></h3>
                     </div>
 
-                    <div class="notification-content">
+                    <div class="tile-body">
                         <div class="row g-1">
                             <c:forEach var="reportRow" items="${errorReport}">
                                 <div class="col-6">

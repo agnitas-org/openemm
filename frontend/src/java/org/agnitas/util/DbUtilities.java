@@ -649,7 +649,7 @@ public class DbUtilities {
 			throw new Exception("TableName for checkTableExists is empty");
 		} else if (checkDbVendorIsOracle(connection)) {
 			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM user_tables WHERE table_name = ?")) {
-				preparedStatement.setString(1, tableName.toUpperCase());
+				preparedStatement.setNString(1, tableName.toUpperCase());
 				try (ResultSet resultSet = preparedStatement.executeQuery()) {
 					resultSet.next();
 					if (resultSet.getInt(1) <= 0) {
@@ -661,7 +661,7 @@ public class DbUtilities {
 			}
 		} else {
 			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ?")) {
-				preparedStatement.setString(1, tableName.toLowerCase());
+				preparedStatement.setNString(1, tableName.toLowerCase());
 				try (ResultSet resultSet = preparedStatement.executeQuery()) {
 					resultSet.next();
 					if (resultSet.getInt(1) <= 0) {
@@ -807,7 +807,7 @@ public class DbUtilities {
 					String nullableSql = "SELECT search_condition FROM user_constraints WHERE table_name = ?";
 					boolean isNotNullByConstraintFields = false;
 					try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-						preparedStatementNullable.setString(1, tableName.toUpperCase());
+						preparedStatementNullable.setNString(1, tableName.toUpperCase());
 						try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
 							while (resultSetNullable.next()) {
 								String searchCondition = resultSetNullable.getString("search_condition");
@@ -824,8 +824,8 @@ public class DbUtilities {
 					// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
 					String sql = "SELECT COALESCE(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? AND column_name = ?";
 					try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setString(1, tableName.toUpperCase());
-						preparedStatement.setString(2, columnName.toUpperCase());
+						preparedStatement.setNString(1, tableName.toUpperCase());
+						preparedStatement.setNString(2, columnName.toUpperCase());
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -863,8 +863,8 @@ public class DbUtilities {
 	        		String sql = "SELECT data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)";
 
 	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setString(1, tableName);
-						preparedStatement.setString(2, columnName);
+						preparedStatement.setNString(1, tableName);
+						preparedStatement.setNString(2, columnName);
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -930,7 +930,7 @@ public class DbUtilities {
 					String nullableSql = "SELECT search_condition FROM user_constraints WHERE table_name = ?";
 					Set<String> notNullByConstraintFields = new HashSet<>();
 					try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-						preparedStatementNullable.setString(1, tableName.toUpperCase());
+						preparedStatementNullable.setNString(1, tableName.toUpperCase());
 						try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
 							while (resultSetNullable.next()) {
 								String searchCondition = resultSetNullable.getString("search_condition");
@@ -945,7 +945,7 @@ public class DbUtilities {
 					// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
 					String sql = "SELECT column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? ORDER BY column_name";
 					try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setString(1, tableName.toUpperCase());
+						preparedStatement.setNString(1, tableName.toUpperCase());
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 							while (resultSet.next()) {
@@ -988,7 +988,7 @@ public class DbUtilities {
 	        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
 
 	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setString(1, tableName);
+						preparedStatement.setNString(1, tableName);
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 							while (resultSet.next()) {
@@ -1273,6 +1273,12 @@ public class DbUtilities {
 					dbType = "NUMBER";
 				} else {
 					dbType = "FLOAT";
+				}
+			} else if ("DOUBLE".equalsIgnoreCase(fieldType)) {
+				if (isOracle) {
+					dbType = "NUMBER";
+				} else {
+					dbType = "DOUBLE";
 				}
 			} else if ("VARCHAR".equalsIgnoreCase(fieldType) || "VARCHAR2".equalsIgnoreCase(fieldType)) {
 				if (isOracle) {
@@ -2108,7 +2114,7 @@ public class DbUtilities {
 		return statement;
 	}
 
-	public static <T> String makeBulkInClauseWithDelimiter(boolean isOracle, String columnName, Collection<T> values, String delimiter) {
+	public static <T> String makeBulkInClauseWithDelimiter(boolean isOracle, String columnName, Collection<T> values, String delimiter, boolean isIn) {
 		final String elementDelimiter = delimiter == null ? "" : delimiter;
 		boolean splittingRequired;
 		int entriesCountLimit;
@@ -2140,9 +2146,14 @@ public class DbUtilities {
 		clauseBuilder.append("(");
 		for (Set<T> set : choppedSets) {
 			if (!firstList) {
-				clauseBuilder.append(" OR ");
+				clauseBuilder.append(isIn ? " OR " : " AND ");
 			}
 			clauseBuilder.append(columnName);
+
+			if (!isIn) {
+				clauseBuilder.append(" NOT ");
+			}
+
 			clauseBuilder.append(" IN (");
 
 			boolean firstElement = true;
@@ -2223,7 +2234,7 @@ public class DbUtilities {
 			try {
 		    	int foundSequences = template.queryForObject("SELECT COUNT(*) FROM all_sequences WHERE sequence_name = ?", Integer.class, sequenceName.toUpperCase());
 		    	if (foundSequences > 0) {
-		    		template.execute("DROP SEQUENCE " + sequenceName);
+		    		template.execute("DROP SEQUENCE " + sequenceName);		// FIXME SQL injection possible
 		    		return true;
 		    	} else {
 		    		return true;
@@ -2233,6 +2244,18 @@ public class DbUtilities {
 			}
 		} else {
 			return true;
+		}
+	}
+	
+	public static final boolean dropTriggerIfExists(final String name, final DataSource dataSource) {
+		final JdbcTemplate template = new JdbcTemplate(dataSource);
+
+		try {
+			template.execute(String.format("DROP TRIGGER %s", name));		// FIXME SQL injection possible
+			
+			return true;
+		} catch(final Exception e) {
+			return false;
 		}
 	}
 
@@ -2399,8 +2422,8 @@ public class DbUtilities {
 			throw new Exception("checkForeignKeyExists for Oracle databases is not supported yet");
 		} else {
 			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE table_schema = SCHEMA() AND table_name = ? AND referenced_table_name = ?")) {
-				preparedStatement.setString(1, tableName.toLowerCase());
-				preparedStatement.setString(2, referencedTableName.toLowerCase());
+				preparedStatement.setNString(1, tableName.toLowerCase());
+				preparedStatement.setNString(2, referencedTableName.toLowerCase());
 				try (ResultSet resultSet = preparedStatement.executeQuery()) {
 					resultSet.next();
 					return resultSet.getInt(1) > 0;
@@ -2436,7 +2459,7 @@ public class DbUtilities {
 			} else {
 				if (checkDbVendorIsOracle(connection)) {
 					try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_synonyms WHERE synonym_name = ?")) {
-						preparedStatement.setString(1, tableOrSynonymName.toUpperCase());
+						preparedStatement.setNString(1, tableOrSynonymName.toUpperCase());
 						try (ResultSet resultSet = preparedStatement.executeQuery()) {
 							resultSet.next();
 							return resultSet.getInt(1) > 0;
@@ -2476,7 +2499,7 @@ public class DbUtilities {
 		} else {
 			if (checkDbVendorIsOracle(connection)) {
 				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_constraints WHERE LOWER(constraint_name) = LOWER(?)")) {
-					preparedStatement.setString(1, constraintName);
+					preparedStatement.setNString(1, constraintName);
 					try (ResultSet resultSet = preparedStatement.executeQuery()) {
 						resultSet.next();
 						return resultSet.getInt(1) > 0;
@@ -2488,7 +2511,7 @@ public class DbUtilities {
 				}
 			} else {
 				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE LOWER(constraint_name) = LOWER(?)")) {
-					preparedStatement.setString(1, constraintName);
+					preparedStatement.setNString(1, constraintName);
 					try (ResultSet resultSet = preparedStatement.executeQuery()) {
 						resultSet.next();
 						return resultSet.getInt(1) > 0;
@@ -2528,8 +2551,8 @@ public class DbUtilities {
 		} else {
 			if (checkDbVendorIsOracle(connection)) {
 				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_constraints WHERE LOWER(table_name) = LOWER(?) AND LOWER(constraint_name) = LOWER(?)")) {
-					preparedStatement.setString(1, tableName);
-					preparedStatement.setString(2, foreignKeyName);
+					preparedStatement.setNString(1, tableName);
+					preparedStatement.setNString(2, foreignKeyName);
 					try (ResultSet resultSet = preparedStatement.executeQuery()) {
 						resultSet.next();
 						if (resultSet.getInt(1) == 0) {
@@ -2551,8 +2574,8 @@ public class DbUtilities {
 				}
 			} else {
 				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE LOWER(table_name) = LOWER(?) AND LOWER(constraint_name) = LOWER(?)")) {
-					preparedStatement.setString(1, tableName);
-					preparedStatement.setString(2, foreignKeyName);
+					preparedStatement.setNString(1, tableName);
+					preparedStatement.setNString(2, foreignKeyName);
 					try (ResultSet resultSet = preparedStatement.executeQuery()) {
 						resultSet.next();
 						if (resultSet.getInt(1) == 0) {
@@ -2606,10 +2629,10 @@ public class DbUtilities {
 						List<String> indexNames = getTableIndexNames(dataSource, tableName);
 						String sql = "SELECT SUM(bytes) FROM user_segments WHERE segment_name in (SELECT segment_name FROM user_lobs WHERE table_name = UPPER(?)) OR segment_name IN (UPPER(?)" + AgnUtils.repeatString(", UPPER(?)", indexNames.size()) + ")";
 						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-							preparedStatement.setString(1, tableName);
-							preparedStatement.setString(2, tableName);
+							preparedStatement.setNString(1, tableName);
+							preparedStatement.setNString(2, tableName);
 							for (int i = 0; i < indexNames.size(); i++) {
-								preparedStatement.setString(3 + i, indexNames.get(i));
+								preparedStatement.setNString(3 + i, indexNames.get(i));
 							}
 							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 								if (resultSet.next()) {
@@ -2622,7 +2645,7 @@ public class DbUtilities {
 		        	} else {
 		        		String sql = "SELECT data_length + data_free FROM information_schema.tables WHERE LOWER(table_name) = LOWER(?)";
 		        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-							preparedStatement.setString(1, tableName);
+							preparedStatement.setNString(1, tableName);
 							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 								if (resultSet.next()) {
 									return resultSet.getLong(1);

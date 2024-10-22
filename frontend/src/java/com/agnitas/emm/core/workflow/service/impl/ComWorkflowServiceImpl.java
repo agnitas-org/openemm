@@ -10,68 +10,6 @@
 
 package com.agnitas.emm.core.workflow.service.impl;
 
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE_DURATION;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
-import static java.text.MessageFormat.format;
-import static java.util.stream.Collectors.toList;
-
-import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Deque;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.EmmCalendar;
-import org.agnitas.util.SafeString;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
@@ -83,13 +21,12 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
@@ -129,23 +66,9 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop.WorkflowEndType;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowActionBasedMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowArchiveImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowConnectionImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowExportImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowFollowupMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowFormImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowImportImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao;
@@ -153,6 +76,7 @@ import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao.Reminde
 import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
+import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
@@ -167,11 +91,75 @@ import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.messages.Message;
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.userform.bean.UserForm;
-
 import jakarta.mail.internet.InternetAddress;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.MediaTypeStatus;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.EmmCalendar;
+import org.agnitas.util.SafeString;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Deque;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE_DURATION;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.isUnpausing;
+import static java.text.MessageFormat.format;
+import static java.util.stream.Collectors.toList;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class ComWorkflowServiceImpl implements ComWorkflowService {
 
@@ -189,8 +177,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     private ProfileFieldDao profileFieldDao;
 	protected ComWorkflowDao workflowDao;
-	private ComMailingDao mailingDao;
-	private TrackableLinkDao linkDao;
+	private MailingDao mailingDao;
 	private ComTargetDao targetDao;
     private ComTargetService targetService;
     private UserFormDao userFormDao;
@@ -206,6 +193,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private MediatypesDao mediatypesDao;
     protected AdminService adminService;
     private MailingService mailingService;
+    private ComWorkflowActivationService workflowActivationService;
+    private BulkActionValidationService<Integer, Workflow> bulkActionValidationService;
 
     private ComWorkflowService selfReference;
 
@@ -438,7 +427,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     private WorkflowIcon createReplacementMailingIcon(StartType startType, WorkflowIcon sample) {
-        WorkflowIcon icon = getEmptyIcon(createReplacementMailingIconType(startType));
+        WorkflowIcon icon = WorkflowUtils.getEmptyIcon(createReplacementMailingIconType(startType));
 
         icon.setId(sample.getId());
         icon.setX(sample.getX());
@@ -557,11 +546,34 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public List<String> getWorkflowNames(List<Integer> ids, int companyId) {
-        return ids.stream()
-                .map(id -> getWorkflow(id, companyId))
-                .map(Workflow::getShortname)
-                .collect(toList());
+    public ServiceResult<List<Workflow>> getAllowedForDeletion(Set<Integer> ids, int companyId) {
+        return bulkActionValidationService.checkAllowedForDeletion(ids, id -> getWorkflowForDeletion(id, companyId));
+    }
+
+    @Override
+    public Collection<Integer> bulkDelete(Set<Integer> ids, int companyId) {
+        List<Integer> allowedIds = ids.stream()
+                .map(id -> getWorkflowForDeletion(id, companyId))
+                .filter(ServiceResult::isSuccess)
+                .map(r -> r.getResult().getWorkflowId())
+                .collect(Collectors.toList());
+
+        allowedIds.forEach(id -> deleteWorkflow(id, companyId));
+
+        return allowedIds;
+    }
+
+    private ServiceResult<Workflow> getWorkflowForDeletion(int id, int companyId) {
+        Workflow workflow = getWorkflow(id, companyId);
+        if (workflow == null) {
+            return ServiceResult.errorKeys("error.general.missing");
+        }
+
+        if (Workflow.WorkflowStatus.STATUS_ACTIVE.equals(workflow.getStatus()) || Workflow.WorkflowStatus.STATUS_TESTING.equals(workflow.getStatus())) {
+            return ServiceResult.errorKeys("error.workflow.nodesShouldBeDisabledBeforeDeleting");
+        }
+
+        return ServiceResult.success(workflow);
     }
 
     @Override
@@ -683,29 +695,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-	public Map<Integer, String> getMailingLinks(int mailingId, int companyId) {
-		List<TrackableLink> trackableLinks = linkDao.getTrackableLinks(companyId, mailingId);
-
-        //productive links (A-Z), SWYN links (A-Z), administrative links (A-Z)"
-        Comparator<TrackableLink> byAdministrative = (l1, l2) -> Boolean.compare(l1.isAdminLink(), l2.isAdminLink());
-        Comparator<TrackableLink> bySWYN = Comparator.comparing(this::isLinkSWYN);
-        Comparator<TrackableLink> byUrl = Comparator.comparing(TrackableLink::getFullUrl);
-        trackableLinks.sort(byAdministrative.thenComparing(bySWYN).thenComparing(byUrl));
-
-		Map<Integer, String> resultMap = new LinkedHashMap<>();
-		for (TrackableLink trackableLink : trackableLinks) {
-			resultMap.put(trackableLink.getId(), trackableLink.getFullUrl());
-		}
-		return resultMap;
-	}
-
-    private Boolean isLinkSWYN(TrackableLink link) {
-        return StringUtils.startsWith(link.getShortname(), "SWYN");
-    }
-
-    @Override
     public List<TargetLight> getAllTargets(int companyId) {
-        return targetDao.getTargetLights(companyId, false);
+        return targetDao.getTargetLights(companyId);
     }
 
     @Override
@@ -1198,31 +1189,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private WorkflowIcon getEmptyIcon(WorkflowIconType type) {
-        switch (type) {
-            case START: return new WorkflowStartImpl();
-            case STOP: return new WorkflowStopImpl();
-            case DECISION: return new WorkflowDecisionImpl();
-            case DEADLINE: return new WorkflowDeadlineImpl();
-            case PARAMETER: return new WorkflowParameterImpl();
-            case RECIPIENT: return new WorkflowRecipientImpl();
-            case ARCHIVE: return new WorkflowArchiveImpl();
-            case FORM: return new WorkflowFormImpl();
-            case MAILING: return new WorkflowMailingImpl();
-            case ACTION_BASED_MAILING: return new WorkflowActionBasedMailingImpl();
-            case MAILING_MEDIATYPE_SMS: return new WorkflowMailingMediaTypeSmsImpl();
-            case MAILING_MEDIATYPE_POST: return new WorkflowMailingMediaTypePostImpl();
-            case DATE_BASED_MAILING: return new WorkflowDateBasedMailingImpl();
-            case FOLLOWUP_MAILING: return new WorkflowFollowupMailingImpl();
-            case IMPORT: return new WorkflowImportImpl();
-            case EXPORT: return new WorkflowExportImpl();
-
-            default:
-                // Add any new type when required.
-                throw new UnsupportedOperationException("Not supported yet");
-        }
-    }
-
     @Override
     public boolean assignWorkflowDrivenSettings(Admin admin, Mailing mailing, int workflowId, int iconId) {
         if (mailing == null || workflowId <= 0 || iconId <= 0) {
@@ -1317,13 +1283,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public void bulkDelete(Set<Integer> workflowIds, int companyId) {
-        for (int workflowId : workflowIds) {
-            deleteWorkflow(workflowId, companyId);
-        }
-    }
-
-    @Override
     public Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId) throws Exception {
         final Map<Integer, ChangingWorkflowStatusResult> results = new HashMap<>();
         for (int workflowId : workflowIds) {
@@ -1349,7 +1308,71 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return results;
     }
 
-	@Override
+    @Override
+    public Map<Integer, ServiceResult<ChangingWorkflowStatusResult>> setActiveness(Set<Integer> ids, Admin admin, boolean activeness) {
+        return ids.stream().collect(Collectors.toMap(Function.identity(), id -> {
+            Workflow workflow = getWorkflow(id, admin.getCompanyID());
+
+            if (workflow == null) {
+                return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(Message.of(ERROR_MSG)), false);
+            }
+
+            return activeness ? activateWorkflow(workflow, admin) : deactivateWorkflow(workflow, admin);
+        }));
+    }
+
+    private ServiceResult<ChangingWorkflowStatusResult> activateWorkflow(Workflow workflow, Admin admin) {
+        WorkflowStatus newStatus = WorkflowStatus.STATUS_ACTIVE;
+
+        try {
+            SimpleServiceResult validationResult = workflowValidationService.validate(workflow.getWorkflowId(), workflow.getWorkflowIcons(), workflow.getStatus(), newStatus, admin);
+            if (!validationResult.isSuccess()) {
+                return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(validationResult.getErrorMessages()), false);
+            }
+
+            boolean unpausing = WorkflowUtils.isUnpausing(workflow.getStatus(), newStatus);
+            List<Message> activationErrors = new ArrayList<>();
+
+            deleteWorkflowTargetConditions(admin.getCompanyID(), workflow.getWorkflowId());
+            if (workflowActivationService.activateWorkflow(workflow.getWorkflowId(), admin, false, unpausing, false, new ArrayList<>(), activationErrors, new ArrayList<>())) {
+                ChangingWorkflowStatusResult result = changeWorkflowStatus(workflow, newStatus);
+                return new ServiceResult<>(result, result.isChanged());
+            }
+
+            return new ServiceResult<>(changeWorkflowStatus(workflow, WorkflowStatus.STATUS_FAILED), false, activationErrors);
+        } catch (Exception e) {
+            logger.error("Error occurred while activating the workflow! ID: " + workflow.getWorkflowId(), e);
+            return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(Message.of(ERROR_MSG)), false);
+        }
+    }
+
+    private ServiceResult<ChangingWorkflowStatusResult> deactivateWorkflow(Workflow workflow, Admin admin) {
+        WorkflowStatus oldStatus = workflow.getStatus();
+
+        try {
+            if (WorkflowStatus.STATUS_ACTIVE.equals(oldStatus)) {
+                ChangingWorkflowStatusResult result = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_INACTIVE);
+                return new ServiceResult<>(result, result.isChanged());
+            }
+
+            if (WorkflowStatus.STATUS_TESTING.equals(oldStatus)) {
+                ChangingWorkflowStatusResult result = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_OPEN);
+                return new ServiceResult<>(result, result.isChanged());
+            }
+
+            if (WorkflowStatus.STATUS_PAUSED.equals(oldStatus)) {
+                deletePauseUndoEntry(workflow.getWorkflowId(), admin.getCompanyID());
+                ChangingWorkflowStatusResult result = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_INACTIVE);
+                return new ServiceResult<>(result, result.isChanged());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while deactivating the workflow! ID: " + workflow.getWorkflowId(), e);
+        }
+
+        return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(Message.of(ERROR_MSG)), false);
+    }
+
+    @Override
 	public ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) throws Exception {
         Workflow workflow = getWorkflow(workflowId, companyId);
         return changeWorkflowStatus(workflow, newStatus);
@@ -1518,9 +1541,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
         boolean anyMailingDeactivated = false;
         List<Message> errors = new ArrayList<>();
-        if (isDeactivationOrCompletion(workflow.getStatus(), newStatus)) {
+        WorkflowStatus oldStatus = workflow.getStatus();
+
+        if (isDeactivationOrCompletion(oldStatus, newStatus)) {
             boolean isTestRun = newStatus == WorkflowStatus.STATUS_TESTED;
-            boolean isPausing = WorkflowUtils.isPausing(workflow.getStatus(), newStatus);
+            boolean isPausing = WorkflowUtils.isPausing(oldStatus, newStatus);
 
             for (ComOptimization optimization : optimizations) {
                 // Un-schedule not finished optimizations, delete finished ones
@@ -1574,7 +1599,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 newStatus = WorkflowStatus.STATUS_OPEN ;
 
             }
-
         }
 
         if (newStatus == WorkflowStatus.STATUS_COMPLETE || newStatus == WorkflowStatus.STATUS_INACTIVE) {
@@ -1587,12 +1611,16 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         // set workflow to new state
         workflowDao.changeWorkflowStatus(workflowId, companyId, newStatus);
 
-        return new ChangingWorkflowStatusResult(true, anyMailingDeactivated, errors);
+        return new ChangingWorkflowStatusResult(oldStatus, newStatus, workflow, anyMailingDeactivated, errors);
     }
 
     private boolean isDeactivationOrCompletion(WorkflowStatus oldStatus, WorkflowStatus newStatus) {
         if (WorkflowStatus.STATUS_FAILED == newStatus || WorkflowUtils.isPausing(oldStatus, newStatus)) {
             return true;
+        }
+
+        if (isUnpausing(oldStatus, newStatus)) {
+            return false;
         }
 
         switch (oldStatus) {
@@ -2136,12 +2164,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     @Override
     public JSONArray getWorkflowListJson(Admin admin) {
-        boolean redesign = admin.isRedesignedUiUsed(Permission.CAMPAIGNS_UI_MIGRATION);
         JSONArray mailingListsJson = new JSONArray();
         String dateTimePattern = admin.getDateTimeFormat().toPattern();
 
         for (Workflow workflow : getWorkflowsOverview(admin)) {
-            mailingListsJson.element(getWorkflowListJsonEntry(dateTimePattern, workflow, redesign));
+            mailingListsJson.element(getWorkflowListJsonEntry(dateTimePattern, workflow, admin.isRedesignedUiUsed()));
         }
         return mailingListsJson;
     }
@@ -2151,7 +2178,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         List<WorkflowIcon> icons = workflowDataParser.deSerializeWorkflowIconsList(workflow.getWorkflowSchema());
 
         entry.element("id", workflow.getWorkflowId());
-        entry.element("status", getWorkflowStatusJson(workflow));
+        if (redesign) {
+            entry.element("status", WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString()).getName());
+        } else {
+            entry.element("status", getWorkflowStatusJson(workflow));
+        }
         entry.element("shortname", workflow.getShortname());
         entry.element("description", workflow.getDescription());
         entry.element("startDate", getWorkflowDateJson(workflow.getGeneralStartEvent(), icons, dateTimePattern, true, redesign));
@@ -2173,10 +2204,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return reactionJson;
     }
 
+    // TODO: EMMGUI-714 remove after remove of old design
     private JSONObject getWorkflowStatusJson(Workflow workflow) {
         JSONObject statusJson = new JSONObject();
         WorkflowForm.WorkflowStatus status = WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString());
-        statusJson.element("name", status.getName()); // TODO remove while removing the old UI design EMMGUI-714
+        statusJson.element("name", status.getName());
         statusJson.element("messageKey", status.getMessageKey());
         return statusJson;
     }
@@ -2407,11 +2439,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
-    public ComMailingDao getMailingDao() {
+    public MailingDao getMailingDao() {
         return mailingDao;
     }
 
@@ -2423,11 +2455,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Required
 	public void setAdminService(AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
-	}
-
-    @Required
-	public void setLinkDao(TrackableLinkDao linkDao) {
-		this.linkDao = linkDao;
 	}
 
     @Required
@@ -2511,6 +2538,16 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Required
     public void setMailingService(MailingService mailingService) {
         this.mailingService = mailingService;
+    }
+
+    @Required
+    public void setBulkActionValidationService(BulkActionValidationService<Integer, Workflow> bulkActionValidationService) {
+        this.bulkActionValidationService = bulkActionValidationService;
+    }
+
+    @Required
+    public void setWorkflowActivationService(ComWorkflowActivationService workflowActivationService) {
+        this.workflowActivationService = workflowActivationService;
     }
 
     @Required
@@ -2871,5 +2908,15 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
         start.setConnections(List.of(new WorkflowConnectionImpl(recipient.getId())));
         return workflowDataParser.serializeWorkflowIcons(List.of(start, recipient));
+    }
+
+    @Override
+    public boolean isAutoExportManagedByWorkflow(int autoExportId) {
+        return workflowDao.isDependencyExists(autoExportId, WorkflowDependencyType.AUTO_EXPORT);
+    }
+
+    @Override
+    public boolean isAutoImportManagedByWorkflow(int autoImportId) {
+        return workflowDao.isDependencyExists(autoImportId, WorkflowDependencyType.AUTO_IMPORT);
     }
 }

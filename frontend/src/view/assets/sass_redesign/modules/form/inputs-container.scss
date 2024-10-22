@@ -14,6 +14,7 @@
 .input-icon-container {
   position: relative;
   border-radius: $border-radius;
+  height: min-content;
 
   &::after {
     color: var(--input-icon-color);
@@ -33,6 +34,22 @@
   @extend .input-icon-container;
   &::after {
     @include fa-content($fa-var-search);
+  }
+}
+
+.input-status-container {
+  position: relative;
+  border-radius: $border-radius;
+
+  .status-badge {
+    position: absolute;
+    top: 50%;
+    right: $gap-sm;
+    transform: translateY(-50%);
+  }
+
+  > .form-control {
+    padding-right: 35px;
   }
 }
 
@@ -86,5 +103,28 @@
   .time-picker-container {
     flex: 1 0 80px;
     min-width: 80px;
+  }
+}
+
+.text-area-grow-wrapper {
+  display: grid;
+
+  &::after {
+    /* Note the weird space! Needed to prevent jumpy behavior */
+    content: attr(data-replicated-value) " ";
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    visibility: hidden; // Hidden from view, clicks, and screen readers
+    padding: $input-padding-y + 1px $input-padding-x + 1px;
+  }
+
+  textarea {
+    resize: none;
+    overflow: hidden;
+  }
+
+  > textarea, &::after {
+    grid-area: 1 / 1 / 2 / 2; // Should occupy the first (and only) cell of the grid
   }
 }

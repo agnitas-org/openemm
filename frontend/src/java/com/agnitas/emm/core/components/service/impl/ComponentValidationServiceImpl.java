@@ -12,6 +12,7 @@ package com.agnitas.emm.core.components.service.impl;
 
 import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -20,6 +21,8 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +36,8 @@ import com.agnitas.messages.Message;
 
 @Service("ComponentValidationService")
 public class ComponentValidationServiceImpl implements ComponentValidationService {
+
+    private static final Logger LOGGER = LogManager.getLogger(ComponentValidationServiceImpl.class);
 
     private final MimeTypeWhitelistService mimetypeWhitelistService;
     private final ComMailingComponentsService mailingComponentsService;
@@ -87,8 +92,15 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
         if (attachment.getType() == AttachmentType.PERSONALIZED) {
             if (!StringUtils.equals("text/xml", file.getContentType()) &&
                     !StringUtils.equals("text/x-xslfo", file.getContentType())) {
-                errors.add(Message.of("error.mailing.attachment.personalised.format.invalid"));
-                return false;
+                try {
+                    if (!"application/xslfo+xml".equalsIgnoreCase(ApacheTikaUtils.getContentType(file.getBytes()))) {
+                        errors.add(Message.of("error.mailing.attachment.personalised.format.invalid"));
+                        return false;
+                    }
+                } catch (IOException e) {
+                    LOGGER.error("Error occurred while parsing attachment content type!", e);
+                    return false;
+                }
             }
         } else if (!mimetypeWhitelistService.isMimeTypeWhitelisted(file.getContentType())) {
             errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));

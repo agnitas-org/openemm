@@ -36,6 +36,7 @@
 
     <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
         <jsp:param name="toolbarType" value="${toolbarType}"/>
+        <jsp:param name="showAiTextGenerationBtn" value="${isContentGenerationAllowed}"/>
     </jsp:include>
 </emm:HideByPermission>
 

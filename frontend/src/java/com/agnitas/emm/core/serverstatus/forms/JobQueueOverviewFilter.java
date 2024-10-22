@@ -12,6 +12,8 @@ package com.agnitas.emm.core.serverstatus.forms;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class JobQueueOverviewFilter {
 
     private Integer id;
@@ -58,5 +60,9 @@ public class JobQueueOverviewFilter {
 
     public void setSuccessful(Boolean successful) {
         this.successful = successful;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || startDate.isPresent() || id != null || running != null || successful != null;
     }
 }

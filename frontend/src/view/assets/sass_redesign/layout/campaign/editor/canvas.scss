@@ -1,12 +1,10 @@
 
 .editor-content-body {
-  width: 100%;
-  height: 100%;
+  @include size(100%);
 }
 
 .editor-content-body-bottom {
-  width: 100%;
-  height: 100%;
+  @include size(100%);
   max-height: calc(100% - 73px); // todo fix
   position: relative;
   display: flex;
@@ -18,8 +16,7 @@
 #viewPort {
   position: relative;
   margin-right: auto;
-  width: 100%;
-  height: 100%;
+  @include size(100%);
   background-color: transparent;
   z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_VIEW_PORT */
   overflow: hidden;
@@ -32,19 +29,32 @@
 #grid-background {
   background-image: linear-gradient( #bbb, transparent 1px), linear-gradient( 90deg, #bbb, transparent 1px);
   position: absolute;
-  width: 100%;
-  height: 100%
+  @include size(100%);
 }
 
 #canvas, #selection-backdrop {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
 }
 
 #selection-backdrop {
   display: none;
   z-index: 10000;
+}
+
+#canvas {
+  &:has(.jtk-dragged), &:has(.draggable-node) {
+    cursor: grabbing;
+    .node {
+      pointer-events: none;
+    }
+  }
+
+  &:has(.js-collision-detected) {
+    cursor: no-drop !important;
+  }
+
+  &:has(.jtk-connector.jtk-hover) {
+    cursor: grabbing !important;
+  }
 }

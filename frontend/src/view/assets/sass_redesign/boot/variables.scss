@@ -3,7 +3,9 @@
 $sidebar-width: 40px;
 $sidebar-icon-size: 25px;
 $header-height: $sidebar-width;
-$tile-header-height: 45px;
+$tile-header-height: 40px;
+
+$pagesCount: 10;
 
 $gap: 20px;
 $gap-md: 15px;
@@ -20,23 +22,33 @@ $mobile-view-threshold: 1000px;
 
 $x-light-grey:              $gray-100;
 $light-grey:                $gray-400;
+$light-purple:              #9B45D0;
 $dark-grey:                 $gray-700;
 $grey-blue:                 #2D3A4D;
 $dark-blue:                 #1A3258;
 $main-bg-color-dark:        #282D32;
 
-$stat-light-blue: #80C7FF;
-$stat-very-dark-blue: #0A40A9;
-$stat-cyan: #BAF8E1;
-$stat-or-badge-blue: #569AFF;
-$stat-or-badge-dark-blue: #2872E0;
-$stat-or-badge-dark-cyan:   #11A98E;
-$stat-or-badge-dark-grey:   #3D3D3D;
-$stat-or-badge-green:       #4FB102;
-$stat-or-badge-dark-green:  #516C03;
-$stat-or-badge-red:         #880010;
-$stat-or-badge-light-grey:  #C2C2C2;
-$stat-or-badge-black:       #0A0A0A;
+$stat-light-blue:               #80C7FF;
+$stat-or-badge-very-dark-blue:  #0A40A9;
+$stat-or-badge-light-cyan:      #BAF8E1;
+$stat-or-badge-cyan:            #2FE9C7;
+$stat-or-badge-light-lime:      #8BF4AF;
+$stat-or-badge-orange:          #F8CE39;
+$stat-or-badge-grey:            #7E7E7E;
+$stat-or-badge-blue:            #569AFF;
+$stat-or-badge-dark-blue:       #2872E0;
+$stat-or-badge-dark-cyan:       #11A98E;
+$stat-or-badge-dark-grey:       #3D3D3D;
+$stat-or-badge-lime:            #0ACD70;
+$stat-or-badge-green:           #4FB102;
+$stat-or-badge-dark-green:      #516C03;
+$stat-or-badge-red:             #880010;
+$stat-or-badge-light-grey:      #C2C2C2;
+$stat-or-badge-black:           #0A0A0A;
+$stat-or-badge-violet:          #E5CEF0;
+$stat-or-badge-violet-darken:   #AD87CA;
+$stat-or-badge-violet-dark:     #460876;
+$stat-or-badge-light-red:       #E12E59;
 
 $border-default: 1px solid $light-grey;
 $table-border: $border-default;

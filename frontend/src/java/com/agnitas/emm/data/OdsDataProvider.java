@@ -219,7 +219,12 @@ public class OdsDataProvider extends DataProvider {
 									returnList.add(value);
 
 									if (!xmlReader.isEndElement() || !xmlReader.getLocalName().equals("p")) {
-										throw new Exception("Invalid xml data. Missing closing tag 'p'");
+										throw new Exception(
+												String.format("Invalid xml data. Expected closing tag 'p', but got '%s' (end: %b) at line %d, column %d.", 
+														xmlReader.getName(), 
+														xmlReader.isEndElement(),
+														xmlReader.getLocation().getLineNumber(), 
+														xmlReader.getLocation().getColumnNumber()));
 									}
 								} else if (xmlReader.isEndElement() && xmlReader.getLocalName().equals("table-cell")) {
 									if (isEmptyCell) {
@@ -328,6 +333,7 @@ public class OdsDataProvider extends DataProvider {
 			}
 
 			final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+			xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
 			xmlReader = xmlInputFactory.createXMLStreamReader(contentXmlZipInputStream);
 

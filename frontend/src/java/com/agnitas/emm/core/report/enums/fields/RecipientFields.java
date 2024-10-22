@@ -14,7 +14,7 @@ import org.antlr.v4.runtime.misc.Nullable;
 
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 /**
  * @deprecated Use RecipientFieldServiceImpl.RecipientStandardField instead
@@ -53,11 +53,6 @@ public enum RecipientFields implements DatabaseField<String, RecipientFields> {
     @Nullable
     public static RecipientFields getByName(final String readableName) {
         return (RecipientFields) DatabaseFieldUtils.getByName(readableName, values());
-    }
-
-    @Nullable
-    public static String getTranslationKeyByCode(final String code) {
-        return DatabaseFieldUtils.getTranslationKeyByCode(code, values());
     }
 
     public static boolean isContainsCode(final String code) {

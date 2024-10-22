@@ -11,12 +11,22 @@
 package com.agnitas.emm.core.mailingcontent.validator.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.agnitas.emm.util.html.HtmlChecker;
+
+import com.agnitas.emm.util.html.HtmlCheckerError;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+
+import com.agnitas.messages.Message;
 
 import org.agnitas.util.HtmlUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +60,7 @@ public class HtmlContentValidator implements DynTagValidator {
         this.linkService = linkService;
     }
     
-    public final List<String> findInvalidTags(final String content) {
+    public final List<String> findIllegalTags(final String content) {
     	try {
 	    	final List<String> list = new ArrayList<>();
 	    	
@@ -70,40 +80,52 @@ public class HtmlContentValidator implements DynTagValidator {
 
     @Override
     public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
-        List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
-        boolean hasNoErrors = true;
+        for (DynContentDto contentBlock : dynTagDto.getContentBlocks()) {
+            validateContentBlock(dynTagDto, popups, contentBlock);
+        }
+        return !popups.hasAlertPopups();
+    }
 
-        for (DynContentDto contentBlock : contentBlocks) {
-        	final List<String> invalidElements = findInvalidTags(contentBlock.getContent());
-        	
-        	if(!invalidElements.isEmpty()) {
-        		final String element = invalidElements.get(0);
-        		popups.alert(String.format("error.mailing.content.illegal.%s", element));
-        		return false;
-        	}
-            
-            try {
-                LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(contentBlock.getContent(), dynTagDto.getCompanyId());
-                List<LinkService.ErroneousLink> linksWithErros = linkScanResult.getErroneousLinks();
-                for (LinkService.ErroneousLink link : linksWithErros) {
-                    popups.alert(link.getErrorMessageKey(), link.getLinkText());
-                    hasNoErrors = false;
-                }
-                
-                for (final String url : linkScanResult.getNotTrackableLinks()) {
-                	popups.warning("warning.mailing.link.agntag", StringEscapeUtils.escapeHtml4(dynTagDto.getName()), StringEscapeUtils.escapeHtml4(url));
-                }
-                
-                LinkScanResultToPopup.linkWarningsToPopups(linkScanResult, popups);
-
-                validatePoorLink(dynTagDto.getCompanyId(), contentBlock.getContent(), popups);
-            } catch (Exception e) {
-                String description = String.format("dyn tag id: %d, dyn tag name: %s", dynTagDto.getId(), dynTagDto.getName());
-                logger.warn("something went wrong while html content validation in the dyn content. {}", description);
-            }
+    private void validateContentBlock(DynTagDto dynTagDto, Popups popups, DynContentDto contentBlock) {
+        List<Message> tagErrors = collectTagErrors(contentBlock);
+        if (CollectionUtils.isNotEmpty(tagErrors)) {
+            tagErrors.forEach(popups::alert);
         }
 
-        return hasNoErrors;
+        try {
+            LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(contentBlock.getContent(), dynTagDto.getCompanyId());
+            for (LinkService.ErroneousLink link : linkScanResult.getErroneousLinks()) {
+                popups.alert(link.getErrorMessageKey(), link.getLinkText());
+            }
+            
+            for (final String url : linkScanResult.getNotTrackableLinks()) {
+                popups.warning("warning.mailing.link.agntag", StringEscapeUtils.escapeHtml4(dynTagDto.getName()), StringEscapeUtils.escapeHtml4(url));
+            }
+            
+            LinkScanResultToPopup.linkWarningsToPopups(linkScanResult, popups);
+
+            validatePoorLink(dynTagDto.getCompanyId(), contentBlock.getContent(), popups);
+        } catch (Exception e) {
+            String description = String.format("dyn tag id: %d, dyn tag name: %s", dynTagDto.getId(), dynTagDto.getName());
+            logger.warn("something went wrong while html content validation in the dyn content. {}", description);
+        }
+    }
+
+    private List<Message> collectTagErrors(DynContentDto contentBlock) {
+        List<String> illegalElements = findIllegalTags(contentBlock.getContent());
+        if (!illegalElements.isEmpty()) {
+            return illegalElements.stream().map(HtmlContentValidator::getIllegalElementMessage).collect(Collectors.toList());
+        }
+        try {
+            HtmlChecker.checkForUnallowedHtmlTags(contentBlock.getContent(), true);
+        } catch (HtmlCheckerException e) {
+            return e.getErrors().stream().map(HtmlCheckerError::toMessage).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    private static Message getIllegalElementMessage(String illegalElement) {
+        return Message.of(String.format("error.mailing.content.illegal.%s", illegalElement));
     }
 
     private void validatePoorLink(int companyId, String link, Popups popups) {

@@ -1,0 +1,49 @@
+
+$pageBtnWidth: 30px;
+
+.table-wrapper__footer {
+  padding: $table-spacing / 2 $table-spacing;
+  background-color: var(--table-head-bg-color);
+
+  min-height: 40px;
+
+  &:empty {
+    min-height: 10px;
+  }
+
+  border-radius: $border-radius;
+  border: $table-border;
+
+  @include flex-row($gap-sm);
+  justify-content: space-between;
+  align-items: center;
+
+  @for $i from 2 through $pagesCount {
+    &--pages-#{$i} {
+      @container (max-width: #{380px + ($pageBtnWidth * ($i - 2))}) {
+        flex-direction: column;
+        gap: $table-spacing + $gap-x-sm;
+        min-height: min-content;
+      }
+    }
+  }
+}
+
+.table-wrapper__rows-selection {
+  @include flex-row($gap-x-sm);
+  align-items: center;
+
+  @include font(clamp(13px, 2vw, $font-size-base));
+  color: var(--table-footer-text-color);
+
+  span {
+    white-space: nowrap;
+  }
+
+  --input-icon-color: var(--table-head-text-color);
+  --select2-selection-color: var(--table-head-text-color);
+
+  .dark-theme & {
+    --select-dropdown-bg-color: var(--table-head-bg-color);
+  }
+}

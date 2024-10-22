@@ -9,47 +9,42 @@ The `data-ajax` attribute enables ajax mode for a link (an `a` element)
 so `AGN.Lib.Page.reload` is going to be used to perform a request (see `href` attribute):
 
 ```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary" data-ajax="">Go to index.html</a>
+<a href="index.html" class="btn btn-primary" data-ajax="">Go to index.html</a>
 ```
 
 A `.js-ajax` css class can be used instead:
 
 ```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary js-ajax">Go to index.html</a>
+<a href="index.html" class="btn btn-primary js-ajax">Go to index.html</a>
 ```
 
 By default a `GET` HTTP method is used. But you can specify an HTTP method to use as a value of the `data-ajax` attribute:
 
 ```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary" data-ajax="POST">Go to index.html</a>
+<a href="index.html" class="btn btn-primary" data-ajax="POST">Go to index.html</a>
 ```
 */
 
-(function(){
+(() =>{
 
-  var Loader = AGN.Lib.Loader,
-      Template  = AGN.Lib.Template,
-      Page   = AGN.Lib.Page,
-      CSRF = AGN.Lib.CSRF;
+  const Loader = AGN.Lib.Loader,
+    Page = AGN.Lib.Page,
+    CSRF = AGN.Lib.CSRF;
 
-  var AjaxLoader = {
-    initialize: function(options) {
+  const AjaxLoader = {
+    initialize: function (options) {
       if (options.loader === true || options.loader === undefined) {
         options.loader = {
-          show: function() {
-            Loader.show();
-          },
-          hide: function() {
-            Loader.hide();
-          }
+          show: () => Loader.show(),
+          hide: () => Loader.hide()
         };
       }
     },
 
-    show: function(options) {
-      var loader = options.loader;
+    show: function (options) {
+      const loader = options.loader;
 
-      if (loader && loader.show) {
+      if (loader?.show) {
         try {
           loader.show();
         } catch (e) {
@@ -58,10 +53,10 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
       }
     },
 
-    hide: function(options) {
-      var loader = options.loader;
+    hide: function (options) {
+      const loader = options.loader;
 
-      if (loader && loader.hide) {
+      if (loader?.hide) {
         try {
           loader.hide();
         } catch (e) {
@@ -99,10 +94,8 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
       return;
     }
 
-    var errorMessage;
-
-    if (jqxhr.status == 401) {
-      var event = $.Event('ajax:unauthorized');
+    if (jqxhr.status === 401) {
+      const event = $.Event('ajax:unauthorized');
 
       // Chiefly for retaining unsaved changes.
       $(document).trigger(event);
@@ -111,7 +104,7 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
         // Preserve existing behavior unless different one required (defined via options.statusCode['401'])
         Page.render(jqxhr.responseText);
       }
-    } else if(jqxhr.status == 403) {
+    } else if(jqxhr.status === 403) {
       if (jqxhr.responseText) {
         const $resp = $(jqxhr.responseText);
         const $csrfErrorMessage = $resp.filter('#csrf-error-message');
@@ -153,8 +146,8 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
     }
   });
 
-  $(document).on('click', 'a[data-ajax], a.js-ajax', function(e) {
-    var $e = $(this);
+  $(document).on('click', 'a[data-ajax]', function(e) {
+    const $e = $(this);
     e.preventDefault();
     Page.reload($e.attr('href'), true, $e.data('ajax'));
   });

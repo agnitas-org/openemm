@@ -34,6 +34,7 @@
 
 <c:url var="recipientOverviewUrl" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+    <c:param name="restoreSort" value="true"/>
 </c:url>
 <c:url var="recipientViewLink" value="/recipient/${recipient.customerId}/view.action"/>
 

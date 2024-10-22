@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
-import org.agnitas.emm.core.component.service.ComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.Attachment;

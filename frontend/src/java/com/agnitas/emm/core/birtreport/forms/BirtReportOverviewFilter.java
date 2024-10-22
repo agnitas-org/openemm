@@ -13,11 +13,14 @@ package com.agnitas.emm.core.birtreport.forms;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class BirtReportOverviewFilter extends PaginationForm {
 
     private String name;
     private DateRange changeDate = new DateRange();
     private DateRange lastDeliveryDate = new DateRange();
+    private boolean showDeleted;
 
     public String getName() {
         return name;
@@ -41,5 +44,17 @@ public class BirtReportOverviewFilter extends PaginationForm {
 
     public void setLastDeliveryDate(DateRange lastDeliveryDate) {
         this.lastDeliveryDate = lastDeliveryDate;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || lastDeliveryDate.isPresent() || changeDate.isPresent();
+    }
+
+    public boolean isShowDeleted() {
+        return showDeleted;
+    }
+
+    public void setShowDeleted(boolean showDeleted) {
+        this.showDeleted = showDeleted;
     }
 }

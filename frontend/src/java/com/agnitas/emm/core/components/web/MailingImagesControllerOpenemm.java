@@ -5,6 +5,7 @@ import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -22,8 +23,8 @@ public class MailingImagesControllerOpenemm extends MailingImagesController {
     public MailingImagesControllerOpenemm(ComMailingBaseService mailingBaseService, PreviewImageService previewImageService,
                                           MaildropService maildropService, UserActivityLogService userActivityLogService,
                                           ComMailingComponentsService mailingComponentsService,
-                                          MailinglistApprovalService mailinglistApprovalService, ConfigService configService) {
+                                          MailinglistApprovalService mailinglistApprovalService, ConfigService configService, WebStorage webStorage) {
         super(mailingBaseService, previewImageService, maildropService, userActivityLogService,
-                mailingComponentsService, configService, mailinglistApprovalService);
+                mailingComponentsService, configService, mailinglistApprovalService, webStorage);
     }
 }

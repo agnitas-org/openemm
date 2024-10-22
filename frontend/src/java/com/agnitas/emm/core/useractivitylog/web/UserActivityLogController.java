@@ -18,6 +18,7 @@ import java.util.List;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -55,8 +57,8 @@ import jakarta.servlet.http.HttpSession;
 public class UserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected UserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
-                                        UserActivityLogExportWorkerFactory exportWorkerFactory) {
-        super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
+                                        UserActivityLogExportWorkerFactory exportWorkerFactory, ConfigService configService) {
+        super(webStorage, adminService, userActivityLogService, exportWorkerFactory, configService);
     }
 
     @Override
@@ -71,8 +73,10 @@ public class UserActivityLogController extends AbstractUserActivityLogController
 
     @RequestMapping(value = "/listRedesigned.action", method = {RequestMethod.GET, RequestMethod.POST})
     @PermissionMapping("list")
-    public Pollable<ModelAndView> listRedesigned(Admin admin, @ModelAttribute("filter") UserActivityLogFilter filter, @ModelAttribute UserActivityLogSearchParams searchParams, Model model, HttpSession session) {
+    public Pollable<ModelAndView> listRedesigned(Admin admin, @ModelAttribute("filter") UserActivityLogFilter filter, @ModelAttribute UserActivityLogSearchParams searchParams,
+                                                 @RequestParam(required = false) boolean restoreSort, Model model, HttpSession session) {
         FormUtils.syncSearchParams(searchParams, filter, true);
+        FormUtils.updateSortingState(webStorage, WebStorage.USERLOG_OVERVIEW, filter, restoreSort);
         return getListRedesigned(admin, filter, model, session);
     }
 
@@ -152,7 +156,7 @@ public class UserActivityLogController extends AbstractUserActivityLogController
         FormUtils.syncSearchParams(searchParams, filter, false);
         model.addFlashAttribute("filter", filter);
 
-        return redirectToRedesignedListPage();
+        return redirectToRedesignedListPage() + "?restoreSort=true";
     }
 
     @ModelAttribute

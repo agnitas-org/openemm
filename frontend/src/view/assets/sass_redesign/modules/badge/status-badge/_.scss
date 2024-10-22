@@ -1,10 +1,23 @@
 
+/*doc
+---
+title: Status Badge Variants
+name: badges_04_status
+parent: badges_03_special
+---
+
+The first and required class for them is `.status-badge`.
+Additionally, there is the possibility to customize the badge size:
+
+Size        | Example
+------------|--------------------------------------------------------------------------
+large       |<span class="status-badge status-badge--lg mailing.status.edit"></span>
+extra large |<span class="status-badge status-badge--xl campaign.status.tested"></span>
+
+*/
+
 .status-badge {
-  @include flex-center;
-  @include size($status-badge-size);
-  min-width: $status-badge-size;
-  min-height: $status-badge-size;
-  border-radius: $border-radius-sm;
+  @extend .square-badge;
   color: $white;
   position: relative;
   &:before {
@@ -17,12 +30,22 @@
     @include center-absolute;
     line-height: 1;
   }
-}
 
-.status-badge--lg {
-  @include size(24px);
-  &:before {
-    font-size: $font-size-sm;
+  &--lg {
+    width: 24px !important;
+    height: 24px !important;
+    &:before {
+      font-size: $font-size-sm;
+    }
+  }
+
+  &--xl {
+    width: 60px;
+    height: 60px;
+    border-radius: $border-radius;
+    &:before {
+      font-size: 40px;
+    }
   }
 }
 
@@ -35,7 +58,10 @@
 
 @import "default-status-badge";
 @import "mailing-status-badge";
+@import "mediatype-status-badge";
 @import "campaign-status-badge";
 @import "complexity-status-badge";
 @import "job-status-badge";
 @import "auto-import-status-badge";
+@import "building-block-status-badge";
+@import "mailloop-reply-status-badge";

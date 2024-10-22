@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -30,7 +30,7 @@ public abstract class GenericRuleConverter implements RuleConverter {
     private static final Logger logger = LogManager.getLogger(GenericRuleConverter.class);
 
     private EmmProfileFieldResolverFactory profileFieldResolverFactory;
-
+    
     @Override
     public String convert(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException {
         try {
@@ -59,7 +59,7 @@ public abstract class GenericRuleConverter implements RuleConverter {
         switch (dataType) {
             case NUMERIC:
                 String numericValue = QueryBuilderUtil.getRuleNodeValueAsString(node);
-                if (StringUtils.isNumeric(numericValue)) {
+                if (NumberUtils.isCreatable(numericValue)) {
                     return numericValue;
                 } else {
                 	 String message = String.format("Data type '%s' not handled'", dataType);

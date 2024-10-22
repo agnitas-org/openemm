@@ -14,11 +14,14 @@ import com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm;
 import com.agnitas.web.mvc.Popups;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Set;
+
+// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 public class BlacklistDeleteFormValidator {
 
 	public boolean validate(final BlacklistDeleteForm form, final Popups popups) {
-		final String email = form.getEmail();
-		if(StringUtils.isEmpty(email)) {
+		Set<String> emails = form.getEmails();
+		if(emails.stream().anyMatch(StringUtils::isBlank)) {
 			popups.alert("error.email.empty");
 			return false;
 		}

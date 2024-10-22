@@ -15,6 +15,7 @@ package com.agnitas.reporting.birt.external.beans;
  */
 public class MailingClickStatsPerTargetRow extends URLClickStatRow {
 	private String targetgroup;
+    private boolean isAnonymous;
 
 	public String getTargetgroup() {
 		return targetgroup;
@@ -23,5 +24,12 @@ public class MailingClickStatsPerTargetRow extends URLClickStatRow {
 	public void setTargetgroup(String targetgroup) {
 		this.targetgroup = targetgroup;
 	}
-	
+
+    public boolean isAnonymous() {
+        return isAnonymous;
+    }
+
+    public void setAnonymous(boolean anonymous) {
+        isAnonymous = anonymous;
+    }
 }

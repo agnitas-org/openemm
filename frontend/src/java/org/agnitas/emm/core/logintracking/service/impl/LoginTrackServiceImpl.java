@@ -10,15 +10,12 @@
 
 package org.agnitas.emm.core.logintracking.service.impl;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.loginmanager.entity.BlockedAddressData;
+import com.agnitas.emm.util.SortDirection;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.util.OneOf;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.logintracking.LoginStatus;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
@@ -27,13 +24,21 @@ import org.agnitas.emm.core.logintracking.bean.LoginTrackSettings;
 import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
 import org.agnitas.emm.core.logintracking.dao.LoginTrackSettingsDao;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.util.Const;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.emm.core.loginmanager.entity.BlockedAddressData;
-import com.agnitas.emm.util.SortDirection;
-import com.agnitas.util.OneOf;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link LoginTrackService}.
@@ -80,11 +85,6 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 	@Override
 	public void trackLoginSuccessfulButBlocked(final String ipAddress, final String username) {
 		this.loginTrackDao.trackLoginStatus(ipAddress, username, LoginStatus.SUCCESS_BUT_BLOCKED);
-	}
-	
-	@Override
-	public void unlockIpAddress(final String ipAddress) {
-		this.loginTrackDao.trackLoginStatus(ipAddress, null, LoginStatus.UNLOCKED);
 	}
 	
 	/**
@@ -203,7 +203,7 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 	}
 	
 	@Override
-	public Optional<BlockedAddressData> findBlockedAddressByTrackingID(int trackingId) {
+	public Optional<BlockedAddressData> findBlockedAddressByTrackingID(long trackingId) {
 		final Optional<LoginData> optionalData = loginTrackDao.findLoginDataByTrackingID(trackingId);
 		
 		if(optionalData.isPresent()) {
@@ -220,19 +220,21 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 	}
 	
 	@Override
-	public boolean unlockBlockedAddressByTrackingId(int blockedAddressId) {
+	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
+	public boolean unlockBlockedAddressByTrackingId(long blockedAddressId) {
 		final Optional<BlockedAddressData> optionalData = findBlockedAddressByTrackingID(blockedAddressId);
 		
 		if(optionalData.isPresent()) {
-			final BlockedAddressData data = optionalData.get();
-			final String usernameOrNull = data.getUsername().orElse(null);
-			
-			loginTrackDao.trackLoginStatus(data.getIpAddress(), usernameOrNull, LoginStatus.UNLOCKED);
-			
+			unlockBlockedAddress(optionalData.get());
 			return true;
 		}
 		
 		return false;
+	}
+
+	private void unlockBlockedAddress(BlockedAddressData entry) {
+		final String usernameOrNull = entry.getUsername().orElse(null);
+		loginTrackDao.trackLoginStatus(entry.getIpAddress(), usernameOrNull, LoginStatus.UNLOCKED);
 	}
 
 	@Override
@@ -304,7 +306,39 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 		return new PaginatedListImpl<>(sublist, list.size(), pageSize, pageNumber, criterion.getId(), direction.getId());
 	}
 
-	private static final Comparator<BlockedAddressData> blockedAddressComparatorFrom(final LoginTrackSortCriterion criterion, final SortDirection direction) {
+	@Override
+	public List<String> getBlockedIpAddresses(Set<Integer> ids) {
+		return filterExistingBlockedAddresses(ids)
+				.stream()
+				.map(BlockedAddressData::getIpAddress)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public ServiceResult<UserAction> unlockAddresses(Set<Integer> ids, Admin admin) {
+		List<BlockedAddressData> addresses = filterExistingBlockedAddresses(ids);
+		addresses.forEach(this::unlockBlockedAddress);
+
+		List<String> ipAddresses = addresses.stream().map(BlockedAddressData::getIpAddress).collect(Collectors.toList());
+
+		return ServiceResult.success(
+				new UserAction(
+						"unlock IPs",
+						"IP addresses: " + StringUtils.join(ipAddresses, ", ")
+				),
+				Message.of(Const.Mvc.SELECTION_DELETED_MSG)
+		);
+	}
+
+	private List<BlockedAddressData> filterExistingBlockedAddresses(Set<Integer> ids) {
+		return ids.stream()
+				.map(this::findBlockedAddressByTrackingID)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(Collectors.toList());
+	}
+
+	private static Comparator<BlockedAddressData> blockedAddressComparatorFrom(final LoginTrackSortCriterion criterion, final SortDirection direction) {
 		final Comparator<BlockedAddressData> comparator = blockedAddressComparatorFrom(criterion);
 		
 		switch(direction) {

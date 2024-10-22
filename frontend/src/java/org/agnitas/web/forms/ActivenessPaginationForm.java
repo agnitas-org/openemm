@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.agnitas.emm.core.commons.ActivenessStatus;
 
+// TODO: EMMGUI-714 remove after remove of old design
 public class ActivenessPaginationForm extends PaginationForm {
     private ActivenessStatus filter = ActivenessStatus.NONE;
 	private Map<Integer, Boolean> activeness = new HashMap<>();

@@ -20,8 +20,16 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ComBirtReportDao {
+
+    boolean markDeleted(int reportId, int companyId);
+
+    void restore(Set<Integer> ids, int companyId);
+
+    List<Integer> getMarkedAsDeletedBefore(Date date, int companyId);
+
     boolean insert(ComBirtReport report) throws Exception;
 
     boolean update(ComBirtReport report) throws Exception;
@@ -76,4 +84,9 @@ public interface ComBirtReportDao {
     boolean deleteReport(int companyId, int reportId);
 
     List<Integer> getSampleReportIds(int companyId);
+
+    List<ReportEntry> findAllByEmailPart(String email, int companyID);
+    List<ReportEntry> findAllByEmailPart(String email);
+
+    void storeBirtReportEmailRecipients(List<String> emails, int reportId);
 }

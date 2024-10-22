@@ -1,7 +1,5 @@
 AGN.Lib.Controller.new('reference-content-settings', function() {
-  const Template = AGN.Lib.Template;
   let $container;
-  let createItemHtml;
   let isAvailable = false;
   let isEnabled = false;
   let initialItems = [];
@@ -14,7 +12,11 @@ AGN.Lib.Controller.new('reference-content-settings', function() {
   }
 
   function createItem(index, value) {
-    return $(createItemHtml({name: getAddonText(index), value: value, disabled: !isEnabled}));
+    return AGN.Lib.Template.dom('mailing-reference-content-item', {
+      name: getAddonText(index),
+      value: value,
+      disabled: !isEnabled
+    });
   }
 
   function getAddonText(index) {
@@ -39,7 +41,6 @@ AGN.Lib.Controller.new('reference-content-settings', function() {
   }
   this.addDomInitializer('reference-content-settings', function() {
     $container = $('#reference-content-items');
-    createItemHtml = Template.prepare('mailing-reference-content-item');
     $form = $('#mailingSettingsForm');
     selectKeyColumn();
 

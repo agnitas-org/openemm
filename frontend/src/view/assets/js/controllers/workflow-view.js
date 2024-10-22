@@ -615,7 +615,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 var autoExportSelector = $('form[name="' + this.formName + '"] select[name=importexportId]');
                 if (autoExportSelector.val() > 0) {
                     $.ajax({
-                        type: 'POST',
                         url: AGN.url('/workflow/validateDependency.action'),
                         data: {
                             workflowId: Def.workflowId || 0,
@@ -729,7 +728,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 var autoImportSelector = $('form[name="' + this.formName + '"] select[name=importexportId]');
                 if (autoImportSelector.val() > 0) {
                     $.ajax({
-                        type: 'POST',
                         url: AGN.url('/workflow/validateDependency.action'),
                         data: {
                             workflowId: Def.workflowId || 0,
@@ -1527,11 +1525,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 if (mailingId > 0) {
                     $linkSelect.attr('readonly', 'readonly');
                     $.ajax({
-                        type: 'POST',
-                        url: AGN.url('/workflow/getMailingLinks.action'),
-                        data: {
-                            mailingId: mailingId
-                        },
+                        url: AGN.url('/mailing/ajax/' + mailingId + '/links.action'),
                         success: function(data) {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
@@ -1878,11 +1872,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 if (mailingId > 0) {
                     $linkSelect.attr('readonly', 'readonly');
                     $.ajax({
-                        type: 'POST',
-                        url: AGN.url('/workflow/getMailingLinks.action'),
-                        data: {
-                            mailingId: mailingId
-                        },
+                        url: AGN.url('/mailing/ajax/' + mailingId + '/links.action'),
                         success: function(data) {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
@@ -2382,7 +2372,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
             $mailingsList.attr('readonly', 'readonly');
 
             $.ajax({
-                type: 'POST',
                 url: AGN.url('/workflow/getMailingsByWorkStatus.action'),
                 data: {
                     mailingTypes: this.mailingTypesForLoading.join(','),
@@ -3100,6 +3089,9 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
     function isStartNodeDateInPast(startNode) {
         const startDate = _.clone(startNode.data.date);
+        if (!startDate) {
+            return false;
+        }
         startDate.setHours(startNode.data.hour);
         startDate.setMinutes(startNode.data.minute);
         startDate.setSeconds(0);

@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import org.agnitas.emm.core.commons.util.ConfigValue.WebPush;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
@@ -69,21 +70,21 @@ import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.PermissionDao;
-import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
-import com.agnitas.dao.impl.ProfileFieldDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.JavaMailServiceImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.dao.RecipientFieldDao;
+import com.agnitas.emm.core.dao.impl.RecipientFieldDaoImpl;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.permission.service.PermissionServiceImpl;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
-import com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.impl.RecipientFieldServiceImpl;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.messages.Message;
@@ -143,6 +144,8 @@ public class ConfigService {
 	/** DAO for access company table. */
 	protected ComCompanyDao companyDao;
 	
+	protected RecipientFieldService recipientFieldService;
+	
 	/** DAO for access admin table. */
 	protected AdminDao adminDao; // TODO Replace by AdminService
 	
@@ -160,8 +163,6 @@ public class ConfigService {
 	
 	/** DAO for access server_command_tbl table. */
 	protected ComServerMessageDao serverMessageDao;
-	
-	protected ProfileFieldService profileFieldService;
 	
 	protected JavaMailService javaMailService;
 	
@@ -214,11 +215,10 @@ public class ConfigService {
 			((PermissionServiceImpl) permissionService).setPermissionDao(permissionDao);
 			instance.setPermissionService(permissionService);
 			
-			ProfileFieldDao profileFieldDao = new ProfileFieldDaoImpl();
-			((ProfileFieldDaoImpl) profileFieldDao).setDataSource(dataSource);
-			ProfileFieldService profileFieldService = new ProfileFieldServiceImpl();
-			((ProfileFieldServiceImpl) profileFieldService).setProfileFieldDao(profileFieldDao);
-			instance.setProfileFieldService(profileFieldService);
+			RecipientFieldDao recipientFieldDao = new RecipientFieldDaoImpl(dataSource, null);
+			RecipientFieldService recipientFieldService = new RecipientFieldServiceImpl();
+			((RecipientFieldServiceImpl) recipientFieldService).setRecipientFieldDao(recipientFieldDao);
+			instance.setRecipientFieldService(recipientFieldService);
 			
 			JavaMailService javaMailService = new JavaMailServiceImpl();
 			((JavaMailServiceImpl) javaMailService).setConfigService(instance);
@@ -351,12 +351,12 @@ public class ConfigService {
 	}
 	
 	/**
-	 * Set ProfileFieldService
+	 * Set RecipientFieldService
 	 * 
 	 */
 	@Required
-	public void setProfileFieldService(ProfileFieldService profileFieldService) {
-		this.profileFieldService = profileFieldService;
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = recipientFieldService;
 	}
 	
 	@Required
@@ -473,7 +473,7 @@ public class ConfigService {
 		}
 	}
 
-	private void joinConfigValues(Map<String, Map<Integer, String>> basicValues, Map<String, Map<Integer, String>> additionalValues) throws Exception {
+	private void joinConfigValues(Map<String, Map<Integer, String>> basicValues, Map<String, Map<Integer, String>> additionalValues) {
 		for (Entry<String, Map<Integer, String>> configEntry : additionalValues.entrySet()) {
 			Map<Integer, String> configValuesMap = basicValues.get(configEntry.getKey());
 			if (configValuesMap == null) {
@@ -486,7 +486,7 @@ public class ConfigService {
 		}
 	}
 
-	private Map<String, Map<Integer, String>> readEmmPropertiesFile() throws Exception {
+	private Map<String, Map<Integer, String>> readEmmPropertiesFile() {
 		try (InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("emm.properties")) {
 			Map<String, Map<Integer, String>> emmPropertiesMap = new HashMap<>();
 			Properties properties = new Properties();
@@ -865,7 +865,7 @@ public class ConfigService {
 				if (maximumNumberOfProfileFields >= 0) {
 					int numberOfCompanySpecificProfileFields;
 					try {
-						numberOfCompanySpecificProfileFields = profileFieldService.getCurrentSpecificFieldCount(companyID);
+						numberOfCompanySpecificProfileFields = recipientFieldService.getClientSpecificFieldCount(companyID);
 					} catch (Exception e) {
 						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
 					}
@@ -1018,6 +1018,10 @@ public class ConfigService {
 		}
 	}
 
+	public Optional<Date> getChangeDate(ConfigValue configValue, int companyId) {
+		return Optional.ofNullable(companyInfoDao.getChangeDate(configValue, companyId));
+	}
+
 	public void writeValue(final ConfigValue configurationValueID, final String value, String description) {
 		String[] parts = configurationValueID.toString().split("\\.", 2);
 		
@@ -1026,12 +1030,10 @@ public class ConfigService {
 		invalidateCache();
 	}
 
-	
 	public void writeValue(final ConfigValue configurationValueID, final int companyID, final String value) {
 		writeValue(configurationValueID, companyID, value, null);
 	}
 	 
-
 	public void writeValue(final ConfigValue configurationValueID, final int companyID, final String value, final String description) {
 		companyInfoDao.writeConfigValue(companyID, configurationValueID.toString(), value, description);
 		
@@ -1452,7 +1454,7 @@ public class ConfigService {
 	 * @return <code>true</code> if push notifications are enabled
 	 */
 	public final boolean isPushNotificationEnabled(final int companyID) {
-		return getBooleanValue(ConfigValue.PushNotificationsEnabled, companyID);
+		return getBooleanValue(WebPush.PushNotificationsEnabled, companyID);
 	}
 
 	/**
@@ -1465,15 +1467,15 @@ public class ConfigService {
 	 */
 	public final String pushNotificationProviderCredentials(final int companyID) {
 		// "{}" represents empty map in JSON
-		return getValue(ConfigValue.PushNotificationProviderCredentials, companyID, "{}");
+		return getValue(WebPush.PushNotificationProviderCredentials, companyID, "{}");
 	}
 
 	public String getPushNotificationFileSinkBaseDirectory(int companyID) {
-		return getValue(ConfigValue.PushNotificationFileSinkBaseDirectory, companyID, "/tmp");
+		return getValue(WebPush.PushNotificationFileSinkBaseDirectory, companyID, "/tmp");
 	}
 	
 	public final String getPushNotificationResultBaseDirectory() {
-		return getValue(ConfigValue.PushNotificationResultBaseDirectory, "/tmp");
+		return getValue(WebPush.PushNotificationResultBaseDirectory, "/tmp");
 	}
 	
 	public final int getLicenseID() {
@@ -1481,31 +1483,31 @@ public class ConfigService {
 	}
 
 	public final String getPushNotificationSftpHost() {
-		return getValue(ConfigValue.PushNotificationSftpHost);
+		return getValue(WebPush.PushNotificationSftpHost);
 	}
 
 	public String getPushNotificationSftpUser() {
-		return getValue(ConfigValue.PushNotificationSftpUser);
+		return getValue(WebPush.PushNotificationSftpUser);
 	}
 
 	public String getPushNotificationSftpBasePath() {
-		return getValue(ConfigValue.PushNotificationSftpBasePath);
+		return getValue(WebPush.PushNotificationSftpBasePath);
 	}
 
 	public String getPushNotificationSftpKeyFileName() {
-		return getValue(ConfigValue.PushNotificationSftpSshKeyFile);
+		return getValue(WebPush.PushNotificationSftpSshKeyFile);
 	}
 
 	public String getPushNotificationEncryptedSftpPassphrase() {
-		return getValue(ConfigValue.PushNotificationSftpEncryptedSshKeyPassphrase);
+		return getValue(WebPush.PushNotificationSftpEncryptedSshKeyPassphrase);
 	}
 	
 	public String getPushNotificationClickTrackingUrl(final int companyID) {
-		return getValue(ConfigValue.PushNotificationClickTrackingUrl, companyID);
+		return getValue(WebPush.PushNotificationClickTrackingUrl, companyID);
 	}
 	
 	public String getPushNotificationOpenTrackingUrl(final int companyID) {
-		return getValue(ConfigValue.PushNotificationOpenTrackingUrl, companyID);
+		return getValue(WebPush.PushNotificationOpenTrackingUrl, companyID);
 	}
 
 	public boolean isConfigValueExists(ConfigValue configurationValueID, int companyId) {

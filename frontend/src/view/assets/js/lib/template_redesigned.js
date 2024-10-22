@@ -10,21 +10,13 @@ category: Javascripts - Templates
 All the `text/x-mustache-template` scripts found during initialization are stored in `AGN.Opt.Templates` and accessible via `AGN.Lib.Template`.
 
 ```htmlexample
-<div class="form-group">
-  <div class="col-sm-4">
-    <label for="name" class="control-label">
-      Name
-    </label>
-  </div>
-  <div class="col-sm-8">
+<div class="d-flex flex-column gap-1">
+  <div>
+    <label for="name" class="form-label">Name</label>
     <input type="text" id="name" class="form-control" placeholder="Enter name"/>
   </div>
-</div>
 
-<div class="form-group">
-  <div class="col-sm-offset-4 col-sm-8">
-    <button type="button" id="showGreetings" class="btn btn-regular btn-primary">Greet!</button>
-  </div>
+  <button id="showGreetings" type="button" class="btn btn-primary">Greet!</button>
 </div>
 
 <script type="text/javascript">
@@ -72,41 +64,48 @@ var $modal = AGN.Lib.Template.dom('modal', {
 
 */
 
-(function() {
+(() => {
+
   const CSRF = AGN.Lib.CSRF;
   const templates = AGN.Opt.Templates;
 
-  function prepare(name) {
-    if (exists(name)) {
-      const templateFunc = _.template(templates[name]);
-      return createTemplateDecorator(templateFunc);
+  const cache = [];
+
+  class Template {
+    static prepare(name) {
+      if (!this.exists(name)) {
+        throw new Error(`There's no template \`${name}\` registered`);
+      }
+
+      if (!cache[name]) {
+        const templateFunc = _.template(templates[name]);
+        cache[name] = function () {
+          const template = templateFunc.apply(this, arguments);
+          return CSRF.updateTokenInDOM(template);
+        };
+      }
+
+      return cache[name];
     }
-    throw new Error("There's no template `" + name + "` registered");
-  }
 
-  function createTemplateDecorator(templateFunc) {
-    return function () {
-      const template = templateFunc.apply(this, arguments);
-      return CSRF.updateTokenInDOM(template, true);
+    static text(name, parameters) {
+      return this.prepare(name)(parameters);
+    }
+
+    static dom(name, parameters) {
+      return $(this.text(name, parameters));
+    }
+
+    static exists(name) {
+      return name in templates;
+    }
+
+    static register(id, content) {
+      AGN.Opt.Templates[id] = content;
+      delete cache[id];
     }
   }
 
-  function text(name, parameters) {
-    return prepare(name)(parameters);
-  }
+  AGN.Lib.Template = Template;
 
-  function dom(name, parameters) {
-    return $(text(name, parameters));
-  }
-
-  function exists(name) {
-    return name in templates;
-  }
-
-  AGN.Lib.Template = {
-    prepare: prepare,
-    text: text,
-    dom: dom,
-    exists: exists
-  };
 })();

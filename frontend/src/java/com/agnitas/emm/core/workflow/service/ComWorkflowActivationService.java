@@ -18,7 +18,7 @@ import com.agnitas.beans.MailingSendOptions;
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
@@ -114,7 +114,7 @@ public class ComWorkflowActivationService {
 	private static final String HOUR_EXPRESSION = "1/24 * ";
 	private static final String MINUTE_EXPRESSION = "1/(24 * 60) * ";
 
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private ComWorkflowService workflowService;
 	private MailingSendService mailingSendService;
 	private ComOptimizationService optimizationService;
@@ -476,7 +476,7 @@ public class ComWorkflowActivationService {
 						.setDate(sendDate)
 						.setMaxRecipients(workflowMailing.getMaxRecipients())
 						.setBlockSize(workflowMailing.getBlocksize())
-						.setDefaultStepping(DEFAULT_STEPPING)
+						.setStepping(DEFAULT_STEPPING)
 						.setFollowupFor(getBaseMailingId(icon))
 						.setCheckForDuplicateRecords(workflowMailing.isDoubleCheck())
 						.setSkipWithEmptyTextContent(workflowMailing.isSkipEmptyBlocks())
@@ -1367,7 +1367,7 @@ public class ComWorkflowActivationService {
 		this.workflowService = workflowService;
 	}
 
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -1652,14 +1652,6 @@ public class ComWorkflowActivationService {
 			return !positive;
 		}
 
-        /**
-         * Used by JSP
-         */
-        @SuppressWarnings("unused")
-		public void setNegative(boolean negative) {
-			this.positive = !negative;
-		}
-
 		public void negate() {
 			positive = !positive;
 		}
@@ -1682,7 +1674,7 @@ public class ComWorkflowActivationService {
 	}
 
 	private class TargetCondition extends Condition {
-		private int targetId;
+		private final int targetId;
 
 		public TargetCondition(int targetId) {
 			this.targetId = targetId;
@@ -1695,14 +1687,6 @@ public class ComWorkflowActivationService {
 
 		public int getTargetId() {
 			return targetId;
-		}
-
-        /**
-         * Used by JSP
-         */
-        @SuppressWarnings("unused")
-		public void setTargetId(int targetId) {
-			this.targetId = targetId;
 		}
 
 		@Override
@@ -1749,7 +1733,7 @@ public class ComWorkflowActivationService {
 
 	private static class ConditionGroup extends Condition {
 		private List<Condition> conditions = new LinkedList<>();
-		private boolean conjunction;
+		private final boolean conjunction;
 
 		public ConditionGroup(boolean conjunction) {
 			this.conjunction = conjunction;
@@ -1760,11 +1744,6 @@ public class ComWorkflowActivationService {
 			this.conjunction = conjunction;
 		}
 
-        @SuppressWarnings("unused")
-		public boolean contains(Condition condition) {
-			return conditions.contains(condition);
-		}
-
 		public void add(Condition condition) {
 			conditions.add(condition);
 		}
@@ -1773,34 +1752,14 @@ public class ComWorkflowActivationService {
 			this.conditions.addAll(conditionsToAdd);
 		}
 
-        @SuppressWarnings("unused")
-		public void remove(Condition condition) {
-			conditions.remove(condition);
-		}
-
-        @SuppressWarnings("unused")
-		public void removeAll(Collection<Condition> conditionsToRemove) {
-			this.conditions.removeAll(conditionsToRemove);
-		}
-
 		@Override
 		public boolean isConjunction() {
 			return conjunction;
 		}
 
-        @SuppressWarnings("unused")
-		public void setConjunction(boolean conjunction) {
-			this.conjunction = conjunction;
-		}
-
 		@Override
 		public boolean isDisjunction() {
 			return !conjunction;
-		}
-
-        @SuppressWarnings("unused")
-		public void setDisjunction(boolean disjunction) {
-			this.conjunction = !disjunction;
 		}
 
 		@Override

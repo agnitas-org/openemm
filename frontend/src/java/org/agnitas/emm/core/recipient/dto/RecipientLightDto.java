@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.core.recipient.dto;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class RecipientLightDto {
     
     private int customerId;
@@ -57,5 +59,10 @@ public class RecipientLightDto {
     
     public void setLastname(String lastname) {
         this.lastname = lastname;
+    }
+
+    public String getReadableName() {
+        String shortname = getFirstname() + " " + getLastname();
+        return StringUtils.isBlank(shortname) ? getEmail() : shortname;
     }
 }

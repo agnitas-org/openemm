@@ -14,7 +14,6 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
 import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
@@ -31,8 +30,11 @@ import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -60,6 +62,7 @@ import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
@@ -100,6 +103,7 @@ import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
@@ -109,6 +113,7 @@ import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 public class BirtReportController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(BirtReportController.class);
+    private static final String REDIRECT_TO_OVERVIEW = "redirect:/statistics/reports.action?restoreSort=true";
 
     private final ComBirtReportService birtReportService;
     private final WebStorage webStorage;
@@ -151,8 +156,8 @@ public class BirtReportController implements XssCheckAware {
 
     @RequestMapping("/reports.action")
     public String list(Admin admin, @ModelAttribute("birtReportsForm") BirtReportOverviewFilter filter,
-                       @ModelAttribute BirtReportFormSearchParams searchParams, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.BIRT_REPORT_OVERVIEW, filter);
+                       @ModelAttribute BirtReportFormSearchParams searchParams, @RequestParam(required = false) boolean restoreSort, Model model) {
+        FormUtils.syncPaginationData(webStorage, WebStorage.BIRT_REPORT_OVERVIEW, filter, restoreSort);
 
         if (isRedesign(admin)) {
             FormUtils.syncSearchParams(searchParams, filter, true);
@@ -171,13 +176,17 @@ public class BirtReportController implements XssCheckAware {
     }
 
     private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.STATISTICS_REPORTS_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/reports/search.action")
-    public String search(@ModelAttribute BirtReportOverviewFilter filter, @ModelAttribute BirtReportFormSearchParams searchParams) {
+    public String search(@ModelAttribute BirtReportOverviewFilter filter, RedirectAttributes ra,
+                         @ModelAttribute BirtReportFormSearchParams searchParams, Admin admin) {
         FormUtils.syncSearchParams(searchParams, filter, false);
-        return "redirect:/statistics/reports.action";
+        if (admin.isRedesignedUiUsed()) {
+            ra.addFlashAttribute("birtReportsForm", filter);
+        }
+        return REDIRECT_TO_OVERVIEW;
     }
 
     @RequestMapping("/report/{id:\\d+}/view.action")
@@ -236,7 +245,7 @@ public class BirtReportController implements XssCheckAware {
     }
 
     @PostMapping("/report/evaluate.action")
-    public String evaluate(Admin admin, BirtReportForm form, RedirectAttributes redirectModel, Model model, Popups popups) throws Exception {
+    public Object evaluate(Admin admin, BirtReportForm form, RedirectAttributes redirectModel, Model model, Popups popups) throws Exception {
         if (!formValidator.isValidToEvaluate(form, admin, popups)) {
             if (isRedesign(admin)) {
                 return MESSAGES_VIEW;
@@ -246,15 +255,39 @@ public class BirtReportController implements XssCheckAware {
             }
         }
 
-        prepareDownloadPage(form, admin, model);
-        return "birtreport_download";
+        if (isRedesign(admin)) {
+            return evaluate(form, admin, popups);
+        } else {
+            prepareDownloadPage(form, admin, model);
+            return "birtreport_download";
+        }
     }
 
+    private Object evaluate(BirtReportForm form, Admin admin, Popups popups) throws Exception {
+        List<BirtReportDownload> downloads = birtReportService.evaluate(form.getReportId(), form.getActiveTab(), admin);
+        if (CollectionUtils.isEmpty(downloads)) {
+            return "evaluation_finished";
+        }
+
+        File tmpFile = birtStatisticsService.getBirtReportTmpFile(downloads, admin.getCompanyID());
+        if (tmpFile == null || !tmpFile.exists() || tmpFile.length() <= 0) {
+            return "evaluation_finished";
+        }
+
+        String fileName = downloads.size() == 1 ? downloads.get(0).getFileName() : "birt_reports.zip";
+
+        String downloadUrl = String.format("/statistics/report/download.action?fileName=%s&tmpFileName=%s",
+                fileName, Objects.requireNonNull(tmpFile).getAbsolutePath());
+        return ResponseEntity.ok(new DataResponseDto<>(downloadUrl, popups));
+    }
+
+    // TODO: EMMGUI-714: remove when old design will be removed
     private void prepareDownloadPage(BirtReportForm form, Admin admin, Model model) throws Exception {
         model.addAttribute("reportId", form.getReportId());
         model.addAttribute("success", evaluate(form, admin, model));
     }
 
+    // TODO: EMMGUI-714: remove when old design will be removed
     private boolean evaluate(BirtReportForm form, Admin admin, Model model) throws Exception {
         BirtReportDownload birtDownload = birtReportService.evaluate(admin, form);
         if (birtDownload == null) {
@@ -268,6 +301,10 @@ public class BirtReportController implements XssCheckAware {
         model.addAttribute("fileName", birtDownload.getFileName());
         model.addAttribute("tmpFileName", birtDownload.getTmpFileName());
         model.addAttribute("reportShortname", birtDownload.getShortname());
+        if (isRedesign(admin)) {
+            model.addAttribute("downloadUrl", "/statistics/report/download.action");
+        }
+
         return true;
     }
 
@@ -278,38 +315,46 @@ public class BirtReportController implements XssCheckAware {
         return new FileSystemResource(file);
     }
 
+    @GetMapping(value = "/report/deleteRedesigned.action")
     @PermissionMapping("confirmDelete")
-    @GetMapping(value = "/report/{id:\\d+}/delete.action")
-    public String confirmDeleteRedesigned(@PathVariable int id, Model model, Admin admin, Popups popups) {
-        if (!birtReportService.isReportExist(admin.getCompanyID(), id)) {
-            popups.alert("recipient.reports.notAvailable");
-            return MESSAGES_VIEW;
+    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
+        validateSelectedIds(bulkIds);
+
+        List<String> names = birtReportService.getNames(bulkIds, admin.getCompanyID());
+        if (names.isEmpty()) {
+            throw new RequestErrorException(ERROR_MSG);
         }
 
-        MvcUtils.addDeleteAttrs(model, birtReportService.getReportName(admin.getCompanyID(), id),
-                "statistic.reports.delete", "statistic.reports.delete.question");
+        MvcUtils.addDeleteAttrs(model, names,
+                "statistic.reports.delete", "statistic.reports.delete.question",
+                "bulkAction.delete.report", "bulkAction.delete.report.question");
         return DELETE_VIEW;
     }
 
-    @RequestMapping(value = "/report/{id:\\d+}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @RequestMapping(value = "/report/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     @PermissionMapping("delete")
-    public String deleteRedesigned(@PathVariable int id, Admin admin, Popups popups) {
-        int companyId = admin.getCompanyID();
+    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+        validateSelectedIds(bulkIds);
+        ServiceResult<UserAction> result = birtReportService.markDeleted(bulkIds, admin.getCompanyID());
 
-        if (birtReportService.isReportExist(companyId, id)) {
-            String reportName = birtReportService.getReportName(admin.getCompanyID(), id);
+        popups.addPopups(result);
+        userActivityLogService.writeUserActivityLog(admin, result.getResult());
 
-            if (birtReportService.deleteReport(companyId, id)) {
-                writeUserActivityLog(admin, new UserAction("delete report", getReportUalDescription(reportName, id)));
-                popups.success(SELECTION_DELETED_MSG);
-            } else {
-                popups.alert(ERROR_MSG);
-            }
-        } else {
-            popups.alert("recipient.reports.notAvailable");
+        return REDIRECT_TO_OVERVIEW;
+    }
+
+    @PostMapping("/report/restore.action")
+    public String restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+        validateSelectedIds(bulkIds);
+        birtReportService.restore(bulkIds, admin.getCompanyID());
+        popups.success(CHANGES_SAVED_MSG);
+        return REDIRECT_TO_OVERVIEW + "&showDeleted=true";
+    }
+
+    private void validateSelectedIds(Set<Integer> ids) {
+        if (org.apache.commons.collections4.CollectionUtils.isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
         }
-
-        return "redirect:/statistics/reports.action";
     }
 
     @GetMapping("/report/{id:\\d+}/confirmDelete.action")
@@ -344,7 +389,7 @@ public class BirtReportController implements XssCheckAware {
             popups.alert("recipient.reports.notAvailable");
         }
 
-        return "redirect:/statistics/reports.action";
+        return REDIRECT_TO_OVERVIEW;
     }
 
     @GetMapping(value = "/report/getFilteredMailing.action", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -375,15 +420,21 @@ public class BirtReportController implements XssCheckAware {
     }
 
     @RequestMapping("/singleMailingStatistics/create.action")
-    public String createSingleMailingStatisticsReport(@RequestParam(name = "mailingId") int mailingId, Admin admin, Model model) throws Exception {
+    public Object createSingleMailingStatisticsReport(@RequestParam(name = "mailingId") int mailingId, Admin admin, Model model, Popups popups) throws Exception {
         BirtReportDto newReport = birtReportService.createSingleMailingStatisticsReport(mailingId, admin);
         BirtReportForm form = conversionService.convert(newReport, BirtReportForm.class);
 
-        prepareDownloadPage(form, admin, model);
-        model.addAttribute("backUrl", "/statistics/mailing/" + mailingId + "/view.action");
-        birtReportService.deleteReport(admin.getCompanyID(), newReport.getId());
+        if (isRedesign(admin)) {
+            Object evaluationResult = evaluate(form, admin, popups);
+            birtReportService.deleteReport(admin.getCompanyID(), newReport.getId());
+            return evaluationResult;
+        } else {
+            prepareDownloadPage(form, admin, model);
+            model.addAttribute("backUrl", "/statistics/mailing/" + mailingId + "/view.action");
+            birtReportService.deleteReport(admin.getCompanyID(), newReport.getId());
 
-        return "birtreport_download";
+            return "birtreport_download";
+        }
     }
 
     private String redirectToView(@PathVariable int reportId) {

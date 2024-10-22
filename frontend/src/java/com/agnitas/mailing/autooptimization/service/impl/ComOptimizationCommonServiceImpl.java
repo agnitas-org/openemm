@@ -15,7 +15,7 @@ import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
@@ -24,7 +24,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
 	
 	private ComOptimizationDao optimizationDao;
 	private MaildropStatusDao maildropStatusDao;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	/*
 	 * (non-Javadoc)
@@ -82,7 +82,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
 		this.maildropStatusDao = maildropStatusDao;
 	}
 
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 }

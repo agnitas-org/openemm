@@ -25,7 +25,7 @@ import org.apache.commons.lang3.BooleanUtils;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class RecipientDto {
 

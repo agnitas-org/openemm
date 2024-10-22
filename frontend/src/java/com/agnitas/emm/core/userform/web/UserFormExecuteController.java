@@ -25,7 +25,7 @@ import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.component.service.ComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.MapUtils;

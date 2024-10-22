@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.core.components.form;
 
+import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
+import org.agnitas.web.forms.PaginationForm;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
-
-public class UpdateMailingAttachmentsForm {
+public class UpdateMailingAttachmentsForm extends PaginationForm {
 
     private List<MailingAttachmentDto> attachments = new ArrayList<>();
 

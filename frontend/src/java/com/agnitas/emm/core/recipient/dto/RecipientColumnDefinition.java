@@ -23,6 +23,7 @@ import com.agnitas.beans.ProfileFieldMode;
 public class RecipientColumnDefinition {
     private String columnName;
     private String shortname;
+    private String description;
     private DbColumnType.SimpleDataType dataType;
     private ProfileFieldMode editMode;
     private boolean nullable;
@@ -46,6 +47,14 @@ public class RecipientColumnDefinition {
 
     public String getShortname() {
         return shortname;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public void setDataType(DbColumnType.SimpleDataType dataType) {

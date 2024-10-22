@@ -38,7 +38,6 @@
 <c:set var="DEFAULT_STEPPING" value="<%= MailingBlockSizeService.DEFAULT_STEPPING %>"/>
 
 <jsp:useBean id="now" class="java.util.Date" />
-<fmt:formatDate value="${now}" pattern="${adminDateFormat}" timeZone="${adminZone}" var="currentDate" />
 <fmt:formatDate value="${now}" pattern="HH" timeZone="${adminZone}" var="currentHour" />
 <fmt:formatDate value="${now}" pattern="mm" timeZone="${adminZone}" var="currentMinutes" />
 
@@ -215,9 +214,10 @@
                                             <label class="control-label" for="fullDate">
                                                 <mvc:message code="Date" />
                                             </label>
+
                                             <div class="input-group">
                                                 <div class="input-group-controls">
-                                                    <input name="sendDate" id="fullDate" value="${currentDate}" class="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: 'yyyymmdd', min: true" />
+                                                    <input name="sendDate" id="fullDate" value="${sendDateStr}" class="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: 'yyyymmdd', min: true" />
                                                 </div>
                                                 <div class="input-group-btn">
                                                     <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
@@ -250,7 +250,7 @@
                                             </label>
                                             <div class="input-group" data-field="split">
                                                 <div class="input-group-controls">
-                                                    <input id="sendTime" type="text" name="sendTime" value="${currentHour}:${currentMinutes}" data-value="${currentHour}:${currentMinutes}" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" data-field-split="sendHour, sendMinute" data-field-split-rule=":">
+                                                    <input id="sendTime" type="text" name="sendTime" value="${sendTimeStr}" data-value="${sendTimeStr}" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" data-field-split="sendHour, sendMinute" data-field-split-rule=":">
                                                 </div>
                                                 <div class="input-group-addon">
 												<span class="addon">

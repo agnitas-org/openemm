@@ -57,7 +57,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -146,6 +146,10 @@ public class Data {
 	 */
 	protected boolean bounceBleed = true;
 	protected int bounceBleedDuration = 180;
+	/*
+	 * if generation is aborted when voucher codes are insufficent
+	 */
+	protected boolean vouchersMandatory = false;
 	/**
 	 * database driver name
 	 */
@@ -276,7 +280,7 @@ public class Data {
 	/**
 	 * virtual database fields
 	 */
-	public Map<String, String> virtualMap = null;
+	private Map<String, String> virtualMap = null;
 	/**
 	 * static values
 	 */
@@ -696,6 +700,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tenforceTestVIP = " + enforceTestVIP);
 		logging(Log.DEBUG, "init", "\tbounceBleed = " + bounceBleed);
 		logging(Log.DEBUG, "init", "\tbounceBleedDuration = " + bounceBleedDuration);
+		logging(Log.DEBUG, "init", "\tvouchersMandatory = " + vouchersMandatory);
 		logging(Log.DEBUG, "init", "\tisPriorityMailing = " + isPriorityMailing);
 		logging(Log.DEBUG, "init", "\tmailingPriority = " + mailingPriority);
 		if (references != null) {
@@ -1380,6 +1385,9 @@ public class Data {
 		}
 		if ((temp = company.info ("bounce-bleed-duration", mailing.id ())) != null) {
 			bounceBleedDuration = Str.atoi (temp, bounceBleedDuration);
+		}
+		if ((temp = company.info ("vouchers-mandatory", mailing.id ())) != null) {
+			vouchersMandatory = Str.atob (temp, false);
 		}
 
 		setupUrlAndTags(mailing.id ());
@@ -2654,6 +2662,10 @@ public class Data {
 	public String virtualData(String colname) {
 		return findInMap(virtualMap, colname);
 	}
+	
+	public Map <String, String> virtualMap () {
+		return virtualMap;
+	}
 
 	public String getBindingTable() {
 		return bigClause.getBindingTable();
@@ -3027,6 +3039,10 @@ public class Data {
 	
 	public int bounceBleedDuration () {
 		return bounceBleedDuration;
+	}
+	
+	public boolean vouchersMandatory () {
+		return vouchersMandatory;
 	}
 
 	protected Map <String, String> retrieveOverwrittenTestRecipientColumns () {
@@ -3454,6 +3470,10 @@ public class Data {
 
 			if (sql != null) {
 				rc.add(sql);
+			}
+			sql = targetExpression.altgselect ();
+			if (sql != null) {
+				rc.add (sql);
 			}
 		}
 		if (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing()) {

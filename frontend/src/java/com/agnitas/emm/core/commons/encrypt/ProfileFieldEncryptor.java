@@ -34,14 +34,14 @@ import org.springframework.beans.factory.annotation.Required;
 public class ProfileFieldEncryptor {
 
 	/** Index of matching group for encryption identifier. */
-	@SuppressWarnings("unused")
+	@SuppressWarnings("unused") // reserved ID for A9N encryption identifier group index
 	private static final int A9N_ENCRYPTION_IDENTIFIER_GROUP_INDEX = 1;
 
 	/** Index of matching group for company ID. */
 	private static final int A9N_COMPANY_ID_GROUP_INDEX = 2;
 
 	/** Index of matching group for customer ID. */
-	@SuppressWarnings("unused")
+	@SuppressWarnings("unused") // reserved ID for A9N customer id group index
 	private static final int A9N_CUSTOMER_ID_GROUP_INDEX = 3;
 
 	/** Index of matching group for data. */

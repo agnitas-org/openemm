@@ -5,9 +5,7 @@ $campaign-editor-toolbar-icon-default-width: 40px; // some icons have custom wid
 .toolbar {
   display: flex;
   justify-content: space-between;
-  max-height: 73px;
-  padding: 10px 20px;
-  border-top: 1px solid $border-color;
+  padding: $gap-sm $gap;
   border-bottom: 1px solid $border-color;
 
   &__icons {
@@ -22,24 +20,24 @@ $campaign-editor-toolbar-icon-default-width: 40px; // some icons have custom wid
   &__icon-set {
     display: flex;
     gap: $gap-sm;
-    min-width: 0;
+    flex-wrap: wrap;
   }
 
   &__icon {
-    @include size($campaign-editor-toolbar-icon-default-width, $campaign-editor-toolbar-icon-height);
+    @include size($campaign-editor-toolbar-icon-height);
     color: $campaign-icon-color;
+    outline: none;
     
     &:not(.disabled) {
       cursor: pointer;
     }
 
     &:hover:not(.disabled), &:active:not(.disabled) {
-      color: $campaign-selected-icon-color;
+      color: $campaign-focused-icon-color;
     }
 
     svg {
-      width: 100%;
-      height: 100%;
+      @include size(100%);
     }
   }
 
@@ -47,6 +45,10 @@ $campaign-editor-toolbar-icon-default-width: 40px; // some icons have custom wid
     min-width: min-content;
   }
   
+  .active {
+    color: $campaign-focused-icon-color;
+  }
+
   .w-40 {
     width: 40px !important;
   }
@@ -58,7 +60,7 @@ $campaign-editor-toolbar-icon-default-width: 40px; // some icons have custom wid
   .w-30 {
     width: 30px !important;
   }
-  
+
   .w-26 {
     width: 26px;
   }

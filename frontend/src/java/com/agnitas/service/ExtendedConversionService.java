@@ -34,11 +34,14 @@ public interface ExtendedConversionService extends ConversionService {
         List<S> list = paginatedList.getList();
         List<T> convertedList = convert(list, sourceType, targetType);
 
-        return new PaginatedListImpl<>(convertedList,
+        PaginatedListImpl<T> result = new PaginatedListImpl<>(convertedList,
                 paginatedList.getFullListSize(),
                 paginatedList.getObjectsPerPage(),
                 paginatedList.getPageNumber(),
                 paginatedList.getSortCriterion(),
                 paginatedList.getSortDirection().getName());
+
+        result.setNotFilteredFullListSize(paginatedList.getNotFilteredFullListSize());
+        return result;
     }
 }

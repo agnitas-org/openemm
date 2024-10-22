@@ -53,16 +53,16 @@
 					<td>
 						<label class="toggle">
 							{{ if (encrypted) { }}
-								<input type="checkbox" checked="checked" data-mapping-ecnrypted />
+								<input type="checkbox" checked="checked" data-mapping-encrypted />
 							{{ } else { }}
-								<input type="checkbox" data-mapping-ecnrypted />
+								<input type="checkbox" data-mapping-encrypted />
 							{{ } }}
 							<div class="toggle-control"></div>
 						</label>
 					</td>
 				</c:when>
 				<c:otherwise>
-					<input type="hidden" value="{{= encrypted }}" data-mapping-ecnrypted>
+					<input type="hidden" value="{{= encrypted }}" data-mapping-encrypted>
 				</c:otherwise>
 			</c:choose>
 

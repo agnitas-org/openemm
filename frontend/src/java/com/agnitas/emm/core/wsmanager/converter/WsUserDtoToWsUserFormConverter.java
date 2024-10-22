@@ -28,7 +28,6 @@ public class WsUserDtoToWsUserFormConverter implements Converter<WebserviceUserD
         userForm.setCompanyId(userDto.getCompanyId());
         userForm.setPassword("");
         userForm.setEmail(userDto.getEmail());
-        userForm.setContactInfo(userDto.getContactInfo());
         userForm.setActive(userDto.isActive());
         
     	final Map<String, String> grantedPermissions = userDto.getGrantedPermissions().stream().collect(Collectors.toMap(name -> name, name -> "true"));

@@ -12,6 +12,7 @@ package com.agnitas.emm.core.company.factory.impl;
 
 import java.util.Objects;
 
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.anonymization.RecipientAnonymizationSettings;
 import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
@@ -74,6 +75,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setAllowEmailWithWhitespace(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmailWithWhitespace.getDefaultValue()));
         companySettingsDto.setAllowEmptyEmail(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmptyEmail.getDefaultValue()));
         companySettingsDto.setExpireStatistics(Integer.parseInt(ConfigValue.ExpireStatistics.getDefaultValue()));
+        companySettingsDto.setExpireStatistics(Integer.parseInt(ConfigValue.ExpireStatistics.getDefaultValue()));
         companySettingsDto.setExpireSuccess(Integer.parseInt(ConfigValue.ExpireSuccess.getDefaultValue()));
         companySettingsDto.setExpireRecipient(Integer.parseInt(ConfigValue.ExpireRecipient.getDefaultValue()));
         companySettingsDto.setExpireBounce(Integer.parseInt(ConfigValue.ExpireBounce.getDefaultValue()));
@@ -82,9 +84,11 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setDefaultCompanyLinkTrackingMode(LinkTrackingMode.getDefault().getMode());
         companySettingsDto.setDefaultBlockSize(Integer.parseInt(ConfigValue.DefaultBlocksizeValue.getDefaultValue()));
         companySettingsDto.setDefaultTestRunOption(TestRunOption.fromId(Integer.parseInt(ConfigValue.DefaultTestRunOption.getDefaultValue())));
+        companySettingsDto.setAdminTestMarkPlacement(AdminTestMarkPlacementOption.find(ConfigValue.Backend_AdminTestMark.getDefaultValue()));
         companySettingsDto.setUserBasedFavoriteTargets(AgnUtils.interpretAsBoolean(ConfigValue.UserBasedFavoriteTargets.getDefaultValue()));
         companySettingsDto.setFilterRecipientsOverviewForActiveRecipients(AgnUtils.interpretAsBoolean(ConfigValue.FilterRecipientsOverviewForActiveRecipients.getDefaultValue()));
         companySettingsDto.setCleanAdminAndTestRecipientsActivity(AgnUtils.interpretAsBoolean(ConfigValue.CleanAdminAndTestRecipientsActivities.getDefaultValue()));
+        companySettingsDto.setIndividualLinkTrackingForMailings(AgnUtils.interpretAsBoolean(ConfigValue.IndividualLinkTrackingForAllMailings.getDefaultValue()));
         companySettingsDto.setNormalizeEmails(!AgnUtils.interpretAsBoolean(ConfigValue.AllowUnnormalizedEmails.getDefaultValue()));
 
         int maxFieldsByLicense = configService.getIntegerValue(ConfigValue.MaxFields);

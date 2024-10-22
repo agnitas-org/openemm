@@ -1,68 +1,126 @@
 
+/*doc
+---
+title: Badges
+name: badges
+category: Components - Badges
+---
+
+Basic badges are tiny objects usually only used to display a text.
+They are however very flexible.
+
+An important condition is that the background color must be set for the badge.
+You can see the list of Bootstrap classes for setting the background [here](https://getbootstrap.com/docs/5.2/helpers/color-background/).
+
+*/
+
+/*doc
+---
+title: Basic example
+name: badges_01_example
+parent: badges
+---
+
+```htmlexample
+<span class="badge text-bg-primary">Primary</span>
+```
+
+Badges can also contain text and icons in any order and multitude.
+Text inside has to be wrapped inside `<span>`.
+
+```htmlexample
+<span class="badge text-bg-danger">
+  <i class="icon icon-angle-left"></i>
+  <span>Danger</span>
+  <i class="icon icon-angle-right"></i>
+</span>
+```
+
+You can also use more large version of the badge just using class `.badge--lg`.
+
+```htmlexample
+<span class="badge badge--lg text-bg-primary">Primary</span>
+```
+
+*/
+
+/*doc
+---
+title: States
+name: badges_02_states
+parent: badges
+---
+
+The usual states are supported as `.badge--success`, `.badge--warning` and `.badge--error` respectively.
+
+```htmlexample
+<span class="badge badge--success">
+    <span class="text">Text</span>
+</span>
+<span class="badge badge--warning">
+    <span class="text">Text</span>
+</span>
+<span class="badge badge--error">
+    <span class="text">Text</span>
+</span>
+```
+*/
+
+/*doc
+---
+title: Special Badge Variants
+name: badges_03_special
+parent: badges
+---
+
+The most common variation of badges is the status badges, but there are others as well.
+
+*/
+
+/*doc
+---
+title: Colored badges
+name: badges_14_colored
+parent: badges_03_special
+---
+
+The square badge can have any color you want. To do this you need to use a class `.square-badge` and give it some kind of background color.
+
+```htmlexample
+<span class="square-badge text-bg-primary"></span>
+<span class="square-badge text-bg-danger"></span>
+<span class="square-badge" style="background: orange"></span>
+```
+
+*/
+
 $status-badge-size: 18px;
 $status-badge-size-lg: 30px;
 $status-badge-font-size: 10px;
 
-@import "status-badge/_.scss";
-@import "text-badge";
-
-.multi-icon-badge {
-  @include flex-row($gap-x-sm);
-  align-items: center;
-  padding-inline: $gap-x-sm - 1;
-  height: $status-badge-size;
-  border-radius: $border-radius-sm;
-  background-color: $stat-or-badge-dark-grey;
-  color: $white;
-
-  .icon {
-    font-size: $status-badge-font-size;
-  }
-}
-
-.color-badge {
+.square-badge {
   @include size($status-badge-size);
-  @include min-size($status-badge-size);
+  @include flex-center;
   border-radius: $border-radius-sm;
-  background-color: $white;
+  flex: none;
 }
 
-.pill-badge {
+.table-badge {
   @extend .badge;
-  padding: 2px $gap-sm;
+  padding: 3px $gap-sm;
+
   font-size: $font-size-base;
-  border: $border-default;
-  border-radius: $border-radius-pill;
-  background-color: var(--pill-badge-bg-color);
-  color: var(--pill-badge-color);
   font-weight: $font-weight-base;
-}
 
-.image-badge {
-  @include size($status-badge-size-lg);
-  @include min-size($status-badge-size-lg);
-  @include flex-center;
-  border-radius: $border-radius;
-  background-color: $primary;
-
-  img {
-    @include size($font-size-md); // TODO replace magic n with variable
-  }
-}
-
-.icon-badge {
-  @include flex-center;
-  @include size($status-badge-size);
-  @include min-size($status-badge-size);
+  border: $border-default;
   border-radius: $border-radius-sm;
-  font-size: $status-badge-font-size;
-  color: $white;
-  background-color: $primary;
+
+  background-color: var(--table-head-bg-color);
+  color: var(--table-badge-color);
 }
 
-.icon-badge--lg {
-  @include size($status-badge-size-lg);
-  @include min-size($status-badge-size-lg);
-  border-radius: $border-radius;
-  font-size: $font-size-md;
-}
+@import "status-badge/_.scss";
+@import "icon-badge";
+@import "image-badge";
+@import "table-badge";
+@import "text-badge";

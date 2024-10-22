@@ -20,96 +20,96 @@ public interface DatasourceDescription {
      *
      * @param id New value of property id.
      */
-    public void setId(int id);
+    void setId(int id);
 
     /**
      * Setter for property companyID.
      *
      * @param id New value of property companyID.
      */
-    public void setCompanyID( int id);
+    void setCompanyID(int id);
     
     /**
      * Setter for property sourcegroupID.
      *
-     * @param title New value of property sourcegroupID.
+     * @param sourceGroupType New value of property sourceGroupType.
      */
-    public void setSourceGroupType(SourceGroupType sourceGroupType);
+    void setSourceGroupType(SourceGroupType sourceGroupType);
     
     /**
      * Setter for property description.
      *
      * @param desc New value of property description.
      */
-    public void setDescription(String desc);
+    void setDescription(String desc);
     
     /**
      * Setter for property url.
      *
      * @param url New value of property description.
      */
-    public void setUrl(String url);
+    void setUrl(String url);
 
     /**
      * Setter for property description2.
      *
      * @param desc New value of property description2.
      */
-    public void setDescription2(String desc);
+    void setDescription2(String desc);
 
     /**
      * Setter for property creationDate.
      *
      * @param creationDate New value of property creationDate.
      */
-    public void setCreationDate(Date creationDate);
+    void setCreationDate(Date creationDate);
 
     /**
      * Getter for property id.
      * 
      * @return Value of property id.
      */
-    public int getId();
+    int getId();
 
     /**
      * Getter for property companyID.
      * 
      * @return Value of property companyID.
      */
-    public int getCompanyID();
+    int getCompanyID();
     
     /**
      * Getter for property sourcegroupID.
      * 
      * @return Value of property sourcegroupID.
      */
-    public SourceGroupType getSourceGroupType();
+    SourceGroupType getSourceGroupType();
     
     /**
      * Getter for property description.
      * 
      * @return Value of property description.
      */
-    public String getDescription();
+    String getDescription();
     
     /**
      * Getter for property url.
      * 
      * @return Value of property url.
      */
-    public String getUrl();
+    String getUrl();
 
     /**
      * Getter for property description2.
      * 
      * @return Value of property description2.
      */
-    public String getDescription2();
+    String getDescription2();
 
     /**
      * Getter for property creationDate.
      * 
      * @return Value of property creationDate.
      */
-    public Date getCreationDate();
+    Date getCreationDate();
 }

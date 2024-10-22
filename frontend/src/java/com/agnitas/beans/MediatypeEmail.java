@@ -12,6 +12,8 @@ package com.agnitas.beans;
 
 import org.agnitas.util.importvalues.MailType;
 
+import java.util.Set;
+
 public interface MediatypeEmail extends Mediatype {
     String ONEPIXEL_BOTTOM = "bottom";
     String ONEPIXEL_NONE = "none";
@@ -283,8 +285,16 @@ public interface MediatypeEmail extends Mediatype {
 
 	void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery);
 
-    boolean isClearance();
+    boolean isRequestApproval();
 
-    void setClearance(boolean clearance);
+    void setRequestApproval(boolean requestApproval);
+
+    String getApprovedBy();
+
+    void setApprovedBy(String clearance);
+    
+    Set<Integer> getApprovers();
+    
+    void setApprovers(Set<Integer> approvers);
 }
 

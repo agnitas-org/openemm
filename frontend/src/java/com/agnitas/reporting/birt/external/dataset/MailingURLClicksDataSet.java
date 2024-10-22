@@ -116,44 +116,24 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 
 		Map<Integer, MailingClickStatsPerTargetRow> allDeviceClassesClickItems = new HashMap<>();
 		Map<Integer, MailingClickStatsPerTargetRow> mobileClickItems = new HashMap<>();
+		Map<Integer, MailingClickStatsPerTargetRow> anonymousClickItems = new HashMap<>();
 
-		updateAllLinks(columnIndex, mailingID, targetName, allDeviceClassesClickItems, mobileClickItems);
+		updateAllLinks(columnIndex, mailingID, targetName, allDeviceClassesClickItems, mobileClickItems, anonymousClickItems);
 
 		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, allDeviceClassesClickItems, false);
 		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, mobileClickItems, true);
-
-		updateAnonymousLinks(companyID, timeFilter, parametersAnonymous, allDeviceClassesClickItems, false);
-		updateAnonymousLinks(companyID, timeFilter, parametersAnonymous, mobileClickItems, true);
+		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, anonymousClickItems, false, true);
 
 		insertIntoTempTable(tempTableID, allDeviceClassesClickItems.values());
 		insertIntoTempTable(tempTableID, mobileClickItems.values());
-	}
-
-	private void updateAnonymousLinks(int companyID, String timeFilter, List<Object> parameters,
-									  Map<Integer, MailingClickStatsPerTargetRow> clickItems, boolean isMobile) {
-		StringBuilder sql = new StringBuilder("SELECT ");
-		sql.append("rlog.url_id,")
-				.append(" COUNT(*) AS anonymous")
-				.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog")
-				.append(" WHERE rlog.customer_id = 0")
-				.append(" AND rlog.mailing_id = ?");
-
-		if(isMobile) {
-			sql.append(" AND rlog.device_class_id = ").append(DeviceClass.MOBILE.getId());
-		}
-
-		sql.append(timeFilter)
-				.append(" GROUP BY rlog.url_id")
-				.append(" ORDER BY rlog.url_id");
-
-		List<Map<String, Object>> resultAnonymous = select(logger, sql.toString(), parameters.toArray(new Object[0]));
-		for (Map<String, Object> row : resultAnonymous) {
-			int urlID = ((Number) row.get("url_id")).intValue();
-			addAnonymousClicksValue(clickItems.get(urlID), row);
-		}
+		insertIntoTempTable(tempTableID, anonymousClickItems.values());
 	}
 
 	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters, Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile) {
+        updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, clicksItems, isMobile, false);
+    }
+
+	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters, Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile, boolean isAnonymous) {
 		StringBuilder sql = new StringBuilder("SELECT rlog.url_id, COUNT(*) AS clicks_gross, COUNT(DISTINCT rlog.customer_id) AS clicks_net");
 
 		if ((recipientFilter != null && recipientFilter.contains("cust.")) || (targetSql != null && targetSql.contains("cust."))) {
@@ -162,12 +142,16 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 			sql.append(" WHERE rlog.customer_id = cust.customer_id AND rlog.customer_id != 0 AND rlog.mailing_id = ?");
 		} else {
 			sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog");
-			sql.append(" WHERE rlog.customer_id != 0 AND rlog.mailing_id = ?");
+			sql.append(" WHERE ").append(" rlog.mailing_id = ?");
 		}
 
 		if (isMobile) {
 			sql.append(" AND rlog.device_class_id = ").append(DeviceClass.MOBILE.getId());
 		}
+        
+        if (isAnonymous) {
+            sql.append(" AND rlog.customer_id = 0");
+        }
 
 		if (StringUtils.isNotEmpty(targetSql)) {
 			sql.append(" AND (").append(targetSql).append(")");
@@ -192,15 +176,10 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void addAnonymousClicksValue(MailingClickStatsPerTargetRow targetRow, Map<String, Object> row) {
-		if (targetRow != null) {
-			targetRow.addClicksAnonymous(((Number) row.get("anonymous")).intValue());
-		}
-	}
-
 	private void updateAllLinks(int columnIndex, int mailingID, String targetName,
-								Map<Integer, MailingClickStatsPerTargetRow> allDeviceClassesClickItems,
-								Map<Integer, MailingClickStatsPerTargetRow> mobileClickItems) {
+                                Map<Integer, MailingClickStatsPerTargetRow> allDeviceClassesClickItems,
+                                Map<Integer, MailingClickStatsPerTargetRow> mobileClickItems,
+                                Map<Integer, MailingClickStatsPerTargetRow> anonymousClickItems) {
 		String queryAllLinks =
 			"SELECT"
 				+ " url_id,"
@@ -217,9 +196,16 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 
 			allDeviceClassesClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, false));
 			mobileClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, true));
+			anonymousClickItems.put(urlID, getAnonymousMailingClickStatByTargetRow(urlID, columnIndex, targetName, row));
 		}
 	}
 
+	private MailingClickStatsPerTargetRow getAnonymousMailingClickStatByTargetRow(int urlId, int columnIndex, String targetName, Map<String,Object> row) {
+        MailingClickStatsPerTargetRow anonymousRow = getMailingClickStatByTargetRow(urlId, columnIndex, targetName, row, false);
+        anonymousRow.setAnonymous(true);
+        return anonymousRow;
+    }
+    
 	private MailingClickStatsPerTargetRow getMailingClickStatByTargetRow(int urlId, int columnIndex, String targetName, Map<String,Object> row, boolean isMobile) {
 		MailingClickStatsPerTargetRow statsRow = new MailingClickStatsPerTargetRow();
 		statsRow.setUrlId(urlId);
@@ -250,8 +236,8 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 			row.setTargetgroup(resultSet.getString("target_group"));
 			row.setRowIndex(rowIndex);
 			row.setMobile(resultSet.getBigDecimal("mobile").intValue() == 1);
-			row.setDeleted(extractBooleanValue(resultSet.getBigDecimal("deleted")));
-			row.setClicksAnonymous((resultSet.getBigDecimal("anonymous")).intValue());
+            row.setAnonymous(resultSet.getBigDecimal("anonymous").intValue() == 1);
+            row.setDeleted(extractBooleanValue(resultSet.getBigDecimal("deleted")));
 
 			return row;
 		});
@@ -286,7 +272,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 				row.getClicksNet(),
 				row.isMobile() ? 1 : 0,
 				row.isDeleted() ? 1 : 0,
-				row.getClicksAnonymous()
+				row.isAnonymous() ? 1 : 0
 			});
 		}
 		batchupdateEmbedded(logger, insertQuery, values);

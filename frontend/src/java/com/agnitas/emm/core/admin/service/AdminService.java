@@ -25,6 +25,7 @@ import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.CompaniesConstraints;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface AdminService {
 
@@ -120,6 +122,8 @@ public interface AdminService {
             String direction,
             int pageNumber,
             int pageSize);
+
+    PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
 
     List<AdminEntry> listAdminsByCompanyID(final int companyID);
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
@@ -207,4 +211,15 @@ public interface AdminService {
     void setPasswordReminderState(int adminId, PasswordReminderState state);
 
     int getEmailChangedMailingId(String language);
+
+    List<AdminEntry> findAllByEmailPart(String email, int companyID);
+    List<AdminEntry> findAllByEmailPart(String email);
+
+    ServiceResult<List<Admin>> getAllowedForDeletion(Set<Integer> ids, int companyID);
+    List<Admin> delete(Set<Integer> ids, int companyId);
+    SimpleServiceResult delete(int id, int companyId);
+
+    void updateEmail(String email, int id, int companyId);
+
+    AdminEntry findByEmail(String email, int companyId);
 }

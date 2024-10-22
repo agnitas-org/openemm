@@ -18,16 +18,30 @@
   min-width: 250px;
   background-color: var(--main-bg-color);
   border-color: $gray-400;
-}
+  position: relative;
 
-.dropdown__items-container {
-  border: $border-default;
-  border-radius: $border-radius;
-  overflow: hidden;
+  &:before {
+    position: absolute;
+    content: '';
+    inset: $dropdown-spacer;
+    border: $border-default;
+    border-radius: $border-radius;
+    pointer-events: none;
+  }
+
+  > li:first-child {
+    @include border-top-radius;
+    overflow: hidden;
+  }
+
+  > li:last-child {
+    @include border-bottom-radius;
+    overflow: hidden;
+  }
 }
 
 .dropdown-item {
-  color: var(--default-text-color);
+  color: var(--text-color-default);
   padding: $dropdown-spacer;
 
   &:active, &:hover, &.selected {

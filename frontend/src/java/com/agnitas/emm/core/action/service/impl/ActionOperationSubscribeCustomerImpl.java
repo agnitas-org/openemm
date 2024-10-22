@@ -46,7 +46,7 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.mobilephone.MobilephoneNumber;
 import com.agnitas.emm.mobilephone.service.MobilephoneNumberWhitelist;
 import com.agnitas.emm.push.pushsubscription.service.PushSubscriptionService;
@@ -54,7 +54,7 @@ import com.agnitas.emm.push.pushsubscription.service.PushSubscriptionService;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation {
-	/** The logger. */
+
     private static final Logger logger = LogManager.getLogger(ActionOperationSubscribeCustomerImpl.class);
     
     public static final String DEFAULT_GENDER = "2";
@@ -164,7 +164,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		final int companyID = op.getCompanyId();
 
 		@SuppressWarnings("unchecked")
-		final CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters"));
+		final CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters")); // suppress warning for this cast
 
 		final Recipient aCust = prepareRecipient(companyID, (Integer) params.get("customerID"));
 		final HttpServletRequest request = (HttpServletRequest) params.get("_request");

@@ -5,6 +5,12 @@
   height: 100% !important;
 }
 
+.ace_editor:has(.ace_text-input[readonly]) {
+  .ace_content, .ace_active-line {
+    background-color: var(--input-disabled-bg-color) !important;
+  }
+}
+
 [data-multi-editor] {
   .tile-header {
     padding: $gap-x-sm;

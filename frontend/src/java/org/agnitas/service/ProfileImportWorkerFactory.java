@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
-import com.agnitas.service.ColumnInfoService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 
 public class ProfileImportWorkerFactory {
 	private ConfigService configService;
@@ -35,7 +35,7 @@ public class ProfileImportWorkerFactory {
 	private ProfileImportReporter profileImportReporter;
 	private ImportModeHandlerFactory importModeHandlerFactory;
 	private ImportRecipientsDao importRecipientsDao;
-	private ColumnInfoService columnInfoService;
+	private RecipientFieldService recipientFieldService;
 	private ImportQuotaCheckService importQuotaCheckService;
 	
 	@Required
@@ -64,8 +64,8 @@ public class ProfileImportWorkerFactory {
 	}
 
 	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = recipientFieldService;
 	}
 	
 	@Required
@@ -80,7 +80,7 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setProfileImportReporter(profileImportReporter);
 		profileImportWorker.setImportModeHandlerFactory(importModeHandlerFactory);
 		profileImportWorker.setImportRecipientsDao(importRecipientsDao);
-		profileImportWorker.setColumnInfoService(columnInfoService);
+		profileImportWorker.setRecipientFieldService(recipientFieldService);
 
 		profileImportWorker.setSessionId(sessionId);
 		profileImportWorker.setInteractiveMode(interactiveMode);
@@ -92,6 +92,7 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setImportQuotaCheckService(importQuotaCheckService);
 		profileImportWorker.setCheckHtmlTags(!configService.getBooleanValue(ConfigValue.NoHtmlCheckOnProfileImport, companyID));
 		profileImportWorker.setAllowSafeHtmlTags(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, companyID));
+		profileImportWorker.setThrottleImportPerBlock(configService.getIntegerValue(ConfigValue.ImportThrottlingSecondsPerBlock, companyID));
 		
 		if (importProfile.isMailinglistsAll()) {
 			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(companyID).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));

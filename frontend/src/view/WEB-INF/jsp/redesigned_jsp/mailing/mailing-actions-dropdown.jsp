@@ -14,9 +14,7 @@
 <emm:instantiate var="element" type="java.util.LinkedHashMap">
     <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-    <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
     <c:set target="${element}" property="cls" value="mobile-hidden"/>
-    <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
     <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
     <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -87,7 +85,7 @@
                     <c:set target="${option}" property="url">
                         <c:url value="/mailing/${param.mailingId}/confirmUndo.action"/>
                     </c:set>
-                    <c:set target="${option}" property="extraAttributes" value=" data-confirm=''"/>
+                    <c:set target="${option}" property="extraAttributes" value="id='server-undo-option' data-confirm=''"/>
                     <c:set target="${option}" property="name">
                         <mvc:message code="button.Undo"/>
                     </c:set>
@@ -114,7 +112,7 @@
             <c:set var="optionIndex" value="${10}"/>
             <c:forEach var="extraOptionEntry" items="${agnMailingExtraOptions}">
                 <c:set target="${optionList}" property="${optionIndex}" value="${extraOptionEntry.value}"/>
-                <c:set var="optionIndex" value="${optionIndex + 1} "/>
+                <c:set var="optionIndex" value="${optionIndex + 1}"/>
             </c:forEach>
         </c:if>
     </c:if>

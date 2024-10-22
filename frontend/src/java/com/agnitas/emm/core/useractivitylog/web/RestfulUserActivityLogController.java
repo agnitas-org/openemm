@@ -25,6 +25,7 @@ import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -52,8 +54,8 @@ import java.util.List;
 public class RestfulUserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected RestfulUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
-                                               UserActivityLogExportWorkerFactory exportWorkerFactory) {
-        super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
+                                               UserActivityLogExportWorkerFactory exportWorkerFactory, ConfigService configService) {
+        super(webStorage, adminService, userActivityLogService, exportWorkerFactory, configService);
     }
 
     @Override
@@ -69,8 +71,9 @@ public class RestfulUserActivityLogController extends AbstractUserActivityLogCon
     @RequestMapping(value = "/listRedesigned.action", method = {RequestMethod.GET, RequestMethod.POST})
     @PermissionMapping("list")
     public Pollable<ModelAndView> listRedesigned(@ModelAttribute("filter") RestfulUserActivityLogFilter filter, @ModelAttribute RestfulUserActivityLogSearchParams searchParams,
-                                                 Admin admin, Model model, HttpSession session) {
+                                                 @RequestParam(required = false) boolean restoreSort, Admin admin, Model model, HttpSession session) {
         FormUtils.syncSearchParams(searchParams, filter, true);
+        FormUtils.updateSortingState(webStorage, WebStorage.RESTFUL_USERLOG_OVERVIEW, filter, restoreSort);
         return getListRedesigned(admin, filter, model, session);
     }
 
@@ -150,7 +153,7 @@ public class RestfulUserActivityLogController extends AbstractUserActivityLogCon
         FormUtils.syncSearchParams(searchParams, filter, false);
         model.addFlashAttribute("filter", filter);
 
-        return redirectToRedesignedListPage();
+        return redirectToRedesignedListPage() + "?restoreSort=true";
     }
 
     @ModelAttribute

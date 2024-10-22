@@ -35,7 +35,7 @@
         <c:set target="${agnBreadcrumbs}"   property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}"    property="textKey" value="settings.Mailloop"/>
         <c:set target="${agnBreadcrumb}"    property="url">
-            <c:url value="/administration/bounce/list.action"/>
+            <c:url value="/administration/bounce/list.action?restoreSort=true"/>
         </c:set>
     </emm:instantiate>
 

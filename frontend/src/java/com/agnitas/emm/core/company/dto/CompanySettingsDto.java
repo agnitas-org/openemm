@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.core.company.dto;
 
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.post.PostalField;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,11 +28,11 @@ public class CompanySettingsDto {
     private boolean hasActivatedAccessAuthorization;
     private boolean hasExtendedSalutation;
     private int executiveAdministrator;
-    private boolean hasDataExportNotify;
     private String language;
     private String timeZone;
     private boolean hasForceSending;
     private boolean hasTrackingVeto;
+    private boolean responseInboxEnabled;
     private int sector;
     private int business;
     private int maxAdminMails = -1;
@@ -66,6 +68,7 @@ public class CompanySettingsDto {
 	private boolean filterRecipientsOverviewForActiveRecipients;
 	private boolean autoDeeptracking;
 	private boolean cleanAdminAndTestRecipientsActivity;
+	private boolean individualLinkTrackingForMailings;
 	private int expireStatistics;
 	private int expireSuccess;
 	private int expireRecipient;
@@ -77,12 +80,18 @@ public class CompanySettingsDto {
     private boolean normalizeEmails;
     private int defaultCompanyLinkTrackingMode;
     private int defaultBlockSize;
+	private int mailingMinimumApprovals = Integer.parseInt(ConfigValue.MailingMinimumApprovals.getDefaultValue());
     private String listHelpUrl;
     private boolean htmlContentAllowed;
-
 	private TestRunOption defaultTestRunOption;
+	private AdminTestMarkPlacementOption adminTestMarkPlacement;
+	private String adminMailSubjectMark;
+	private String testMailSubjectMark;
+	private String adminMailToAddressMark;
+	private String testMailToAddressMark;
 	private boolean useDefaultAddressFieldsForPost;
 	private Map<PostalField, String> postalFieldsMappings = new HashMap<>();
+    private boolean showAllDashboardCalendarMailings; // TODO: remove after EMMGUI-714 will be finished and old design will be removed
 
 	public String getListHelpUrl() {
 		return listHelpUrl;
@@ -140,14 +149,6 @@ public class CompanySettingsDto {
         this.technicalContacts = technicalContacts;
     }
 
-    public boolean isHasDataExportNotify() {
-        return hasDataExportNotify;
-    }
-
-    public void setHasDataExportNotify(boolean hasDataExportNotify) {
-        this.hasDataExportNotify = hasDataExportNotify;
-    }
-
     public String getLanguage() {
         return language;
     }
@@ -180,7 +181,15 @@ public class CompanySettingsDto {
         this.hasTrackingVeto = hasTrackingVeto;
     }
 
-    public int getSector() {
+	public boolean isResponseInboxEnabled() {
+		return responseInboxEnabled;
+	}
+
+	public void setResponseInboxEnabled(boolean responseInboxEnabled) {
+		this.responseInboxEnabled = responseInboxEnabled;
+	}
+
+	public int getSector() {
         return sector;
     }
 
@@ -528,6 +537,14 @@ public class CompanySettingsDto {
 		this.cleanAdminAndTestRecipientsActivity = cleanAdminAndTestRecipientsActivity;
 	}
 
+	public boolean isIndividualLinkTrackingForMailings() {
+		return individualLinkTrackingForMailings;
+	}
+
+	public void setIndividualLinkTrackingForMailings(boolean individualLinkTrackingForMailings) {
+		this.individualLinkTrackingForMailings = individualLinkTrackingForMailings;
+	}
+
 	public boolean isAutoDeeptracking(){
 		return autoDeeptracking;
 	}
@@ -574,5 +591,61 @@ public class CompanySettingsDto {
 
 	public void setPostalFieldsMappings(Map<PostalField, String> postalFieldsMappings) {
 		this.postalFieldsMappings = postalFieldsMappings;
+	}
+
+	public int getMailingMinimumApprovals() {
+		return mailingMinimumApprovals;
+	}
+
+	public void setMailingMinimumApprovals(int mailingMinimumApprovals) {
+		this.mailingMinimumApprovals = mailingMinimumApprovals;
+	}
+
+    public boolean isShowAllDashboardCalendarMailings() {
+        return showAllDashboardCalendarMailings;
+    }
+
+    public void setShowAllDashboardCalendarMailings(boolean showAllDashboardCalendarMailings) {
+        this.showAllDashboardCalendarMailings = showAllDashboardCalendarMailings;
+    }
+
+	public AdminTestMarkPlacementOption getAdminTestMarkPlacement() {
+		return adminTestMarkPlacement;
+	}
+
+	public void setAdminTestMarkPlacement(AdminTestMarkPlacementOption adminTestMarkPlacement) {
+		this.adminTestMarkPlacement = adminTestMarkPlacement;
+	}
+
+	public String getAdminMailSubjectMark() {
+		return adminMailSubjectMark;
+	}
+
+	public void setAdminMailSubjectMark(String adminMailSubjectMark) {
+		this.adminMailSubjectMark = adminMailSubjectMark;
+	}
+
+	public String getTestMailSubjectMark() {
+		return testMailSubjectMark;
+	}
+
+	public void setTestMailSubjectMark(String testMailSubjectMark) {
+		this.testMailSubjectMark = testMailSubjectMark;
+	}
+
+	public String getAdminMailToAddressMark() {
+		return adminMailToAddressMark;
+	}
+
+	public void setAdminMailToAddressMark(String adminMailToAddressMark) {
+		this.adminMailToAddressMark = adminMailToAddressMark;
+	}
+
+	public String getTestMailToAddressMark() {
+		return testMailToAddressMark;
+	}
+
+	public void setTestMailToAddressMark(String testMailToAddressMark) {
+		this.testMailToAddressMark = testMailToAddressMark;
 	}
 }

@@ -11,7 +11,9 @@
 package com.agnitas.emm.core.supervisor.dao;
 
 import java.util.Date;
-import java.util.List;
+
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.web.forms.PaginationForm;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.SupervisorLoginPermissionTableItem;
@@ -49,7 +51,7 @@ public interface GrantedSupervisorLoginDao {
 	 */
 	void grantSupervisorLoginToAllDepartments(final int adminID, final Date expireDate);
 
-	List<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(final int adminID);
+	PaginatedListImpl<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(PaginationForm form, int adminID);
 
 	void deleteOldGrants(final int expireDays);
 

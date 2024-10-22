@@ -45,8 +45,6 @@ public class WsUserDtoToWebserviceUserConverter implements Converter<WebserviceU
             }
 
             user.setContactEmail(userDto.getEmail());
-            user.setContact(userDto.getContactInfo());
-
             user.setActive(userDto.isActive());
             user.setGrantedPermissions(userDto.getGrantedPermissions());
             user.setGrantedPermissionGroupIDs(userDto.getGrantedPermissionGroupIDs());

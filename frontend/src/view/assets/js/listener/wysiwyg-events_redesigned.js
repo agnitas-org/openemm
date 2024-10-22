@@ -1,4 +1,4 @@
-(function(){
+(() => {
 
   var Form = AGN.Lib.Form,
       Editor = AGN.Lib.Editor;

@@ -5,17 +5,17 @@
 <div class="d-flex flex-column gap-3">
 	<div class="tile tile--sm w-100 h-auto">
 		<div class="tile-header">
-			<h2 class="tile-title"><mvc:message code="totp.setup.info.headline.twoFactor" /></h2>
+			<h2 class="tile-title text-truncate"><mvc:message code="totp.setup.info.headline.twoFactor" /></h2>
 		</div>
-		<div class="tile-body">
-			<p><mvc:message code="GWUA.twoFactorAuthentication.description" /></p>
+		<div class="tile-body p-3">
+			<p><mvc:message code="totp.setup.info.content.twoFactor" /></p>
 		</div>
 	</div>
 	<div class="tile tile--sm w-100 h-auto">
 		<div class="tile-header">
-			<h2 class="tile-title"><mvc:message code="totp.info.headline.availableApps" /></h2>
+			<h2 class="tile-title text-truncate"><mvc:message code="totp.info.headline.availableApps" /></h2>
 		</div>
-		<div class="tile-body">
+		<div class="tile-body p-3">
 			<p><mvc:message code="totp.info.content.availableApps" /></p>
 			<br/>
 			<p><mvc:message code="totp.info.content.availableApps.listHeadline" /></p>
@@ -29,9 +29,9 @@
 	</div>
 	<div class="tile tile--sm w-100 h-auto">
 		<div class="tile-header">
-			<h2 class="tile-title"><mvc:message code="totp.info.headline.loginProblems" /></h2>
+			<h2 class="tile-title text-truncate"><mvc:message code="totp.info.headline.loginProblems" /></h2>
 		</div>
-		<div class="tile-body">
+		<div class="tile-body p-3">
 			<p><b><mvc:message code="totp.info.content.loginProblems.1" /></b></p>
 			<br/>
 			<p><b><mvc:message code="totp.info.content.loginProblems.listHeadline.1" /></b></p>

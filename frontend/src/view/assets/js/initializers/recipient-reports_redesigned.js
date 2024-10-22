@@ -16,6 +16,5 @@ AGN.Lib.DomInitializer.new('recipient-report-initializer', function($scope) {
     } else {
       $iframe.contents().find('body').css('color', '#fff');
     }
-    $iframe.height($iframe.contents().height());
   }
 });

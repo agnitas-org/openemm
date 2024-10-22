@@ -1,9 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action"%>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action"%>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.DateMode" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://tiles.apache.org/tags-tiles"     prefix="tiles" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 
@@ -32,7 +31,7 @@
 <c:set var="SELECT_MONTH" value="<%= DateMode.SELECT_MONTH %>" />
 <c:set var="SELECT_PERIOD" value="<%= DateMode.SELECT_PERIOD %>" />
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden" id="stat-form" servletRelativeAction="/statistics/mailing/${mailingStatisticForm.mailingID}/view.action"
+<mvc:form cssClass="tiles-container flex-column" id="stat-form" servletRelativeAction="/statistics/mailing/${mailingStatisticForm.mailingID}/view.action"
           method="post" data-form="resource"
           modelAttribute="mailingStatisticForm"
           data-editable-view="${agnEditViewKey}">
@@ -40,7 +39,7 @@
 
     <div id="filter-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="report.mailing.filter"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.filter"/></h1>
         </div>
         <div class="tile-body js-scrollable">
             <c:if test="${isTotalAutoOpt}">
@@ -88,9 +87,9 @@
         </div>
     </div>
 
-    <div id="overview-tile" class="tile flex-grow-1" data-editable-tile="main">
+    <div id="overview-tile" class="tile" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title" class="headline"><mvc:message code="report.mailing.statistics.select"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.statistics.select"/></h1>
             <div class="tile-title-controls gap-3">
                 <mvc:select path="statisticType" cssClass="form-control" id="statisticType" data-select-options="dropdownAutoWidth: true, width: 'auto'" data-form-submit="">
                     <mvc:option value=""><mvc:message code="statistic.load.specific"/></mvc:option>

@@ -1,65 +1,83 @@
 
-<%--@elvariable id="summedRemarks" type="net.sf.json.JSONArray"--%>
-<%--@elvariable id="notSummedRemarks" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="summedStatuses" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="notSummedStatuses" type="net.sf.json.JSONArray"--%>
 
 <div class="row h-100">
-    <div class="col-6 js-data-table h-100" data-table="summed-remarks">
-        <div class="js-data-table-body">
-            <script id="summed-remarks" type="application/json">
+    <div class="col-6 h-100">
+        <div class="table-wrapper" data-js-table="summed-statuses">
+            <div class="table-wrapper__header justify-content-end">
+                <div class="table-wrapper__controls">
+                    <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                    <jsp:include page="../../common/table/entries-label.jsp" />
+                </div>
+            </div>
+
+            <script id="summed-statuses" type="application/json">
                 {
                     "columns": [
                          {
-                            "field": "remark",
+                            "field": "name",
                             "headerName": "<mvc:message code='recipient.Remark'/>",
                             "filter": false,
                             "cellStyle": {"user-select": "text"},
-                            "editable": false
+                            "editable": false,
+                            "cellRenderer": "NotEscapedStringCellRenderer"
                         },
                         {
                             "field": "value",
                             "headerName": "<mvc:message code="Value"/>",
                             "filter": false,
                             "cellStyle": {"user-select": "text"},
-                            "editable": false
+                            "editable": false,
+                            "cellRenderer": "NotEscapedStringCellRenderer"
                         }
                     ],
                     "options": {
                         "pagination": false,
-                        "showRecordsCount": false,
+                        "showRecordsCount": "simple",
                         "autoHeight": true
                     },
-                    "data": ${summedRemarks}
+                    "data": ${summedStatuses}
                 }
             </script>
         </div>
     </div>
 
-    <div class="col-6 js-data-table h-100" data-table="not-summed-remarks">
-        <div class="js-data-table-body">
-            <script id="not-summed-remarks" type="application/json">
+    <div class="col-6 h-100">
+        <div class="table-wrapper" data-js-table="not-summed-statuses">
+            <div class="table-wrapper__header justify-content-end">
+                <div class="table-wrapper__controls">
+                    <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                    <jsp:include page="../../common/table/entries-label.jsp" />
+                </div>
+            </div>
+
+            <script id="not-summed-statuses" type="application/json">
                 {
                     "columns": [
                          {
-                            "field": "remark",
+                            "field": "name",
                             "headerName": "<mvc:message code='recipient.Remark'/>",
                             "filter": false,
                             "cellStyle": {"user-select": "text"},
-                            "editable": false
+                            "editable": false,
+                            "cellRenderer": "NotEscapedStringCellRenderer"
                         },
                         {
                             "field": "value",
                             "headerName": "<mvc:message code='Value'/>",
                             "filter": false,
                             "cellStyle": {"user-select": "text"},
-                            "editable": false
+                            "editable": false,
+                            "cellRenderer": "NotEscapedStringCellRenderer"
                         }
                     ],
                     "options": {
                         "pagination": false,
-                        "showRecordsCount": false,
+                        "showRecordsCount": "simple",
                         "autoHeight": true
                     },
-                    "data": ${notSummedRemarks}
+                    "data": ${notSummedStatuses}
                 }
             </script>
         </div>

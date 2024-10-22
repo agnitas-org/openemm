@@ -1,13 +1,26 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://displaytag.sf.net"               prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="baseEndpoint" value="${param.restful ? '/restfulUser' : '/admin'}" />
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <mvc:form id="table-tile" servletRelativeAction="${baseEndpoint}/list.action" modelAttribute="adminListForm" cssClass="tile" data-editable-tile="main">
+<mvc:message var="passwordSendMsg" code="password.send" />
+<mvc:message var="deleteMsg"       code="settings.admin.delete" />
+<mvc:message var="adminBanMsg"     code="settings.admin.ban.tooltip" />
+
+<c:set var="sendAuthDataAllowed" value="${not param.restful and emm:permissionAllowed('admin.sendWelcome', pageContext.request)}" />
+<c:set var="deleteAllowed"       value="${emm:permissionAllowed('admin.delete', pageContext.request)}" />
+
+<c:url var="sendAuthDataUrl" value="/admin/welcome.action" />
+<c:url var="deleteUrl"       value="/admin/deleteRedesigned.action">
+    <c:param name="backToUrl" value="${param.restful ? '/restfulUser/list.action' : ''}" />
+</c:url>
+
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <mvc:form id="table-tile" servletRelativeAction="${baseEndpoint}/list.action" modelAttribute="adminListForm" method="GET" cssClass="tile" data-editable-tile="main">
         <script type="application/json" data-initializer="web-storage-persist">
             {
                 "admin-overview": {
@@ -16,76 +29,105 @@
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-        </div>
         <div class="tile-body">
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table class="table table-rounded js-table table-hover" pagesize="${adminListForm.numberOfRows}"
-                                   id="admin" name="adminEntries"
-                                   requestURI="${baseEndpoint}/list.action?numberOfRows=${adminListForm.numberOfRows}&__fromdisplaytag=true"
-                                   excludedParams="*" size="${adminEntries.fullListSize}" partialList="true">
+            <div class="table-wrapper">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <div class="bulk-actions hidden">
+                            <p class="bulk-actions__selected">
+                                <span><%-- Updates by JS --%></span>
+                                <mvc:message code="default.list.entry.select" />
+                            </p>
+                            <div class="bulk-actions__controls">
+                                <a href="#" class="icon-btn text-primary" data-tooltip="${passwordSendMsg}" data-form-url="${sendAuthDataUrl}"
+                                   data-form-submit data-form-method="POST" data-bulk-action="send-auth-data">
+                                    <i class="icon icon-paper-plane"></i>
+                                </a>
+                                <a href="#" class="icon-btn text-danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-confirm data-bulk-action="delete">
+                                    <i class="icon icon-trash-alt"></i>
+                                </a>
+                            </div>
+                        </div>
 
-                        <%@ include file="../../displaytag/displaytag-properties.jspf" %>
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${adminEntries.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${adminEntries.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
 
-                        <display:column titleKey="logon.username" sortProperty="username" sortable="true"
-                                        headerClass="js-table-sort" value="${admin.username}"/>
+                <div class="table-wrapper__body">
+                    <agnDisplay:table class="table table-hover table--borderless js-table" pagesize="${adminListForm.numberOfRows}"
+                                      id="admin" name="adminEntries" requestURI="${baseEndpoint}/list.action"
+                                      excludedParams="*" size="${adminEntries.fullListSize}" partialList="true">
 
-                        <display:column sortProperty="firstname" titleKey="recipient.Firstname" sortable="true"
-                                        headerClass="js-table-sort" value="${admin.firstname}"/>
+                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
 
-                        <display:column titleKey="recipient.Lastname" sortable="true" sortProperty="fullname"
-                                        headerClass="js-table-sort" value="${admin.fullname}"/>
+                        <c:if test="${deleteAllowed or sendAuthDataAllowed}">
+                            <c:set var="checkboxSelectAll">
+                                <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
+                            </c:set>
+
+                            <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                                <input class="form-check-input" type="checkbox" name="bulkIds" value="${admin.id}" data-bulk-checkbox />
+                            </agnDisplay:column>
+                        </c:if>
+
+                        <agnDisplay:column titleKey="logon.username" sortProperty="username" sortable="true" headerClass="js-table-sort">
+                            <div class="d-flex align-items-center gap-2 overflow-wrap-anywhere">
+                                <c:if test="${admin.passwordExpired}">
+                                    <span class="icon-badge text-bg-dark" data-tooltip="${adminBanMsg}">
+                                        <i class="icon icon-ban"></i>
+                                    </span>
+                                </c:if>
+                                <span class="text-truncate-table">${admin.username}</span>
+                            </div>
+                        </agnDisplay:column>
+
+                        <agnDisplay:column sortProperty="firstname" titleKey="recipient.Firstname" sortable="true" headerClass="js-table-sort">
+                            <span>${admin.firstname}</span>
+                        </agnDisplay:column>
+
+                        <agnDisplay:column titleKey="recipient.Lastname" sortable="true" sortProperty="fullname" headerClass="js-table-sort">
+                            <span>${admin.fullname}</span>
+                        </agnDisplay:column>
 
                         <emm:ShowByPermission token="master.companies.show">
-                            <display:column titleKey="Company" sortable="true" sortProperty="company_name"
-                                            headerClass="js-table-sort" value="${admin.companyName} (${admin.companyID})"/>
+                            <agnDisplay:column titleKey="Company" sortable="true" sortProperty="company_name" headerClass="js-table-sort">
+                                <span>${admin.companyName} (${admin.companyID})</span>
+                            </agnDisplay:column>
                         </emm:ShowByPermission>
 
-                        <display:column titleKey="mailing.MediaType.0" sortable="true" property="email" sortProperty="email"
-                                        headerClass="js-table-sort" value="${admin.email}"/>
+                        <agnDisplay:column titleKey="mailing.MediaType.0" sortable="true" sortProperty="email" headerClass="js-table-sort">
+                            <a href="<c:url value="${baseEndpoint}/${admin.id}/view.action"/>" class="hidden" data-view-row="page"></a>
+                            <span>${admin.email}</span>
+                        </agnDisplay:column>
 
-                        <display:column titleKey="default.creationDate" sortable="true" property="creationDate" sortProperty="creation_date"
-                                        headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.creationDate}"/>
+                        <agnDisplay:column titleKey="default.creationDate" sortable="true" property="creationDate" sortProperty="creation_date"
+                                           headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.creationDate}"/>
 
-                        <display:column titleKey="admin.login.last" sortable="true" property="loginDate" sortProperty="last_login"
-                                        headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.loginDate}"/>
+                        <agnDisplay:column titleKey="admin.login.last" sortable="true" property="loginDate" sortProperty="last_login"
+                                           headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.loginDate}"/>
 
-                        <display:column class="table-actions" headerClass="fit-content">
-                            <c:url var="adminDeleteUrl" value="${baseEndpoint}/${admin.id}/confirmDelete.action"/>
-                            <c:url var="adminViewUrl" value="${baseEndpoint}/${admin.id}/view.action"/>
-                            <c:url var="adminSendUrl" value="${baseEndpoint}/${admin.id}/welcome.action"/>
-
-                            <div>
-                                <a href="${adminViewUrl}" class="hidden" data-view-row="page" title="<mvc:message code='settings.admin.edit'/> "></a>
-                                <emm:ShowByPermission token="admin.delete">
-                                    <c:choose>
-                                        <c:when test="${admin.passwordExpired}">
-                                            <mvc:message var="adminBanMessage" code="settings.admin.ban.tooltip" />
-                                            <a href="#" class="btn btn-icon-sm btn-secondary" data-tooltip="${adminBanMessage}">
-                                                <i class="icon icon-ban"></i>
-                                            </a>
-                                        </c:when>
-                                    </c:choose>
-                                </emm:ShowByPermission>
-                                <c:if test="${not param.restful}">
-                                    <emm:ShowByPermission token="admin.sendWelcome">
-                                        <mvc:message var="passwordSendMessage" code="password.send" />
-                                        <a href="${adminSendUrl}" class="btn btn-icon-sm btn-primary js-row-delete" data-tooltip="${passwordSendMessage}">
+                        <c:if test="${(sendAuthDataAllowed or deleteAllowed) and adminEntries.fullListSize gt 0}">
+                            <agnDisplay:column class="table-actions" headerClass="fit-content">
+                                <div>
+                                    <c:if test="${sendAuthDataAllowed}">
+                                        <a href="${sendAuthDataUrl}?bulkIds=${admin.id}" class="icon-btn text-primary js-row-delete" data-tooltip="${passwordSendMsg}" data-bulk-action="send-auth-data">
                                             <i class="icon icon-paper-plane"></i>
                                         </a>
-                                    </emm:ShowByPermission>
-                                </c:if>
-                                <emm:ShowByPermission token="admin.delete">
-                                    <mvc:message var="adminDeleteMessage" code="settings.admin.delete" />
-                                    <a href="${adminDeleteUrl}" class="btn btn-icon-sm btn-danger js-row-delete" data-tooltip="${adminDeleteMessage}">
-                                        <i class="icon icon-trash-alt"></i>
-                                    </a>
-                                </emm:ShowByPermission>
-                            </div>
-                        </display:column>
-                    </display:table>
+                                    </c:if>
+                                    <c:if test="${deleteAllowed}">
+                                        <a href="${deleteUrl}&bulkIds=${admin.id}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}" data-bulk-action="delete">
+                                            <i class="icon icon-trash-alt"></i>
+                                        </a>
+                                    </c:if>
+                                </div>
+                            </agnDisplay:column>
+                        </c:if>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -95,11 +137,12 @@
               data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">

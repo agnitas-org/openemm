@@ -1,4 +1,4 @@
-(function() {
+(() => {
 
   const LOCKING_UPDATE_INTERVAL_MILLISECONDS =  45000;  // 45 seconds
   const LOCKING_MAX_DURATION_MILLISECONDS = 3 * 60 * 60000;  // 3 hours

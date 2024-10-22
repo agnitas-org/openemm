@@ -27,7 +27,6 @@ import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +40,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Implementation of {@link ComOptimization}.
@@ -119,43 +117,6 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	   String query = "SELECT " + StringUtils.join(tableColumns, ", ") + " FROM auto_optimization_tbl" +
 			   " WHERE optimization_id = ? AND company_id = ? AND (deleted = 0 OR deleted IS NULL)";
 		return selectObject(logger, query, new ComOptimizationRowMapper(), optimizationID, companyID);
-	}
-
-	@Override
-	public Map<Integer, String>	getGroups(int campaignID, int companyID, int optimizationID)	{
-		String sql = "SELECT m.mailing_id, m.shortname" +
-				" FROM mailing_tbl m" +
-				" WHERE m.company_id = ? AND m.campaign_id = ? AND m.deleted = 0 AND m.is_template = 0 AND mailing_type = 0" +
-				" AND m.mailing_id NOT IN (" +
-					" SELECT mailing_id FROM mailing_account_tbl c WHERE m.mailing_id = c.mailing_id AND c.status_field = 'W'" +
-				" )" +
-				" AND NOT EXISTS (" +
-					" SELECT 1 FROM auto_optimization_tbl" +
-					" WHERE (optimization_id <> ? OR ? = 0)" +
-					" AND (deleted <> 1 OR deleted IS NULL)" +
-					" AND m.mailing_id IN (group1_id, group2_id, group3_id, group4_id, group5_id)" +
-				" )" +
-				" ORDER BY mailing_id DESC";
-
-		try	{
-			List<Map<String, Object>> list = select(logger, sql, companyID, campaignID, optimizationID, optimizationID);
-			if (CollectionUtils.isEmpty(list)) {
-				return null;
-			}
-
-			Map<Integer, String> result = new TreeMap<>();
-			for (Map<String, Object> map : list) {
-				Integer mailingID = ((Number) map.get("mailing_id")).intValue();
-				String shortname = (String) map.get("shortname");
-
-				result.put(mailingID, shortname);
-			}
-			return result;
-		} catch(Exception e) {
-			logger.error("Error getting split-groups", e);
-			javaMailService.sendExceptionMail(companyID, "SQL: "+sql+", "+companyID+", "+campaignID, e);
-			return null;
-		}
 	}
 
 	@Override
@@ -445,35 +406,14 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	}
 
 	@Override
-	public List<ComOptimization> list(int campaignID, int companyID) {
-		return list(companyID, campaignID, 0);
-	}
-
-	@Override
 	public List<ComOptimization> listWorkflowManaged(int workflowId, int companyID) {
-		return list(companyID, null, workflowId);
-	}
-
-	private List<ComOptimization> list(int companyID, Integer campaignId, Integer workflowId) {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
-		List<Object> sqlParameters = new ArrayList<>();
 
 		sqlQueryBuilder.append("SELECT ").append(StringUtils.join(tableColumns, ", "))
 				.append(" FROM auto_optimization_tbl")
-				.append(" WHERE (deleted = 0 OR deleted IS NULL) AND company_id = ?");
-		sqlParameters.add(companyID);
+				.append(" WHERE (deleted = 0 OR deleted IS NULL) AND company_id = ? AND workflow_id = ?");
 
-		if (campaignId != null) {
-			sqlQueryBuilder.append(" AND campaign_id = ?");
-			sqlParameters.add(campaignId);
-		}
-
-		if (workflowId != null) {
-			sqlQueryBuilder.append(" AND workflow_id = ?");
-			sqlParameters.add(workflowId);
-		}
-
-		return select(logger, sqlQueryBuilder.toString(), new ComOptimizationRowMapper(), sqlParameters.toArray());
+		return select(logger, sqlQueryBuilder.toString(), new ComOptimizationRowMapper(), companyID, workflowId);
 	}
 
 	@Override
@@ -484,27 +424,6 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 
 	@Override
 	public List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate) {
-		StringBuilder querySb = new StringBuilder();
-		querySb.append("SELECT ao.campaign_id,")
-				.append(" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname,")
-				.append(" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id")
-				.append(" FROM auto_optimization_tbl ao")
-				.append(" WHERE ao.company_id = ?")
-				.append(" AND (ao.deleted = 0 OR ao.deleted IS NULL)")
-				.append(" AND ao.result_senddate IS NOT NULL");
-
-		String sqlTruncDate = isOracleDB() ? "TRUNC(ao.result_senddate)" : "DATE(ao.result_senddate)";
-		String sqlTruncDateParam = isOracleDB() ? "TRUNC(?)" : "DATE(?)";
-
-		querySb.append(" AND ").append(sqlTruncDate).append(" >= ").append(sqlTruncDateParam)
-				.append(" AND ").append(sqlTruncDate).append(" <= ").append(sqlTruncDateParam)
-				.append(" ORDER BY ao.result_senddate");
-
-		return select(logger, querySb.toString(), new MinimizedOptimizationRowMapper(), companyId, startDate, endDate);
-	}
-
-	@Override
-	public List<ComOptimization> getOptimizationsForCalendar_New(int companyId, Date startDate, Date endDate) {
 		String querySb = "SELECT ao.campaign_id," +
 				" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname," +
 				" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id" +

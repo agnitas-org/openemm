@@ -156,7 +156,7 @@
 
 	<bean id="SnowflakeMailingCache" class="com.agnitas.emm.core.mailing.cache.ComSnowflakeMailingCacheImpl">
 		<property name="configService" ref="ConfigService" />
-		<property name="comMailingDao" ref="MailingDao" />
+		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
 <!-- ============================================================================================================================== Mailing component -->
@@ -206,7 +206,7 @@
 
 	<bean id="RecipientFactory" class="org.agnitas.beans.factory.impl.RecipientFactoryImpl">
 		<property name="recipientDao" ref="RecipientDao" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
 		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
 		<property name="blacklistService" ref="BlacklistService"/>
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
@@ -466,9 +466,6 @@
 		</constructor-arg>
 	</bean>
 	
-
-	<bean id="futureHolder" class="com.agnitas.util.FutureHolderMap" />
-
 	<bean id="PollingService" class="com.agnitas.service.impl.PollingServiceImpl">
 		<property name="workerExecutorService" ref="WorkerExecutorService"/>
 	</bean>

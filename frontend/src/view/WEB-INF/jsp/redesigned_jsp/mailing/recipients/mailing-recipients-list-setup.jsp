@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -17,11 +17,9 @@
 </c:url>
 
 <c:set var="agnTitleKey" 			value="Mailing" 					 scope="request" />
-<c:set var="agnSubtitleKey" 		value="Mailing" 					 scope="request" />
 <c:set var="sidemenu_active" 		value="Mailings" 					 scope="request" />
-<c:set var="sidemenu_sub_active" 	value="none" 						 scope="request" />
+<c:set var="sidemenu_sub_active" 	value="default.Overview" 			 scope="request" />
 <c:set var="agnHighlightKey" 		value="Recipients" 					 scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 						 scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 					 scope="request" />
 <c:url var="agnBreadcrumbsRootUrl" 	value="/mailing/list.action" 	     scope="request" />
 <c:set var="agnHelpKey"			    value="Recipients"	                 scope="request" />
@@ -29,7 +27,7 @@
 
 <c:choose>
     <c:when test="${isMailingGrid}">
-        <%@ include file="../fragments/mailing-grid-navigation.jspf" %>
+        <c:set var="agnNavigationKey" value="GridMailingView" scope="request" />
 
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="templateID" value="${gridTemplateId}"/>
@@ -37,20 +35,19 @@
         </emm:instantiate>
     </c:when>
     <c:otherwise>
-		<c:choose>
-			<c:when test="${isPostMailing}">
-				<c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
-			</c:when>
-			<c:otherwise>
-				<c:set var="agnNavigationKey" value="mailingView" scope="request" />
-			</c:otherwise>
-		</c:choose>
+        <c:set var="agnNavigationKey" value="mailingView" scope="request" />
+
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
             <c:set target="${agnNavHrefParams}" property="init" value="true"/>
         </emm:instantiate>
     </c:otherwise>
 </c:choose>
+
+<emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
+    <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="true" />
+    <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+</emm:instantiate>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -73,9 +70,7 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn"/>
         <c:set target="${element}" property="cls" value="mobile-hidden" />
-        <c:set target="${element}" property="type" value="button"/>
         <c:set target="${element}" property="extraAttributes" value="data-form-target='#table-tile' data-form-submit-static data-prevent-load data-form-url='${exportUrl}'"/>
         <c:set target="${element}" property="iconBefore" value="icon-cloud-download-alt"/>
         <c:set target="${element}" property="name">

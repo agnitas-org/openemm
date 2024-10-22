@@ -4,13 +4,10 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="agnTitleKey" 			       value="export" 				          scope="request"/>
-<c:set var="agnSubtitleKey" 		       value="export" 				          scope="request"/>
 <c:set var="sidemenu_active" 		       value="ImportExport" 		          scope="request"/>
 <c:set var="sidemenu_sub_active" 	       value="export" 				          scope="request"/>
 <c:set var="agnHighlightKey" 		       value="export" 				          scope="request"/>
-<c:set var="isBreadcrumbsShown" 	       value="true" 				          scope="request"/>
-<c:set var="agnBreadcrumbsRootKey"	       value="ImportExport" 		          scope="request"/>
-<mvc:message var="agnHeadLineFirstCrumb"   code="manage.tables.exportProfiles"    scope="request"/>
+<c:set var="agnBreadcrumbsRootKey"	       value="manage.tables.exportProfiles"   scope="request"/>
 <c:set var="agnHelpKey" 			       value="export" 				          scope="request"/>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

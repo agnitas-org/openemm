@@ -1,28 +1,71 @@
 
+/*doc
+---
+title: Mailing status badges
+name: badges_06_mailing_status
+parent: badges_04_status
+---
+
+`.mailing.mediatype` should always be combined with the mailing mediatype, e.g. `.mailing.mediatype.email, .mailing.mediatype.post`.
+
+These can exist in text elements or standalone and denote the status of a mailing.
+
+<span class="status-badge mailing.status.new"></span>
+<span class="status-badge mailing.status.active"></span>
+<span class="status-badge mailing.status.canceled"></span>
+<span class="status-badge mailing.status.disable"></span>
+<span class="status-badge mailing.status.edit"></span>
+<span class="status-badge mailing.status.ready"></span>
+<span class="status-badge mailing.status.scheduled"></span>
+<span class="status-badge mailing.status.sending"></span>
+<span class="status-badge mailing.status.sent"></span>
+<span class="status-badge mailing.status.norecipients"></span>
+<span class="status-badge mailing.status.test"></span>
+<span class="status-badge mailing.status.admin"></span>
+<span class="status-badge mailing.status.in-generation"></span>
+<span class="status-badge mailing.status.generation-finished"></span>
+<span class="status-badge mailing.status.canceledAndCopied"></span>
+```
+
+There are also additional badges not related to the working status of the mailing.
+Such as `has content`, `no content`, `used in WM`, `is EMC`, `has actions`, `deleted`, `worldmailing`, `detabased mailing`
+
+```htmlexample
+<span class="status-badge mailing.status.has-content"></span>
+<span class="status-badge mailing.status.no-content"></span>
+<span class="status-badge mailing.status.cm"></span>
+<span class="status-badge mailing.status.emc"></span>
+<span class="status-badge mailing.status.trigger"></span>
+<span class="status-badge mailing.status.deleted"></span>
+<span class="status-badge mailing.status.world"></span>
+<span class="status-badge mailing.status.datebased"></span>
+```
+*/
+
 $mailing-status-badges-defs: (
-    new:                  (background: $stat-or-badge-blue,         icon: $fa-var-file),
-    has-content:          (background: $stat-very-dark-blue,        icon: $fa-var-file-alt),
-    no-content:           (background: $gray-400,                   icon: $fa-var-file),
-    active:               (background: #57C700,                     icon: $fa-var-play),
-    canceled:             (background: #E12E59,                     icon: $fa-var-minus-circle),
-    disable:              (background: #7E7E7E,                     icon: $fa-var-ban),
-    edit:                 (background: $stat-or-badge-dark-blue,    icon: $fa-var-pen),
-    ready:                (background: #8BF4AF,                     icon: $fa-var-check),
-    scheduled:            (background: #0ACD70,                     icon: $fa-var-history),
-    sending:              (background: #57C700,                     icon: $fa-var-paper-plane),
-    sent:                 (background: #516C03,                     icon: $fa-var-paper-plane),
-    norecipients:         (background: #7E7E7E,                     icon: $fa-var-paper-plane),
-    test:                 (background: #9B45D0,                     icon: $fa-var-lightbulb),
-    admin:                (background: #460876,                     icon: $fa-var-lightbulb),
-    in-generation:        (background: #8BF4AF,                     icon: $fa-var-cogs),
-    generation-finished:  (background: #0ACD70,                     icon: $fa-var-cog),
-    canceledAndCopied:    (background: #E12E59,                     icon: $fa-var-copy),
-    cm:                   (background: $stat-or-badge-dark-cyan,    icon: $fa-var-project-diagram),
-    emc:                  (background: $stat-or-badge-dark-grey,    icon: $fa-var-th-large),
-    trigger:              (background: $stat-or-badge-dark-grey,    icon: $fa-var-cogs),
-    deleted:              (background: $red,                        icon: $fa-var-trash-alt),
-    world:                (background: $stat-or-badge-dark-blue,    icon: $fa-var-envelope),
-    datebased:            (background: $stat-very-dark-blue,        icon: $fa-var-calendar-alt),
+    new:                  (background: $stat-or-badge-blue,           icon: $fa-var-file),
+    has-content:          (background: $stat-or-badge-very-dark-blue, icon: $fa-var-file-alt),
+    no-content:           (background: $gray-400,                     icon: $fa-var-file),
+    active:               (background: #57C700,                       icon: $fa-var-play),
+    canceled:             (background: $stat-or-badge-light-red,      icon: $fa-var-minus-circle),
+    disable:              (background: $stat-or-badge-grey,           icon: $fa-var-ban),
+    edit:                 (background: $stat-or-badge-dark-blue,      icon: $fa-var-pen),
+    ready:                (background: #8BF4AF,                       icon: $fa-var-check),
+    scheduled:            (background: $stat-or-badge-lime,           icon: $fa-var-history),
+    sending:              (background: #57C700,                       icon: $fa-var-paper-plane),
+    sent:                 (background: #516C03,                       icon: $fa-var-paper-plane),
+    norecipients:         (background: $stat-or-badge-grey,           icon: $fa-var-paper-plane),
+    test:                 (background: $light-purple,                 icon: $fa-var-lightbulb),
+    admin:                (background: $stat-or-badge-violet-dark,    icon: $fa-var-lightbulb),
+    in-generation:        (background: #8BF4AF,                       icon: $fa-var-cogs),
+    generation-finished:  (background: $stat-or-badge-lime,           icon: $fa-var-cog),
+    canceledAndCopied:    (background: $stat-or-badge-light-red,      icon: $fa-var-copy),
+    cm:                   (background: $stat-or-badge-dark-cyan,      icon: $fa-var-project-diagram),
+    emc:                  (background: $stat-or-badge-dark-grey,      icon: $fa-var-th-large),
+    trigger:              (background: $stat-or-badge-dark-grey,      icon: $fa-var-cogs),
+    deleted:              (background: $red,                          icon: $fa-var-trash-alt),
+    world:                (background: $stat-or-badge-dark-blue,      icon: $fa-var-envelope),
+    datebased:            (background: $stat-or-badge-very-dark-blue, icon: $fa-var-calendar-alt),
 );
 
 @mixin mailing-status-badge($state) {

@@ -68,7 +68,10 @@ public class CalendarCommentServiceImpl implements CalendarCommentService {
         for (ComCalendarComment comment : comments) {
             JSONObject object = new JSONObject();
 
-            object.element("recipients", getRecipients(comment));
+            object.element("recipients", admin.isRedesignedUiUsed() ? comment.getRecipientsString() : getRecipients(comment));
+            if (admin.isRedesignedUiUsed()) {
+                object.element("notifyAdminId", getCommentAdminId(comment.getRecipients()));
+            }
             object.element("commentId", comment.getCommentId());
             object.element("comment", comment.getComment());
             object.element("adminId", comment.getAdminId());
@@ -76,12 +79,19 @@ public class CalendarCommentServiceImpl implements CalendarCommentService {
             object.element("deadline", comment.isDeadline());
             object.element("notified", comment.isNotified());
             object.element("date", DateUtilities.format(comment.getDate(), dateFormat));
-            object.element("plannedSendDates", DateUtilities.format(comment.getPlannedSendDate(), dateTimeFormat));
+            object.element(admin.isRedesignedUiUsed() ? "plannedSendDate" : "plannedSendDates", DateUtilities.format(comment.getPlannedSendDate(), dateTimeFormat));
 
             array.add(object);
         }
 
         return array;
+    }
+
+    private static int getCommentAdminId(List<ComCalendarCommentRecipient> recipients) {
+        if (recipients.size() != 1 || StringUtils.isNotEmpty(recipients.get(0).getAddress())) {
+            return 0;
+        }
+        return recipients.get(0).getAdminId();
     }
 
     private JSONObject getRecipients(ComCalendarComment comment) {

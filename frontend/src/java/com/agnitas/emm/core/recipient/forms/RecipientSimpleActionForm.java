@@ -12,6 +12,7 @@ package com.agnitas.emm.core.recipient.forms;
 
 import org.agnitas.web.forms.SimpleActionForm;
 
+// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 public class RecipientSimpleActionForm extends SimpleActionForm {
 
     private String email;

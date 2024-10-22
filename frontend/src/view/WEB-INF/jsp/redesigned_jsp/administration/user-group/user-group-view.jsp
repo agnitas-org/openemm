@@ -15,7 +15,7 @@
     <c:set var="allowedUserGroupChange" value="true"/>
 </emm:ShowByPermission>
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden" servletRelativeAction="/administration/usergroup/save.action"
+<mvc:form cssClass="tiles-container flex-column" servletRelativeAction="/administration/usergroup/save.action"
           modelAttribute="userGroupForm"
           id="userGroupForm"
           data-form="resource"
@@ -25,9 +25,9 @@
     <mvc:hidden path="id"/>
     <mvc:hidden path="companyId"/>
 
-    <div id="settings-tile" class="tile h-auto flex-shrink-0" data-editable-tile>
+    <div id="settings-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="Settings"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="Settings"/></h1>
         </div>
         <div class="tile-body row js-scrollable">
             <div class="col-4">
@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <div class="tiles-block" style="flex: 1">
+    <div class="tiles-block">
         <%@ include file="../permissions.jspf" %>
     </div>
 

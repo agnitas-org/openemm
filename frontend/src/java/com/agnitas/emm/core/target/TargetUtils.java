@@ -104,10 +104,11 @@ public class TargetUtils {
 		 * Code is backend compatible if,
 		 * - no non-profile-tables are used
 		 * - no reference tables are used
-		 * - and generated SQL does not contain sub-selects
+		 * - generated SQL does not contain sub-selects
+		 * - and generated SQL does not use date arithmetics
 		 */
 
-		return !properties.isUsingNonCustomerTables() && !properties.isUsingReferenceTables() && !properties.isUsingSubselects();
+		return !properties.isUsingNonCustomerTables() && !properties.isUsingReferenceTables() && !properties.isUsingSubselects() && !properties.isUsingDateArithmetics();
 	}
 
 }

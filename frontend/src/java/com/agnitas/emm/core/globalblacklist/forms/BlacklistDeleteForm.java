@@ -19,16 +19,20 @@ import org.apache.commons.collections4.CollectionUtils;
 
 public class BlacklistDeleteForm {
 
-    private String email;
+    private Set<String> emails = new HashSet<>();
 
     private List<Integer> mailingListIds;
 
-    public String getEmail() {
-        return email;
+    public Set<String> getEmails() {
+        return emails;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public String getEmail() {
+        return emails.iterator().next();
+    }
+
+    public void setEmails(Set<String> emails) {
+        this.emails = emails;
     }
 
     public List<Integer> getMailingListIds() {

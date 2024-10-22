@@ -13,6 +13,7 @@ package org.agnitas.emm.core.commons.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.util.AgnUtils;
@@ -60,7 +61,7 @@ public class ConfigValue {
 	public static final ConfigValue BirtPublicKey = new ConfigValue("birt.publickey");
 		
 	public static final ConfigValue BirtErrorPage = new ConfigValue("birt.errorPage", "/webcontent/birt/pages/common/Error.jsp");
-
+	//message keys, marked as deleted are shown, instead of "missing message key...."
 	public static final ConfigValue IgnoreDeletedI18NMessagesHosts = new ConfigValue("system.ignoreDeletedMessagesHosts");
 	
 	public static final ConfigValue DefaultMailloopDomain = new ConfigValue("system.defaultMailloopDomain");
@@ -90,7 +91,7 @@ public class ConfigValue {
 	public static final ConfigValue MailingSizeErrorThresholdBytes = new ConfigValue("company.mailingSizeErrorThresholdBytes", "10485760");
 	/** Contraints in prevent_tabl_drop are created (true) or left out (false) **/
 	public static final ConfigValue UsePreventTableDropConstraint = new ConfigValue("company.usePreventTableDropConstraint", "true");
-	
+	/** if "true" than a target group assigned to an action based mailing is used, otherwise not */
 	public static final ConfigValue CampaignEnableTargetGroups = new ConfigValue("campaign-enable-target-groups", "false");
 
     public static final ConfigValue UseWkhtmltox = new ConfigValue("useWkhtmltox", "false");
@@ -132,7 +133,7 @@ public class ConfigValue {
 	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers", "-1");
 	public static final ConfigValue System_License_MaximumNumberOfCustomers_Graceful = new ConfigValue("maximumNumberOfCustomersGraceful", "5000");
 	/**
-	 * Maximum limit of company specific profile fields. Standard profile fields (see RecipientFieldService.RecipientStandardField) do not count to this limit.
+	 * Maximum limit of company specific profile fields. Standard profile fields (see RecipientStandardField) do not count to this limit.
 	 */
 	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields", "200");
 	public static final ConfigValue System_License_MaximumNumberOfProfileFields_Graceful = new ConfigValue("maximumNumberOfProfileFieldsGraceful", "10");
@@ -162,8 +163,10 @@ public class ConfigValue {
 	 * Access Limiting Targetgroups (ALTG)
 	 */
 	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
-	
+
+	/** companyID used for creation of demo openemm clients */
 	public static final ConfigValue System_License_OpenEMMMasterCompany = new ConfigValue("openEMMMasterCompany");
+	/** URL used for login of demo openemm users */
 	public static final ConfigValue System_License_OpenEMMLoginUrl = new ConfigValue("openEMMLoginURL");
 	
 	/** OpenEMM Demo Account Management **/
@@ -173,7 +176,7 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/122.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0");
 
 	public static final ConfigValue InboxPreview_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue InboxPreview_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
@@ -194,9 +197,12 @@ public class ConfigValue {
 	
 	/** Height of thumbnail in inbox preview. */
 	public static final ConfigValue Thumbnail_Sizey = new ConfigValue("thumbnail.sizey", "84");
+	/** Defines scale factor of thumbnail */
 	public static final ConfigValue Thumbnail_Threshold = new ConfigValue("thumbnail.threshold", "1.0");
 
+	/** value for enable or disable runtime check, default enabled */
 	public static final ConfigValue VelocityRuntimeCheck = new ConfigValue("velocity.runtimecheck");
+	/** value for enable or disable abort invalid velocity scripts, default enabled */
 	public static final ConfigValue VelocityScriptAbort = new ConfigValue("velocity.abortscripts");
 
 	public static final ConfigValue RdirLandingpage = new ConfigValue("system.RdirLandingpage","https://www.agnitas.de/");
@@ -259,7 +265,7 @@ public class ConfigValue {
 	/** Maximum attachment size (in Bytes). (Default 10 MB) */
 	public static final ConfigValue MaximumUploadAttachmentSize = new ConfigValue("system.MaximumUploadAttachmentSize", Integer.toString(10 * 1024 * 1024));
 
-	/** Default number of allowed user */
+	/** Default number of allowed gui user */
 	public static final ConfigValue UserAllowed = new ConfigValue("UserAllowed", "1000");
 	
 	/** Enable / disable historization of profile fields. */
@@ -302,6 +308,11 @@ public class ConfigValue {
 	public static final ConfigValue ImportQuota = new ConfigValue("import.quota.lines", "1500000");
 	
 	public static final ConfigValue ImportQuotaWarning = new ConfigValue("import.quota.lines.warn", "1000000");
+	
+	/**
+	 * Throttling while importing data to temptable (seconds)
+	 */
+	public static final ConfigValue ImportThrottlingSecondsPerBlock = new ConfigValue("import.throttling.secondsPerBlock", "0");
 
 	/** Maximum number of rows included in an export file for profile recipient export **/
 	public static final ConfigValue ProfileRecipientExportMaxRows = new ConfigValue("export.recipient.maxRows", "-1");
@@ -400,7 +411,7 @@ public class ConfigValue {
 
 	public static final ConfigValue TablespacenameCustomerIndex = new ConfigValue("tablespace.cust.index");
 
-	/** Value for maximum number of company specific profile fields in a customer table. Standard profile fields (see RecipientFieldService.RecipientStandardField) do not count to this limit. */
+	/** Value for maximum number of company specific profile fields in a customer table. Standard profile fields (see RecipientStandardField) do not count to this limit. */
 	public static final ConfigValue MaxFields = new ConfigValue("maxFields", "50");
 
 	/** Default value for maximum number of recipients for admin test mailing */
@@ -482,56 +493,6 @@ public class ConfigValue {
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
 	public static final ConfigValue CompanyDSGVOCleaner = new ConfigValue("company.dsgvocleaner", "-1");
 	
-	/** Enables web push notifications. */
-	public static final ConfigValue PushNotificationsEnabled = new ConfigValue("webpush.push_notification");
-	
-	/** Additional crendentials requires by some providers (like Google). */
-	public static final ConfigValue PushNotificationProviderCredentials = new ConfigValue("webpush.provider_credentials");
-	
-	/** Base directory to store notifications to be enqueued. */
-	public static final ConfigValue PushNotificationFileSinkBaseDirectory = new ConfigValue("webpush.filesink_basedir");
-	
-	/** Base directory to store send results. */
-	public static final ConfigValue PushNotificationResultBaseDirectory = new ConfigValue("webpush.result_basedir");
-	
-	/** SFTP host for data transfer to push sending service. */
-	public static final ConfigValue PushNotificationSftpHost = new ConfigValue("webpush.sftp.host");
-	
-	/** User name of SFTP host on push sending server. */
-	public static final ConfigValue PushNotificationSftpUser = new ConfigValue("webpush.sftp.user");
-	
-	/** Path on SFTP host of push sending server for data exchange. */
-	public static final ConfigValue PushNotificationSftpBasePath = new ConfigValue("webpush.sftp.basepath");
-	
-	/** SSH key file for connecting to SFTP service on push sending server. */
-	public static final ConfigValue PushNotificationSftpSshKeyFile = new ConfigValue("webpush.sftp.sshkey.file");
-	
-	/** Encrypted passphrase for SSH key file to connect to SFTP service on push sending server. */
-	public static final ConfigValue PushNotificationSftpEncryptedSshKeyPassphrase = new ConfigValue("webpush.sftp.sshkey.passphrase_encrypted");
-	
-	/**
-	 * URL for click tracking of push notifications.
-	 * 
-	 * Must be complete URL containing "[push-uid]" as placeholder for Push UID
-	 */
-	public static final ConfigValue PushNotificationClickTrackingUrl = new ConfigValue("webpush.click_tracking_url");
-	
-	/**
-	 * URL for tracking opendings of push notifications.
-	 * 
-	 * Must be complete URL containing "[push-uid]" as placeholder for Push UID
-	 */
-	public static final ConfigValue PushNotificationOpenTrackingUrl = new ConfigValue("webpush.open_tracking_url");
-	
-	/** Server application key (public part) for sending push notifications. */
-	public static final ConfigValue PushNotificationVapidPublicKey =  new ConfigValue("webpush.vapid.key.public");
-	
-	/** Server application key (private part) for sending push notifications. */
-	public static final ConfigValue PushNotificationVapidPrivateKey =  new ConfigValue("webpush.vapid.key.private");
-	
-	/** Server application key (subject part) for sending push notifications. */
-	public static final ConfigValue PushNotificationVapidSubject =  new ConfigValue("webpush.vapid.subject");
-
 	public static final ConfigValue LogonIframeUrlEnglish = new ConfigValue("logon.iframe.url.en");
 	public static final ConfigValue LogonIframeUrlGerman = new ConfigValue("logon.iframe.url.de");
 	public static final ConfigValue SkipLogonIframeUrlCheck = new ConfigValue("logon.iframe.url.skipCheck", "false");
@@ -549,6 +510,7 @@ public class ConfigValue {
 	public static final ConfigValue AutoExport_Expire = new ConfigValue("export.AutoExport.Expire", "30");
 
 	public static final ConfigValue MailingUndo_Expire = new ConfigValue("mailing.undo.expire", "60");
+	public static final ConfigValue DynamicTagsCleanupRetentionDays = new ConfigValue("dynamictags.cleanup.retention.days", "60");
 
 	/** Delete import files after successful (auto-)import **/
 	public static final ConfigValue DeleteSuccessfullyImportedFiles = new ConfigValue("import.importfiles.delete");
@@ -580,6 +542,7 @@ public class ConfigValue {
 	public static final ConfigValue LimitBlockOperations_Maximum = new ConfigValue("limit-block-operations-max");
 
 	public static final ConfigValue ForceSending = new ConfigValue("force-sending");
+	public static final ConfigValue EnableResponseInbox = new ConfigValue("bavd:inbox-enabled", "false");
 	public static final ConfigValue LocaleLanguage = new ConfigValue("locale-language");
 	public static final ConfigValue LocaleCountry = new ConfigValue("locale-country");
 	public static final ConfigValue LocaleTimezone = new ConfigValue("locale-timezone");
@@ -622,6 +585,7 @@ public class ConfigValue {
 	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "-1");
 	public static final ConfigValue CleanTrackingData = new ConfigValue("cleanup.deleteTrackingData", "-1");
 	public static final ConfigValue DeleteRecipients = new ConfigValue("cleanup.deleteRecipients", "-1");
+	public static final ConfigValue DeleteBindingStepsize = new ConfigValue("mailinglist.deleteBindings", "10000");
 	
 	/**
 	 * Values allowed: none, warning, error
@@ -687,6 +651,8 @@ public class ConfigValue {
 	public static final ConfigValue AllowUnnormalizedEmails = new ConfigValue("AllowUnnormalizedEmails", "false");
 
 	public static final ConfigValue DefaultTestRunOption = new ConfigValue("default.test.run.option", String.valueOf(TestRunOption.NO_LIMITATION.getId()));
+
+	public static final ConfigValue ResponseInbox_RetentionDays = new ConfigValue("responseInbox.retentationDays", "7");
 	
 	/** All config values related to Facebook. */
 	public static final class Facebook {
@@ -743,6 +709,89 @@ public class ConfigValue {
 
 		/** Retention time in seconds for cached SOAP API invocation costs. */
 		public static final ConfigValue WebserviceCostsCacheRetentionSeconds = new ConfigValue("webservice.costs_cache_retention_seconds", "300");
+	}
+	
+	public static final class WebPush {
+		/** Enables web push notifications. */
+		public static final ConfigValue PushNotificationsEnabled = new ConfigValue("webpush.push_notification");
+
+		/** Includes master company in checks for push notifications. */
+		public static final ConfigValue WebpushIncludeMasterCompany = new ConfigValue("webpush.includeMasterCompany", "false");
+		
+		/** Additional crendentials requires by some providers (like Google). */
+		public static final ConfigValue PushNotificationProviderCredentials = new ConfigValue("webpush.provider_credentials");
+
+		public static final ConfigValue WebpushMaximumResponsesPerIteration = new ConfigValue("webpush.maxResponsesPerIteration", "1000");
+		
+		// --- Tracking configuration
+		/**
+		 * URL for click tracking of push notifications.
+		 * 
+		 * Must be complete URL containing "[push-uid]" as placeholder for Push UID
+		 */
+		public static final ConfigValue PushNotificationClickTrackingUrl = new ConfigValue("webpush.click_tracking_url");
+
+		/**
+		 * URL for tracking opendings of push notifications.
+		 * 
+		 * Must be complete URL containing "[push-uid]" as placeholder for Push UID
+		 */
+		public static final ConfigValue PushNotificationOpenTrackingUrl = new ConfigValue("webpush.open_tracking_url");
+		
+		
+		
+		// --- VAPID data
+		/** Server application key (public part) for sending push notifications. */
+		public static final ConfigValue PushNotificationVapidPublicKey =  new ConfigValue("webpush.vapid.key.public");
+		
+		/** Server application key (private part) for sending push notifications. */
+		public static final ConfigValue PushNotificationVapidPrivateKey =  new ConfigValue("webpush.vapid.key.private");
+		
+		/** Server application key (subject part) for sending push notifications. */
+		public static final ConfigValue PushNotificationVapidSubject =  new ConfigValue("webpush.vapid.subject");
+
+		
+		
+		// --- Legacy send service configuration
+		/** Base directory to store notifications to be enqueued. */
+		public static final ConfigValue PushNotificationFileSinkBaseDirectory = new ConfigValue("webpush.filesink_basedir");
+		
+		/** Base directory to store send results. */
+		public static final ConfigValue PushNotificationResultBaseDirectory = new ConfigValue("webpush.result_basedir");
+		
+		/** SFTP host for data transfer to push sending service. */
+		public static final ConfigValue PushNotificationSftpHost = new ConfigValue("webpush.sftp.host");
+		
+		/** User name of SFTP host on push sending server. */
+		public static final ConfigValue PushNotificationSftpUser = new ConfigValue("webpush.sftp.user");
+		
+		/** Path on SFTP host of push sending server for data exchange. */
+		public static final ConfigValue PushNotificationSftpBasePath = new ConfigValue("webpush.sftp.basepath");
+		
+		/** SSH key file for connecting to SFTP service on push sending server. */
+		public static final ConfigValue PushNotificationSftpSshKeyFile = new ConfigValue("webpush.sftp.sshkey.file");
+		
+		/** Encrypted passphrase for SSH key file to connect to SFTP service on push sending server. */
+		public static final ConfigValue PushNotificationSftpEncryptedSshKeyPassphrase = new ConfigValue("webpush.sftp.sshkey.passphrase_encrypted");
+		
+		
+		// --- Postman send service configuration
+		/** SFTP host name for Postman. */
+		public static final ConfigValue WebpushPostmanSftpHost = new ConfigValue("webpush.postman.sftp.host");
+		
+		/** SFTP user for Postman. */
+		public static final ConfigValue WebpushPostmanSftpUser = new ConfigValue("webpush.postman.sftp.user");
+
+		/** Key file for SFTP user for Postman. */
+		public static final ConfigValue WebpushPostmanSftpKeyFile = new ConfigValue("webpush.postman.sftp.keyFile.name");
+		
+		/** Passphrase for SFTP key file. */
+		public static final ConfigValue WebpushPostmanSftpKeyFilePassphrase = new ConfigValue("webpush.postman.sftp.keyFile.passphrase");
+		
+		/** Remote directory on SFTP to write push notifications for sending. */
+		public static final ConfigValue WebpushPostmanSftpRemoteDispatcherMessageDirectory = new ConfigValue("webpush.postman.dispatcher.messageDirectory");
+		
+		public static final ConfigValue WebpushPostmanSftpRemoteDispatcherResponseDirectory = new ConfigValue("webpush.postman.dispatcher.responseDirectory");
 	}
 	
 	public static final class Honeypot {
@@ -814,7 +863,7 @@ public class ConfigValue {
 	 * All of these keys will be removed after successful rollout.
 	 */
 	public static final class Development {
-		// Currently empty. Will be filled in future with new features in rollout.
+		public static final ConfigValue WebPushUseNewPostman = new ConfigValue("development.webpush.useNewPostman", "false");
 	}
 	
 	// Backend configuration values
@@ -840,9 +889,11 @@ public class ConfigValue {
 	public static final ConfigValue MailOut_DbTempTablespace = new ConfigValue("mailout.ini.db_temp_tablespace");
 	public static final ConfigValue MailOut_SampleEmails = new ConfigValue("mailout.ini.sample_emails");
 
-	public static final ConfigValue Backend_AdminTestMark = new ConfigValue("admin-test-mark");
-	public static final ConfigValue Backend_AdminTestMarkSubjectAdmin = new ConfigValue("admin-test-mark-subject-admin");
-	public static final ConfigValue Backend_AdminTestMarkSubjectTest = new ConfigValue("admin-test-mark-subject-test");
+	public static final ConfigValue Backend_AdminTestMark = new ConfigValue("admin-test-mark", AdminTestMarkPlacementOption.NONE.getStorageValue());
+	public static final ConfigValue Backend_AdminTestMarkSubjectAdmin = new ConfigValue("admin-test-mark-subject-admin", "[ADMIN]");
+	public static final ConfigValue Backend_AdminTestMarkSubjectTest = new ConfigValue("admin-test-mark-subject-test", "[TEST]");
+	public static final ConfigValue Backend_AdminTestMarkToAdmin = new ConfigValue("admin-test-mark-to-admin", "Adminmail");
+	public static final ConfigValue Backend_AdminTestMarkToTest = new ConfigValue("admin-test-mark-to-test", "Testmail");
 	public static final ConfigValue Backend_Ahv_LimitAbsolute = new ConfigValue("ahv:limit-absolute");
 	public static final ConfigValue Backend_Ahv_LimitPercent = new ConfigValue("ahv:limit-percent");
 	public static final ConfigValue Backend_Ahv_MaxReactivations = new ConfigValue("ahv:max-reactivations");
@@ -957,6 +1008,7 @@ public class ConfigValue {
 	public static final ConfigValue SsoLoginSamlCertificate = new ConfigValue("system.SsoLoginSamlCertificate");
 	public static final ConfigValue SsoLoginSamlSpEntityID = new ConfigValue("system.SsoLoginSamlSpEntityID");
 	public static final ConfigValue SsoLoginSamlUsernameAttribute = new ConfigValue("system.SsoLoginSamlUsernameAttribute", "username");
+	public static final ConfigValue SsoSamlIdpUrl = new ConfigValue("system.sso.saml.idp.url");
 
 	public static final ConfigValue UpsellingInfoUrlEnglish = new ConfigValue("upselling.moreInfo.url.en");
 	public static final ConfigValue UpsellingInfoUrlGerman = new ConfigValue("upselling.moreInfo.url.de");
@@ -1035,9 +1087,6 @@ public class ConfigValue {
 	
 	public static final ConfigValue ExecutableTempDirPath = new ConfigValue("system.ExecutableTempDirPath", "/tmp");
 	
-	// temporary
-	public static final ConfigValue WriteExtendedRecipientReport = new ConfigValue("write.extended.recipient.report", "false");
-
 	public static final ConfigValue TextGeneratorUrl = new ConfigValue("TextGeneratorUrl");
 	public static final ConfigValue TextGeneratorApiKey = new ConfigValue("TextGeneratorApiKey");
 	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel");
@@ -1061,8 +1110,16 @@ public class ConfigValue {
 
 	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
 
+	public static final ConfigValue RecipientDistributionStatExpirationYears = new ConfigValue("expire.recipientDistributionStat.years", "5");
+
 	public static ConfigValue FilterRecipientsOverviewForActiveRecipients = new ConfigValue("recipients.overview.filterForActive", "false");
 	public static ConfigValue CleanAdminAndTestRecipientsActivities = new ConfigValue("recipients.adminAndTest.cleanActivity", "false");
+
+	public static ConfigValue IndividualLinkTrackingForAllMailings = new ConfigValue("mailings.individualLinkTracking", "false");
+
+	public static final ConfigValue MailingMinimumApprovals = new ConfigValue("mailing.minimum.approvals", "1");
+	public static final ConfigValue DashboardCalendarShowALlEntries = new ConfigValue("dashboard.calendar.showAllEntries", "false");
+	public static final ConfigValue GenderUnknownDefaultValues = new ConfigValue("gender.unknown.defaultValues", "unknown;diverse;kein;keine;keine Angabe;none;other;divers;unbekannt;andere");
 
 	private final String name;
 	private final String defaultValue;

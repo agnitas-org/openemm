@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -35,7 +35,7 @@ public class WorkflowControllerOpenemm extends WorkflowController {
     public WorkflowControllerOpenemm(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
                               ComWorkflowActivationService workflowActivationService, ComWorkflowStatisticsService workflowStatisticsService,
                               @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService, ComWorkflowDataParser workflowDataParser,
-                              CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
+                              CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, MailingComponentDao componentDao,
                               PdfService pdfService, ComCompanyDao companyDao, ConfigService configService,
                               WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                               ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService,

@@ -31,7 +31,7 @@ public class ComWorkflowReactionJobWorker extends JobWorker {
     public String runJob() throws Exception {
         initBeans();
 
-        final CompaniesConstraints constraints = getCompaniesConstrains();
+        final CompaniesConstraints constraints = getCompaniesConstraints();
 
         // Get reactions we need to check (active reactions with start date in the past)
         for (final ComWorkflowReaction reaction : reactionDao.getReactionsToCheck(constraints)) {

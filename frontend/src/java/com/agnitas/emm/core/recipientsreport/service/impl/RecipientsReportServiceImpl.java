@@ -10,23 +10,23 @@
 
 package com.agnitas.emm.core.recipientsreport.service.impl;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.common.exceptions.ZipDownloadException;
+import com.agnitas.emm.common.service.BulkFilesDownloadService;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.RecipientReportDownloadException;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport.EntityType;
+import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.MimeTypeService;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.Tuple;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -37,44 +37,38 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
-import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.MimeTypeService;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX;
 
 public class RecipientsReportServiceImpl implements RecipientsReportService {
 
     private static final Logger logger = LogManager.getLogger(RecipientsReportServiceImpl.class);
-    private static final Map<RecipientsReport.RecipientReportType, Permission> TYPE_PERMISSIONS;
+    private static final Map<RecipientsReport.RecipientReportType, Permission> TYPE_PERMISSIONS = Map.of(
+            RecipientsReport.RecipientReportType.IMPORT_REPORT, Permission.WIZARD_IMPORT,
+            RecipientsReport.RecipientReportType.EXPORT_REPORT, Permission.WIZARD_EXPORT
+    );
 
-    static {
-        TYPE_PERMISSIONS = new HashMap<>();
-        TYPE_PERMISSIONS.put(RecipientsReport.RecipientReportType.IMPORT_REPORT, Permission.WIZARD_IMPORT);
-        TYPE_PERMISSIONS.put(RecipientsReport.RecipientReportType.EXPORT_REPORT, Permission.WIZARD_EXPORT);
-    }
-
-    private static final Map<RecipientsReport.EntityType, Permission> REPORT_TYPE_PERMISSIONS = Map.of(
-            RecipientsReport.EntityType.IMPORT, Permission.WIZARD_IMPORT,
-            RecipientsReport.EntityType.EXPORT, Permission.WIZARD_EXPORT
+    private static final Map<EntityType, Permission> REPORT_TYPE_PERMISSIONS = Map.of(
+            EntityType.IMPORT, Permission.WIZARD_IMPORT,
+            EntityType.EXPORT, Permission.WIZARD_EXPORT
     );
 
     private RecipientsReportDao recipientsReportDao;
     private MimeTypeService mimeTypeService;
-
-    @Required
-    public void setRecipientsReportDao(RecipientsReportDao recipientsReportDao) {
-        this.recipientsReportDao = recipientsReportDao;
-    }
-
-    @Required
-    public void setMimeTypeService(MimeTypeService mimeTypeService) {
-        this.mimeTypeService = mimeTypeService;
-    }
+    private BulkFilesDownloadService bulkFilesDownloadService;
 
     @Override
     public List<DashboardRecipientReport> getReportsForDashboard(int companyId) {
@@ -82,47 +76,19 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport saveNewReport(Admin admin, int companyId, RecipientsReport report, String content) throws Exception {
+    public RecipientsReport saveNewReport(Admin admin, int companyId, RecipientsReport report, String content) {
         // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
-        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+        if (report.getEntityType() == EntityType.IMPORT) {
             report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
             if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
                 report.setAutoImportID(report.getEntityId());
             }
-        } else if (report.getEntityType() == RecipientsReport.EntityType.EXPORT) {
+        } else if (report.getEntityType() == EntityType.EXPORT) {
             report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
         }
 
         report.setAdminId(admin != null ? admin.getAdminID() : 0);
         recipientsReportDao.createNewReport(companyId, report, content);
-        return report;
-    }
-
-    @Override
-    public RecipientsReport createAndSaveImportReport(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
-        RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin != null ? admin.getAdminID() : 0);
-        report.setDatasourceId(datasourceId);
-        report.setFilename(filename);
-        report.setReportDate(reportDate);
-        report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
-        if (autoImportID > 0) {
-        	report.setAutoImportID(autoImportID);
-        }
-        report.setIsError(isError);
-        recipientsReportDao.createReport(companyID, report, content);
-        return report;
-    }
-
-    @Override
-    public RecipientsReport createAndSaveExportReport(int companyID, Admin admin, String filename, Date reportDate, String content, boolean isError) throws Exception {
-        RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin != null ? admin.getAdminID() : 0);
-        report.setFilename(filename);
-        report.setReportDate(reportDate);
-        report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
-        report.setIsError(isError);
-        recipientsReportDao.createReport(companyID, report, content);
         return report;
     }
 
@@ -197,22 +163,27 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport.RecipientReportType getReportType(int companyId, int reportId) {
-        if (reportId > 0 && companyId > 0) {
-            return recipientsReportDao.getReportType(companyId, reportId);
+    public DownloadRecipientReport getRecipientReportForDownload(int reportId, Admin admin) throws Exception {
+        EntityType type = recipientsReportDao.getReportType(admin.getCompanyID(), reportId);
+       
+        if (type == EntityType.EXPORT && admin.permissionAllowed(Permission.WIZARD_EXPORT)) {
+            return getExportDownloadFileData(admin, reportId);
+        }
+        if (type == EntityType.IMPORT && admin.permissionAllowed(Permission.WIZARD_IMPORT)) {
+            return getImportDownloadFileData(admin, reportId);
         }
         return null;
     }
-    
-    @Override
-    public DownloadRecipientReport getExportDownloadFileData(Admin admin, int reportId) throws UnsupportedEncodingException {
+
+    private DownloadRecipientReport getExportDownloadFileData(Admin admin, int reportId) throws UnsupportedEncodingException {
         RecipientsReport report = getReport(admin.getCompanyID(), reportId);
-        if (report != null) {
-            String reportContent = getImportReportContent(admin.getCompanyID(), reportId);
-            return getDownloadReportData(admin, report.getFilename(), reportContent);
+        if (report == null) {
+            return null;
         }
-    
-        return null;
+        String reportContent = getImportReportContent(admin.getCompanyID(), reportId);
+        DownloadRecipientReport download = getDownloadReportData(admin, report.getFilename(), reportContent);
+        download.setType(EntityType.EXPORT);
+        return download;    
     }
     
     private DownloadRecipientReport getDownloadReportData(Admin admin, String filename, String reportContent) throws UnsupportedEncodingException {
@@ -234,8 +205,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         return recipientReport;
     }
     
-    @Override
-    public DownloadRecipientReport getImportDownloadFileData(Admin admin, int reportId) throws Exception {
+    private DownloadRecipientReport getImportDownloadFileData(Admin admin, int reportId) throws Exception {
         int companyId = admin.getCompanyID();
         RecipientsReport report = getReport(companyId, reportId);
         
@@ -245,19 +215,21 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
 
         byte[] fileData = getImportReportFileData(companyId, reportId);
     
-        if (fileData != null) {
-            DownloadRecipientReport recipientReport = new DownloadRecipientReport();
-            recipientReport.setContent(fileData);
-            recipientReport.setFilename(report.getFilename());
-            String mimeType = mimeTypeService.getMimetypeForFile(StringUtils.lowerCase(report.getFilename()));
-            recipientReport.setMediaType(MediaType.parseMediaType(mimeType));
-            recipientReport.setSuplemental(true);
-            return recipientReport;
-        } else {
+        if (fileData == null) {
             String reportContent = getImportReportContent(companyId, reportId);
             String fileName = generateDownloadImportFileName(report);
-            return getDownloadReportData(admin, fileName, reportContent);
+            DownloadRecipientReport recipientReport = getDownloadReportData(admin, fileName, reportContent);
+            recipientReport.setType(EntityType.IMPORT);
+            return recipientReport;
         }
+        DownloadRecipientReport recipientReport = new DownloadRecipientReport();
+        recipientReport.setType(EntityType.IMPORT);
+        recipientReport.setContent(fileData);
+        recipientReport.setFilename(report.getFilename());
+        String mimeType = mimeTypeService.getMimetypeForFile(StringUtils.lowerCase(report.getFilename()));
+        recipientReport.setMediaType(MediaType.parseMediaType(mimeType));
+        recipientReport.setSuplemental(true);
+        return recipientReport;
     }
 
     private String generateDownloadImportFileName(RecipientsReport report) {
@@ -267,24 +239,26 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-	public void createSupplementalReportData(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
-        RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin != null ? admin.getAdminID() : 0);
-        report.setDatasourceId(datasourceId);
-        report.setFilename(filename);
-        report.setReportDate(reportDate);
-        report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
-        if (autoImportID > 0) {
-        	report.setAutoImportID(autoImportID);
+    public File getZipToDownload(Set<Integer> ids, Admin admin) {
+        try {
+            return bulkFilesDownloadService.getZipToDownload(ids, "recipient-logs", id -> {
+                try {
+                    DownloadRecipientReport file = getRecipientReportForDownload(id, admin);
+                    return file == null ? null : new Tuple<>(HttpUtils.escapeFileName(file.getFilename()), file.getContent());
+                } catch (Exception e) {
+                    logger.error(String.format("Error occurred when download log by ID: %d", id), e);
+                    return null;
+                }
+            });
+        } catch (ZipDownloadException e) {
+            throw new RecipientReportDownloadException(e.getErrors());
         }
-        report.setIsError(isError);
-		recipientsReportDao.createSupplementalReportData(companyID, report, temporaryDataFile, textContent);
-	}
+    }
 
     @Override
     public void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception {
-        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
-        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+        // TODO: EMMGUI-714: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (report.getEntityType() == EntityType.IMPORT) {
             report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
             if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
                 report.setAutoImportID(report.getEntityId());
@@ -310,14 +284,29 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         return result;
     }
 
-    private RecipientsReport.EntityType[] getAllowedReportTypes(RecipientsReport.EntityType[] types, final Admin admin) {
+    private EntityType[] getAllowedReportTypes(EntityType[] types, final Admin admin) {
         if (types == null) {
-            return RecipientsReport.EntityType.values();
+            return EntityType.values();
         }
         return Arrays.stream(types)
                 .filter(Objects::nonNull)
                 .filter(type -> admin.permissionAllowed(REPORT_TYPE_PERMISSIONS.get(type)))
                 .collect(Collectors.toList())
-                .toArray(new RecipientsReport.EntityType[]{});
+                .toArray(new EntityType[]{});
+    }
+
+    @Required
+    public void setRecipientsReportDao(RecipientsReportDao recipientsReportDao) {
+        this.recipientsReportDao = recipientsReportDao;
+    }
+
+    @Required
+    public void setMimeTypeService(MimeTypeService mimeTypeService) {
+        this.mimeTypeService = mimeTypeService;
+    }
+
+    @Required
+    public void setBulkFilesDownloadService(BulkFilesDownloadService bulkFilesDownloadService) {
+        this.bulkFilesDownloadService = bulkFilesDownloadService;
     }
 }

@@ -10,16 +10,16 @@
 
 package com.agnitas.emm.core.target.eql.emm.resolver;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingResolverException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;
 
 public class EmmMailingTypeResolverImpl implements MailingTypeResolver {
 
-	private final ComMailingDao mailingDao;
+	private final MailingDao mailingDao;
 	
-	public EmmMailingTypeResolverImpl(ComMailingDao mailingDao) {
+	public EmmMailingTypeResolverImpl(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	

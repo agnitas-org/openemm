@@ -18,7 +18,7 @@
           'sidebar header'
           'sidebar main-view';
 
-  height: 100vh;
+  height: 100dvh;
 }
 
 #main-view {
@@ -36,15 +36,25 @@
 }
 
 .tiles-container {
-  display: grid;
+  display: flex;
   padding: $tiles-spacer;
   flex-grow: 1;
   min-height: 0;
-  grid-gap: $tiles-spacer;
+  gap: $tiles-spacer;
   position: relative; // for select2 dropdown
+
+  > .tile, > .tiles-block {
+    flex: 1;
+
+    @include mobile {
+      flex: 0 0 min-content !important;
+    }
+  }
 
   @include mobile {
     grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+    @include hide-scroll;
   }
 }
 
@@ -52,30 +62,26 @@
   display: flex;
   gap: $tiles-spacer;
   overflow: hidden;
+
+  @include mobile {
+    flex-direction: column !important;
+
+    > .tile, .tiles-block {
+      flex: 0 0 min-content !important;
+    }
+  }
 }
 
 .filter-overview {
   @extend .tiles-container;
-  display: flex;
 
   #table-tile {
     flex: 3;
-
-    @include mobile {
-      flex: none;
-    }
   }
 
   #filter-tile {
-    flex: 1;
-
     @include mobile {
       order: -1;
-      flex: 0 0 min-content;
     }
-  }
-
-  @include mobile {
-    flex-direction: column;
   }
 }

@@ -8,12 +8,12 @@
 <%--@elvariable id="numberOfRecipients" type="java.lang.Integer"--%>
 
 <mvc:form cssClass="modal modal-adaptive" tabindex="-1" servletRelativeAction="/target/${targetIdToDeleteRecipients}/delete/recipients.action" method="POST">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="target.delete.recipients"/></h1>
 
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -34,13 +34,13 @@
             <div class="modal-footer">
                 <c:choose>
                     <c:when test="${numberOfRecipients gt 0}">
-                        <button type="button" class="btn btn-danger flex-grow-1 js-confirm-positive" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-danger js-confirm-positive" data-bs-dismiss="modal">
                             <i class="icon icon-trash-alt"></i>
                             <span class="text"><mvc:message code="button.Delete" /></span>
                         </button>
                     </c:when>
                     <c:otherwise>
-                        <button type="button" class="btn btn-primary flex-grow-1 js-confirm-negative" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-primary js-confirm-negative" data-bs-dismiss="modal">
                             <i class="icon icon-check"></i>
                             <span class="text"><mvc:message code="button.OK" /></span>
                         </button>

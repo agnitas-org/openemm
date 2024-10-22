@@ -5,7 +5,9 @@
 <%--@elvariable id="userFormId" type="java.lang.Integer"--%>
 <%--@elvariable id="userFormName" type="java.lang.String"--%>
 
-<c:set var="agnNavigationKey" 		value="formViewWithLinks" 							scope="request" />
+<c:url var="switchDesignUrl" value="/webform/statistic.action?formId=${userFormId}"         scope="request" />
+
+<c:set var="agnNavigationKey" 		value="formViewWithLinks" 							    scope="request" />
 <c:set var="agnTitleKey" 			value="Form" 											scope="request" />
 <c:set var="agnSubtitleKey" 		value="Form" 											scope="request" />
 <c:set var="sidemenu_active" 		value="Forms" 											scope="request" />

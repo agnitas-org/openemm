@@ -132,4 +132,8 @@ public interface EmmAction extends Serializable {
 	void setAdvertising(boolean advertising);
 
 	boolean isAdvertising();
+
+    boolean isDeleted();
+
+    void setDeleted(boolean deleted);
 }

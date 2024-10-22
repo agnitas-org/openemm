@@ -1,4 +1,82 @@
 
+/*doc
+---
+title: Panels
+name: panels
+category: Components - Panels
+---
+
+A panel is a kind of tile with a background fill. It is mainly used to display text on some background. But it may also contain some kind of custom layout
+
+The basic structure is as follows:
+
+```htmlexample
+<div class="panel" style="background: orangered">
+    <h2>Panel content</h2>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Contextual Variants
+name: panels_01_states
+parent: panels
+---
+
+Panels support the usual states as `.panel--success`, `.panel--info`, `.panel--warning` and `.panel--alert` respectively.
+
+```htmlexample
+<div class="panel panel--success">
+    <h2>Panel content</h2>
+</div>
+```
+
+```htmlexample
+<div class="panel panel--info">
+    <h2>Panel content</h2>
+</div>
+```
+
+```htmlexample
+<div class="panel panel--warning">
+    <h2>Panel content</h2>
+</div>
+```
+
+```htmlexample
+<div class="panel panel--alert">
+    <h2>Panel content</h2>
+</div>
+```
+*/
+
+/*doc
+---
+title: Status panel
+name: panels_02_status-panel
+parent: panels
+---
+
+Variation of panel to display some status. Contains an icon, title, and additional text information.
+
+```htmlexample
+<div class="panel panel--success panel--status">
+    <div class="panel-head">
+        <i class="icon icon-check-circle"></i>
+        <div class="panel-title">
+            <p>Status</p>
+        </div>
+    </div>
+    <div class="panel-body">
+        Panel text
+    </div>
+</div>
+```
+
+*/
+
 @mixin panel-variant($state, $color) {
   .panel--#{$state} {
     color: $white;
@@ -22,6 +100,12 @@
   $color: nth($conf, 2);
 
   @include panel-variant($state, $color);
+}
+
+.panel--statistics {
+  color: $white;
+  background-color: $dark-blue;
+  gap: $gap-x-sm;
 }
 
 .panel--status {

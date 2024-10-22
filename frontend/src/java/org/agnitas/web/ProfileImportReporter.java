@@ -10,20 +10,17 @@
 
 package org.agnitas.web;
 
-import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
-
-import java.io.File;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Company;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.DataSourceService;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.dao.ImportRecipientsDao;
@@ -51,17 +48,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Company;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.DataSourceService;
+import java.io.File;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+
+import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
 
 public class ProfileImportReporter {
 
@@ -146,31 +145,22 @@ public class ProfileImportReporter {
 			autoImportID = profileImportWorker.getAutoImport().getAutoImportId();
 		}
 		if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null) {
-			if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, companyID)) {
-				createInvalidRecipientsReport(profileImportWorker, admin, companyID, true);
-			} else {
-				recipientsReportService.createSupplementalReportData(companyID, admin, RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
-			}
+			createInvalidRecipientsReport(profileImportWorker, admin, companyID, true);
 		}
 
-		if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, companyID)) {
-			RecipientsReport report = new RecipientsReport();
+		RecipientsReport report = new RecipientsReport();
 
-			report.setDatasourceId(profileImportWorker.getDatasourceId());
-			report.setFilename(generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID));
-			report.setReportDate(profileImportWorker.getEndTime());
-			report.setIsError(isError);
+		report.setDatasourceId(profileImportWorker.getDatasourceId());
+		report.setFilename(generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID));
+		report.setReportDate(profileImportWorker.getEndTime());
+		report.setIsError(isError);
 
-			report.setEntityId(isAutoImport ? autoImportID : profileImportWorker.getImportProfileId());
-			report.setEntityType(RecipientsReport.EntityType.IMPORT);
-			report.setEntityExecution(isAutoImport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
-			report.setEntityData(RecipientsReport.EntityData.PROFILE);
+		report.setEntityId(isAutoImport ? autoImportID : profileImportWorker.getImportProfileId());
+		report.setEntityType(RecipientsReport.EntityType.IMPORT);
+		report.setEntityExecution(isAutoImport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
+		report.setEntityData(RecipientsReport.EntityData.PROFILE);
 
-			return recipientsReportService.saveNewReport(admin, companyID, report, resultFileContent).getId();
-		} else {
-			String filename = generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID);
-			return recipientsReportService.createAndSaveImportReport(companyID, admin, filename, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
-		}
+		return recipientsReportService.saveNewReport(admin, companyID, report, resultFileContent).getId();
 	}
 
 	private void createInvalidRecipientsReport(ProfileImportWorker profileImportWorker, Admin admin, int companyID, boolean isError) throws Exception {

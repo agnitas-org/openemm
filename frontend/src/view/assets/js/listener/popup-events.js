@@ -1,7 +1,5 @@
 (function() {
-  var Action = AGN.Lib.Action,
-      Modal  = AGN.Lib.Modal,
-      Helpers = AGN.Lib.Helpers;
+  var Action = AGN.Lib.Action;
 
   Action.new({'click': '[data-popup]'}, function() {
     var url = this.el.data('popup'),

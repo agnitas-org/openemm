@@ -1,18 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticForm"--%>
 
-<c:set var="agnNavigationKey" 		value="none" 	                    scope="request" />
 <c:set var="agnTitleKey" 			value="Recipient" 			        scope="request" />
-<c:set var="agnSubtitleKey" 		value="Statistics" 			        scope="request" />
 <c:set var="sidemenu_active" 		value="Statistics" 			        scope="request" />
 <c:set var="sidemenu_sub_active" 	value="Recipients" 			        scope="request" />
 <c:set var="agnHighlightKey" 		value="statistic.Recipient"         scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 				        scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Statistics" 			        scope="request" />
 <c:set var="agnHelpKey" 			value="recipientStatistic" 	        scope="request" />
 <c:set var="agnEditViewKey" 	    value="recipients-stat-overview" 	scope="request" />
@@ -29,8 +26,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
-        <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
         <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
         <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -53,7 +48,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn"/>
         <c:set target="${element}" property="extraAttributes" value="data-form-target='#stat-form' data-form-submit"/>
         <c:set target="${element}" property="iconBefore" value="icon icon-sync"/>
         <c:set target="${element}" property="name">

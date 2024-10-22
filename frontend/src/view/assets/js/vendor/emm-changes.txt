@@ -62,3 +62,7 @@
 
 17) jquery-dirty-0.8.3.js-extended
 - changed the detection of "dirty" input fields that use the "select2" library [GWUA-5421]
+
+18) perfect-scrollbar-1.5.5.js
+- added fire custom events on rail clicks [EMMGUI-863]
+- fixed infitity scroll after (avoid scroll after last item) [EMMGUI-739] (https://github.com/mdbootstrap/perfect-scrollbar/issues/51)

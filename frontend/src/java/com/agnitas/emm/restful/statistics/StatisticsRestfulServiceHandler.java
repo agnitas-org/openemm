@@ -27,7 +27,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -63,11 +63,11 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 
 	private final RestfulUserActivityLogDao userActivityLogDao;
 	private final ComCompanyDao companyDao;
-	private final ComMailingDao mailingDao;
+	private final MailingDao mailingDao;
 	private final MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
 	private final MailinglistDao mailinglistDao;
 
-	public StatisticsRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, ComCompanyDao companyDao, ComMailingDao mailingDao, MailingSummaryDataSetFactory mailingSummaryDataSetFactory, MailinglistDao mailinglistDao) {
+	public StatisticsRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, ComCompanyDao companyDao, MailingDao mailingDao, MailingSummaryDataSetFactory mailingSummaryDataSetFactory, MailinglistDao mailinglistDao) {
 		this.userActivityLogDao = userActivityLogDao;
 		this.companyDao = companyDao;
 		this.mailingDao = mailingDao;

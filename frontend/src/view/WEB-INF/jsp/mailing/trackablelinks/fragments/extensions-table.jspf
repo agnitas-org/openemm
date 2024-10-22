@@ -5,7 +5,7 @@
 <div class="form-group">
     <div class="col-sm-4">
         <c:if test="${extensionTableTitle eq null}">
-            <c:set var="extensionTableTitle"><mvc:message code="LinkExtensions" /></c:set>
+            <c:set var="extensionTableTitle"><mvc:message code="LinkExtensions" /> <button class="icon icon-help" data-help="help_${helplanguage}/mailing/trackable_links/LinkExtensions.xml" tabindex="-1" type="button"></button></c:set>
         </c:if>
         <label class="control-label">${extensionTableTitle}</label>
     </div>

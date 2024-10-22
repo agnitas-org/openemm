@@ -83,4 +83,8 @@ public interface MailingComponent {
 	boolean isSourceComponent();
 	
 	boolean isMobileImage();
+
+	int getSize();
+
+	void setSize(int size);
 }

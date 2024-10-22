@@ -5,9 +5,9 @@
 
 <div id="edit-rights-tile" class="tile" data-editable-tile="main" style="flex: 3">
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="UserRights.edit"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="UserRights.edit"/></h1>
     </div>
-    <div class="tile-body js-scrollable" style="display: grid; grid-template-columns: minmax(300px, 1fr) 3fr; gap: 10px">
+    <div class="tile-body" style="display: grid; grid-template-columns: minmax(300px, 1fr) 3fr; gap: 10px">
         <div class="permission-categories">
             <c:forEach items="${permissionCategories}" var="category" varStatus="status">
                 <c:set var="categoryIndex" value="${status.index}"/>
@@ -26,7 +26,7 @@
             <c:set var="categoryIndex" value="${status.index}"/>
             <div id="${categoryIndex}-category-permissions" class="tile">
                 <div class="tile-header text-dark">
-                    <h1 class="tile-title"><mvc:message code="${category.name}"/></h1>
+                    <h1 class="tile-title text-truncate"><mvc:message code="${category.name}"/></h1>
                     <div class="tile-controls">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-${categoryIndex}" data-toggle-checkboxes="on">
@@ -77,12 +77,12 @@
 
 <div id="filter-tile" class="tile" data-action="handle-filter-enterdown" data-editable-tile style="flex: 1">
     <div class="tile-header">
-        <h1 class="tile-title">
-            <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+        <h1 class="tile-title text-truncate">
+            <i class="icon icon-caret-up mobile-visible"></i><mvc:message code="report.mailing.filter"/>
         </h1>
         <div class="tile-controls">
-            <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-            <a class="btn btn-icon btn-icon-sm btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
+            <a class="btn btn-icon btn-inverse" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+            <a class="btn btn-icon btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
         </div>
     </div>
     <div class="tile-body js-scrollable">

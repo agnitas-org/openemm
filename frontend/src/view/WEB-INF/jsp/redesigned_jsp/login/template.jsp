@@ -1,12 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix= "fn" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ page import="java.util.Enumeration" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn"    uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="sec"   uri="http://www.springframework.org/security/tags" %>
 
 <c:set var="autoRedirectToLogin">
     <tiles:insertAttribute name="autoRedirectToLogin" />
@@ -40,7 +40,7 @@
 </head>
 <body class="login-page">
 
-<div class="login-form">
+<div class="login-form" data-controller="login">
     <div class="login-form__header">
         <img src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
 
@@ -62,7 +62,7 @@
                         <c:if test="${backToLogin}">
                             <a href="${loginUrl}" class="d-flex gap-1 align-items-center">
                                 <i class="icon icon-caret-left"></i>
-                                <mvc:message code="GWUA.backToLogin" />
+                                <mvc:message code="logon.back" />
                             </a>
                         </c:if>
                     </div>
@@ -72,12 +72,12 @@
             </div>
         </c:if>
 
-        <div id="popups" data-popups-options="useTabs: false, collapse: false">
+        <div id="popups" data-popups-options="useTabs: false, collapse: false, removeEmptyContainer: false">
             <tiles:insertTemplate template="/WEB-INF/jsp/messages.jsp" />
         </div>
     </div>
 
-    <p class="text-center"><mvc:message code="GWUA.default.Copyright.simple"/></p>
+    <p class="text-center"><mvc:message code="default.Copyright"/></p>
 </div>
 
 <c:set var="extraContent">

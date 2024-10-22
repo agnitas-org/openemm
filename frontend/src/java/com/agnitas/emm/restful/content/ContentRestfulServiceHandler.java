@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.impl.DynamicTagImpl;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
@@ -64,7 +64,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private DynamicTagDao dynamicTagDao;
 	private ComTargetDao targetDao;
 	private ThumbnailService thumbnailService;
@@ -77,7 +77,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	
@@ -409,8 +409,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 								// Check for unallowed html tags
 								try {
 									HtmlChecker.checkForNoHtmlTags(dynamicTag.getDynName());
-								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-									throw new RestfulClientException("Content name contains unallowed HTML tags");
+								} catch(final HtmlCheckerException e) {
+									throw new RestfulClientException("Content name contains unallowed HTML tags", e);
 								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'name'. String expected");
@@ -456,8 +456,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 													// Check for unallowed html tags
 													try {
 														HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
-													} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-														throw new RestfulClientException("Mailing content contains unallowed HTML tags");
+													} catch(final HtmlCheckerException e) {
+														throw new RestfulClientException("Mailing content contains unallowed HTML tags", e);
 													}
 												} else {
 													throw new RestfulClientException("Invalid data type for 'text'. String expected");

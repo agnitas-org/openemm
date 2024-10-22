@@ -168,11 +168,18 @@ public class MailingDAO {
 			}
 		}
 	}
+	
+	public long findMaildropStatusID (DBase dbase, String statusField) throws SQLException {
+		MaildropStatusDAO	maildropStatus = new MaildropStatusDAO (dbase, 0, mailingID);
+		
+		return maildropStatus.findStatusID (dbase, statusField);
+	}
+	
 	public void retrieveItems (DBase dbase) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			List<Map<String, Object>> rq =dbase.query (with.cursor (),
-								   "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
-								   "mailingID", mailingID);
+			List<Map<String, Object>> rq = dbase.query (with.cursor (),
+								    "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
+								    "mailingID", mailingID);
 			for (int n = 0; n < rq.size (); ++n) {
 				Map<String, Object> row = rq.get (n);
 			
@@ -349,5 +356,25 @@ public class MailingDAO {
 			}
 		}
 		return count > 0;
+	}
+	
+	/**
+	 * retrieve a MailingID by name from the database
+	 */
+	public long findMailingByName (DBase dbase, String mailingName, long companyID) throws SQLException {
+		long	mailingID = 0;
+		
+		try (DBase.With with = dbase.with ()) {
+			Map <String, Object>	row = dbase.querys (with.cursor (),
+								    "SELECT mailing_id " +
+								    "FROM mailing_tbl " +
+								    "WHERE company_id = :companyID AND shortname = :mailingName AND (deleted IS NULL OR deleted = 0)",
+								    "companyID", companyID, "mailingName", mailingName);
+			
+			if (row != null) {
+				mailingID = dbase.asLong (row.get ("mailing_id"));
+			}
+		}
+		return mailingID;
 	}
 }

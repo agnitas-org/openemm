@@ -18,7 +18,7 @@ import java.util.Objects;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.velocity.VelocityResult;
@@ -49,7 +49,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.util.ScriptHelper;
 
 public class ActionOperationExecuteScriptImpl implements EmmActionOperation {

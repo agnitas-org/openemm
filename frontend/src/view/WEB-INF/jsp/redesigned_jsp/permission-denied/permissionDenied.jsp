@@ -6,7 +6,7 @@
 	<div class="tile-header">
 		<h1 class="tile-title">
 			<i class="icon icon-state-alert"></i>
-			<mvc:message code="permission.denied.title"/>
+			<span class="text-truncate"><mvc:message code="permission.denied.title"/></span>
 		</h1>
 	</div>
 

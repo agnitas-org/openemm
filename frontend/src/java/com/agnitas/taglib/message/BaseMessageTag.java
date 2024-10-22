@@ -17,6 +17,7 @@ import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import org.agnitas.util.AgnUtils;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import java.io.IOException;
@@ -84,8 +85,12 @@ public abstract class BaseMessageTag extends BodyTagSupport {
 
     private String getMessageText(Message message) {
         if (message.isResolvable()) {
-            MessageSource messageSource = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext()).getBean(MessageSource.class);
-            return messageSource.getMessage(message.getCode(), message.getArguments(), AgnUtils.getLocale(pageContext));
+            try {
+                MessageSource messageSource = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext()).getBean(MessageSource.class);
+                return messageSource.getMessage(message.getCode(), message.getArguments(), AgnUtils.getLocale(pageContext));
+            } catch (NoSuchMessageException e) {
+                return "ERROR: Message not found with code '" + message.getCode() + "'";
+            }
         }
 
         return message.getCode();

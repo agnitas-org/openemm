@@ -13,6 +13,8 @@ package com.agnitas.emm.core.company.form;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class CompanyListForm extends PaginationForm {
 
     private Integer id;
@@ -50,5 +52,9 @@ public class CompanyListForm extends PaginationForm {
 
     public void setStatus(CompanyStatus status) {
         this.status = status;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || isNotBlank(description) || id != null || status != null;
     }
 }

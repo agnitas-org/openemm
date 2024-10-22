@@ -10,24 +10,12 @@
 
 package com.agnitas.emm.core.target.service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.target.service.UserActivityLog;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
 import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
@@ -38,6 +26,18 @@ import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCac
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service for target groups.
@@ -50,7 +50,7 @@ public interface ComTargetService {
 	 * @param targetGroupID target group ID to be deleted
 	 */
 	
-	SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin, boolean buildErrorMessages);
+	SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin);
 	
 	boolean deleteTargetGroupByCompanyID(int companyID);
 
@@ -71,6 +71,7 @@ public interface ComTargetService {
 	 * @param targetIds target IDs to delete
 	 */
 	ServiceResult<List<Integer>> bulkDelete(Set<Integer> targetIds, Admin admin);
+	List<Integer> bulkDeleteRedesigned(Set<Integer> ids, Admin admin);
 
 	/**
 	 * Method generates SQL expression from mailing target expression.
@@ -128,7 +129,7 @@ public interface ComTargetService {
 
 	String getTargetName(int targetId, int companyId);
 
-	List<String> getTargetNames(Collection<Integer> ids, int companyId);
+	ServiceResult<List<String>> getTargetNamesForDeletion(List<Integer> ids, Admin admin);
 
     String getTargetName(int targetId, int companyId, boolean includeDeleted);
 
@@ -136,13 +137,8 @@ public interface ComTargetService {
 
 	boolean checkIfTargetNameIsValid(String targetShortname);
 	
-	boolean isWorkflowManagerListSplit(int companyID, int targetID) throws UnknownTargetGroupIdException;
-
 	/**
 	 * Use it for WS if you are sure you do not need ALTG check
-	 *
-	 * @param companyID
-	 * @return
 	 */
 	List<TargetLight> getWsTargetLights(int companyID);
 
@@ -154,11 +150,9 @@ public interface ComTargetService {
 	 */
 	List<TargetLight> getTargetLights(Admin admin);
 
-	List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+	List<TargetLight> getTargetLights(int adminId, int companyID, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content);
-
-	List<TargetLight> getTargetLights(Admin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
 
@@ -199,8 +193,6 @@ public interface ComTargetService {
 	 */
  	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
 
-	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(Map<String, Object> recipientData, int companyID) throws Exception;
-
 	List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
 	
 	List<TargetLight> getSplitTargetLights(int companyId, String splitType);
@@ -215,13 +207,9 @@ public interface ComTargetService {
 
 	int calculateComplexityIndex(String eql, int companyId, TargetComplexityEvaluationCache cache);
 
-	void initializeComplexityIndex(int companyId);
-
 	List<TargetLight> getAccessLimitationTargetLights(int companyId);
 
 	List<TargetLight> getAccessLimitationTargetLights(int adminId, int companyId);
-
-    List<TargetLight> getNoAccessLimitationTargetLights(int companyId);
 
     List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, Admin admin);
 
@@ -253,7 +241,7 @@ public interface ComTargetService {
 
 	void deleteWorkflowTargetConditions(int companyID);
 
-	List<TargetLight> getTargetLights(int fromCompanyID, boolean b);
+	List<TargetLight> getTargetLights(int fromCompanyID);
 
 	int getAccessLimitingTargetgroupsAmount(int companyId);
 
@@ -264,4 +252,10 @@ public interface ComTargetService {
     void unmarkAsFavorite(int targetId, int adminId, int companyId);
 
 	List<TargetLight> listTargetLightsForMailingSettings(final Admin admin, final Mailing mailing);
+
+	Set<Integer> getInvalidTargets(int companyId, Set<Integer> targets);
+
+    void restore(Set<Integer> ids, Admin admin);
+
+	void removeMarkedAsDeletedBefore(Date date, int companyID);
 }

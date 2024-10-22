@@ -80,7 +80,11 @@ public enum MediaTypes {
 	 * 
 	 * @return media type for code or <code>null</code>
 	 */
-	public static MediaTypes getMediaTypeForCode(int code) {
+	public static MediaTypes getMediaTypeForCode(Integer code) {
+		if (code == null) {
+			return null;
+		}
+
 		for (MediaTypes type : values()) {
 			if (type.code == code) {
 				return type;

@@ -37,6 +37,7 @@ public class MailingComponentToMailingImageDtoConverter implements Converter<Mai
 		dto.setMimeType(component.getMimeType());
         dto.setType(component.getType());
         dto.setPresent(component.getPresent());
+		dto.setSize(component.getSize());
         dto.setLink(linkService.getTrackableLink(component.getCompanyID(), component.getUrlID()));
 		return dto;
 	}

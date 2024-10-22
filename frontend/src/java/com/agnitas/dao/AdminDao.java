@@ -185,4 +185,13 @@ public interface AdminDao {
     int getPasswordExpirationMailingId(String language);
 
     void setPasswordReminderState(int adminId, PasswordReminderState state);
+
+	PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
+
+    List<AdminEntry> findAllByEmailPart(String email, int companyID);
+    List<AdminEntry> findAllByEmailPart(String email);
+
+    void updateEmail(String email, int id, int companyId);
+
+    AdminEntry findByEmail(String email, int companyId);
 }

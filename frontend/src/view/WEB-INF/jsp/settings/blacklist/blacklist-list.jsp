@@ -18,6 +18,10 @@
           data-controller="blacklist-list"
           data-form="resource">
 
+    <mvc:hidden path="page"/>
+    <mvc:hidden path="sort"/>
+    <mvc:hidden path="dir"/>
+
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "blacklist-overview": {
@@ -119,6 +123,10 @@
                             <label class="label">
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
                             </label>
                         </li>
                         <li class="divider"></li>

@@ -10,26 +10,19 @@
 
 package org.agnitas.dao.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements MailinglistApprovalDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailinglistApprovalDaoImpl.class);
-
-	public static final Set<String> SORTABLE_FIELDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("mailinglist_id", "shortname", "description", "creation_date", "change_date")));
+	private static final Logger logger = LogManager.getLogger(MailinglistApprovalDaoImpl.class);
 
 	public static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
 

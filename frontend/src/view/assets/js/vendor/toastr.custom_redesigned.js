@@ -111,7 +111,7 @@
                 var options = getOptions();
                 if (!$container) { getContainer(options); }
                 if ($toastElement && $(':focus', $toastElement).length === 0) {
-                    removeToast($toastElement);
+                    removeToast($toastElement, options.removeEmptyContainer);
                     return;
                 }
                 if ($container.children().length) {
@@ -134,7 +134,7 @@
                     $toastElement[options.hideMethod]({
                         duration: options.hideDuration,
                         easing: options.hideEasing,
-                        complete: function () { removeToast($toastElement); }
+                        complete: function () { removeToast($toastElement, options.removeEmptyContainer); }
                     });
                     return true;
                 }
@@ -188,6 +188,7 @@
                     target: 'body',
                     newestOnTop: false,
                     useTabs: true,
+                    removeEmptyContainer: true,
                     collapse: true
                 };
             }
@@ -490,7 +491,7 @@
                         duration: options.hideDuration,
                         easing: options.hideEasing,
                         complete: function () {
-                            removeToast($toastElement);
+                            removeToast($toastElement, options.removeEmptyContainer);
                             if (options.onHidden && response.state !== 'hidden') {
                                 options.onHidden();
                             }
@@ -519,14 +520,14 @@
                 return $.extend({}, getDefaults(), toastr.options);
             }
 
-            function removeToast($toastElement) {
+            function removeToast($toastElement, removeEmptyContainer = true) {
                 if (!$container) { $container = getContainer(); }
                 if ($toastElement.is(':visible')) {
                     return;
                 }
                 $toastElement.remove();
                 $toastElement = null;
-                if ($container.children().length === 0) {
+                if (removeEmptyContainer && $container.children().length === 0) {
                     $container.remove();
                 }
             }

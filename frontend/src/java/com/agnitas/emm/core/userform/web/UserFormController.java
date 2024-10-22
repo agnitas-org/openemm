@@ -10,30 +10,31 @@
 
 package com.agnitas.emm.core.userform.web;
 
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.form.UserFormsForm;
+import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
-import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
-import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.UserFormImporter;
@@ -65,27 +66,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.emm.core.userform.dto.ResultSettings;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.form.UserFormsForm;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import java.io.File;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/webform")
@@ -93,22 +89,20 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 public class UserFormController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(UserFormController.class);
+	private static final String REDIRECT_TO_OVERVIEW = "redirect:/webform/list.action";
 
 	private final WebStorage webStorage;
-	private final ComUserformService userformService;
-	private final ComEmmActionService emmActionService;
+	private final UserformService userformService;
+	private final EmmActionService emmActionService;
 	private final ConfigService configService;
 	private final UserActivityLogService userActivityLogService;
 	private final ExtendedConversionService conversionService;
-    private final LinkService linkService;
-	private final VelocityDirectiveScriptValidator velocityValidator;
 	private final UserFormImporter userFormImporter;
 	private final CompanyTokenService companyTokenService;
 
-	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService,
+	public UserFormController(WebStorage webStorage, UserformService userformService, EmmActionService emmActionService,
 							  ConfigService configService, UserActivityLogService userActivityLogService,
-							  ExtendedConversionService conversionService, LinkService linkService,
-							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter,
+							  ExtendedConversionService conversionService, UserFormImporter userFormImporter,
 							  CompanyTokenService companyTokenService) {
 		this.webStorage = webStorage;
 		this.userformService = userformService;
@@ -116,8 +110,6 @@ public class UserFormController implements XssCheckAware {
 		this.configService = configService;
 		this.userActivityLogService = userActivityLogService;
 		this.conversionService = conversionService;
-		this.linkService = linkService;
-		this.velocityValidator = velocityValidator;
 		this.userFormImporter = userFormImporter;
 		this.companyTokenService = Objects.requireNonNull(companyTokenService, "CompanyTokenService is null");
 	}
@@ -150,6 +142,7 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	@PostMapping("/saveActiveness.action")
+	// TODO: EMMGUI-714: Remove after remove of old design
 	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
 		UserAction userAction = userformService.setActiveness(admin.getCompanyID(), form.getActiveness());
 		boolean result = false;
@@ -162,6 +155,31 @@ public class UserFormController implements XssCheckAware {
 		}
 
 		return new BooleanResponseDto(popups, result);
+	}
+
+	@PostMapping("/changeActiveness.action")
+	public Object changeActiveness(@RequestParam(required = false) Set<Integer> ids, Admin admin, Popups popups,
+								   @RequestParam boolean activate, @RequestParam(defaultValue = "false") boolean fromOverview) {
+		validateSelectedIds(ids);
+
+		ServiceResult<List<UserForm>> result = userformService.setActiveness(ids, admin.getCompanyID(), activate);
+		popups.addPopups(result);
+
+		Collection<Integer> affectedIds = CollectionUtils.emptyIfNull(result.getResult())
+				.stream()
+				.map(UserForm::getId)
+				.collect(Collectors.toList());
+
+		if (result.isSuccess()) {
+			writeChangeActivenessToUAL(affectedIds, activate, admin);
+			if (popups.isEmpty()) {
+				popups.success(CHANGES_SAVED_MSG);
+			}
+		}
+
+		return fromOverview
+				? ResponseEntity.ok(new DataResponseDto<>(affectedIds, popups, result.isSuccess()))
+				: redirectToView(ids.iterator().next());
 	}
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
@@ -193,6 +211,9 @@ public class UserFormController implements XssCheckAware {
 
 			UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
 			model.addAttribute("form", conversionService.convert(userForm, UserFormForm.class));
+			if (admin.isRedesignedUiUsed()) {
+				model.addAttribute("isActive", userForm.isActive());
+			}
 
 			loadUserformUrlPatternsAllTestRecipients(admin, userForm.getName(), model, companyToken);
 
@@ -219,69 +240,49 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	@PostMapping("/save.action")
-	public String save(Admin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
+	public String save(Admin admin, @ModelAttribute("form") UserFormForm form, Popups popups) {
 		try {
-			if (validate(admin, form, popups)) {
-				boolean update = form.getFormId() > 0;
-				UserFormDto userFormDto = conversionService.convert(form, UserFormDto.class);
-				ServiceResult<Integer> result = userformService.saveUserForm(admin, userFormDto);
-
-				int formId = result.getResult();
-
-				if (result.isSuccess()) {
-					popups.success("default.changes_saved");
-				}
-
-				if (result.hasErrorMessages()) {
-					result.getErrorMessages().forEach(popups::alert);
-				}
-				if(CollectionUtils.isNotEmpty(result.getWarningMessages())) {
-					result.getWarningMessages().forEach(popups::warning);
-				}
-
-				if (formId > 0) {
-					writeUserActivityLog(admin, (update ? "edit user form" : "create user form"),
-							String.format("%s (%d)", userFormDto.getName(), formId));
-
-					return String.format("redirect:/webform/%d/view.action", formId);
-				}
+            List<Message> errors = userformService.validateUserForm(admin, form);
+            if (CollectionUtils.isNotEmpty(errors)) {
+                errors.forEach(popups::alert);
+                return MESSAGES_VIEW;
+            }
+            
+            boolean update = form.getFormId() > 0;
+            UserFormDto userFormDto = conversionService.convert(form, UserFormDto.class);
+			if (admin.isRedesignedUiUsed()) {
+				userFormDto.setActive(userformService.isActive(form.getFormId()));
 			}
+            ServiceResult<Integer> result = userformService.saveUserForm(admin, userFormDto);
+
+            int formId = result.getResult();
+
+            if (result.isSuccess()) {
+                popups.success("default.changes_saved");
+            }
+
+            if (result.hasErrorMessages()) {
+                result.getErrorMessages().forEach(popups::alert);
+            }
+            if (CollectionUtils.isNotEmpty(result.getWarningMessages())) {
+                result.getWarningMessages().forEach(popups::warning);
+            }
+
+            if (formId > 0) {
+                writeUserActivityLog(admin, (update ? "edit user form" : "create user form"),
+                        getFormDescr(userFormDto != null ? userFormDto.getName() : "", formId));
+
+                return redirectToView(formId);
+            }
 		} catch (Exception e) {
 			popups.alert(ERROR_MSG);
 		}
 		return MESSAGES_VIEW;
 	}
 
-	private List<Message> validateSettings(ResultSettings settings) throws ScriptValidationException {
-        String type = settings.isSuccess() ? "SUCCESS" : "ERROR";
-        List<Message> errors = new ArrayList<>();
-        try {
-			velocityValidator.validateScript(settings.getTemplate());
-		} catch (IllegalVelocityDirectiveException e) {
-            errors.add(new Message("error.form.illegal_directive", new Object[]{e.getDirective()}));
-            return errors;
-		}
-
-        int invalidLineNumber = linkService.getLineNumberOfFirstInvalidLink(settings.getTemplate());
-        if (invalidLineNumber != -1) {
-            errors.add(new Message("error.invalid_link", new Object[]{type, invalidLineNumber}));
-        }
-
-        return errors;
+    private static String redirectToView(int formId) {
+        return String.format("redirect:/webform/%d/view.action", formId);
     }
-
-	private boolean validate(Admin admin, UserFormForm form, Popups popups) throws Exception {
-		if (!userformService.isValidFormName(form.getFormName())) {
-			popups.alert("error.form.invalid_name");
-		} else if (!userformService.isFormNameUnique(form.getFormName(), form.getFormId(), admin.getCompanyID())) {
-			popups.alert("error.form.name_in_use");
-		}
-
-		List<Message> errors = validateSettings(form.getSuccessSettings());
-        errors.addAll(validateSettings(form.getErrorSettings()));
-
-		return !popups.hasAlertPopups();
-	}
 
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	@GetMapping("/import.action")
@@ -292,37 +293,21 @@ public class UserFormController implements XssCheckAware {
 
 	@PostMapping("/importUserForm.action")
 	@PermissionMapping("import")
-	public String importForm(Admin admin, @RequestParam(value = "uploadFile") MultipartFile uploadFile, Popups popups) {
-		if (uploadFile.isEmpty()) {
-        	popups.alert("error.file.missingOrEmpty");
-			return MESSAGES_VIEW;
-		}
-
-        FormImportResult result;
-        try (InputStream input = uploadFile.getInputStream()) {
-            // Import userform data from upload file
-            result = userFormImporter.importUserForm(admin.getCompanyID(), input, admin.getLocale(), null);
-
-            if (result.isSuccess()) {
-            	popups.success("userform.imported");
-				for (Map.Entry<String, Object[]> warningEntry : result.getWarnings().entrySet()) {
-					popups.warning(warningEntry.getKey(), warningEntry.getValue());
-				}
-
-            	writeUserActivityLog(admin, "import userform", String.format("%s (%d)", result.getUserFormName(), result.getUserFormID()));
-				return String.format("redirect:/webform/%d/view.action", result.getUserFormID());
-			} else {
-            	for (Map.Entry<String, Object[]> errorEntry : result.getErrors().entrySet()) {
-					popups.alert(errorEntry.getKey(), errorEntry.getValue());
-				}
-			}
-        } catch (Exception e) {
-            logger.error("Mailing import failed", e);
-            popups.alert("error.userform.import");
+	public String importForm(@RequestParam MultipartFile uploadFile, Admin admin, Popups popups) {
+        FormImportResult result = userFormImporter.importUserForm(uploadFile, admin.getLocale(), admin.getCompanyID());
+        if (!result.isSuccess()) {
+            result.getErrors().forEach(popups::alert);
+            return MESSAGES_VIEW;
         }
-
-		return MESSAGES_VIEW;
+        writeUserActivityLog(admin, "import userform", getFormDescr(result.getUserFormName(), result.getUserFormID()));
+        result.getWarnings().forEach(popups::warning);
+        popups.success("userform.imported");
+        return redirectToView(result.getUserFormID());
 	}
+
+    private static String getFormDescr(String name, int id) {
+        return String.format("%s (%d)", name, id);
+    }
 
 	@GetMapping(value = "/{id:\\d+}/export.action")
 	@PermissionMapping("export")
@@ -334,13 +319,13 @@ public class UserFormController implements XssCheckAware {
 
         if (exportedFile == null) {
             popups.alert("error.userform.export");
-			return String.format("redirect:/webform/%d/view.action", id);
+			return redirectToView(id);
         }
 
         String downloadFileName = String.format("UserForm_%s_%d_%d.json",
 				StringUtils.replace(userFormName, "/", "_"), companyId, id);
 
-        writeUserActivityLog(admin, new UserAction("export user form", String.format("%s (%d)", userFormName, id)));
+        writeUserActivityLog(admin, new UserAction("export user form", getFormDescr(userFormName, id)));
         return ResponseEntity.ok()
                 .contentLength(exportedFile.length())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -362,9 +347,9 @@ public class UserFormController implements XssCheckAware {
 			int cloneId = result.getResult();
 			if (cloneId > 0) {
 				String formName = userformService.getUserFormName(id, admin.getCompanyID());
-				writeUserActivityLog(admin, "cloned user form", String.format("%s (%d)", formName, id));
+				writeUserActivityLog(admin, "cloned user form", getFormDescr(formName, id));
 
-				return String.format("redirect:/webform/%d/view.action", cloneId);
+				return redirectToView(cloneId);
 			} else {
 				logger.error("Result clone ID is wrong");
 			}
@@ -403,7 +388,7 @@ public class UserFormController implements XssCheckAware {
 			}
 
 			popups.success("default.selection.deleted");
-			return "redirect:/webform/list.action";
+			return REDIRECT_TO_OVERVIEW;
 		}
 
         popups.alert(ERROR_MSG);
@@ -431,7 +416,7 @@ public class UserFormController implements XssCheckAware {
         if (userformService.deleteUserForm(form.getId(), admin.getCompanyID())) {
 			writeUserActivityLog(admin, "delete user form", String.format("ID: %d", form.getId()));
 			popups.success("default.selection.deleted");
-			return "redirect:/webform/list.action";
+			return REDIRECT_TO_OVERVIEW;
 		}
 
         popups.alert(ERROR_MSG);
@@ -441,7 +426,7 @@ public class UserFormController implements XssCheckAware {
 	@GetMapping(value = "/deleteRedesigned.action")
 	@PermissionMapping("confirmDelete")
 	public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
-		validateDeletion(bulkIds);
+		validateSelectedIds(bulkIds);
 		List<String> items = userformService.getUserFormNames(bulkIds, admin.getCompanyID());
 		MvcUtils.addDeleteAttrs(model, items,
                 "settings.form.delete", "settings.userform.delete.question",
@@ -452,7 +437,7 @@ public class UserFormController implements XssCheckAware {
 	@RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
 	@PermissionMapping("delete")
 	public String deleteRedesigned(@RequestParam(required = false) List<Integer> bulkIds, Admin admin, Popups popups) {
-		validateDeletion(bulkIds);
+		validateSelectedIds(bulkIds);
 
 		List<UserFormDto> deletedUserForms = userformService.bulkDeleteUserForm(bulkIds, admin.getCompanyID());
 
@@ -462,14 +447,23 @@ public class UserFormController implements XssCheckAware {
 			});
 
 			popups.success(SELECTION_DELETED_MSG);
-			return "redirect:/webform/list.action";
+			return REDIRECT_TO_OVERVIEW;
 		}
 
 		popups.alert(ERROR_MSG);
 		return MESSAGES_VIEW;
 	}
 
-	private void validateDeletion(Collection<Integer> bulkIds) {
+	@PostMapping("/restore.action")
+	@ResponseBody
+	public BooleanResponseDto restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+		validateSelectedIds(bulkIds);
+		userformService.restore(bulkIds, admin.getCompanyID());
+		popups.success(CHANGES_SAVED_MSG);
+		return new BooleanResponseDto(popups, true);
+	}
+
+	private void validateSelectedIds(Collection<Integer> bulkIds) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
 			throw new RequestErrorException(NOTHING_SELECTED_MSG);
 		}
@@ -514,4 +508,9 @@ public class UserFormController implements XssCheckAware {
         return ("successSettings.template".equals(param) || "errorSettings.template".equals(param))
                 && "save".equals(controllerMethodName);
     }
+
+	private void writeChangeActivenessToUAL(Collection<Integer> ids, boolean activeness, Admin admin) {
+		String idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(", "));
+        writeUserActivityLog(admin, (activeness ? "activate" : "deactivate") + " user forms", "IDs: " + idsStr);
+	}
 }

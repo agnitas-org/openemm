@@ -10,21 +10,20 @@
 
 package com.agnitas.emm.core.objectusage.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementation of {@link ObjectUsageService} interface.
@@ -34,7 +33,7 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	private static final Logger LOGGER = LogManager.getLogger(ObjectUsageServiceImpl.class);
 
 	/** Service to detect objects referencing target groups. */
-	private ReferencedItemsService referencedItemsService;
+	protected ReferencedItemsService referencedItemsService;
 	
 	/** Service service handling profile fields. */
 	private ProfileFieldService profileFieldService;
@@ -42,13 +41,8 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
     private ComWorkflowService workflowService;
 
 	@Override
-	public final ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID) {
-		final List<ObjectUsage> list = new ArrayList<>();
-		
-		list.addAll(ObjectUsageServiceHelper.targetGroupsToObjectUsage(this.referencedItemsService.listTargetGroupsReferencingAutoImport(companyID, autoImportID)));
-		// TODO List other objects referencing to auto-imports here
-
-		return new ObjectUsages(list);
+	public ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override

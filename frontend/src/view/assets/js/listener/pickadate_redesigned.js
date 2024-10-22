@@ -1,4 +1,4 @@
-;(function() {
+;(() => {
   $(document).on('click', '.date-picker-container', function() {
     const $input = $(this).find('.js-datepicker');
 

@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.ModelAndView;
@@ -61,7 +62,7 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     
     private static final Logger logger = LogManager.getLogger(MailingComparisonStatisticController.class);
 
-    private static final String REDIRECT_TO_OVERVIEW = "redirect:/statistics/mailing/comparison/list.action";
+    private static final String REDIRECT_TO_OVERVIEW = "redirect:/statistics/mailing/comparison/list.action?restoreSort=true";
     public static final int MAX_MAILINGS_SELECTED = 10;
     private static final int MIN_MAILINGS_SELECTED = 2;
     
@@ -85,12 +86,12 @@ public class MailingComparisonStatisticController implements XssCheckAware {
 
     // In case of adding target select on ui, see history to rollback model attrs
     @RequestMapping("/list.action")
-    public String list(Admin admin, Model model, MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, Popups popups) {
+    public String list(@RequestParam(required = false) boolean restoreSort, Admin admin, Model model, MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, Popups popups) {
         try {
+            FormUtils.syncPaginationData(webStorage, WebStorage.MAILING_COMPARISON_OVERVIEW, filter, restoreSort);
             if (isUiRedesign(admin)) {
                 FormUtils.syncSearchParams(searchParams, filter, true);
             }
-            FormUtils.syncNumberOfRows(webStorage, WebStorage.MAILING_COMPARISON_OVERVIEW, filter);
 
             model.addAttribute("mailings", mailingBaseService.getMailingsForComparison(filter, admin));
             model.addAttribute("selectionMax", MAX_MAILINGS_SELECTED);

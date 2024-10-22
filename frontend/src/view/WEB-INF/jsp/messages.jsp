@@ -1,3 +1,4 @@
+<%--  TODO: EMMGUI-714: remove after old design will be removed  --%>
 <%--
 ********************************************************************************
    IMPORTANT NOTE

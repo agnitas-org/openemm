@@ -26,6 +26,7 @@
     var urlMailingView;
     var urlMailingStatisticsView;
     var isStatisticsViewPermitted;
+    var dayMailingsLimit = -1;
 
     var monthNames = t('date.monthsFull');
 
@@ -107,6 +108,7 @@
       urlMailingView = conf.urls.MAILING_VIEW;
       urlMailingStatisticsView = conf.urls.MAILING_STATISTICS_VIEW;
       isStatisticsViewPermitted = conf.isStatisticsViewPermitted;
+      dayMailingsLimit = conf.showALlMailingsPerDay ? -1 : 5;
     }
 
     this.setUp = setUp;
@@ -199,7 +201,7 @@
       $('#calendar-days').html(monthNames[month] + " " + year);
 
       getComments(startDate, endDate);
-      getMailings(startDate, endDate);
+      getMailings(startDate, endDate, dayMailingsLimit);
       getCalendarPushes(startDate, endDate);
       getAutoOptimizations(startDate, endDate);
 
@@ -236,7 +238,7 @@
       $('#calendar-days').html(AGN.Lib.DateFormat.format(startDate, localeDatePattern) + ' - ' + AGN.Lib.DateFormat.format(date, localeDatePattern));
 
       getComments(startDate, date);
-      getMailings(startDate, date);
+      getMailings(startDate, date, dayMailingsLimit);
       getCalendarPushes(startDate, date);
       getAutoOptimizations(startDate, date);
 
@@ -923,7 +925,7 @@
 
     this.removeCommentDB = removeCommentDB;
 
-    function getMailings(startDate, endDate) {
+    function getMailings(startDate, endDate, limit) {
       startDate = dateToServiceFormat(startDate);
       endDate = dateToServiceFormat(endDate);
 
@@ -933,20 +935,42 @@
         url: urlCalendarMailingsList,
         data: {
           startDate: startDate,
-          endDate: endDate
+          endDate: endDate,
+          limit: limit + 1 // +1 in order to detect if more mailings are present
         }
       }).done(function (data) {
         $.each(data, function (index, d) {
-          setMailings(d)
+          setMailing(d, limit);
         });
         adjustSidebarHeight();
       }).always(stopProgress);
     }
+    
+    function updateDayMailings($btn) {
+        var $day = $btn.closest('.calendar-day-container');
+        var date = dateFromServiceFormat($day.data('date'), "");
+        $btn.remove();
+        getMailings(date, date, -1);
+    }
+    
+    this.updateDayMailings = updateDayMailings;
 
-    function setMailings(d) {
+    this.getMailings = getMailings;
+
+    function setMailing(d, limit) {
       var $day = $('#day-' + d.sendDate);
       var $badge = $('#' + d.mailingId);
 
+      if (limit > 0 && $day.find('.calendar-mail-label').length >= limit) {
+        if (!$day.find('.show-more-mailings').exists()) {
+          $day.append("<div class='calendar-mail-label'>"
+              + "<button type='button' class='calendar-badge btn-primary show-more-mailings' style='width: 100%;'>"
+                + t('defaults.showMore')
+              + "</button></div>");
+        }
+        return;
+      }
+      
       if ($day.exists() && !$badge.exists()) {
         var statusClass;
         var mailingLink = getMailingLink(d);

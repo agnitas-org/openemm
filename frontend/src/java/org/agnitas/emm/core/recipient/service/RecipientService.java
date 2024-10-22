@@ -15,7 +15,9 @@ import java.text.DateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
+import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -23,7 +25,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.cache.annotation.Cacheable;
 
 import com.agnitas.beans.Admin;
@@ -68,7 +70,8 @@ public interface RecipientService {
 	List<RecipientLightDto> getDuplicateRecipients(Admin admin, String fieldName, int recipientId) throws Exception;
 
 	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(Admin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
-	
+	ServiceResult<Integer> getAffectedRecipientsCountForBulkSaveFields(Admin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
+
 	File getDuplicateAnalysisCsv(Admin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
 
     Set<ProfileField> getRecipientColumnInfos(Admin admin);
@@ -78,7 +81,9 @@ public interface RecipientService {
 	RecipientDto getRecipientDto(Admin admin, int recipientId);
 
     List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyId, int mailinglistId);
-    
+
+	List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(Admin admin);
+
     void supplySourceID(Recipient recipient, int defaultId);
 
 	int getSubscribersSize(RecipientsModel model);
@@ -143,6 +148,7 @@ public interface RecipientService {
 
 	int saveNewCustomer(Recipient recipient) throws Exception;
 
+    List<Recipient> findAllByEmailPart(String email, List<Integer> companiesIds);
     List<Recipient> findRecipientByData(int companyID, Map<String, Object> dataMap) throws Exception;
 
 	BindingEntry getBindingsByMailinglistId(int companyID, int customerID, int mailinglistID, int mediaType);
@@ -185,4 +191,14 @@ public interface RecipientService {
     String getEmail(int recipientId, int companyId);
 
 	boolean recipientExists(int companyID, int customerID);
+
+	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int id, MediaTypes email, String targetSql, List<String> profileFieldsToShow, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
+
+    ServiceResult<List<RecipientLightDto>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+	ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
+	SimpleServiceResult delete(int id, int companyId, Admin admin);
+
+	void updateEmail(String newEmail, int id, int companyId);
+
+	List<Integer> findIdsByEmail(String email, int companyId);
 }

@@ -10,26 +10,15 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-
-
-import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
@@ -39,9 +28,19 @@ import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
-
 import net.sf.json.JSONArray;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ComWorkflowService {
 
@@ -55,7 +54,7 @@ public interface ComWorkflowService {
 
 	Workflow getWorkflow(int workflowId, int companyId);
 
-    List<String> getWorkflowNames(List<Integer> ids, int companyId);
+    ServiceResult<List<Workflow>> getAllowedForDeletion(Set<Integer> bulkIds, int companyId);
 
     /**
      * Get object representation of workflow schema (icons and connections) or {@code null} if referenced workflow doesn't exist.
@@ -110,8 +109,6 @@ public interface ComWorkflowService {
 
     List<Map<String, Object>> getMailings(int companyId, String commaSeparatedMailingIds);
 
-	Map<Integer, String> getMailingLinks(int mailingId, int companyId);
-
 	List<TargetLight> getAllTargets(int companyId);
 
 	List<ProfileField> getHistorizedProfileFields(int companyId) throws Exception;
@@ -142,8 +139,9 @@ public interface ComWorkflowService {
 
     Date getMaxPossibleDate(List<List<WorkflowNode>> chains);
 
-    void bulkDelete(Set<Integer> workflowIds, int companyId);
+    Collection<Integer> bulkDelete(Set<Integer> workflowIds, int companyId);
 
+    // TODO: EMMGUI-714 remove after remove of old design
     Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId) throws Exception;
 
 	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) throws Exception;
@@ -288,4 +286,9 @@ public interface ComWorkflowService {
     int getWorkflowSenderId(Workflow workflow);
 
     String getInitialWorkflowSchema();
+
+    boolean isAutoExportManagedByWorkflow(int autoExportId);
+    boolean isAutoImportManagedByWorkflow(int autoImportId);
+
+    Map<Integer, ServiceResult<ChangingWorkflowStatusResult>> setActiveness(Set<Integer> ids, Admin admin, boolean activeness);
 }

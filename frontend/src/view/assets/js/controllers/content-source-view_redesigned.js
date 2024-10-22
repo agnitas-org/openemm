@@ -69,7 +69,6 @@ AGN.Lib.Controller.new('content-source-view', function () {
     if (!form.validate()) {
       return;
     }
-    form.cleanFieldFeedback();
     storeCurrentUrlSettings();
     showUrlSettings(this.el.closest('tr'));
   });

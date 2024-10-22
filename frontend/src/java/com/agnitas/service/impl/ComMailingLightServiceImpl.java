@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.service.ComMailingLightService;
 
@@ -29,7 +29,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
     
     private static final Logger logger = LogManager.getLogger(ComMailingLightServiceImpl.class);
     
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private ComCompanyDao companyDao;
     private MaildropService maildropService;
 
@@ -75,7 +75,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
 
     @Override
 	@Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 

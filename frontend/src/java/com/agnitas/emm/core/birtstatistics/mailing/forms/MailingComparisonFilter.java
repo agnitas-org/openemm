@@ -14,6 +14,8 @@ import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class MailingComparisonFilter extends PaginationForm {
 
     private String mailing;
@@ -42,6 +44,10 @@ public class MailingComparisonFilter extends PaginationForm {
 
     public void setSendDate(DateRange sendDate) {
         this.sendDate = sendDate;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(mailing) || isNotBlank(description) || sendDate.isPresent();
     }
 
     @Override

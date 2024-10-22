@@ -1,56 +1,29 @@
-///*doc
-//---
-//title: Icons
-//name: icons
-//category: CSS - Icons
-//---
-//*/
-//
-///*doc
-//---
-//title: Font Awesome Icons
-//name: icons-01
-//parent: icons
-//---
-//
-//The Font Awesome Iconset (v4.3) is included in the css. Simply use `<i class="icon icon-name"></i>` to display an icon.
-//Icon names can be looked up on the <a href="http://fontawesome.io/icons/" target="_blank">Font Awesome Doc</a>
-//
-//```htmlexample
-//<i class="icon icon-check"></i>
-//```
-//*/
-//
-//.icon-help:before {
-//  content: $fa-var-question-circle;
-//}
-
 /*doc
 ---
-title: SVG Sprite Icons
-name: icons-02
-parent: icons
+title: Icons
+name: icons
+category: Components - Icons
 ---
 
-As icons from fronts are limited to one color we are providing an svg-sprite for multi-colored icons.
-For adding a new icon add the svg with the icon in `src/view/assets/core/images/sprite` and rerun the grunt task.
+The Font Awesome Iconset (v5.15.4)  is included in the css.
 
-To differentiate between fontawesome and svg icons the module class for svg icons is `icon-defs`.
-Instead of using a css class name for selecting an icon please use the `data-icon="name-of-file"` attribute.
-
-As svg icons work similar to background images, the container must have a width and height assigned. By default the three classes `icon-defs-small`, `icon-defs-medium` and `icon-defs-large` are provided.
+<small class="text-muted">Icon names can be looked up on the <a href="https://fontawesome.com/v5/search?m=free" target="_blank"><i>Font Awesome search</i></a></small>
 
 ```htmlexample
-<i class="icon-defs icon-defs-small" data-icon="clicks-minus"></i>
-<i class="icon-defs icon-defs-medium" data-icon="clicks-minus"></i>
-<i class="icon-defs icon-defs-large" data-icon="clicks-minus"></i>
+<i class="icon icon-check"></i>
 ```
 */
 
-.icon {
-  @extend .fa;
+.icon-help:before {
+  content: $fa-var-question-circle;
 }
 
+.icon {
+  @extend .fa;
+  flex-shrink: 0;
+}
+
+// todo check usage
 .icon-defs {
   display: inline-block;
 }
@@ -113,32 +86,6 @@ As svg icons work similar to background images, the container must have a width 
   color: var(--input-icon-color);
   background-color: var(--input-icon-color);
 }
-
-//.icon-lab:before {
-//  content: "\f0c3";
-//}
-//
-//@each $conf in $mailing-state-icons {
-//    $state: nth($conf, 1);
-//    $icon: nth($conf, 2);
-//
-//  .icon-mailing\.status\.#{$state}:before { content: $icon; }
-//}
-//
-//.icon-emc {
-//  background-image: url(assets/core/images/facelift/agn_mailing-new-grid.png);
-//  background-repeat: no-repeat;
-//  background-size: cover;
-//  display: inline-block;
-//  height: 8px;
-//  width: 8px;
-//  vertical-align: middle;
-//}
-//
-///* Linkages (Aktionen/Kampagnenmanager/Seiten) */
-//.icon-linkage-action:before { content: $fa-var-cog; }
-//.icon-linkage-campaignmanager:before { content: $fa-var-tasks; }
-//.icon-linkage-site:before { content: $fa-var-list-alt; }
 
 //TODO fix in java code com/agnitas/emm/core/workflow/beans/WorkflowReactionType.java:14 CHANGE_OF_PROFILE
 .icon-exchange:before {

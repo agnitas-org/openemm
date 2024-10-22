@@ -368,6 +368,7 @@
         <jsp:include page="editors/workflow-icon-comment-editor.jsp"/>
         <jsp:include page="editors/mailing-data-transfer-modal.jsp"/>
         <jsp:include page="editors/own-workflow-expanding-modal.jsp"/>
+        <jsp:include page="editors/workflow-create-auto-opt-modal.jsp"/>
         <jsp:include page="workflow-save-before-pdf-dialog.jsp"/>
         <jsp:include page="workflow-copy-dialog-new.jsp"/>
         <jsp:include page="workflow-simple-dialog.jsp">

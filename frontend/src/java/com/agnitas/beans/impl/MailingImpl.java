@@ -1245,11 +1245,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			logger.error(e.getMessage(), e);
 		}
 		cleanupMailingComponents(componentsToCheck);
-        for (MailingComponent component : components.values()) {
-            if (StringUtils.length(component.getComponentName()) > COMPONENT_NAME_MAX_LENGTH) {
-                throw new UserMessageException("error.compname.too.long", component.getComponentName());
-            }
-        }
+        validateScannedComponents();
 
 		// scan for Links
 		// in template-components and dyncontent
@@ -1261,6 +1257,20 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		return true;
 	}
+
+    private void validateScannedComponents() throws UserMessageException {
+        for (MailingComponent component : components.values()) {
+            if (StringUtils.length(component.getComponentName()) > COMPONENT_NAME_MAX_LENGTH) {
+                throw new UserMessageException(isImageComponent(component)
+                        ? "error.image.name.tooLong"
+                        : "error.compname.too.long", component.getComponentName());
+            }
+        }
+    }
+
+    private static boolean isImageComponent(MailingComponent component) {
+        return List.of(MailingComponentType.Image, MailingComponentType.HostedImage).contains(component.getType());
+    }
 
     private List<String> getMailingHostedImages(ApplicationContext con) {
         return getMailingComponentService(con)

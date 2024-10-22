@@ -23,7 +23,8 @@
             <mvc:form servletRelativeAction="/recipients/blacklist/delete.action"
                       modelAttribute="blacklistDeleteForm"
                       id="blacklistDeleteView">
-                <mvc:hidden path="email" />
+
+                <input type="hidden" name="emails" value="${blacklistDeleteForm.email}">
 
                 <div class="modal-body">
                     <mvc:message code="recipient.blacklist.delete"/>

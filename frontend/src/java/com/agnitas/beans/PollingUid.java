@@ -10,21 +10,19 @@
 
 package com.agnitas.beans;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
-
 public final class PollingUid {
 
-    private static final boolean IS_RETAINED_BY_DEFAULT = true;
     private final String sessionId;
     private final String name;
     private final Object[] arguments;
     private final int hashValue;
-    private boolean isRetained = IS_RETAINED_BY_DEFAULT;
 
     public static Builder builder(String sessionId, String name) {
         return new Builder(sessionId, name);
@@ -39,10 +37,6 @@ public final class PollingUid {
 
     public String getName() {
         return name;
-    }
-
-    public boolean isRetained() {
-        return isRetained;
     }
 
     @Override
@@ -70,9 +64,7 @@ public final class PollingUid {
     public static class Builder {
         private final String sessionId;
         private final String name;
-        private List<Object> arguments = new ArrayList<>();
-
-        private boolean isRetained = IS_RETAINED_BY_DEFAULT;
+        private final List<Object> arguments = new ArrayList<>();
 
         public Builder(String sessionId, String name) {
             this.sessionId = sessionId;
@@ -84,16 +76,8 @@ public final class PollingUid {
             return this;
         }
 
-        public Builder setRetained(boolean retained) {
-            isRetained = retained;
-            return this;
-        }
-
         public PollingUid build() {
-            PollingUid pollingUid = new PollingUid(sessionId, name, arguments.toArray());
-            pollingUid.isRetained = this.isRetained;
-
-            return pollingUid;
+            return new PollingUid(sessionId, name, arguments.toArray());
         }
     }
 }

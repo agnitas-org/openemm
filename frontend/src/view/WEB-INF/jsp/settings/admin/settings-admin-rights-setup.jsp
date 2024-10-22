@@ -34,6 +34,7 @@
         <c:set target="${agnBreadcrumb}" property="url">
             <c:url value="/admin/list.action">
                 <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+                <c:param name="restoreSort" value="true"/>
             </c:url>
         </c:set>
     </emm:instantiate>

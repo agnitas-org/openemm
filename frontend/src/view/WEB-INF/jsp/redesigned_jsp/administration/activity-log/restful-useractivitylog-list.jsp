@@ -1,10 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="filter" type="com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter"--%>
 <%--@elvariable id="actions" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
@@ -15,7 +15,7 @@
 
 <c:set var="NEWLINE" value="<%= '\n' %>"/>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
     <mvc:form id="table-tile" servletRelativeAction="/administration/restful-user/activitylog/listRedesigned.action" modelAttribute="filter" cssClass="tile" data-editable-tile="main">
         <script type="application/json" data-initializer="web-storage-persist">
             {
@@ -25,32 +25,44 @@
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-        </div>
         <div class="tile-body">
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table id="userAction" name="actions" class="table table-rounded js-table" sort="external"
+            <div class="table-wrapper">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${actions.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${actions.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
+
+                <div class="table-wrapper__body">
+                    <agnDisplay:table id="userAction" name="actions" class="table table--borderless js-table" sort="external"
                                    requestURI="/administration/restful-user/activitylog/listRedesigned.action" partialList="true"
                                    size="${filter.numberOfRows}" excludedParams="*">
 
-                        <%@ include file="../../displaytag/displaytag-properties.jspf" %>
+                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
 
-                        <display:column titleKey="recipient.Timestamp" sortProperty="timestamp" sortable="true" headerClass="js-table-sort fit-content">
+                        <agnDisplay:column titleKey="recipient.Timestamp" sortProperty="timestamp" sortable="true" headerClass="js-table-sort fit-content">
                             <emm:formatDate value="${userAction.timestamp}" format="${localeTableFormat}"/>
-                        </display:column>
+                        </agnDisplay:column>
 
-                        <display:column property="displayName" sortProperty="username" titleKey="logon.username" sortable="true" headerClass="js-table-sort fit-content"/>
+                        <agnDisplay:column sortProperty="username" titleKey="logon.username" sortable="true" headerClass="js-table-sort">
+                            <span>${userAction.displayName}</span>
+                        </agnDisplay:column>
 
-                        <display:column property="endpoint" sortProperty="endpoint" titleKey="webservice.endpoint" sortable="true" headerClass="js-table-sort"/>
+                        <agnDisplay:column sortProperty="endpoint" titleKey="webservice.endpoint" sortable="true" headerClass="js-table-sort">
+                            <span>${userAction.endpoint}</span>
+                        </agnDisplay:column>
 
-                        <display:column property="requestMethod" sortProperty="requestMethod" titleKey="webservice.method" sortable="true" headerClass="js-table-sort fit-content"/>
+                        <agnDisplay:column property="requestMethod" sortProperty="request_method" titleKey="webservice.method" sortable="true" headerClass="js-table-sort fit-content"/>
 
-                        <display:column titleKey="Description" sortProperty="description" sortable="true" headerClass="js-table-sort">
-                            ${fn:replace(fn:escapeXml(userAction.description), NEWLINE, '<br>')}
-                        </display:column>
-                    </display:table>
+                        <agnDisplay:column titleKey="Description" sortProperty="description" sortable="true" headerClass="js-table-sort">
+                            <span>${fn:replace(fn:escapeXml(userAction.description), NEWLINE, '<br>')}</span>
+                        </agnDisplay:column>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -60,17 +72,18 @@
               data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
                 <div class="col-12" data-date-range>
-                    <label class="form-label" for="upload-date-from"><mvc:message code="Date"/></label>
+                    <label class="form-label" for="filter-date-from"><mvc:message code="Date"/></label>
                     <div class="date-picker-container mb-1">
                         <c:set var="fromDate" value="${defaultDate}"/>
                         <c:if test="${not empty filter.timestamp.from}">
@@ -78,7 +91,8 @@
                         </c:if>
 
                         <mvc:message var="fromMsg" code="From" />
-                        <mvc:text id="filter-date-from" path="timestamp.from" placeholder="${fromMsg}" value="${fromDate}" cssClass="form-control js-datepicker" />
+                        <mvc:text id="filter-date-from" path="timestamp.from" placeholder="${fromMsg}" value="${fromDate}" cssClass="form-control js-datepicker"
+                                  data-datepicker-options="minDate: '-${logExpire}', maxDate: '${defaultDate}'"/>
                     </div>
                     <div class="date-picker-container">
                         <c:set var="toDate" value="${defaultDate}"/>
@@ -87,7 +101,8 @@
                         </c:if>
 
                         <mvc:message var="toMsg" code="To" />
-                        <mvc:text id="filter-date-to" path="timestamp.to" placeholder="${toMsg}" value="${toDate}" cssClass="form-control js-datepicker"/>
+                        <mvc:text id="filter-date-to" path="timestamp.to" placeholder="${toMsg}" value="${toDate}" cssClass="form-control js-datepicker"
+                                  data-datepicker-options="minDate: '-${logExpire}', maxDate: '${defaultDate}'"/>
                     </div>
                 </div>
 
@@ -123,5 +138,4 @@
             </div>
         </div>
     </mvc:form>
-
 </div>

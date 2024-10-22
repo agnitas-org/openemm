@@ -10,17 +10,32 @@
 
 package com.agnitas.emm.core.salutation.service;
 
+import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+
+import java.util.List;
+import java.util.Set;
 
 public interface SalutationService {
 
     PaginatedListImpl<SalutationEntry> paginatedList(int companyId, String sort, String order, int page, int rowsCount);
+
+    PaginatedListImpl<Title> overview(SalutationOverviewFilter filter);
+
+    List<Title> getAll(int companyId, boolean includeGenders);
 
     Title get(int salutationId, int companyId);
 
     void save(Title title) throws Exception;
 
     boolean delete(int salutationId, int companyId);
+
+    ServiceResult<List<Title>> getAllowedForDeletion(Set<Integer> ids, int companyId);
+
+
+    ServiceResult<UserAction> bulkDelete(Set<Integer> ids, int companyId);
 }

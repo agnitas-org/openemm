@@ -69,7 +69,7 @@
 "log4j-core-2.17.1.jar","2.17.1",2021,"2.17.2",2022-03-16,"https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core","no known vulnerability","implementation of API",
 "log4j-jcl-2.17.1.jar","2.17.1",2021,"2.17.2",2022-03-16,"https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-jcl","no known vulnerability","adapter for commons-logging library",
 "log4j-slf4j-impl-2.17.1.jar","2.17.1",2021,"2.17.2",2022-03-16,"https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl","no known vulnerability","SLF4J API binding to Log4j",
-"msgpack-core-0.9.2.jar","0.9.2",2022,"0.9.2",2022-06-23,"https://mavenlibs.com/maven/dependency/org.msgpack/msgpack-core","latest release","used for agnUID V5",
+"msgpack-core-0.9.5.jar","0.9.5",2023,"0.9.8",2024-03-27,"https://mavenlibs.com/maven/dependency/org.msgpack/msgpack-core","latest stable release","used for agnUID V5",
 "nekohtml-1.9.22-noko2.jar","1.9.22",2015,"1.9.22",2023-01-23,"https://mvnrepository.com/artifact/net.sourceforge.nekohtml/nekohtml","latest release","HTML parser and tag balancer",
 "ph-collection-10.1.6.jar","10.1.6",2022,"10.1.6",2022-03-31,"https://mvnrepository.com/artifact/com.helger.commons/ph-collection","latest release","library with extended collections",
 "ph-commons-10.1.6.jar","10.1.6",2022,"10.1.6",2022-03-31,"https://mvnrepository.com/artifact/com.helger.commons/ph-commons","latest release","library with utility classes",

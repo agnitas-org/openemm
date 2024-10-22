@@ -45,7 +45,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.impl.TrackableLinkImpl;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
@@ -83,7 +83,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private MailinglistDao mailinglistDao;
 	private MailingImporter mailingImporter;
 	private MailingExporter mailingExporter;
@@ -103,7 +103,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -467,8 +467,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									// Check for unallowed html tags
 									try {
 										HtmlChecker.checkForUnallowedHtmlTags(mailing.getShortname(), false);
-									} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-										throw new RestfulClientException("Mailing name contains unallowed HTML tags");
+									} catch(final HtmlCheckerException e) {
+										throw new RestfulClientException("Mailing name contains unallowed HTML tags", e);
 									}
 								} else {
 									throw new RestfulClientException("Invalid data type for 'shortname'. String expected");
@@ -479,8 +479,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									// Check for unallowed html tags
 									try {
 										HtmlChecker.checkForUnallowedHtmlTags(mailing.getDescription(), false);
-									} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-										throw new RestfulClientException("Mailing description contains unallowed HTML tags");
+									} catch(final HtmlCheckerException e) {
+										throw new RestfulClientException("Mailing description contains unallowed HTML tags", e);
 									}
 								} else {
 									throw new RestfulClientException("Invalid data type for 'description'. String expected");
@@ -615,8 +615,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 											// Check for unallowed html tags
 											try {
 												HtmlChecker.checkForUnallowedHtmlTags(mailingParameter.getName(), false);
-											} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-												throw new RestfulClientException("Mailing parameter name contains unallowed HTML tags");
+											} catch(final HtmlCheckerException e) {
+												throw new RestfulClientException("Mailing parameter name contains unallowed HTML tags", e);
 											}
 											mailingParameter.setValue((String) parameterJsonObject.get("value"));
 											mailingParameter.setDescription((String) parameterJsonObject.get("description"));
@@ -645,8 +645,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 											// Check for unallowed html tags
 											try {
 												HtmlChecker.checkForUnallowedHtmlTags(trackableLink.getShortname(), false);
-											} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-												throw new RestfulClientException("Link name contains unallowed HTML tags");
+											} catch(final HtmlCheckerException e) {
+												throw new RestfulClientException("Link name contains unallowed HTML tags", e);
 											}
 										} else if (linkDataEntry.getKey().equals("url")) {
 											String fullUrl = (String) linkDataEntry.getValue();
@@ -678,8 +678,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 														// Check for unallowed html tags
 														try {
 															HtmlChecker.checkForUnallowedHtmlTags(propertyName, false);
-														} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-															throw new RestfulClientException("Link property name contains unallowed HTML tags");
+														} catch(final HtmlCheckerException e) {
+															throw new RestfulClientException("Link property name contains unallowed HTML tags", e);
 														}
 													} else if (propertyDataEntry.getKey().equals("value")) {
 														propertyValue = (String) propertyDataEntry.getValue();

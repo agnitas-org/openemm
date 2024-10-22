@@ -10,6 +10,48 @@
 
 package com.agnitas.dao.impl;
 
+import com.agnitas.beans.Company;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.CompanyImpl;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.archive.service.CampaignService;
+import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.company.form.CompanyListForm;
+import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
+import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.DynamicTagContent;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.impl.CompanyStatus;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.impl.OnepixelDaoImpl;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import com.agnitas.emm.core.userform.service.UserformService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.agnitas.util.Tuple;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,56 +64,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.OnepixelDaoImpl;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.userforms.UserformService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.Tuple;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.Company;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.CompanyImpl;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.archive.service.CampaignService;
-import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.core.company.form.CompanyListForm;
-import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
-import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
-import com.agnitas.emm.core.recipient.service.RecipientType;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
 	private static final Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
 
 	private ConfigService configService;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private ComTargetDao targetDao;
 	private CopyMailingService copyMailingService;
 	private BindingHistoryDao bindingHistoryDao;
@@ -87,7 +84,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		this.configService = configService;
 	}
 	
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
@@ -134,23 +131,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private static final String TABLESPACE_DATA_CUSTOMER_TABLE = "data_cust_table";
 	private static final String TABLESPACE_INDEX_CUSTOMER = "data_cust_index";
 	
-	/**
-	 * Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
-	 */
-	public static final String[] OLD_SOCIAL_MEDIA_FIELDS = new String[]{
-		"facebook_status",
-		"foursquare_status",
-		"google_status",
-		"twitter_status",
-		"xing_status"};
-	
 	@Override
 	public Company getCompany(int companyID) {
 		if (companyID == 0) {
 			return null;
 		}
 
-		final String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
+		final String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
 		final List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
 		
 		if (!list.isEmpty()) {
@@ -171,7 +158,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						" rdir_domain = ?, mailloop_domain = ?, status = ?, mailtracking = ?," +
 						" stat_admin = ?," +
 						" sector = ?, business_field = ?, max_recipients = ?," +
-						" salutation_extended = ?, export_notify = ?, contact_tech = ?" +
+						" salutation_extended = ?, contact_tech = ?" +
 						" WHERE company_id = ?";
 				update(logger, sql,
 						company.getCreatorID(),
@@ -186,7 +173,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						company.getBusiness(),
 						company.getMaxRecipients(),
 						company.getSalutationExtended(),
-						company.getExportNotifyAdmin(),
 						StringUtils.defaultString(company.getContactTech()),
 						company.getId());
 			} else {
@@ -201,7 +187,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 									"rdir_domain", "mailloop_domain", "status",
 									"mailtracking", "stat_admin",
 									"sector", "business_field", "max_recipients", "secret_key",
-									"salutation_extended", "enabled_uid_version", "export_notify",
+									"salutation_extended", "enabled_uid_version",
 									"default_datasource_id", "contact_tech");
 
 					String sql = "INSERT INTO company_tbl (" + StringUtils.join(fieldList, ", ") + ")"
@@ -223,7 +209,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						company.getSecretKey(),
 						company.getSalutationExtended(),
 						company.getEnabledUIDVersion(),
-						company.getExportNotifyAdmin(),
 						defaultDatasourceID,
 						StringUtils.defaultString(company.getContactTech()));
 				} else {
@@ -232,7 +217,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 									"rdir_domain", "mailloop_domain", "status", "mailtracking",
 									"stat_admin", "sector", "business_field",
 									"max_recipients", "secret_key", "salutation_extended", "enabled_uid_version",
-									"export_notify", "default_datasource_id",
+									"default_datasource_id",
 									"contact_tech");
 					
 					String insertStatementSql = "INSERT INTO company_tbl (" + StringUtils.join(creationFieldList, ", ") + ")"
@@ -253,7 +238,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						company.getSecretKey(),
 						company.getSalutationExtended(),
 						company.getEnabledUIDVersion(),
-						company.getExportNotifyAdmin(),
 						defaultDatasourceID,
 						StringUtils.defaultString(company.getContactTech()));
 				}
@@ -325,9 +309,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		PaginatedListImpl<CompanyEntry> paginatedList;
 		
 		if (companyID == 1) {
-			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "'", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper());
+			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE (status != '" + CompanyStatus.DELETED.getDbValue() + "' AND status != '" + CompanyStatus.DELETION_IN_PROGRESS.getDbValue() + "')", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper());
 		} else {
-			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE (company_id = ? OR creator_company_id = ?) AND status != '" + CompanyStatus.DELETED.getDbValue() + "'", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper(), companyID, companyID);
+			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE (company_id = ? OR creator_company_id = ?) AND (status != '" + CompanyStatus.DELETED.getDbValue() + "' AND status != '" + CompanyStatus.DELETION_IN_PROGRESS.getDbValue() + "')", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper(), companyID, companyID);
 		}
 		paginatedList.setSortCriterion(sortCriterion);
 		return paginatedList;
@@ -338,21 +322,20 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
         StringBuilder sql = new StringBuilder(
                 "SELECT company_id, shortname, description, status, timestamp FROM company_tbl");
         List<Object> params = applyOverviewFilter(filter, companyId, sql);
-        return selectPaginatedList(logger, sql.toString(), "company_tbl", filter.getSortOrDefault("company_id"), filter.ascending(),
-                filter.getPage(), filter.getNumberOfRows(), new CompanyEntryRowMapper(), params.toArray());
+		PaginatedListImpl<CompanyEntry> list = selectPaginatedList(logger, sql.toString(), "company_tbl", filter.getSortOrDefault("company_id"), filter.ascending(),
+				filter.getPage(), filter.getNumberOfRows(), new CompanyEntryRowMapper(), params.toArray());
+
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(companyId));
+		}
+
+		return list;
    	}
 
     private List<Object> applyOverviewFilter(CompanyListForm filter, int companyId, StringBuilder sql) {
-        sql.append(" WHERE")
-                .append(companyId != 1 ? " (company_id = ? OR creator_company_id = ?) AND" : "")
-                .append(" status NOT IN (?, ?)");
-        List<Object> params = new ArrayList<>();
-        if (companyId != 1) {
-            params.addAll(List.of(companyId, companyId));
-        }
-        params.addAll(List.of(CompanyStatus.DELETED.getDbValue(), CompanyStatus.DELETION_IN_PROGRESS.getDbValue()));
+		List<Object> params = applyRequiredOverviewFilter(sql, companyId);
 
-        if (filter.getId() != null) {
+		if (filter.getId() != null) {
             sql.append(getPartialSearchFilterWithAnd("company_id", filter.getId(), params));
         }
         if (StringUtils.isNotBlank(filter.getName())) {
@@ -380,6 +363,27 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
         params.add(status.getDbValue());
     }
 
+	private int getTotalUnfilteredCountForOverview(int companyId) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM company_tbl");
+		List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
+		List<Object> params = new ArrayList<>();
+
+		query.append(" WHERE")
+				.append(companyId != 1 ? " (company_id = ? OR creator_company_id = ?) AND" : "")
+				.append(" status NOT IN (?, ?)");
+		if (companyId != 1) {
+			params.addAll(List.of(companyId, companyId));
+		}
+		params.addAll(List.of(CompanyStatus.DELETED.getDbValue(), CompanyStatus.DELETION_IN_PROGRESS.getDbValue()));
+
+		return params;
+	}
+
     @Override
 	public List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus) {
 		if (allowTransitionStatus) {
@@ -402,7 +406,31 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND (company_id = ? OR creator_company_id = ?) ORDER BY LOWER(shortname)", new CompanyEntryRowMapper(), companyId, companyId);
 		}
 	}
-	
+
+	@Override
+	public List<CompanyEntry> findAllByEmailPart(String email, int companyID) {
+		String query = "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE company_id = ?"
+				+ getPartialSearchFilterWithAnd("contact_tech");
+		return select(logger, query, new CompanyEntryRowMapper(), companyID, email);
+	}
+
+	@Override
+	public List<CompanyEntry> findAllByEmailPart(String email) {
+		String query = "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE "
+				+ getPartialSearchFilter("contact_tech");
+		return select(logger, query, new CompanyEntryRowMapper(), email);
+	}
+
+	@Override
+	public void updateTechnicalContact(String email, int id) {
+		update(logger, "UPDATE company_tbl SET contact_tech = ? WHERE company_id = ?", email, id);
+	}
+
+	@Override
+	public String getTechnicalContact(int id) {
+		return selectObjectDefaultNull(logger, "SELECT contact_tech FROM company_tbl WHERE company_id = ?", StringRowMapper.INSTANCE, id);
+	}
+
 	@Override
 	public CompanyEntry getCompanyLight(int id) {
 		return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE company_id = ?", new CompanyEntryRowMapper(), id).get(0);
@@ -412,9 +440,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public List<Company> getCreatedCompanies(int companyId) {
 		try {
 			if (companyId == 1) {
-				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper());
+				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper());
 			} else {
-				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE (creator_company_id = ? OR company_id = ?) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper(), companyId, companyId);
+				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE (creator_company_id = ? OR company_id = ?) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper(), companyId, companyId);
 			}
 		} catch (Exception e) {
 			return new ArrayList<>();
@@ -1095,7 +1123,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 */
 	@Override
 	public List<Company> getAllActiveCompaniesWithoutMasterCompany() {
-		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "') AND company_id > 1 ORDER BY company_id";
+		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "') AND company_id > 1 ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper());
 		} catch (Exception e) {
@@ -1109,7 +1137,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 */
 	@Override
 	public List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany) {
-		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "')  AND company_id >= ? ORDER BY company_id";
+		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "')  AND company_id >= ? ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper(), startCompany);
 		} catch (Exception e) {
@@ -1124,6 +1152,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
                 " WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
                 + (includeMasterCompany ? "" : " AND company_id > 1"), IntegerRowMapper.INSTANCE);
    	}
+
+	@Override
+	public List<Integer> getCompaniesIds() {
+		return select(logger, "SELECT company_id from company_tbl", IntegerRowMapper.INSTANCE);
+	}
 
 	@Override
 	public boolean createHistoryTables(int companyID) {
@@ -1226,7 +1259,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 */
 	@Override
 	public List<Company> getAllActiveCompanies() {
-		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY company_id DESC";
+		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY company_id DESC";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper());
 		} catch (Exception e) {
@@ -1261,7 +1294,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			readCompany.setAutoMailingReportSendActivated(resultSet.getInt("auto_mailing_report_active") == 1);
 			readCompany.setSalutationExtended(resultSet.getInt("salutation_extended"));
 			readCompany.setEnabledUIDVersion(resultSet.getInt("enabled_uid_version"));
-			readCompany.setExportNotifyAdmin(resultSet.getInt("export_notify"));
 			readCompany.setParentCompanyId( resultSet.getInt("parent_company_id"));
 			readCompany.setContactTech(resultSet.getString("contact_tech"));
 			
@@ -1519,7 +1551,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 
 		try {
-			String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE shortname = ?";
+			String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, parent_company_id, contact_tech FROM company_tbl WHERE shortname = ?";
 			List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyName);
 			if (!list.isEmpty()) {
 				return list.get(0);
@@ -1529,11 +1561,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot read company data for name: " + companyName, e);
 		}
-	}
-
-	@Override
-	public boolean existOldLayoutBuilderTemplates(int id) {
-		return false;
 	}
 
 	@Override
@@ -1553,15 +1580,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
                         DbUtilities.asCondition(" AND %s", constraints),
                 IntegerRowMapper.INSTANCE, CompanyStatus.ACTIVE.getDbValue());
    	}
-
-	@Override
-	public boolean existsTestVipRecipientOnAllMailinglists(int companyID) {
-		int testVipRecipientAmount = selectIntWithDefaultValue(logger,
-			"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE ("
-			+ "(SELECT COUNT(*) from customer_" + companyID + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND user_status = ? AND user_type = ?)"
-			+ " = (SELECT COUNT(*) FROM mailinglist_tbl WHERE company_id = ? AND deleted = 0))", 0, UserStatus.Active.getStatusCode(), RecipientType.TEST_VIP_RECIPIENT.getLetter(), companyID);
-		return testVipRecipientAmount > 0;
-	}
 
 	@Override
 	public String getSpamCheckAddress(int companyID) {

@@ -10,39 +10,6 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-
-import javax.sql.DataSource;
-
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.EmmLayoutBase;
@@ -62,6 +29,38 @@ import com.agnitas.service.LicenseError;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
+import org.agnitas.emm.core.commons.password.PasswordCheck;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.preview.Page;
+import org.agnitas.preview.Preview;
+import org.agnitas.preview.PreviewFactory;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+
+import javax.sql.DataSource;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation of {@link com.agnitas.emm.core.logon.service.ComLogonService}.
@@ -545,7 +544,15 @@ public class ComLogonServiceImpl implements ComLogonService {
 		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 		return new SimpleServiceResult(true);
 	}
-	
+
+	@Override
+	public void sendWelcomeMail(Set<Integer> ids, String clientIp, int companyID, String passwordResetLinkPattern) {
+		for (int id : ids) {
+			Admin admin = adminService.getAdmin(id, companyID);
+			sendWelcomeMail(admin, clientIp, passwordResetLinkPattern);
+		}
+	}
+
 	@Override
 	public boolean existsPasswordResetTokenHash(String username, String token) {
 		return passwordResetDao.existsPasswordResetTokenHash(username, getTokenHash(token));

@@ -25,6 +25,7 @@ import java.util.TimeZone;
 
 public interface MailingSendService {
 
+
     enum DeliveryType {
         WORLD,
         TEST,
@@ -74,4 +75,7 @@ public interface MailingSendService {
 	void clearTestActionsData(int mailingID, int companyID);
 
     void validateForTestRun(MailingTestSendForm form, int mailingId, int companyId);
+
+    boolean updateDoubleCheckOnSending(int companyId, int mailingID, boolean doubleCheck);
+
 }

@@ -10,45 +10,59 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.messages.Message;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import com.agnitas.messages.Message;
+import java.util.Objects;
 
 public class ChangingWorkflowStatusResult {
 
-	private final boolean changed;
-	private final boolean anyMailingDeactivated;
-    private List<Message> messages = Collections.emptyList();
+    private final boolean anyMailingDeactivated;
+    private final Workflow.WorkflowStatus oldStatus;
+    private final Workflow.WorkflowStatus newStatus;
+    private final Workflow workflow;
+    private final Collection<Message> messages;
 
-	public static ChangingWorkflowStatusResult notChanged() {
-		return new ChangingWorkflowStatusResult(false, false);
-	}
-
-	public static ChangingWorkflowStatusResult success() {
-		return new ChangingWorkflowStatusResult(true, false);
-	}
-
-	public ChangingWorkflowStatusResult(boolean changed, boolean anyMailingDeactivated) {
-		this.changed = changed;
-		this.anyMailingDeactivated = anyMailingDeactivated;
-	}
-
-    public ChangingWorkflowStatusResult(boolean changed, boolean anyMailingDeactivated, List<Message> messages) {
-        this.changed = changed;
-        this.anyMailingDeactivated = anyMailingDeactivated;
-        this.messages = Collections.unmodifiableList(messages);
+    public static ChangingWorkflowStatusResult notChanged(Message... messages) {
+        return notChanged(List.of(messages));
     }
 
-	public boolean isAnyMailingDeactivated() {
-		return anyMailingDeactivated;
-	}
+    public static ChangingWorkflowStatusResult notChanged(Collection<Message> messages) {
+        return new ChangingWorkflowStatusResult(null, null, null, false, messages);
+    }
 
-	public boolean isChanged() {
-		return changed;
-	}
+    public ChangingWorkflowStatusResult(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus, Workflow workflow, boolean anyMailingDeactivated, Collection<Message> messages) {
+        this.workflow = workflow;
+        this.anyMailingDeactivated = anyMailingDeactivated;
+        this.oldStatus = oldStatus;
+        this.newStatus = newStatus;
+        this.messages = Collections.unmodifiableCollection(messages);
+    }
 
-    public List<Message> getMessages() {
+    public boolean isAnyMailingDeactivated() {
+        return anyMailingDeactivated;
+    }
+
+    public boolean isChanged() {
+        return !Objects.equals(oldStatus, newStatus);
+    }
+
+    public Collection<Message> getMessages() {
         return messages;
+    }
+
+    public Workflow.WorkflowStatus getOldStatus() {
+        return oldStatus;
+    }
+
+    public Workflow.WorkflowStatus getNewStatus() {
+        return newStatus;
+    }
+
+    public Workflow getWorkflow() {
+        return workflow;
     }
 }

@@ -15,7 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class MailingsListProperties {
+
     private String types;
     private String mediaTypes;
     private boolean isTemplate;
@@ -44,9 +48,9 @@ public class MailingsListProperties {
     private String direction;
     private int page;
     private int rownums;
-    private boolean includeTargetGroups;
     private Boolean isGrid;
     private boolean useRecycleBin;
+    private boolean isMailingStatisticsOverview;
     private Set<String> additionalColumns = new HashSet<>();
 
     public String getTypes() {
@@ -233,14 +237,6 @@ public class MailingsListProperties {
         this.rownums = rownums;
     }
 
-    public boolean isIncludeTargetGroups() {
-        return includeTargetGroups;
-    }
-
-    public void setIncludeTargetGroups(boolean includeTargetGroups) {
-        this.includeTargetGroups = includeTargetGroups;
-    }
-
     public List<Integer> getTargetGroups() {
         return targetGroups;
     }
@@ -303,5 +299,21 @@ public class MailingsListProperties {
 
     public void setRedesignedUiUsed(boolean redesignedUiUsed) {
         isRedesignedUiUsed = redesignedUiUsed;
+    }
+
+    public void setMailingStatisticsOverview(boolean mailingStatisticsOverview) {
+        isMailingStatisticsOverview = mailingStatisticsOverview;
+    }
+
+    public boolean isMailingStatisticsOverview() {
+        return isMailingStatisticsOverview;
+    }
+
+    public boolean isUiFiltersSet() {
+        return (!isMailingStatisticsOverview && isNotBlank(types)) || isNotBlank(mediaTypes) || isNotBlank(searchNameStr) || isNotBlank(searchDescriptionStr)
+                || isNotBlank(searchContentStr) || (!isMailingStatisticsOverview && isNotEmpty(statuses)) || isNotEmpty(badge) || isNotEmpty(mailingLists)
+                || isNotEmpty(archives) || isNotEmpty(targetGroups) || sendDateBegin != null || sendDateEnd != null
+                || creationDateBegin != null || creationDateEnd != null || planDateBegin != null || planDateEnd != null
+                || changeDateBegin != null || changeDateEnd != null || isGrid != null;
     }
 }

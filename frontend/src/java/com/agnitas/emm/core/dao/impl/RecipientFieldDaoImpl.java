@@ -38,7 +38,7 @@ import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
@@ -89,7 +89,7 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			recipientFieldDescription.setDefaultValue(defaultValues.get(fieldEntry.getKey()));
 			
 			// Some fields are read only
-			if (RecipientFieldService.RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(recipientFieldDescription.getColumnName())) {
+			if (RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(recipientFieldDescription.getColumnName())) {
 				recipientFieldDescription.getPermissions().put(0, ProfileFieldMode.ReadOnly);
 			}
 			
@@ -143,7 +143,7 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 				ProfileFieldMode defaultPermission = ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit"));
 
 				// Some fields are read only
-				if (defaultPermission != ProfileFieldMode.NotVisible && RecipientFieldService.RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(columnName)) {
+				if (defaultPermission != ProfileFieldMode.NotVisible && RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(columnName)) {
 					defaultPermission = ProfileFieldMode.ReadOnly;
 				}
 				

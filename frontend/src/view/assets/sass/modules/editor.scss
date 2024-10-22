@@ -1,0 +1,14 @@
+
+.ace_editor {
+  --ace-editor-readonly-bg-color: #F5F5F5;
+
+  .dark-theme & {
+    --ace-editor-readonly-bg-color: #6F6F6F;
+  }
+}
+
+.ace_editor:has(.ace_text-input[readonly]) {
+  .ace_content, .ace_active-line {
+    background-color: var(--ace-editor-readonly-bg-color) !important;
+  }
+}

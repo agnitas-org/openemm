@@ -138,8 +138,10 @@ public class LinkcheckWorker implements Runnable {
 				logger.info( "Checking link: " + linkToCheck);
 			}
 			
-			@SuppressWarnings("unused")
 			final URL url = new URL(linkToCheck);	// just for checking, we could use the plain String...
+			if (logger.isDebugEnabled()) {
+				logger.debug("url: " + url);
+			}
 			
 			try(final CloseableHttpClient httpClient = createHttpClient()) {
 				final HttpGet request = new HttpGet(linkToCheck);

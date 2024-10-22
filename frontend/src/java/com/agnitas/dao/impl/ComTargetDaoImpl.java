@@ -10,21 +10,22 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
+import com.agnitas.dao.impl.mapper.TargetRowMapper;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
+import com.agnitas.emm.core.target.TargetUtils;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
+import com.agnitas.emm.core.target.service.TargetLightsOptions;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.helger.collection.pair.Pair;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -40,7 +41,6 @@ import org.agnitas.util.FulltextSearchQueryException;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -52,22 +52,20 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
-import com.agnitas.dao.impl.mapper.TargetRowMapper;
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
-import com.agnitas.emm.core.target.TargetUtils;
-import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
-import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.helger.collection.pair.Pair;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link ComTargetDao}.
@@ -464,11 +462,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 	
 	@Override
-	public boolean deleteTargetReally(int targetId, int companyId) {
-		return update(logger, "DELETE FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?", companyId, targetId) > 0;
-	}
-
-	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean deleteTargetsReally(int companyID) {
 		if (companyID <= 0) {
@@ -482,6 +475,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public void deleteTargetsReally(Collection<Integer> ids) {
+		update(logger, "DELETE FROM dyn_target_tbl WHERE " + makeBulkInClauseForInteger("target_id", ids));
 	}
 
 	protected void deleteTargetsDependentData(int companyId) {
@@ -573,38 +571,20 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 	@Override
 	public List<TargetLight> getTargetLights(int companyID) {
-		return getTargetLights(companyID, false);
+		return getTargetLights(0, companyID, true);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted) {
-		return getTargetLights(companyID, includeDeleted, true, true);
+	public List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId) {
+		return getTargetLights(adminId, companyId, false);
 	}
 
-	@Override
-	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
-		return getTargetLights(companyID, includeDeleted, worldDelivery, adminTestDelivery, false);
-	}
-
-	@Override
-	public List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
-		return getTargetLights(adminId, companyID, includeDeleted, worldDelivery, adminTestDelivery, false);
-	}
-
-	@Override
-	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-	    return getTargetLights(0, companyID, includeDeleted, worldDelivery, adminTestDelivery, content);
-    }
-
-	@Override
-	public List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	private List<TargetLight> getTargetLights(int adminId, int companyID, boolean worldDelivery) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
                 .setAdminId(adminId)
 				.setCompanyId(companyID)
-				.setIncludeDeleted(includeDeleted)
 				.setWorldDelivery(worldDelivery)
-				.setAdminTestDelivery(adminTestDelivery)
-				.setContent(content)
+				.setAdminTestDelivery(true)
 				.build();
 		return getTargetLightsBySearchParameters(options);
 	}
@@ -626,11 +606,25 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		try {
 			boolean sortDirectionAscending = !"desc".equalsIgnoreCase(options.getDirection()) && !"descending".equalsIgnoreCase(options.getDirection());
 			SqlPreparedStatementManager sqlPreparedStatementManager = preparePaginatedSelectStatement(options);
+
+			PaginatedListImpl<TargetLight> list;
 			if (StringUtils.isBlank(options.getSorting())) {
 				String sortClause = getDefaultSortingClauseForTargetList(options.getAdminId(), options.getCompanyId());
-				return selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, options.getSorting(), sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+				list = selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause,
+						options.getSorting(), sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(),
+						sqlPreparedStatementManager.getPreparedSqlParameters());
+			} else {
+				list = selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "dyn_target_tbl", options.getSorting(),
+						sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(),
+						sqlPreparedStatementManager.getPreparedSqlParameters());
 			}
-			return selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "dyn_target_tbl", options.getSorting(), sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+
+			if (options.isRedesignedUiUsed() && options.isUiFiltersSet()) {
+				String countQuery = "SELECT COUNT(*) FROM dyn_target_tbl WHERE company_id = ? AND (hidden IS NULL or hidden = 0) AND deleted = 0";
+				list.setNotFilteredFullListSize(selectInt(logger, countQuery, options.getCompanyId()));
+			}
+
+			return list;
 		} catch (Exception e) {
 			logger.error("Getting target lights failed: {}", e.getMessage());
 		}
@@ -675,19 +669,12 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 													final TargetLightsOptions options) throws Exception {
 		preparedStatementManager.addWhereClause("company_id = ?", options.getCompanyId());
 		preparedStatementManager.addWhereClause("(hidden IS NULL or hidden = 0)");
-
-		if (!options.isIncludeDeleted()) {
-			preparedStatementManager.addWhereClause("deleted = 0");
-		}
+		preparedStatementManager.addWhereClause("deleted = ?", BooleanUtils.toInteger(options.isDeleted()));
 
 		if (options.isContent()) {
 			preparedStatementManager.addWhereClause("component_hide = 0");
 		}
 		
-		if (!options.isIncludeInvalid()) {
-			preparedStatementManager.addWhereClause("(invalid = 0 or invalid is null)");
-		}
-
 		if (options.isRedesignedUiUsed()) {
 			if (options.getDeliveryOption() != null) {
 				preparedStatementManager.addWhereClause("admin_test_delivery = ?", options.getDeliveryOption().getStorageCode());
@@ -902,7 +889,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 			return select(logger, sqlGetTargetsExceptIds, getTargetLightRowMapper(), companyID);
 		} else {
-			return getTargetLights(companyID, false);
+			return getTargetLights(companyID);
 		}
 	}
 
@@ -920,11 +907,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	@Override
 	public List<TargetLight> getTestAndAdminTargetLights(int companyId) {
 		return getTestAndAdminTargetLights(0, companyId);
-	}
-
-	@Override
-	public List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId) {
-		return getTargetLights(adminId, companyId, false, false, true);
 	}
 
 	@Override
@@ -1036,18 +1018,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public void saveComplexityIndices(int companyId, Map<Integer, Integer> complexities) {
-		if (MapUtils.isNotEmpty(complexities)) {
-			List<Object[]> sqlParameters = complexities.entrySet()
-					.stream()
-					.map(entry -> new Object[]{entry.getValue(), entry.getKey(), companyId})
-					.collect(Collectors.toList());
-
-			batchupdate(logger, "UPDATE dyn_target_tbl SET complexity = ? WHERE target_id = ? AND company_id = ?", sqlParameters);
-		}
-	}
-
-	@Override
 	public List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
 		List<Object> selectParameter = new ArrayList<>();
 		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, deleted, " +
@@ -1131,13 +1101,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			"WHERE target_id = ? AND company_id = ? AND COALESCE(hidden, 0) = 0";
 
 		return selectWithDefaultValue(logger, sqlGetComplexityIndex, Integer.class, null, targetId, companyId);
-	}
-
-	@Override
-	public List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(int companyId) {
-		String sqlGetTargets = "SELECT target_id, eql FROM dyn_target_tbl WHERE company_id = ? AND complexity IS NULL";
-
-		return select(logger, sqlGetTargets, new TargetEqlMapper(), companyId);
 	}
 
     @Override
@@ -1286,8 +1249,22 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
         return selectInt(logger,
                 "SELECT hidden FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?", targetId, companyId) == 1;
 	}
-	
-    protected Collection<String> getAdditionalExtendedColumns() {
+
+	@Override
+	public void restore(Set<Integer> ids, int companyID) {
+		String query = "UPDATE dyn_target_tbl SET deleted = 0, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND deleted = 1 AND "
+				+ makeBulkInClauseForInteger("target_id", ids);
+
+		update(logger, query, companyID);
+	}
+
+	@Override
+	public List<Integer> getMarkedAsDeletedBefore(Date date, int companyID) {
+		String query = "SELECT target_id FROM dyn_target_tbl WHERE company_id = ? AND deleted = 1 AND change_date < ?";
+		return select(logger, query, IntegerRowMapper.INSTANCE, companyID, date);
+	}
+
+	protected Collection<String> getAdditionalExtendedColumns() {
   		return CollectionUtils.emptyCollection();
   	}
   

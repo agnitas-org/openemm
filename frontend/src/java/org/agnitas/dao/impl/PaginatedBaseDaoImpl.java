@@ -62,7 +62,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 				sortClause = "ORDER BY " + sortColumn;
 			}
 			sortClause = sortClause + " " + (sortDirectionAscending ? "asc" : "desc");
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (Exception e) {
 			sortClause = "";
 		}
 

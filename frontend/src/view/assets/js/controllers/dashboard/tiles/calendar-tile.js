@@ -1,27 +1,31 @@
-class CalendarTile extends DraggableTile {
+(() => {
+  const Def = AGN.Lib.Dashboard.Def;
+  const TileSize = Def.TileSize;
 
-  constructor(controller) {
-    super(controller);
-    this.type = DraggableTile.def.TILE.TYPE.WIDE;
-    this.variants = [{type: DraggableTile.def.TILE.TYPE.WIDE}, {type: DraggableTile.def.TILE.TYPE.TALL}]
-    this._controller.addDomInitializer('dashboard-calendar', this.#domInitializer);
-  }
-  
-  #domInitializer() {
-    new AGN.Lib.Calendar(this.el, this.config.firstDayOfWeek, this.config.statisticsViewAllowed);
+  class CalendarTile extends AGN.Lib.Dashboard.DraggableTile {
+
+    static ID = "calendar";
+
+    constructor(controller) {
+      super(controller);
+      this._controller.addDomInitializer('dashboard-calendar', this.#domInitializer);
+      this.variants = [TileSize.WIDE, TileSize.TALL];
+      this.size = this.variants[0];
+    }
+
+    #domInitializer() {
+      new AGN.Lib.Dashboard.Calendar(this.el, this.config);
+    }
+
+    remove() {
+      super.remove();
+      this.$el = undefined;
+    }
+
+    thumbnail(size) {
+      return super.thumbnail() + (size === TileSize.TALL ? '-tall' : '');
+    }
   }
 
-  get id() {
-    return DraggableTile.def.TILE.ID.CALENDAR;
-  }
-  
-  remove() {
-    super.remove();
-    this.$el = undefined;
-  }
-
-  thumbnail(type) {
-    const suffix = type === DraggableTile.def.TILE.TYPE.TALL ? '-tall' : '';
-    return AGN.url(`/assets/core/images/dashboard/tile/${this.id}${suffix}.svg`);
-  }
-}
+  AGN.Lib.Dashboard.CalendarTile = CalendarTile;
+})();

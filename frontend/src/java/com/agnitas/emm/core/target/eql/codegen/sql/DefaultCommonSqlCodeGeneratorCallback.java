@@ -930,9 +930,11 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 		switch (node.getOperator()) {
 		case ADD:
 			codeStack.push(new CodeFragment(sqlDialect.dateAddDays(left.getCode(), right.getCode()), DataType.DATE, set));
+			this.codeProperties.encounteredDateArithmetics();
 			break;
 		case SUB:
 			codeStack.push(new CodeFragment(sqlDialect.dateSubDays(left.getCode(), right.getCode()), DataType.DATE, set));
+			this.codeProperties.encounteredDateArithmetics();
 			break;
 
 		case MUL:

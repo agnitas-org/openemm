@@ -11,8 +11,10 @@
 package com.agnitas.beans;
 
 import java.util.Date;
+import java.util.Set;
 
 public interface MaildropEntry {
+
 	int getAdminTestTargetID();
 	
 	void setAdminTestTargetID( int targetID);
@@ -68,4 +70,9 @@ public interface MaildropEntry {
     int getOverwriteTestRecipient();
 
     void setOverwriteTestRecipient(int overwriteTestRecipient);
+
+    void setAltgIds(Set<Integer> altgIds);
+
+    Set<Integer> getAltgIds();
+
 }

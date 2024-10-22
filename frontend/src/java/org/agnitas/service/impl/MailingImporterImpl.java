@@ -10,6 +10,8 @@
 
 package org.agnitas.service.impl;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,7 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
+import com.agnitas.emm.core.mailing.service.MailingService;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -62,12 +66,13 @@ import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
@@ -84,7 +89,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	protected ComCompanyDao companyDao;
 
 	@Resource(name="MailingDao")
-	protected ComMailingDao mailingDao;
+	protected MailingDao mailingDao;
+
+	@Resource(name = "MailingService")
+	protected MailingService mailingService;
 
 	@Resource(name="MailinglistDao")
 	protected MailinglistDao mailinglistDao;
@@ -118,11 +126,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
 		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid, adminAltgIds);
 	}
-
-    @Override
-    public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid) throws Exception {
-        return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, isGrid, null);
-    }
 
     /**
      * Import simple mailing or template
@@ -173,7 +176,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			Map<Integer, Integer> targetIdMappings = importTargets(companyID, jsonObject, warnings);
 
 			Mailing mailing = new MailingImpl();
-			int importedMailingID = importMailingData(mailing, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings, adminAltgIds);
+			int importedMailingID = importMailingData(mailing, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings, adminAltgIds, overwriteTemplate);
 			if (importedMailingID == 0 && needsAltg(adminAltgIds, targetIdMappings.values())) {
                 warnings.put("warning.mailing.altg", null);
                 return ImportResult.builder().setSuccess(true)
@@ -187,9 +190,9 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				return ImportResult.builder().addError("error.mailing.import").build();
 			} else {
 				// Load and save the new mailing to let any adjustments happen that may be needed
-				Mailing storedMailing = mailingDao.getMailing(mailing.getId(), mailing.getCompanyID());
+				Mailing storedMailing = mailingService.getMailing(mailing.getCompanyID(), mailing.getId());
 				storedMailing.buildDependencies(true, getApplicationContext());
-				mailingDao.saveMailing(storedMailing, false);
+				mailingService.saveMailingWithNewContent(storedMailing, false);
 				
 				return ImportResult.builder().setSuccess(true)
 						.setMailingID(importedMailingID)
@@ -203,10 +206,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	}
 
     private boolean needsAltg(Set<Integer> adminAltgIds, Collection<Integer> targetIds) {
-        return CollectionUtils.isNotEmpty(adminAltgIds) && CollectionUtils.intersection(targetIds, adminAltgIds).isEmpty();
+        return isNotEmpty(adminAltgIds) && CollectionUtils.intersection(targetIds, adminAltgIds).isEmpty();
     }
 
-    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds) throws Exception {
+    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds, boolean overwrite) throws Exception {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
 
 		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
@@ -525,8 +528,29 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		if (needsAltg(adminAltgIds, targetIdMappings.values())) {
 		    return 0;
         }
+        if (importAsTemplate) {
+            List<Integer> idsWithSameName = mailingDao.getClassicTemplatesByName(mailing.getShortname(), companyID);
+            if (!overwrite && isNotEmpty(idsWithSameName)) {
+                throw new RequestErrorException("error.template.import.duplicate");
+            }
+            if (overwrite) {
+                if (idsWithSameName.size() > 1) {
+                    warnings.put("warning.template.import.name", null);
+                    cloneName(mailing, companyID);
+                }
+                if (idsWithSameName.size() == 1) {
+                    mailingDao.markAsDeleted(idsWithSameName.get(0), companyID);
+                }
+            }
+        }
         return mailingDao.saveMailing(mailing, false);
 	}
+
+    private void cloneName(Mailing mailing, int companyID) {
+        Predicate<String> isUnique = name -> isNotEmpty(mailingDao.getClassicTemplatesByName(name, companyID));
+        String cloneName = AgnUtils.getUniqueCloneName(mailing.getShortname(), 50, isUnique);
+        mailing.setShortname(cloneName);
+    }
 
 	protected Map<Integer, Integer> importTargets(int companyID, JsonObject jsonObject, Map<String, Object[]> warnings) {
 		Map<Integer, Integer> targetIdMappings = new HashMap<>();

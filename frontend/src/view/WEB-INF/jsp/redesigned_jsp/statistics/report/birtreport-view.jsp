@@ -3,10 +3,11 @@
 
 <%@ page import="com.agnitas.emm.core.birtreport.dto.BirtReportType" %>
 <%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="birtReportForm" type="com.agnitas.emm.core.birtreport.forms.BirtReportForm"--%>
 <%--@elvariable id="activeTabType" type="com.agnitas.emm.core.birtreport.dto.ReportSettingsType"--%>
@@ -24,7 +25,7 @@
 <c:set var="TYPE_AFTER_MAILING_24HOURS_ID" value="<%= BirtReportType.TYPE_AFTER_MAILING_24HOURS.getKey()%>"/>
 <c:set var="NORMAL_MAILING_TYPE" value="<%= MailingType.NORMAL.getCode() %>"/>
 
-<mvc:form id="birt-report-view" cssClass="tiles-container d-flex hidden" servletRelativeAction="/statistics/report/save.action" modelAttribute="birtReportForm"
+<mvc:form id="birt-report-view" cssClass="tiles-container" servletRelativeAction="/statistics/report/save.action" modelAttribute="birtReportForm"
           data-form="resource" data-controller="birt-reports" data-initializer="birt-reports" data-form-dirty-checking="" data-editable-view="${agnEditViewKey}">
 
     <script id="config:birt-reports" type="application/json">
@@ -48,10 +49,10 @@
     <mvc:hidden path="reportId"/>
     <mvc:hidden path="activeTab"/>
 
-    <div class="tiles-block flex-column" style="flex: 1">
+    <div class="tiles-block flex-column">
         <div id="general-settings-tile" class="tile h-auto flex-shrink-0" data-editable-tile>
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="mailing.generalSettings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="mailing.generalSettings" /></h1>
             </div>
             <div class="tile-body js-scrollable">
                 <div class="row g-3">
@@ -70,7 +71,7 @@
                             ${descriptionMsg}
                         </label>
 
-                        <mvc:text id="description" path="description" cssClass="form-control" placeholder="${descriptionMsg}"/>
+                        <mvc:textarea id="description" path="description" cssClass="form-control" placeholder="${descriptionMsg}" rows="1"/>
                     </div>
                 </div>
             </div>
@@ -78,13 +79,20 @@
 
         <div id="delivery-settings-tile" class="tile" data-editable-tile>
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="workflow.mailing.DeliverySettings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="workflow.mailing.DeliverySettings" /></h1>
             </div>
             <div class="tile-body js-scrollable">
                 <div class="row g-3" data-field="toggle-vis">
                     <div class="col-12">
                         <label for="emailAddresses" class="form-label"><mvc:message code="report.autosend.email"/> *</label>
-                        <mvc:text path="emailAddresses" maxlength="199" id="emailAddresses" cssClass="form-control" placeholder="${emailPlaceholder}" />
+
+                        <select name="emailAddresses" id="emailAddresses" class="form-control dynamic-tags" multiple placeholder="${emailPlaceholder}">
+                            <c:forEach var="emailAddress" items="${emm:splitString(birtReportForm.emailAddresses)}">
+                                <c:if test="${not empty emailAddress}">
+                                    <option value="${emailAddress}" selected>${emailAddress}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
                     </div>
 
                     <div class="col-12">
@@ -94,7 +102,7 @@
 
                     <div class="col-12">
                         <label for="emailDescription" class="form-label">${descriptionMsg}</label>
-                        <mvc:textarea path="emailDescription" rows="3" id="emailDescription" cssClass="form-control v-resizable" placeholder="${descriptionMsg}" />
+                        <mvc:textarea id="emailDescription" path="emailDescription" cssClass="form-control" placeholder="${descriptionMsg}" rows="1" />
                     </div>
 
                     <div class="col-12">
@@ -233,7 +241,7 @@
         </div>
     </div>
 
-    <div id="extended-settings-tile" class="tile" style="flex: 1" data-editable-tile>
+    <div id="extended-settings-tile" class="tile" data-editable-tile>
         <div class="tile-header p-2">
             <nav class="navbar navbar-expand-lg">
                 <a class="chosen-tab btn btn-primary w-0" href="#">
@@ -243,7 +251,7 @@
                                role="switch" data-action="activate-delivery-for-active-tab">
                     </div>
                 </a>
-                <button class="navbar-toggler btn-icon-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#report-settings-tabs" aria-controls="report-settings-tabs" aria-expanded="false">
+                <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#report-settings-tabs" aria-controls="report-settings-tabs" aria-expanded="false">
                     <i class="icon icon-bars"></i>
                 </button>
                 <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="report-settings-tabs">
@@ -312,11 +320,11 @@
 <c:if test="${hasActiveDelivery}">
     <script id="report-deactivate-deliveries" type="text/x-mustache-template">
         <mvc:form cssClass="modal modal-adaptive" servletRelativeAction="/statistics/report/${birtReportForm.reportId}/deactivateAllDeliveries.action" tabindex="-1" data-form="resource">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h1 class="modal-title"><mvc:message code="report.deactivate.all"/></h1>
-                        <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                             <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                         </button>
                     </div>
@@ -326,12 +334,12 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger js-confirm-negative flex-grow-1" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-danger js-confirm-negative" data-bs-dismiss="modal">
                             <i class="icon icon-times"></i>
                             <span class="text"><mvc:message code="default.No"/></span>
                         </button>
 
-                        <button type="button" class="btn btn-primary js-confirm-positive flex-grow-1" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-primary js-confirm-positive" data-bs-dismiss="modal">
                             <i class="icon icon-check"></i>
                             <span class="text"><mvc:message code="default.Yes"/></span>
                         </button>

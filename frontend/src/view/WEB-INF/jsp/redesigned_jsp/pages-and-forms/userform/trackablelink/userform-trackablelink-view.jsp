@@ -13,7 +13,7 @@
 <c:set var="TRACKABLE_YES" value="<%= LinkUtils.TRACKABLE_YES %>"/>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/webform/${userFormId}/trackablelink/save.action" method="post"
                   id="userFormTrackableLinkForm"
                   data-form="resource" modelAttribute="form"
@@ -22,8 +22,8 @@
             <mvc:hidden path="id"/>
 
             <div class="modal-header">
-                <h1 class="tile-title"><mvc:message code="TrackableLink.editLink"/></h1>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                <h1 class="tile-title text-truncate"><mvc:message code="TrackableLink.editLink"/></h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -87,7 +87,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary flex-grow-1" data-form-submit-event>
+                <button type="button" class="btn btn-primary" data-form-submit-event>
                     <i class="icon icon-save"></i>
                     <mvc:message code="button.Save"/>
                 </button>

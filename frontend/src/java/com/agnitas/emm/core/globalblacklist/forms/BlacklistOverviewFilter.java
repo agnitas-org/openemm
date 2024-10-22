@@ -16,7 +16,11 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+// TODO Move to blacklist package
 public class BlacklistOverviewFilter extends PaginationForm {
+
     private String email;
     private String reason;
     private DateRange creationDate = new DateRange();
@@ -43,6 +47,10 @@ public class BlacklistOverviewFilter extends PaginationForm {
 
     public void setCreationDate(DateRange creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(email) || isNotBlank(reason) || creationDate.isPresent();
     }
 
     @Override

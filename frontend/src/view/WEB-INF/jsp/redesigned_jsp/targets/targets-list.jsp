@@ -1,10 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption" %>
-<%@ taglib uri="http://displaytag.sf.net"               prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag"  %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isSearchEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
@@ -13,15 +15,14 @@
 <%--@elvariable id="target" type="com.agnitas.beans.impl.TargetLightImpl"--%>
 <%--@elvariable id="isUserBasedFavorites" type="java.lang.Boolean"--%>
 
-<c:set var="COMPLEXITIES" value="<%= TargetComplexityGrade.values() %>" scope="page"/>
-<c:set var="DELIVERY_OPTIONS" value="<%= TargetGroupDeliveryOption.values() %>" scope="page"/>
-<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
-<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
-<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
+<mvc:message var="restoreMsg" code="default.restore" />
+<mvc:message var="deleteMsg"  code="target.Delete" />
 
-<mvc:message var="targetDeleteMessage" code="target.Delete" />
+<c:url var="restoreUrl" value="/target/restore.action" />
 
-<div class="filter-overview hidden" data-controller="targets-list" data-editable-view="${agnEditViewKey}">
+<c:set var="deletionAllowed" value="${emm:permissionAllowed('targets.delete', pageContext.request)}" />
+
+<div class="filter-overview" data-controller="targets-list" data-editable-view="${agnEditViewKey}">
     <mvc:form id="table-tile" cssClass="tile" servletRelativeAction="/target/list.action" modelAttribute="targetForm" data-editable-tile="main">
         <script type="application/json" data-initializer="web-storage-persist">
             {
@@ -31,64 +32,119 @@
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-        </div>
+        <mvc:hidden path="showDeleted" />
+
         <div class="tile-body">
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table class="table table-hover table-rounded js-table" id="target" name="targetEntries" sort="external"
-                                   requestURI="/target/list.action" partialList="true" size="${targetForm.numberOfRows}" excludedParams="*">
+            <div class="table-wrapper">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <c:if test="${deletionAllowed}">
+                            <div class="bulk-actions hidden">
+                                <p class="bulk-actions__selected">
+                                    <span><%-- Updates by JS --%></span>
+                                    <mvc:message code="default.list.entry.select" />
+                                </p>
+                                <div class="bulk-actions__controls">
+                                    <c:choose>
+                                        <c:when test="${targetForm.showDeleted}">
+                                            <a href="#" class="icon-btn text-primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}" data-form-submit>
+                                                <i class="icon icon-redo"></i>
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <c:url var="bulkDeleteUrl" value="/target/confirm/bulk/delete.action"/>
+                                            <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.target" />" data-form-url='${bulkDeleteUrl}' data-form-confirm>
+                                                <i class="icon icon-trash-alt"></i>
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+                            </div>
+                        </c:if>
+                        <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${targetEntries.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${targetEntries.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
 
-                        <%@ include file="../displaytag/displaytag-properties.jspf" %>
+                <div class="table-wrapper__body">
+                    <agnDisplay:table class="table table--borderless js-table ${targetForm.showDeleted ? '' : 'table-hover'}" id="target" name="targetEntries"
+                                      sort="external" requestURI="/target/list.action" partialList="true" size="${targetForm.numberOfRows}" excludedParams="*">
 
-                        <emm:ShowByPermission token="targets.delete">
+                        <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
+
+                        <c:if test="${deletionAllowed}">
                             <c:set var="checkboxSelectAll">
-                                <input type="checkbox" class="form-check-input" data-form-bulk="bulkIds"/>
+                                <input type="checkbox" class="form-check-input" data-bulk-checkboxes />
                             </c:set>
 
-                            <display:column title="${checkboxSelectAll}" class="js-checkable" sortable="false" headerClass="bulk-ids-column fit-content">
-                                <input type="checkbox" class="form-check-input" name="bulkIds" value="${target.id}"/>
-                            </display:column>
-                        </emm:ShowByPermission>
+                            <agnDisplay:column title="${checkboxSelectAll}">
+                                <input type="checkbox" class="form-check-input" name="bulkIds" value="${target.id}" data-bulk-checkbox />
+                            </agnDisplay:column>
+                        </c:if>
 
-                        <display:column headerClass="js-table-sort fit-content" property="id" titleKey="MailinglistID"/>
+                        <agnDisplay:column headerClass="js-table-sort fit-content" property="id" titleKey="MailinglistID"/>
 
-                        <display:column class="js-checkable align-center" headerClass="js-table-sort fit-content" sortable="true" titleKey="default.favourite" sortProperty="favorite">
-                            <label class="icon-checkbox text-primary">
-                                <input type="checkbox" ${target.favorite ? 'checked' : ''} autocomplete="off"
-                                       data-action="${isUserBasedFavorites ? 'check-admin-favorites' : 'check-favorites'}" data-target-id="${target.id}">
-                                <i class="icon icon-star far" data-icon-off></i>
-                                <i class="icon icon-star" data-icon-on></i>
-                            </label>
-                        </display:column>
+                        <c:choose>
+                            <c:when test="${targetForm.showDeleted}">
+                                <agnDisplay:column titleKey="autoImport.status" sortable="false" headerClass="fit-content">
+                                    <span class="status-badge mailing.status.deleted mx-auto" data-tooltip="<mvc:message code="target.Deleted" />"></span>
+                                </agnDisplay:column>
+                            </c:when>
+                            <c:otherwise>
+                                <agnDisplay:column headerClass="js-table-sort fit-content" sortable="true" titleKey="default.favourite" sortProperty="favorite">
+                                    <label class="icon-checkbox text-primary">
+                                        <input type="checkbox" ${target.favorite ? 'checked' : ''} autocomplete="off"
+                                               data-action="${isUserBasedFavorites ? 'check-admin-favorites' : 'check-favorites'}" data-target-id="${target.id}">
+                                        <i class="icon icon-star far" data-icon-off></i>
+                                        <i class="icon icon-star" data-icon-on></i>
+                                    </label>
+                                </agnDisplay:column>
+                            </c:otherwise>
+                        </c:choose>
 
-                        <display:column headerClass="js-table-sort" titleKey="Name" sortable="true" sortProperty="target_shortname">
-                            <%-- Show icon for the target which is unavailable in dropdowns--%>
-                            <c:if test="${target.componentHide}">
-                                <emm:HideByPermission token="mailing.content.showExcludedTargetgroups">
-                                    <i class="icon icon-exclamation-triangle text-danger"
-                                       data-tooltip="<mvc:message code="target.tooltip.not_available_in_components"/>"></i>
-                                </emm:HideByPermission>
+                        <agnDisplay:column headerClass="js-table-sort" titleKey="Name" sortable="true" sortProperty="target_shortname">
+                            <div class="d-flex align-items-center gap-1 overflow-wrap-anywhere">
+                                <c:if test="${target.accessLimitation}">
+                                  <span class="icon-badge text-bg-danger-dark" data-tooltip="<mvc:message code="target.limit.access" />">
+                                    <i class="icon icon-user-lock"></i>
+                                  </span>
+                                </c:if>
+
+                                <%-- Show icon for the target which is unavailable in dropdowns--%>
+                                <c:if test="${target.componentHide}">
+                                    <emm:HideByPermission token="mailing.content.showExcludedTargetgroups">
+                                        <i class="icon icon-exclamation-triangle text-danger"
+                                           data-tooltip="<mvc:message code="target.tooltip.not_available_in_components"/>"></i>
+                                    </emm:HideByPermission>
+                                </c:if>
+                                <span class="text-truncate-table">${target.targetName}</span>
+                            </div>
+                        </agnDisplay:column>
+
+                        <agnDisplay:column headerClass="js-table-sort" titleKey="Description" sortable="true" sortProperty="target_description">
+                            <span>${target.targetDescription}</span>
+                            <c:if test="${not targetForm.showDeleted}">
+                                <a href='<c:url value="/target/${target.id}/view.action"/>' class="hidden" data-view-row="page"></a>
                             </c:if>
-                            <span>${target.targetName}</span>
-                        </display:column>
+                        </agnDisplay:column>
 
-                        <display:column headerClass="js-table-sort" titleKey="Description" sortable="true" sortProperty="target_description" property="targetDescription" />
-
-                        <display:column class="align-center bold" titleKey="target.group.complexity" sortable="false" headerClass="fit-content">
+                        <agnDisplay:column class="align-center bold" titleKey="target.group.complexity" sortable="false" headerClass="fit-content">
                             <div class="flex-center">
                                 <c:set var="complexityGrade" value="${targetComplexities[target.id]}"/>
                                 <c:choose>
                                     <c:when test="${target.valid}">
                                         <c:choose>
-                                            <c:when test="${complexityGrade eq COMPLEXITY_GREEN}">
+                                            <c:when test="${complexityGrade eq TargetComplexityGrade.GREEN}">
                                                 <span class="status-badge complexity.status.green" data-tooltip="<mvc:message code="target.group.complexity.low"/>"></span>
                                             </c:when>
-                                            <c:when test="${complexityGrade eq COMPLEXITY_YELLOW}">
+                                            <c:when test="${complexityGrade eq TargetComplexityGrade.YELLOW}">
                                                 <span class="status-badge complexity.status.yellow" data-tooltip="<mvc:message code="warning.target.group.performance.yellow"/>"></span>
                                             </c:when>
-                                            <c:when test="${complexityGrade eq COMPLEXITY_RED}">
+                                            <c:when test="${complexityGrade eq TargetComplexityGrade.RED}">
                                                 <span class="status-badge complexity.status.red" data-tooltip="<mvc:message code="warning.target.group.performance.red"/>"></span>
                                             </c:when>
                                         </c:choose>
@@ -98,25 +154,33 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
-                        </display:column>
+                        </agnDisplay:column>
 
-                        <display:column headerClass="js-table-sort fit-content" titleKey="default.creationDate" sortable="true"
+                        <agnDisplay:column headerClass="js-table-sort fit-content" titleKey="default.creationDate" sortable="true"
                                         format="{0, date, ${adminDateFormat}}" property="creationDate" sortProperty="creation_date"/>
 
-                        <display:column headerClass="js-table-sort fit-content" titleKey="default.changeDate" sortable="true"
+                        <agnDisplay:column headerClass="js-table-sort fit-content" titleKey="default.changeDate" sortable="true"
                                         format="{0, date, ${adminDateFormat}}" property="changeDate" sortProperty="change_date"/>
 
-                        <display:column headerClass="fit-content">
-                            <a href='<c:url value="/target/${target.id}/view.action"/>' class="hidden" data-view-row="page"></a>
-
-                            <emm:ShowByPermission token="targets.delete">
-                                <c:url var="deletionLink" value="/target/${target.id}/confirm/delete.action" />
-                                <a href="${deletionLink}" class="btn btn-icon-sm btn-danger js-row-delete" data-tooltip="${targetDeleteMessage}">
-                                    <i class="icon icon-trash-alt"></i>
-                                </a>
-                            </emm:ShowByPermission>
-                        </display:column>
-                    </display:table>
+                        <c:if test="${deletionAllowed}">
+                            <agnDisplay:column headerClass="fit-content">
+                                <c:choose>
+                                    <c:when test="${targetForm.showDeleted}">
+                                        <a href="#" class="icon-btn text-primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}"
+                                           data-form-set="bulkIds: ${target.id}" data-form-submit>
+                                            <i class="icon icon-redo"></i>
+                                        </a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:url var="deletionLink" value="/target/${target.id}/confirm/delete.action" />
+                                        <a href="${deletionLink}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
+                                            <i class="icon icon-trash-alt"></i>
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
+                            </agnDisplay:column>
+                        </c:if>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -126,11 +190,12 @@
               data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
@@ -152,11 +217,13 @@
                     <div class="col-12">
                         <label for="filter-complexity" class="form-label"><mvc:message code="target.group.complexity" /></label>
 
-                        <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control js-select" data-result-template="target-complexity-badge-selection">
+                        <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control js-select" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
                             <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
 
-                            <c:forEach var="complexity" items="${COMPLEXITIES}">
-                                <mvc:option value="${complexity}">${complexity}</mvc:option>
+                            <c:forEach var="complexity" items="${TargetComplexityGrade.values()}">
+                                <mvc:option value="${complexity}" data-badge-class="complexity.status.${fn:toLowerCase(complexity)}">
+                                    ${complexity}
+                                </mvc:option>
                             </c:forEach>
                         </mvc:select>
                     </div>
@@ -167,7 +234,7 @@
                         <mvc:select id="filter-delivery" path="searchDeliveryOption" cssClass="form-control js-select">
                             <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
 
-                            <c:forEach var="delivery" items="${DELIVERY_OPTIONS}">
+                            <c:forEach var="delivery" items="${TargetGroupDeliveryOption.values()}">
                                 <mvc:option value="${delivery}"><mvc:message code="${delivery.messageKey}" /></mvc:option>
                             </c:forEach>
                         </mvc:select>
@@ -200,17 +267,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <mvc:checkbox id="filter-show-deleted" path="showDeleted" cssClass="form-check-input" role="switch"/>
+                            <label class="form-label form-check-label" for="filter-show-deleted">
+                                <mvc:message code="default.list.deleted.show"/>
+                            </label>
+                        </div>
+                    </div>
                 </c:if>
             </div>
         </div>
     </mvc:form>
 </div>
-
-<script id="target-complexity-badge-selection" type="text/x-mustache-template">
-    <div class="d-flex align-items-center gap-1">
-        {{ if (value) { }}
-            <span class="status-badge complexity.status.{{- value.toLowerCase() }}"></span>
-        {{ } }}
-        <span>{{- text }}</span>
-    </div>
-</script>

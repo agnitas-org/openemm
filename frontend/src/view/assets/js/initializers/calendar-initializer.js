@@ -1,4 +1,3 @@
-// TODO: EMMGUI-714: check usage and remove when old design will be removed
 AGN.Lib.DomInitializer.new("calendar-table", function () {
   var conf = this.config;
 
@@ -118,6 +117,10 @@ AGN.Lib.DomInitializer.new("calendar-table", function () {
 
   Action.new({'change': '#month_list, #month_list_year, #weeks_list'}, function() {
     AGN.Lib.CalendarService.showDate();
+  });
+
+  Action.new({'click': '.show-more-mailings'}, function() {
+      AGN.Lib.CalendarService.updateDayMailings(this.el);
   });
 
   Action.new({'change': '#weeks_list_year'}, function() {

@@ -10,18 +10,11 @@
 
 package org.agnitas.dao.impl;
 
-import java.net.InetAddress;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MaildropRowMapper;
@@ -31,15 +24,20 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import java.net.InetAddress;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatusDao {
-	private static final transient Logger logger = LogManager.getLogger( MaildropStatusDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger( MaildropStatusDaoImpl.class);
 	private static String origin;
 	static {
 		try {
@@ -52,9 +50,10 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean delete(int companyId, int id) {
-		String sql = "DELETE FROM maildrop_status_tbl WHERE company_id = ? AND status_id = ?";
+		String sql = "SELECT status_id FROM maildrop_status_tbl WHERE company_id = ? AND status_id = ?";
 		try {
-			return update(logger, sql, companyId, id) > 0;
+			List<Integer> ids = select(logger, sql, IntegerRowMapper.INSTANCE, companyId, id);
+			return deleteByIds(ids) > 0;
 		} catch (Exception e) {
 			logger.error("Error: " + e.getMessage(), e);
 		}
@@ -63,31 +62,26 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	
 	@Override
 	public boolean delete(int companyId, int mailingId, MaildropStatus status, MaildropGenerationStatus generationStatus) {
-		final String sql = "DELETE FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = ? AND genstatus = ?";
+		final String sql = "SELECT status_id FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = ? AND genstatus = ?";
+		List<Integer> ids = select(logger, sql, IntegerRowMapper.INSTANCE, companyId, mailingId, status.getCodeString(), generationStatus.getCode());
 
-		final int deleted = update(logger, sql, companyId, mailingId, status.getCodeString(), generationStatus.getCode());
-
-		return deleted > 0;
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public int deleteUnsentWorldMailingEntries(int mailingID) {
-		String sql = "DELETE FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND status_field = ? AND mailing_id = ?";
-		try {
-			return update(logger, sql, MaildropGenerationStatus.SCHEDULED.getCode(), MaildropGenerationStatus.NOW.getCode(), MaildropStatus.WORLD.getCode(), mailingID);
-		} catch (Exception e) {
-			logger.error("Error: " + e.getMessage(), e);
-		}
-		return 0;
+		return deleteByIds(ids) > 0;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteUnsentEntries(int mailingID) {
-		String sql = "DELETE FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND mailing_id = ?";
-		try {
-			return update(logger, sql, MaildropGenerationStatus.SCHEDULED.getCode(), MaildropGenerationStatus.NOW.getCode(), mailingID);
+        try {
+			List<Integer> ids = select(
+					logger,
+                    "SELECT status_id FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND mailing_id = ?",
+					IntegerRowMapper.INSTANCE,
+					MaildropGenerationStatus.SCHEDULED.getCode(),
+					MaildropGenerationStatus.NOW.getCode(),
+					mailingID
+			);
+
+			return deleteByIds(ids);
 		} catch (Exception e) {
 			logger.error("Error: " + e.getMessage(), e);
 		}
@@ -152,12 +146,6 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		return select(logger, "SELECT DISTINCT status_id FROM maildrop_status_tbl WHERE mailing_id = ? AND company_id = ?",
 				IntegerRowMapper.INSTANCE, mailingID, companyID);
 	}
-	
-	@Override
-	public final List<Integer> getMaildropEntryIds(final int mailingID, final int companyID, MaildropStatus maildropStatus) {
-		return select(logger, "SELECT DISTINCT status_id FROM maildrop_status_tbl WHERE mailing_id = ? AND company_id = ? AND status_field = ?",
-				IntegerRowMapper.INSTANCE, mailingID, companyID, maildropStatus.getCodeString());
-	}
 
 	@Override
 	public MaildropEntry getEntryForStatus(final int mailingID, final int companyID, final char status) {
@@ -175,38 +163,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	}
 
 	@Override
-	public final int saveMaildropEntry(final MaildropEntry entry) throws Exception {
-		MailingType mailingType;
-		try {
-			mailingType = MailingType.fromCode(selectInt(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", entry.getMailingID()));
-	    } catch (final Exception e) {
-	        throw new Exception("Error getting mailingType for mailing " + entry.getMailingID(), e);
-	    }
-		
-		if (mailingType == MailingType.ACTION_BASED || mailingType == MailingType.DATE_BASED) {
-			MaildropEntry existingEntry = getEntryForStatus(entry.getMailingID(), entry.getCompanyID(), entry.getStatus());
-			if (existingEntry != null) {
-				entry.setId(existingEntry.getId());
-				logger.error("Trying to activate mailing multiple times: " + entry.getMailingID());
-			}
-		}
-		
-		if (entry.getId() == 0) {
-			return insertMaildropEntry(entry);
-		} else {
-			final MaildropEntry existingEntry = getMaildropEntry(entry.getMailingID(), entry.getCompanyID(), entry.getId());
-
-			if (existingEntry == null) {
-				return insertMaildropEntry(entry);
-			} else {
-				updateMaildropEntry(entry);
-
-				return entry.getId();
-			}
-		}
-	}
-	
-	private void updateMaildropEntry(final MaildropEntry entry) {
+	public void updateMaildropEntry(final MaildropEntry entry) {
 		final String sql = "UPDATE maildrop_status_tbl SET status_field = ?, senddate = ?, step = ?, blocksize = ?, gendate = ?, genstatus = ?, genchange = ?, max_recipients = ?, admin_test_target_id = ?, optimize_mail_generation = ? WHERE status_id = ? AND company_id = ? AND mailing_id = ?";
 		
 		this.update(logger, sql,
@@ -224,8 +181,9 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 				entry.getCompanyID(),
 				entry.getMailingID());
 	}
-	
-	private int insertMaildropEntry(final MaildropEntry entry) {
+
+	@Override
+	public int insertMaildropEntry(final MaildropEntry entry) {
 		int	overwriteTestRecipient = entry.getOverwriteTestRecipient();
 		
 		if (isOracleDB()) {
@@ -310,7 +268,8 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		}
 	}
 
-	private void batchInsertMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries) {
+	@Override
+	public void batchInsertMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries) {
 		if (entries.isEmpty()) {
 			return;
 		}
@@ -380,8 +339,9 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 			logger.error("Could not insert new mail drops", e);
 		}
 	}
-	
-	private void batchUpdateMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries) {
+
+	@Override
+	public void batchUpdateMaildropEntries(int companyId, int mailingId, List<MaildropEntry> entries) {
 		if (entries.isEmpty()) {
 			return;
 		}
@@ -453,32 +413,6 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	}
 	
 	@Override
-	public void saveMaildropEntries(int companyId, int mailingId, Set<MaildropEntry> maildropStatusList) {
-		List<MaildropEntry> update = new ArrayList<>();
-		List<MaildropEntry> create = new ArrayList<>();
-		
-		List<Integer> existingMaildropIds = getMaildropEntryIds(mailingId, companyId);
-		
-		maildropStatusList.forEach(entry -> {
-			entry.setCompanyID(companyId);
-			entry.setMailingID(mailingId);
-			if (existingMaildropIds.contains(entry.getId())) {
-				update.add(entry);
-			} else {
-				create.add(entry);
-			}
-		});
-
-		batchInsertMaildropEntries(companyId, mailingId, create);
-		batchUpdateMaildropEntries(companyId, mailingId, update);
-	}
-
-	@Override
-	public boolean reactivateMaildropStatusEntry(int maildropStatusID) {
-		return update(logger, "UPDATE maildrop_status_tbl SET genstatus = 1, genchange = CURRENT_TIMESTAMP, gendate = CURRENT_TIMESTAMP WHERE status_id = ? AND genstatus != 2", maildropStatusID) > 0;
-	}
-
-	@Override
 	public final void removeOutdatedFindLastNewsletterEntries(final int companyID, final ZonedDateTime olderThan) {
 		final String selectSql = "SELECT mds2.status_id"
 				+ " FROM maildrop_status_tbl mds1, maildrop_status_tbl mds2"
@@ -493,14 +427,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		final Date timestamp = Date.from(olderThan.toInstant());
 		
 		final List<Integer> idList = this.select(logger, selectSql, IntegerRowMapper.INSTANCE, companyID, timestamp);
-		final List<Object[]> idArgList = idList
-				.stream()
-				.map(id -> new Object[] { id })
-				.collect(Collectors.toList());
-		
-		
-		final String deleteSql = "DELETE FROM maildrop_status_tbl WHERE status_id=?";
-		this.batchupdate(logger, deleteSql, idArgList);
+		deleteByIds(idList);
 	}
 
 	@Override
@@ -538,8 +465,39 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 
 	@Override
 	public void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays) {
-		final String deleteSql = "DELETE FROM maildrop_status_tbl WHERE mailing_id = ? AND senddate < ?";
-		Date dateLimit = DateUtilities.getDateOfDaysAgo(maximumAgeInDays);
-		update(logger, deleteSql, mailingID, dateLimit);
+        List<Integer> ids = select(
+				logger,
+				"SELECT status_id FROM maildrop_status_tbl WHERE mailing_id = ? AND senddate < ?",
+				IntegerRowMapper.INSTANCE,
+				mailingID,
+				DateUtilities.getDateOfDaysAgo(maximumAgeInDays)
+		);
+
+		deleteByIds(ids);
+	}
+
+	@Override
+	public void deleteByMailingId(int mailingID) {
+		List<Integer> ids = select(
+				logger,
+				"SELECT status_id FROM maildrop_status_tbl WHERE mailing_id = ?",
+				IntegerRowMapper.INSTANCE,
+				mailingID
+		);
+
+		if (!ids.isEmpty()) {
+			update(logger, "DELETE FROM test_recipients_tbl WHERE " + makeBulkInClauseForInteger("maildrop_status_id", ids));
+		}
+		deleteByIds(ids);
+
+	}
+
+	protected int deleteByIds(Collection<Integer> ids) {
+		if (ids.isEmpty()) {
+			return 0;
+		}
+
+		return update(logger, "DELETE FROM maildrop_status_tbl WHERE "
+				+ makeBulkInClauseForInteger("status_id", ids));
 	}
 }

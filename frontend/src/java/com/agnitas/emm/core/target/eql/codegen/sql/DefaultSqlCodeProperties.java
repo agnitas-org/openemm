@@ -15,6 +15,7 @@ class DefaultSqlCodeProperties implements SqlCodeProperties {
 	private boolean referenceTables;
 	private boolean nonCustomerTables;
 	private boolean subselects;
+	private boolean dateArithmetics;
 	
 	@Override
 	public boolean isUsingReferenceTables() {
@@ -30,7 +31,10 @@ class DefaultSqlCodeProperties implements SqlCodeProperties {
 	public boolean isUsingSubselects() {
 		return this.subselects;
 	}
-	
+
+	@Override
+	public boolean isUsingDateArithmetics() { return this.dateArithmetics; }
+
 	/**
 	 * Called when code generation encountered a reference table.
 	 */
@@ -52,4 +56,5 @@ class DefaultSqlCodeProperties implements SqlCodeProperties {
 		this.subselects = true;
 	}
 
+	public void encounteredDateArithmetics() { this.dateArithmetics = true; }
 }

@@ -14,7 +14,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
 
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
@@ -33,7 +33,6 @@ import com.agnitas.messages.I18nString;
 
 public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveMailingImpl.class);
 
 	private PreviewFactory previewFactory;
@@ -78,7 +77,7 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 		// check for mobile device
 		boolean mobile = false;
 		@SuppressWarnings("unchecked")
-		Map<String, Object> requestParams = (Map<String, Object>) params.get("requestParameters");
+		Map<String, Object> requestParams = (Map<String, Object>) params.get("requestParameters"); // suppress warning for this cast
 		Object mobileDeviceObject = requestParams.get("mobileDevice");
 		if (mobileDeviceObject == null) {
 			// another way to set the mobile device.

@@ -88,8 +88,8 @@ public class AddContentBlockEndpoint extends BaseEndpoint {
 		return response;
 	}
 	
-	private final void validateContent(final ContentModel model) throws InvalidMailingContentException {
-		final List<String> invalidElements = this.htmlContentValidator.findInvalidTags(model.getContent());
+	private void validateContent(final ContentModel model) throws InvalidMailingContentException {
+		final List<String> invalidElements = this.htmlContentValidator.findIllegalTags(model.getContent());
 		
 		if(!invalidElements.isEmpty()) {
 			throw new InvalidMailingContentException(

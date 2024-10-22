@@ -140,12 +140,12 @@ public class MailingModel {
 		return formatList;
 	}
 
-	public static enum OnePixel {
+	public enum OnePixel {
 		TOP("top"), BOTTOM("bottom"), NONE("none");
 
 		private final String name;
 
-		private OnePixel(String name) {
+		OnePixel(String name) {
 			this.name = name;
 		}
 
@@ -177,7 +177,7 @@ public class MailingModel {
 		private final String name;
 		private final int value;
 
-		private TargetMode(String name, int value) {
+		TargetMode(String name, int value) {
 			this.name = name;
 			this.value = value;
 		}

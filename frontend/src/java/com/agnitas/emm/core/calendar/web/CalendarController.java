@@ -15,17 +15,22 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
+import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
 import com.agnitas.emm.util.html.xssprevention.ForbiddenTagError;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +41,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -73,13 +80,15 @@ public class CalendarController implements XssCheckAware {
     private final CalendarService calendarService;
     private final ComOptimizationService optimizationService;
     private final CalendarCommentService calendarCommentService;
+    private final UserActivityLogService userActivityLogService;
 
     public CalendarController(AdminService adminService, CalendarService calendarService,
-                              ComOptimizationService optimizationService, CalendarCommentService calendarCommentService) {
+                              ComOptimizationService optimizationService, CalendarCommentService calendarCommentService, UserActivityLogService userActivityLogService) {
         this.adminService = adminService;
         this.calendarService = calendarService;
         this.optimizationService = optimizationService;
         this.calendarCommentService = calendarCommentService;
+        this.userActivityLogService = userActivityLogService;
     }
 
     @ExceptionHandler(XSSHtmlException.class)
@@ -103,6 +112,19 @@ public class CalendarController implements XssCheckAware {
         return "calendar_view";
     }
 
+    @GetMapping("/calendar/unsent-mailings/unplanned.action")
+    @ResponseBody
+    public List<CalendarUnsentMailing> unplannedMailings(Admin admin) {
+        return calendarService.getUnplannedMailings(admin);
+    }
+
+    @GetMapping("/calendar/unsent-mailings/planned.action")
+    @ResponseBody
+    public List<CalendarUnsentMailing> plannedUnsentMailings(Admin admin) {
+        return calendarService.getPlannedUnsentMailings(admin);
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @RequestMapping("/calendar/getUnsentMailings.action")
     public String getUnsentMailings(Admin admin, Model model) {
         setUnsentMails(model, admin);
@@ -110,6 +132,7 @@ public class CalendarController implements XssCheckAware {
         return "calendar_unsent_mailings_list_ajax";
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @RequestMapping("/calendar/getPlannedMailings.action")
     public String getPlannedMailings(Admin admin, Model model) {
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
@@ -188,9 +211,26 @@ public class CalendarController implements XssCheckAware {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/calendar/mailingsLight.action")
+    public @ResponseBody
+    ResponseEntity<?> mailingsLight(@RequestParam String start, @RequestParam String end, Admin admin) {
+        LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
+        LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
+
+        if (Objects.isNull(startDate) || Objects.isNull(endDate)) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (startDate.isAfter(endDate)) {
+            logger.error("Start date is after end date");
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(calendarService.getMailingsLight(admin, startDate, endDate));
+    }
+
     @GetMapping("/calendar/mailings.action")
     public @ResponseBody
-    ResponseEntity<?> getMailings(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    ResponseEntity<?> getMailings(@RequestParam(defaultValue = "0") int limit, Admin admin,
+                                  @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -203,11 +243,15 @@ public class CalendarController implements XssCheckAware {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(admin.isRedesignedUiUsed()
-                ? calendarService.getMailingsRedesigned(admin, startDate, endDate)
-                : calendarService.getMailings(admin, startDate, endDate));
+        return ResponseEntity.ok(calendarService.getMailings(admin, startDate, endDate, limit));
     }
 
+    @GetMapping("/calendar/mailingsPopoverInfo.action")
+    @ResponseBody
+    public List<MailingPopoverInfo> mailingsPopoverInfo(@RequestParam Set<Integer> mailingIds, Admin admin) {
+        return calendarService.mailingsPopoverInfo(mailingIds, admin);
+    }
+    
     @RequestMapping(value = "/calendar/moveMailing.action", method = RequestMethod.POST)
     public @ResponseBody
     ResponseEntity<?> moveMailing(Admin admin, @RequestParam("mailingId") int mailingId, @RequestParam("date") String newDate) {
@@ -221,8 +265,23 @@ public class CalendarController implements XssCheckAware {
         boolean isSuccess = calendarService.moveMailing(admin, mailingId, date);
 
         result.element("success", isSuccess);
-
+        writeUAL(admin, getMoveMailingUalDescr(mailingId, isSuccess, date));
         return ResponseEntity.ok().body(result);
+    }
+
+    private static String getMoveMailingUalDescr(int mailingId, boolean isSuccess, LocalDate date) {
+        return String.format(isSuccess
+            ? "mailing id = %d moved to date - %s"
+            : "mailing id = %d attempt to move to date - %s", mailingId, date);
+    }
+
+    @PostMapping(value = "/calendar/mailing/{mailingId:\\d+}/clearPlannedDate.action")
+    public ResponseEntity<?> clearMailingPlannedDate(@PathVariable int mailingId, Admin admin) {
+        boolean success = calendarService.clearMailingPlannedDate(mailingId, admin.getCompanyID());
+        writeUAL(admin, String.format(success
+            ? "mailing id = %d cleared plan date"
+            : "mailing id = %d attempt to clear plan date", mailingId));
+        return ResponseEntity.ok(success);
     }
 
     private void setUnsentMails(Model model, Admin admin) {
@@ -257,5 +316,9 @@ public class CalendarController implements XssCheckAware {
         model.addAttribute("currentAdminName", admin.getUsername());
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getCalendarYearList(SELECTOR_START_YEAR_NUM));
+    }
+
+    private void writeUAL(Admin admin, String description) {
+        userActivityLogService.writeUserActivityLog(admin, "dashboard calendar change", description);
     }
 }

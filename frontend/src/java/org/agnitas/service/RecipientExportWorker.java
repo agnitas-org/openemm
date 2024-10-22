@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ExportColumnMapping;
@@ -39,27 +38,28 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.export.util.ExportUtils;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ColumnInfoService;
 
 public class RecipientExportWorker extends GenericExportWorker {
 
 	public static final String EXPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientExport";
 
 	public static final int NO_MAILINGLIST = -1;
+	public static final int ALL_MAILINGLISTS = 0;
 	public static final String ALL_BINDING_TYPES = "E";
 
 	private final ComTargetService targetService;
 	private final MailinglistService mailinglistService;
-    private final ColumnInfoService columnInfoService;
+    private final RecipientFieldService recipientFieldService;
 
 	private ExportPredef exportProfile;
-	private Admin admin;
+	protected Admin admin;
     
 	/**
 	 * Descriptive username for manually executed exports (non-AutoExport)
@@ -102,7 +102,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return admin;
 	}
 
-	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final ColumnInfoService columnInfoService, MailinglistService mailinglistService) throws Exception {
+	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final RecipientFieldService recipientFieldService, MailinglistService mailinglistService) throws Exception {
 		super();
 		this.exportProfile = exportProfile;
 		this.admin = admin;
@@ -136,7 +136,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		setDecimalFormat(new DecimalFormat("###0.###", decimalFormatSymbols));
 
 		this.targetService = targetService;
-        this.columnInfoService = columnInfoService;
+        this.recipientFieldService = recipientFieldService;
 		this.mailinglistService = mailinglistService;
 	}
 
@@ -157,13 +157,19 @@ public class RecipientExportWorker extends GenericExportWorker {
 			boolean selectBounces = false;
 			boolean isFirstColumn = true;
             List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, admin);
-
-    		CaseInsensitiveMap<String, ProfileField> profilefields;
-    		if (admin != null) {
-    			profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
-    		} else {
-    			profilefields = columnInfoService.getColumnInfoMap(companyID);
-    		}
+            
+    		CaseInsensitiveMap<String, RecipientFieldDescription> profilefields = new CaseInsensitiveMap<>();
+            for (RecipientFieldDescription field : recipientFieldService.getRecipientFields(companyID)) {
+    			ProfileFieldMode permission;
+	    		if (admin != null) {
+	    			permission = field.getAdminPermission(admin.getAdminID());
+	    		} else {
+	    			permission = field.getDefaultPermission();
+	    		}
+	    		if (permission == ProfileFieldMode.Editable || permission == ProfileFieldMode.ReadOnly) {
+    				profilefields.put(field.getColumnName(), field);
+    			}
+            }
     		
     		for (ExportColumnMapping exportColumnMapping : profileFieldsToExport) {
     			if (profilefields.containsKey(exportColumnMapping.getDbColumn())) {
@@ -186,7 +192,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 							customerTableSql.append("bounce.exit_mailing_id AS ExitMailingID, bounce.mailinglist_id AS Mailinglist, bounce.detail AS BounceDetail");
 						}
 					}
-				} else if (profilefields.get(columnName).getModeEdit() != ProfileFieldMode.Editable && profilefields.get(columnName).getModeEdit() != ProfileFieldMode.ReadOnly) {
+				} else if (!profilefields.containsKey(columnName)) {
 					throw new ExportException(false, ExportException.Reason.ColumnNotExportableError, columnName);
 				} else {
 					if (isFirstColumn) {
@@ -198,7 +204,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 				}
 			}
             columnMappings = new ArrayList<>(profileFieldsToExport);
-            columnMappings.addAll(ExportUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, admin, columnInfoService));
+            columnMappings.addAll(ExportUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, admin, recipientFieldService));
             
 			for (int selectedMailinglistID : mailingListIds) {
 				String mailinglistStr = "Mailinglist_" + selectedMailinglistID;
@@ -248,14 +254,12 @@ public class RecipientExportWorker extends GenericExportWorker {
 
 			// Add where clauses to basic Select statement
 			customerTableSql.append(" WHERE ").append(RecipientStandardField.Bounceload.getColumnName() + " = 0");
-			if (exportProfile.getMailinglistID() == NO_MAILINGLIST) {
+			if (isNoMailinglistPresent()) {
 				customerTableSql.append(" AND NOT EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE cust.customer_id = bind.customer_id)");
 			} else {
 				StringBuilder existsBindingSqlPart = new StringBuilder();
-				if (exportProfile.getMailinglistID() > 0) {
-					existsBindingSqlPart.append("bind.mailinglist_id = ?");
-					selectParameters.add(exportProfile.getMailinglistID());
-				}
+				
+				applyMailingLists(existsBindingSqlPart);
 				
 				if (!ALL_BINDING_TYPES.equals(exportProfile.getUserType())) {
 					if (existsBindingSqlPart.length() > 0) {
@@ -456,31 +460,42 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return this;
 	}
 
+	protected void applyMailingLists(StringBuilder sql) {
+		if (exportProfile.getMailinglistID() > 0) {
+			sql.append("bind.mailinglist_id = ?");
+			selectParameters.add(exportProfile.getMailinglistID());
+		}
+	}
+
+	protected boolean isNoMailinglistPresent() {
+        return exportProfile.getMailinglistID() == NO_MAILINGLIST;
+    }
+
     private List<String> getSplittedColumnNames(List<ExportColumnMapping> columnsToExport) {
         return AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(
                 columnsToExport.stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.joining(";"))));
     }
 
     private List<ExportColumnMapping> getProfileFieldsToExport(int companyID, Admin adminParam) throws Exception {
-        List<ExportColumnMapping> profileFieldColumns = ExportUtils.getProfileFieldColumnsFromExport(exportProfile, companyID, adminParam, columnInfoService);
+        List<ExportColumnMapping> profileFieldColumns = ExportUtils.getProfileFieldColumnsFromExport(exportProfile, companyID, adminParam, recipientFieldService);
         if (profileFieldColumns.isEmpty()) {
-        	List<ProfileField> profileFields;
-        	if (adminParam !=  null) {
-        		profileFields = columnInfoService.getComColumnInfos(companyID, adminParam.getAdminID());
-        	} else {
-        		profileFields = columnInfoService.getComColumnInfos(companyID);
-        	}
+        	List<RecipientFieldDescription> profileFields = new ArrayList<>();
+            for (RecipientFieldDescription field : recipientFieldService.getRecipientFields(companyID)) {
+    			ProfileFieldMode permission;
+	    		if (adminParam != null) {
+	    			permission = field.getAdminPermission(adminParam.getAdminID());
+	    		} else {
+	    			permission = field.getDefaultPermission();
+	    		}
+	    		if (permission == ProfileFieldMode.Editable || permission == ProfileFieldMode.ReadOnly) {
+	    			profileFields.add(field);
+    			}
+            }
         	
             return profileFields.stream()
-	            .filter(new Predicate<ProfileField>() {
-					@Override
-					public boolean test(ProfileField profileField) {
-						return profileField.getModeEdit() != ProfileFieldMode.NotVisible;
-					}
-				})
 	            .map(profileField -> {
 	            	ExportColumnMapping columnMapping = new ExportColumnMapping();
-	                columnMapping.setDbColumn(profileField.getColumn());
+	                columnMapping.setDbColumn(profileField.getColumnName());
 	                return columnMapping;
 	            })
 	            .collect(Collectors.toList());
@@ -506,7 +521,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return Collections.emptyList();
 	}
 
-	protected String getTargetSql() throws Exception {
+	protected String getTargetSql() {
 		if (exportProfile.getTargetID() <= 0) {
 			return null;
 		} else {

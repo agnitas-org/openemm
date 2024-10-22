@@ -12,10 +12,12 @@ package org.agnitas.emm.core.autoexport.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
 import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.ExportPredef;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
@@ -24,13 +26,14 @@ import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.service.CsvImportExportDescription;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 
 public interface AutoExportService {
 
     int MAX_SHORTNAME_LENGTH = 100;
 
     List<AutoExport> getAutoExports(Admin admin);
-    List<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, Admin admin);
+    PaginatedListImpl<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, Admin admin);
 
     List<AutoExport> getAutoExportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
@@ -68,10 +71,6 @@ public interface AutoExportService {
 
     void finishMailingAutoExport(AutoExport autoExport);
 
-    List<AutoExport> getAutoExports(int companyId, boolean active);
-
-    List<AutoExport> getMailingAutoExports(int companyId, boolean active);
-
     AutoExportStatus doExportReactionsData(AutoExport autoExport) throws Exception;
 
 	AutoExportStatus doExportReactionsAndStatusData(AutoExport autoExport) throws Exception;
@@ -87,5 +86,14 @@ public interface AutoExportService {
     AutoExportWsJobState getWsJobState(int jobId, int companyId);
 
     void removeExpiredWsJobs();
+    boolean isManageAllowed(AutoExport autoExport, Admin admin);
+    boolean hasPermissionForType(AutoExport.AutoExportType type, Admin admin);
+    ServiceResult<List<AutoExport>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+    ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
 
+    List<AutoExport> findAllByEmailPart(String email, int companyID);
+    List<AutoExport> findAllByEmailPart(String email);
+    void updateEmails(String emailForError, String emailForReport, int id);
+
+    ServiceResult<List<AutoExport>> changeActiveness(Set<Integer> ids, Admin admin, boolean activeness);
 }

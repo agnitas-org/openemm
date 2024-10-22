@@ -10,17 +10,16 @@
 
 package com.agnitas.emm.core.profilefields.service;
 
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Popups;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Locale;
 
 public interface ProfileFieldValidationService {
 
@@ -50,7 +49,7 @@ public interface ProfileFieldValidationService {
 
     boolean hasTargetGroups(int companyId, String fieldName);
 
-    boolean isValidToDelete(String column, int companyId, Locale locale, Popups popups);
+    SimpleServiceResult isValidToDelete(String column, Admin admin);
 
     boolean isStandardColumn(String fieldName);
 

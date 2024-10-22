@@ -15,8 +15,8 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagContentRowMapper;
-import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagRowMapper;
+import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagContentRowMapper;
+import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagRowMapper;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 
 import org.agnitas.beans.DynamicTagContent;

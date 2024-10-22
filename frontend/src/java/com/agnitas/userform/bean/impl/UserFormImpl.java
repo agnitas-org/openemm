@@ -39,8 +39,8 @@ import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
  * Bean extension of EMM (needed for trackable links)
  */
 public class UserFormImpl implements UserForm {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormImpl.class);
 	
 	/**
      * Holds value of property companyID.
@@ -109,6 +109,7 @@ public class UserFormImpl implements UserForm {
 	protected String errorMimetype = "text/html"; // alternative: "application/json"
 
     private boolean isActive;
+    private boolean deleted;
 
     private String successFormBuilderJson;
     private String errorFormBuilderJson;
@@ -427,16 +428,8 @@ public class UserFormImpl implements UserForm {
 		}
 	}
 	
-	private final CaseInsensitiveMap<String, Object> escapeRequestParameters(final Map<String, Object> params) {
-		final CaseInsensitiveMap<String, Object> paramsEscaped = new CaseInsensitiveMap<>(params);
-
-		/*
-		@SuppressWarnings("unchecked")
-		final Map<String, Object> parameters = (Map<String, Object>) paramsEscaped.get("requestParameters");
-        paramsEscaped.put("requestParameters", AgnUtils.escapeHtmlInValues(parameters));
-        */
-		
-        return paramsEscaped;
+	private CaseInsensitiveMap<String, Object> escapeRequestParameters(final Map<String, Object> params) {
+        return new CaseInsensitiveMap<>(params);
 	}
 	
 	protected String evaluateFormResult(Map<String, Object> params, boolean actionResult, ApplicationContext context) {
@@ -575,6 +568,16 @@ public class UserFormImpl implements UserForm {
     @Override
 	public void setActive(boolean active) {
         isActive = active;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    @Override
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     @Override

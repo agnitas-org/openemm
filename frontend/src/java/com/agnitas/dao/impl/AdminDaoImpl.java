@@ -11,6 +11,7 @@
 package com.agnitas.dao.impl;
 
 import static java.text.MessageFormat.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -138,7 +139,15 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		
 		try {
 			Admin admin = getAdminInternal(username);
-			return isAdminPassword(admin, password) ? admin : null;
+			if (isAdminPassword(admin, password)) {
+				return admin;
+			}
+
+			logger.warn("Invalid credentials for {}", username);
+			return null;
+		} catch (AdminNameNotFoundException e) {
+			logger.warn("Invalid username: {}", username);
+			return null;
 		} catch (AdminException e) {
 			return null;
 		}
@@ -544,6 +553,38 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	}
 
 	@Override
+	public PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize) {
+		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ?";
+		return selectPaginatedList(logger, query, "admin_tbl", sort, AgnUtils.sortingDirectionToBoolean(dir), pageNumber, pageSize, new AdminEntry_RowMapper(), companyId);
+	}
+
+	@Override
+	public List<AdminEntry> findAllByEmailPart(String email, int companyID) {
+		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? AND "
+				+ getPartialSearchFilter("email");
+		return select(logger, query, new AdminEntry_RowMapper(), companyID, email);
+	}
+
+	@Override
+	public List<AdminEntry> findAllByEmailPart(String email) {
+		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE "
+				+ getPartialSearchFilter("email");
+
+		return select(logger, query, new AdminEntry_RowMapper(), email);
+	}
+
+	@Override
+	public void updateEmail(String email, int id, int companyId) {
+		update(logger, "UPDATE admin_tbl SET email = ? WHERE admin_id = ? AND company_id = ?", email, id, companyId);
+	}
+
+	@Override
+	public AdminEntry findByEmail(String email, int companyId) {
+		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? AND email = ?";
+		return selectObjectDefaultNull(logger, query, new AdminEntry_RowMapper(), companyId, email);
+	}
+
+	@Override
 	public PaginatedListImpl<AdminEntry> getAdminList(int companyID, String searchFirstName, String searchLastName, String searchEmail, String searchCompanyName, Integer filterCompanyId, Integer filterAdminGroupId, Integer filterMailinglistId, String filterLanguage, DateRange creationDate,
 													  DateRange lastLoginDate, String username, String sortColumn, String sortDirection, int pageNumber, int pageSize, boolean showRestfulUsers) {
 		if (StringUtils.isBlank(sortColumn)) {
@@ -554,21 +595,8 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
 
-		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager(
-				"SELECT adm.admin_id, adm.username, adm.fullname, adm.firstname, adm.last_login_date, adm.company_name, adm.email, adm.admin_lang, comp.shortname, adm.company_id, adm.creation_date, adm.timestamp, adm.pwdchange_date"
-						+ " FROM admin_tbl adm "
-						+ " JOIN company_tbl comp ON (comp.company_ID = adm.company_id)"
-						+ " WHERE comp.status = ?"
-						+ " AND restful = ?", CompanyStatus.ACTIVE.getDbValue(), showRestfulUsers ? 1 : 0);
-
-
-		// WHERE clause already in statement
-		sqlPreparedStatementManager.setHasAppendedClauses(true);
-
 		try {
-			if (companyID > 1) {
-				sqlPreparedStatementManager.addWhereClause("adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)", companyID, companyID);
-			}
+			SqlPreparedStatementManager sqlPreparedStatementManager = createBaseOverviewQuery(showRestfulUsers, companyID, false);
 
 			addAdminListFilters(
 					searchFirstName,
@@ -585,17 +613,51 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 					sqlPreparedStatementManager
 			);
 
+			PaginatedListImpl<AdminEntry> list;
+
+			if ("last_login".equalsIgnoreCase(sortColumn)) {
+				String sortClause = " ORDER BY last_login_date " + (sortDirectionAscending ? "ASC" : "DESC");
+				list = selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, sortColumn,
+						sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
+			} else {
+				list = selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "admin_tbl", sortColumn,
+						sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
+			}
+
+			if (isNotBlank(searchFirstName) || isNotBlank(searchLastName) || isNotBlank(searchEmail) || isNotBlank(searchCompanyName)
+					|| filterCompanyId != null || filterAdminGroupId != null || filterMailinglistId != null || isNotBlank(filterLanguage)
+					|| creationDate.isPresent() || lastLoginDate.isPresent() || isNotBlank(username)) {
+				SqlPreparedStatementManager totalCountStatement = createBaseOverviewQuery(showRestfulUsers, companyID, true);
+				list.setNotFilteredFullListSize(selectInt(logger, totalCountStatement.getPreparedSqlString(), totalCountStatement.getPreparedSqlParameters()));
+			}
+
+			return list;
 		} catch (Exception e) {
 			logger.error("Invalid filters", e);
-		}
-
-		if ("last_login".equalsIgnoreCase(sortColumn)) {
-			String sortClause = " ORDER BY last_login_date " + (sortDirectionAscending ? "ASC" : "DESC");
-			return selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
-		} else {
-			return selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "admin_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
+			return new PaginatedListImpl<>();
 		}
     }
+
+	private SqlPreparedStatementManager createBaseOverviewQuery(boolean showRestfulUsers, int companyID, boolean useCountQuery) throws Exception {
+        StringBuilder query = new StringBuilder().append("SELECT ")
+				.append(useCountQuery ? "COUNT(*)" : "adm.admin_id, adm.username, adm.fullname, adm.firstname, adm.last_login_date, adm.company_name, adm.email, adm.admin_lang, comp.shortname, adm.company_id, adm.creation_date, adm.timestamp, adm.pwdchange_date")
+				.append(" FROM admin_tbl adm JOIN company_tbl comp ON (comp.company_ID = adm.company_id) WHERE comp.status = ? AND restful = ?");
+
+		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager(
+                query.toString(),
+				CompanyStatus.ACTIVE.getDbValue(),
+				showRestfulUsers ? 1 : 0
+		);
+
+		// WHERE clause already in statement
+		sqlPreparedStatementManager.setHasAppendedClauses(true);
+
+		if (companyID > 1) {
+			sqlPreparedStatementManager.addWhereClause("adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)", companyID, companyID);
+		}
+
+		return sqlPreparedStatementManager;
+	}
 
     protected void addAdminListFilters(String searchFirstName, String searchLastName, String searchEmail, String searchCompanyName, Integer filterCompanyId, Integer filterAdminGroupId, Integer filterMailinglistId, String filterLanguage, DateRange creationDate,
 									   DateRange lastLoginDate, String username, SqlPreparedStatementManager statementManager) throws Exception {
@@ -657,7 +719,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			statementManager.addWhereClause("adm.last_login_date < ?", DateUtilities.addDaysToDate(lastLoginDate.getTo(), 1));
 		}
 
-		if (StringUtils.isNotBlank(username)) {
+		if (isNotBlank(username)) {
 			statementManager.addWhereClause(getPartialSearchFilter("adm.username"), username);
 		}
 	}
@@ -1044,7 +1106,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
     @Override
    	public int getEmailChangedMailingId(String language) {
-   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "EmailChangedMail_" + language.toUpperCase());
+   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "EMailAddressChangedMail_" + language.toUpperCase());
    	}
 
     @Override

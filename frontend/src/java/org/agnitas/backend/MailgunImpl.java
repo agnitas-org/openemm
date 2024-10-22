@@ -161,7 +161,7 @@ public class MailgunImpl implements Mailgun {
 			doExecute(opts);
 			str = "Success: Mailout fired.";
 		} catch (CancelException e) {
-			str = e.reason ();
+			str = e.message ();
 			data.logging (Log.WARNING, "mailout", "Creation has canceled due to " + str);
 		} catch (Exception e) {
 			if (data != null) {

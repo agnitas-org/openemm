@@ -42,7 +42,7 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.service.RecipientFieldService;
 
 public class ActionOperationServiceMailImpl implements EmmActionOperation {
-	/** The logger */
+
 	private static final Logger logger = LogManager.getLogger(ActionOperationServiceMailImpl.class);
 
 	private JavaMailService javaMailService;
@@ -255,7 +255,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		if (params.containsKey(parameterName)) {
 			returnValue = params.get(parameterName);
 		} else if (params.containsKey("requestParameters")) {
-			returnValue = ((Map<String, Object>) params.get("requestParameters")).get(parameterName);
+			returnValue = ((Map<String, Object>) params.get("requestParameters")).get(parameterName); // suppress warning for this cast
 		}
 		
 		if (returnValue == null) {

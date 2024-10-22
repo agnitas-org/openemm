@@ -11,19 +11,25 @@
 package com.agnitas.emm.grid.grid.beans;
 
 public enum GridDivContainerEditMode {
-    EDITABLE_CONTAINER(0),
-    FIXED_CONTAINER(1),
-    ANCHORED_CONTAINER(2),
-    FIXED_AND_ANCHORED_CONTAINER(3);
+    EDITABLE_CONTAINER(0, "grid.div.container.mode.editable"),
+    FIXED_CONTAINER(1, "grid.div.container.mode.fixed"),
+    ANCHORED_CONTAINER(2, "grid.div.container.mode.anchored"),
+    FIXED_AND_ANCHORED_CONTAINER(3, "grid.div.container.mode.anchoredAndFixed");
 
-    private int storageCode;
+    private final int storageCode;
+    private final String messageKey;
+
+    GridDivContainerEditMode(int storageCode, String messageKey) {
+        this.storageCode = storageCode;
+        this.messageKey = messageKey;
+    }
 
     public int getStorageCode() {
         return storageCode;
     }
 
-    GridDivContainerEditMode(int storageCode) {
-        this.storageCode = storageCode;
+    public String getMessageKey() {
+        return messageKey;
     }
 
     public static GridDivContainerEditMode getDivContainerEditModeForStorageCode(int storageCode) throws Exception {

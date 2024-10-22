@@ -15,12 +15,12 @@
 <c:set var="MONTHLY_CLICKERS" value="<%= MonthlyStatType.CLICKERS.getCode() %>"/>
 <c:set var="MONTHLY_ANONYMOUS_CLICKS" value="<%= MonthlyStatType.ANONYMOUS_CLICKS.getCode() %>"/>
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden" id="stat-form" servletRelativeAction="/statistics/monthly/view.action"
+<mvc:form cssClass="tiles-container flex-column" id="stat-form" servletRelativeAction="/statistics/monthly/view.action"
           data-form="resource" modelAttribute="monthlyStatisticForm" data-editable-view="${agnEditViewKey}">
 
     <div id="filter-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="report.mailing.filter" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.filter" /></h1>
         </div>
 
         <div class="tile-body">
@@ -40,9 +40,9 @@
         </div>
     </div>
 
-    <div id="overview-tile" class="tile flex-grow-1" data-editable-tile="main">
+    <div id="overview-tile" class="tile" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title">
+            <h1 class="tile-title text-truncate">
                 <c:set var="top10MetricsValue" value="${monthlyStatisticForm.top10MetricsId}"/>
 
                 <c:choose>
@@ -54,7 +54,7 @@
                 </c:choose>
             </h1>
 
-            <div class="tile-title-controls gap-2">
+            <div class="tile-title-controls">
                 <mvc:select path="startMonth" cssClass="form-control js-select" data-select-options="dropdownAutoWidth: true, width: 'auto'">
                     <c:forEach items="${monthList}" var="month">
                         <mvc:option value="${month[0]}"><mvc:message code="${month[1]}"/></mvc:option>

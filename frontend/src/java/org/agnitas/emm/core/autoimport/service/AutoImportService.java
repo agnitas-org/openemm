@@ -10,21 +10,24 @@
 
 package org.agnitas.emm.core.autoimport.service;
 
-import java.util.Date;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
+import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.service.CsvImportExportDescription;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.bean.AutoImportWsJobState;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.service.CsvImportExportDescription;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public interface AutoImportService {
     List<Mailinglist> getMailinglists(int companyId);
@@ -74,6 +77,7 @@ public interface AutoImportService {
     void writeResultData(final AutoImport autoImport, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
 
     void saveAutoImport(AutoImport autoImport) throws Exception;
+    void updateEmail(String emailForError, int id);
 
     AutoImport copyAutoImport(Admin admin, int autoImportId) throws Exception;
 
@@ -85,8 +89,17 @@ public interface AutoImportService {
 
     void removeExpiredWsJobs();
 
-    List<AutoImport> getAutoImportsOverview(AutoImportOverviewFilter filter, Admin admin);
+    PaginatedListImpl<AutoImport> getAutoImportsOverview(AutoImportOverviewFilter filter, Admin admin);
     List<AutoImport.AutoImportType> getAvailableTypes(Admin admin);
 
     String findName(int autoImportId, int companyId);
+
+    List<AutoImport> findAllByEmailPart(String email, int companyID);
+    List<AutoImport> findAllByEmailPart(String email);
+
+    ServiceResult<List<AutoImport>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+
+    ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
+
+    ServiceResult<List<AutoImport>> changeActiveness(Set<Integer> ids, int companyID, boolean activeness);
 }

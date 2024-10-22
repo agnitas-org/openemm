@@ -81,12 +81,21 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		List<Object> params = applyOverviewFilter(filter, query);
 
 		try {
+			PaginatedListImpl list;
 			if (sortColumn.equals("company_name")) {
 				String sortClause = "ORDER BY LOWER(company_name) " + (filter.ascending() ? "ASC" : "DESC");
-				return selectPaginatedListWithSortClause(logger, query.toString(), sortClause, sortColumn, filter.ascending(), filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
+				list = selectPaginatedListWithSortClause(logger, query.toString(), sortClause, sortColumn, filter.ascending(),
+						filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
+			} else {
+				list = selectPaginatedList(logger, query.toString(), WS_USER_TBL_NAME, sortColumn, filter.ascending(), filter.getPage(),
+						filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
 			}
 
-			return selectPaginatedList(logger, query.toString(), WS_USER_TBL_NAME, sortColumn, filter.ascending(), filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
+			if (filter.isUiFiltersSet()) {
+				list.setNotFilteredFullListSize(selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl w JOIN company_tbl c ON c.company_id = w.company_id"));
+			}
+
+			return list;
 		} catch (Exception e) {
 			logger.error("Error listing webservice user", e);
 			throw new WebserviceUserDaoException("Error listing webservice user", e);
@@ -151,7 +160,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	@Override
 	public void updateUser(final WebserviceUser user) throws WebserviceUserDaoException {
 		try {
-			int count = update(logger, "UPDATE webservice_user_tbl SET active = ?, contact_info = ?, contact_email = ? WHERE username = ?", user.isActive(), user.getContact(), user.getContactEmail(), user.getUsername());
+			int count = update(logger, "UPDATE webservice_user_tbl SET active = ?, contact_email = ? WHERE username = ?", user.isActive(), user.getContactEmail(), user.getUsername());
 			if (count == 0) {
 				if (logger.isInfoEnabled()) {
 					logger.info("Unknown webservice user '" + user.getUsername() + "'");
@@ -194,8 +203,8 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		}
 
 		try {
-			update(logger, "INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email, contact_info) VALUES (?, ?, ?, ?, ?, 1, ?, ?)",
-					username, user.getCompanyID(), user.getDefaultDatasourceID(), bulkSizeLimit, user.getPasswordHash(), user.getContactEmail(), user.getContact());
+			update(logger, "INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email) VALUES (?, ?, ?, ?, ?, 1, ?)",
+					username, user.getCompanyID(), user.getDefaultDatasourceID(), bulkSizeLimit, user.getPasswordHash(), user.getContactEmail());
 		} catch(Exception e) {
 			logger.error("Error creating new webservice user", e);
 
@@ -213,7 +222,6 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 			user.setDefaultDatasourceID(resultSet.getInt("default_data_source_id"));
 			user.setUsername(resultSet.getString("username"));
 			user.setActive(resultSet.getBoolean("active"));
-			user.setContact(resultSet.getString("contact_info"));
 			user.setContactEmail(resultSet.getString("contact_email"));
 			
 			return user;

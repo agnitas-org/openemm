@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.datasource.bean;
 
+import org.agnitas.dao.SourceGroupType;
+
+import java.util.Date;
+
 public interface DataSource {
 
     int getId();
@@ -19,4 +23,16 @@ public interface DataSource {
     String getDescription();
 
     void setDescription(String description);
+
+    Date getTimestamp();
+
+    void setTimestamp(Date timestamp);
+
+    SourceGroupType getSourceGroupType();
+
+    void setSourceGroupType(SourceGroupType sourceGroupType);
+
+    void setExtraData(String extraData);
+
+    String getExtraData();
 }

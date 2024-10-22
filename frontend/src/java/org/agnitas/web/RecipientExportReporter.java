@@ -15,7 +15,6 @@ import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
@@ -46,42 +45,31 @@ public class RecipientExportReporter {
 	private final RecipientsReportService recipientsReportService;
 	private final JavaMailService javaMailService;
 	private final ComCompanyDao companyDao;
-	private final AdminService adminService;
 	private final ConfigService configService;
 	private final MailinglistService mailinglistService;
 	private final ComTargetDao targetDao;
 
-	public RecipientExportReporter(RecipientsReportService recipientsReportService, JavaMailService javaMailService, ComCompanyDao companyDao, AdminService adminService,
+	public RecipientExportReporter(RecipientsReportService recipientsReportService, JavaMailService javaMailService, ComCompanyDao companyDao,
 								   ConfigService configService, MailinglistService mailinglistService, ComTargetDao targetDao) {
 
 		this.recipientsReportService = recipientsReportService;
 		this.javaMailService = javaMailService;
 		this.companyDao = companyDao;
-		this.adminService = adminService;
 		this.configService = configService;
 		this.mailinglistService = mailinglistService;
 		this.targetDao = targetDao;
 	}
 
-	/**
-	 * Send a report email about this export to the executing GUI-admin or the creator of the autoexport
-	 */
+    /**
+     * Send a report email about this export to the executing GUI-admin or the creator of the autoexport
+     */
 	public void sendExportReportMail(RecipientExportWorker exportWorker) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
 		
 		String additionalContent = "";
 		int companyID = exportWorker.getExportProfile().getCompanyID();
 		Company comp = companyDao.getCompany(companyID);
-		if (comp.getExportNotifyAdmin() > 0) {
-			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), companyID);
 
-			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
-				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
-			} else {
-				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + companyID + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
-			}
-		}
 		
 		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
 			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
@@ -119,13 +107,14 @@ public class RecipientExportReporter {
 		}
 	}
 
-	private String generateLocalizedExportTextReport(RecipientExportWorker exportWorker) throws Exception {
+	private String generateLocalizedExportTextReport(RecipientExportWorker exportWorker) {
 		Locale locale = exportWorker.getExportProfile().getLocale();
 		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + exportWorker.getExportProfile().getShortname() + "\":\n\n";
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", locale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
-		
-		Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+
+        int companyId = exportWorker.getExportProfile().getCompanyID();
+        Company company = companyDao.getCompany(companyId);
 		reportContent += I18nString.getLocaleString("Company", locale) + ": " + (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")") + "\n";
 		
 		if (exportWorker.getAutoExport() != null) {
@@ -189,15 +178,12 @@ public class RecipientExportReporter {
 		if (StringUtils.isNotBlank(exportWorker.getExportProfile().getMailinglists())) {
 			profileContent += I18nString.getLocaleString("Mailinglists", locale) + ": " + StringUtils.join(AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getMailinglists())), ", ") + "\n";
 		}
-		
-		if (exportWorker.getExportProfile().getMailinglistID() > 0) {
-			profileContent += I18nString.getLocaleString("Mailinglist", locale) + ": " + mailinglistService.getMailinglistName(exportWorker.getExportProfile().getMailinglistID(), exportWorker.getExportProfile().getCompanyID()) + " (ID: " + Integer.toString(exportWorker.getExportProfile().getMailinglistID()) + ")" + "\n";
-		} else {
-			profileContent += I18nString.getLocaleString("Mailinglist", locale) + ": " + I18nString.getLocaleString(CommonKeys.ALL_MAILINGLISTS, locale);
-		}
-		
+        
+		Set<Integer> mailinglistIds = exportWorker.getExportProfile().getMailinglistIds();
+		profileContent += I18nString.getLocaleString("Mailinglists", locale) + ": " + mailinglistIds.stream().map(id -> mailinglistToStr(id, companyId, locale)).collect(Collectors.joining(", ")) + "\n";
+
 		if (exportWorker.getExportProfile().getTargetID() > 0) {
-			profileContent += I18nString.getLocaleString("Target", locale) + ": " + targetDao.getTargetName(exportWorker.getExportProfile().getTargetID(), exportWorker.getExportProfile().getCompanyID(), false) + " (ID: " + Integer.toString(exportWorker.getExportProfile().getTargetID()) + ")" + "\n";
+			profileContent += I18nString.getLocaleString("Target", locale) + ": " + targetDao.getTargetName(exportWorker.getExportProfile().getTargetID(), companyId, false) + " (ID: " + exportWorker.getExportProfile().getTargetID() + ")" + "\n";
 		} else {
 			profileContent += I18nString.getLocaleString("Target", locale) + ": " + I18nString.getLocaleString("statistic.all_subscribers", locale);
 		}
@@ -276,7 +262,8 @@ public class RecipientExportReporter {
 		
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
 
-		Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+        int companyId = exportWorker.getExportProfile().getCompanyID();
+        Company company = companyDao.getCompany(companyId);
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")")));
 		
 		if (exportWorker.getAutoExport() != null) {
@@ -343,18 +330,15 @@ public class RecipientExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("Mailinglists", locale), false));
 			for (String selectedMailinglistIDString : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getMailinglists()))) {
 				int selectedMailinglistID = Integer.parseInt(selectedMailinglistIDString);
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", mailinglistService.getMailinglistName(selectedMailinglistID, exportWorker.getExportProfile().getCompanyID()) + " (ID: " + Integer.toString(selectedMailinglistID) + ")"));
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", mailinglistService.getMailinglistName(selectedMailinglistID, companyId) + " (ID: " + selectedMailinglistID + ")"));
 			}
 		}
-		
-		if (exportWorker.getExportProfile().getMailinglistID() > 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mailinglist", locale), mailinglistService.getMailinglistName(exportWorker.getExportProfile().getMailinglistID(), exportWorker.getExportProfile().getCompanyID()) + " (ID: " + Integer.toString(exportWorker.getExportProfile().getMailinglistID()) + ")"));
-		} else {
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mailinglist", locale), I18nString.getLocaleString(CommonKeys.ALL_MAILINGLISTS, locale)));
-		}
-		
+
+        Set<Integer> mailinglistIds = exportWorker.getExportProfile().getMailinglistIds();
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mailinglists", locale), mailinglistIds.stream().map(id -> mailinglistToStr(id, companyId, locale)).collect(Collectors.joining(", "))));
+
 		if (exportWorker.getExportProfile().getTargetID() > 0) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Target", locale), targetDao.getTargetName(exportWorker.getExportProfile().getTargetID(), exportWorker.getExportProfile().getCompanyID(), false) + " (ID: " + Integer.toString(exportWorker.getExportProfile().getTargetID()) + ")"));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Target", locale), targetDao.getTargetName(exportWorker.getExportProfile().getTargetID(), companyId, false) + " (ID: " + exportWorker.getExportProfile().getTargetID() + ")"));
 		} else {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Target", locale), I18nString.getLocaleString("statistic.all_subscribers", locale)));
 		}
@@ -377,22 +361,19 @@ public class RecipientExportReporter {
 		return htmlContent.toString();
 	}
 
-	public void sendExportErrorMail(RecipientExportWorker exportWorker) throws Exception {
+	private String mailinglistToStr(int mailinglistId, int companyId, Locale locale) {
+        if (mailinglistId == 0) {
+            return I18nString.getLocaleString(CommonKeys.ALL_MAILINGLISTS, locale);
+        }
+        return mailinglistService.getMailinglistName(mailinglistId, companyId) + " (ID: " + mailinglistId + ")";
+    }
+    
+	public void sendExportErrorMail(RecipientExportWorker exportWorker) {
 		Set<String> emailRecipients = new HashSet<>();
 
 		String additionalContent = "";
 		int companyID = exportWorker.getExportProfile().getCompanyID();
 		Company comp = companyDao.getCompany(companyID);
-		if (comp.getExportNotifyAdmin() > 0) {
-			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), companyID);
-
-			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
-				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
-			} else {
-				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + companyID + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
-			}
-		}
 
 		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
 			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
@@ -445,30 +426,26 @@ public class RecipientExportReporter {
 			fileToShow = exportWorker.getRemoteFile().getRemoteFilePath();
 		} else {
 			//Local exported File
-			fileToShow = exportWorker.getExportFile();
+			fileToShow = new File(exportWorker.getExportFile()).getName();
 		}
 
-		if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, exportWorker.getExportProfile().getCompanyID())) {
-			boolean isAutoExport = exportWorker.getAutoExport() != null;
+		boolean isAutoExport = exportWorker.getAutoExport() != null;
 
-			RecipientsReport report = new RecipientsReport();
-			report.setFilename(fileToShow);
-			report.setReportDate(exportWorker.getEndTime());
-			report.setIsError(isError);
+		RecipientsReport report = new RecipientsReport();
+		report.setFilename(fileToShow);
+		report.setReportDate(exportWorker.getEndTime());
+		report.setIsError(isError);
 
-			report.setEntityId(isAutoExport
-					? exportWorker.getAutoExport().getAutoExportId()
-					: exportWorker.getExportProfile().getId()
-			);
+		report.setEntityId(isAutoExport
+				? exportWorker.getAutoExport().getAutoExportId()
+				: exportWorker.getExportProfile().getId()
+		);
 
-			report.setEntityType(RecipientsReport.EntityType.EXPORT);
-			report.setEntityExecution(isAutoExport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
-			report.setEntityData(RecipientsReport.EntityData.PROFILE);
+		report.setEntityType(RecipientsReport.EntityType.EXPORT);
+		report.setEntityExecution(isAutoExport ? RecipientsReport.EntityExecution.AUTOMATIC : RecipientsReport.EntityExecution.MANUAL);
+		report.setEntityData(RecipientsReport.EntityData.PROFILE);
 
-			recipientsReportService.saveNewReport(admin, exportWorker.getExportProfile().getCompanyID(), report, generateLocalizedExportHtmlReport(exportWorker));
-		} else {
-			recipientsReportService.createAndSaveExportReport(exportWorker.getExportProfile().getCompanyID(), admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker), isError);
-		}
+		recipientsReportService.saveNewReport(admin, exportWorker.getExportProfile().getCompanyID(), report, generateLocalizedExportHtmlReport(exportWorker));
 	}
 }
 

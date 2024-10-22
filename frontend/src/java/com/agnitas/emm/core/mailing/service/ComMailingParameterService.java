@@ -10,19 +10,20 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import java.util.List;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
+import java.util.List;
+import java.util.Set;
+
 public interface ComMailingParameterService {
-	List<ComMailingParameter> getAllParameters(int companyID, final Admin admin);
 
 	List<ComMailingParameter> getMailingParameters(int companyId, int mailingId);
 
-	List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId, DateRange changeDate);
+	PaginatedListImpl<ComMailingParameter> getParametersBySearchQuery(MailingParamOverviewFilter filter, int companyID);
 
 	ComMailingParameter getParameter(int mailingInfoID, final Admin admin);
 
@@ -37,4 +38,8 @@ public interface ComMailingParameterService {
 	boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId);
 
 	boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId, List<UserAction> userActions);
+
+	List<String> getNames(Set<Integer> ids, Admin admin);
+
+	void delete(Set<Integer> ids, Admin admin);
 }

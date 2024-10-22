@@ -1,0 +1,14 @@
+
+#profileFieldRules, #decisionProfileFieldRules{
+  @include flex-column($gap-md);
+  @include border;
+  padding: $gap-sm;
+}
+
+#profileFieldAddedRules, #decisionProfileFieldAddedRules {
+  @include flex-column($gap-md);
+}
+
+#profileFieldRuleAdd, #decisionProfileFieldRuleAdd {
+  @include flex-row($gap-sm);
+}

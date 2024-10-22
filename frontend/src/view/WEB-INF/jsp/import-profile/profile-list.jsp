@@ -45,6 +45,10 @@
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
                             </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
+                            </label>
                         </li>
                         <li class="divider"></li>
                         <li>
@@ -62,7 +66,7 @@
         <div class="tile-content">
             <div class="table-wrapper">
                 <display:table class="table table-bordered table-striped table-hover js-table" id="profile" name="profiles"
-                        pagesize="${form.numberOfRows}" requestURI="/import-profile/list.action" excludedParams="*" defaultsort="1">
+                        pagesize="${form.numberOfRows}" requestURI="/import-profile/list.action" excludedParams="*">
 
                     <display:column headerClass="js-table-sort" sortProperty="name" property="name" titleKey="import.ImportProfile" sortable="true" />
                     <display:column titleKey="recipient.importprofile.defaultprofile">

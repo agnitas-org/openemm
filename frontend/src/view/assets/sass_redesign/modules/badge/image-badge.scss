@@ -1,0 +1,32 @@
+
+/*doc
+---
+title: Image badges
+name: badges_13_image
+parent: badges_03_special
+---
+
+The square badge can contain any image inside. To do that you should use class `.image-badge`.
+
+```htmlexample
+<span class="image-badge">
+  <img src="/assets/core/images/facelift/errors_error-500.svg" />
+</span>
+
+<span class="image-badge text-bg-danger">
+  <img src="/assets/core/images/facelift/agnitas-emm-logo.svg" />
+</span>
+```
+
+*/
+
+.image-badge {
+  @extend .square-badge;
+  @include size($status-badge-size-lg);
+  border-radius: $border-radius;
+  background-color: $primary;
+
+  img {
+    @include size($font-size-md);
+  }
+}

@@ -10,7 +10,9 @@
 
 package com.agnitas.emm.core.user.form;
 
-public class SupervisorGrantLoginPermissionForm {
+import org.agnitas.web.forms.PaginationForm;
+
+public class SupervisorGrantLoginPermissionForm extends PaginationForm {
 
     private int departmentID;
     private String expireDateLocalized;

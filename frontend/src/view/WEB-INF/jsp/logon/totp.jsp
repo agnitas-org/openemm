@@ -51,7 +51,7 @@
 							<div class="col-md-3">
 								<div class="form-group">
 									<div class="col-md-12">
-										<p style="font-size: 16px; font-weight: bold;"><mvc:message code="totp.scanCode" /></p>
+										<p style="font-size: 16px; font-weight: bold;"><mvc:message code="totp.enterCode" /></p>
 									</div>
 								</div>
 								<div class="col-sm-8 col-md-12 col-lg-8">

@@ -10,8 +10,15 @@
 
 package com.agnitas.service.impl;
 
-import java.util.Objects;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.emm.core.datasource.bean.DataSource;
+import com.agnitas.emm.core.datasource.enums.DataSourceType;
+import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
+import com.agnitas.service.DataSourceService;
+import com.agnitas.service.FailedCreateDataSourceException;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.impl.DatasourceDescriptionImpl;
 import org.agnitas.dao.SourceGroupType;
@@ -20,14 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.emm.core.datasource.bean.DataSource;
-import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
-import com.agnitas.service.DataSourceService;
-import com.agnitas.service.FailedCreateDataSourceException;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import java.util.Objects;
 
 public class DataSourceServiceImpl implements DataSourceService {
 	
@@ -77,12 +77,18 @@ public class DataSourceServiceImpl implements DataSourceService {
 	}
 	
     @Override
-    public JSONArray getDataSourcesJson(final int companyId) {
+    public JSONArray getDataSourcesJson(Admin admin) {
         JSONArray jsonArray = new JSONArray();
-        for (DataSource dataSource : datasourceDescriptionDao.getDataSources(companyId)) {
+        for (DataSource dataSource : datasourceDescriptionDao.getDataSources(admin.getCompanyID())) {
             JSONObject entry = new JSONObject();
             entry.put("id", dataSource.getId());
             entry.put("description", dataSource.getDescription());
+			if (admin.isRedesignedUiUsed()) {
+				entry.put("timestamp", dataSource.getTimestamp().getTime());
+				entry.put("type", DataSourceType.findBySourceGroupType(dataSource.getSourceGroupType()).orElse(null));
+				entry.put("sourceGroupType", dataSource.getSourceGroupType());
+				entry.put("extraData", dataSource.getExtraData());
+			}
             jsonArray.add(entry);
         }
         return jsonArray;
@@ -92,8 +98,12 @@ public class DataSourceServiceImpl implements DataSourceService {
     public DatasourceDescription getDatasourceDescription(int datasourceId, int companyId) {
 	    return datasourceDescriptionDao.getDatasourceDescription(datasourceId, companyId);
     }
-    
-	
+
+	@Override
+	public DatasourceDescription getDatasourceDescription(int datasourceId) {
+		return datasourceDescriptionDao.getDatasourceDescription(datasourceId);
+	}
+
 	private int getDataSourceId(int companyId, SourceGroupType sourceGroupType, String dsDescription) {
 		DatasourceDescription dataSource = datasourceDescriptionDao.getByDescription(sourceGroupType, companyId, dsDescription);
 		

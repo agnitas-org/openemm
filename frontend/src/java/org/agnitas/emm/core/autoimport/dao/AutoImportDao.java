@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.service.AutoImportJobStatus;
@@ -52,9 +53,9 @@ public interface AutoImportDao {
 	void announceEnd(AutoImport autoImport) throws Exception;
 
 	int resetAutoImportsForCurrentHost();
-	
-	List<AutoImport> getAutoImportsOverviewFiltered(AutoImportOverviewFilter filter, int companyId, boolean restrictContentSourceType, boolean showReferenceTableImports);
-	
+
+	PaginatedListImpl<AutoImport> getAutoImportsOverview(AutoImportOverviewFilter filter, int companyId, boolean restrictContentSourceType, boolean showReferenceTableImports);
+
 	int getRunningAutoImportsByHost(String hostname);
 
 	void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
@@ -104,4 +105,9 @@ public interface AutoImportDao {
 	List<Integer> getOutdatedAutoImports(int companyID, Date autoImportExportExpireDate);
 
 	List<AutoImportLight> getListOfAllowedAutoImportsForWorkflow(int workflowId, int companyId);
+
+    List<AutoImport> findAllByEmailPart(String email, int companyID);
+    List<AutoImport> findAllByEmailPart(String email);
+
+    void updateEmails(String emailForError, int id);
 }

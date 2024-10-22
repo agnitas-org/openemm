@@ -12,19 +12,19 @@ package com.agnitas.emm.core.target.eql.emm.resolver;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;
 
 public class EmmMailingTypeResolverFactory {
 
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	public MailingTypeResolver newResolver() {
 		return new EmmMailingTypeResolverImpl(mailingDao);
 	}
 	
 	@Required
-	public void setMailingDao(ComMailingDao dao) {
+	public void setMailingDao(MailingDao dao) {
 		this.mailingDao = dao;
 	}
 	

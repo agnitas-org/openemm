@@ -155,8 +155,7 @@
                         "rows-count": ${mailingOverviewForm.numberOfRows},
                         "fields": ${emm:toJson(mailingOverviewForm.selectedFields)},
                         "mailing-types": ${emm:toJson(mailingOverviewForm.mailingTypes)},
-                        "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)},
-                        "use-recycle-bin": ${emm:toJson(mailingOverviewForm.useRecycleBin)}
+                        "media-types": ${emm:toJson(mailingOverviewForm.mediaTypes)}
                     }
                 }
             </script>
@@ -249,7 +248,7 @@
                             <li>
                                 <label class="label">
                                     <mvc:checkbox path="useRecycleBin" cssClass="js-form-change"/>
-                                    <mvc:message code="mailing.deleted" />
+                                    <mvc:message code="default.list.deleted.show" />
                                 </label>
                             </li>
                             <li class="divider"></li>
@@ -270,6 +269,10 @@
                             <label class="label">
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
                             </label>
                         </li>
                         <li class="divider"></li>
@@ -703,6 +706,10 @@
                         <c:forEach var="selectedField" items="${mailingOverviewForm.selectedFields}">
                             <c:forEach var="field" items="${ADDITIONAL_FIELDS}">
                                 <c:if test="${selectedField == field.sortColumn}">
+                                    <c:set var="recipientHelp">
+                                        <mvc:message code="${field.messageKey}"/>
+                                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/NumberOfRecipients.xml" tabindex="-1" type="button"></button>
+                                    </c:set>
                                     <c:choose>
                                         <c:when test="${field == 'RECIPIENTS_COUNT'}">
                                             <%-- Replace 0 values with "n/a" for all the mailings but normal --%>
@@ -710,7 +717,7 @@
                                                 <c:set target="${mailing}" property="recipientsCount"><mvc:message code="NotAvailableShort"/></c:set>
                                             </c:if>
                                             <display:column property="recipientsCount"
-                                                            titleKey="${field.messageKey}"
+                                                            title="${recipientHelp}"
                                                             sortable="true"
                                                             sortProperty="${field.sortColumn}"
                                                             headerClass="js-table-sort"/>

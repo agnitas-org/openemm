@@ -1,10 +1,10 @@
 <script id="modal-edit-blacklisted-recipient" type="text/x-mustache-template">
     <mvc:form servletRelativeAction="/recipients/blacklist/update.action" data-form="resource" cssClass="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="recipient.RecipientEdit"/></h1>
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary flex-grow-1" data-action="save-edit">
+                    <button type="button" class="btn btn-primary" data-action="save-edit">
                         <i class="icon icon-save"></i>
                         <span class="text"><mvc:message code="button.Save"/></span>
                     </button>

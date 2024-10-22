@@ -10,7 +10,7 @@
 <script id="dashboard-tile-workflows" type="text/x-mustache-template">
     <div class="tile draggable-tile scheduled-items">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
         </div>
         <div class="tile-body grid js-scrollable" style="--bs-columns: 1">
             <c:choose>
@@ -20,7 +20,7 @@
 
                         <a class="list-item overflow-hidden" href="<c:url value="/workflow/${workflow.id}/view.action" />">
                             <div class="item__info-container">
-                                <span class="status-badge small campaign.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
+                                <span class="status-badge campaign.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
                                 <span class="item__name-label text-truncate">${workflow.name}</span>
                             </div>
 

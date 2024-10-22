@@ -21,7 +21,7 @@ import com.agnitas.emm.core.report.bean.RecipientEntity;
 import com.agnitas.emm.core.report.bean.impl.RecipientEntityImpl;
 import com.agnitas.emm.core.report.enums.fields.RecipientFields;
 import com.agnitas.emm.core.report.mapper.Mapper;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 @Component
 public class RecipientEntityMapper implements Mapper<RecipientEntity> {

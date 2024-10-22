@@ -10,12 +10,11 @@
 
 package com.agnitas.emm.core.target.dto;
 
-import org.agnitas.beans.RowsCountWebStorageEntry;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.agnitas.beans.SortingWebStorageEntry;
 
-// TODO: replace with RowsCountWebStorageEntry after EMMGUI-714 will be finished and old design will removed
-public class TargetOverviewWebStorageEntry extends RowsCountWebStorageEntry {
+// TODO: replace with SortingWebStorageEntry after EMMGUI-714 will be finished and old design will removed
+public class TargetOverviewWebStorageEntry extends SortingWebStorageEntry {
     @JsonProperty("show-world-targets")
     private boolean showWorldDelivery = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
 

@@ -33,8 +33,8 @@ import com.agnitas.dao.ComDkimDao;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class ComDkimDaoImpl extends BaseDaoImpl implements ComDkimDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComDkimDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ComDkimDaoImpl.class);
 	
 	private ConfigService configService;
 

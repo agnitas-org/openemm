@@ -1,5 +1,7 @@
 package com.agnitas.emm.core.profilefields.web;
 
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
 import com.agnitas.emm.core.service.RecipientFieldService;
@@ -19,7 +21,7 @@ import com.agnitas.emm.core.profilefields.form.ProfileFieldFormSearchParams;
 @PermissionMapping("profiledb")
 @SessionAttributes(types = ProfileFieldFormSearchParams.class)
 public class ProfileFieldsControllerOpenemm extends ProfileFieldsController {
-    public ProfileFieldsControllerOpenemm(RecipientFieldService recipientFieldService, WebStorage webStorage, ConfigService configService, ProfileFieldValidationService validationService, UserActivityLogService userActivityLogService, ObjectUsageService objectUsageService, ComWorkflowService workflowService, ComTargetService targetService) {
-        super(recipientFieldService, webStorage, configService, validationService, userActivityLogService, objectUsageService, workflowService, targetService);
+    public ProfileFieldsControllerOpenemm(RecipientFieldService recipientFieldService, WebStorage webStorage, ConfigService configService, ProfileFieldValidationService validationService, UserActivityLogService userActivityLogService, ObjectUsageService objectUsageService, ComWorkflowService workflowService, ComTargetService targetService, MailinglistApprovalService mailinglistApprovalService, BirtStatisticsService birtStatisticsService) {
+        super(recipientFieldService, webStorage, configService, validationService, userActivityLogService, objectUsageService, workflowService, targetService, mailinglistApprovalService, birtStatisticsService);
     }
 }

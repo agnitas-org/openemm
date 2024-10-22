@@ -42,6 +42,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
@@ -267,7 +268,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		if (profileField == null) {
 			throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName);
 		} else {
-			for (String standardField : RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames()) {
+			for (String standardField : RecipientStandardField.getAllRecipientStandardFieldColumnNames()) {
 				if (standardField.trim().equalsIgnoreCase(requestedProfilefieldName)) {
 					throw new RestfulClientException("Invalid requested profilefield name: Cannot remove standard columns");
 				}
@@ -331,7 +332,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		profileField.setNullable(true);
 		profileField.setColumnName(requestedProfilefieldName);
 		
-		if (RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
+		if (RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
 			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumnName());
 		}
 		
@@ -416,7 +417,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			}
 		}
 
-		if (RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
+		if (RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
 			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumnName());
 		}
 		
@@ -875,7 +876,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
     		}
 
     		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyID);
-    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
+    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
 			int currentFieldCount = companySpecificFields.size();
 			
 			if (currentFieldCount < maxFields) {

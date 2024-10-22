@@ -1,7 +1,6 @@
 
 #icon-titles-container {
-  width: 100%;
-  height: 100%;
+  @include size(100%);
   z-index: 5; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_TITLES_CONTAINER */
 }
 
@@ -14,11 +13,10 @@
   line-height: 18px;
   max-height: 118px;  /* 6 lines of text + padding */
   text-align: left;
-  color: var(--label-color);
+  color: $campaign-icon-title-color;
   border-radius: 4px;
   word-break: break-word;
   overflow: hidden;
-  background-color: white;
 
   &.expandable::after {
     content: "";
@@ -28,8 +26,14 @@
     width: 100%;
     height: 41px;  /* 2 lines of text + bottom padding */
     background: linear-gradient(to top,
-            rgba(255, 255, 255, 1) 0%,
-            rgba(255, 255, 255, 0) 80%
+            var(--main-bg-color) 0%,
+            transparent          80%
     );
+  }
+
+  &.expanded {
+    max-height: none;
+    color: $campaign-focused-icon-color;
+    z-index: 19 !important; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_TITLE_HOVER */
   }
 }

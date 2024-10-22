@@ -10,33 +10,6 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
@@ -50,11 +23,12 @@ import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.enums.ContentGenerationTonality;
-import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
 import com.agnitas.emm.core.mailingcontent.form.FrameContentForm;
+import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
@@ -66,17 +40,44 @@ import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-
 import jakarta.servlet.http.HttpSession;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.UserMessageException;
+import org.agnitas.util.AgnUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class MailingContentController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingContentController.class);
 
     protected final MailingService mailingService;
+    protected final MailingContentService mailingContentService;
+    protected final MediaTypesService mediaTypesService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final MaildropService maildropService;
-    protected final MailingContentService mailingContentService;
     private final ComTargetService targetService;
     private final UserActivityLogService userActivityLogService;
     private final ProfileFieldDao profileFieldDao;
@@ -94,7 +95,7 @@ public class MailingContentController implements XssCheckAware {
                                     UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
                                     ComMailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
                                     AgnTagService agnTagService, PreviewImageService previewImageService, DynTagChainValidator dynTagChainValidator,
-                                    ExtendedConversionService extendedConversionService) {
+                                    ExtendedConversionService extendedConversionService, MediaTypesService mediaTypesService) {
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.mailingService = mailingService;
         this.maildropService = maildropService;
@@ -110,6 +111,7 @@ public class MailingContentController implements XssCheckAware {
         this.previewImageService = previewImageService;
         this.dynTagChainValidator = dynTagChainValidator;
         this.extendedConversionService = extendedConversionService;
+        this.mediaTypesService = mediaTypesService;
     }
 
     @GetMapping("/{mailingId:\\d+}/view.action")
@@ -140,6 +142,11 @@ public class MailingContentController implements XssCheckAware {
     @PostMapping("/save.action")
     public @ResponseBody
     DataResponseDto<DynTagDto> save(Admin admin, HttpSession session, @RequestBody DynTagDto dynTagDto, Popups popups) {
+        if (mailingService.isSettingsReadonly(admin, dynTagDto.getMailingId())) {
+            popups.alert(ERROR_MSG);
+            return new DataResponseDto<>(popups, false);
+        }
+
         if (!dynTagChainValidator.validate(dynTagDto, popups, admin)) {
             return new DataResponseDto<>(popups, false);
         }
@@ -158,6 +165,9 @@ public class MailingContentController implements XssCheckAware {
             userActions.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
             logger.info(String.format("Content of mailing was changed. mailing-name : %s, mailing-id: %d",
                     mailing.getDescription(), mailing.getId()));
+        } catch (UserMessageException e) {
+            popups.alert(e.getErrorMessageKey(), e.getAdditionalErrorData());
+            return new DataResponseDto<>(popups, false);
         } catch (Exception e) {
             logger.error(String.format("Error during building dependencies. mailing-name : %s, mailing-id: %d",
                     mailing.getDescription(), mailing.getId()), e);
@@ -176,6 +186,10 @@ public class MailingContentController implements XssCheckAware {
     @PostMapping("/{mailingId:\\d+}/save.action")
     public String saveRedesigned(@PathVariable int mailingId, Admin admin, HttpSession session,
                                  @RequestBody List<DynTagDto> dynTags, Popups popups) {
+        if (mailingService.isSettingsReadonly(admin, mailingId)) {
+            throw new UnsupportedOperationException();
+        }
+
         mailingContentService.saveDynTags(mailingId, dynTags, admin, popups);
         if (popups.hasAlertPopups()) {
             return MESSAGES_VIEW;
@@ -189,7 +203,7 @@ public class MailingContentController implements XssCheckAware {
     public String confirmGenerateTextFromHtml(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups, Model model) {
         if (!isMailingEditable(admin, mailingId)) {
             popups.alert("status_changed");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         model.addAttribute("mailingId", mailingId);
@@ -204,9 +218,9 @@ public class MailingContentController implements XssCheckAware {
             popups.alert("status_changed");
         } else {
             if (generateTextContent(admin, mailingId)) {
-                popups.success("default.changes_saved");
+                popups.success(CHANGES_SAVED_MSG);
             } else {
-                popups.alert("Error");
+                popups.alert(ERROR_MSG);
             }
         }
 
@@ -236,10 +250,16 @@ public class MailingContentController implements XssCheckAware {
         boolean isMailingExclusiveLockingAcquired = tryToLock(mailingId, admin, model);
         boolean isTextGenerationEnabled = !mailing.isIsTemplate() && mailingContentService.isGenerationAvailable(mailing);
         boolean isWorldMailingSend = maildropService.isActiveMailing(mailingId, admin.getCompanyID());
-        boolean isLimitedRecipientOverview = isWorldMailingSend &&
-                !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
 
-        model.addAttribute("limitedRecipientOverview", isLimitedRecipientOverview);
+        if (isUiRedesign(admin)) {
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            boolean isLimitedRecipientOverview = isWorldMailingSend &&
+                    !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
+
+            model.addAttribute("limitedRecipientOverview", isLimitedRecipientOverview);
+        }
+
         model.addAttribute("isWorldMailingSend", isWorldMailingSend);
         model.addAttribute("isTextGenerationEnabled", isTextGenerationEnabled);
         model.addAttribute("isMailingEditable", isMailingEditable(admin, mailingId));
@@ -248,31 +268,20 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("isContentGenerationAllowed", false);
         if (isUiRedesign(admin)) {
             model.addAttribute("mailFormat", mailing.getEmailParam().getMailFormat());
-            model.addAttribute("isSettingsReadonly", isSettingsReadonly(admin));
+            model.addAttribute("isSettingsReadonly", mailingService.isSettingsReadonly(admin, mailing.isIsTemplate()));
             model.addAttribute("MAILING_EDITABLE", isMailingEditable(mailingId, admin));
             model.addAttribute("showDynamicTemplateToggle", mailingService.isDynamicTemplateCheckboxVisible(mailing));
-            model.addAttribute("isEmailMediaTypeActive", getActiveMediaTypes(mailing).contains(MediaTypes.EMAIL));
+            model.addAttribute("isEmailMediaTypeActive", mediaTypesService.getActiveMediaTypes(mailing).contains(MediaTypes.EMAIL));
             model.addAttribute("frameContentForm", getFrameContentForm(mailing));
         }
-    }
-
-    protected static List<MediaTypes> getActiveMediaTypes(Mailing mailing) {
-        return mailing.getMediatypes().entrySet().stream()
-                .filter(entry -> entry.getValue().getStatus() == MediaTypeStatus.Active.getCode())
-                .map(entry -> MediaTypes.getMediaTypeForCode(entry.getKey()))
-                .collect(Collectors.toList());
     }
 
     private boolean isMailingEditable(int mailingId, Admin admin) {
         return !maildropService.isActiveMailing(mailingId, admin.getCompanyID());
     }
 
-    private boolean isSettingsReadonly(Admin admin) {
-        return admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY);
-    }
-
     protected boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }    
 
     private void prepareForm(Mailing mailing, MailingContentForm form, Admin admin) {
@@ -312,7 +321,7 @@ public class MailingContentController implements XssCheckAware {
 
     private void loadTargets(Admin admin, Model model) {
         boolean showContentBlockTargetGroupsOnly = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
-        model.addAttribute("targets", targetService.getTargetLights(admin, false, true, false, showContentBlockTargetGroupsOnly));
+        model.addAttribute("targets", targetService.getTargetLights(admin, true, false, showContentBlockTargetGroupsOnly));
     }
 
     private void loadDynTags(Mailing mailing, MailingContentForm form) {
@@ -352,13 +361,13 @@ public class MailingContentController implements XssCheckAware {
     }
 
     protected boolean isMailingEditable(Admin admin, int mailingId) {
-        return !admin.permissionAllowed(Permission.MAILING_CONTENT_READONLY)
+        return !mailingService.isSettingsReadonly(admin, mailingId)
                 && mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
     }
 
     private void loadTargetGroups(MailingContentForm form, Admin admin) {
         boolean showContentBlockTargetGroupsOnly = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
-        List<TargetLight> list = targetService.getTargetLights(admin, false, true, false, showContentBlockTargetGroupsOnly);
+        List<TargetLight> list = targetService.getTargetLights(admin,  true, false, showContentBlockTargetGroupsOnly);
 
         form.setAvailableTargetGroups(list);
     }

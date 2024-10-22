@@ -10,16 +10,10 @@
 
 package com.agnitas.emm.core.recipientsreport.dao.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
@@ -33,8 +27,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
+import java.io.File;
+import java.io.FileInputStream;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements RecipientsReportDao {
 
@@ -85,46 +85,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public void createReport(int companyId, RecipientsReport report, String fileContent) {
-		if (report.getReportDate() == null) {
-			report.setReportDate(new Date());
-        }
-		
-        if (isOracleDB()) {
-            int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            update(logger, sql,
-                reportId,
-                report.getReportDate(),
-                report.getFilename(),
-                report.getDatasourceId(),
-                report.getAdminId(),
-                report.getType().name(),
-                companyId,
-                AgnUtils.normalizeTextLineBreaks(fileContent),
-                report.getFileId(),
-                report.getAutoImportID(),
-                report.isError() ? 1 : 0);
-            report.setId(reportId);
-        } else {
-        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            int newId = insertIntoAutoincrementMysqlTable(logger, "recipients_report_id", sql,
-                report.getReportDate(),
-                report.getFilename(),
-                report.getDatasourceId(),
-                report.getAdminId(),
-                report.getType().name(),
-                companyId,
-                AgnUtils.normalizeTextLineBreaks(fileContent),
-                report.getFileId(),
-                report.getAutoImportID(),
-                report.isError() ? 1 : 0);
-            report.setId(newId);
-        }
-    }
-
-    @Override
-    public void createNewReport(int companyId, RecipientsReport report, String fileContent) throws Exception {
+    public void createNewReport(int companyId, RecipientsReport report, String fileContent) {
         if (report.getReportDate() == null) {
             report.setReportDate(new Date());
         }
@@ -160,44 +121,6 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         }
 
         report.setId(reportId);
-    }
-
-    @Override
-    public void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception {
-        if (isOracleDB()) {
-            int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            update(logger, sql,
-                reportId,
-                report.getReportDate(),
-                report.getFilename(),
-                report.getDatasourceId(),
-                report.getAdminId(),
-                report.getType().name(),
-                companyId,
-                textContent,
-                report.getFileId(),
-                report.getAutoImportID(),
-                report.isError() ? 1 : 0);
-            report.setId(reportId);
-        } else {
-        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            int newId = insertIntoAutoincrementMysqlTable(logger, "recipients_report_id", sql,
-                report.getReportDate(),
-                report.getFilename(),
-                report.getDatasourceId(),
-                report.getAdminId(),
-                report.getType().name(),
-                companyId,
-                textContent,
-                report.getFileId(),
-                report.getAutoImportID(),
-                report.isError() ? 1 : 0);
-            report.setId(newId);
-        }
-        try (FileInputStream inputStream = new FileInputStream(temporaryDataFile)) {
-        	updateBlob(logger, "UPDATE recipients_report_tbl SET content = ? WHERE recipients_report_id = ?", inputStream, report.getId());
-        }
     }
 
     @Override
@@ -269,12 +192,25 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
     
     @Override
-    public RecipientsReport.RecipientReportType getReportType(int companyId, int reportId) {
+    public RecipientsReport.EntityType getReportType(int companyId, int reportId) {
+        RecipientsReport.EntityType entityType = IntEnum.fromId(RecipientsReport.EntityType.class, selectInt(logger,
+                "SELECT entity_type FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?",
+                companyId, reportId));
+        if (entityType != null && entityType != RecipientsReport.EntityType.UNKNOWN) {
+            return entityType;
+        }
         String typeValue = selectObjectDefaultNull(logger,
-                "SELECT type FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id "
-                	+ "WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
+                "SELECT type FROM recipients_report_tbl ir WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
                 StringRowMapper.INSTANCE, companyId, reportId);
-        return typeValue != null ? RecipientsReport.RecipientReportType.valueOf(typeValue) : null;
+        
+        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (RecipientsReport.RecipientReportType.EXPORT_REPORT.name().equalsIgnoreCase(typeValue)) {
+            return RecipientsReport.EntityType.EXPORT;
+        }
+        if (RecipientsReport.RecipientReportType.IMPORT_REPORT.name().equalsIgnoreCase(typeValue)) {
+            return RecipientsReport.EntityType.IMPORT;
+        }
+        return RecipientsReport.EntityType.UNKNOWN;
     }
 
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
@@ -302,16 +238,30 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     
     @Override
     public PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId) {
-        String sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id," +
+        String sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.entity_data," +
                 " ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error," +
                 " NVL(a.username, 'AutoImport / AutoExport') AS username" +
                 " FROM recipients_report_tbl ir LEFT JOIN admin_tbl a ON a.admin_id = ir.admin_id" +
                 " WHERE ir.company_id = ?";
         List<Object> params = new ArrayList<>(List.of(companyId));
         sql += applyOverviewFilters(filter, params);
-        return selectPaginatedList(logger, sql, "recipients_report_tbl",
+
+        PaginatedListImpl<RecipientsReport> list = selectPaginatedList(logger, sql, "recipients_report_tbl",
                 filter.getSortOrDefault(DEFAULT_SORTABLE_COLUMN), filter.ascending(),
                 filter.getPage(), filter.getNumberOfRows(), REPORT_ROWS_MAPPER, params.toArray());
+
+        if (filter.isUiFiltersSet()) {
+            int unfilteredTotalCount = selectIntWithDefaultValue(
+                    logger,
+                    "SELECT COUNT(*) FROM recipients_report_tbl WHERE company_id = ?",
+                    0,
+                    companyId
+            );
+
+            list.setNotFilteredFullListSize(unfilteredTotalCount);
+        }
+
+        return list;
     }
 
     private String applyOverviewFilters(RecipientsReportForm filter, List<Object> params) {
@@ -372,6 +322,10 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
             report.setFileId(resultSet.getObject("download_id") == null ? null : resultSet.getInt("download_id"));
             report.setAutoImportID(resultSet.getObject("autoimport_id") == null ? -1 : resultSet.getInt("autoimport_id"));
             report.setIsError(resultSet.getObject("error") != null && resultSet.getInt("error") > 0);
+
+            if (DbUtilities.resultsetHasColumn(resultSet, "entity_data")) {
+                report.setEntityData(IntEnum.fromId(RecipientsReport.EntityData.class, resultSet.getInt("entity_data")));
+            }
 
             return report;
         }

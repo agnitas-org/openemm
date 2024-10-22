@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
@@ -34,6 +33,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.responseheaders.common.UsedFor;
 import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
 import com.agnitas.emm.responseheaders.web.NullHttpResonseHeaderApplier;

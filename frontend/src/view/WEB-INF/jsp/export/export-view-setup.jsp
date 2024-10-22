@@ -11,7 +11,7 @@
 <%--@elvariable id="isOwnColumnsExportAllowed" type="java.lang.Boolean"--%>
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 
-<c:url var="listUrl" value="/export/list.action"/>
+<c:url var="listUrl" value="/export/list.action?restoreSort=true"/>
 <c:url var="evaluateUrl" value="/export/${id}/evaluate.action"/>
 
 <c:set var="agnTitleKey" 			value="export" 				scope="request"/>

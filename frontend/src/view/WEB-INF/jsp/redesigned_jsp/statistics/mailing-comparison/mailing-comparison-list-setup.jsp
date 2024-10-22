@@ -3,13 +3,10 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<c:set var="isTabsMenuShown" 		value="false" 			                scope="request" />
 <c:set var="agnTitleKey" 			value="statistic.comparison" 	        scope="request" />
-<c:set var="agnSubtitleKey" 		value="Statistics" 				        scope="request" />
 <c:set var="sidemenu_active" 		value="Statistics" 				        scope="request" />
 <c:set var="sidemenu_sub_active" 	value="statistic.comparison" 	        scope="request" />
 <c:set var="agnHighlightKey" 		value="statistic.comparison" 	        scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 					        scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Statistics" 				        scope="request" />
 <c:set var="agnHelpKey" 			value="compareMailings" 		        scope="request" />
 <c:set var="agnEditViewKey" 	    value="mailing-comparison-overview"     scope="request" />
@@ -26,8 +23,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
-        <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
         <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
         <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
 
@@ -40,7 +35,6 @@
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${optionList}" property="0" value="${option}"/>
             <c:set target="${option}" property="extraAttributes" value="data-form-target='#table-tile' data-form-set='reportFormat:csv' data-form-submit-static data-form-url='${exportUrl}' data-prevent-load"/>
-            <c:set target="${option}" property="url">#</c:set>
             <c:set target="${option}" property="name">
                 <mvc:message code="user.export.csv"/>
             </c:set>
@@ -51,7 +45,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn"/>
         <c:set target="${element}" property="extraAttributes" value="data-form-url='${compareUrl}' data-form-submit-static data-form-target='#table-tile'"/>
         <c:set target="${element}" property="iconBefore" value="icon icon-search"/>
         <c:set target="${element}" property="name">

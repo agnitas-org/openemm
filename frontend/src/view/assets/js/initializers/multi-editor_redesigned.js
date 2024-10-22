@@ -1,3 +1,54 @@
+/*doc
+---
+title: Multi Editor
+name: multi-editor
+category: Components - Multi Editor
+---
+
+Sometimes user can use different <a href="components_-_code_editors.html">code editors</a> in combination (for example, ace, wysiwyg, form-builder, ai generation).
+In order to simplify the synchronization of the result between switching editors, you can use `[data-multi-editor]`.
+
+Also using the internal `[data-enlarged-modal]` it is possible to enlarge the multi editor in a fullscreen modal.
+The multi editor code will synchronize changes from the enlarged modal to the original one when collapsing or using the "Apply" button,
+or will cancel changes if the modal is closed.
+Use `[data-modal-set]` to pass some options to enlarged modal.
+
+```htmlexample
+<div class="tile" data-multi-editor>
+    <div class="tile-header">
+        <ul class="tile-title-controls gap-1">
+            <li>
+                <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#first-editor-tab">
+                    <i class="icon icon-code"></i>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="btn btn-icon btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#second-editor-tab">
+                    <i class="icon icon-font"></i>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="btn btn-icon btn-icon--wide btn-inverse" data-toggle-tab="#third-editor-tab">
+                    <i class="icon icon-table"></i>
+                    <i class="icon icon-flask text-secondary"></i>
+                </a>
+            </li>
+        </ul>
+        <div class="tile-controls">
+            <a href="#" class="btn-enlarge" data-enlarged-modal data-modal-set="title: 'Title from [data-modal-set]'">
+               <i class="icon icon-expand-arrows-alt"></i>
+            </a>
+        </div>
+    </div>
+    <div class="tile-body">
+        <div id="first-editor-tab" class="bg-success p-3 h-100"><textarea id="first-editor" class="form-control">First editor here</textarea></div>
+        <div id="second-editor-tab" class="bg-warning p-3 h-100"><textarea id="second-editor" class="form-control">Second editor here</textarea></div>
+        <div id="third-editor-tab" class="bg-info p-3 h-100"><textarea id="third-editor" class="form-control">Third editor here</textarea></div>
+    </div>
+</div>
+```
+*/
+
 AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
   const Helpers = AGN.Lib.Helpers;
   const Modal = AGN.Lib.Modal;
@@ -11,8 +62,18 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
         return multiEditor; // return the existing object
       }
       this.$el = $el;
-      this.$container = $el.parent();
+
+      this.$target = $el.find('[data-enlarge-target]');
+      if (!this.$target.exists()) {
+        this.$target = this.$el;
+      }
+      this.$container = this.$target.parent();
+
       this.#init();
+    }
+
+    static defaultOptions() {
+      return {btnText: t('defaults.apply')};
     }
 
     #init() {
@@ -42,17 +103,22 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
         this.backup[$(textarea).attr('id')] = Editor.get($(textarea)).val());
       _.each(this.$el.find('.js-form-builder'), textarea =>
         this.backup[$(textarea).attr('id')] = FormBuilder.get(textarea).getJson());
+      _.each(this.$el.find('#queryBuilderRules'), qbInput => {
+        const api = $(qbInput).parent().prop('queryBuilder');
+        this.backup['queryBuilderRules'] = api.getRules({allow_invalid: true, skip_empty: false});
+      });
     }
 
     showModal() {
       const template = this.$resizeBtn.data('enlarged-modal') || 'multi-editor-modal';
       const opts = Helpers.objFromString(this.$resizeBtn.data('modal-set'));
-      this.$modal = Modal.fromTemplate(template, opts);
-      this.$placeholder.replaceWith(this.$el);
+      this.$modal = Modal.fromTemplate(template, _.extend(MultiEditor.defaultOptions(), opts));
+      this.$placeholder.replaceWith(this.$target);
+      AGN.Lib.CoreInitializer.run('select', this.$target);
       this.$applyBtn.on('click', () => this.resize());
       this.$modal.on('hide.bs.modal', () => this.hideModal()); // close or backdrop click
       this.$el.trigger('enlarged');
-      Editor.get(this.editor$).resize();
+      Editor.get(this.editor$)?.resize();
     }
 
     hideModal() {
@@ -66,16 +132,21 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
     cancel() {
       this.toggleWysiwygIfSelected(false)
       this.restore();
-      this.$container.append(this.$el);
+      this.$container.append(this.$target);
+      AGN.Lib.CoreInitializer.run('select', this.$target);
       this.toggleWysiwygIfSelected(true)
     }
 
     restore() {
       Object.entries(this.backup).forEach(([id, val]) => {
-        if (FormBuilder.isCreated(`#${id}`)) {
-          FormBuilder.get("#" + id).setJson(val);
+        const selector = `#${id}`;
+
+        if (id === 'queryBuilderRules') {
+          $(selector).parent().prop('queryBuilder')?.setRules(val);
+        } else if (FormBuilder.isCreated(selector)) {
+          FormBuilder.get(selector).setJson(val);
         } else {
-          this.$el.find(`#${id}`).data('_editor')?.val(val);
+          this.$el.find(selector).data('_editor')?.val(val);
         }
       });
     }
@@ -84,7 +155,8 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
       this.applyChanges = true;
       this.toggleWysiwygIfSelected(false);
       Modal.getInstance(this.$modal).hide();
-      this.$container.append(this.$el);
+      this.$container.append(this.$target);
+      AGN.Lib.CoreInitializer.run('select', this.$target);
       this.toggleWysiwygIfSelected(true);
     }
     
@@ -103,7 +175,7 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
     }
 
     get enlarged() {
-      return this.$el.closest('.modal').length > 0;
+      return this.$target.closest('.modal').length > 0;
     }
 
     get $resizeBtn() {
@@ -127,7 +199,5 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
     }
   }
 
-  _.each($scope.find('[data-multi-editor]'), function (el) {
-    new MultiEditor($(el));
-  });
+  _.each($scope.find('[data-multi-editor]'), el => new MultiEditor($(el)));
 })

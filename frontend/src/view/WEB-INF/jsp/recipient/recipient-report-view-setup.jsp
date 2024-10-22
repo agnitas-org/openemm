@@ -6,7 +6,7 @@
 
 <%--@elvariable id="datasourceId" type="java.lang.Integer"--%>
 
-<c:url var="logsOverviewLink" value="/recipientsreport/list.action"/>
+<c:url var="logsOverviewLink" value="/recipientsreport/list.action?restoreSort=true"/>
 
 <c:set var="agnNavigationKey" 		value="RecipientsReport" 	scope="request" />
 <c:set var="agnTitleKey" 			value="statistic.protocol" 	scope="request" />

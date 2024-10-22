@@ -110,7 +110,7 @@ public class LogonController implements XssCheckAware {
     public String onUnexpectedLogonStateException(UnexpectedLogonStateException e) {
         logger.debug("Unexpected logon state", e);
 
-        return "redirect:/logon.action";
+        return "redirect:/logonRedesigned.action";
     }
 
     @ExceptionHandler(HostAuthenticationServiceException.class)
@@ -118,7 +118,7 @@ public class LogonController implements XssCheckAware {
         logger.error("Host authentication exception", e);
         popups.alert("Error");
 
-        return "redirect:/logon.action";
+        return "redirect:/logonRedesigned.action";
     }
 
     @Anonymous
@@ -450,7 +450,7 @@ public class LogonController implements XssCheckAware {
         if (model.containsAttribute(PASSWORD_CHANGED_KEY)) {
             logonStateBundle.requireLogonState(LogonState.COMPLETE);
             if (redesigned) {
-                popups.success("GWUA.passwordChanged", request.getContextPath() + "/logonRedesigned.action");
+                popups.success("password.changed.proceed", request.getContextPath() + "/logonRedesigned.action");
             }
             return redesigned ? "login_password_changed" : "logon_password_changed";
         } else {
@@ -781,7 +781,7 @@ public class LogonController implements XssCheckAware {
                 popups.alert("warning.failed_logins.1", times);
             }
         }
-        
+        AgnUtils.updateBrowserCacheMarker(); // update for admin related data in config.js
         return "redirect:/dashboard.action";
     }
 

@@ -10,27 +10,42 @@
 
 package org.agnitas.emm.company.service.impl;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import org.agnitas.emm.company.service.CompanyService;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 public final class CompanyServiceImpl implements CompanyService {
 	
 	private ComCompanyDao companyDao;
-	
+
 	@Override
-	public final Company getCompanyOrNull(int companyId) {
+	public boolean isMailtrackingActive(int companyId) {
+		return companyDao.isMailtrackingActive(companyId);
+	}
+
+	@Override
+	public Set<String> getTechnicalContacts(int companyId) {
+		String technicalContact = StringUtils.defaultString(companyDao.getTechnicalContact(companyId));
+		return new HashSet<>(AgnUtils.splitAndTrimList(technicalContact));
+	}
+
+	@Override
+	public Company getCompanyOrNull(int companyId) {
 		return companyDao.getCompany(companyId);
 	}
 	
 	@Override
-	public final Company getCompany(int companyId) throws UnknownCompanyIdException {
+	public Company getCompany(int companyId) throws UnknownCompanyIdException {
 		final Company company = this.companyDao.getCompany(companyId);
 		
 		if(company == null) {
@@ -43,6 +58,11 @@ public final class CompanyServiceImpl implements CompanyService {
 	@Override
 	public boolean isCompanyExisting(int companyId) {
 		return companyId > 0 && companyDao.isCompanyExist(companyId);
+	}
+
+	@Override
+	public List<Integer> getCompaniesIds() {
+		return companyDao.getCompaniesIds();
 	}
 
 	@Override
@@ -60,8 +80,23 @@ public final class CompanyServiceImpl implements CompanyService {
 		return companyDao.getCreatedCompanies(companyId);
 	}
 
+	@Override
+	public List<CompanyEntry> findAllByEmailPart(String email, int companyID) {
+		return companyDao.findAllByEmailPart(email, companyID);
+	}
+
+	@Override
+	public List<CompanyEntry> findAllByEmailPart(String email) {
+		return companyDao.findAllByEmailPart(email);
+	}
+
+	@Override
+	public void updateTechnicalContact(String email, int id) {
+		companyDao.updateTechnicalContact(email, id);
+	}
+
 	@Required
-	public final void setCompanyDao(final ComCompanyDao dao) {
+	public void setCompanyDao(final ComCompanyDao dao) {
 		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
 	}
 }

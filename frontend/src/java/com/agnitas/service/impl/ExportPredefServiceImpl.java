@@ -10,43 +10,47 @@
 
 package com.agnitas.service.impl;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.sql.DataSource;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExportPredefService;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.ExportPredef;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.ExportPredefDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.FileCompressionType;
 import org.agnitas.service.RecipientExportWorker;
 import org.agnitas.service.RecipientExportWorkerFactory;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Const;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.Charset;
+import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExportPredefService;
-import com.agnitas.service.ServiceResult;
+import javax.sql.DataSource;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
 
@@ -56,6 +60,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     private ExportPredefDao exportPredefDao;
     private ConfigService configService;
     private DataSource dataSource;
+    private BulkActionValidationService<Integer, ExportPredef> bulkActionValidationService;
     
     @Override
     public ExportPredef get(int id, int companyId) {
@@ -78,24 +83,55 @@ public class ExportPredefServiceImpl implements ExportPredefService {
 
     @Override
     public List<ExportPredef> getExportProfiles(Admin admin) {
-    	return exportPredefDao.getAllByCompany(admin.getCompanyID());
+    	return exportPredefDao.getAllExports(admin);
+    }
+
+    @Override
+    public PaginatedListImpl<ExportPredef> getExportProfilesOverview(PaginationForm form, Admin admin) {
+        final List<ExportPredef> exports = getExportProfiles(admin);
+        final int page = AgnUtils.getValidPageNumber(exports.size(), form.getPage(), form.getNumberOfRows());
+
+        List<ExportPredef> sortedExports = exports.stream()
+                .sorted(getComparator(form))
+                .skip((long) (page - 1) * form.getNumberOfRows())
+                .limit(form.getNumberOfRows())
+                .collect(Collectors.toList());
+
+        return new PaginatedListImpl<>(sortedExports, exports.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
+    }
+
+    private Comparator<ExportPredef> getComparator(PaginationForm form) {
+        Comparator<ExportPredef> comparator = (c1, c2) -> 0;
+
+        if (StringUtils.equalsIgnoreCase("shortname", form.getSort())) {
+            comparator = Comparator.comparing(c -> StringUtils.trimToEmpty(c.getShortname()));
+        } else if (StringUtils.equalsIgnoreCase("description", form.getSort())) {
+            comparator = Comparator.comparing(c -> StringUtils.trimToEmpty(c.getDescription()));
+        }
+
+        if (!AgnUtils.sortingDirectionToBoolean(form.getOrder(), true)) {
+            comparator = comparator.reversed();
+        }
+
+        return comparator;
     }
 
     @Override
     public List<Integer> getExportProfileIds(Admin admin) {
-    	return exportPredefDao.getAllIdsByCompany(admin.getCompanyID());
+    	return exportPredefDao.getAllExportIds(admin);
     }
     
     @Override
     public ServiceResult<ExportPredef> getExportForDeletion(int exportId, int companyId) {
         ExportPredef export = get(exportId, companyId);
         if (export == null) {
-            return ServiceResult.error(Message.of(ERROR_MSG));
+            return ServiceResult.error(Message.of("error.general.missing"));
         }
         return ServiceResult.success(export);
     }
 
     @Override
+    // TODO: EMMGUI-714: remove after remove of old design
     public ServiceResult<ExportPredef> delete(int exportId, int companyId) {
         ServiceResult<ExportPredef> exportForDeletion = getExportForDeletion(exportId, companyId);
         if (!exportForDeletion.isSuccess()) {
@@ -173,6 +209,34 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
+    public ServiceResult<List<ExportPredef>> getAllowedForDeletion(Set<Integer> ids, int companyId) {
+        return bulkActionValidationService.checkAllowedForDeletion(ids, id -> getExportForDeletion(id, companyId));
+    }
+
+    @Override
+    public ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin) {
+        List<ExportPredef> exports = ids.stream()
+                .map(id -> getExportForDeletion(id, admin.getCompanyID()))
+                .filter(ServiceResult::isSuccess)
+                .map(ServiceResult::getResult)
+                .collect(Collectors.toList());
+
+        for (ExportPredef export : exports) {
+            exportPredefDao.delete(export);
+        }
+
+        List<Integer> removedIds = exports.stream().map(ExportPredef::getId).collect(Collectors.toList());
+
+        return ServiceResult.success(
+                new UserAction(
+                        "delete export definitions",
+                        "deleted export definitions with following ids: " + StringUtils.join(removedIds, ", ")
+                ),
+                Message.of(Const.Mvc.SELECTION_DELETED_MSG)
+        );
+    }
+
+    @Override
     public boolean isManageAllowed(ExportPredef export, Admin admin) throws Exception {
         if (export == null) {
             return true;
@@ -216,8 +280,6 @@ public class ExportPredefServiceImpl implements ExportPredefService {
 
     protected EnumSet<BindingEntry.UserType> getAvailableUserTypeOptions(Admin admin) {
         final EnumSet<BindingEntry.UserType> options = EnumSet.allOf(BindingEntry.UserType.class);
-        //options.removeAll(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP);
-        //options.remove(BindingEntry.UserType.WorldVIP);
         options.removeAll(Set.of(BindingEntry.UserType.TestVIP, BindingEntry.UserType.WorldVIP));
         return options;
     }
@@ -264,5 +326,10 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     @Required
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    @Required
+    public void setBulkActionValidationService(BulkActionValidationService<Integer, ExportPredef> bulkActionValidationService) {
+        this.bulkActionValidationService = bulkActionValidationService;
     }
 }

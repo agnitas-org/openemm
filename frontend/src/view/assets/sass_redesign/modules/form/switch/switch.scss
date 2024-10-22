@@ -1,3 +1,37 @@
+/*doc
+---
+title: Switches & Checkboxes
+name: checkboxes
+category: Components - Switches & Checkboxes
+---
+*/
+
+/*doc
+---
+title: Switch
+name: switch
+parent: checkboxes
+---
+
+Toggle switches are used best as on/off like switches and should be preferred over checkboxes or radiobuttons.
+
+<small class="text-muted">You can apply a <a href="components_-_show%7Chide_by_checkbox%7Cselect.html#checkbox-hider"><i>show|hide by checkbox</i></a> component to this.</small>
+
+```htmlexample
+<div class="form-check form-switch">
+    <input class="form-check-input" id="switch-example" type="checkbox" role="switch">
+    <label class="form-label form-check-label" for="switch-example">Hyperspace Jump</label>
+</div>
+<div class="form-check form-switch">
+    <input class="form-check-input" id="switch-example" type="checkbox" role="switch" checked disabled>
+    <label class="form-label form-check-label" for="switch-example">Put your crocs in sport mode</label>
+</div>
+<div class="form-check form-check-reverse form-switch">
+    <input class="form-check-input" type="checkbox" role="switch" id="reversed-label-switch">
+    <label class="form-label form-check-label" for="reversed-label-switch">Label first</label>
+</div>
+```
+*/
 
 .form-switch {
   display: flex;

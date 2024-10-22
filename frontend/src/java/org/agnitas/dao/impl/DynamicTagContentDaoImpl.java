@@ -65,12 +65,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 		// Check for unallowed html tags
 		try {
 			HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+		} catch(final HtmlCheckerException e) {
 			throw new Exception("Mailing content name contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
-		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+		} catch(final HtmlCheckerException e) {
 			throw new Exception("Mailing content description contains unallowed HTML tags");
 		}
 
@@ -220,12 +220,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 			// Check for unallowed html tags
 			try {
 				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch(final HtmlCheckerException e) {
 				throw new Exception("Mailing content name contains unallowed HTML tags");
 			}
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch(final HtmlCheckerException e) {
 				throw new Exception("Mailing content description contains unallowed HTML tags");
 			}
 		}
@@ -273,12 +273,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 			// Check for unallowed html tags
 			try {
 				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch(final HtmlCheckerException e) {
 				throw new Exception("Mailing content name contains unallowed HTML tags");
 			}
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch(final HtmlCheckerException e) {
 				throw new Exception("Mailing content description contains unallowed HTML tags");
 			}
 		}

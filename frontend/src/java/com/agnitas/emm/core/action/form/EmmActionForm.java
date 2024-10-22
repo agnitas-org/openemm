@@ -16,7 +16,7 @@ public class EmmActionForm {
     private String shortname;
     private String description;
     private int type;
-    private boolean active;
+    private boolean active; // TODO: EMMGUI-714 remove after remove of old design
     private boolean advertising;
 
     private String modulesSchema;

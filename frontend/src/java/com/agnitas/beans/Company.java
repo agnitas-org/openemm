@@ -178,11 +178,7 @@ public interface Company {
 	void setEnabledUIDVersion( int enabledUIDVersion);
 	
 	int getEnabledUIDVersion();
-	
-	void setExportNotifyAdmin(int exportNotifyAdmin);
-	
-	int getExportNotifyAdmin();
-	
+
 	int getParentCompanyId();
 	
 	void setParentCompanyId(int companyId);

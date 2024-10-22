@@ -10,16 +10,9 @@
 
 package com.agnitas.emm.core.blacklist.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.BlackListEntryImpl;
@@ -42,9 +35,15 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	
@@ -136,6 +135,12 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	}
 
 	@Override
+	public boolean delete(Set<String> emails, int companyId) {
+		String sql = "DELETE FROM " + getCustomerBanTableName(companyId) + " WHERE " + makeBulkInClauseForString("email", emails);
+		return update(logger, sql) > 0;
+	}
+
+	@Override
 	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID) {
 		String sort = getSortableColumn(filter.getSort());
 
@@ -212,7 +217,12 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), params.toArray());
 		}
 
-		return new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
+		PaginatedListImpl<BlackListEntry> paginatedList = new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
+		if (filter.isUiFiltersSet()) {
+			paginatedList.setNotFilteredFullListSize(selectInt(logger, "SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID)));
+		}
+
+		return paginatedList;
 	}
 
 	private Tuple<String, List<Object>> applyOverviewFilters(BlacklistOverviewFilter filter) {
@@ -289,14 +299,14 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
     }
 
 	@Override
-	public List<Mailinglist> getMailinglistsWithBlacklistedBindings( int companyId, String email) {
+	public List<Mailinglist> getMailinglistsWithBlacklistedBindings(Set<String> emails, int companyId) {
 		String query = "SELECT DISTINCT m.mailinglist_id, m.company_id, m.shortname, m.description FROM mailinglist_tbl m, customer_" + companyId + "_tbl c, customer_" + companyId + "_binding_tbl b" +
-			" WHERE c.email = ? AND b.customer_id = c.customer_id AND b.user_status = ? AND b.mailinglist_id = m.mailinglist_id AND m.deleted = 0 AND m.company_id = ?";
+			" WHERE c.email IN (" + AgnUtils.csvQMark(emails.size()) + ") AND b.customer_id = c.customer_id AND b.user_status = ? AND b.mailinglist_id = m.mailinglist_id AND m.deleted = 0 AND m.company_id = ?";
 
+		List<Object> params = new ArrayList<>(emails);
+		params.addAll(List.of(UserStatus.Blacklisted.getStatusCode(), companyId));
 
-		List<Mailinglist> list = select(logger, query, MAILINGLIST_ROW_MAPPER, email, UserStatus.Blacklisted.getStatusCode(), companyId);
-		
-		return list;
+        return select(logger, query, MAILINGLIST_ROW_MAPPER, params.toArray());
 	}
 
 	@Override

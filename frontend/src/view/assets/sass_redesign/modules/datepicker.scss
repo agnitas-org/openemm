@@ -10,6 +10,7 @@ $datepicker-item-size: 35px;
 
   @include flex-column($gap-sm);
   padding: $gap-sm;
+  z-index: 3;
 }
 
 .ui-datepicker-calendar {
@@ -30,7 +31,7 @@ $datepicker-item-size: 35px;
       display: inline-block;
       border: $border-transparent;
       border-radius: 50%;
-      color: var(--default-text-color);
+      color: var(--text-color-default);
     }
 
     &:not(.ui-datepicker-current-day) {
@@ -56,10 +57,17 @@ $datepicker-item-size: 35px;
     &.ui-datepicker-unselectable {
       cursor: not-allowed;
     }
+    
+    &.ui-datepicker-today {
+      a {
+        color: $white;
+        background-color: $primary;
+      }
+    }
   }
 
   th {
-    color: var(--default-text-color);
+    color: var(--text-color-default);
     &:not(.ui-datepicker-week-col) {
       font-weight: $font-weight-normal;
     }
@@ -67,7 +75,7 @@ $datepicker-item-size: 35px;
 
   .ui-datepicker-week-col {
     font-weight: $font-weight-semibold;
-    color: var(--default-text-color);
+    color: var(--text-color-default);
   }
 }
 

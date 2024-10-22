@@ -4,15 +4,20 @@
           data-custom-loader=""
           data-editable-tile="">
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="forms.import"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="forms.import"/></h1>
+        <c:if test="${showCloseBtn}">
+            <button type="button" class="btn-close" data-bs-dismiss="modal">
+                <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+            </button>
+        </c:if>
     </div>
     <div class="tile-body flex-center flex-column" data-initializer="upload">
         <div id="dropzone" class="dropzone flex-grow-1 w-100" data-upload-dropzone='submit' style="height: 300px">
             <div class="dropzone-text">
-                <strong><i class="icon icon-reply"></i>&nbsp;<mvc:message code="upload_dropzone.title"/></strong>
-                <span class="btn btn-sm btn-primary btn-upload">
+                <b><i class="icon icon-reply"></i>&nbsp;<mvc:message code="upload_dropzone.title"/></b>
+                <span class="btn btn-primary btn-upload">
                     <i class="icon icon-file-upload"></i>
-                    <span class="text"><b><mvc:message code="button.multiupload.select"/></b></span>
+                    <span class="text"><mvc:message code="button.multiupload.select"/></span>
                     <input type="file" data-upload="uploadFile"/>
                 </span>
             </div>

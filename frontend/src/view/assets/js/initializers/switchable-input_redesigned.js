@@ -1,7 +1,7 @@
 /*doc
 ---
 title: Switchable Input
-name: fields-04-switchable-input
+name: fields-08-switchable-input
 parent: fields
 ---
 
@@ -18,26 +18,16 @@ Also make sure that the target (`switchable-input__body`) and the switch (`switc
 ```htmlexample
 <form>
   <div class="switchable-input">
-    <div class="form-group">
-      <div class="col-sm-4">
-        <label for="checkboxID" class="control-label">Checkbox or toggle</label>
-      </div>
-
-      <div class="col-sm-4 switchable-input__switch">
-        <label class="toggle">
-          <input type="checkbox" id="checkboxID" role="switch"/>
-          <div class="toggle-control"></div>
-        </label>
+    <div class="switchable-input__header">
+      <label class="switchable-input__label">Checkbox or toggle</label>
+      <div class="switchable-input__switch">
+          <input class="form-check-input" type="checkbox" role="switch">
       </div>
     </div>
 
-    <div class="form-group switchable-input__body">
-      <div class="col-sm-4">
-        <label for="username" class="control-label">Some input field</label>
-      </div>
-      <div class="col-sm-4">
-        <input type="text" class="form-control" name="username" id="username"/>
-      </div>
+    <div class="switchable-input__body">
+      <label for="username" class="form-label">Some input field</label>
+      <input type="text" class="form-control" name="username" id="username"/>
     </div>
   </div>
 </form>
@@ -53,39 +43,23 @@ The element with `data-hide-on-switch` will be shown if the switch (checkbox) is
 ```htmlexample
 <form>
   <div class="switchable-input">
-    <div class="form-group">
-      <div class="col-sm-4">
-        <label for="checkboxID" class="control-label">Swap</label>
-      </div>
-
-      <div class="col-sm-4 switchable-input__switch">
-        <label class="toggle">
-          <input type="checkbox" id="checkboxID" role="switch"/>
-          <div class="toggle-control"></div>
-        </label>
+    <div class="switchable-input__header">
+      <label class="switchable-input__label">Swap</label>
+      <div class="switchable-input__switch">
+          <input class="form-check-input" type="checkbox" role="switch">
       </div>
     </div>
 
-    <div class="form-group switchable-input__body">
+    <div class="switchable-input__body">
       <div data-hide-on-switch>
-        <div class="col-sm-4">
-          <label for="email" class="control-label">E-mail</label>
-        </div>
-        <div class="col-sm-4">
-          <input type="text" class="form-control" id="email" placeholder="E-mail"/>
-        </div>
+        <label for="email" class="form-label">E-mail</label>
+        <input type="text" class="form-control" id="email" placeholder="E-mail"/>
       </div>
 
       <div data-show-on-switch>
-        <div class="col-sm-4">
-          <label class="control-label">Credentials</label>
-        </div>
-        <div class="col-sm-4">
-          <input type="text" class="form-control" placeholder="Username"/>
-        </div>
-        <div class="col-sm-4">
-          <input type="text" class="form-control" placeholder="Password"/>
-        </div>
+        <label class="form-label">Credentials</label>
+        <input type="text" class="form-control" placeholder="Username"/>
+        <input type="text" class="form-control mt-1" placeholder="Password"/>
       </div>
     </div>
   </div>

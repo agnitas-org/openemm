@@ -1,0 +1,6 @@
+<div class="form-check form-switch mt-1">
+	<mvc:checkbox id="filter-use-recycle-bin" path="useRecycleBin" cssClass="form-check-input" role="switch"/>
+	<label class="form-label form-check-label" for="filter-use-recycle-bin">
+		<mvc:message code="default.list.deleted.show"/>
+	</label>
+</div>

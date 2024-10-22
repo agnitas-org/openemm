@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   class Upload {
     constructor($dropzone, $file, parentUpload) {
@@ -40,6 +40,10 @@
       this.$file.val('');
     }
 
+    removeSelection(index) {
+      this.selection.splice(index, 1);
+    }
+
     getSelection() {
       return this.selection.slice(0);
     }
@@ -52,7 +56,7 @@
 
       if (this.multiple) {
         for (let i = 0; i < files.length; i++) {
-          let file = files[i];
+          const file = files[i];
 
           if (this.#onDrop(file, this.selection.length)) {
             this.selection.push(file);
@@ -69,7 +73,7 @@
       }
 
       if (added) {
-        this.$dropzone.trigger('upload:dropped');
+        this.$dropzone.trigger('upload:dropped', [this.selection]);
       }
     }
 

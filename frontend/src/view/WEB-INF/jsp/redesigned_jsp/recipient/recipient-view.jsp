@@ -1,19 +1,17 @@
-<%@page import="com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField"%>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.importvalues.MailType" %>
-<%@ page import="com.agnitas.beans.ProfileField" %>
-<%@ page import="org.agnitas.util.DbColumnType" %>
-<%@ page import="org.agnitas.emm.core.recipient.RecipientUtils" %>
-<%@page import="org.agnitas.dao.UserStatus"%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
+<%@ page import="com.agnitas.emm.core.service.RecipientStandardField" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
+<%@ page import="org.agnitas.dao.UserStatus" %>
+<%@page import="org.agnitas.util.DbColumnType"%>
 <%@ page import="org.agnitas.util.importvalues.Gender" %>
+<%@ page import="org.agnitas.util.importvalues.MailType" %>
 
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isRecipientEmailInUseWarningEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailinglists" type="java.util.List"--%>
@@ -22,6 +20,9 @@
 <%--@elvariable id="allowedEmptyEmail" type="java.lang.Boolean"--%>
 <%--@elvariable id="disableTrackingVeto" type="java.lang.Boolean"--%>
 <%--@elvariable id="columnDefinitions" type="java.util.List<com.agnitas.emm.core.recipient.dto.RecipientColumnDefinition>"--%>
+<%--@elvariable id="dataSource" type="org.agnitas.beans.DatasourceDescription"--%>
+<%--@elvariable id="latestDataSource" type="org.agnitas.beans.DatasourceDescription"--%>
+<%--@elvariable id="availableMediaTypes" type="java.util.List<com.agnitas.emm.core.mediatypes.common.MediaTypes>"--%>
 
 <c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
@@ -36,10 +37,6 @@
 <c:set var="COLUMN_LASTOPEN_DATE" value="<%= RecipientStandardField.LastOpenDate.getColumnName() %>"/>
 <c:set var="COLUMN_LASTSEND_DATE" value="<%= RecipientStandardField.LastSendDate.getColumnName() %>"/>
 
-<c:set var="MAILTYPE_TEXT" value="<%= MailType.TEXT %>" scope="page"/>
-<c:set var="MAILTYPE_HTML" value="<%= MailType.HTML %>" scope="page"/>
-<c:set var="MAILTYPE_HTML_OFFLINE" value="<%= MailType.HTML_OFFLINE %>" scope="page"/>
-
 <c:set var="USER_STATUS_ACTIVE" value="<%= UserStatus.Active %>"/>
 <c:set var="USER_STATUS_ADMIN_OUT" value="<%= UserStatus.AdminOut %>"/>
 <c:set var="USER_STATUS_USER_OUT" value="<%= UserStatus.UserOut %>"/>
@@ -50,39 +47,22 @@
 <c:set var="USER_TYPE_TEST_VIP" value="<%= BindingEntry.UserType.TestVIP.getTypeCode() %>"/>
 <c:set var="USER_TYPE_NORMAL_VIP" value="<%= BindingEntry.UserType.WorldVIP.getTypeCode() %>"/>
 
-<c:set var="GENDER_MALE" value="<%= Gender.MALE %>"/>
-<c:set var="GENDER_FEMALE" value="<%= Gender.FEMALE %>"/>
-<c:set var="GENDER_UNKNOWN" value="<%= Gender.UNKNOWN %>"/>
-<c:set var="GENDER_PRAXIS" value="<%= Gender.PRAXIS %>"/>
-<c:set var="GENDER_COMPANY" value="<%= Gender.COMPANY %>"/>
-
-<c:set var="MEDIATYPE_EMAIL" value="<%= MediaTypes.EMAIL %>" />
-<c:set var="MEDIATYPE_SMS" value="<%= MediaTypes.SMS %>" />
-<c:set var="MEDIATYPE_POST" value="<%= MediaTypes.POST %>" />
-
-<c:set var="POSSIBLE_MEDIATYPES" value="${[MEDIATYPE_EMAIL, MEDIATYPE_SMS, MEDIATYPE_POST]}"/>
+<c:set var="ADDITIONAL_MAIN_COLS" value="${[COLUMN_CHANGE_DATE, COLUMN_CREATION_DATE, COLUMN_CLEANED_DATE, COLUMN_LASTCLICK_DATE, COLUMN_LASTOPEN_DATE, COLUMN_LASTSEND_DATE]}" />
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 
-<mvc:form id="recipient-detail-view" servletRelativeAction="/recipient/save.action" cssClass="tiles-container hidden" modelAttribute="form"
+<mvc:form id="recipient-detail-view" servletRelativeAction="/recipient/save.action" cssClass="tiles-container" modelAttribute="form"
           data-form="resource" data-controller="recipient-view" data-action="recipient-save" data-editable-view="${agnEditViewKey}">
 
     <c:if test="${isRecipientEmailInUseWarningEnabled}">
         <script data-initializer="recipient-view" type="application/json">
-            {
-              "urls": {
-                "CHECK_ADDRESS": "<c:url value='/recipient/${form.id}/checkAddress.action'/>",
-                "CHECK_MATCH_ALTG": "<c:url value='/recipient/checkAltgMatch.action'/>",
-                "SAVE_AND_BACK_TO_LIST": "<c:url value='/recipient/saveAndBackToList.action'/>",
-                "EXISTING_USER_URL_PATTERN": "<c:url value='/recipient/:recipientID:/view.action'/>"
-              }
-            }
+            {"id": ${form.id}}
         </script>
     </c:if>
 
     <div id="settings-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="Settings" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
         </div>
 
         <div class="tile-body js-scrollable">
@@ -91,13 +71,13 @@
                     <label class="form-label" for="recipient-salutation"><mvc:message code="recipient.Salutation" /></label>
 
                     <mvc:select path="gender" id="recipient-salutation" cssClass="form-control" multiple="false">
-                        <mvc:option value="${GENDER_MALE}"><mvc:message code="recipient.gender.0.short"/></mvc:option>
-                        <mvc:option value="${GENDER_FEMALE}"><mvc:message code="recipient.gender.1.short"/></mvc:option>
+                        <mvc:option value="${Gender.MALE}"><mvc:message code="recipient.gender.0.short"/></mvc:option>
+                        <mvc:option value="${Gender.FEMALE}"><mvc:message code="recipient.gender.1.short"/></mvc:option>
                         <emm:ShowByPermission token="recipient.gender.extended">
-                            <mvc:option value="${GENDER_PRAXIS}"><mvc:message code="recipient.gender.4.short"/></mvc:option>
-                            <mvc:option value="${GENDER_COMPANY}"><mvc:message code="recipient.gender.5.short"/></mvc:option>
+                            <mvc:option value="${Gender.PRAXIS}"><mvc:message code="recipient.gender.4.short"/></mvc:option>
+                            <mvc:option value="${Gender.COMPANY}"><mvc:message code="recipient.gender.5.short"/></mvc:option>
                         </emm:ShowByPermission>
-                        <mvc:option value="${GENDER_UNKNOWN}"><mvc:message code="recipient.gender.2.short"/></mvc:option>
+                        <mvc:option value="${Gender.UNKNOWN}"><mvc:message code="recipient.gender.2.short"/></mvc:option>
                     </mvc:select>
                 </div>
 
@@ -146,9 +126,9 @@
                     <label class="form-label" for="recipient-mailtype"><mvc:message code="Mailtype"/></label>
 
                     <mvc:select path="mailtype" id="recipient-mailtype" cssClass="form-control js-select" multiple="false">
-                        <mvc:option value="${MAILTYPE_TEXT}"><mvc:message code="${MAILTYPE_TEXT.messageKey}"/></mvc:option>
-                        <mvc:option value="${MAILTYPE_HTML}"><mvc:message code="${MAILTYPE_HTML.messageKey}"/></mvc:option>
-                        <mvc:option value="${MAILTYPE_HTML_OFFLINE}"><mvc:message code="${MAILTYPE_HTML_OFFLINE.messageKey}"/></mvc:option>
+                        <c:forEach var="mailtype" items="${[MailType.TEXT, MailType.HTML, MailType.HTML_OFFLINE]}">
+                            <mvc:option value="${mailtype}"><mvc:message code="${mailtype.messageKey}"/></mvc:option>
+                        </c:forEach>
                     </mvc:select>
                 </div>
 
@@ -159,7 +139,7 @@
 
     <div id="profile-fields-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="recipient.fields" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="recipient.fields" /></h1>
         </div>
 
         <div class="tile-body js-scrollable">
@@ -176,63 +156,53 @@
                                 <c:choose>
                                     <c:when test="${definition.shortname eq COLUMN_CUSTOMER_ID}">
                                         <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-id">${COLUMN_CUSTOMER_ID}</label>
-                                            <mvc:text path="id" id="recipient-id" cssClass="form-control" readonly="true"/>
+                                            <label class="form-label text-truncate" data-popover="${definition.description}">${COLUMN_CUSTOMER_ID}</label>
+                                            <mvc:text path="id" cssClass="form-control" readonly="true"/>
                                         </div>
                                     </c:when>
                                     <c:when test="${definition.shortname eq COLUMN_DATASOURCE_ID}">
                                         <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-datasource-id">${COLUMN_DATASOURCE_ID}</label>
-                                            <mvc:text path="dataSourceId" id="recipient-datasource-id" cssClass="form-control" readonly="true"/>
+                                            <label class="form-label text-truncate" data-popover="${definition.description}">${COLUMN_DATASOURCE_ID}</label>
+                                            <c:choose>
+                                                <c:when test="${dataSource ne null}">
+                                                    <mvc:hidden path="dataSourceId" />
+                                                    <input type="text" value="${dataSource.description}" class="form-control clickable" readonly data-action="hide-datasource-popover"
+                                                           data-popover data-popover-options='{"html": true, "trigger": "click", "templateName": "datasource-info-${dataSource.id}"}'>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <mvc:text path="dataSourceId" cssClass="form-control" readonly="true"/>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                     </c:when>
                                     <c:when test="${definition.shortname eq COLUMN_LATEST_DATASOURCE_ID}">
                                         <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-latest-datasource-id">${COLUMN_LATEST_DATASOURCE_ID}</label>
-                                            <mvc:text path="latestDataSourceId" id="recipient-latest-datasource-id" cssClass="form-control" readonly="true"/>
+                                            <label class="form-label text-truncate" data-popover="${definition.description}">${COLUMN_LATEST_DATASOURCE_ID}</label>
+                                            <c:choose>
+                                                <c:when test="${latestDataSource ne null}">
+                                                    <mvc:hidden path="latestDataSourceId" />
+                                                    <input type="text" value="${latestDataSource.description}" class="form-control clickable" readonly data-action="hide-datasource-popover"
+                                                           data-popover data-popover-options='{"html": true, "trigger": "click", "templateName": "datasource-info-${latestDataSource.id}"}'>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <mvc:text path="latestDataSourceId" cssClass="form-control" readonly="true"/>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                     </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_CHANGE_DATE}">
+                                    <c:when test="${fn:contains(ADDITIONAL_MAIN_COLS, definition.shortname)}">
                                         <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_CHANGE_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_CREATION_DATE}">
-                                        <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_CREATION_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_CLEANED_DATE}">
-                                        <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_CLEANED_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_LASTCLICK_DATE}">
-                                        <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_LASTCLICK_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_LASTOPEN_DATE}">
-                                        <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_LASTOPEN_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${definition.shortname eq COLUMN_LASTSEND_DATE}">
-                                        <div class="${fieldBlockClass}">
-                                            <label class="form-label text-truncate" for="recipient-timestamp">${COLUMN_LASTSEND_DATE}</label>
-                                            <mvc:text path="${propName}" id="recipient-timestamp" cssClass="form-control" readonly="true"/>
+                                            <label class="form-label text-truncate" data-popover="${definition.description}">${definition.shortname}</label>
+                                            <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
                                         </div>
                                     </c:when>
                                 </c:choose>
                             </c:when>
                             <c:otherwise>
                                 <div class="${fieldBlockClass}">
-                                    <label class="form-label text-truncate">${definition.shortname}</label>
+                                    <label class="form-label text-truncate" for="recipient-${propName}" data-popover="${definition.description}">
+                                        ${definition.shortname}
+                                    </label>
 
                                     <%-- display field with fixed values list--%>
                                     <c:if test="${definition.writable and hasFixedValues}">
@@ -274,7 +244,6 @@
                                 </div>
                             </c:otherwise>
                         </c:choose>
-
                     </c:if>
                 </c:forEach>
             </div>
@@ -283,15 +252,12 @@
 
     <div id="mailinglists-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="Mailinglists" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="Mailinglists" /></h1>
         </div>
 
         <div class="tile-body js-scrollable">
             <div class="row g-3">
-                <c:set var="editable" value="false"/>
-                <emm:ShowByPermission token="recipient.change">
-                    <c:set var="editable" value="true"/>
-                </emm:ShowByPermission>
+                <c:set var="editable" value="${emm:permissionAllowed('recipient.change', pageContext.request)}" />
 
                 <%--@elvariable id="bindingsListForm" type="com.agnitas.emm.core.recipient.forms.RecipientBindingListForm"--%>
                 <c:set var="bindingsListForm" value="${form.bindingsListForm}"/>
@@ -301,7 +267,7 @@
                     <c:set var="mailinglistBindings" value="${bindingsListForm.getListBinding(mlist.id)}"/>
                     <c:set var="mailinglistTileState" value="close"/>
 
-                    <c:forEach items="${POSSIBLE_MEDIATYPES}" var="mediaType">
+                    <c:forEach items="${availableMediaTypes}" var="mediaType">
                         <emm:ShowByPermission token="${mediaType.requiredPermission.tokenString}">
                             <%--@elvariable id="binding" type="com.agnitas.emm.core.recipient.dto.RecipientBindingDto"--%>
                             <c:set var="binding" value="${mailinglistBindings.getBinding(mediaType)}"/>
@@ -317,11 +283,11 @@
                             <div class="tile-header">
                                 <h3 class="tile-title text-color-default" role="button">
                                     <i class="icon icon-caret-up"></i>
-                                    ${mlist.shortname}
+                                    <span class="text-truncate">${mlist.shortname}</span>
                                 </h3>
 
                                 <div class="d-flex gap-3">
-                                    <c:forEach items="${POSSIBLE_MEDIATYPES}" var="mediaType">
+                                    <c:forEach items="${availableMediaTypes}" var="mediaType">
                                         <emm:ShowByPermission token="${mediaType.requiredPermission.tokenString}">
                                             <c:set var="binding" value="${mailinglistBindings.getBinding(mediaType)}"/>
                                             <c:set var="isBindingActive" value="${not empty binding.status and binding.status eq USER_STATUS_ACTIVE}" />
@@ -334,7 +300,7 @@
 
                             <div class="tile-body">
                                 <div class="row g-3">
-                                    <c:forEach items="${POSSIBLE_MEDIATYPES}" var="mediaType">
+                                    <c:forEach items="${availableMediaTypes}" var="mediaType">
                                         <emm:ShowByPermission token="${mediaType.requiredPermission.tokenString}">
                                             <c:set var="binding" value="${mailinglistBindings.getBinding(mediaType)}"/>
                                             <c:set var="isBindingActive" value="${not empty binding.status and binding.status eq USER_STATUS_ACTIVE}" />
@@ -350,7 +316,7 @@
                                                     <div class="tile-header">
                                                         <p class="tile-title">
                                                             <i class="icon icon-mediatype-${mediaType.mediaCode} fs-1 ${isBindingActive ? 'text-primary' : ''}"></i>
-                                                            <mvc:message code="mailing.MediaType.${mediaType.mediaCode}"/>
+                                                            <span class="text-truncate"><mvc:message code="mailing.MediaType.${mediaType.mediaCode}"/></span>
                                                         </p>
 
                                                         <div class="form-check form-switch">
@@ -358,40 +324,45 @@
                                                                           disabled="${not editable}" cssClass="form-check-input" role="switch"/>
                                                         </div>
                                                     </div>
-                                                    <div class="tile-body">
-                                                        <div class="row g-2">
-                                                            <div class="col-12">
-                                                                <label class="form-label"><mvc:message code="recipient.RecipientType" /></label>
-                                                                <mvc:select path="${propertyName}.userType" cssClass="form-control" disabled="${not editable or not isBindingActive}" multiple="false" data-binding-usertype="">
-                                                                    <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
-                                                                    <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
-                                                                    <%@include file="fragments/recipient-test-vip-user-type.jspf" %>
-                                                                    <mvc:option value="${USER_TYPE_NORMAL}"><mvc:message code="NormalSubscriber"/></mvc:option>
-                                                                    <%@include file="fragments/recipient-normal-vip-user-type.jspf" %>
-                                                                </mvc:select>
+                                                    <div class="tile-body form-column">
+                                                        <div>
+                                                            <label class="form-label"><mvc:message code="recipient.RecipientType" /></label>
+                                                            <mvc:select path="${propertyName}.userType" cssClass="form-control" disabled="${not editable or not isBindingActive}" multiple="false" data-binding-usertype="">
+                                                                <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
+                                                                <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
+                                                                <%@include file="fragments/recipient-test-vip-user-type.jspf" %>
+                                                                <mvc:option value="${USER_TYPE_NORMAL}"><mvc:message code="NormalSubscriber"/></mvc:option>
+                                                                <%@include file="fragments/recipient-normal-vip-user-type.jspf" %>
+                                                            </mvc:select>
+                                                        </div>
+
+                                                        <c:if test="${not empty binding.status}">
+                                                            <div>
+                                                                <label class="form-label"><mvc:message code="recipient.Status" /></label>
+                                                                <input type="text" class="form-control" value="<mvc:message code='recipient.MailingState${binding.status.statusCode}'/>" readonly>
                                                             </div>
+                                                        </c:if>
 
-                                                            <div class="col-12">
-                                                                <c:set var="statusRemark" value="${binding.userRemark}"/>
-                                                                <c:if test="${not empty binding.referrer}">
-                                                                    <c:set var="statusRemark" value="${binding.userRemark} Ref: ${emm:abbreviate(binding.referrer, 15)}"/>
-                                                                </c:if>
-                                                                <c:if test="${binding.status eq USER_STATUS_USER_OUT}">
-                                                                    <c:set var="statusRemark" value="${statusRemark}<br>Opt-Out-Mailing: ${binding.exitMailingId}"/>
-                                                                </c:if>
+                                                        <div>
+                                                            <c:set var="statusRemark" value="${binding.userRemark}"/>
+                                                            <c:if test="${not empty binding.referrer}">
+                                                                <c:set var="statusRemark" value="${binding.userRemark} Ref: ${emm:abbreviate(binding.referrer, 15)}"/>
+                                                            </c:if>
+                                                            <c:if test="${binding.status eq USER_STATUS_USER_OUT}">
+                                                                <c:set var="statusRemark" value="${statusRemark}<br>Opt-Out-Mailing: ${binding.exitMailingId}"/>
+                                                            </c:if>
 
-                                                                <label class="form-label"><mvc:message code="recipient.Remark" /></label>
-                                                                <div class="row g-2">
-                                                                    <div class="col-8">
-                                                                        <input type="text" class="form-control" value="${statusRemark}" readonly>
-                                                                    </div>
-                                                                    <div class="col-4">
-                                                                        <c:set var="bindingChangeDate" value="" />
-                                                                        <c:if test="${not empty binding.changeDate}">
-                                                                            <fmt:formatDate var="bindingChangeDate" value="${binding.changeDate}" pattern="${adminDateTimeFormatWithSeconds}"/>
-                                                                        </c:if>
-                                                                        <input type="text" class="form-control" value="${bindingChangeDate}" readonly>
-                                                                    </div>
+                                                            <label class="form-label"><mvc:message code="recipient.Remark" /></label>
+                                                            <div class="row g-2">
+                                                                <div class="col-8">
+                                                                    <input type="text" class="form-control" value="${statusRemark}" readonly>
+                                                                </div>
+                                                                <div class="col-4">
+                                                                    <c:set var="bindingChangeDate" value="" />
+                                                                    <c:if test="${not empty binding.changeDate}">
+                                                                        <fmt:formatDate var="bindingChangeDate" value="${binding.changeDate}" pattern="${adminDateTimeFormatWithSeconds}"/>
+                                                                    </c:if>
+                                                                    <input type="text" class="form-control" value="${bindingChangeDate}" readonly>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -412,11 +383,11 @@
 
 <script id="recipient-confirmation-modal" type="text/x-mustache-template">
     <div class="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="warning"/></h1>
-                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close" data-confirm-negative>
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -426,21 +397,64 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger js-confirm-negative flex-grow-1" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger" data-confirm-negative>
                         <i class="icon icon-times"></i>
-                        <span class="text">
-                            <mvc:message code="button.Cancel"/>
-                        </span>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
                     </button>
 
-                    <button type="button" class="btn btn-primary js-confirm-positive flex-grow-1" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-primary js-confirm-positive" data-bs-dismiss="modal">
                         <i class="icon icon-check"></i>
-                        <span class="text">
-                            <mvc:message code="button.Proceed"/>
-                        </span>
+                        <span class="text"><mvc:message code="button.Proceed"/></span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 </script>
+
+<script id="duplicated-email-block" type="text/x-mustache-template">
+    <div class="d-flex align-items-center justify-content-between w-100">
+        <span><mvc:message code="error.email.duplicated" /></span>
+        <a href="{{- AGN.url('/recipient/' + recipientID + '/view.action') }}" class="btn btn-sm btn-inverse text-nowrap">
+            <mvc:message code="recipient.existing.switch" />
+        </a>
+    </div>
+</script>
+
+<c:forEach var="datasource" items="${[dataSource, latestDataSource]}">
+    <c:if test="${datasource ne null}">
+        <script id="datasource-info-${datasource.id}" type="text/x-mustache-template">
+            <div class="input-groups">
+                <div class="input-group">
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned"><mvc:message code="MailinglistID" /></span>
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned text-truncate">${datasource.id}</span>
+                </div>
+
+                <div class="input-group">
+                    <mvc:message var="descriptionMsg" code="Description" />
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned">${descriptionMsg}</span>
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned text-truncate">${datasource.description}</span>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned">SOURCEGROUP</span>
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned text-truncate">${datasource.sourceGroupType}</span>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned"><mvc:message code="recipient.Timestamp" /></span>
+                    <span class="input-group-text input-group-text--disabled input-group-text--left-aligned text-truncate">
+                        <fmt:formatDate value="${datasource.creationDate}" pattern="${adminDateTimeFormatWithSeconds}"/>
+                    </span>
+                </div>
+
+                <c:if test="${not empty datasource.description2}">
+                    <div class="input-group">
+                        <span class="input-group-text input-group-text--disabled input-group-text--left-aligned">${descriptionMsg} 2</span>
+                        <span class="input-group-text input-group-text--disabled input-group-text--left-aligned text-truncate">${datasource.description2}</span>
+                    </div>
+                </c:if>
+            </div>
+        </script>
+    </c:if>
+</c:forEach>

@@ -1,4 +1,5 @@
-(function() {
+(() => {
+
   const Popover = AGN.Lib.Popover;
 
   function initializeRowClicks($row) {
@@ -8,27 +9,30 @@
     }
     $row.data('link', $link.attr('href'));
 
-    if ($link.data('view-row') === 'page') {    // detail view content is opened with reload
+    if ($link.data('view-row') === 'page') { // detail view content is opened with reload
       $row.data('load-page', 'true');
       $row.wrap(`<a class="table-row-wrapper" href="${$link.attr('href')}"></a>`);
-    } else if ($link.data('table-modal')) {     // content is loaded as a modal from the mustache template
-      passModalAttrsFromLinkToRow($link, $row);
-    }                                           // content is loaded as a modal from the server. default
+    } else if ($link.data('modal')) { // content is loaded as a modal from the mustache template
+      passDataAttrsFromLinkToRow($link, $row);
+    } // content is loaded as a modal from the server. default
     $link.remove();
   }
 
-  function passModalAttrsFromLinkToRow($link, $row) {
-    const dataModalAttr = 'data-table-modal';
-    const dataModalOptionsAttr = 'data-table-modal-options';
-    $row
-      .attr(dataModalAttr, $link.attr(dataModalAttr))
-      .attr(dataModalOptionsAttr, $link.attr(dataModalOptionsAttr));
+  function passDataAttrsFromLinkToRow($link, $row) {
+    const DATA_PREFIX = 'data-';
+
+    $.each($link[0].attributes, (index, attr) => {
+      if (attr.name.startsWith(DATA_PREFIX) && !attr.name !== 'data-view-row') {
+        const attrName = attr.name.substring(DATA_PREFIX.length);
+        $row.attr(`data-${attrName}`, attr.value);
+      }
+    });
   }
 
   function initializeRowPopovers($row) {
     const $popover = $row.find('.js-row-popover');
 
-    if ($popover.length !== 1 || $row.closest('table').hasClass('table-preview')) {
+    if ($popover.length !== 1 || $row.closest('table').hasClass('table--preview')) {
       // destroy existing popovers when switch to 'Preview' mode
       Popover.remove($row);
       return;
@@ -41,10 +45,10 @@
       if (deferred === false) {
         deferred = $.Deferred();
 
-        var $elements = $popover.children();
+        let $elements = $popover.children();
 
-        if ($elements.length == 0) {
-          var $container = $('<div></div>');
+        if (!$elements.exists()) {
+          const $container = $('<div></div>');
           $container.css({
             position: 'fixed',
             visibility: 'hidden'
@@ -55,13 +59,13 @@
           // Workaround for some browsers setting wrong img.complete when an image element is not attached to a document
           $(document.body).append($container);
 
-          deferred.done(function() {
+          deferred.done(() => {
             $elements.detach();
             $container.remove();
           });
         }
 
-        deferred.done(function() {
+        deferred.done(() => {
           content = $elements;
         });
 
@@ -72,7 +76,7 @@
           });
 
         if (images.length > 0) {
-          deferred.done(function() {
+          deferred.done(() => {
             const popover = Popover.get($row);
             if (popover) {
               popover.setContent();
@@ -82,10 +86,10 @@
             }
           });
 
-          var checkLoadingComplete = function() {
+          const checkLoadingComplete = function () {
             let complete = true;
-            for (var i = 0; i < images.length; i++) {
-              var image = images[i];
+            for (let i = 0; i < images.length; i++) {
+              const image = images[i];
               if (image) {
                 if (image.complete) {
                   $(image).off('load error');
@@ -113,8 +117,7 @@
       return content;
     };
 
-    Popover.new($row, {
-      trigger: 'hover',
+    Popover.create($row, {
       delay: {
         show: 300,
         hide: 100
@@ -124,11 +127,7 @@
     });
   }
 
-  AGN.Lib.CoreInitializer.new('table-row-actions', function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
+  AGN.Lib.CoreInitializer.new('table-row-actions', function($scope = $(document)) {
     $scope.find('.js-table').each(function() {
       $(this).find('tr').each(function () {
         const $row = $(this);

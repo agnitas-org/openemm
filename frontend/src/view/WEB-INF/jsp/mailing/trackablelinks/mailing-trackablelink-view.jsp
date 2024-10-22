@@ -151,7 +151,7 @@
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="administrativeCheckbox"> 
-                                <mvc:message code="report.adminLinks" />
+                                <mvc:message code="report.adminLinks" /> <button class="icon icon-help" data-help="help_${helplanguage}/mailing/trackable_links/AdministrativeLinks.xml" tabindex="-1" type="button"></button>
                             </label>
                         </div>
                         <div class="col-sm-8">

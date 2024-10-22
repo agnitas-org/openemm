@@ -10,22 +10,25 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
+import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.userform.form.WebFormStatFrom;
+import com.agnitas.userform.bean.UserForm;
 import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
@@ -37,11 +40,14 @@ import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinkForm;
 import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinksForm;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.springframework.web.context.request.RequestContextHolder;
+
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/webform")
@@ -52,18 +58,20 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 
 	private final LinkService linkService;
 	private final FormTrackableLinkService trackableLinkService;
-	private final ComUserformService userformService;
+	private final UserformService userformService;
 	private final BirtStatisticsService birtStatisticsService;
 	private final ConfigService configService;
 	private final ExtendedConversionService conversionService;
+	private final UserActivityLogService userActivityLogService;
 
-	public UserFormTrackableLinkController(LinkService linkService, FormTrackableLinkService trackableLinkService, ComUserformService userformService, BirtStatisticsService birtStatisticsService, ConfigService configService, ExtendedConversionService conversionService) {
+	public UserFormTrackableLinkController(LinkService linkService, FormTrackableLinkService trackableLinkService, UserformService userformService, BirtStatisticsService birtStatisticsService, ConfigService configService, ExtendedConversionService conversionService, UserActivityLogService userActivityLogService) {
 		this.linkService = linkService;
 		this.trackableLinkService = trackableLinkService;
 		this.userformService = userformService;
 		this.birtStatisticsService = birtStatisticsService;
 		this.configService = configService;
 		this.conversionService = conversionService;
+		this.userActivityLogService = userActivityLogService;
 	}
 
 	@GetMapping("/{formId:\\d+}/trackablelink/list.action")
@@ -189,6 +197,7 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		return "messages";
 	}
 
+	// TODO remove while removing the old UI design EMMGUI-714
 	@GetMapping("/{formId:\\d+}/trackablelink/statistic.action")
 	public String statistic(Admin admin, @PathVariable int formId, Model model, Popups popups) {
 		try {
@@ -207,6 +216,31 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 			logger.error("Could not obtain user form links statistic!", e);
 			popups.alert("Error");
 		}
+		return "userform_userform_stats";
+	}
+
+	@InitBinder
+	public void initBinder(WebDataBinder binder, Admin admin) {
+		binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
+	}
+
+	@GetMapping("/statistic.action")
+	public String statistic(WebFormStatFrom form, Admin admin, Model model, HttpSession session, Popups popups) throws Exception {
+		int formId = form.getFormId();
+		if (form.isAllowedToChoseForm()) { // all forms stat page
+			List<UserForm> webForms = userformService.getUserForms(admin.getCompanyID());
+			if (CollectionUtils.isEmpty(webForms)) {
+				popups.alert("GWUA.dashboard.records.notAvailable");
+				return MESSAGES_VIEW;
+			}
+			formId = webForms.get(0).getId();
+			model.addAttribute("userForms", webForms);
+		}
+		model
+			.addAttribute("years", AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)))
+			.addAttribute("formName", userformService.getUserFormName(formId, admin.getCompanyID()))
+			.addAttribute("statUrl", birtStatisticsService.getWebFormStatUrl(form, admin, session.getId()));
+		userActivityLogService.writeUserActivityLog(admin, "form statistics", "active submenu - Pages & Forms");
 		return "userform_userform_stats";
 	}
 }

@@ -11,18 +11,20 @@
 package com.agnitas.emm.core.mailing.service.impl;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
 import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,14 +45,6 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getAllParameters(int companyID, final Admin admin) {
-		if (companyID > 0) {
-			return this.mailingParameterDao.getAllParameters(companyID);
-		}
-		return Collections.emptyList();
-	}
-
-	@Override
 	public List<ComMailingParameter> getMailingParameters(int companyId, int mailingId) {
 		if (companyId > 0 && mailingId > 0) {
 			return mailingParameterDao.getMailingParameters(companyId, mailingId);
@@ -59,13 +53,8 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId, DateRange changeDate) {
-		if (companyID > 0) {
-		    int mailingIdStartsWith = NumberUtils.toInt(mailingId);
-            return mailingParameterDao.getParametersBySearchQuery(companyID, searchQuery, mailingIdStartsWith, changeDate);
-		}
-
-		return Collections.emptyList();
+	public PaginatedListImpl<ComMailingParameter> getParametersBySearchQuery(MailingParamOverviewFilter filter, int companyID) {
+		return mailingParameterDao.getParameters(filter, companyID);
 	}
 
 	@Override
@@ -137,5 +126,19 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 		return getMailingParameters(companyId, mailingId)
 				.stream()
 				.collect(Collectors.toMap(ComMailingParameter::getMailingInfoID, Function.identity()));
+	}
+
+	@Override
+	public List<String> getNames(Set<Integer> ids, Admin admin) {
+		return ids.stream()
+				.map(id -> getParameter(id, admin))
+				.filter(Objects::nonNull)
+				.map(ComMailingParameter::getName)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public void delete(Set<Integer> ids, Admin admin) {
+		ids.forEach(id -> deleteParameter(id, admin));
 	}
 }

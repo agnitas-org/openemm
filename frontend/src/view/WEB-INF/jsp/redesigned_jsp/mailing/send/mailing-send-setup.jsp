@@ -8,21 +8,15 @@
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="templateId" type="java.lang.Integer"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
-<%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 <%--@elvariable id="approvePossible" type="java.lang.Boolean"--%>
 <%--@elvariable id="isThresholdClearanceExceeded" type="java.lang.Boolean"--%>
+<%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
 
-<c:set var="TYPE_NORMAL" value="<%=MailingType.NORMAL.getCode()%>" scope="request" />
-<c:set var="TYPE_FOLLOWUP" value="<%=MailingType.FOLLOW_UP.getCode()%>" scope="request" />
-<c:set var="TYPE_ACTIONBASED" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="request" />
-<c:set var="TYPE_DATEBASED" value="<%=MailingType.DATE_BASED.getCode()%>" scope="request" />
-<c:set var="TYPE_INTERVAL" value="<%=MailingType.INTERVAL.getCode()%>" scope="request" />
-
-<c:set var="isFollowUpMailing" value="${form.mailingtype eq TYPE_FOLLOWUP}" scope="request" />
-<c:set var="isNormalMailing" value="${form.mailingtype eq TYPE_NORMAL}" scope="request" />
-<c:set var="isDateBasedMailing" value="${form.mailingtype eq TYPE_DATEBASED}" scope="request" />
-<c:set var="isIntervalMailing" value="${form.mailingtype eq TYPE_INTERVAL}" scope="request" />
-<c:set var="isActionBasedMailing" value="${form.mailingtype eq TYPE_ACTIONBASED}" scope="request" />
+<c:set var="isFollowUpMailing" value="${form.mailingtype eq MailingType.FOLLOW_UP.code}" scope="request" />
+<c:set var="isNormalMailing" value="${form.mailingtype eq MailingType.NORMAL.code}" scope="request" />
+<c:set var="isDateBasedMailing" value="${form.mailingtype eq MailingType.DATE_BASED.code}" scope="request" />
+<c:set var="isIntervalMailing" value="${form.mailingtype eq MailingType.INTERVAL.code}" scope="request" />
+<c:set var="isActionBasedMailing" value="${form.mailingtype eq MailingType.ACTION_BASED.code}" scope="request" />
 <c:set var="canLoadStatusBox" value="${isNormalMailing or isFollowUpMailing}" scope="request" />
 
 <c:set var="activeStatusKey" value="<%= MailingStatus.ACTIVE.getMessageKey() %>"/>
@@ -36,7 +30,6 @@
 <c:set var="isTemplate" value="${form.isTemplate}" scope="request" />
 
 <c:set var="sidemenu_active" 		value="Mailings"	            scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 		            scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 	            scope="request" />
 <c:set var="agnHelpKey" 			value="preview" 	            scope="request" />
 
@@ -46,7 +39,6 @@
     <c:when test="${isTemplate}">
         <c:set var="agnNavigationKey" 		value="templateView" 	     scope="request" />
         <c:set var="agnTitleKey" 			value="Template" 		     scope="request" />
-        <c:set var="agnSubtitleKey" 		value="Template" 		     scope="request" />
         <c:set var="sidemenu_sub_active"	value="Templates" 		     scope="request" />
         <c:set var="agnHighlightKey" 		value="template.testing"     scope="request" />
         <c:set var="agnHelpKey"             value="mailingsCheck"        scope="request" />
@@ -62,7 +54,7 @@
     <c:otherwise>
         <c:choose>
             <c:when test="${form.isMailingGrid}">
-                <%@ include file="../fragments/mailing-grid-navigation.jspf" %>
+                <c:set var="agnNavigationKey" value="GridMailingView" scope="request" />
 
                 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
                     <c:set target="${agnNavHrefParams}" property="templateID" value="${templateId}"/>
@@ -70,17 +62,7 @@
                 </emm:instantiate>
             </c:when>
             <c:otherwise>
-                <c:choose>
-                    <c:when test="${isPostMailing}">
-                        <c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
-                    </c:when>
-                    <c:when test="${limitedRecipientOverview}">
-                        <c:set var="agnNavigationKey" value="mailingView_DisabledMailinglist" scope="request" />
-                    </c:when>
-                    <c:otherwise>
-                        <c:set var="agnNavigationKey" value="mailingView" scope="request" />
-                    </c:otherwise>
-                </c:choose>
+                <c:set var="agnNavigationKey" value="mailingView" scope="request" />
 
                 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
                     <c:set target="${agnNavHrefParams}" property="mailingID" value="${tmpMailingID}"/>
@@ -89,13 +71,17 @@
             </c:otherwise>
         </c:choose>
 
+        <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="${form.worldMailingSend}" />
+            <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
+            <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+        </emm:instantiate>
+
         <c:set var="agnTitleKey" 		     value="Mailing" 	            scope="request" />
-        <c:set var="agnSubtitleKey" 	     value="Mailing" 	            scope="request" />
         <c:set var="agnHighlightKey" 	     value="Send_Mailing"           scope="request" />
-        <c:set var="sidemenu_sub_active"     value="none" 		            scope="request" />
+        <c:set var="sidemenu_sub_active"     value="default.Overview" 		scope="request" />
         <c:set var="agnHelpKey" 		     value="mailingsCheck"          scope="request" />
         <c:url var="agnBreadcrumbsRootUrl"   value="/mailing/list.action"   scope="request" />
-
     </c:otherwise>
 </c:choose>
 
@@ -116,7 +102,6 @@
 
                 <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-                <c:set target="${element}" property="btnCls" value="btn"/>
                 <c:set target="${element}" property="type" value="href"/>
                 <c:set target="${element}" property="url" value="${approveUrl}"/>
                 <c:set target="${element}" property="iconBefore" value="icon-check"/>
@@ -133,7 +118,6 @@
                         <emm:instantiate var="element" type="java.util.LinkedHashMap">
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                            <c:set target="${element}" property="btnCls" value="btn"/>
                             <c:set target="${element}" property="extraAttributes" value="data-action='send-world'"/>
                             <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                             <c:set target="${element}" property="name">
@@ -150,7 +134,6 @@
                                 <c:url var="confirmActionBasedActivationUrl" value="/mailing/send/${tmpMailingID}/actionbased/activation/confirm.action"/>
                                 <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                                <c:set target="${element}" property="btnCls" value="btn"/>
                                 <c:set target="${element}" property="type" value="href"/>
                                 <c:set target="${element}" property="url" value="${confirmActionBasedActivationUrl}"/>
                                 <c:set target="${element}" property="extraAttributes" value="data-confirm=''"/>
@@ -166,7 +149,6 @@
                                 <c:url var="confirmActionBasedDeactivationUrl" value="/mailing/send/${tmpMailingID}/deactivate/confirm.action"/>
                                 <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                                <c:set target="${element}" property="btnCls" value="btn"/>
                                 <c:set target="${element}" property="type" value="href"/>
                                 <c:set target="${element}" property="url" value="${confirmActionBasedDeactivationUrl}"/>
                                 <c:set target="${element}" property="extraAttributes" value="data-confirm=''"/>
@@ -187,7 +169,6 @@
                                     <c:url var="confirmDateBasedDeactivationUrl" value="/mailing/send/${tmpMailingID}/deactivate/confirm.action"/>
                                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                                    <c:set target="${element}" property="btnCls" value="btn"/>
                                     <c:set target="${element}" property="type" value="href"/>
                                     <c:set target="${element}" property="url" value="${confirmDateBasedDeactivationUrl}"/>
                                     <c:set target="${element}" property="extraAttributes" value="data-confirm=''"/>
@@ -203,7 +184,6 @@
                                         <c:url var="confirmDateBasedActivationUrl" value="/mailing/send/datebased/activation/confirm.action"/>
                                         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                                        <c:set target="${element}" property="btnCls" value="btn"/>
                                         <c:set target="${element}" property="extraAttributes" value="data-form-target='#delivery-settings-form' data-form-confirm='' data-form-url='${confirmDateBasedActivationUrl}'"/>
                                         <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                                         <c:set target="${element}" property="name">
@@ -220,7 +200,6 @@
                             <c:url var="resumeSendingLink" value="/mailing/send/${form.mailingID}/resume-sending.action"/>
                             <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
-                            <c:set target="${element}" property="btnCls" value="btn"/>
                             <c:set target="${element}" property="extraAttributes" value="data-action='resume-sending' data-link='${resumeSendingLink}'"/>
                             <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                             <c:set target="${element}" property="name">
@@ -236,7 +215,6 @@
                             <c:url var="deactivateIntervalUrl" value="/mailing/send/${form.mailingID}/deactivate-interval.action"/>
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                            <c:set target="${element}" property="btnCls" value="btn"/>
                             <c:set target="${element}" property="type" value="href"/>
                             <c:set target="${element}" property="url" value="${deactivateIntervalUrl}"/>
                             <c:set target="${element}" property="iconBefore" value="icon-state-alert"/>
@@ -252,7 +230,6 @@
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
                             <c:set target="${element}" property="extraAttributes" value="data-form-target='#delivery-settings-form' data-form-url='${activateIntervalUrl}' data-form-submit" />
-                            <c:set target="${element}" property="btnCls" value="btn"/>
                             <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                             <c:set target="${element}" property="name">
                                 <mvc:message code="button.Activate"/>

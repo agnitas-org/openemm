@@ -1,5 +1,8 @@
 
 #choose-tile-modal {
+
+  $thumbnail-size: 175px;
+
   .modal-body {
     padding-top: 0;
     
@@ -9,7 +12,11 @@
     
     .tile-thumbnail {
       position: relative;
-      
+      svg {
+        height: $thumbnail-size;
+        max-width: $thumbnail-size;
+      }
+
       &.disabled {
         &:hover {
           img {

@@ -19,7 +19,7 @@
     </script>
 
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="template.testing" /></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="template.testing" /></h1>
     </div>
 
     <div class="tile-body js-scrollable">
@@ -80,7 +80,7 @@
                             </div>
 
                             <div class="col-auto" data-show-by-checkbox="#save-target-toggle">
-                                <a href="#" id="testTargetSaveButton" class="btn btn-sm btn-primary"
+                                <a href="#" id="testTargetSaveButton" class="btn btn-primary"
                                    data-show-by-checkbox="#save-target-toggle" data-action="save-target-for-test-run">
                                     <i class="icon icon-save"></i>
                                     <span class="text"><mvc:message code="button.save.target" /></span>
@@ -154,11 +154,11 @@
             </div>
             <div class="col-auto flex-center">
                 {{ if (newRow) { }}
-                    <button type="button" class="btn btn-icon-sm btn-primary {{- showCheckMark ? 'hidden' : ''}}" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-test-recipient">
+                    <button type="button" class="btn btn-icon btn-primary {{- showCheckMark ? 'hidden' : ''}}" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-test-recipient">
                         <i class="icon icon-plus"></i>
                     </button>
                 {{ } else { }}
-                    <button type="button" class="btn btn-icon-sm btn-danger {{- showCheckMark ? 'hidden' : ''}}" data-tooltip="<mvc:message code='button.Delete'/>" data-action="remove-test-recipient">
+                    <button type="button" class="btn btn-icon btn-danger {{- showCheckMark ? 'hidden' : ''}}" data-tooltip="<mvc:message code='button.Delete'/>" data-action="remove-test-recipient">
                         <i class="icon icon-trash-alt"></i>
                     </button>
                 {{ } }}

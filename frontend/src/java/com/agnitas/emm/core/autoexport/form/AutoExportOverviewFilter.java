@@ -12,6 +12,8 @@ package com.agnitas.emm.core.autoexport.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class AutoExportOverviewFilter extends PaginationForm  {
 
     private String name;
@@ -40,5 +42,9 @@ public class AutoExportOverviewFilter extends PaginationForm  {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(name) || isNotBlank(description) || active != null;
     }
 }

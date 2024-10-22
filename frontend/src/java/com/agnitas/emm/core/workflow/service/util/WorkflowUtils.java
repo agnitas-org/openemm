@@ -36,6 +36,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowActionBasedMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowArchiveImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowExportImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowFollowupMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowFormImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowImportImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
+
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
@@ -545,5 +562,30 @@ public class WorkflowUtils {
 
     public static boolean isDuringPause(Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus) {
         return oldStatus == STATUS_PAUSED && newStatus == STATUS_PAUSED;
+    }
+
+    public static WorkflowIcon getEmptyIcon(WorkflowIconType type) {
+        switch (type) {
+            case START: return new WorkflowStartImpl();
+            case STOP: return new WorkflowStopImpl();
+            case DECISION: return new WorkflowDecisionImpl();
+            case DEADLINE: return new WorkflowDeadlineImpl();
+            case PARAMETER: return new WorkflowParameterImpl();
+            case RECIPIENT: return new WorkflowRecipientImpl();
+            case ARCHIVE: return new WorkflowArchiveImpl();
+            case FORM: return new WorkflowFormImpl();
+            case MAILING: return new WorkflowMailingImpl();
+            case ACTION_BASED_MAILING: return new WorkflowActionBasedMailingImpl();
+            case MAILING_MEDIATYPE_SMS: return new WorkflowMailingMediaTypeSmsImpl();
+            case MAILING_MEDIATYPE_POST: return new WorkflowMailingMediaTypePostImpl();
+            case DATE_BASED_MAILING: return new WorkflowDateBasedMailingImpl();
+            case FOLLOWUP_MAILING: return new WorkflowFollowupMailingImpl();
+            case IMPORT: return new WorkflowImportImpl();
+            case EXPORT: return new WorkflowExportImpl();
+
+            default:
+                // Add any new type when required.
+                throw new UnsupportedOperationException("Not supported yet");
+        }
     }
 }

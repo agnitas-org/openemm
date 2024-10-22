@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="bounceFilterForm" type="com.agnitas.emm.core.bounce.form.BounceFilterForm"--%>
 
@@ -20,7 +21,14 @@
                     </h4>
                 </div>
                 <div class="modal-body">
-                    <mvc:message code="settings.mailloop.delete"/>
+                    <c:choose>
+                        <c:when test="${containsReplies}">
+                            <mvc:message code="mailloop.delete.inbox.question" arguments="${bounceFilterForm.shortName}"/>
+                        </c:when>
+                        <c:otherwise>
+                            <mvc:message code="settings.mailloop.delete"/>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
                 <div class="modal-footer">
                     <div class="btn-group">

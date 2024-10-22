@@ -18,14 +18,14 @@
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden" id="stat-form" servletRelativeAction="/statistics/recipient/view.action"
+<mvc:form cssClass="tiles-container flex-column" id="stat-form" servletRelativeAction="/statistics/recipient/view.action"
           method="GET"
           modelAttribute="form"
           data-controller="recipient-statistics-view"
           data-editable-view="${agnEditViewKey}">
     <div id="filter-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="report.mailing.filter"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.filter"/></h1>
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
@@ -63,9 +63,9 @@
             </div>
         </div>
     </div>
-    <div id="overview-tile" class="tile flex-grow-1" data-editable-tile="main">
+    <div id="overview-tile" class="tile" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title" class="headline"><mvc:message code="report.mailing.statistics.select"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="report.mailing.statistics.select"/></h1>
             <div class="tile-title-controls gap-3">
                 <mvc:select path="reportName" cssClass="form-control" id="selectReportName" data-action="type-change" data-select-options="dropdownAutoWidth: true, width: 'auto'">
                     <mvc:option value="recipient_progress.rptdesign"><mvc:message code="statistics.progress"/></mvc:option>

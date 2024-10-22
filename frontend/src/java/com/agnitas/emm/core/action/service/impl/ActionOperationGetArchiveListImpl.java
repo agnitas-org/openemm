@@ -15,10 +15,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
+import org.agnitas.emm.core.mailing.service.MailingArchiveService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -27,7 +32,7 @@ import com.agnitas.beans.Company;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -44,13 +49,80 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveListImpl.class);
 
 	private ExtensibleUIDService uidService;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private ComCompanyDao companyDao;
 	private ConfigService configService;
 	private MailingPreviewService mailingPreviewService;
 
+	private final MailingArchiveService mailingArchiveService;
+
+	public ActionOperationGetArchiveListImpl(final MailingArchiveService mailingArchiveService) {
+		this.mailingArchiveService = Objects.requireNonNull(mailingArchiveService, "mailing archive service");
+	}
+
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
+		final ActionOperationGetArchiveListParameters op =(ActionOperationGetArchiveListParameters) operation;
+		final int companyID = op.getCompanyId();
+		final int campaignID = op.getCampaignID();
+
+		Integer tmpNum;
+		int customerID;
+
+		if(params.get("customerID")!=null) {
+            tmpNum=(Integer)params.get("customerID");
+            customerID=tmpNum.intValue();
+        } else {
+        	actionOperationErrors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
+	        return false;
+        }
+
+        final Company company = companyDao.getCompany(companyID);
+ 		if(company == null) {
+        	actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_COMPANY_ID);
+        	return false;
+        }
+
+		final int licenseID = this.configService.getLicenseID();
+        ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID);
+
+		try {
+			final List<MailingArchiveEntry> mailings = this.mailingArchiveService.listMailingArchive(companyID, campaignID);
+
+       		final Hashtable<String, String> shortnames = new Hashtable<>();
+			final Hashtable<String, String> uids = new Hashtable<>();
+			final Hashtable<String, String> subjects = new Hashtable<>();
+			final List<String> mailingids = new LinkedList<>();
+
+			for(final MailingArchiveEntry mailing : mailings) {
+				uid = UIDFactory.copyWithNewMailingID(uid, mailing.getMailingId());
+				final String uidString =  uidService.buildUIDString(uid);
+				final String mailingIdString = Integer.toString(mailing.getMailingId());
+				final String subject = mailingPreviewService.renderPreviewFor(mailing.getMailingId(), customerID, mailing.getEmailSubject());
+
+				shortnames.put(mailingIdString, mailing.getShortname());
+				uids.put(mailingIdString, uidString);
+				subjects.put(mailingIdString, subject);
+				mailingids.add(mailingIdString);
+			}
+
+			params.put("archiveListSubjects", subjects);
+        	params.put("archiveListNames", shortnames);
+        	params.put("archiveListUids", uids);
+        	params.put("archiveListMailingIDs", mailingids);
+
+        	if(logger.isInfoEnabled()) {
+        		logger.info("generated feed");
+        	}
+
+			return true;
+		} catch (Exception e) {
+        	logger.error(String.format("Error creating list of mailng for archive %d", campaignID), e);
+        	return false;
+        }
+	}
+
+	public boolean __old__execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
 		ActionOperationGetArchiveListParameters op =(ActionOperationGetArchiveListParameters) operation;
 		int companyID = op.getCompanyId();
 		int campaignID = op.getCampaignID();
@@ -70,15 +142,15 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
             customerID=tmpNum.intValue();
         } else {
         	actionOperationErrors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
-        	
+
             return false;
         }
 
         final Company company = companyDao.getCompany(companyID);
-        
+
         if(company == null) {
         	actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_COMPANY_ID);
-        	
+
         	return false;
         }
 
@@ -97,13 +169,13 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	                if (aType.getStatus() == MediaTypeStatus.Active.getCode()) {
 	                    mailingids.add(Integer.toString(tmpMailingID));
 	                    shortnames.put(Integer.toString(tmpMailingID), (String) map.get("shortname"));
-	                    
+
 	                    final String subject = mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aType.getSubject());
-	                    
+
 	                    subjects.put(Integer.toString(tmpMailingID), subject);
-	                    		
+
 	                    uid = UIDFactory.copyWithNewMailingID(uid, tmpMailingID);
-	                    
+
 	                    try {
 	                    	uids.put( Integer.toString(tmpMailingID), uidService.buildUIDString( uid));
 	                    } catch (Exception e) {
@@ -126,7 +198,7 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
         if(logger.isInfoEnabled()) {
         	logger.info("generated feed");
         }
-        
+
         return true;
 
 	}
@@ -142,7 +214,7 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	}
 
 	@Required
-	public final void setMailingDao(final ComMailingDao dao) {
+	public final void setMailingDao(final MailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 

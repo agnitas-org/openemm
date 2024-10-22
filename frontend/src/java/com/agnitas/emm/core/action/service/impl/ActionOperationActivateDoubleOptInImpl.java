@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -39,7 +39,7 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 	/**
 	 * DAO for accessing mailing data.
 	 */
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 
 	/**
 	 * DAO for accessing subscription/binding data.
@@ -47,7 +47,7 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 	private ComBindingEntryDao bindingEntryDao;
 
 	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
+	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	

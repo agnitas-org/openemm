@@ -15,6 +15,7 @@ import java.util.Date;
 public class ReportEntry {
     
     private int id;
+    private int companyId;
     
     private String shortname;
     
@@ -72,5 +73,13 @@ public class ReportEntry {
     
     public void setDeliveryDate(Date deliveryDate) {
         this.deliveryDate = deliveryDate;
+    }
+
+    public int getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(int companyId) {
+        this.companyId = companyId;
     }
 }

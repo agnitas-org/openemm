@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   const EditableView = AGN.Lib.EditableView;
   const Action = AGN.Lib.Action;

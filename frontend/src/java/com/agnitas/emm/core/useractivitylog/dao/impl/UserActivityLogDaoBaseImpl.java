@@ -12,11 +12,15 @@ package com.agnitas.emm.core.useractivitylog.dao.impl;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDaoBase;
+import org.agnitas.beans.AdminEntry;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public abstract class UserActivityLogDaoBaseImpl extends PaginatedBaseDaoImpl implements UserActivityLogDaoBase {
 
@@ -46,5 +50,18 @@ public abstract class UserActivityLogDaoBaseImpl extends PaginatedBaseDaoImpl im
                 update(LOGGER, sql, admin.getAdminID(), feature, date, date);
             }
         }
+    }
+
+    protected String buildVisibleAdminsCondition(List<AdminEntry> visibleAdmins) {
+        List<String> usernames = visibleAdmins.stream()
+                .filter(Objects::nonNull)
+                .map(AdminEntry::getUsername)
+                .collect(Collectors.toList());
+
+        if (!usernames.isEmpty()) {
+            return makeBulkInClauseForString("username", usernames);
+        }
+
+        return "";
     }
 }

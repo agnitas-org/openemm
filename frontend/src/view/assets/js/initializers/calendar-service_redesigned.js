@@ -1,7 +1,9 @@
 (function () {
   const DateFormat = AGN.Lib.DateFormat;
   const Template = AGN.Lib.Template;
+  
   const monthMailingsUrl = AGN.url('/calendar/mailings.action');
+  const mailingsPopoverInfoUrl = AGN.url("/calendar/mailingsPopoverInfo.action");
   const mailingSettingsView = AGN.url('/mailing/:mailingId:/settings.action');
   const mailingStatView = AGN.url('/statistics/mailing/:mailingId:/view.action?init=true');
 
@@ -119,6 +121,34 @@
       const dayOfWeek = dayDate.toLocaleString(window.adminLocale, {weekday: 'long'})
       dateStr = AGN.Lib.DateFormat.format(dayDate, window.adminDateFormat);
       $('#calendar-tile-day-mailings').html(Template.dom("dashboard-schedule-day", {dayOfWeek, dateStr, dayMailings}));
+      this.createPopovers(dayMailings);
+    }
+
+    createPopovers(dayMailings) {
+      if (!dayMailings?.length) {
+        return
+      }
+      const mailingIds = dayMailings.map(mailing => mailing.mailingId).join(',');
+      $
+        .get(mailingsPopoverInfoUrl, { mailingIds })
+        .done(mailings => mailings.forEach(mailing => this.createPopover(mailing)));
+    }
+
+    createPopover(mailing) {
+      mailing.thumbnailUrl = AGN.url(this.getMailingThumbnailSrc(mailing.thumbnailComponentId, mailing.post));
+      const content = Template.dom("calendar-mailing-popover-content", mailing);
+      const $dayMailing = $(`.schedule__day-mailing[data-mailing-id="${mailing.mailingId}"]`);
+      AGN.Lib.Popover.getOrCreate($dayMailing, {trigger: 'hover', html: true, content})
+    }
+
+    getMailingThumbnailSrc(previewComp, isPostType) {
+      if (isPostType) {
+        return "/assets/core/images/facelift/post_thumbnail.jpg";
+      }
+      if (previewComp) {
+        return "/sc?compID=" + previewComp;
+      }
+      return "/assets/core/images/facelift/no_preview.svg";
     }
 
     getMailingLink(mailing) {

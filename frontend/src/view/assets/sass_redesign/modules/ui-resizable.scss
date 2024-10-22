@@ -1,0 +1,89 @@
+
+.ui-wrapper {
+  outline: 2px dashed $primary !important;
+
+  &.ui-resizable-disabled {
+    outline: 2px dashed transparent !important;
+  }
+}
+
+.ui-resizable-handle {
+  $resizable-handle-size: $gap-sm;
+
+  .ui-wrapper.ui-resizable-disabled & {
+    display: none;
+  }
+
+  position: absolute;
+  font-family: 'FontAwesome';
+
+  width: $resizable-handle-size;
+  height: $resizable-handle-size;
+
+  border-radius: 2px;
+  background-color: $primary;
+
+  &.ui-resizable-nw {
+    top: -$resizable-handle-size / 2;
+    left: -$resizable-handle-size / 2;
+
+    cursor: nwse-resize;
+  }
+
+  &.ui-resizable-ne {
+    top: -$resizable-handle-size / 2;
+    right: -$resizable-handle-size / 2;
+
+    cursor: nesw-resize;
+  }
+
+  &.ui-resizable-se {
+    bottom: -$resizable-handle-size / 2;
+    right: -$resizable-handle-size / 2;
+
+    cursor: nwse-resize;
+  }
+
+  &.ui-resizable-sw {
+    bottom: -$resizable-handle-size / 2;
+    left: -$resizable-handle-size / 2;
+
+    cursor: nesw-resize;
+  }
+
+  &.ui-resizable-w {
+    height: calc(100% - #{$resizable-handle-size});
+    top: $resizable-handle-size / 2;
+    left: -$resizable-handle-size / 2;
+
+    cursor: ew-resize;
+    background-color: transparent;
+  }
+
+  &.ui-resizable-e {
+    height: calc(100% - #{$resizable-handle-size});
+    top: $resizable-handle-size / 2;
+    right: -$resizable-handle-size / 2;
+
+    cursor: ew-resize;
+    background-color: transparent;
+  }
+
+  &.ui-resizable-n {
+    width: calc(100% - #{$resizable-handle-size});
+    top: -$resizable-handle-size / 2;
+    left: $resizable-handle-size / 2;
+
+    cursor: ns-resize;
+    background-color: transparent;
+  }
+
+  &.ui-resizable-s {
+    width: calc(100% - #{$resizable-handle-size});
+    bottom: -$resizable-handle-size / 2;
+    left: $resizable-handle-size / 2;
+
+    cursor: ns-resize;
+    background-color: transparent;
+  }
+}

@@ -28,7 +28,7 @@ public interface DashboardService {
 
     List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums);
 
-    JSONObject getStatisticsInfo(int mailingId, Locale locale, int companyId) throws Exception;
+    JSONObject getStatisticsInfo(int mailingId, Locale locale, Admin admin) throws Exception;
 
     List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate);
 

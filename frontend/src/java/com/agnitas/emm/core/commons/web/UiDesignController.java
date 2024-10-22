@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.Anonymous;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @RequestMapping("/ui-design")
-@PermissionMapping("ui.design")
 public class UiDesignController {
 
     private final AdminService adminService;
@@ -31,12 +30,13 @@ public class UiDesignController {
         this.adminService = adminService;
     }
 
+    @Anonymous
     @PostMapping("/switch.action")
     public @ResponseBody BooleanResponseDto switchDesign(Admin admin) {
         if (admin.isRedesignedUiUsed()) {
-            adminService.revokePermission(admin, Permission.USE_REDESIGNED_UI);
+            adminService.grantPermission(admin, Permission.USE_OLD_UI);
         } else {
-            adminService.grantPermission(admin, Permission.USE_REDESIGNED_UI);
+            adminService.revokePermission(admin, Permission.USE_OLD_UI);
         }
 
         return new BooleanResponseDto(true);

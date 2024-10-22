@@ -1,44 +1,44 @@
-/*doc
----
-title: Full Screen View
-name: fullscreen
-category: Javascripts - Full Screen View
----
-
-A container can be stretched to fill the available screen area by using the `data-sizing` statement.
-
-```htmlexample
-<div class="tile" data-sizing="container">
-  <div class="tile-header" data-sizing="top">
-    <h2 class="headline">
-      Top Element
-    </h2>
-  </div>
-
-  <div class="tile-content" >
-
-    <div class="row">
-      <div class="col-sm-8">
-        <div data-sizing="scroll">
-          <p style="font-size: 200px;">Scrollable Element which fills the available screen area</p>
-        </div>
-      </div>
-
-      <div class="col-sm-4">
-        <div data-sizing="scroll">
-          <p style="font-size: 200px;">Scrollable Element which fills the available screen area</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="tile-footer" data-sizing="bottom">
-    <p>Bottom Element</p>
-  </div>
-</div>
-```
-*/
+// /*doc
+// ---
+// title: Full Screen View
+// name: fullscreen
+// category: Javascripts - Full Screen View
+// ---
+//
+// A container can be stretched to fill the available screen area by using the `data-sizing` statement.
+//
+// ```htmlexample
+// <div class="tile" data-sizing="container">
+//   <div class="tile-header" data-sizing="top">
+//     <h2 class="headline">
+//       Top Element
+//     </h2>
+//   </div>
+//
+//   <div class="tile-content" >
+//
+//     <div class="row">
+//       <div class="col-sm-8">
+//         <div data-sizing="scroll">
+//           <p style="font-size: 200px;">Scrollable Element which fills the available screen area</p>
+//         </div>
+//       </div>
+//
+//       <div class="col-sm-4">
+//         <div data-sizing="scroll">
+//           <p style="font-size: 200px;">Scrollable Element which fills the available screen area</p>
+//         </div>
+//       </div>
+//     </div>
+//
+//   </div>
+//
+//   <div class="tile-footer" data-sizing="bottom">
+//     <p>Bottom Element</p>
+//   </div>
+// </div>
+// ```
+// */
 
 AGN.Lib.CoreInitializer.new('sizing', function($scope) {
   if (!$scope) {

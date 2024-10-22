@@ -14,10 +14,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
 
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
@@ -28,25 +28,41 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.JavaMailService;
 
+@Component("ExportPredefDao")
 public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao {
 
-	private static final Logger logger = LogManager.getLogger(ExportPredefDaoImpl.class);
-	
+    private static final Logger logger = LogManager.getLogger(ExportPredefDaoImpl.class);
+    
+    private static final List<String> COLUMNS = List.of("export_predef_id", "company_id", "charset", "columns",
+            "shortname", "description", "mailinglists", "mailinglist_id", "target_id", "user_type", "user_status",
+            "deleted", "timestamp_start", "timestamp_end", "timestamp_lastdays", "timestamp_includecurrent",
+            "creation_date_start", "creation_date_end", "creation_date_lastdays", "creation_date_includecurrent",
+            "mailinglist_bind_start", "mailinglist_bind_end", "mailinglist_bind_lastdays", "ml_bind_includecurrent",
+            "always_quote", "delimiter_char", "separator_char", "dateformat", "datetimeformat", "timezone",
+            "locale_lang", "locale_country", "decimalseparator", "use_decoded_values", "limits_linked_by_and");
+    protected static final String COLUMNS_CSV = StringUtils.join(COLUMNS, ", ");
+
+    public ExportPredefDaoImpl(DataSource dataSource, JavaMailService javaMailService) {
+        super(dataSource, javaMailService);
+    }
+    
 	@Override
 	public ExportPredef get(int id, int companyID) {
-		if (companyID != 0 && id != 0) {
-			return selectObjectDefaultNull(logger, "SELECT * FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", new ExportPredefRowMapper(isOracleDB()), id, companyID);
-		} else {
-			return null;
-		}
+		if (companyID <= 0 || id <= 0) {
+            return null;
+        }
+        return selectObjectDefaultNull(logger,
+                "SELECT " + COLUMNS_CSV + " FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?",
+                getExportRowMapper(), id, companyID);
 	}
 
 	@Override
@@ -275,80 +291,22 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	}
 
 	@Override
-	public List<ExportPredef> getAllByCompany(int companyId) {
-		return getAllByCompany(companyId, null, 0);
+	public List<ExportPredef> getAllExports(Admin admin) {
+		return getAllExports(admin.getCompanyID());
 	}
 
 	@Override
-	public List<ExportPredef> getAllByCompany(int companyId, final Collection<Integer> disabledMailingListIds, final int targetId) {
-		final List<Object> params = new ArrayList<>();
-		String sql = "SELECT * FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?";
-		params.add(companyId);
-		
-		if (targetId > 0) {
-			sql += " AND target_id = ? ";
-			params.add(targetId);
-		}
-		
-		if (CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			sql += " AND mailinglist_id > 0 AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
-		}
-
-		final List<ExportPredef> profiles = new ArrayList<>();
-		final RowMapper<ExportPredef> rowMapper = new ExportPredefRowMapper(isOracleDB());
-		final RowCallbackHandler rowCallbackHandler;
-
-		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			rowCallbackHandler = rs -> {
-				if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
-					profiles.add(rowMapper.mapRow(rs, 0));
-				}
-			};
-		} else {
-			rowCallbackHandler = rs -> profiles.add(rowMapper.mapRow(rs, 0));
-		}
-
-		query(logger, sql, rowCallbackHandler, params.toArray());
-
-		return profiles;
+	public List<ExportPredef> getAllExports(int companyId) {
+		return select(logger,
+                "SELECT " + COLUMNS_CSV + " FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?",
+                getExportRowMapper(), companyId);
 	}
 
 	@Override
-	public List<Integer> getAllIdsByCompany(int companyId) {
-		return getAllIdsByCompany(companyId, null, 0);
-	}
-
-	@Override
-	public List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds, final int targetId) {
-		final List<Object> params = new ArrayList<>();
-		String sqlGetIds = "SELECT export_predef_id, mailinglists FROM export_predef_tbl " +
-				"WHERE deleted = 0 AND company_id = ? ";
-		params.add(companyId);
-
-		if (targetId > 0) {
-			sqlGetIds += " AND target_id = ? ";
-			params.add(targetId);
-		}
-		
-		if (CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			sqlGetIds += " AND mailinglist_id > 0 AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
-		}
-
-		final List<Integer> ids = new ArrayList<>();
-		final RowCallbackHandler rowCallbackHandler;
-		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			rowCallbackHandler = rs -> {
-				if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
-					ids.add(rs.getInt("export_predef_id"));
-				}
-			};
-		} else {
-			rowCallbackHandler = rs -> ids.add(rs.getInt("export_predef_id"));
-		}
-
-		query(logger, sqlGetIds, rowCallbackHandler, params.toArray());
-
-		return ids;
+	public List<Integer> getAllExportIds(Admin admin) {
+		return select(logger,
+                "SELECT export_predef_id FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?",
+                IntegerRowMapper.INSTANCE, admin.getCompanyID());
 	}
 	
 	@Override
@@ -356,19 +314,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 		return select(logger, "SELECT DISTINCT(export_predef_id) FROM export_column_mapping_tbl WHERE export_predef_id IN (SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ?) AND LOWER(db_column) = ? ORDER BY export_predef_id", IntegerRowMapper.INSTANCE, companyID, profileFieldName.toLowerCase());
 	}
 
-	private static boolean validateMailingListIds(String ids, Collection<Integer> disabledMailingListIds) {
-		if (StringUtils.isBlank(ids)) {
-			return true;
-		}
-
-		List<Integer> mailingListIds = AgnUtils.splitAndTrimList(ids).stream().map(NumberUtils::toInt)
-				.filter(id -> id > 0)
-				.collect(Collectors.toList());
-
-		return mailingListIds.isEmpty() || !disabledMailingListIds.containsAll(mailingListIds);
-	}
-
-    private class ExportPredefRowMapper implements RowMapper<ExportPredef> {
+    protected class ExportPredefRowMapper implements RowMapper<ExportPredef> {
 		private boolean isOracle;
 
 		public ExportPredefRowMapper(boolean isOracle) {
@@ -469,6 +415,10 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			return readItem;
 		}
 	}
+
+    protected ExportPredefRowMapper getExportRowMapper() {
+        return new ExportPredefRowMapper(isOracleDB());
+    }
     
     private class ExportColumnMappingRowMapper implements RowMapper<ExportColumnMapping> {
 		@Override

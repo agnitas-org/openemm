@@ -34,7 +34,7 @@ public class AgnTagTitleTypeAttributeResolver implements AgnTagAttributeResolver
     @Override
 	public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) {
         if (tag.startsWith("agnTITLE") && attribute.equals("type")) {
-            List<Title> titles = titleDao.getTitles(admin.getCompanyID());
+            List<Title> titles = titleDao.getTitles(admin.getCompanyID(), false);
             Map<String, String> options = new LinkedHashMap<>(titles.size());
 
             for (Title title : titles) {

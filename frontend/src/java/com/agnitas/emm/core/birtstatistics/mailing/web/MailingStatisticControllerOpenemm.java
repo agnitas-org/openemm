@@ -1,5 +1,6 @@
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.service.UserActivityLogService;
 import org.springframework.core.convert.ConversionService;
@@ -21,20 +22,21 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @RequestMapping("/statistics/mailing")
 @PermissionMapping("mailing.stat")
 public class MailingStatisticControllerOpenemm extends MailingBirtStatController {
-    public MailingStatisticControllerOpenemm(
-    		ComMailingBaseService mailingBaseService,
-    		MailinglistApprovalService mailinglistApprovalService,
-            WebStorage webStorage,
-            ConversionService conversionService,
-            UserActivityLogService userActivityLogService,
-            AdminService adminService,
-            GridServiceWrapper gridServiceWrapper,
-            BirtStatisticsService birtStatisticsService,
-            CompanyService companyService,
-            ComTargetService targetService,
-            ComBirtReportService birtReportService,
-			ComOptimizationService optimizationService) {
-        super(mailingBaseService,
+	public MailingStatisticControllerOpenemm(
+			ComMailingBaseService mailingBaseService,
+			MailinglistApprovalService mailinglistApprovalService,
+			WebStorage webStorage,
+			ConversionService conversionService,
+			UserActivityLogService userActivityLogService,
+			AdminService adminService,
+			GridServiceWrapper gridServiceWrapper,
+			BirtStatisticsService birtStatisticsService,
+			CompanyService companyService,
+			ComTargetService targetService,
+			ComBirtReportService birtReportService,
+			ComOptimizationService optimizationService,
+			MaildropService maildropService) {
+		super(mailingBaseService,
 				mailinglistApprovalService,
 				webStorage,
 				conversionService,
@@ -45,6 +47,7 @@ public class MailingStatisticControllerOpenemm extends MailingBirtStatController
 				companyService,
 				targetService,
 				birtReportService,
-				optimizationService);
-    }
+				optimizationService,
+				maildropService);
+	}
 }

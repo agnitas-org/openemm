@@ -15,7 +15,6 @@ import java.util.Map;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
@@ -30,6 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.MailingComponentDao;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;

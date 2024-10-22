@@ -2,7 +2,7 @@
 <div class="col-12">
     <div class="tile tile--sm">
         <div class="tile-header">
-            <h3 class="text-dark"><mvc:message code="mailing.send.security.notification"/></h3>
+            <h3 class="tile-title text-dark"><mvc:message code="mailing.send.security.notification"/></h3>
         </div>
 
         <div class="tile-body border-top p-3">
@@ -52,11 +52,11 @@
             </div>
             <div class="col-auto">
                 {{ if (newRow) { }}
-                    <button type="button" class="btn btn-icon-sm btn-primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="status-mail-recipient-row-add">
+                    <button type="button" class="btn btn-icon btn-primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="status-mail-recipient-row-add">
                         <i class="icon icon-plus"></i>
                     </button>
                 {{ } else { }}
-                    <button type="button" class="btn btn-icon-sm btn-danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="status-mail-recipient-row-delete">
+                    <button type="button" class="btn btn-icon btn-danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="status-mail-recipient-row-delete">
                         <i class="icon icon-trash-alt"></i>
                     </button>
                 {{ } }}

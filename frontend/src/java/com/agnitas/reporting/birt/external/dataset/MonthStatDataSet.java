@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.emm.core.birtstatistics.monthly.MonthlyStatType;
 import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.MonthCounterStatRow;
+import com.agnitas.reporting.birt.external.beans.MonthCounterStat;
 import com.agnitas.reporting.birt.external.beans.MonthDetailStatRow;
 import com.agnitas.reporting.birt.external.beans.MonthTotalStatRow;
 
@@ -38,7 +38,8 @@ public class MonthStatDataSet extends BIRTDataSet {
 	 * Get mailing statistics for a time period
 	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
 	 */
-	public List<MonthCounterStatRow> getMailingCounts(int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
+	// called from Monthly.rptdesign
+	public List<MonthCounterStat> getMailingCounts(int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
@@ -46,7 +47,8 @@ public class MonthStatDataSet extends BIRTDataSet {
 		
 		String query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
 			+ " SUM(a.no_of_mailings) email_count,"
-			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail"
+			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail,"
+			+ " a.status_field"
 			+ " FROM mailing_account_tbl a";
 		
 			if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
@@ -57,18 +59,24 @@ public class MonthStatDataSet extends BIRTDataSet {
 			
 			query += " WHERE a.company_id = ?"
 				+ " AND a.timestamp >= ?"
-				+ " AND a.timestamp < ?";
-		
+				+ " AND a.timestamp < ?"
+				+ " AND EXISTS (SELECT 1 FROM mailing_account_tbl b WHERE b.mailing_id = a.mailing_id AND b.status_field NOT IN ('A', 'T') AND b.timestamp >= ? AND b.timestamp < ?) GROUP BY a.status_field";
+
 			params.add(companyID);
 			params.add(startDate);
 			params.add(endDate);
-		return select(logger, query, (resultSet, rowNum) -> {
-			MonthCounterStatRow monthCounterRow = new MonthCounterStatRow();
-			monthCounterRow.setMailingCount(resultSet.getInt("mailing_count"));
-			monthCounterRow.setEMailCount(resultSet.getInt("email_count"));
-			monthCounterRow.setKilobyte(new DecimalFormat("0.0").format(resultSet.getDouble("kbPerMail")));
-			return monthCounterRow;
+			params.add(startDate);
+			params.add(endDate);
+
+		MonthCounterStat row = new MonthCounterStat();
+		select(logger, query, (resultSet, rowNum) -> {
+			String status = resultSet.getString("status_field");
+			row.getMailings().put(status, resultSet.getInt("mailing_count"));
+			row.getEmails().put(status, resultSet.getInt("email_count"));
+			row.getKilobytes().put(status, resultSet.getDouble("kbPerMail"));
+			return row;
 		}, params.toArray());
+		return List.of(row);
 	}
 
 	/**

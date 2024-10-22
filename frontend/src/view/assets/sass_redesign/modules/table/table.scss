@@ -1,23 +1,32 @@
 
 $table-spacing: 10px;
-$table-header-height: 31px;
+$table-header-height: 34px;
+$table-row-height: 56px;
 $max-preview-width: 300px;
+$table-control-radius: $border-radius-sm;
 
 // separator between header elements
 @mixin table-header-separator() {
   content: "";
   position: absolute;
-  top: $table-spacing / 2;
-  bottom: $table-spacing / 2;
+  top: $table-spacing / 2 + 1;
+  bottom: $table-spacing - 1;
   left: 0;
   width: 1px;
   background-color: var(--table-border-color);
 }
 
+@mixin table-text-truncation() {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @mixin sortable-link($icon) {
   > a::before, > span > a::before {
     @include fa-content($icon);
-    margin-right: $table-spacing;
+    margin-right: $table-spacing / 2;
   }
 }
 
@@ -33,8 +42,10 @@ $max-preview-width: 300px;
     th {
       flex-grow: 1;
 
-      &.additional-columns {
+      &.columns-picker {
         flex: none;
+        padding-top: 7px;
+        padding-bottom: 0;
       }
     }
   }
@@ -65,12 +76,32 @@ $max-preview-width: 300px;
 
     td {
       padding: 0;
+      overflow: hidden;
+
+      @include flex-row($table-spacing / 2);
+      align-items: center;
     }
   }
 
-  .table-cell-nowrap {
-    min-width: 0;
-    flex: 1;
+  &:not(.no-truncate) {
+    .fluid-cell {
+      min-width: 0;
+      flex: 1;
+
+      span {
+        display: inline !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  &.no-truncate {
+    .fluid-cell {
+      order: 2;
+      width: 100%;
+    }
   }
 
   .table-actions {
@@ -80,27 +111,28 @@ $max-preview-width: 300px;
       gap: $table-spacing / 2;
     }
   }
-}
 
-@mixin table-cell-sub-info() {
-  width: 100%;
-  color: var(--text-gray-color);
+  .secondary-cell {
+    order: 2;
+    width: 100%;
+    color: var(--text-gray-color);
 
-  .icon {
-    font-size: $font-size-base;
+    > .icon {
+      display: initial;
+    }
   }
 }
 
-.table-rounded {
+.table--borderless {
   table-layout: fixed;
   width: 100%;
   margin: 0;
   border-collapse: separate;
   border-spacing: 0;
-  color: var(--default-text-color);
+  color: var(--text-color-default);
 
   tbody tr {
-    height: 40px;
+    height: $table-row-height;
   }
 
   @include mobile {
@@ -108,20 +140,20 @@ $max-preview-width: 300px;
   }
 
   thead {
-    background-color: var(--table-head-bg-color);
     position: sticky;
     top: 0;
     z-index: 1;
   }
 
   td {
-    @extend .text-truncate;
+    color: var(--table-body-color);
     padding-block: $table-spacing / 2;
     padding-inline: $table-spacing;
     vertical-align: middle;
     border: none;
+    overflow-wrap: anywhere;
 
-    &.js-checkable {
+    &:has(input[type="checkbox"]) {
       text-align: center;
     }
 
@@ -136,21 +168,14 @@ $max-preview-width: 300px;
   th {
     @extend .text-truncate;
     position: relative;
-    padding: $table-spacing / 2 + 1 $table-spacing;
+    padding: $table-spacing / 2 $table-spacing $table-spacing $table-spacing;
     border: none;
 
     color: var(--table-head-text-color);
     font-weight: $font-weight-semibold;
 
-    @include desktop {
-      &:not(.hidden) + th::before {
-        @include table-header-separator;
-      }
-    }
-    @include mobile {
-      &:not(.mobile-hidden) + th::before {
-        @include table-header-separator;
-      }
+    & + th::before {
+      @include table-header-separator;
     }
 
     &.sortable:not(.sorted) {
@@ -158,7 +183,9 @@ $max-preview-width: 300px;
     }
 
     &.sorted {
-      color: var(--table-sortable-color);
+      > a {
+        color: var(--table-sortable-color);
+      }
 
       &.order1 { // desc
         @include sortable-link($fa-var-sort-down);
@@ -169,27 +196,35 @@ $max-preview-width: 300px;
       }
     }
 
-    &.flex-table-header {
-      &.sortable, &.sorted {
-        > a {
-          display: flex; // allows display switch inside the <th> on same line with sort arrows
-        }
-      }
+    .form-switch {
+      display: inline-flex; // allows to display switch inside the table header
     }
 
-    &.bulk-ids-column {
+    &:has(input[type="checkbox"]) {
       width: 35px;
       max-width: 35px;
     }
 
-    &.additional-columns {
-      padding-block: 8px;
-      width: 50px;
-      max-width: 50px;
+    &:has(.form-switch) {
+      width: auto !important;
+      max-width: none !important;
+    }
+
+    &.columns-picker {
+      padding-top: $table-spacing / 2 - 1;
+      padding-bottom: $table-spacing + 1;
+
+      .icon-btn {
+        font-size: $font-size-md;
+      }
 
       .dropdown {
         @extend .flex-center;
       }
+    }
+
+    .icon-btn {
+      font-size: inherit;
     }
   }
 
@@ -209,9 +244,10 @@ $max-preview-width: 300px;
           cursor: pointer;
 
           > * {
-            color: var(--default-text-color);
+            color: var(--text-color-default);
           }
         }
+
         &.empty > * {
           --bs-table-accent-bg: initial;
           color: initial;
@@ -220,14 +256,79 @@ $max-preview-width: 300px;
     }
   }
 
-  &:not(.table-preview) {
+  &:not(.no-truncate) {
+    .text-truncate-table {
+      @include table-text-truncation;
+    }
+
+    td > span:not(.table-badge) {
+      @extend .text-truncate-table;
+    }
+  }
+
+  //            Row delimiters
+  // ------------------------------------------
+  @include desktop {
+    &:not(.table--preview) {
+      tr:not(:last-child) td {
+        border-bottom: $table-border;
+      }
+
+      .table-row-wrapper:not(:last-child) {
+        td {
+          border-bottom: $table-border;
+        }
+      }
+    }
+  }
+
+  @include mobile {
+    &:not(.table--preview) {
+      tr:not(:last-child) {
+        border-bottom: $table-border;
+      }
+
+      .table-row-wrapper:not(:last-child) tr {
+        border-bottom: $table-border;
+      }
+    }
+  }
+  // --------------------------------------------
+
+  &:not(.table--preview) {
     .table-preview-visible {
+      display: none;
+    }
+  }
+
+  .form-check-input:not(:checked) {
+    &:not(:indeterminate) {
+      background-color: var(--table-checkbox-bg-color);
+    }
+
+    &:disabled {
+      background-color: var(--input-disabled-bg-color);
+    }
+  }
+
+  &:not(.table--preview) {
+    .thumbnail-cell {
       display: none;
     }
   }
 }
 
-.table-preview {
+.table-wrapper__header:empty + .table-wrapper__body .table--borderless {
+  th {
+    padding-top: 0;
+
+    & + th::before {
+      top: 0;
+    }
+  }
+}
+
+.table--preview {
   @include flex-table;
 
   tbody {
@@ -235,12 +336,8 @@ $max-preview-width: 300px;
     grid-template-columns: repeat(auto-fit, minmax(#{$max-preview-width}, 1fr));
   }
 
-  .js-checkable {
+  tr > td:has(input[type="checkbox"]) {
     @include flex-center;
-  }
-
-  .table__cell-sub-info {
-    @include table-cell-sub-info;
   }
 
   .table-preview-visible {
@@ -250,31 +347,27 @@ $max-preview-width: 300px;
   .table-preview-hidden {
     display: none !important;
   }
-}
 
-.table-cell-wrapper {
-  @include flex-row($table-spacing / 2);
-  align-items: center;
-
-  span {
-    @extend .text-truncate;
+  .table-actions {
+    order: 0;
+    margin-left: auto;
   }
 }
 
-.table__cell-sub-info {
-  @include mobile {
-    @include table-cell-sub-info;
-  }
+.secondary-cell > .icon {
+  display: none;
 }
 
-.table-cell__preview-wrapper {
+.thumbnail-cell {
+  order: -1;
+  width: 100%;
   @extend .flex-center;
   height: 200px;
-}
 
-.table-cell__preview {
-  max-width: $max-preview-width;
-  max-height: 100%;
+  img {
+    max-width: $max-preview-width;
+    max-height: 100%;
+  }
 }
 
 .table-row-wrapper {
@@ -293,4 +386,12 @@ tbody > tr.disabled {
     pointer-events: none;
     background-color: transparent;
   }
+}
+
+.table__btn {
+  height: 22px;
+  padding-inline: $gap-sm - 1px;
+  gap: $gap-x-sm;
+  --bs-btn-border-radius: #{$table-control-radius};
+  --bs-btn-bg: var(--table-head-bg-color);
 }

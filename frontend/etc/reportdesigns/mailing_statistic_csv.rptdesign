@@ -113,21 +113,6 @@ function tr(key) {
 showSoftbounces = BirtReporUtils.isOptionAllowed("softbounces", params["figures"]);
 showHardbounces = BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]);
 
-if(!(showSoftbounces == true)){
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces row").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces footer na").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces footer 100").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces2").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces2 row").drop();
-}
-if(!(showHardbounces == true)){
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Hardbounces").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Hardbounces row").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Hardbounces footer na").drop();
-	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Hardbounces footer 100").drop();
-}
-
 if (!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksHeader").drop();
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksContent").drop();
@@ -4351,6 +4336,12 @@ isShowLink = true;	]]></method>
                 </table>
                 <table name="Softbounces row" id="3871">
                     <property name="dataSet">MailingsDataSet</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                        </structure>
+                    </list-property>
                     <list-property name="boundDataColumns">
                         <structure>
                             <property name="name">COUNT</property>
@@ -4406,6 +4397,12 @@ isShowLink = true;	]]></method>
                     <property name="pageBreakInside">avoid</property>
                     <property name="width">100%</property>
                     <property name="dataSet">BouncesDataSet</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                        </structure>
+                    </list-property>
                     <list-property name="boundDataColumns">
                         <structure>
                             <property name="name">COUNT</property>
@@ -4566,7 +4563,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">row._outer["bouncesExpired"] == false &amp;&amp; row._outer["softbouncesDataExists"] == true</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["softbouncesDataExists"] == true)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -4632,7 +4629,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">row._outer["bouncesExpired"] == true || row._outer["softbouncesDataExists"] == false</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["softbouncesDataExists"] == false)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -4720,6 +4717,12 @@ isShowLink = true;	]]></method>
                 </table>
                 <table name="Softbounces2 row" id="4293">
                     <property name="dataSet">MailingsDataSet</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                        </structure>
+                    </list-property>
                     <list-property name="boundDataColumns">
                         <structure>
                             <property name="name">COUNT</property>
@@ -4774,7 +4777,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">(row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -4876,6 +4879,12 @@ isShowLink = true;	]]></method>
                     </detail>
                 </table>
                 <table name="Hardbounces row" id="4069">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
+                        </structure>
+                    </list-property>
                     <column id="4072"/>
                     <header>
                         <row id="4070">
@@ -4889,6 +4898,12 @@ isShowLink = true;	]]></method>
                     <property name="pageBreakInside">avoid</property>
                     <property name="width">100%</property>
                     <property name="dataSet">BouncesDataSet</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
+                        </structure>
+                    </list-property>
                     <list-property name="boundDataColumns">
                         <structure>
                             <property name="name">COUNT</property>
@@ -5024,7 +5039,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">row._outer["bouncesExpired"] == false &amp;&amp; row._outer["hardbouncesDataExists"] == true</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["hardbouncesDataExists"] == true)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5090,7 +5105,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">row._outer["bouncesExpired"] == true || row._outer["hardbouncesDataExists"] == false</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["hardbouncesDataExists"] == false)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">

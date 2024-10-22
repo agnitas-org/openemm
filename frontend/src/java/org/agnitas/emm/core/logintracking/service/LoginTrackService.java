@@ -13,7 +13,10 @@ package org.agnitas.emm.core.logintracking.service;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.logintracking.LoginStatus;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
@@ -21,6 +24,7 @@ import org.agnitas.emm.core.logintracking.service.impl.LoginTrackSortCriterion;
 
 import com.agnitas.emm.core.loginmanager.entity.BlockedAddressData;
 import com.agnitas.emm.util.SortDirection;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 
 /**
  * Service for handling login data.
@@ -51,13 +55,6 @@ public interface LoginTrackService {
 	 */
 	void trackLoginSuccessfulButBlocked(final String ipAddress, final String username);
 	
-	/**
-	 * Unlock given IP address.
-	 * 
-	 * @param ipAddress IP address to unlock
-	 */
-	void unlockIpAddress(final String ipAddress);
-
 	/**
 	 * Checks, if given IP address is locked.
 	 * 
@@ -115,7 +112,7 @@ public interface LoginTrackService {
 	 * 
 	 * @return blocked address data or {@link Optional#empty()}
 	 */
-	Optional<BlockedAddressData> findBlockedAddressByTrackingID(int trackingId);
+	Optional<BlockedAddressData> findBlockedAddressByTrackingID(long trackingId);
 	
 	/**
 	 * Unlocks blocked IP address by tracking ID.
@@ -129,7 +126,7 @@ public interface LoginTrackService {
 	 * @see #unlockIpAddress(String)
 	 */
 	@Deprecated // Block by IP using unlockIpAddress()
-	boolean unlockBlockedAddressByTrackingId(final int trackingID);
+	boolean unlockBlockedAddressByTrackingId(final long trackingID);
 
 	/**
 	 * Lists blocked IP addresses.
@@ -139,4 +136,8 @@ public interface LoginTrackService {
 	List<BlockedAddressData> listBlockedIpAddresses();
 
 	PaginatedListImpl<BlockedAddressData> getBlockedIPListAfterSuccessfulLogin(final LoginTrackSortCriterion criterion, final SortDirection order, int pageNumber, int pageSize);
+
+    List<String> getBlockedIpAddresses(Set<Integer> ids);
+
+	ServiceResult<UserAction> unlockAddresses(Set<Integer> ids, Admin admin);
 }

@@ -170,6 +170,10 @@
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
                             </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
+                            </label>
                         </li>
                         <li class="divider"></li>
                         <li>
@@ -221,7 +225,7 @@
                                     headerClass="js-table-sort"/>
 
                     <display:column property="requestMethod"
-                                    sortProperty="requestMethod"
+                                    sortProperty="request_method"
                                     titleKey="webservice.method"
                                     sortable="true"
                                     headerClass="js-table-sort"/>

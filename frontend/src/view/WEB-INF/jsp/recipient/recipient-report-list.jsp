@@ -12,10 +12,7 @@
 <%--@elvariable id="recipientsReportForm" type="com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm"--%>
 <%--@elvariable id="reportsList" type="org.displaytag.pagination.PaginatedList"--%>
 
-<mvc:form servletRelativeAction="/recipientsreport/list.action" modelAttribute="recipientsReportForm">
-    <input type="hidden" name="page" value="${reportsList.pageNumber}"/>
-    <input type="hidden" name="sort" value="${reportsList.sortCriterion}"/>
-    <input type="hidden" name="dir" value="${reportsList.sortDirection}"/>
+<mvc:form servletRelativeAction="/recipientsreport/list.action" modelAttribute="recipientsReportForm" data-form="">
 
     <script type="application/json" data-initializer="web-storage-persist">
         {
@@ -50,6 +47,10 @@
                             <label class="label">
                                 <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
+                            </label>
+                            <label class="label">
+                                <mvc:radiobutton path="numberOfRows" value="200"/>
+                                <span class="label-text">200</span>
                             </label>
                         </li>
                         <li class="divider"></li>

@@ -1,4 +1,60 @@
-(function () {
+/*doc
+---
+title: Editable view
+name: editable-view
+category: Javascripts - Editable View
+---
+
+This directive is used to hide or show tiles in the view.
+
+On the container (mostly `.tiles-container`) you need to add the `data-editable-view` attribute and specify the name of the view.
+
+Tiles that are inside must have a unique ID, as well as a `data-editable-tile` attribute.
+If the tile is the main one and should not be hidden, then the value `main` must be added inside the `data-editable-tile` attribute.
+
+To control the editing mode, you need to create a button. For it you need to specify the `data-edit-view` attribute and specify the name of the view there.
+
+```htmlexample
+<button class="btn btn-primary w-100 mb-2" type="button" data-edit-view="styleguide">
+    <i class="icon icon-edit"></i>
+    <span class="text">Edit view</span>
+</button>
+
+<div class="tiles-container" style="height: 500px;" data-editable-view="styleguide">
+    <div id="tile-1" class="tile" data-editable-tile="main">
+        <div class="tile-header">
+            <h1 class="tile-title">Tile1</h1>
+        </div>
+        <div class="tile-body">
+            Tile content!
+        </div>
+    </div>
+
+    <div class="tiles-block flex-column">
+        <div id="tile-2" class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title">Tile2</h1>
+            </div>
+            <div class="tile-body">
+                Tile content!
+            </div>
+        </div>
+
+        <div id="tile-3" class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title">Tile3</h1>
+            </div>
+            <div class="tile-body">
+                Tile content!
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+*/
+
+(() => {
 
   const STATE = {
     MAIN: 'main',
@@ -71,7 +127,7 @@
 
       this.#controlContainersVisibility();
 
-      this.$el.removeClass('hidden');
+      this.$el.addClass('is-initialized');
       this.$el.data(EditableView.DATA_KEY, this);
 
       this.#updateControlViewBtn();

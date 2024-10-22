@@ -3,11 +3,7 @@
   
   .tile-body {
     padding-top: 0;
-    
-    .col {
-      padding-top: $gap-md;
-    }
-    
+
     .mailing-card {
       border: 0;
       --bs-card-inner-border-radius: 0;
@@ -23,6 +19,10 @@
         .card-body {
           .card-title {
             color: $primary;
+            
+            &--buttons {
+              @include flex-row($gap-x-sm);
+            }            
           }
         }
       }
@@ -33,11 +33,20 @@
         padding: $gap-sm 0 0;
   
         .card-title {
-          display: flex;
+          @include flex-row($gap-sm);
+          justify-content: space-between;
           align-items: center;
-          gap: $gap-sm;
-          line-height: 18px;
-          color: var(--default-text-color);
+          
+          &--name {
+            @include flex-row($gap-sm);
+            align-items: center;
+            line-height: 18px;
+            color: var(--text-color-default);
+            min-width: 0;
+          }
+          &--buttons {
+            display: none;
+          }
         }
         
         .card-text {

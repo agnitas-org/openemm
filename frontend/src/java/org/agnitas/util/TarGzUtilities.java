@@ -28,26 +28,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class TarGzUtilities {
-	public static long getUncompressedSize(final File tarGzFile) throws Exception {
-		if (!tarGzFile.exists()) {
-			throw new Exception("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
-		} else if (!tarGzFile.isFile()) {
-			throw new Exception("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
-		} else {
-			try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new GzipCompressorInputStream(new BufferedInputStream(new FileInputStream(tarGzFile))))) {
-				TarArchiveEntry entry;
-				long size = 0;
-				while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
-					if (!entry.isDirectory()) {
-						size += entry.getRealSize();
-					}
-				}
-				return size;
-			} catch (final Exception e) {
-				throw new Exception("Cannot read '" + tarGzFile + "'", e);
-			}
-		}
-	}
 
 	public static int getFilesCount(final File tarGzFile) throws Exception {
 		if (!tarGzFile.exists()) {

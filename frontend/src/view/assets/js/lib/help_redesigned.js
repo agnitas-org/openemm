@@ -1,15 +1,13 @@
-(function () {
+(() => {
 
   class Help {
     constructor($element) {
       this.$el = $element;
-
-      const url = AGN.url($element.data('help'));
       this.config = null;
 
-      $.get(url).done(xml => {
+      $.get(AGN.url($element.data('help'))).done(xml => {
         this.config = $(xml);
-        this.popoverInteractive();
+        this.popover();
         this.show();
       });
     }
@@ -19,8 +17,12 @@
     }
 
     getConfig(key) {
-      const val = this.config.find(key).text();
-      return val.replace("<![CDATA[", "").replace("]]>", "");
+      const val = this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
+      if (!this.$el.is('[data-help-config]')) {
+        return val;
+      }
+
+      return _.template(val)($(this.$el.data('help-config')).json());
     }
 
     popover() {
@@ -30,31 +32,11 @@
 
       this.$el.popover('dispose');
 
-      AGN.Lib.Popover.new(this.$el, {
-        title: this.getConfig('title'),
-        content: this.getConfig('content'),
-        html: true,
-        trigger: this.$el.data("trigger") || "focus",
-        offset: [20, 0],
-        popperConfig: {
-          placement: 'bottom-start'
-        }
-      });
-    }
-
-    popoverInteractive() {
-      if (!this.config) {
-        return;
-      }
-
-      this.$el.popover('dispose');
-
-      const popover = AGN.Lib.Popover.new(this.$el, {
+      const popover = AGN.Lib.Popover.create(this.$el, {
         title: this.getConfig('title'),
         content: this.getConfig('content'),
         html: true,
         trigger: 'manual',
-        offset: [20, 0],
         popperConfig: {
           placement: 'bottom-start'
         }
@@ -70,15 +52,11 @@
       // A popup help balloon should stay opened when either a help button or a help balloon has a focus
       let timeout = null;
 
-      const onFocusLosing = function () {
-        timeout = setTimeout(function () {
-          popover.hide();
-        }, 100);
+      const onFocusLosing = () => {
+        timeout = setTimeout(() => popover.hide(), 100);
       };
 
-      const onFocusObtaining = function () {
-        clearTimeout(timeout);
-      };
+      const onFocusObtaining = () => clearTimeout(timeout);
 
       $tip.focusout(onFocusLosing);
       this.$el.focusout(onFocusLosing);
@@ -101,13 +79,12 @@
     }
 
     static show($element) {
-      const helpObj = $element.data('_help');
-      if (helpObj) {
-        helpObj.show();
-        return
+      const instance = $element.data('agn:help');
+      if (instance) {
+        instance.show();
+      } else {
+        $element.data('agn:help', new Help($element));
       }
-
-      $element.data('_help', new Help($element));
     }
   }
 

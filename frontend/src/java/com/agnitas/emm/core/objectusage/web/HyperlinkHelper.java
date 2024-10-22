@@ -67,6 +67,8 @@ final class HyperlinkHelper {
                 return classicMailingContentHyperLink(usage, locale);
             case EMC_CONTENT:
                 return emcContentHyperLink(usage, locale);
+            case BIRT_REPORT:
+                return birtReportHyperlink(usage, locale);
             default:
                 return plainText(usage, locale);
 		}
@@ -79,6 +81,14 @@ final class HyperlinkHelper {
     private static String workflowHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/workflow/")
+                .path(Integer.toString(usage.getObjectUserID()))
+                .path("/view.action")
+                .toUriString(), usage, locale);
+    }
+
+    private static String birtReportHyperlink(ObjectUsage usage, Locale locale) {
+        return hyperLink(UriComponentsBuilder.newInstance()
+                .path("/statistics/report/")
                 .path(Integer.toString(usage.getObjectUserID()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
@@ -131,7 +141,7 @@ final class HyperlinkHelper {
             return StringEscapeUtils.escapeHtml4(StringUtils.abbreviate(name, 30));
         }
         String messageKey = "referencingObject." + type.name();
-        if (!I18nString.hasMessageForKey(messageKey)) { // TODO: remove after GWUA-5688 will be successfully tested
+        if (!I18nString.hasMessageForKey(messageKey)) {
             messageKey = "GWUA." + messageKey;
         }
         return I18nString.getLocaleString(messageKey, locale, StringEscapeUtils.escapeHtml4(name));

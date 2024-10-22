@@ -18,7 +18,6 @@ import java.util.Map;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
 
 public class RecipientFieldDescription {
 	private String columnName;

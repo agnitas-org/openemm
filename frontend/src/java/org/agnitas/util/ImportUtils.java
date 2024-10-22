@@ -10,50 +10,31 @@
 
 package org.agnitas.util;
 
+import com.agnitas.beans.Admin;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+import org.agnitas.service.FileCompressionType;
+import org.agnitas.service.ImportException;
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.service.FileCompressionType;
-import org.agnitas.service.ImportException;
-import org.apache.commons.compress.utils.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-
-import jakarta.servlet.http.HttpServletRequest;
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
-
 public class ImportUtils {
-
-	private static final Logger logger = LogManager.getLogger(ImportUtils.class);
 
 	public static final String RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME = "recipient-import-file";
 	public static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
-
-	public static final String MAIL_TYPE_HTML = "html";
-	public static final String MAIL_TYPE_TEXT = "text";
-	public static final String MAIL_TYPE_TEXT_ALT = "txt";
-
-	public static final String MAIL_TYPE_DB_COLUMN = "mailtype";
 
 	public static final String MAIL_TYPE_UNDEFINED = "0";
 	public static final String MAIL_TYPE_DEFINED = "1";
@@ -81,7 +62,7 @@ public class ImportUtils {
     	
     	private String idString;
     	
-    	private ImportErrorType(String idString) {
+    	ImportErrorType(String idString) {
     		this.idString = idString;
     	}
 		
@@ -104,77 +85,12 @@ public class ImportUtils {
     	}
     }
 		
-	public static String describeMap(Map<String, String> reportMap) {
-		StringBuffer description = new StringBuffer();
-		for (Entry<String, String> entry : reportMap.entrySet()) {
-			description.append(entry.getKey()).append(" = \"").append(entry.getValue()).append("\"\n");
-		}
-		return description.toString();
-	}
-	
-	public static boolean isFieldValid(String currentFieldName, Map<String, Object> recipient) {
-    	boolean fieldIsValid;
-    	String erroneousFieldName = ((String) recipient.get(ImportRecipientsDao.VALIDATOR_RESULT_RESERVED));
-		fieldIsValid = erroneousFieldName != null && !currentFieldName.equals(erroneousFieldName);
-    	return fieldIsValid;
-	}
-
-	/**
-	 * Some pages have enctype="multipart/form-data" because they need to
-	 * upload file. With such enctype the Charset is corrupted. This method
-	 * fixes strings and make them UTF-8
-	 *
-	 * @param sourceStr source corrupted string
-	 * @return fixed string
-	 */
-	public static String fixEncoding(String sourceStr) {
-		try {
-			return new String(sourceStr.getBytes("iso-8859-1"), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error("Error during encoding converting", e);
-			return sourceStr;
-		}
-	}
-
-	public static boolean hasNoEmptyParameterStartsWith(HttpServletRequest request, String paramStart) {
-		Enumeration<String> parameterNames = request.getParameterNames();
-		while (parameterNames.hasMoreElements()) {
-			String paramName = parameterNames.nextElement();
-			if (paramName.startsWith(paramStart)) {
-				boolean notEmpty = AgnUtils.parameterNotEmpty(request, paramName);
-				if(notEmpty){
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	public static String getNotEmptyValueFromParameter(HttpServletRequest request, String parameterStart) {
-		Enumeration<String> parameterNames = request.getParameterNames();
-		while (parameterNames.hasMoreElements()) {
-			String paramName = parameterNames.nextElement();
-			if (paramName.startsWith(parameterStart)) {
-				if (AgnUtils.parameterNotEmpty(request, paramName)) {
-					return request.getParameter(paramName);
-				}
-			}
-		}
-		return null;
-	}
-
-	public static void removeHiddenColumns(Map<String, CsvColInfo> dbColumns, Admin admin) {
-		for (String hiddenColumn : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
-			dbColumns.remove(hiddenColumn);
-		}
-	}
-
 	public static boolean checkIfImportFileHasData(File importFile, String optionalZipPassword) throws IOException {
         if (importFile == null) {
             return false;
         } else if (AgnUtils.isZipArchiveFile(importFile)) {
 			try {
-				if (optionalZipPassword != null) {
+				if (StringUtils.isNotEmpty(optionalZipPassword)) {
 					try (ZipFile zipFile = new ZipFile(importFile))  {
 						zipFile.setPassword(optionalZipPassword.toCharArray());
 						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
@@ -191,16 +107,26 @@ public class ImportUtils {
 					}
 				} else {
 					try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						ZipInputStream zipInputStream = ((ZipInputStream) dataInputStream);
+						ZipEntry zipEntry = zipInputStream.getNextEntry();
+
 						if (zipEntry == null) {
 							throw new ImportException(false, "error.unzip.noEntry");
-						} else {
-							if (zipEntry.getSize() == -1) {
-								return dataInputStream.read(new byte[5]) > -1;
-							} else {
-								return zipEntry.getSize() > 0;
-							}
 						}
+
+						while (zipEntry != null) {
+							if (zipEntry.getSize() == -1) {
+								if (dataInputStream.read(new byte[5]) > -1) {
+									return true;
+								}
+							} else if (zipEntry.getSize() > 0) {
+								return true;
+							}
+
+							zipEntry = zipInputStream.getNextEntry();
+						}
+
+						return false;
 					}
 				}
 			} catch (ImportException e) {

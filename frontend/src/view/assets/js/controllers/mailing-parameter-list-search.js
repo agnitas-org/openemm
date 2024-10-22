@@ -2,13 +2,13 @@ AGN.Lib.Controller.new('mailing-parameter-list-search', function () {
   
   this.addDomInitializer('mailing-parameter-list-search', function() {
     var config = this.config;
-    var mailingQuery = config.mailingQuery;
+    var mailingId = config.mailingId;
     var paramQuery = config.paramQuery;
     var $paramSearchField = $('#param-search-field');
     var $mailingSearchField = $('#mailing-search-field');
     
     new initSelect2Field($paramSearchField, 'paramQuery', paramQuery, false);
-    new initSelect2Field($mailingSearchField, 'mailingQuery', mailingQuery, true);
+    new initSelect2Field($mailingSearchField, 'mailingId', mailingId, true);
   });
 
   function initSelect2Field($field, searchFieldName, oldValue, isSelectable) {

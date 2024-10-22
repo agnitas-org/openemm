@@ -162,7 +162,6 @@ public interface Admin {
     boolean permissionAllowed(Permission... permissions);
 
     boolean isRedesignedUiUsed();
-    boolean isRedesignedUiUsed(Permission permission);
 
     Locale getLocale();
 

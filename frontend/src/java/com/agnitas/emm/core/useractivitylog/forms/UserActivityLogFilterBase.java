@@ -15,6 +15,8 @@ import org.agnitas.web.forms.PaginationForm;
 
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class UserActivityLogFilterBase extends PaginationForm {
 
     private DateRange timestamp;
@@ -53,5 +55,9 @@ public class UserActivityLogFilterBase extends PaginationForm {
         map.put("companyId", companyId);
 
         return map;
+    }
+
+    public boolean isUiFiltersSet() {
+        return timestamp.isPresent() || isNotBlank(username);
     }
 }

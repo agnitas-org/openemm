@@ -1,21 +1,21 @@
-/*doc
----
-title: Fields
-name: fields
-category: Javascripts - Fields
----
-
-Fields are small extensions of functionality for a form. They can be added via the `data-field="field-name"` directive.
-
-```htmlexample
-<form>
-  <div data-field="toggle-vis">
-
-  </div>
-
-</form>
-```
-*/
+// /*doc
+// ---
+// title: Fields
+// name: fields
+// category: Javascripts - Fields
+// ---
+//
+// Fields are small extensions of functionality for a form. They can be added via the `data-field="field-name"` directive.
+//
+// ```htmlexample
+// <form>
+//   <div data-field="toggle-vis">
+//
+//   </div>
+//
+// </form>
+// ```
+// */
 
 (function(){
 
@@ -51,65 +51,69 @@ Fields are small extensions of functionality for a form. They can be added via t
     return [];
   }
 
+  Field.prototype.onSubmit = function() {
+    // overridden in inherited classes
+  }
+
   AGN.Lib.Field = Field;
 
-/*doc
----
-title: Custom Field (Custom Validation)
-name: fields-00-custom
-parent: fields
----
-
-A `validator` Field enables custom field validation provided by `AGN.Lib.Validator`.
-
-This field prevents form submission when an input is not valid.
-
-```htmlexample
-<form>
-
-  <div class="form-group" data-field="validator">
-    <div class="col-sm-4">
-      <label class="control-label">Your nickname (min 3, max 20 characters)</label>
-    </div>
-    <div class="col-sm-4">
-      <input type="text" class="form-control" data-field-validator="foo-edit/content" data-validator-options="min: 3, max: 20"/>
-    </div>
-  </div>
-
-  <div class="btn-group">
-    <a href="#" class="btn btn-regular btn-primary" data-form-submit="">Submit</a>
-  </div>
-
-  <script type="text/javascript">
-    AGN.Lib.Validator.new('foo-edit/content', {
-      valid: function($e, options) {
-        return !this.errors($e, options).length;
-      },
-
-      errors: function($e, options) {
-        var content = $e.val();
-        var errors = [];
-
-        if (content.length < options.min) {
-          errors.push({
-            field: $e,
-            msg: "Must be at least " + options.min + " character(s) long"
-          });
-        } else if (content.length > options.max) {
-          errors.push({
-            field: $e,
-            msg: "Must be shorter that " + options.max + " character(s)"
-          });
-        }
-
-        return errors;
-      }
-    });
- </script>
-
-</form>
-```
-*/
+// /*doc
+// ---
+// title: Custom Field (Custom Validation)
+// name: fields-00-custom
+// parent: fields
+// ---
+//
+// A `validator` Field enables custom field validation provided by `AGN.Lib.Validator`.
+//
+// This field prevents form submission when an input is not valid.
+//
+// ```htmlexample
+// <form>
+//
+//   <div class="form-group" data-field="validator">
+//     <div class="col-sm-4">
+//       <label class="control-label">Your nickname (min 3, max 20 characters)</label>
+//     </div>
+//     <div class="col-sm-4">
+//       <input type="text" class="form-control" data-field-validator="foo-edit/content" data-validator-options="min: 3, max: 20"/>
+//     </div>
+//   </div>
+//
+//   <div class="btn-group">
+//     <a href="#" class="btn btn-regular btn-primary" data-form-submit="">Submit</a>
+//   </div>
+//
+//   <script type="text/javascript">
+//     AGN.Lib.Validator.new('foo-edit/content', {
+//       valid: function($e, options) {
+//         return !this.errors($e, options).length;
+//       },
+//
+//       errors: function($e, options) {
+//         var content = $e.val();
+//         var errors = [];
+//
+//         if (content.length < options.min) {
+//           errors.push({
+//             field: $e,
+//             msg: "Must be at least " + options.min + " character(s) long"
+//           });
+//         } else if (content.length > options.max) {
+//           errors.push({
+//             field: $e,
+//             msg: "Must be shorter that " + options.max + " character(s)"
+//           });
+//         }
+//
+//         return errors;
+//       }
+//     });
+//  </script>
+//
+// </form>
+// ```
+// */
 
   CustomField = function($field) {
     // inherit from Field
@@ -150,73 +154,73 @@ This field prevents form submission when an input is not valid.
   AGN.Lib.CustomField = CustomField;
   AGN.Opt.Fields['validator'] = CustomField;
 
-/*doc
----
-title: Double Select Field
-name: fields-01-double-select
-parent: fields
----
-
-A `double-select` Field can be used if the options of one select are dependent on the value of another select.
-
-The parent select should be designated with the css class `js-double-select-trigger`, while the child/dependent select should have the class `js-double-select-target`.
-
-For reading the values and titles for the options from a hash in AGN.Opt just set `data-provider="opt"` and `data-provider-src="KeyInAgnOpt"` on the element which has the `data-field="double-select"` directive.
-
-```htmlexample
-<form>
-
-  <script type="text/javascript">
-  AGN.Opt.DoubleSelectExample = {
-      // if parent select value == parentSelectValue1
-      "parentSelectValue1": {
-          // show one option:
-          "childSelectValue1": "Child Select Option 1"
-      },
-      // if parent select value == parentSelectValue2
-      "parentSelectValue2": {
-          // show the following 2 options:
-          "childSelectValue1": "Child Select Option 1",
-          "childSelectValue2": "Child Select Option 2"
-      },
-      // if parent select value == parentSelectValue3
-      "parentSelectValue3": {
-          // do not show any options
-      }
-  }
-  </script>
-
-
-  <div data-field="double-select" data-provider="opt" data-provider-src="DoubleSelectExample">
-    <div class="form-group">
-      <div class="col-sm-8">
-        <label>Parent Control</label>
-      </div>
-      <div class="col-sm-4">
-        <select class="form-control js-double-select-trigger">
-          <option value="parentSelectValue1">Parent Select Option 1</option>
-          <option value="parentSelectValue2">Parent Select Option 2</option>
-          <option value="parentSelectValue3">Parent Select Option 3</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <div class="col-sm-8">
-        <label>Child/Dependent Control</label>
-      </div>
-      <div class="col-sm-4">
-        <select class="form-control js-double-select-target">
-        </select>
-      </div>
-    </div>
-  </div>
-
-
-</form>
-
-```
-*/
+// /*doc
+// ---
+// title: Double Select Field
+// name: fields-01-double-select
+// parent: fields
+// ---
+//
+// A `double-select` Field can be used if the options of one select are dependent on the value of another select.
+//
+// The parent select should be designated with the css class `js-double-select-trigger`, while the child/dependent select should have the class `js-double-select-target`.
+//
+// For reading the values and titles for the options from a hash in AGN.Opt just set `data-provider="opt"` and `data-provider-src="KeyInAgnOpt"` on the element which has the `data-field="double-select"` directive.
+//
+// ```htmlexample
+// <form>
+//
+//   <script type="text/javascript">
+//   AGN.Opt.DoubleSelectExample = {
+//       // if parent select value == parentSelectValue1
+//       "parentSelectValue1": {
+//           // show one option:
+//           "childSelectValue1": "Child Select Option 1"
+//       },
+//       // if parent select value == parentSelectValue2
+//       "parentSelectValue2": {
+//           // show the following 2 options:
+//           "childSelectValue1": "Child Select Option 1",
+//           "childSelectValue2": "Child Select Option 2"
+//       },
+//       // if parent select value == parentSelectValue3
+//       "parentSelectValue3": {
+//           // do not show any options
+//       }
+//   }
+//   </script>
+//
+//
+//   <div data-field="double-select" data-provider="opt" data-provider-src="DoubleSelectExample">
+//     <div class="form-group">
+//       <div class="col-sm-8">
+//         <label>Parent Control</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <select class="form-control js-double-select-trigger">
+//           <option value="parentSelectValue1">Parent Select Option 1</option>
+//           <option value="parentSelectValue2">Parent Select Option 2</option>
+//           <option value="parentSelectValue3">Parent Select Option 3</option>
+//         </select>
+//       </div>
+//     </div>
+//
+//     <div class="form-group">
+//       <div class="col-sm-8">
+//         <label>Child/Dependent Control</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <select class="form-control js-double-select-target">
+//         </select>
+//       </div>
+//     </div>
+//   </div>
+//
+//
+// </form>
+//
+// ```
+// */
 
   DoubleSelectField = function($field) {
     // inherit from Field
@@ -255,109 +259,109 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
   AGN.Lib.DoubleSelectField = DoubleSelectField;
   AGN.Opt.Fields['double-select'] = DoubleSelectField;
 
-/*doc
----
-title: Toggle Visibility Field
-name: fields-02-toggle-vis
-parent: fields
----
-
-A `toggle-vis` Field can be used if elements should be displayed depending on the state of a checkbox, a radio field or a select.
-
-The radio/select or checkbox elements which control the visibility should all have the `data-field-vis=""`. When checked/selected they will hide all elements which are set in data-field-vis-hide="jQuerySelector" and show all all elements which are set in data-field-vis-show="jQuerySelector"
-
-Inputs in the targets will be disabled when hidden, to avoid sending them with the form.
-
-For usage with a checkbox an element with the `data-field-vis-default=""` directive should be added to control the state if no checkbox is checked.
-
-Caveat:
-Only targets inside the container designated by the `toggle-vis` directive will be hidden/shown.
-
-```htmlexample
-<form>
-
-  <div data-field="toggle-vis">
-    <div class="form-group">
-      <div class="col-sm-8">
-        <label>Control via Radiobuttons</label>
-      </div>
-      <div class="col-sm-4">
-        <label class="radio">
-          <input type="radio" name="hideTargetViaRadio" value="1" checked data-field-vis="" data-field-vis-hide="#exampleRadioTarget">
-          Hide Element
-        </label>
-        <label class="radio">
-          <input type="radio" name="hideTargetViaRadio" value="0" data-field-vis="" data-field-vis-show="#exampleRadioTarget">
-          Show Element
-        </label>
-      </div>
-    </div>
-
-    <div class="form-group" id="exampleRadioTarget">
-      <div class="col-sm-8">
-        <label>Disabled when hidden</label>
-      </div>
-      <div class="col-sm-4">
-        <input type="text" class="form-control">
-      </div>
-    </div>
-  </div>
-
-  <div data-field="toggle-vis">
-    <div class="form-group">
-      <div class="col-sm-8">
-        <label>Control via Select</label>
-      </div>
-      <div class="col-sm-4">
-        <select name="hideTargetViaSelect" data-field-vis="" class="form-control">
-          <option value="1" data-field-vis-hide="#exampleSelectTarget" selected >
-            Hide Target
-          </option>
-          <option value="2" data-field-vis-show="#exampleSelectTarget">
-            Show Target
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group" id="exampleSelectTarget">
-      <div class="col-sm-8">
-        <label>Disabled when hidden</label>
-      </div>
-      <div class="col-sm-4">
-        <input type="text" class="form-control">
-      </div>
-    </div>
-  </div>
-
-  <div data-field="toggle-vis">
-    <div class="form-group">
-      <div class="col-sm-8">
-        <label>Control via Checkbox</label>
-      </div>
-      <div class="col-sm-4">
-        <label class="checkbox">
-          <input type="checkbox" checked data-field-vis="" data-field-vis-show="#button1">
-          Show Button 1
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" checked data-field-vis="" data-field-vis-show="#button2">
-          Show Button 2
-        </label>
-
-        <div class="hidden" data-field-vis-default="" data-field-vis-hide="#button1, #button2"></div>
-      </div>
-    </div>
-
-    <div class="btn-group">
-      <a href="#" class="btn btn-regular btn-primary" id="button1">Button 1</a>
-      <a href="#" class="btn btn-regular btn-primary" id="button2">Button 2</a>
-    </div>
-  </div>
-</form>
-
-```
-*/
+// /*doc
+// ---
+// title: Toggle Visibility Field
+// name: fields-02-toggle-vis
+// parent: fields
+// ---
+//
+// A `toggle-vis` Field can be used if elements should be displayed depending on the state of a checkbox, a radio field or a select.
+//
+// The radio/select or checkbox elements which control the visibility should all have the `data-field-vis=""`. When checked/selected they will hide all elements which are set in data-field-vis-hide="jQuerySelector" and show all all elements which are set in data-field-vis-show="jQuerySelector"
+//
+// Inputs in the targets will be disabled when hidden, to avoid sending them with the form.
+//
+// For usage with a checkbox an element with the `data-field-vis-default=""` directive should be added to control the state if no checkbox is checked.
+//
+// Caveat:
+// Only targets inside the container designated by the `toggle-vis` directive will be hidden/shown.
+//
+// ```htmlexample
+// <form>
+//
+//   <div data-field="toggle-vis">
+//     <div class="form-group">
+//       <div class="col-sm-8">
+//         <label>Control via Radiobuttons</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <label class="radio">
+//           <input type="radio" name="hideTargetViaRadio" value="1" checked data-field-vis="" data-field-vis-hide="#exampleRadioTarget">
+//           Hide Element
+//         </label>
+//         <label class="radio">
+//           <input type="radio" name="hideTargetViaRadio" value="0" data-field-vis="" data-field-vis-show="#exampleRadioTarget">
+//           Show Element
+//         </label>
+//       </div>
+//     </div>
+//
+//     <div class="form-group" id="exampleRadioTarget">
+//       <div class="col-sm-8">
+//         <label>Disabled when hidden</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <input type="text" class="form-control">
+//       </div>
+//     </div>
+//   </div>
+//
+//   <div data-field="toggle-vis">
+//     <div class="form-group">
+//       <div class="col-sm-8">
+//         <label>Control via Select</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <select name="hideTargetViaSelect" data-field-vis="" class="form-control">
+//           <option value="1" data-field-vis-hide="#exampleSelectTarget" selected >
+//             Hide Target
+//           </option>
+//           <option value="2" data-field-vis-show="#exampleSelectTarget">
+//             Show Target
+//           </option>
+//         </select>
+//       </div>
+//     </div>
+//
+//     <div class="form-group" id="exampleSelectTarget">
+//       <div class="col-sm-8">
+//         <label>Disabled when hidden</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <input type="text" class="form-control">
+//       </div>
+//     </div>
+//   </div>
+//
+//   <div data-field="toggle-vis">
+//     <div class="form-group">
+//       <div class="col-sm-8">
+//         <label>Control via Checkbox</label>
+//       </div>
+//       <div class="col-sm-4">
+//         <label class="checkbox">
+//           <input type="checkbox" checked data-field-vis="" data-field-vis-show="#button1">
+//           Show Button 1
+//         </label>
+//         <label class="checkbox">
+//           <input type="checkbox" checked data-field-vis="" data-field-vis-show="#button2">
+//           Show Button 2
+//         </label>
+//
+//         <div class="hidden" data-field-vis-default="" data-field-vis-hide="#button1, #button2"></div>
+//       </div>
+//     </div>
+//
+//     <div class="btn-group">
+//       <a href="#" class="btn btn-regular btn-primary" id="button1">Button 1</a>
+//       <a href="#" class="btn btn-regular btn-primary" id="button2">Button 2</a>
+//     </div>
+//   </div>
+// </form>
+//
+// ```
+// */
 
 
   ToggleVisField = function($field) {
@@ -469,33 +473,33 @@ Only targets inside the container designated by the `toggle-vis` directive will 
   AGN.Lib.ToggleVisField = ToggleVisField;
   AGN.Opt.Fields['toggle-vis'] = ToggleVisField;
 
-/*doc
----
-title: Required Field
-name: fields-03-required
-parent: fields
----
-
-The required field helps with preventing a form from submit, when its field value is blank.
-
-```htmlexample
-<form>
-
-  <div class="form-group" data-field="required">
-    <div class="col-sm-4">
-      <label class="control-label">A required field</label>
-    </div>
-    <div class="col-sm-4">
-      <input type="text" class="form-control" data-field-required="" />
-    </div>
-  </div>
-
-  <div class="btn-group">
-    <a href="#" class="btn btn-regular btn-primary" data-form-submit="">Submit</a>
-  </div>
-</form>
-```
-*/
+// /*doc
+// ---
+// title: Required Field
+// name: fields-03-required
+// parent: fields
+// ---
+//
+// The required field helps with preventing a form from submit, when its field value is blank.
+//
+// ```htmlexample
+// <form>
+//
+//   <div class="form-group" data-field="required">
+//     <div class="col-sm-4">
+//       <label class="control-label">A required field</label>
+//     </div>
+//     <div class="col-sm-4">
+//       <input type="text" class="form-control" data-field-required="" />
+//     </div>
+//   </div>
+//
+//   <div class="btn-group">
+//     <a href="#" class="btn btn-regular btn-primary" data-form-submit="">Submit</a>
+//   </div>
+// </form>
+// ```
+// */
 
   RequiredField = function($field) {
     // inherit from Field
@@ -924,36 +928,56 @@ The required field helps with preventing a form from submit, when its field valu
   </div>
   */
   DateTimeField = function($field) {
+    if ($field.data('agn:date-time-field')) {
+      return $field.data('agn:date-time-field'); // already initialized
+    }
     Field.apply(this, [$field]); // inherit from Field
 
     var $el = $(this.el);
-    var propertyName = $el.data('property');
-    var options = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('field-options')));
-    var value = options.value || options.defaultValue || '';
-    var dateFormat = options.dateFormat || 'dd.mm.yyyy';
+    this.propertyName = $el.data('property');
+    this.options = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('field-options')));
+    var value = this.options.value || this.options.defaultValue || '';
+    this.dateFormat = this.options.dateFormat || 'dd.mm.yyyy';
 
-    prepareDatetimeInput($el, propertyName, value, dateFormat);
+    var self = this;
+    prepareDatetimeInput($el, this.propertyName, value, this.dateFormat);
     $el.on('change', function() {
-      setDateTimeFieldValue(propertyName, dateFormat);
+      self.setDateTimeFieldValue(self.propertyName, self.dateFormat, self.options.defaultSubmitTime);
     });
+    $field.data('agn:date-time-field', this);
   }
   // inherit from Field
   DateTimeField.prototype = Object.create(Field.prototype);
   DateTimeField.prototype.constructor = DateTimeField;
-  AGN.Lib.DateTimeField = DateTimeField;
-  AGN.Opt.Fields['datetime'] = DateTimeField;
-  
-  function setDateTimeFieldValue(property, dateFormat) {
-    var escapedProperty = property.replace(/([:.\[\],=@])/g, "\\$1");
-    var $date = $('#' + escapedProperty + '_date');
-    var $time = $('#' + escapedProperty + '_time');
-    $('[name="' + property + '"]').val(prepareDateTimeValue($date, $time, dateFormat));
+
+  DateTimeField.prototype.onSubmit = function() {
+    this.setDateTimeFieldValue();
   }
 
-  function prepareDateTimeValue($date, $time, dateFormat) {
+  DateTimeField.prototype.setDateTimeFieldValue = function() {
+    var escapedProperty = this.propertyName.replace(/([:.\[\],=@])/g, "\\$1");
+    var $date = $('#' + escapedProperty + '_date');
+    var $time = $('#' + escapedProperty + '_time');
+    $('[name="' + this.propertyName + '"]').val(prepareDateTimeValue($date, $time, this.dateFormat, this.options.defaultSubmitTime));
+  }
+
+  AGN.Lib.DateTimeField = DateTimeField;
+  AGN.Opt.Fields['datetime'] = DateTimeField;
+
+  function prepareDateTimeValue($date, $time, dateFormat, defaultSubmitTime) {
     var time = $time ? $time.val() : '';
-    time = time ? time.replaceAll('_', '0') : "00:00";
+    time = time ? time.replaceAll('_', '0') : getDefaultSubmitTime(defaultSubmitTime);
     return $date.val() ? formatDateTime($date.pickadate("picker"), time, dateFormat) : '';
+  }
+
+  function getDefaultSubmitTime(defaultSubmitTime) {
+      if (defaultSubmitTime !== '' && !defaultSubmitTime) {
+          return '00:00';
+      }
+      if (defaultSubmitTime === 'now') {
+          return moment().format('HH:mm');
+      }
+      return defaultSubmitTime;
   }
 
   function formatDateTime(date, time, dateFormat) {
@@ -986,11 +1010,13 @@ The required field helps with preventing a form from submit, when its field valu
     input.type = "hidden";
     input.name = propertyName;
     input.value = value;
+    const extraAttrs = $el.data('field-extra-attributes');
     $el.append(_.template(AGN.Opt.Templates['datetime-picker'])({
       date: getDateFromFieldValue(value),
       time: getTimeFromFieldValue(value),
       property: propertyName,
-      dateFormat: dateFormat
+      dateFormat: dateFormat,
+      extraAttrs: extraAttrs || ''
     }));
     $el.append(input);
     

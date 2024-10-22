@@ -13,7 +13,7 @@ package org.agnitas.emm.springws.endpoint.binding;
 import java.util.Objects;
 
 import org.agnitas.emm.core.binding.service.BindingModel;
-import org.agnitas.emm.core.binding.service.BindingService;
+import com.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberBindingRequest;

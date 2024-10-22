@@ -19,11 +19,11 @@ import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.UserActivityLogActions;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -71,8 +71,29 @@ public class ComUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
 		SqlPreparedStatementManager sqlPreparedStatementManager =
 				prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, selectedAction, from, to, description);
 
-        return selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "userlog_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new LoggedUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+		PaginatedListImpl<LoggedUserAction> list = selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "userlog_tbl", sortColumn,
+				sortDirectionAscending, pageNumber, pageSize, new LoggedUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+
+		if (from != null || to != null || (StringUtils.isNotBlank(selectedAdmin) && !"0".equals(selectedAdmin)) || StringUtils.isNotBlank(description)
+				|| UserActivityLogActions.ANY.getIntValue() != selectedAction) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins));
+		}
+
+		return list;
     }
+
+	private int getTotalUnfilteredCountForOverview(List<AdminEntry> visibleAdmins) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM userlog_tbl");
+
+		if (CollectionUtils.isNotEmpty(visibleAdmins)) {
+			String condition = buildVisibleAdminsCondition(visibleAdmins);
+			if (!condition.isBlank()) {
+				query.append(" WHERE ").append(condition);
+			}
+		}
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0);
+	}
 
     @Override
     public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description) throws Exception {
@@ -86,15 +107,10 @@ public class ComUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
 		}
 
 		//  If set, any of the visible admins must match
-		if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
-			List<String> visibleAdminNameList = new ArrayList<>();
-			for (AdminEntry visibleAdmin : visibleAdmins) {
-				if (visibleAdmin != null) {
-					visibleAdminNameList.add(visibleAdmin.getUsername());
-				}
-			}
-			if (!visibleAdminNameList.isEmpty()) {
-				sqlPreparedStatementManager.addWhereClause(makeBulkInClauseForString("username", visibleAdminNameList));
+		if (CollectionUtils.isNotEmpty(visibleAdmins)) {
+			String visibleAdminsCondition = buildVisibleAdminsCondition(visibleAdmins);
+			if (!visibleAdminsCondition.isBlank()) {
+				sqlPreparedStatementManager.addWhereClause(visibleAdminsCondition);
 			}
 		}
 

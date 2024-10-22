@@ -26,7 +26,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = ActionOperationServiceMailParameters.class, name = "ServiceMail"),
     @JsonSubTypes.Type(value = ActionOperationSubscribeCustomerParameters.class, name = "SubscribeCustomer"),
     @JsonSubTypes.Type(value = ActionOperationUnsubscribeCustomerParameters.class, name = "UnsubscribeCustomer"),
-    @JsonSubTypes.Type(value = ActionOperationUpdateCustomerParameters.class, name = "UpdateCustomer")
+    @JsonSubTypes.Type(value = ActionOperationUpdateCustomerParameters.class, name = "UpdateCustomer"),
+    @JsonSubTypes.Type(value = ActionOperationSendLastNewsletterParameters.class, name = "SendLastNewsletter")
 })
 public abstract class AbstractActionOperationParameters implements ActionOperationParameters {
 	private int id;

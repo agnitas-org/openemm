@@ -10,19 +10,21 @@
 
 package com.agnitas.emm.ecs.web;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.ecs.service.EcsService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.ecs.EcsModeType;
+import com.agnitas.emm.ecs.form.EcsHeatmapForm;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import cz.vutbr.web.domassign.DeclarationMap;
 import org.agnitas.ecs.EcsPreviewSize;
 import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -48,19 +50,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.w3c.dom.Document;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.ecs.service.EcsService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.ecs.EcsModeType;
-import com.agnitas.emm.ecs.form.EcsHeatmapForm;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import cz.vutbr.web.domassign.DeclarationMap;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 @PermissionMapping("heatmap")
@@ -83,19 +83,20 @@ public class EcsHeatmapController implements XssCheckAware {
     private final EmbeddedClickStatService embeddedClickStatService;
     private final ConfigService configService;
     private final UserActivityLogService userActivityLogService;
+    private final MaildropService maildropService;
+    private final MailinglistApprovalService mailinglistApprovalService;
 
-    public EcsHeatmapController(EcsService ecsService,
-                                ComMailingBaseService mailingBaseService,
-                                GridServiceWrapper gridService,
-                                EmbeddedClickStatService embeddedClickStatService,
-                                ConfigService configService,
-                                UserActivityLogService userActivityLogService) {
+    public EcsHeatmapController(EcsService ecsService, ComMailingBaseService mailingBaseService, GridServiceWrapper gridService, ConfigService configService,
+                                EmbeddedClickStatService embeddedClickStatService, UserActivityLogService userActivityLogService, MaildropService maildropService,
+                                MailinglistApprovalService mailinglistApprovalService) {
         this.ecsService = ecsService;
         this.mailingBaseService = mailingBaseService;
         this.gridService = gridService;
         this.embeddedClickStatService = embeddedClickStatService;
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
+        this.maildropService = maildropService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
     }
 
     @RequestMapping(value = "/mailing/{mailingId:\\d+}/heatmap/view.action", method = {RequestMethod.GET, RequestMethod.POST})
@@ -118,6 +119,10 @@ public class EcsHeatmapController implements XssCheckAware {
         model.addAttribute("previewWidth", DeviceClass.getPreviewSizeByDeviceType(form.getDeviceType()).getWidth());
         model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
 
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, companyId));
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailingBaseService.getMailinglistId(mailingId, companyId)));
+        }
 
         writeUserActivityLog(admin, new UserAction("view ecs", "active tab - heatmap"));
         return "ecs_view";

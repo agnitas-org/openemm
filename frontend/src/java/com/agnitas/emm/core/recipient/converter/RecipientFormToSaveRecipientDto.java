@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
 import com.agnitas.emm.core.recipient.forms.RecipientForm;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 @Component
 public class RecipientFormToSaveRecipientDto implements Converter<RecipientForm, SaveRecipientDto>  {

@@ -10,9 +10,42 @@
 
 package com.agnitas.emm.core.mailinglist.service.impl;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.MailinglistImpl;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.MailinglistApprovalDao;
+import org.agnitas.dao.MailinglistDao;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,36 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.MailinglistApprovalDao;
-import org.agnitas.dao.MailinglistDao;
-
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
 
 public class MailinglistServiceImpl implements MailinglistService {
 
@@ -57,7 +61,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
     private MailinglistApprovalDao mailinglistApprovalDao;
     
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     
     private ComBindingEntryDao bindingEntryDao;
     
@@ -66,10 +70,16 @@ public class MailinglistServiceImpl implements MailinglistService {
     private ComRecipientDao recipientDao;
     
     private ComTargetDao targetDao;
+    private BulkActionValidationService<Integer, Mailinglist> bulkActionValidationService;
 
     @Required
     public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
         this.bindingEntryDao = bindingEntryDao;
+    }
+
+    @Required
+    public void setBulkActionValidationService(BulkActionValidationService<Integer, Mailinglist> bulkActionValidationService) {
+        this.bulkActionValidationService = bulkActionValidationService;
     }
 
     @Required
@@ -83,7 +93,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
@@ -103,7 +113,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
     
     @Override
-    public void bulkDelete(Set<Integer> mailinglistIds, int companyId) {
+    public void bulkDelete(Collection<Integer> mailinglistIds, int companyId) {
         if(mailinglistIds != null) {
             for (int mailinglistId : mailinglistIds) {
                 mailinglistDao.deleteMailinglist(mailinglistId, companyId);
@@ -172,10 +182,56 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public List<String> getMailinglistNames(Set<Integer> mailinglistIds, int companyId) {
-        return mailinglistIds.stream()
-                .map(id -> mailinglistDao.getMailinglistName(id, companyId))
+    public ServiceResult<List<Mailinglist>> getAllowedForDeletion(Set<Integer> ids, Admin admin) {
+        ServiceResult<List<Mailinglist>> result =
+                bulkActionValidationService.checkAllowedForDeletion(ids, id -> getMailinglistForDeletion(id, admin));
+
+        validateDeleteOfLastMailinglist(result.getResult(), admin.getCompanyID());
+        return result;
+    }
+
+    @Override
+    public List<Integer> delete(Set<Integer> ids, Admin admin) {
+        List<Integer> allowedIds = ids.stream()
+                .map(id -> getMailinglistForDeletion(id, admin))
+                .filter(ServiceResult::isSuccess)
+                .map(r -> r.getResult().getId())
                 .collect(Collectors.toList());
+
+        bulkDelete(allowedIds, admin.getCompanyID());
+
+        return allowedIds;
+    }
+    
+    private ServiceResult<Mailinglist> getMailinglistForDeletion(int id, Admin admin) {
+        Mailinglist mailinglist = getMailinglist(id, admin.getCompanyID());
+        if (mailinglist == null) {
+            return ServiceResult.errorKeys("error.general.missing");
+        }
+
+        ObjectUsages usages = collectObjectUsages(id, admin.getCompanyID());
+        if (!usages.isEmpty()) {
+            return ServiceResult.error(usages.toMessage("error.mailinglist.cannot_delete_mailinglists", admin.getLocale()));
+        }
+        
+        return ServiceResult.success(mailinglist);
+    }
+
+    private void validateDeleteOfLastMailinglist(Collection<?> items, int companyId) {
+        int mailinglistsCount = mailinglistDao.getCountOfMailinglists(companyId);
+        if (mailinglistsCount <= CollectionUtils.size(items)) {
+            throw new RequestErrorException("error.mailinglist.delete.last");
+        }
+    }
+
+    private ObjectUsages collectObjectUsages(int id, int companyId) {
+        List<Mailing> affectedMailings = getUsedMailings(Set.of(id), companyId);
+
+        List<ObjectUsage> usages = affectedMailings.stream()
+                .map(m -> new ObjectUsage(ObjectUserType.MAILING, m.getId(), m.getShortname()))
+                .collect(Collectors.toList());
+
+        return new ObjectUsages(usages);
     }
 
     @Override
@@ -319,6 +375,9 @@ public class MailinglistServiceImpl implements MailinglistService {
             entry.element("changeDate", DateUtilities.toLong(mailinglist.getChangeDate()));
             entry.element("creationDate", DateUtilities.toLong(mailinglist.getCreationDate()));
             entry.element("isFrequencyCounterEnabled", mailinglist.isFrequencyCounterEnabled());
+            if (admin.isRedesignedUiUsed()) {
+                entry.element("restrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
+            }
 
             mailingListsJson.element(entry);
         }
@@ -359,4 +418,14 @@ public class MailinglistServiceImpl implements MailinglistService {
                                 .contains(mailinglistId))
                 .map(param -> param.get("report_id")).distinct().mapToInt(i -> 1).sum();
     }
+    
+    @Override
+	public Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID) {
+    	return mailinglistDao.getMailinglistWorldSubscribersStatistics(companyId, mailinglistID);
+    }
+
+	@Override
+	public int saveMailinglist(Mailinglist mailinglist) {
+    	return mailinglistDao.saveMailinglist(mailinglist);
+	}
 }

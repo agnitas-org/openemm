@@ -12,17 +12,21 @@ package com.agnitas.emm.core.mailing.forms;
 
 import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
 import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
 
     private static final Set<String> DEFAULT_COLUMNS = Set.of("email", "firstname", "lastname", "customer_id");
 
     private boolean loadRecipients;
+    private boolean inEditColumnsMode;
     private List<MailingRecipientType> types;
     private String firstname;
     private String lastname;
@@ -87,12 +91,25 @@ public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
         this.email = email;
     }
 
+    public boolean isInEditColumnsMode() {
+        return inEditColumnsMode;
+    }
+
+    public void setInEditColumnsMode(boolean inEditColumnsMode) {
+        this.inEditColumnsMode = inEditColumnsMode;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(firstname) || isNotBlank(lastname) || isNotBlank(email) || CollectionUtils.isNotEmpty(types);
+    }
+
     @Override
     public Object[] toArray() {
         return ArrayUtils.addAll(Arrays.asList(
                 recipientsFilter,
                 selectedFields,
                 loadRecipients,
+                inEditColumnsMode,
                 types,
                 firstname,
                 lastname,

@@ -11,11 +11,11 @@
 
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailinglist/${id}/delete.action" method="DELETE">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="settings.mailinglist.delete"/>&nbsp;‘${mailinglistShortname}’</h1>
-                <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
@@ -33,7 +33,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger js-confirm-positive flex-grow-1" data-dismiss="modal">
+                <button type="button" class="btn btn-danger js-confirm-positive" data-dismiss="modal">
                     <i class="icon icon-trash-alt"></i>
                     <b><mvc:message code="${sentMailingsCount > 0 or affectedReportsCount > 0 ? 'button.DeleteAnyway' : 'button.Delete'}"/></b>
                 </button>

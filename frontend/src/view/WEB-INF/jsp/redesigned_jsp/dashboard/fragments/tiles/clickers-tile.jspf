@@ -6,25 +6,23 @@
 
     <div class="tile draggable-tile">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
             <c:if test="${mailingsAvailable}">
                 <div class="tile-controls min-w-0">
                     <%@ include file="../statistics-mailing-dropdown.jspf" %>
                 </div>
             </c:if>
         </div>
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body">
             <c:choose>
                 <c:when test="${mailingsAvailable}">
-                    <div class="flex-grow-1 min-h-0">
-                        <canvas class="h-100 clickable" data-action="open-mailing-statistics">
-                            <%-- Loads by JS --%>
-                        </canvas>
-                    </div>
+                    <canvas class="h-100 clickable" data-action="open-mailing-statistics">
+                        <%-- Loads by JS --%>
+                    </canvas>
 
-                    <div class="statistics-notification">
-                        <h1 id="statistics-clickers-percent" class="text-light-blue"><%-- Loads by JS --%></h1>
-                        <h2><mvc:message code="GWUA.statistics.totalClickers.basedOnOpeners" /></h2>
+                    <div class="notification-simple hidden">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="default.NoEntries" /></span>
                     </div>
                 </c:when>
                 <c:otherwise>

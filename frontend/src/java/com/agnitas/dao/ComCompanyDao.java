@@ -152,15 +152,20 @@ public interface ComCompanyDao {
 
 	void cleanupPremiumFeaturePermissions(int companyID);
 
-	boolean existOldLayoutBuilderTemplates(int id);
-
 	Optional<String> getCompanyToken(int companyID) throws UnknownCompanyIdException;
 
     List<Integer> getActiveCompanies(CompaniesConstraints constraints);
 
-	boolean existsTestVipRecipientOnAllMailinglists(int companyID);
-
 	void createMissingOpenemmPlusPermissions();
 
 	String getSpamCheckAddress(int companyID);
+
+    List<CompanyEntry> findAllByEmailPart(String email, int companyID);
+    List<CompanyEntry> findAllByEmailPart(String email);
+
+	void updateTechnicalContact(String email, int id);
+
+	String getTechnicalContact(int id);
+
+	List<Integer> getCompaniesIds();
 }

@@ -1,0 +1,56 @@
+
+.horizontal-card {
+  --horizontal-card-spacer: #{$gap-md};
+
+  @include flex-row(var(--horizontal-card-spacer));
+  align-items: center;
+  width: 100%;
+
+  padding: var(--horizontal-card-spacer);
+  border: $border-default;
+  border-radius: $border-radius;
+
+  &__header {
+    @include flex-row(var(--horizontal-card-spacer));
+    color: var(--text-dark-gray-color);
+  }
+
+  &__icon {
+    @include size(60px);
+    font-size: 40px;
+    border-radius: $border-radius;
+  }
+
+  &__thumbnail {
+    max-width: 60px;
+  }
+
+  &__body {
+    @include flex-column(var(--horizontal-card-spacer));
+    flex-grow: 1;
+  }
+
+  &__title {
+    font-size: $font-size-md;
+    color: var(--text-dark-gray-color);
+    font-weight: 500;
+
+    @include flex-row(var(--horizontal-card-spacer));
+    align-items: center;
+  }
+
+  &__subtitle {
+    color: var(--text-gray-color);
+    @include flex-row(var(--horizontal-card-spacer));
+    align-items: center;
+  }
+
+  &__footer {
+    color: var(--text-dark-gray-color);
+  }
+
+  &.disabled {
+    background: var(--input-disabled-bg-color);
+    pointer-events: none;
+  }
+}

@@ -1,0 +1,15 @@
+
+.btn-category {
+  @extend .btn-inverse;
+  justify-content: space-between;
+  font-size: $font-size-md;
+
+  border-radius: $border-radius-sm;
+  padding: $gap-sm;
+
+  &[disabled], &[readonly] {
+    color: var(--input-disabled-color);
+    background-color: var(--input-disabled-bg-color);
+    opacity: 1;
+  }
+}

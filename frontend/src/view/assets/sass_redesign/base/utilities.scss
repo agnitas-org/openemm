@@ -11,6 +11,10 @@
   min-height: 0 !important;
 }
 
+.min-h-100 {
+  min-height: 100% !important;
+}
+
 .flex-center {
   @include flex-center;
 }
@@ -19,8 +23,20 @@
   @include center-absolute;
 }
 
+.absolute-center-v {
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+}
+
 .hidden {
   display: none !important;
+}
+
+.mobile-visible {
+  @include desktop {
+    display: none !important;
+  }
 }
 
 .mobile-hidden {
@@ -29,38 +45,20 @@
   }
 }
 
-.desktop-hidden {
-  @include desktop {
-    display: none !important;
-  }
-}
-
-.mobile-visible {
-  display: none !important;
-
-  @include mobile {
-    display: initial !important;
-  }
-}
-
-.desktop-visible {
-  display: none !important;
-
-  @include desktop {
-    display: initial !important;
-  }
-}
-
 .bg-light-blue {
   background-color: $light-blue;
 }
 
-.clickable {
-  cursor: pointer !important;
+.bg-disabled {
+  background-color: var(--input-disabled-bg-color);
 }
 
-.text-color-default {
-  color: var(--default-text-color) !important;
+.border-left-radius-0 {
+  @include border-start-radius(0);
+}
+
+.clickable {
+  cursor: pointer !important;
 }
 
 .bg-transparent {
@@ -69,6 +67,10 @@
 
 .flex-none {
   flex: none !important;
+}
+
+.flex-1 {
+  flex: 1 !important;
 }
 
 .unselectable {
@@ -85,8 +87,16 @@
   margin: 0;
 }
 
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere !important;
+}
+
 @each $key, $value in $spacers {
   .ml-#{$key} {
     margin-left: $value !important;
   }
+}
+
+.hide-scroll {
+  @include hide-scroll;
 }

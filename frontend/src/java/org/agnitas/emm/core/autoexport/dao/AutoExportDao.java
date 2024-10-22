@@ -10,16 +10,15 @@
 
 package org.agnitas.emm.core.autoexport.dao;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.sql.DataSource;
-
+import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
-import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
+import javax.sql.DataSource;
+import java.util.Date;
+import java.util.List;
 
 public interface AutoExportDao {
     List<AutoExport> getAutoExportsToRun(int maximumParallelAutoExports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
@@ -35,17 +34,14 @@ public interface AutoExportDao {
     void updateAutoExport(AutoExport autoExport) throws Exception;
 
     List<AutoExport> getAutoExports(int companyId);
-	List<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, int companyID);
+    List<AutoExport> getAutoExports(List<Integer> allowedProfilesForRecipientAutoExport, int companyId);
+	PaginatedListImpl<AutoExport> getAutoExportsOverview(AutoExportOverviewFilter filter, List<Integer> allowedProfilesForRecipientAutoExport, int companyID);
 
     void deleteAutoExport(int autoExportId, int companyId);
 
 	boolean announceStart(int autoExportId, Date currentStart, Date nextStart);
 
 	void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
-
-	List<AutoExport> getAutoExports(int companyId, boolean active);
-
-	void scheduleMailingReport(int companyId, int autoExportId, int mailing_id, List<Integer> hoursAfterDelivery, Date activationDate);
 
 	int resetAutoExportsForCurrentHost();
 
@@ -55,8 +51,6 @@ public interface AutoExportDao {
 
 	int getRunningAutoExportsByHost(String hostName);
 	
-	List<AutoExport> getMailingAutoExports(int companyId, boolean active);
-
 	boolean isExportStalling();
 
 	int saveWsJobState(int companyId, int autoExportId, AutoExportJobStatus status, int expirationTimeout);
@@ -68,4 +62,8 @@ public interface AutoExportDao {
 	void removeExpiredWsJobs();
 
 	List<Integer> getOutdatedAutoExports(int companyID, Date autoExportExportExpireDate);
+
+    List<AutoExport> findAllByEmailPart(String email, int companyID);
+    List<AutoExport> findAllByEmailPart(String email);
+    void updateEmails(String emailForError, String emailForReport, int id);
 }

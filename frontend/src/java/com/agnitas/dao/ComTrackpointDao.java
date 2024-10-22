@@ -11,6 +11,7 @@
 package com.agnitas.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 
@@ -35,4 +36,6 @@ public interface ComTrackpointDao {
     PaginatedListImpl<ComTrackpointDef> getAll(int companyID, String sort, String direction, int pageNumber, int pageSize);
 
     boolean deleteTrackpointsByCompany(int companyId);
+
+    Map<Integer, String> getNamesMap(int companyID);
 }

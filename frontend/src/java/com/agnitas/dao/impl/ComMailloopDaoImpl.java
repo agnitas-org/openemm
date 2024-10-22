@@ -10,15 +10,7 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Set;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
 import com.agnitas.emm.core.bounce.util.BounceUtils;
@@ -29,15 +21,18 @@ import org.agnitas.beans.impl.MailloopImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 
 public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao {
 	
@@ -67,22 +62,26 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
                 .append(" FROM mailloop_tbl ");
         List<Object> params = applyOverviewFilter(filter, sql);
 
-        return selectPaginatedList(logger, sql.toString(), "mailloop_tbl",
-                filter.getSortOrDefault(SHORTNAME_COL), filter.ascending(), filter.getPage(),
-   				filter.getNumberOfRows(), new BounceFilterDtoRowMapper(), params.toArray());
+		PaginatedListImpl<BounceFilterDto> list = selectPaginatedList(logger, sql.toString(), "mailloop_tbl",
+				filter.getSortOrDefault(SHORTNAME_COL), filter.ascending(), filter.getPage(),
+				filter.getNumberOfRows(), new BounceFilterDtoRowMapper(), params.toArray());
+
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
+		}
+
+		return list;
    	}
 
     private static String getFilterAddressOverviewQuery(String companyDomain) {
-        return String.format("COALESCE(filter_address, CONCAT(CONCAT('%s', rid), '%s'))",
+        return String.format("COALESCE(NULLIF(filter_address, ''), CONCAT(CONCAT('%s', rid), '%s'))",
                 BounceUtils.EMAIL_PREFIX + "_", "@" + companyDomain);
     }
 
     private List<Object> applyOverviewFilter(BounceFilterListForm filter, StringBuilder sql) {
-        int companyId = filter.getCompanyId();
-        sql.append(" WHERE company_id = ?");
-        List<Object> params = new ArrayList<>(List.of(companyId));
+        List<Object> params = applyRequiredOverviewFilter(sql, filter.getCompanyId());
 
-        if (StringUtils.isNotBlank(filter.getName())) {
+		if (StringUtils.isNotBlank(filter.getName())) {
             sql.append(getPartialSearchFilterWithAnd(SHORTNAME_COL));
             params.add(filter.getName());
         }
@@ -96,6 +95,18 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
         }
         return params;
     }
+
+	private int getTotalUnfilteredCountForOverview(int companyId) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM mailloop_tbl");
+		List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
+		query.append(" WHERE company_id = ?");
+		return new ArrayList<>(List.of(companyId));
+	}
 
 	@Override
 	public Mailloop getMailloop(int mailloopId, int companyId) {
@@ -160,7 +171,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 						mailloop.getDescription(),
 						mailloop.getShortname(),
 						mailloop.getForwardEmail(),
-						mailloop.getFilterEmail(),
+						StringUtils.isBlank(mailloop.getFilterEmail()) ? null : mailloop.getFilterEmail(),
 						mailloop.isDoForward() ? 1 : 0,
 						mailloop.isDoAutoresponder() ? 1 : 0,
 						mailloop.getChangedate(),
@@ -278,16 +289,5 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
     @Override
     public boolean isAddressInUse(String filterAddress) {
         return selectInt(logger, "SELECT COUNT(*) FROM mailloop_tbl WHERE filter_address = ?", filterAddress) > 0;
-    }
-
-    @Override
-    public List<String> getBounceFilterNames(Set<Integer> ids, int companyId) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
-        }
-        List<Object> params = new ArrayList<>(ids);
-        params.add(companyId);
-        return select(logger, "SELECT shortname FROM mailloop_tbl WHERE rid IN (" + AgnUtils.csvQMark(ids.size()) + ")"
-                + " AND company_id = ?", StringRowMapper.INSTANCE, params.toArray());
     }
 }

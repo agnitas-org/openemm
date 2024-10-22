@@ -1,110 +1,73 @@
 
-///*doc
-//---
-//title: Notifications
-//name: notifications
-//category: Components - Notifications
-//---
-//
-//Notifications are the backbone of the javascript popups, but they can also be used as standalone elements.
-//
-//In that case, they should not contain a close icon, because they can't be dismissed - for illustration purposes, the close icons in the examples have been left in.
-//
-//*/
-//
-///*doc
-//---
-//title: Basic Example
-//name: notifications_01_example
-//parent: notifications
-//---
-//
-//```htmlexample
-//<div class="notification">
-//    <div class="notification-header">
-//        <p class="headline">
-//            <span class="text">You've been notified!</span>
-//            <i class="close-icon icon icon-times-circle"></i>
-//        </p>
-//    </div>
-//
-//    <div class="notification-content">
-//        <p>There's something I meant to notify you about, but I forgot...</p>
-//    </div>
-//
-//</div>
-//```
-//*/
-//
-///*doc
-//---
-//title: States
-//name: notifications_02_states
-//parent: notifications
-//---
-//
-//Notifications support the full range of state variants, namely as `.notification-success`, `.notification-info`, `.notification-warning` and `.notification-alert` respectively.
-//
-//Please note that depending on the state, the state icon in the headline has to be adjusted accordingly, it does not get placed automatically when placing notifications into the content directly.
-//
-//```htmlexample
-//<div class="notification notification-success">
-//    <div class="notification-header">
-//        <p class="headline">
-//            <i class="icon icon-state-success"></i>
-//            <span class="text">You've been notified!</span>
-//            <i class="close-icon icon icon-times-circle"></i>
-//        </p>
-//    </div>
-//
-//    <div class="notification-content">
-//        <p>There's something I meant to notify you about, but I forgot...</p>
-//    </div>
-//</div>
-//
-//<div class="notification notification-info">
-//    <div class="notification-header">
-//        <p class="headline">
-//            <i class="icon icon-state-info"></i>
-//            <span class="text">You've been notified!</span>
-//            <i class="close-icon icon icon-times-circle"></i>
-//        </p>
-//    </div>
-//
-//    <div class="notification-content">
-//        <p>There's something I meant to notify you about, but I forgot...</p>
-//    </div>
-//</div>
-//
-//<div class="notification notification-warning">
-//    <div class="notification-header">
-//        <p class="headline">
-//            <i class="icon icon-state-warning"></i>
-//            <span class="text">You've been notified!</span>
-//            <i class="close-icon icon icon-times-circle"></i>
-//        </p>
-//    </div>
-//
-//    <div class="notification-content">
-//      <p>There's something I meant to notify you about, but I forgot...</p>
-//    </div>
-//</div>
-//
-//<div class="notification notification-alert">
-//    <div class="notification-header">
-//        <p class="headline">
-//            <i class="icon icon-state-alert"></i>
-//            <span class="text">You've been notified!</span>
-//            <i class="close-icon icon icon-times-circle"></i>
-//        </p>
-//    </div>
-//
-//    <div class="notification-content">
-//        <p>There's something I meant to notify you about, but I forgot...</p>
-//    </div>
-//</div>
-//```
-//*/
+/*doc
+---
+title: Notifications
+name: notifications
+category: Components - Notifications
+---
+
+Notifications are the text blocks with the border and with icon in some cases.
+
+*/
+
+/*doc
+---
+title: Basic Example
+name: notifications_01_example
+parent: notifications
+---
+
+```htmlexample
+<div class="notification-simple">
+  <i class="icon icon-info-circle"></i>
+  <span>Some notification text!</span>
+</div>
+```
+*/
+
+/*doc
+---
+title: States
+name: notifications_02_states
+parent: notifications
+---
+
+Notifications support the full range of state variants, namely as `.notification-success`, `.notification-info`, `.notification-warning` and `.notification-alert` respectively.
+
+Please note that depending on the state, the state icon has to be adjusted accordingly, it does not get placed automatically when placing notifications into the content directly.
+
+```htmlexample
+<div class="notification-simple notification-simple--success">
+  <i class="icon icon-info-circle"></i>
+  <span>Some notification text!</span>
+</div>
+
+<div class="notification-simple notification-simple--info">
+  <i class="icon icon-info-circle"></i>
+  <span>Some notification text!</span>
+</div>
+
+<div class="notification-simple notification-simple--warning">
+  <i class="icon icon-info-circle"></i>
+  <span>Some notification text!</span>
+</div>
+
+<div class="notification-simple notification-simple--alert">
+  <i class="icon icon-info-circle"></i>
+  <span>Some notification text!</span>
+</div>
+```
+
+There is larger variant of notification. You should just add the class `.notification-simple--lg`.
+This variant has another paddings and text doesn't truncate inside it.
+
+```htmlexample
+<div class="notification-simple notification-simple--lg">
+  <i class="icon icon-info-circle"></i>
+  <span>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta fuga modi nisi, nobis non numquam odio perspiciatis quaerat repudiandae veritatis vitae, voluptatibus. Esse eum ipsam, obcaecati officia officiis possimus voluptate?</span>
+</div>
+```
+*/
 
 $notification-header-height: 30px;
 $popup-width: 435px;
@@ -145,52 +108,6 @@ html {
 
   span {
     white-space: initial;
-  }
-}
-
-.statistics-notification {
-  width: 100%;
-  padding: $gap-sm;
-  background: $dark-blue;
-  color: $white;
-  border-radius: $border-radius;
-
-  flex-shrink: 0;
-  @include flex-row($gap-x-sm);
-  align-items: center;
-}
-
-.notification {
-  border-radius: $border-radius;
-  border: $border-default;
-  overflow: hidden;
-
-  .notification-header {
-    display: flex;
-    align-items: center;
-    height: $notification-header-height;
-    padding-inline: $gap-sm;
-
-    .notification-title {
-      @include flex-row($gap-x-sm);
-      align-items: center;
-    }
-  }
-
-  .notification-content {
-    padding: $gap-sm;
-    color: var(--default-text-color);
-  }
-}
-
-@mixin notification-variant($state, $color) {
-  .notification--#{$state} {
-    border-color: $color;
-
-    .notification-header {
-      color: $white;
-      background-color: $color;
-    }
   }
 }
 
@@ -262,7 +179,7 @@ html {
 
       .popup-content {
         background-color: var(--popup-content-bg-color);
-        color: var(--default-text-color);
+        color: var(--text-color-default);
         border: 1px solid $color;
         padding: $gap-sm;
         @include border-bottom-radius;
@@ -373,7 +290,6 @@ html {
 
   @include popup-variant($state, $color);
   @include notification-simple-variant($state, $color);
-  @include notification-variant($state, $color);
 }
 
 .popups-bottom-right {

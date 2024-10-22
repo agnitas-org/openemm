@@ -26,7 +26,7 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.binding.service.ComBindingService;
+import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionRequest;
 import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionResponse;
 
@@ -35,11 +35,11 @@ public class SetSubscriberBindingWithActionEndpoint extends BaseEndpoint {
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(SetSubscriberBindingWithActionEndpoint.class);
 
-	private final ComBindingService bindingService;
+	private final BindingService bindingService;
 	private final SecurityContextAccess securityContextAccess;
 
 	@Autowired
-	public SetSubscriberBindingWithActionEndpoint(@Qualifier("BindingService") ComBindingService bindingService, final SecurityContextAccess securityContextAccess) {
+	public SetSubscriberBindingWithActionEndpoint(@Qualifier("BindingService") BindingService bindingService, final SecurityContextAccess securityContextAccess) {
 		this.bindingService = Objects.requireNonNull(bindingService, "bindingService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}

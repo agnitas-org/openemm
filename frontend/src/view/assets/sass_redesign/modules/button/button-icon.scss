@@ -1,0 +1,51 @@
+/*doc
+---
+title: Button icon
+name: buttons_01_icon
+parent: buttons
+---
+
+Differs from the <a href="#buttons_02_icon">`.icon-btn`</a> component is that it has borders and background.
+Large size is also available .
+In case you want to use several icons in a row, use `.btn-icon--wide`.
+Uses <a href="components_-_icons.html">`.icon` component</a> inside.
+
+```htmlexample
+<a href="#" class="btn btn-icon btn-danger">
+    <i class="icon icon-trash-alt"></i>
+</a>
+
+<a href="#" class="btn btn-icon btn-icon--wide btn-inverse">
+    <i class="icon icon-table"></i>
+    <i class="icon icon-magic text-secondary"></i>
+</a>
+
+<button type="button" class="btn btn-icon btn-icon--lg btn-primary">
+    <i class="icon icon-paper-plane"></i>
+</button>
+```
+*/
+
+@mixin btn-icon($width, $height, $paddingX, $paddingY, $fontSize) {
+  @include size($width, $height);
+  padding: $paddingY $paddingX;
+  flex: none;
+
+  i {
+    font-size: $fontSize;
+    @include flex-center;
+  }
+}
+
+.btn-icon {
+  @include btn-icon($btn-icon-size, $btn-icon-size, 0, 0, $font-size-md);
+
+  &--lg {
+    @include btn-icon(auto, 40px, 23px, $gap-sm, $font-size-xl);
+  }
+
+  &--wide {
+    padding-inline: $gap-x-sm;
+    width: auto;
+  }
+}

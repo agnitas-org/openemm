@@ -1,6 +1,8 @@
-class NewsTile extends DraggableTile {
+(() => {
 
-  get id() {
-    return DraggableTile.def.TILE.ID.NEWS;
+  class NewsTile extends AGN.Lib.Dashboard.DraggableTile {
+    static ID = 'news';
   }
-}
+
+  AGN.Lib.Dashboard.NewsTile = NewsTile;
+})();

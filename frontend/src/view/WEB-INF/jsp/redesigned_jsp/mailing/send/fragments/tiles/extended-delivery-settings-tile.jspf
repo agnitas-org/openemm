@@ -1,7 +1,7 @@
 
 <div id="extended-delivery-settings-tile" class="tile" data-editable-tile="">
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="mailing.send.settings.extended" /></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="mailing.send.settings.extended" /></h1>
     </div>
 
     <div class="tile-body js-scrollable">
@@ -14,9 +14,7 @@
 
             <c:if test="${not isActionBasedMailing}">
                 <%@ include file="../mailing-send-required-auto-import.jspf" %>
-            </c:if>
 
-            <c:if test="${not isActionBasedMailing}">
                 <div class="col-12">
                     <div class="form-check form-switch">
                         <mvc:checkbox path="checkForDuplicateRecords" id="checkForDuplicateRecords" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />

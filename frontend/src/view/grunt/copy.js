@@ -31,6 +31,7 @@ module.exports = {
           'core/**',
           'icons-defs.svg',
           'application.css',
+          'application.redesigned.css',
           'application.redesigned.js',
           'application.js'
         ],

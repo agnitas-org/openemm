@@ -19,14 +19,14 @@ import org.agnitas.util.TimeoutLRUMap;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.MailingContentType;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 
 public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCache<MailingContentType> implements MailingContentTypeCache {
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private ConfigService configService;
 
 	@Required
-	public final void setMailingDao(final ComMailingDao dao) {
+	public final void setMailingDao(final MailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 

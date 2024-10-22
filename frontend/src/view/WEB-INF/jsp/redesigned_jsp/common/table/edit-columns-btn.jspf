@@ -1,0 +1,4 @@
+<button type="button" class="btn btn-inverse" data-manage-table-columns>
+    <i class="icon icon-edit"></i>
+    <span><mvc:message code="list.columns.edit" /></span>
+</button>

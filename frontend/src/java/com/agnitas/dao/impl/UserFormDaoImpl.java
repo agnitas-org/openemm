@@ -10,15 +10,16 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.userform.bean.impl.UserFormImpl;
+import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.util.DbUtilities;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -28,33 +29,44 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.UserFormDao;
-import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.bean.impl.UserFormImpl;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
-import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao {
-	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormDaoImpl.class);
 
 	private FormTrackableLinkDao trackableLinkDao;
 
 	@Override
-    public List<UserForm> getUserForms(int companyID) {
+	public List<UserForm> overview(int companyID) {
+		return getUserForms(companyID, true);
+	}
+
+	@Override
+	public List<UserForm> getUserForms(int companyID) {
+		return getUserForms(companyID, false);
+	}
+
+    private List<UserForm> getUserForms(int companyID, boolean includeDeleted) {
     	List<UserForm> comList = select(logger,
-				"SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id  " +
-				"FROM userform_tbl WHERE company_id = ? ORDER BY lower(formname)",
+				"SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id, deleted " +
+				"FROM userform_tbl WHERE company_id = ? " +
+					(includeDeleted ? "" : " AND deleted = 0") +
+					" ORDER BY lower(formname)",
 				new UserForm_Light_RowMapper(), companyID);
     	return new ArrayList<>(comList);
     }
 
     @Override
 	public List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID) {
-		return select(logger, "SELECT form_id, formname FROM userform_tbl WHERE company_id = ? AND (startaction_id = ? OR endaction_id = ?) ORDER BY LOWER(formname)",
+		return select(logger, "SELECT form_id, formname FROM userform_tbl WHERE company_id = ? AND deleted = 0 AND (startaction_id = ? OR endaction_id = ?) ORDER BY LOWER(formname)",
 				(resultSet, i) -> new Tuple<>(resultSet.getInt("form_id"), resultSet.getString("formname")),
 				companyID, actionID, actionID);
 	}
@@ -62,7 +74,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	@Override
 	public UserForm getUserForm(int formID, int companyID) {
 		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date "
-				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
+				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ? AND deleted = 0";
 		return selectObjectDefaultNull(logger, sql, new UserForm_RowMapper(), formID, companyID);
 	}
 
@@ -71,7 +83,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		if (name == null || companyID == 0) {
 			return null;
 		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date FROM userform_tbl WHERE formname = ? AND company_id = ?";
+			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date FROM userform_tbl WHERE formname = ? AND company_id = ? AND deleted = 0";
 
 			List<UserForm> userFormList = select(logger, sql, new UserForm_RowMapper(), name, companyID);
 			if (userFormList == null || userFormList.size() < 1) {
@@ -89,7 +101,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	@Override
 	public String getUserFormName(int formId, int companyId) {
 		if (formId > 0 && companyId > 0) {
-			String sql = "SELECT formName FROM userform_tbl WHERE form_id = ? AND company_id = ?";
+			String sql = "SELECT formName FROM userform_tbl WHERE form_id = ? AND company_id = ? AND deleted = 0";
 			return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("formName"), formId, companyId);
 		} else {
 			return null;
@@ -268,8 +280,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			return 0;
 		}
 
-    	String ids = StringUtils.join(formIds, ", ");
-    	String query = String.format("UPDATE userform_tbl SET active = ?, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND form_id IN (%s)", ids);
+    	String query = "UPDATE userform_tbl SET active = ?, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND"
+				+ makeBulkInClauseForInteger("form_id", formIds);
 
     	return update(logger, query, BooleanUtils.toInteger(isActive), companyId);
 	}
@@ -282,7 +294,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 		String statement = "SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id" +
 				" FROM userform_tbl" +
-				String.format(" WHERE company_id = ? AND form_id IN (%s)", StringUtils.join(formIds, ','));
+				String.format(" WHERE company_id = ? AND deleted = 0 AND form_id IN (%s)", StringUtils.join(formIds, ','));
 
 		return select(logger, statement, new UserForm_Light_RowMapper(), companyId);
 	}
@@ -302,6 +314,25 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				return false;
 			}
 		}
+	}
+
+	@Override
+	public void markDeleted(int formId, int companyId) {
+		update(logger, "UPDATE userform_tbl SET active = 0, deleted = 1, change_date = CURRENT_TIMESTAMP"
+			+ " WHERE form_id = ? AND company_id = ?", formId, companyId);
+	}
+
+	@Override
+	public void restore(Set<Integer> ids, int companyId) {
+		update(logger, "UPDATE userform_tbl SET deleted = 0, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND "
+			+ makeBulkInClauseForInteger("form_id", ids), companyId);
+	}
+
+	@Override
+	public List<Integer> getMarkedAsDeletedBefore(Date date, int companyId) {
+		return select(logger,
+			"SELECT form_id FROM userform_tbl WHERE company_id = ? AND deleted = 1 AND change_date < ?",
+			IntegerRowMapper.INSTANCE, companyId, date);
 	}
 
 	@Override
@@ -333,6 +364,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			readUserForm.setActive(resultSet.getBoolean("active"));
 			readUserForm.setStartActionID(resultSet.getInt("startaction_id"));
 			readUserForm.setEndActionID(resultSet.getInt("endaction_id"));
+			if (DbUtilities.resultsetHasColumn(resultSet, "deleted")) {
+				readUserForm.setDeleted(resultSet.getBoolean("deleted"));
+			}
 			return readUserForm;
 		}
 	}
@@ -366,7 +400,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	public boolean isFormNameInUse(String formName, int formId, int companyId) {
-		String query = "SELECT count(*) FROM userform_tbl WHERE company_id = ? AND formname = ? AND form_id != ?";
+		String query = "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND formname = ? AND form_id != ?";
 		int count = selectInt(logger, query, companyId, formName, formId);
 
 		return count > 0;
@@ -374,7 +408,12 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	public boolean existsUserForm(int companyId, int userFormId) {
-		return selectInt(logger, "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND form_id = ?", companyId, userFormId) > 0;
+		return selectInt(logger, "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND deleted = 0 AND form_id = ?", companyId, userFormId) > 0;
+	}
+
+	@Override
+	public boolean isActive(int formId) {
+		return selectIntWithDefaultValue(logger, "SELECT active FROM userform_tbl WHERE form_id = ? AND deleted = 0", 0, formId) > 0;
 	}
 
 	@Required

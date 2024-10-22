@@ -4,8 +4,7 @@
 .node-connect-button {
   position: absolute;
   visibility: hidden;
-  width: 16px;
-  height: 16px;
+  @extend .square-badge;
   background-color: #dadada;
   border-radius: 3px;
 }
@@ -14,6 +13,12 @@
   top: 0;
   right: 0;
   color: $campaign-icon-color;
+}
+
+.node-status-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 //#connectRapidButton:hover,
@@ -31,4 +36,23 @@
 
 .jtk-connector.jtk-hover {
   z-index: 11; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_HOVER */
+}
+
+.jtk-connector.js-connection-drop-forbidden {
+  cursor: no-drop !important;
+}
+
+.jtk-overlay.connection-label {
+  @include border(4px);
+  opacity: 0.7;
+  padding: 0 5px;
+  cursor: default;
+  z-index: 9; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY */
+}
+
+.jtk-overlay.connection-label.jtk-hover {
+  border: 1px solid $dark-grey;
+  color: $campaign-icon-title-color;
+  opacity: 1;
+  z-index: 12; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY_HOVER */
 }

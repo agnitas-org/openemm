@@ -27,7 +27,7 @@ import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
 public class EmmActionOperationDaoImpl extends BaseDaoImpl implements EmmActionOperationDao, InitializingBean {
 
-	private static final transient Logger logger = LogManager.getLogger(EmmActionOperationDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(EmmActionOperationDaoImpl.class);
 
 	private ActionOperationFactory actionOperationFactory;
 

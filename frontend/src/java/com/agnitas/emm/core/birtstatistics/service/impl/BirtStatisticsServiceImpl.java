@@ -13,6 +13,8 @@ package com.agnitas.emm.core.birtstatistics.service.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.common.exceptions.ZipArchiveException;
+import com.agnitas.emm.common.service.ZipArchiveService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -27,16 +29,19 @@ import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
-import com.agnitas.emm.core.birtstatistics.optimization.dto.OptimizationStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
+import com.agnitas.emm.core.userform.form.WebFormStatFrom;
 import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet;
 import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -55,10 +60,14 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
@@ -73,6 +82,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+import static org.agnitas.util.DateUtilities.toDate;
 
 public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	private static final Logger logger = LogManager.getLogger(BirtStatisticsServiceImpl.class);
@@ -146,10 +156,13 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 
 	public static final String MAILINGCOMPARE_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "MailingCompare";
     private static final String HIDDEN_TARGET_ID = "hiddenTargetId";
+    private static final String COL_NAME = "colName";
+    private static final String LIMIT = "limit";
 
 	protected ConfigService configService;
 	protected AdminService adminService;
 	private BirtReportFileService birtReportFileService;
+	private ZipArchiveService<BirtReportDownload> zipArchiveService;
 
     @Override
 	public String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception {
@@ -172,6 +185,26 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 
 		return generateUrlWithParams(options, admin.getCompanyID());
 	}
+
+    @Override
+    public String getProfileFieldEvalStatUrl(Admin admin, String sessionId, ProfileFieldStatForm form) throws Exception {
+		Map<String, Object> params = Map.of(
+			REPORT_NAME, form.getReportName(),
+			COMPANY_ID, admin.getCompanyID(),
+			TARGET_ID, form.getTargetId(),
+			MAILING_LIST_ID, form.getMailingListId(),
+			LIMIT, form.getLimit(),
+			COL_NAME, form.getColName(),
+			EMM_SESSION, sessionId,
+			TARGET_BASE_URL.toLowerCase(), generateTargetBaseUrl());
+
+		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
+			.setInternalAccess(false)
+			.setAdmin(admin)
+			.setParameters(params)
+			.build();
+        return generateUrlWithParams(options, admin.getCompanyID());
+    }
 
 	@Override
 	public String getMonthlyStatisticsUrlWithoutFormat(Admin admin, String sessionId, MonthlyStatisticDto monthlyStatistic, boolean forInternalUse) throws Exception {
@@ -532,7 +565,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	}
 
 	@Override
-	public File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto, final int companyId) throws Exception {
+	public File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto, final int companyId) {
 		try {
 			return exportBirtStatistic("mailing_compare_export_", "." + mailingComparisonDto.getReportFormat(),
 					MAILINGCOMPARE_FILE_DIRECTORY, birtURL, companyId);
@@ -561,8 +594,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
             		".tmp",
                     BIRT_REPORT_TEMP_DIR,
                     birtUrl,
-                    httpClient,
-                    loggerForErrors);
+                    httpClient);
         } catch (Exception e) {
         	loggerForErrors.error("Cannot get birt report file: " + e.getMessage());
             return null;
@@ -602,28 +634,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.noneMatch(status -> invalidStatuses.contains(status.getStatus()));
 	}
 
-    @Override
-    public String getOptimizationStatisticUrl(Admin admin, OptimizationStatisticDto optimizationDto) throws Exception {
-        Map<String, Object> map = new HashMap<>();
-        map.put(REPORT_NAME, optimizationDto.getReportName());
-        map.put(FORMAT, optimizationDto.getFormat());
-        map.put(MAILING_ID, optimizationDto.getMailingId());
-        map.put(OPTIMIZATION_ID, optimizationDto.getOptimizationId());
-        map.put(COMPANY_ID, optimizationDto.getCompanyId());
-        map.put(SELECTED_TARGETS, StringUtils.join(optimizationDto.getTargetIds(), ","));
-
-        map.put(RECIPIENT_TYPE, optimizationDto.getRecipientType());
-        map.put(TRACKING_ALLOWED, AgnUtils.isMailTrackingAvailable(admin));
-        map.put(SHOW_SOFT_BOUNCES, admin.permissionAllowed(Permission.STATISTIC_SOFTBOUNCES_SHOW));
-
-		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
-				.setParameters(map)
-				.setAdmin(admin)
-				.setInternalAccess(false).build();
-
-		return generateUrlWithParams(options, admin.getCompanyID());
-    }
-
 	@Override
 	public String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto) throws Exception {
 		Map<String, Object> map = new HashMap<>();
@@ -642,6 +652,38 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.build();
 
 		return generateUrlWithParams(options, admin.getCompanyID());
+	}
+
+	@Override
+	public String getWebFormStatUrl(WebFormStatFrom form, Admin admin, String sessionId) throws Exception {
+		DateRange period = getWebFormStatPeriod(form, AgnUtils.getTimeZone(admin).toZoneId());
+		Map<String, Object> map = Map.of(
+			REPORT_NAME, "form_click_statistics.rptdesign",
+			COMPANY_ID, admin.getCompanyID(),
+			START_DATE, new SimpleDateFormat(DateUtilities.YYYY_MM_DD).format(period.getFrom()),
+			END_DATE, new SimpleDateFormat(DateUtilities.YYYY_MM_DD).format(period.getTo()),
+			EMM_SESSION, sessionId,
+			FORM_ID, form.getFormId()
+		);
+		return generateUrlWithParams(BirtUrlOptions.builder(configService, adminService)
+			.setAdmin(admin)
+			.setParameters(map)
+			.setInternalAccess(false).build(), admin.getCompanyID());
+	}
+
+	private DateRange getWebFormStatPeriod(WebFormStatFrom form, ZoneId zoneId) {
+		if (form.getPeriodMode() == DateMode.SELECT_MONTH) {
+			YearMonth yearMonth = YearMonth.of(form.getYear(), form.getMonth());
+			LocalDate from = yearMonth.atDay(1);
+			LocalDate to = yearMonth.plusMonths(1).atDay(1);
+			return new DateRange(toDate(from, zoneId), toDate(to, zoneId));
+		}
+		if (form.getPeriodMode() == DateMode.SELECT_YEAR) {
+			LocalDate from = Year.of(form.getYear()).atDay(1);
+			LocalDate to = Year.of(form.getYear() + 1).atDay(1);
+			return new DateRange(toDate(from, zoneId), toDate(to, zoneId));
+		}
+		return form.getDateRange();
 	}
 
 	@Override
@@ -705,8 +747,38 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		}
 	}
 
+	@Override
+	public File getBirtReportTmpFile(List<BirtReportDownload> birtDownloads, int companyId) {
+		Map<BirtReportDownload, File> filesMap = birtDownloads.stream()
+				.collect(Collectors.toMap(Function.identity(), bd -> getBirtReportTmpFile(bd, companyId)));
+
+		List<BirtReportDownload> downloadsWithFiles = filesMap.entrySet().stream()
+				.filter(e -> e.getValue() != null && e.getValue().exists())
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toList());
+
+		if (downloadsWithFiles.size() == 1) {
+			return filesMap.get(downloadsWithFiles.get(0));
+		}
+
+		try {
+			return zipArchiveService.createZipArchive(downloadsWithFiles, "birt_reports_", d -> {
+				String fileName = d.getFileName();
+				try {
+					return new Tuple<>(fileName, org.apache.commons.io.FileUtils.readFileToByteArray(filesMap.get(d)));
+				} catch (IOException e) {
+					logger.error("Error occurred when trying to read birt report file: " + e.getMessage());
+					return new Tuple<>(fileName, null);
+				}
+			});
+		} catch (ZipArchiveException e) {
+			logger.error("Error occurred when create zip archive! Message: " + e.getMessage());
+			return null;
+		}
+	}
+
 	/**
-	 * @see #exportBirtStatistic(String, String, String, String, CloseableHttpClient, Logger)
+	 * @see #exportBirtStatistic(String, String, String, String, CloseableHttpClient)
 	 */
 	@Deprecated
 	protected File exportBirtStatistic(String prefix, String suffix, String dir, String birtURL, HttpClient httpClient, Logger loggerParameter) throws Exception {
@@ -718,7 +790,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		return FileUtils.downloadAsTemporaryFile(prefix, suffix, dir, birtURL, getBirtUrl(true, companyId));
 	}
 
-	protected File exportBirtStatistic(final String prefix, final String suffix, final String dir, final String url, final CloseableHttpClient httpClient, final Logger loggerForErrors) throws Exception {
+	protected File exportBirtStatistic(final String prefix, final String suffix, final String dir, final String url, final CloseableHttpClient httpClient) throws Exception {
 		final File file = File.createTempFile(prefix, suffix, AgnUtils.createDirectory(dir));
 
 		final boolean result = FileDownload.downloadAsFile(url, file, httpClient);
@@ -743,6 +815,11 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	@Required
 	public void setBirtReportFileService(BirtReportFileService birtReportFileService) {
 		this.birtReportFileService = birtReportFileService;
+	}
+
+	@Required
+	public void setZipArchiveService(ZipArchiveService zipArchiveService) {
+		this.zipArchiveService = zipArchiveService;
 	}
 
 	protected static class BirtUrlOptions {

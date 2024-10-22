@@ -1,12 +1,4 @@
-#mailing-priority-view {
-  display: flex;
-
-  > .tile {
-    flex: 1;
-  }
-}
-
-.mailing-priority__container {
+.mailing-priority-container {
   @include flex-column($gap-md);
   min-height: 100%;
 
@@ -23,50 +15,21 @@
   }
 }
 
-.mailing-priority__entry {
-  @extend .bordered-box-sm;
-  @include flex-row($gap-sm);
-  align-items: center;
-}
+.mailing-priority {
+  --horizontal-card-spacer: #{$gap-sm} !important;
 
-.priority-entry__order {
-  min-width: 60px;
-  color: var(--text-dark-gray-color);
-  font-size: 24px;
-  display: none;
+  &__order {
+    min-width: 60px;
+    font-size: 24px;
+    display: none;
 
-  #ordered-area & {
-    @extend .flex-center;
+    #ordered-area & {
+      @extend .flex-center;
+    }
   }
-}
 
-.priority-entry__thumbnail {
-  max-width: 60px;
-}
-
-.priority-entry__info {
-  @include flex-column($gap-sm);
-  flex-grow: 1;
-
-  > div {
-    @include flex-row($gap-x-sm);
-    align-items: center;
+  &__drag-btn {
+    font-size: 20px !important;
+    margin-right: $gap-sm;
   }
-}
-
-.priority-entry__name {
-  font-size: $font-size-md;
-}
-
-.priority-entry__mailinglist-block {
-  color: var(--text-gray-color);
-  i {
-    font-size: $font-size-md;
-  }
-}
-
-.priority-entry__drag-btn {
-  color: var(--text-dark-gray-color);
-  font-size: 20px !important;
-  margin-right: $gap-sm;
 }

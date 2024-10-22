@@ -1,19 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="isTabsMenuShown"        value="true"                    scope="request" />
-<c:set var="agnNavigationKey"	    value="serverStatusTabs"        scope="request"/>
-
+<c:set var="agnNavigationKey"	    value="serverStatusTabs"        scope="request" />
 <c:set var="agnTitleKey"            value="settings.server.status"  scope="request" />
 <c:set var="agnHelpKey" 			value="Server_status" 			scope="request" />
-
-<c:set var="agnSubtitleKey"         value="settings.server.status"  scope="request" />
 <c:set var="agnHighlightKey"        value="settings.server.status"  scope="request" />
 <c:set var="sidemenu_active"        value="Administration"          scope="request" />
 <c:set var="sidemenu_sub_active"    value="settings.server.status"  scope="request" />
-<c:set var="isBreadcrumbsShown"     value="true"                    scope="request" />
 <c:set var="agnBreadcrumbsRootKey"  value="Administration"          scope="request" />
 <c:set var="agnEditViewKey" 	    value="system-status" 	        scope="request" />
 

@@ -6,7 +6,7 @@
 <%--@elvariable id="reportContentEscaped" type="java.lang.String"--%>
 
 <div class="modal modal-adaptive" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-full-height">
+    <div class="modal-dialog modal-dialog-full-height">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">
@@ -19,12 +19,12 @@
                         </c:otherwise>
                     </c:choose>
                 </h1>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
-            <div class="modal-body" data-initializer="recipient-report-initializer" style="width: 50vw">
-                <iframe id="report-iframe" style="width: 100%;" srcdoc="${reportContentEscaped}"></iframe>
+            <div class="modal-body js-scrollable" data-initializer="recipient-report-initializer" style="width: 50vw; overflow: auto !important;">
+                <iframe class="js-simple-iframe" style="width: 100%;" srcdoc="${reportContentEscaped}"></iframe>
             </div>
         </div>
     </div>

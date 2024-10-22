@@ -1,14 +1,16 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action"%>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="dependentsForm" type="com.agnitas.emm.core.target.form.TargetDependentsListForm"--%>
 <%--@elvariable id="dependents" type="java.util.List<com.agnitas.emm.core.beans.Dependent<com.agnitas.emm.core.target.beans.TargetGroupDependentType>>"--%>
 <%--@elvariable id="mailingGridTemplateMap" type="java.util.Map<java.lang.Integer, java.lang.Integer>"--%>
 
-<mvc:form cssClass="table-box" servletRelativeAction="/target/${dependentsForm.targetId}/dependents.action" modelAttribute="dependentsForm" data-load-stop="">
+<mvc:form cssClass="table-wrapper" servletRelativeAction="/target/${dependentsForm.targetId}/dependents.action" modelAttribute="dependentsForm">
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "target-dependents-overview": {
@@ -17,33 +19,43 @@
         }
     </script>
 
-    <div class="table-scrollable">
-        <display:table id="item" class="table table-rounded table-hover js-table" list="${dependents}"
+    <div class="table-wrapper__header">
+        <h1 class="table-wrapper__title"><mvc:message code="default.usedIn" /></h1>
+        <div class="table-wrapper__controls">
+            <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+            <jsp:include page="../common/table/entries-label.jsp">
+                <jsp:param name="totalEntries" value="${dependents.fullListSize}"/>
+            </jsp:include>
+        </div>
+    </div>
+
+    <div class="table-wrapper__body">
+        <agnDisplay:table id="item" class="table table--borderless table-hover js-table" list="${dependents}"
                 pagesize="${dependentsForm.numberOfRows}" sort="external" excludedParams="*"
                 requestURI="/target/${dependentsForm.targetId}/dependents.action"
                 partialList="true" size="${dependents.fullListSize}">
 
-            <%@ include file="../displaytag/displaytag-properties.jspf" %>
+            <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
 
-            <display:column headerClass="js-table-sort js-filter-type" sortProperty="type" sortable="true" titleKey="default.Type">
+            <agnDisplay:column headerClass="js-table-sort fit-content" sortProperty="type" sortable="true" titleKey="default.Type">
                 <c:choose>
                     <c:when test="${item.type == 'MAILING'}">
                         <emm:ShowByPermission token="mailing.show">
                             <a href="<c:url value="/mailing/${item.id}/settings.action"/>" class="hidden" data-view-row="page"></a>
                         </emm:ShowByPermission>
-                        <mvc:message code="Mailings"/>
+                        <span><mvc:message code="Mailings"/></span>
                     </c:when>
                     <c:when test="${item.type == 'REPORT'}">
                         <emm:ShowByPermission token="report.birt.show">
                             <a href="<c:url value='/statistics/report/${item.id}/view.action'/>" class="hidden" data-view-row="page"></a>
                         </emm:ShowByPermission>
-                        <mvc:message code="Reports"/>
+                        <span><mvc:message code="Reports"/></span>
                     </c:when>
                     <c:when test="${item.type == 'EXPORT_PROFILE'}">
                         <emm:ShowByPermission token="wizard.export">
                             <a href="<c:url value='/export/${item.id}/view.action'/>" class="hidden" data-view-row="page"></a>
                         </emm:ShowByPermission>
-                        <mvc:message code="export.ExportProfile"/>
+                        <span><mvc:message code="export.ExportProfile"/></span>
                     </c:when>
                     <c:when test="${item.type == 'MAILING_CONTENT'}">
                         <emm:ShowByPermission token="mailing.content.show">
@@ -58,12 +70,16 @@
                                 </c:otherwise>
                             </c:choose>
                         </emm:ShowByPermission>
-                        <mvc:message code="mailing.searchContent"/>
+                        <span><mvc:message code="mailing.searchContent"/></span>
                     </c:when>
                 </c:choose>
-            </display:column>
-            <display:column headerClass="js-table-sort fit-content" property="id" sortProperty="id" sortable="true" titleKey="MailinglistID"/>
-            <display:column headerClass="js-table-sort" property="shortname" sortProperty="name" sortable="true" titleKey="Name" escapeXml="true"/>
-        </display:table>
+            </agnDisplay:column>
+            <agnDisplay:column headerClass="js-table-sort fit-content" sortProperty="id" sortable="true" titleKey="MailinglistID">
+                <span>${item.id}</span>
+            </agnDisplay:column>
+            <agnDisplay:column headerClass="js-table-sort" sortProperty="name" sortable="true" titleKey="Name">
+                <span>${fn:escapeXml(item.shortname)}</span>
+            </agnDisplay:column>
+        </agnDisplay:table>
     </div>
 </mvc:form>

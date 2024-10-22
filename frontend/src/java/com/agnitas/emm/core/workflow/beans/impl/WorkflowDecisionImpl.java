@@ -218,6 +218,13 @@ public class WorkflowDecisionImpl extends BaseWorkflowIcon implements WorkflowDe
     }
 
     @Override
+    public boolean hasReactionCriteria() {
+        return isFilled()
+                && getDecisionType() == WorkflowDecisionType.TYPE_DECISION
+                && getDecisionCriteria() == WorkflowDecisionCriteria.DECISION_REACTION;
+    }
+
+    @Override
     public boolean equalsIgnoreI18n(Object o) {
         WorkflowDecisionImpl that = (WorkflowDecisionImpl) o;
         return super.equalsIgnoreI18n(o)

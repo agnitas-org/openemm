@@ -13,22 +13,10 @@ package org.agnitas.backend.exceptions;
 /**
  * To force an accepted cancelation of mail generation
  */
-public class CancelException extends Exception {
+public class CancelException extends BackendException {
 	final static long serialVersionUID = 0xca7ce1;
-	private String	reason;
-	
-	public CancelException (String nReason) {
-		super ();
-		reason = nReason;
-	}
-	
-	public String reason () {
-		return reason;
-	}
-	
-	@Override
-	public String toString () {
-		return reason ();
+	public CancelException (String nMessage) {
+		super (nMessage);
 	}
 }
 		

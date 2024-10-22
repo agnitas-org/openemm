@@ -19,6 +19,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Objects;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class TargetLightsOptions {
 
     public static Builder builder() {
@@ -29,7 +31,6 @@ public class TargetLightsOptions {
 
     private int adminId;
     private int companyId;
-    private boolean includeDeleted;
     private boolean worldDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean adminTestDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private TargetGroupDeliveryOption deliveryOption;
@@ -40,11 +41,11 @@ public class TargetLightsOptions {
     private int recipientCountBasedComplexityAdjustment;
     private boolean isSearchName; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean isSearchDescription; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean includeInvalid = true;
     private String searchText = ""; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean isRedesignedUiUsed; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String searchName;
     private String searchDescription;
+    private boolean deleted;
     private AltgMode altgMode = AltgMode.ALL;
     private int pageNumber;
     private int pageSize;
@@ -57,10 +58,6 @@ public class TargetLightsOptions {
 
     public int getCompanyId() {
         return companyId;
-    }
-
-    public boolean isIncludeDeleted() {
-        return includeDeleted;
     }
 
     public boolean isWorldDelivery() {
@@ -139,14 +136,6 @@ public class TargetLightsOptions {
         return searchDescription;
     }
 
-    public final boolean isIncludeInvalid() {
-		return includeInvalid;
-	}
-
-	public final void setIncludeInvalid(boolean includeInvalid) {
-		this.includeInvalid = includeInvalid;
-	}
-
     public void setSearchName(boolean searchName) {
         isSearchName = searchName;
     }
@@ -159,12 +148,17 @@ public class TargetLightsOptions {
         return isRedesignedUiUsed;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
     public TargetGroupDeliveryOption getDeliveryOption() {
         return deliveryOption;
     }
 
-    public void setDeliveryOption(TargetGroupDeliveryOption deliveryOption) {
-        this.deliveryOption = deliveryOption;
+    public boolean isUiFiltersSet() {
+        return isNotBlank(searchName) || isNotBlank(searchDescription) || (complexity != null && complexity.isPresent())
+                || deliveryOption != null || creationDate.isPresent() || changeDate.isPresent();
     }
 
     @Override
@@ -172,7 +166,6 @@ public class TargetLightsOptions {
         return new ToStringBuilder(this)
                 .append("adminId", adminId)
                 .append("companyId", companyId)
-                .append("includeDeleted", includeDeleted)
                 .append("worldDelivery", worldDelivery)
                 .append("adminTestDelivery", adminTestDelivery)
                 .append("content", content)
@@ -190,8 +183,6 @@ public class TargetLightsOptions {
         TargetLightsOptions that = (TargetLightsOptions) o;
         return adminId == that.adminId &&
                 companyId == that.companyId &&
-                includeDeleted == that.includeDeleted &&
-                includeInvalid == that.includeInvalid && 
                 worldDelivery == that.worldDelivery &&
                 adminTestDelivery == that.adminTestDelivery &&
                 content == that.content &&
@@ -203,7 +194,7 @@ public class TargetLightsOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(adminId, companyId, includeDeleted, includeInvalid, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
+        return Objects.hash(adminId, companyId, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
     }
 
     public static class Builder {
@@ -216,11 +207,6 @@ public class TargetLightsOptions {
 
         public Builder setCompanyId(int companyId) {
             options.companyId = companyId;
-            return this;
-        }
-
-        public Builder setIncludeDeleted(boolean includeDeleted) {
-            options.includeDeleted = includeDeleted;
             return this;
         }
 
@@ -279,14 +265,13 @@ public class TargetLightsOptions {
             return this;
         }
         
-        public Builder setIncludeInvalid(boolean include) {
-        	options.includeInvalid = include;
-        	
-        	return this;
-        }
-
         public Builder setSearchName(String name) {
             options.searchName = name;
+            return this;
+        }
+
+        public Builder setDeleted(boolean deleted) {
+            options.deleted = deleted;
             return this;
         }
 

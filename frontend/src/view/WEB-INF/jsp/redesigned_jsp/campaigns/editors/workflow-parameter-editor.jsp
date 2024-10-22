@@ -9,8 +9,5 @@
         <select name="value" class="form-control">
             <%-- Filled by JS --%>
         </select>
-<%--        <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="parameter-editor-save">--%>
-<%--            <mvc:message code="button.Apply"/>--%>
-<%--        </a>--%>
     </mvc:form>
 </div>

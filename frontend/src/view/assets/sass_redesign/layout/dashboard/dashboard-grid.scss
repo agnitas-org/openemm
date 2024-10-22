@@ -11,6 +11,7 @@
 }
 
 #dashboard-tiles {
+  display: grid;
   grid-template-rows: repeat(2, 1fr);
 
   @for $i from 2 through 4 {
@@ -36,8 +37,21 @@
 
   .tile-wide {
     grid-column: span 2;
+  }
 
-    @include mobile {
+  .tile-xl {
+    grid-row: span 2;
+    grid-column: span 3;
+  }
+
+  .tile-x-wide {
+    grid-row: span 1;
+    grid-column: span 3;
+  }
+
+  @include mobile {
+    .tile-wide, .tile-xl, .tile-x-wide {
+      grid-row: span 1;
       grid-column: span 1;
       @include hide-scroll;
     }

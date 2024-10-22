@@ -1,6 +1,7 @@
-<%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page isErrorPage="true" pageEncoding="UTF-8" %>
+
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <html>
 
@@ -20,9 +21,10 @@
         </h1>
     </div>
     <div class="tile-body">
-        <p class="w-100"><mvc:message code="error.csrf" /></p>
-
-        <a href="#" class="btn btn-regular btn-primary w-100 flex-center gap-1" onclick="window.history.back(); return false;">
+        <p><mvc:message code="error.csrf" /></p>
+    </div>
+    <div class="tile-footer tile-footer--buttons">
+        <a href="#" class="btn btn-primary" onclick="window.history.back(); return false;">
             <i class="icon icon-reply"></i>
             <span class="text"> <mvc:message code="button.Back"/></span>
         </a>
@@ -31,7 +33,7 @@
 
 <script id="csrf-error-message" type="text/x-mustache-template">
     <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="d-flex align-items-center justify-content-center gap-2">
@@ -39,22 +41,20 @@
                         <mvc:message code="permission.denied.title"/>
                     </h1>
 
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
 
-                <div class="modal-body pt-3">
+                <div class="modal-body">
                     <p><mvc:message code="error.csrf" /></p>
+                </div>
 
-                    <div class="row mt-3">
-                        <div class="col d-flex">
-                            <button class="btn btn-primary flex-grow-1" data-bs-dismiss="modal" onclick="location.reload();">
-                                <i class="icon icon-redo"></i>
-                                <span class="text"><mvc:message code="error.reload"/></span>
-                            </button>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" data-bs-dismiss="modal" onclick="location.reload();">
+                        <i class="icon icon-redo"></i>
+                        <span class="text"><mvc:message code="error.reload"/></span>
+                    </button>
                 </div>
             </div>
         </div>

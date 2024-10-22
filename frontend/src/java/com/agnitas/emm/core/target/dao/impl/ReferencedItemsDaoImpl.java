@@ -116,7 +116,7 @@ public class ReferencedItemsDaoImpl extends BaseDaoImpl implements ReferencedIte
 			public final void setValues(final PreparedStatement ps, final int index) throws SQLException {
 				ps.setInt(1, companyID);
 				ps.setInt(2, targetID);
-				ps.setString(3, profileFieldNames.get(index));
+				ps.setNString(3, profileFieldNames.get(index));
 			}
 		};
 		

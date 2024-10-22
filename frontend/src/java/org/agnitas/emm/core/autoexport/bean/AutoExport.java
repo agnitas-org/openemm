@@ -134,6 +134,7 @@ public class AutoExport {
 	private int maximumRetries = 1;
 	private List<Integer> hoursAfterDelivery = null;
 	private boolean exportLinkDescription;
+	private int workflowId;
 
 	private Date currentStart = null;
 
@@ -482,7 +483,15 @@ public class AutoExport {
 		this.exportLinkDescription = exportLinkDescription;
 	}
 
-    @Override
+	public int getWorkflowId() {
+		return workflowId;
+	}
+
+	public void setWorkflowId(int workflowId) {
+		this.workflowId = workflowId;
+	}
+
+	@Override
     public String toString() {
         return shortname + " (ID: " + autoExportId + ")";
     }

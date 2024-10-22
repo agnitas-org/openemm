@@ -50,50 +50,49 @@ public enum Gender {
 	public static Gender getGenderByDefaultGenderMapping(String value) {
 		if (StringUtils.isBlank(value)) {
 			return UNKNOWN;
-		} else {
-			switch (value.toLowerCase().trim()) {
-				case "herr":
-				case "herrn":
-				case "hr.":
-				case "hr":
-				case "mister":
-				case "mr":
-				case "mr.":
-				case "m":
-				case "männlich":
-				case "maennlich":
-				case "male":
-				case "monsieur":
-				case "mâle":
-				case "m.":
-					return MALE;
-				case "frau":
-				case "fr.":
-				case "fr":
-				case "fräulein":
-				case "fraeulein":
-				case "frl.":
-				case "frl":
-				case "miss":
-				case "ms":
-				case "ms.":
-				case "misses":
-				case "mrs":
-				case "mrs.":
-				case "w":
-				case "weiblich":
-				case "f":
-				case "female":
-				case "femme":
-				case "femelle":
-				case "mademoiselle":
-				case "madame":
-				case "mme":
-				case "melle":
-					return FEMALE;
-				default:
-					return UNKNOWN;
-			}
+		}
+		switch (value.toLowerCase().trim()) {
+			case "herr":
+			case "herrn":
+			case "hr.":
+			case "hr":
+			case "mister":
+			case "mr":
+			case "mr.":
+			case "m":
+			case "männlich":
+			case "maennlich":
+			case "male":
+			case "monsieur":
+			case "mâle":
+			case "m.":
+				return MALE;
+			case "frau":
+			case "fr.":
+			case "fr":
+			case "fräulein":
+			case "fraeulein":
+			case "frl.":
+			case "frl":
+			case "miss":
+			case "ms":
+			case "ms.":
+			case "misses":
+			case "mrs":
+			case "mrs.":
+			case "w":
+			case "weiblich":
+			case "f":
+			case "female":
+			case "femme":
+			case "femelle":
+			case "mademoiselle":
+			case "madame":
+			case "mme":
+			case "melle":
+				return FEMALE;
+			default:
+				return UNKNOWN;
 		}
 	}
 }

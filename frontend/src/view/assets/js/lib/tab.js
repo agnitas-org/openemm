@@ -1,113 +1,113 @@
-/*doc
----
-title: Tabs
-name: tabs
-category: Javascripts - Tabs
----
-
-Tabs can be controlled by the `data-toggle-tab="jquerySelector"` directive. The directive should be attached to an anchor and will toggle the corresponding tab.
-
-The toggles save their state into localstorage under the jquerySelector provided to the directive. Thus if the same selector is used under different views those tabs share the same state.
-
-By default the first tab is active.
-
-```htmlexample
-<div class="tile">
-    <div class="tile-header">
-        <ul class="tile-header-nav">
-            <li>
-                <a href="#" data-toggle-tab="#tab1-id">Tab 1</a>
-            </li>
-            <li>
-                <a href="#" data-toggle-tab="#tab2-id">Tab 2</a>
-            </li>
-        </ul>
-    </div>
-
-    <div class="tile-content tile-content-forms">
-      <div id="tab1-id">
-        <p>Tab 1 Content</p>
-      </div>
-
-      <div id="tab2-id">
-        <p>Tab 2 Content</p>
-      </div>
-    </div>
-</div>
-```
-*/
-
-/*doc
----
-title: Forcing Tab State
-name: tabs-01-force
-parent: tabs
----
-
-If you want to overwrite the clients tab state you can use the `data-tab-show="true"` and `data-tab-hide="true"` directive. These directives should be applied to the tab content holder, not the tab toggle.
-
-```htmlexample
-<div class="tile">
-    <div class="tile-header">
-        <ul class="tile-header-nav">
-            <li>
-                <a href="#" data-toggle-tab="#tabforce1-id">Tab 1</a>
-            </li>
-            <li>
-                <a href="#" data-toggle-tab="#tabforce2-id">Tab 2</a>
-            </li>
-        </ul>
-    </div>
-
-    <div class="tile-content tile-content-forms">
-      <div id="tabforce1-id" data-tab-hide="true">
-        <p>Tab 1 Content</p>
-      </div>
-
-      <div id="tabforce2-id" data-tab-show="true">
-        <p>Tab 2 Content</p>
-      </div>
-    </div>
-</div>
-```
-*/
-
-/*doc
-
----
-title: Extending Tabs
-name: tabs-02-extend
-parent: tabs
----
-
-Sometimes it's useful to just extend the content of one tab when showing another tab. For example when displaying basic and advanced settings, the advanced settings tab should also show the settings from the basic tab. This can be achieved by the `data-extends-tab="jquerySelector"` directive
-
-```htmlexample
-<div class="tile">
-    <div class="tile-header">
-        <ul class="tile-header-nav">
-            <li>
-                <a href="#" data-toggle-tab="#tabbasic">Basic Settings</a>
-            </li>
-            <li>
-                <a href="#" data-toggle-tab="#tabadvanced" data-extends-tab="#tabbasic">Advanced Settings</a>
-            </li>
-        </ul>
-    </div>
-
-    <div class="tile-content tile-content-forms">
-      <div id="tabbasic">
-        <p>Basic Tab Content</p>
-      </div>
-
-      <div id="tabadvanced">
-        <p>Advanced Tab Content</p>
-      </div>
-    </div>
-</div>
-```
-
-*/
+// /*doc
+// ---
+// title: Tabs
+// name: tabs
+// category: Javascripts - Tabs
+// ---
+//
+// Tabs can be controlled by the `data-toggle-tab="jquerySelector"` directive. The directive should be attached to an anchor and will toggle the corresponding tab.
+//
+// The toggles save their state into localstorage under the jquerySelector provided to the directive. Thus if the same selector is used under different views those tabs share the same state.
+//
+// By default the first tab is active.
+//
+// ```htmlexample
+// <div class="tile">
+//     <div class="tile-header">
+//         <ul class="tile-header-nav">
+//             <li>
+//                 <a href="#" data-toggle-tab="#tab1-id">Tab 1</a>
+//             </li>
+//             <li>
+//                 <a href="#" data-toggle-tab="#tab2-id">Tab 2</a>
+//             </li>
+//         </ul>
+//     </div>
+//
+//     <div class="tile-content tile-content-forms">
+//       <div id="tab1-id">
+//         <p>Tab 1 Content</p>
+//       </div>
+//
+//       <div id="tab2-id">
+//         <p>Tab 2 Content</p>
+//       </div>
+//     </div>
+// </div>
+// ```
+// */
+//
+// /*doc
+// ---
+// title: Forcing Tab State
+// name: tabs-01-force
+// parent: tabs
+// ---
+//
+// If you want to overwrite the clients tab state you can use the `data-tab-show="true"` and `data-tab-hide="true"` directive. These directives should be applied to the tab content holder, not the tab toggle.
+//
+// ```htmlexample
+// <div class="tile">
+//     <div class="tile-header">
+//         <ul class="tile-header-nav">
+//             <li>
+//                 <a href="#" data-toggle-tab="#tabforce1-id">Tab 1</a>
+//             </li>
+//             <li>
+//                 <a href="#" data-toggle-tab="#tabforce2-id">Tab 2</a>
+//             </li>
+//         </ul>
+//     </div>
+//
+//     <div class="tile-content tile-content-forms">
+//       <div id="tabforce1-id" data-tab-hide="true">
+//         <p>Tab 1 Content</p>
+//       </div>
+//
+//       <div id="tabforce2-id" data-tab-show="true">
+//         <p>Tab 2 Content</p>
+//       </div>
+//     </div>
+// </div>
+// ```
+// */
+//
+// /*doc
+//
+// ---
+// title: Extending Tabs
+// name: tabs-02-extend
+// parent: tabs
+// ---
+//
+// Sometimes it's useful to just extend the content of one tab when showing another tab. For example when displaying basic and advanced settings, the advanced settings tab should also show the settings from the basic tab. This can be achieved by the `data-extends-tab="jquerySelector"` directive
+//
+// ```htmlexample
+// <div class="tile">
+//     <div class="tile-header">
+//         <ul class="tile-header-nav">
+//             <li>
+//                 <a href="#" data-toggle-tab="#tabbasic">Basic Settings</a>
+//             </li>
+//             <li>
+//                 <a href="#" data-toggle-tab="#tabadvanced" data-extends-tab="#tabbasic">Advanced Settings</a>
+//             </li>
+//         </ul>
+//     </div>
+//
+//     <div class="tile-content tile-content-forms">
+//       <div id="tabbasic">
+//         <p>Basic Tab Content</p>
+//       </div>
+//
+//       <div id="tabadvanced">
+//         <p>Advanced Tab Content</p>
+//       </div>
+//     </div>
+// </div>
+// ```
+//
+// */
 
 (function(){
 

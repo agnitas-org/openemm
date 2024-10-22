@@ -10,16 +10,19 @@
 
 package com.agnitas.emm.core.bounce.service;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.service.ServiceResult;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
 public interface BounceFilterService {
+
     int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
     PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int page, int rownums);
@@ -32,9 +35,7 @@ public interface BounceFilterService {
 
     boolean deleteBounceFilter(int filterId, int companyId);
 
-    void delete(Set<Integer> ids, int companyId);
-
-    void validateDeletion(Set<Integer> ids);
+    ServiceResult<UserAction> delete(Set<Integer> ids, int companyId);
 
     boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     
@@ -42,5 +43,7 @@ public interface BounceFilterService {
 
     String getBounceFilterNames(List<BounceFilterDto> filters);
 
-    List<String> getBounceFilterNames(Set<Integer> ids, int companyId);
+    ServiceResult<List<BounceFilterDto>> getAllowedForDeletion(Set<Integer> ids, int companyId);
+
+    boolean containsReply(int filterId);
 }

@@ -1,29 +1,29 @@
-/*doc
----
-title: Ajax
-name: ajax-directives
-category: Javascripts - Ajax
----
-
-The `data-ajax` attribute enables ajax mode for a link (an `a` element)
-so `AGN.Lib.Page.reload` is going to be used to perform a request (see `href` attribute):
-
-```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary" data-ajax="">Go to index.html</a>
-```
-
-A `.js-ajax` css class can be used instead:
-
-```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary js-ajax">Go to index.html</a>
-```
-
-By default a `GET` HTTP method is used. But you can specify an HTTP method to use as a value of the `data-ajax` attribute:
-
-```htmlexample
-<a href="index.html" class="btn btn-regular btn-primary" data-ajax="POST">Go to index.html</a>
-```
-*/
+// /*doc
+// ---
+// title: Ajax
+// name: ajax-directives
+// category: Javascripts - Ajax
+// ---
+//
+// The `data-ajax` attribute enables ajax mode for a link (an `a` element)
+// so `AGN.Lib.Page.reload` is going to be used to perform a request (see `href` attribute):
+//
+// ```htmlexample
+// <a href="index.html" class="btn btn-regular btn-primary" data-ajax="">Go to index.html</a>
+// ```
+//
+// A `.js-ajax` css class can be used instead:
+//
+// ```htmlexample
+// <a href="index.html" class="btn btn-regular btn-primary js-ajax">Go to index.html</a>
+// ```
+//
+// By default a `GET` HTTP method is used. But you can specify an HTTP method to use as a value of the `data-ajax` attribute:
+//
+// ```htmlexample
+// <a href="index.html" class="btn btn-regular btn-primary" data-ajax="POST">Go to index.html</a>
+// ```
+// */
 
 (function(){
 

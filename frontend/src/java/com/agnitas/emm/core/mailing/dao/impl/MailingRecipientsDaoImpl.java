@@ -45,10 +45,11 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
     private static final Logger logger = LogManager.getLogger(MailingRecipientsDaoImpl.class);
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int maxCompanyRecipients, int mailingId, int companyId) throws Exception {
+    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int maxCompanyRecipients,
+                                                                           int mailingId, int companyId) throws Exception {
         int pageNumber = filter.getPage();
         int pageSize = filter.getNumberOfRows();
-        Set<String> columns = getColumnsForSelect(filter);
+        Set<String> columns = getColumnsForSelect(recipientsFields);
 
         final int mailingListId = selectInt(logger, "SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
         final List<Object> params = new ArrayList<>();
@@ -63,7 +64,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
             pageNumber = 1;
             selectSql = getMailingRecipientsQueryWithoutSorting(companyId, mailingId, mailingListId, filter, columns, pageSize, params);
         } else {
-            SqlPreparedStatementManager sqlStatement = prepareSqlStatement(filter, mailingId, companyId);
+            SqlPreparedStatementManager sqlStatement = prepareSqlStatement(filter, recipientsFields, mailingId, companyId);
             selectSql = sqlStatement.getPreparedSqlString();
             params.addAll(List.of(sqlStatement.getPreparedSqlParameters()));
 
@@ -85,11 +86,17 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
         ));
 
         List<MailingRecipientStatRow> recipients = select(logger, selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
-        return new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, "", filter.ascending());
+        PaginatedListImpl<MailingRecipientStatRow> list = new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, "", filter.ascending());
+
+        if (filter.isUiFiltersSet()) {
+            list.setNotFilteredFullListSize(getNumberOfMailingRecipients(companyId, null, mailingId, mailingListId, columns));
+        }
+
+        return list;
     }
 
-    private Set<String> getColumnsForSelect(MailingRecipientsOverviewFilter filter) {
-        Set<String> columns = new LinkedHashSet<>(filter.getSelectedFields());
+    private Set<String> getColumnsForSelect(Set<String> recipientsFields) {
+        Set<String> columns = new LinkedHashSet<>(recipientsFields);
         columns.remove("title"); // to change the order of columns in the export file
         columns.addAll(List.of("title", "firstname", "lastname", "email"));
 
@@ -97,14 +104,13 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
     }
 
     @Override
-    public SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, int mailingId, int companyId) {
+    public SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int mailingId, int companyId) {
         final List<Object> params = new ArrayList<>();
         final int mailingListId = selectInt(logger, "SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
-        final Set<String> columns = getColumnsForSelect(filter);
+        final Set<String> columns = getColumnsForSelect(recipientsFields);
 
         String selectSql =
-                "SELECT cust.customer_id,"
-                        + " " + StringUtils.join(columns, ", ") + ","
+                "SELECT cust.customer_id," + joinWithPrefixes(columns, "cust.") + ","
                         + " MAX(succ.timestamp) AS receive_time,"
                         + " MIN(opl.first_open) AS open_time,"
                         + " COALESCE(MAX(opl.open_count), 0) AS openings,"
@@ -121,7 +127,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
                         + " LEFT OUTER JOIN customer_" + companyId + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)"
                         + " WHERE EXISTS"
                         + " (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? AND bind.user_type NOT IN (?, ?, ?))"
-                        + " GROUP BY cust.customer_id, " + StringUtils.join(columns, ", ");
+                        + " GROUP BY cust.customer_id, " + joinWithPrefixes(columns, "cust.");
 
         selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel ");
 
@@ -200,22 +206,25 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
         List<Object> params = new ArrayList<>();
         params.add(mailingId);
 
-        String subSel = "SELECT cust.customer_id, " + StringUtils.join(columns, ", ") +
+        String subSel = "SELECT cust.customer_id, " + joinWithPrefixes(columns, "cust.") +
                 " FROM customer_" + companyId + "_tbl cust " +
                 "         JOIN mailtrack_" + companyId + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ? ";
 
-        subSel += createJoinStatementWithMailingRecipientsFiltering(filter.getTypes(), params, companyId, mailingId);
+        if (filter != null) {
+            subSel += createJoinStatementWithMailingRecipientsFiltering(filter.getTypes(), params, companyId, mailingId);
+        }
+
         subSel += " WHERE EXISTS(SELECT 1 FROM customer_" + companyId + "_binding_tbl bind " +
                 " WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? " +
                 " AND bind.user_type NOT IN (?, ?, ?)) " +
-                " GROUP BY cust.customer_id, " + StringUtils.join(columns, ", ");
+                " GROUP BY cust.customer_id, " + joinWithPrefixes(columns, "cust.");
 
         params.add(mailinglistId);
         params.add(BindingEntry.UserType.Admin.getTypeCode());
         params.add(BindingEntry.UserType.TestUser.getTypeCode());
         params.add(BindingEntry.UserType.TestVIP.getTypeCode());
 
-        String filterConditions = applyOverviewFilters(filter, params, true);
+        String filterConditions = filter == null ? "" : applyOverviewFilters(filter, params, true);
         return selectInt(logger, String.format("SELECT COUNT(*) FROM (%s) sel %s", subSel, filterConditions), params.toArray());
     }
 

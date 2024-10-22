@@ -170,7 +170,7 @@
             <c:if test="${canSwitchDesign and not hideDesignSwitch}">
                 <li style="margin-bottom: 10px">
                     <div id="design-switch-block">
-                        <label class="toggle" style="margin-bottom: 0">
+                        <label class="toggle" style="margin-bottom: 0" data-tooltip="<mvc:message code="redesign.switch.new" />">
                             <input type="checkbox" id="switch-to-new-design" data-action="switch-to-new-design" data-switch-url="${switchDesignUrl}">
                             <div class="toggle-control"></div>
                         </label>
@@ -179,7 +179,6 @@
                             <mvc:message code="redesign.switch.new" />
                         </label>
 
-                        <span class="beta-badge">BETA</span>
                     </div>
                 </li>
             </c:if>

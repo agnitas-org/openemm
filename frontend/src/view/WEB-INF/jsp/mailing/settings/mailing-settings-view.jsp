@@ -80,10 +80,7 @@
                         "workflowDriven": ${workflowDriven},
                         "mailingType": "${mailingSettingsForm.mailingType}",
                         "selectedRemovedMailinglistId": ${emm:toJson(selectedRemovedMailinglist.id)},
-                        <emm:ShowByPermission token="mailinglists.addresses">
-                            "mailinglists": ${emm:toJson(mailinglists)},
-                            "allowedMailinglistsAddresses": ${emm:toJson(mailinglists)},
-                        </emm:ShowByPermission>
+                        "mailinglists": ${emm:toJson(mailinglists)},
                         "campaignEnableTargetGroups": ${isCampaignEnableTargetGroups},
                         "TARGET_MODE_OR": "${TARGET_MODE_OR}"
                     }

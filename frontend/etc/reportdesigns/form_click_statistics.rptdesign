@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube - ClickingTargetGroupsDataSet.ClickingTargetGroupsDataSet.x</property>
@@ -102,6 +102,36 @@ if(reportContext.getOutputFormat() == "csv" ) {
             <simple-property-list name="defaultValue">
                 <value type="constant">http://localhost:8080/css</value>
             </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="startdate" id="2164">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="enddate" id="2165">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -228,7 +258,7 @@ if(reportContext.getOutputFormat() == "csv" ) {
             </structure>
             <property name="dataSource">UserFormUrlClicksScriptedDataSource</property>
             <method name="open"><![CDATA[userFormClickDataSetClass = new Packages.com.agnitas.reporting.birt.external.dataset.UserFormLinkClicksDataSet();
-userFormClickList = userFormClickDataSetClass.getClicksPerUrl(params["formID"].value, params["companyID"].value);
+userFormClickList = userFormClickDataSetClass.getClicksPerUrl(params["formID"].value, params["companyID"].value, params["startdate"], params["enddate"]);
 totalrows = userFormClickList.size();
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < userFormClickList.size() ){
@@ -620,16 +650,6 @@ return false;]]></method>
                             <property name="pageBreakInside">auto</property>
                             <header>
                                 <row id="2015">
-                                    <list-property name="highlightRules">
-                                        <structure>
-                                            <property name="operator">eq</property>
-                                            <property name="backgroundColor">#F6F6F6</property>
-                                            <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
-                                            <simple-property-list name="value1">
-                                                <value type="javascript">1</value>
-                                            </simple-property-list>
-                                        </structure>
-                                    </list-property>
                                     <cell id="2016">
                                         <property name="borderLeftColor">#D3D3D3</property>
                                         <property name="borderLeftStyle">solid</property>
@@ -702,16 +722,6 @@ return false;]]></method>
                         </group>
                         <detail>
                             <row id="1877">
-                                <list-property name="highlightRules">
-                                    <structure>
-                                        <property name="operator">eq</property>
-                                        <property name="backgroundColor">#F6F6F6</property>
-                                        <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
-                                        <simple-property-list name="value1">
-                                            <value type="javascript">1</value>
-                                        </simple-property-list>
-                                    </structure>
-                                </list-property>
                                 <cell id="1878">
                                     <property name="borderLeftColor">#D3D3D3</property>
                                     <property name="borderLeftStyle">solid</property>
@@ -764,16 +774,6 @@ return false;]]></method>
                                 </cell>
                             </row>
                             <row id="2104">
-                                <list-property name="highlightRules">
-                                    <structure>
-                                        <property name="operator">eq</property>
-                                        <property name="backgroundColor">#F6F6F6</property>
-                                        <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
-                                        <simple-property-list name="value1">
-                                            <value type="javascript">1</value>
-                                        </simple-property-list>
-                                    </structure>
-                                </list-property>
                                 <cell id="2105">
                                     <property name="borderBottomColor">#D3D3D3</property>
                                     <property name="borderBottomStyle">solid</property>

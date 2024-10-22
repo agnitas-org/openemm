@@ -157,7 +157,7 @@
 	
 	.version--wrapper {
 		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
-		background-position: 100% 70%;
+		background-position: 100% 15%;
 		background-repeat: no-repeat;
 		background-size: cover;
 		background-color: #000;

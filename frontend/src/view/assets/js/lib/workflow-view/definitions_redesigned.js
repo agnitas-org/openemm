@@ -145,6 +145,54 @@
                 [0.5, 0.96, 0, 1]
             ]
         },
+        welcomeTrack: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        welcomeTrackWithIncentive: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        anniversaryMail: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        birthdayWithCoupon: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        shoppingCartAbandonersSmall: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        shoppingCartAbandonersLarge: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
         start: {
             anchors: [
                 [0, 0.5, -1, 0],
@@ -463,6 +511,12 @@
         NODE_TYPE_SC_BIRTHDAY: 'scBirthday',
         NODE_TYPE_SC_DOI: 'scDOI',
         NODE_TYPE_SC_ABTEST: 'scABTest',
+        NODE_TYPE_BIRTHDAY_WITH_COUPON: 'birthdayWithCoupon',
+        NODE_TYPE_WELCOME_TRACK: 'welcomeTrack',
+        NODE_TYPE_WELCOME_TRACK_WITH_INCENTIVE: 'welcomeTrackWithIncentive',
+        NODE_TYPE_SHOPPING_CART_ABANDONERS_SMALL: 'shoppingCartAbandonersSmall',
+        NODE_TYPE_SHOPPING_CART_ABANDONERS_LARGE: 'shoppingCartAbandonersLarge',
+        NODE_TYPE_ANNIVERSARY_MAIL: 'anniversaryMail',
         NODE_TYPE_ACTION_BASED_MAILING: 'actionbased_mailing',
         NODE_TYPE_MAILING_MEDIATYPE_SMS: 'mailing_mediatype_sms',
         NODE_TYPE_MAILING_MEDIATYPE_POST: 'mailing_mediatype_post',

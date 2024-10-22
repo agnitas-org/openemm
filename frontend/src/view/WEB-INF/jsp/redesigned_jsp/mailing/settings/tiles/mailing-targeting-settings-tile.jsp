@@ -43,9 +43,9 @@
 <c:set var="isNewGridMailing" value="${mailingId le 0 and isMailingGrid}"/>
 <c:set var="mailinglistEditable" value="${mailinglistEditable or isNewGridMailing}"/>
 
-<div id="mailingTargets" class="tile" style="flex: 1" data-editable-tile>
+<div id="mailingTargets" class="tile" data-editable-tile>
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="mailing.settings.target"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="mailing.settings.target"/></h1>
     </div>
     <div class="tile-body js-scrollable grid" style="--bs-columns: 1">
         <div data-field="validator">
@@ -117,7 +117,6 @@
         <c:if test="${mailingId > 0}">
             <div id="calculate-recipients-box">
                 <label class="form-label" for="number-of-recipients"><mvc:message code="report.numberRecipients"/></label>
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/NumberOfRecipients.xml"></a>
                 <div class="d-flex gap-1">
                     <input type="text" class="form-control" id="number-of-recipients" readonly value="?">
                     <button type="button" class="btn btn-primary px-2" data-action="calculateRecipients">

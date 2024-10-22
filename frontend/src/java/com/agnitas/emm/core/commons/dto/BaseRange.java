@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.commons.dto;
 
+import java.util.Objects;
+
 public class BaseRange<T> {
 
     private T from;
@@ -41,5 +43,18 @@ public class BaseRange<T> {
 
     public boolean isPresent() {
         return from != null || to != null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BaseRange<?> baseRange = (BaseRange<?>) o;
+        return Objects.equals(from, baseRange.from) && Objects.equals(to, baseRange.to);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to);
     }
 }

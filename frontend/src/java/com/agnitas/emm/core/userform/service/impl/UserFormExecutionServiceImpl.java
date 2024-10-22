@@ -61,7 +61,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public final class UserFormExecutionServiceImpl implements UserFormExecutionService, ApplicationContextAware {
 	
-	private static final transient Logger logger = LogManager.getLogger(UserFormExecutionServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(UserFormExecutionServiceImpl.class);
 
 	private ConfigService configService;
 	private ComDeviceService deviceService;
@@ -96,7 +96,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		final int clientID = clientService.getClientId(request.getHeader("User-Agent"));
 		final UserForm userForm = loadUserForm(formName, companyID);
 		final EmmActionOperationErrors actionOperationErrors = populateEmmActionErrorsAsVelocityParameters(params);
-		
+
 		try {
 			final ComExtensibleUID uid = processUID(companyID, request, params, useSession);
 			
@@ -129,6 +129,9 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @param req ServletRequest, used to get the Session.
 	 * @param params HashMap to store the retrieved values in.
 	 * @param useSession also store the result in the session if this is not 0.
+	 * @throws InvalidUIDException 
+	 * @throws UIDParseException 
+	 * @throws DeprecatedUIDVersionException 
 	 */
 	@SuppressWarnings("unchecked")
 	private final ComExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
@@ -155,7 +158,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		} else {
 			if (useSession) {
 				if (req.getSession().getAttribute("agnFormParams") != null) {
-					params.putAll((Map<String, Object>) req.getSession().getAttribute("agnFormParams"));
+					params.putAll((Map<String, Object>) req.getSession().getAttribute("agnFormParams")); // suppress warning for this cast
 				}
 			}
 		}
@@ -369,9 +372,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 						cachedRecipientData.put("mailing_id", uid.getMailingID());
 					}
 					// Replace customer and form placeholders
-					@SuppressWarnings("unchecked")
-					String replacedPropertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
-					propertyValue = replacedPropertyValue;
+                    propertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
 				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), "UTF-8");

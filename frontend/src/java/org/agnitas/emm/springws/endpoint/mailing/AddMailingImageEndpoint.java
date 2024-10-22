@@ -17,8 +17,7 @@ import java.util.Objects;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
-import org.agnitas.dao.MailingComponentDao;
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentMaximumSizeExceededException;
@@ -42,7 +41,8 @@ import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.TrackableLinkDao;
-import com.agnitas.emm.core.components.service.ComComponentService;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.service.MimeTypeService;
 
@@ -53,7 +53,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
 	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
-    private ComComponentService componentService;
+    private ComponentService componentService;
     private TrackableLinkDao trackableLinkDao;
     private MailingDao mailingDao;
     private  MimeTypeService mimeTypeService;
@@ -61,7 +61,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     private SecurityContextAccess securityContextAccess;
     private MailingComponentDao mailingComponentDao;
 
-    public AddMailingImageEndpoint(@Qualifier("componentService") ComComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final MailingComponentDao mailingComponentDao) {
+    public AddMailingImageEndpoint(@Qualifier("componentService") ComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final MailingComponentDao mailingComponentDao) {
         this.componentService = Objects.requireNonNull(componentService, "componentService");
         this.trackableLinkDao = Objects.requireNonNull(trackableLinkDao, "trackableLinkDao");
         this.mailingDao = Objects.requireNonNull(mailingDao, "mailingDao");

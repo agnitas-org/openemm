@@ -239,6 +239,10 @@ public interface UserForm {
 
 	void setActive(boolean active);
 
+	boolean isDeleted();
+
+	void setDeleted(boolean deleted);
+
 	boolean getIsActive();
 
 	void setIsActive(boolean active);
@@ -250,6 +254,6 @@ public interface UserForm {
 	String getErrorFormBuilderJson();
 
 	void setErrorFormBuilderJson(String json);
-	
+
 	String evaluateErrorForm(ApplicationContext con, Map<String, Object> params, EmmActionOperationErrors errors);
 }

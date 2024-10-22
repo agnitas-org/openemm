@@ -1,25 +1,49 @@
-(function(){
+(() => {
   class Scrollbar {
 
     static DATA_KEY = 'agn:perfect-scrollbar';
+    static MARKER_ATTR_NAME = 'agn-scrollbar'
 
-    constructor($el) {
+    static INSTANCES = [];
+
+    constructor($el, options = {}) {
       this.$el = $el;
-      this.scrollbar = new PerfectScrollbar($el[0], {wheelSpeed: 2, wheelPropagation: false, minScrollbarLength: 30});
+      this.scrollbar = new PerfectScrollbar($el[0], _.extend(this.options, options));
+      $el.attr(Scrollbar.MARKER_ATTR_NAME, '');
       $el.data(Scrollbar.DATA_KEY, this);
+      Scrollbar.INSTANCES.push(this);
+    }
+
+    get options() {
+      return {
+        wheelSpeed: 1,
+        wheelPropagation: false,
+        minScrollbarLength: 30
+      };
     }
 
     destroy() {
       this.scrollbar.destroy();
       this.$el.data(Scrollbar.DATA_KEY, null);
+      this.$el.removeAttr(Scrollbar.MARKER_ATTR_NAME);
+      delete Scrollbar.INSTANCES[this];
     }
 
     update() {
       this.scrollbar.update();
     }
 
-    static get($el) {
-      return $el.data(Scrollbar.DATA_KEY) || $el.closest('.js-scrollable').data(Scrollbar.DATA_KEY);
+    static get($el, searchAncestors = true) {
+      const scrollbar = $el.data(Scrollbar.DATA_KEY);
+      if (!searchAncestors) {
+        return scrollbar;
+      }
+
+      return scrollbar || $el.closest(`[${Scrollbar.MARKER_ATTR_NAME}]`).data(Scrollbar.DATA_KEY);
+    }
+
+    static updateAll() {
+      Scrollbar.INSTANCES.forEach(s => s.update());
     }
   }
 

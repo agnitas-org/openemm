@@ -13,30 +13,26 @@ package com.agnitas.emm.core.birtreport.forms;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import org.agnitas.web.forms.FormSearchParams;
 
-public class BirtReportFormSearchParams implements FormSearchParams<BirtReportOverviewFilter> {
-
-    private String name;
-    private DateRange changeDate = new DateRange();
-    private DateRange lastDeliveryDate = new DateRange();
+public class BirtReportFormSearchParams extends BirtReportOverviewFilter implements FormSearchParams<BirtReportOverviewFilter> {
 
     @Override
     public void storeParams(BirtReportOverviewFilter filter) {
-        this.name = filter.getName();
-        this.lastDeliveryDate = filter.getLastDeliveryDate();
-        this.changeDate = filter.getChangeDate();
+        this.setName(filter.getName());
+        this.setLastDeliveryDate(filter.getLastDeliveryDate());
+        this.setChangeDate(filter.getChangeDate());
     }
 
     @Override
     public void restoreParams(BirtReportOverviewFilter filter) {
-        filter.setName(name);
-        filter.setLastDeliveryDate(lastDeliveryDate);
-        filter.setChangeDate(changeDate);
+        filter.setName(this.getName());
+        filter.setLastDeliveryDate(this.getLastDeliveryDate());
+        filter.setChangeDate(this.getChangeDate());
     }
 
     @Override
     public void resetParams() {
-        name = "";
-        changeDate = new DateRange();
-        lastDeliveryDate = new DateRange();
+        this.setName("");
+        this.setChangeDate(new DateRange());
+        this.setLastDeliveryDate(new DateRange());
     }
 }

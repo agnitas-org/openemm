@@ -10,11 +10,13 @@
 
 package com.agnitas.emm.core.mailinglist.service;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.Mailinglist;
-
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
@@ -22,12 +24,14 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.service.ServiceResult;
 
 import net.sf.json.JSONArray;
 
 public interface MailinglistService {
 
-	void bulkDelete(Set<Integer> mailinglistIds, int companyId);
+	void bulkDelete(Collection<Integer> mailinglistIds, int companyId);
 
 	List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId);
 
@@ -47,7 +51,8 @@ public interface MailinglistService {
 
 	String getMailinglistName(int mailinglistId, int companyId);
 
-    List<String> getMailinglistNames(Set<Integer> mailinglistIds, int companyId);
+	ServiceResult<List<Mailinglist>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+	List<Integer> delete(Set<Integer> ids, Admin admin);
 
 	List<Mailinglist> getAllMailingListsNames(int companyId);
 	
@@ -71,4 +76,8 @@ public interface MailinglistService {
     int getSentMailingsCount(int mailinglistId, int companyId);
 
     int getAffectedReportsCount(int mailinglistId, int companyId);
+
+	Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID);
+
+	int saveMailinglist(Mailinglist mailinglist);
 }

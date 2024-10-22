@@ -1,0 +1,5 @@
+<HelpBalloon>
+        <title><![CDATA[Static link:]]></title>
+        <content><![CDATA[References to reference tables are transferred in static links.
+These are permanently linked to the value from the moment a mailing is sent. If you do not check the "Static link" box, the value adjusts dynamically to the value in the reference table.]]></content>    
+</HelpBalloon>

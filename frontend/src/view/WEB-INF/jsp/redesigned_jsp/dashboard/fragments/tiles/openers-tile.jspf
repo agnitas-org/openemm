@@ -6,7 +6,7 @@
 
     <div class="tile draggable-tile">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
             <c:if test="${mailingsAvailable}">
                 <div class="tile-controls min-w-0">
                     <%@ include file="../statistics-mailing-dropdown.jspf" %>
@@ -22,9 +22,14 @@
                         </canvas>
                     </div>
 
-                    <div class="statistics-notification">
+                    <div class="panel panel--statistics">
                         <h1 id="statistics-openers-percent" class="text-light-blue"><%-- Loads by JS --%></h1>
                         <h2><mvc:message code="statistic.opener.total" /></h2>
+                    </div>
+
+                    <div class="notification-simple hidden">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="default.NoEntries" /></span>
                     </div>
                 </c:when>
                 <c:otherwise>

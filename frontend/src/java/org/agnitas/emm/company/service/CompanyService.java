@@ -11,6 +11,7 @@
 package org.agnitas.emm.company.service;
 
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
@@ -31,5 +32,15 @@ public interface CompanyService {
 	List<CompanyEntry> getActiveOwnCompanyEntries(int companyId, boolean allowTransitionStatus);
 
 	List<Company> getCreatedCompanies(int companyId);
-	
+
+    List<CompanyEntry> findAllByEmailPart(String email, int companyID);
+    List<CompanyEntry> findAllByEmailPart(String email);
+
+    void updateTechnicalContact(String email, int id);
+
+    List<Integer> getCompaniesIds();
+
+	boolean isMailtrackingActive(int companyId);
+
+    Set<String> getTechnicalContacts(int companyId);
 }

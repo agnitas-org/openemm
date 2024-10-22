@@ -18,6 +18,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,8 +65,14 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         StringBuilder queryBuilder = new StringBuilder();
         List<Object> params = buildOverviewSelectQuery(queryBuilder, filter, visibleAdmins);
 
-        return selectPaginatedList(LOGGER, queryBuilder.toString(), "restful_usage_log_tbl", filter.getSort(), filter.ascending(),
+        PaginatedListImpl<RestfulUserActivityAction> list = selectPaginatedList(LOGGER, queryBuilder.toString(), "restful_usage_log_tbl", filter.getSort(), filter.ascending(),
                 filter.getPage(), filter.getNumberOfRows(), new RestfulUserActionRowMapper(), params.toArray());
+
+        if (filter.isUiFiltersSet()) {
+            list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins, filter.getCompanyId()));
+        }
+
+        return list;
     }
 
     private List<Object> buildOverviewSelectQuery(StringBuilder query, RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
@@ -73,26 +80,12 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         List<Object> params = applyFilter(filter, query);
 
         //  If set, any of the visible admins must match
-        if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
-            List<String> visibleAdminNameList = new ArrayList<>();
-            for (AdminEntry visibleAdmin : visibleAdmins) {
-                if (visibleAdmin != null) {
-                    visibleAdminNameList.add(visibleAdmin.getUsername());
-                }
-            }
-            if (!visibleAdminNameList.isEmpty()) {
-                query.append(" AND ").append(makeBulkInClauseForString("username", visibleAdminNameList));
-            }
-        }
-
+        addVisibleAdminsCondition(query, visibleAdmins);
         return params;
     }
 
     private List<Object> applyFilter(RestfulUserActivityLogFilter filter, StringBuilder query) {
-        final List<Object> params = new ArrayList<>();
-
-        query.append(" WHERE company_id = ?");
-        params.add(filter.getCompanyId());
+        List<Object> params = applyRequiredOverviewFilter(query, filter.getCompanyId());
 
         if (filter.getTimestamp().getFrom() != null) {
             query.append(" AND timestamp >= ?");
@@ -124,6 +117,28 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         }
 
         return params;
+    }
+
+    private int getTotalUnfilteredCountForOverview(List<AdminEntry> visibleAdmins, int companyId) {
+        StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM restful_usage_log_tbl");
+        List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+        addVisibleAdminsCondition(query, visibleAdmins);
+        return selectIntWithDefaultValue(LOGGER, query.toString(), 0, params.toArray());
+    }
+
+    private void addVisibleAdminsCondition(StringBuilder query, List<AdminEntry> admins) {
+        if (CollectionUtils.isNotEmpty(admins)) {
+            String visibleAdminsCondition = buildVisibleAdminsCondition(admins);
+            if (!visibleAdminsCondition.isBlank()) {
+                query.append(" AND ").append(visibleAdminsCondition);
+            }
+        }
+    }
+
+    private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
+        query.append(" WHERE company_id = ?");
+        return new ArrayList<>(List.of(companyId));
     }
 
     @Override

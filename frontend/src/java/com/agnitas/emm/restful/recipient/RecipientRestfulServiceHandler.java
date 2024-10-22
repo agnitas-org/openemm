@@ -64,6 +64,8 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientMailing;
@@ -76,7 +78,7 @@ import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
@@ -103,6 +105,9 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/recipient
  */
 public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(RecipientRestfulServiceHandler.class);
+	
 	public static final String NAMESPACE = "recipient";
 	
 	private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
@@ -323,7 +328,10 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			try {
 				String fullviewLink = fullviewService.getFullviewUrl(companyID, mailing.getMailingId(), customerID, null);
 				mailingJsonObject.add("fullview_url", fullviewLink);
-			} catch (@SuppressWarnings("unused") Exception e) {
+			} catch (Exception e) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Found errorneous link", e);
+				}
 				mailingJsonObject.add("fullview_url_error", "Not available");
 			}
 
@@ -462,8 +470,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					newUserStatus = UserStatus.getUserStatusByName(request.getParameter("status"));
 				}
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new RestfulClientException("Invalid parameter subscribtion status: '" + request.getParameter("status") + "'");
+			} catch (Exception e) {
+				throw new RestfulClientException("Invalid parameter subscribtion status: '" + request.getParameter("status") + "'", e);
 			}
 		}
 		
@@ -475,8 +483,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					newMediaType = MediaTypes.getMediatypeByName(request.getParameter("mediaType"));
 				}
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new RestfulClientException("Invalid parameter mediaType: '" + request.getParameter("mediaType") + "'");
+			} catch (Exception e) {
+				throw new RestfulClientException("Invalid parameter mediaType: '" + request.getParameter("mediaType") + "'", e);
 			}
 		}
 
@@ -512,8 +520,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							// Check for unallowed html content
 							try {
 								HtmlChecker.checkForUnallowedHtmlTags((String) propertyValue, allowHtmlTags);
-							} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+							} catch(final HtmlCheckerException e) {
+								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey, e);
 							}
 						}
 						jsonObject.add(propertyKey, jsonReader.getCurrentObject());
@@ -749,8 +757,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					newUserStatus = UserStatus.getUserStatusByName(request.getParameter("status"));
 				}
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new RestfulClientException("Invalid parameter subscribtion status: '" + request.getParameter("status") + "'");
+			} catch (Exception e) {
+				throw new RestfulClientException("Invalid parameter subscribtion status: '" + request.getParameter("status") + "'", e);
 			}
 		}
 		
@@ -762,8 +770,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					newMediaType = MediaTypes.getMediatypeByName(request.getParameter("mediaType"));
 				}
-			} catch (@SuppressWarnings("unused") Exception e) {
-				throw new RestfulClientException("Invalid parameter mediaType: '" + request.getParameter("mediaType") + "'");
+			} catch (Exception e) {
+				throw new RestfulClientException("Invalid parameter mediaType: '" + request.getParameter("mediaType") + "'", e);
 			}
 		}
 		
@@ -799,8 +807,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							// Check for unallowed html content
 							try {
 								HtmlChecker.checkForUnallowedHtmlTags((String) propertyValue, allowHtmlTags);
-							} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+							} catch(final HtmlCheckerException e) {
+								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey, e);
 							}
 						}
 						jsonObject.add(propertyKey, jsonReader.getCurrentObject());

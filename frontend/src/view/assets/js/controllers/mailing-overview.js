@@ -9,7 +9,10 @@ AGN.Lib.Controller.new('mailing-overview', function() {
   this.addAction({click: 'restore'}, function () {
     const form = Form.get(this.el);
 
-    $.post(this.el.attr('href')).done(function (resp) {
+    $.ajax(this.el.attr('href'), {
+      method: 'POST',
+      data: form.data()
+    }).done(function (resp) {
       form.updateHtml(resp);
     });
   });

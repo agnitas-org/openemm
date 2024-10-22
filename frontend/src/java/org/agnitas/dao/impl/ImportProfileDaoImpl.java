@@ -10,20 +10,12 @@
 
 package org.agnitas.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ColumnMappingImpl;
@@ -40,12 +32,18 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.CollectionUtils;
 
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DAO handler for ImportProfile-Objects
@@ -57,9 +55,9 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 
 	protected DataEncryptor dataEncryptor;
 	private EmmActionOperationDao emmActionOperationDao;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     
-    public ImportProfileDaoImpl(DataSource dataSource, JavaMailService javaMailService, DataEncryptor dataEncryptor, EmmActionOperationDao emmActionOperationDao, ComMailingDao mailingDao) {
+    public ImportProfileDaoImpl(DataSource dataSource, JavaMailService javaMailService, DataEncryptor dataEncryptor, EmmActionOperationDao emmActionOperationDao, MailingDao mailingDao) {
     	super(dataSource, javaMailService);
     	
 		this.dataEncryptor = dataEncryptor;
@@ -252,6 +250,20 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
     public List<ImportProfile> getAllImportProfilesByCompanyId( int companyId) {
 		return select(logger, "SELECT * FROM import_profile_tbl WHERE company_id = ?", new ImportProfileRowMapper(), companyId);
     }
+
+	@Override
+	public List<ImportProfile> findAllByEmailPart(String email, int companyID) {
+		String query = "SELECT *  FROM import_profile_tbl WHERE company_id = ? AND ("
+				+ getPartialSearchFilter("report_email") + " OR " + getPartialSearchFilter("error_email") + ")";
+		return select(logger, query, new ImportProfileRowMapper(), companyID, email, email);
+	}
+
+	@Override
+	public List<ImportProfile> findAllByEmailPart(String email) {
+		String query = "SELECT * FROM import_profile_tbl WHERE " + getPartialSearchFilter("report_email")
+				+ " OR " + getPartialSearchFilter("error_email");
+		return select(logger, query, new ImportProfileRowMapper(), email, email);
+	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -484,5 +496,11 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@Override
 	public List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName) {
 		return select(logger, "SELECT DISTINCT(profile_id) FROM import_column_mapping_tbl WHERE profile_id IN (SELECT id FROM import_profile_tbl WHERE company_id = ?) AND LOWER(db_column) = ? ORDER BY profile_id", IntegerRowMapper.INSTANCE, companyID, profileFieldName.toLowerCase());
+	}
+
+	@Override
+	public void updateEmails(String emailForError, String emailForReport, int id) {
+		String query = "UPDATE import_profile_tbl SET error_email = ?, report_email = ? WHERE id = ?";
+		update(logger, query, emailForError, emailForReport, id);
 	}
 }

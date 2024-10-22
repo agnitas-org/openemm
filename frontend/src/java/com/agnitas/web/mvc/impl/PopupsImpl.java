@@ -202,7 +202,7 @@ public class PopupsImpl implements Popups {
 
     @Override
     public int size() {
-        return popupsMessages.size();
+        return popupsMessages.size() + fieldsMessages.size();
     }
 
     @Override

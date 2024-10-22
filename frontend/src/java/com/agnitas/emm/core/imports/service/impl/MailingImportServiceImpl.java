@@ -53,13 +53,7 @@ public class MailingImportServiceImpl implements MailingImportService {
         }
 
         if (fileExtension.equalsIgnoreCase("json")) {
-            try (InputStream input = uploadedFile.getInputStream()) {
-                // Import mailing data from upload file
-                return importMailingDataFromJson(admin, input, form);
-            } catch (Exception e) {
-                LOGGER.error("Mailing import failed", e);
-                throw new RequestErrorException("error.mailing.import");
-            }
+            return tryImportDataFromJson(form, admin, uploadedFile);
         }
 
         if (fileExtension.equalsIgnoreCase("zip")) {
@@ -67,6 +61,18 @@ public class MailingImportServiceImpl implements MailingImportService {
         }
 
         return null;
+    }
+
+    private ImportResult tryImportDataFromJson(ImportForm form, Admin admin, MultipartFile uploadedFile) throws Exception {
+        try (InputStream input = uploadedFile.getInputStream()) {
+            return importMailingDataFromJson(admin, input, form);
+        } catch (Exception e) {
+            LOGGER.error("Mailing import failed", e);
+            if (e instanceof RequestErrorException) {
+                throw e;
+            }
+            throw new RequestErrorException("error.mailing.import");
+        }
     }
 
     private void importMailingsFromZipArchive(ImportForm form, Admin admin) throws Exception {

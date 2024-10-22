@@ -1,4 +1,19 @@
 
+/*doc
+---
+title: Job Badges
+name: badges_09_jobs
+parent: badges_04_status
+---
+
+`.job.status` should always be combined with the following statuses: `active`, `inactive`.
+
+```htmlexample
+<span class="status-badge job.status.active"></span>
+<span class="status-badge job.status.inactive"></span>
+```
+*/
+
 $job-status-badges-defs: (
         active:    (background: #57C700,                   icon: $fa-var-play),
         inactive:  (background: $stat-or-badge-dark-grey,  icon: $fa-var-pause)

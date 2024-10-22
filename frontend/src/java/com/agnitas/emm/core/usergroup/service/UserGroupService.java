@@ -10,24 +10,25 @@
 
 package com.agnitas.emm.core.usergroup.service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
+import com.agnitas.service.ServiceResult;
+import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.impl.PaginatedListImpl;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface UserGroupService {
 
     PaginatedListImpl<UserGroupDto> overview(UserGroupOverviewFilter filter);
-
+    // TODO: EMMGUI-714: remove when old design will be removed
     PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(Admin admin, String sort, String sortDirection, int page, int rownumber);
     
     UserGroupDto getUserGroup(Admin admin, int userGroupId);
@@ -48,8 +49,6 @@ public interface UserGroupService {
     
     Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(Admin admin, int groupId, int groupCompanyId);
 
-	List<AdminGroup> getAdminGroupsByCompanyId(int companyID);
-
 	Collection<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyID, AdminGroup adminGroup);
 
 	AdminGroup getAdminGroup(int userGroupId, int companyID);
@@ -58,7 +57,11 @@ public interface UserGroupService {
 
     List<String> groupsToNames(List<UserGroupDto> groups);
 
-    List<UserGroupDto> validateDeletion(Set<Integer> ids, Admin admin);
+    ServiceResult<List<UserGroupDto>> getAllowedGroupsForDeletion(Set<Integer> ids, Admin admin);
 
-    List<UserGroupDto> delete(Set<Integer> bulkIds, Admin admin);
+    List<UserGroupDto> markDeleted(Set<Integer> bulkIds, Admin admin);
+
+    void restore(Set<Integer> ids, int companyId);
+
+    void removeMarkedAsDeletedBefore(Date date, int companyId);
 }

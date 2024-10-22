@@ -312,6 +312,9 @@ public class ServerStatusController implements XssCheckAware {
 			FormUtils.syncSearchParams(searchParams, filter, true);
 		}
 		model.addAttribute("activeJobQueueList", jobQueueService.getOverview(filter));
+		if (admin.isRedesignedUiUsed()) {
+			model.addAttribute("notFilteredFullListSize", filter.isUiFiltersSet() ? jobQueueService.getCountForOverview() : -1);
+		}
 		model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
 		userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "job queue view"), logger);
 

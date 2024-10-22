@@ -1,4 +1,4 @@
-;(function(){
+;(() => {
     $(document).on('change', '[data-toggle-usability]', function() {
     var $this    = $(this),
         targets  = $this.data('toggle-usability'),

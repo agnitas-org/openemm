@@ -8,33 +8,36 @@
 <%--@elvariable id="mailingListsJson" type="net.sf.json.JSONArray"--%>
 <%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <div id="table-tile" class="tile" data-editable-tile="main">
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
-        </div>
+<c:set var="deleteAllowed" value="${emm:permissionAllowed('mailinglist.delete', pageContext.request)}" />
 
-        <div class="tile-body js-data-table" data-table="mailing-lists" data-controller="mailinglist-list">
-            <script type="application/json" data-initializer="mailinglist-list">
-                {
-                    "urls": {
-                        "MAILINGLIST_BULK_DELETE": "<c:url value="/mailinglist/confirmBulkDelete.action"/>"
-                    }
-                }
-            </script>
-            <div class="js-data-table-body" data-web-storage="mailinglist-overview"></div>
+<div class="filter-overview" data-editable-view="${agnEditViewKey}" data-controller="mailinglist-list">
+    <div id="table-tile" class="tile" data-editable-tile="main">
+        <div class="tile-body">
+            <div class="table-wrapper" data-web-storage="mailinglist-overview" data-js-table="mailing-lists">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <c:if test="${deleteAllowed}">
+                            <div class="bulk-actions hidden">
+                                <p class="bulk-actions__selected">
+                                    <span><%-- Updates by JS --%></span>
+                                    <mvc:message code="default.list.entry.select" />
+                                </p>
+                                <div class="bulk-actions__controls">
+                                    <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.mailinglist" />" data-action="bulk-delete">
+                                        <i class="icon icon-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </c:if>
+                        <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+            </div>
         </div>
         <c:set value="true" var="hideFrequencyCounterInfo"/>
         <%@include file="fragments/diactivate-hide-frequency-counter-property.jspf" %>
-
-        <c:forEach var="entry" items="${mailingListsJson}">
-            <c:url var="viewLink" value="/mailinglist/${entry['id']}/view.action"/>
-            <c:set target="${entry}" property="show" value="${viewLink}"/>
-            <emm:ShowByPermission token="mailinglist.delete">
-                <c:url var="deleteLink" value="/mailinglist/${entry['id']}/confirmDelete.action"/>
-                <c:set target="${entry}" property="delete" value="${deleteLink}"/>
-            </emm:ShowByPermission>
-        </c:forEach>
 
         <script id="mailing-lists" type="application/json">
             {
@@ -52,9 +55,10 @@
                         "suppressSizeToFit": true
                     },
                     {
-                        "headerName": "<mvc:message code='Mailinglist'/>",
+                        "headerName": "<mvc:message code='Name'/>",
                         "editable": false,
-                        "cellRenderer": "NotEscapedStringCellRenderer",
+                        "cellRenderer": "MustacheTemplateCellRender",
+                        "cellRendererParams": {"templateName": "mailinglist-name"},
                         "field": "shortname",
                         "resizable": true,
                         "type": "textCaseInsensitiveColumn"
@@ -92,27 +96,47 @@
                         "cellRendererParams": {"templateName": "frequency-counter-badge"}
                     },
                     {
-                        "field": "delete",
-                        "type": "deleteColumn"
+                        "type": "tableActionsColumn",
+                        "buttons": [{"name": "delete", "template": "mailinglist-delete-btn"}],
+                        "hide": ${not deleteAllowed}
                     }
                 ],
-                "data": ${mailingListsJson}
+                "data": ${mailingListsJson},
+                "options": {"viewLinkTemplate": "/mailinglist/{{- id }}/view.action"}
             }
         </script>
 
         <script id="frequency-counter-badge" type="text/x-mustache-template">
-            <span class="pill-badge">{{- t(value === true ? 'defaults.yes' : 'defaults.no') }}</span>
+            <span class="table-badge">{{- t(value === true ? 'defaults.yes' : 'defaults.no') }}</span>
+        </script>
+
+        <script id="mailinglist-name" type="text/x-mustache-template">
+            <div class="d-flex align-items-center gap-2 overflow-wrap-anywhere">
+                {{ if (entry.restrictedForSomeAdmins) { }}
+                    <span class="icon-badge text-bg-danger-dark" data-tooltip="<mvc:message code="mailinglist.limit.access" />">
+                     <i class="icon icon-user-lock"></i>
+                    </span>
+                {{ } }}
+                <span class="text-truncate-table">{{- value }}</span>
+            </div>
+        </script>
+
+        <script id="mailinglist-delete-btn" type="text/x-mustache-template">
+            <a href="{{= AGN.url('/mailinglist/' + id + '/confirmDelete.action') }}" type="button" class="icon-btn text-danger js-data-table-delete" data-tooltip="<mvc:message code="Delete" />">
+                <i class="icon icon-trash-alt"></i>
+            </a>
         </script>
     </div>
 
     <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">

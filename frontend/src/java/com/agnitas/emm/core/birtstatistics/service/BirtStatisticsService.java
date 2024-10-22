@@ -10,30 +10,30 @@
 
 package com.agnitas.emm.core.birtstatistics.service;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
-import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
-import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
+import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
-import com.agnitas.emm.core.birtstatistics.optimization.dto.OptimizationStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
+import com.agnitas.emm.core.userform.form.WebFormStatFrom;
+import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public interface BirtStatisticsService {
 	
@@ -43,8 +43,9 @@ public interface BirtStatisticsService {
 	 * @param domainStatistic Domain statistic data
 	 */
 	String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception;
-	
-	
+
+    String getProfileFieldEvalStatUrl(Admin admin, String sessionId, ProfileFieldStatForm form) throws Exception;
+
 	/**
 	 * Generates birt URL for monthly statistic
 	 *
@@ -87,13 +88,14 @@ public interface BirtStatisticsService {
 	
 	String getRecipientStatusStatisticUrl(Admin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 
-	String getOptimizationStatisticUrl(Admin admin, OptimizationStatisticDto optimizationDto) throws Exception;
-
 	String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto) throws Exception;
 
+	// TODO: EMMGUI-714: remove when old design will be removed
 	String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId) throws Exception;
 
     boolean isWorldMailing(Mailing mailing);
+
+	String getWebFormStatUrl(WebFormStatFrom from, Admin admin, String sessionId) throws Exception;
 
 	/**
 	 * Generates birt URL for report statistic.
@@ -101,5 +103,5 @@ public interface BirtStatisticsService {
 	String getReportStatisticsUrl(Admin admin, BirtReportStatisticDto settings) throws Exception;
 
 	File getBirtReportTmpFile(BirtReportDownload birtDownload, final int companyId);
-
+	File getBirtReportTmpFile(List<BirtReportDownload> birtDownloads, int companyId);
 }

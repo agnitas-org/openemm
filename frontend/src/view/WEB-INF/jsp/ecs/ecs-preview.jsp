@@ -10,7 +10,6 @@
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/jquery/jquery-3.5.1.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/grid/jquery.imagesloaded.min.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/lodash/lodash-4.17.21.js"></script>
-<script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/js-polyfill-0.1.43.min.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/ecs/statLabelAdjuster.js"></script>
 
 <c:choose>

@@ -27,6 +27,8 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.FileResponseBody;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ActivityLogExportWorker;
 import org.agnitas.service.UserActivityLogExportWorker;
 import org.agnitas.service.UserActivityLogService;
@@ -62,12 +64,14 @@ public abstract class AbstractUserActivityLogController {
     protected final AdminService adminService;
     protected final UserActivityLogService userActivityLogService;
     protected final UserActivityLogExportWorkerFactory exportWorkerFactory;
+    protected final ConfigService configService;
 
-    protected AbstractUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService, UserActivityLogExportWorkerFactory exportWorkerFactory) {
+    protected AbstractUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService, UserActivityLogExportWorkerFactory exportWorkerFactory, ConfigService configService) {
         this.webStorage = webStorage;
         this.adminService = adminService;
         this.userActivityLogService = userActivityLogService;
         this.exportWorkerFactory = exportWorkerFactory;
+        this.configService = configService;
     }
 
     @InitBinder
@@ -123,6 +127,7 @@ public abstract class AbstractUserActivityLogController {
             prepareModelAttributesForListPage(model, admin);
             model.addAttribute("admins", admins);
             model.addAttribute("actions", loggedUserActions);
+            model.addAttribute("logExpire", configService.getIntegerValue(ConfigValue.UserActivityLog_Expire, admin.getCompanyID()));
 
             return new ModelAndView(getListViewName(), model.asMap());
         };

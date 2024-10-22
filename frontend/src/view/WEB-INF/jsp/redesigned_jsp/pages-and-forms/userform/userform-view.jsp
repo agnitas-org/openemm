@@ -2,8 +2,8 @@
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
@@ -19,11 +19,10 @@
 <c:url var="actionEditUrlPattern" value="/action/:action-ID:/view.action"/>
 <mvc:message var="labMsq" code="lab.message"/>
 
-<mvc:form cssClass="tiles-container hidden d-flex flex-column" servletRelativeAction="/webform/save.action" id="userFormForm"
+<mvc:form cssClass="tiles-container flex-column" servletRelativeAction="/webform/save.action" id="userFormForm"
           modelAttribute="form" data-form="resource"
           data-autosave-scope="action-form/${form.formId}"
           data-controller="userform-view" data-initializer="userform-view" data-validator="userform-edit/form"
-          cssStyle="grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr"
           data-action="saveUserForm" data-editable-view="${agnEditViewKey}">
 
     <script id="config:userform-view" type="application/json">
@@ -52,13 +51,7 @@
 
     <div id="settings-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="settings.form.edit"/></h1>
-            <div class="tile-controls">
-                <div class="form-check form-switch">
-                    <mvc:checkbox cssClass="form-check-input" role="switch" id="is-active-switch" path="active"/>
-                    <label class="form-label form-check-label" for="is-active-switch"><mvc:message code="default.status.active"/></label>
-                </div>
-            </div>
+            <h1 class="tile-title text-truncate"><mvc:message code="settings.form.edit"/></h1>
         </div>
         <div class="tile-body grid" style="--bs-columns:2">
             <div>
@@ -76,7 +69,7 @@
                     <label for="formURL" class="form-label"><mvc:message code="default.url"/></label>
                     <div class="d-flex gap-2">
                         <input type="text" id="formURL" class="form-control" maxlength="99" size="42" readonly="readonly" value="${userFormURLPattern}">
-                        <button type="button" class="btn btn-info btn-icon btn-icon-sm" data-copyable="" data-copyable-value="${userFormURLPattern}" data-tooltip='<mvc:message code="button.Copy"/>'>
+                        <button type="button" class="btn btn-info btn-icon" data-copyable data-copyable-target="#formURL" data-tooltip='<mvc:message code="button.Copy"/>'>
                             <i class="icon icon-copy"></i>
                         </button>
                     </div>
@@ -95,7 +88,7 @@
                            id="formTestLink"
                            data-action="${not form.active ? 'activate-and-test' : ''}"
                            data-tooltip="<mvc:message code='userform.test'/>"
-                           class="btn btn-icon-sm btn-primary" target="_blank">
+                           class="btn btn-icon btn-primary" target="_blank">
                             <i class="icon icon-play-circle"></i>
                         </a>
                     </div>
@@ -104,14 +97,14 @@
         </div>
     </div>
 
-    <div class="tiles-block flex-grow-1">
+    <div class="tiles-block">
         <%-- Success settings--%>
         <div id="success-form-tile" class="tile" data-editable-tile style="flex: 1">
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="settings.form.success"/></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="settings.form.success"/></h1>
                 <div class="tile-controls">
-                    <input id="success-type" name="successSettings.useUrl" ${form.successSettings.useUrl ? 'checked' : ''} type="checkbox" class="icon-switch">
-                    <label for="success-type" class="text-switch__label">
+                    <label class="text-switch">
+                        <input id="success-type" type="checkbox" name="successSettings.useUrl" ${form.successSettings.useUrl ? 'checked' : ''}>
                         <span><mvc:message code="Form"/></span>
                         <span><mvc:message code="URL"/></span>
                     </label>
@@ -128,7 +121,7 @@
                         </mvc:select>
                         <emm:ShowByPermission token="actions.show">
                             <mvc:message var="actionSwitchTooltip" code="form.action.switch"/>
-                            <a id="startActionLink" class="btn btn-icon btn-icon-sm btn-primary ${form.successSettings.startActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
+                            <a id="startActionLink" class="btn btn-icon btn-primary ${form.successSettings.startActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
                                href="${fn:replace(actionEditUrlPattern, ':action-ID:', form.successSettings.startActionId)}">
                                 <i class="icon icon-pen"></i>
                             </a>
@@ -142,13 +135,13 @@
                         <div class="tile-header">
                             <ul class="tile-title-controls gap-1">
                                 <li>
-                                    <a href="#" class="btn btn-icon-sm btn-inverse active" data-toggle-tab="#successTemplateEditor">
+                                    <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#successTemplateEditor">
                                         <i class="icon icon-code"></i>
                                     </a>
                                 </li>
                                 <c:if test="${not form.successSettings.useVelocity}">
                                     <li>
-                                        <a href="#" class="btn btn-icon-sm btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#success-wysiwyg-editor"
+                                        <a href="#" class="btn btn-icon btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#success-wysiwyg-editor"
                                            data-action="check-velocity-script"
                                            data-action-options="type: success">
                                             <i class="icon icon-font"></i>
@@ -156,14 +149,14 @@
                                     </li>
                                 </c:if>
                                 <li>
-                                    <a href="#" class="btn btn-sm btn-icon-sm w-auto btn-inverse" data-toggle-tab="#success-form-builder-tab">
+                                    <a href="#" class="btn btn-icon btn-icon--wide btn-inverse" data-toggle-tab="#success-form-builder-tab">
                                         <i class="icon icon-table"></i>
                                         <i class="icon icon-flask text-secondary" data-tooltip="${labMsq}"></i>
                                     </a>
                                 </li>
                             </ul>
                             <div class="tile-controls">
-                                <a href="#" class="btn-enlarge" data-enlarged-modal data-modal-set="title: <mvc:message code="settings.form.error"/>">
+                                <a href="#" class="btn-enlarge" data-enlarged-modal data-modal-set="title: <mvc:message code="settings.form.success"/>">
                                    <i class="icon icon-expand-arrows-alt"></i>
                                 </a>
                             </div>
@@ -209,7 +202,7 @@
                         </mvc:select>
                         <emm:ShowByPermission token="actions.show">
                             <mvc:message var="actionSwitchTooltip" code="form.action.switch"/>
-                            <a id="finalActionLink" class="btn btn-primary btn-icon-sm ${form.successSettings.finalActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
+                            <a id="finalActionLink" class="btn btn-primary btn-icon ${form.successSettings.finalActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
                                href="${fn:replace(actionEditUrlPattern, ':action-ID:', form.successSettings.finalActionId)}">
                                 <i class="icon icon-pen"></i>
                             </a>
@@ -222,10 +215,10 @@
         <%-- Error settings--%>
         <div id="error-form-tile" class="tile" data-editable-tile style="flex: 1">
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="settings.form.error"/></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="settings.form.error"/></h1>
                 <div class="tile-controls">
-                    <input id="error-type" name="errorSettings.useUrl" ${form.errorSettings.useUrl ? 'checked' : ''} type="checkbox" class="icon-switch">
-                    <label for="error-type" class="text-switch__label">
+                    <label class="text-switch">
+                        <input id="error-type" type="checkbox" name="errorSettings.useUrl" ${form.errorSettings.useUrl ? 'checked' : ''}>
                         <span><mvc:message code="Form"/></span>
                         <span><mvc:message code="URL"/></span>
                     </label>
@@ -238,13 +231,13 @@
                         <div class="tile-header">
                             <ul class="tile-title-controls gap-1">
                                 <li>
-                                    <a href="#" class="btn btn-icon-sm btn-inverse active" data-toggle-tab="#errorTemplateEditor">
+                                    <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#errorTemplateEditor">
                                         <i class="icon icon-code"></i>
                                     </a>
                                 </li>
                                 <c:if test="${not form.errorSettings.useVelocity}">
                                     <li>
-                                        <a href="#" class="btn btn-icon-sm btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#error-wysiwyg-editor"
+                                        <a href="#" class="btn btn-icon btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#error-wysiwyg-editor"
                                            data-action="check-velocity-script"
                                            data-action-options="type: error">
                                             <i class="icon icon-font"></i>
@@ -252,7 +245,7 @@
                                     </li>
                                 </c:if>
                                 <li>
-                                    <a href="#" class="btn btn-sm btn-icon-sm w-auto btn-inverse" data-toggle-tab="#error-form-builder-tab">
+                                    <a href="#" class="btn btn-icon btn-icon--wide btn-inverse" data-toggle-tab="#error-form-builder-tab">
                                         <i class="icon icon-table"></i>
                                         <i class="icon icon-flask text-secondary" data-tooltip="${labMsq}"></i>
                                     </a>
@@ -299,14 +292,14 @@
 
 <script id="warning-html-generation-modal" type="text/x-mustache-template">
     <div class="modal modal-warning" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
                         <i class="icon icon-state-warning"></i>
                         <mvc:message code="warning" />
                     </h1>
-                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -314,9 +307,9 @@
                     <p><mvc:message code="userform.builder.generateHtml.question" /></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary js-confirm-positive flex-grow-1">
+                    <button type="button" class="btn btn-primary js-confirm-positive">
                         <i class="icon icon-check"></i>
-                        <b><mvc:message code="button.Proceed"/></b>
+                        <span class="text"><mvc:message code="button.Proceed"/></span>
                     </button>
                 </div>
             </div>
@@ -326,14 +319,14 @@
 
 <script id="warning-save-different-tabs" type="text/x-mustache-template">
     <div class="modal modal-warning" tabindex="-1" data-controller="userform-view">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
                         <i class="icon icon-state-warning"></i>
                         <mvc:message code="warning" />
                     </h1>
-                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -372,9 +365,9 @@
                     </mvc:form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary flex-grow-1" data-action="save-specific-code-mode">
+                    <button type="button" class="btn btn-primary" data-action="save-specific-code-mode">
                         <i class="icon icon-check"></i>
-                        <b><mvc:message code="button.Proceed"/></b>
+                        <span class="text"><mvc:message code="button.Proceed"/></span>
                     </button>
                 </div>
             </div>
@@ -385,11 +378,11 @@
 <c:if test="${form.formId gt 0}">
     <script id="userform-activate-and-test" type="text/x-mustache-template">
         <div class="modal" tabindex="-1">
-            <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-centered">
+            <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h1 class="modal-title"><mvc:message code="userform.activate" /></h1>
-                        <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                        <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                             <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                         </button>
                     </div>
@@ -397,11 +390,11 @@
                         <p><mvc:message code="userform.test.activate.question" /></p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger js-confirm-negative flex-grow-1" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-danger js-confirm-negative" data-bs-dismiss="modal">
                             <i class="icon icon-times"></i>
                             <span class="text"><mvc:message code="default.No"/></span>
                         </button>
-                        <button type="button" class="btn btn-primary flex-grow-1 js-confirm-positive" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-primary js-confirm-positive" data-bs-dismiss="modal">
                             <i class="icon icon-check"></i>
                             <span class="text"><mvc:message code="default.Yes"/></span>
                         </button>

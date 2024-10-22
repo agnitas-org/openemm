@@ -20,6 +20,7 @@ import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 import com.agnitas.emm.core.components.entity.MailGenerationOptimizationMode;
 import org.agnitas.backend.dao.MaildropStatusDAO;
@@ -145,6 +146,11 @@ public class MaildropStatus {
 			return new Date();
 		}
 	}
+	
+	public List <Long> getAltGRestriction () {
+		return exists () ? maildrop.getAltGRestriction () : null;
+	}
+	
 
 	/**
 	 * Write all mailinglist related settings to logfile
@@ -363,7 +369,7 @@ public class MaildropStatus {
 		}
 	}
 
-	public void removeEntry() throws Exception {
+	public void removeEntry() throws SQLException{
 		if (exists()) {
 			if (!maildrop.remove(data.dbase)) {
 				data.logging(Log.WARNING, "remove", "Tried to remove non existing entry in maildrop status table for " + id);

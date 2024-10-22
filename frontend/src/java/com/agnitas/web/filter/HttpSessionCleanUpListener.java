@@ -10,23 +10,16 @@
 
 package com.agnitas.web.filter;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.imports.web.RecipientImportController;
+import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
-
-import org.agnitas.emm.core.download.service.DownloadService;
 import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.util.AgnUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
-import com.agnitas.util.FutureHolderMap;
 
 /**
  * Cleanup session data when user logs out or session is destroyed (after inactivity timeout or user closed browser)
@@ -41,27 +34,7 @@ public class HttpSessionCleanUpListener implements HttpSessionListener {
 	@Override
 	public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
 		HttpSession session = httpSessionEvent.getSession();
-		String sessionID = session.getId();
 		ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(session.getServletContext());
-		
-		// Cleanup FutureHolder
-		FutureHolderMap futureHolder = (FutureHolderMap) applicationContext.getBean("futureHolder");
-		List<String> keysToRemove = new ArrayList<>();
-		for (String key : futureHolder.keySet()) {
-			if (key.endsWith("@" + sessionID) ) {
-				keysToRemove.add(key);
-			}
-		}
-		for (String removeMe : keysToRemove) {
-			futureHolder.remove(removeMe);
-		}
-
-		// TODO: GWUA-5759: remove in case if org.agnitas.emm.core.download.web.FileDownloadServlet will be removed
-		if (applicationContext.containsBean("DownloadService")) {
-			// Remove all download data and associated files
-			DownloadService downloadService = (DownloadService) applicationContext.getBean("DownloadService");
-			downloadService.removeAllDownloadData(session);
-		}
 		
 		// Cleanup grid recycle bin
 		Admin admin = (Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN);

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface JobQueueDao {
+
 	List<JobDto> readUpcomingJobsForExecution();
 	
 	JobDto getJob(int id);
@@ -40,18 +41,13 @@ public interface JobQueueDao {
 	List<JobDto> selectErroneousJobs();
 	
 	List<JobDto> getOverview(JobQueueOverviewFilter filter);
+	int getCountForOverview();
 	List<JobDto> getAllActiveJobs();
 
 	List<JobDto> getHangingJobs(Date timeLimit);
 	
 	void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname);
 	
-	boolean setStartCompanyForNextCleanupStart(int currentCompanyID);
-	
-	int getStartCompanyForCleanup();
-	
-	boolean deleteCleanupStartEntry();
-
 	boolean updateJobStatus(JobDto job);
 
 	void acknowledgeErroneousJob(int idToAcknowledge);

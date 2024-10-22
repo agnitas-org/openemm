@@ -10,7 +10,34 @@
 
 package com.agnitas.emm.core.birtreport.dao.impl;
 
-import static org.agnitas.util.DbUtilities.joinForIn;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
+import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.birtreport.bean.ReportEntry;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComLightweightBirtReportImpl;
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.DateRowMapper;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,36 +50,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.birtreport.bean.ReportEntry;
-import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.DateRowMapper;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.bean.impl.ComLightweightBirtReportImpl;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.birtreport.dto.BirtReportType;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import static org.agnitas.util.DbUtilities.joinForIn;
 
 public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBirtReportDao {
 
@@ -69,7 +70,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		if (reportID == 0) {
 			return null;
 		} else {
-			String query = "SELECT report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, intervalpattern, nextstart, hidden FROM birtreport_tbl WHERE report_id = ? AND company_id = ?";
+			String query = "SELECT report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, intervalpattern, nextstart, hidden FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND deleted = 0";
 			ComBirtReport report = selectObjectDefaultNull(logger, query, new ComBirtReportRowMapper(), reportID, companyID);
 			if (report != null) {
 				getReportProperties(report);
@@ -97,7 +98,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@Override
 	public List<ComLightweightBirtReport> getLightweightBirtReportList(int companyID) {
 		String sqlGetReports = "SELECT report_id, shortname, description, hidden FROM birtreport_tbl " +
-				"WHERE company_id = ? ORDER BY LOWER(shortname)";
+				"WHERE company_id = ? AND deleted = 0 ORDER BY LOWER(shortname)";
 		return select(logger, sqlGetReports, new ComLightweightBirtReportRowMapper(), companyID);
 	}
 
@@ -113,7 +114,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		List<ComBirtReport> list = new ArrayList<>();
 		if (org.apache.commons.collections.CollectionUtils.isNotEmpty(reportIds)) {
 			String query = "SELECT report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, intervalpattern, nextstart, hidden"
-					+ " FROM birtreport_tbl WHERE " + makeBulkInClauseForInteger("report_id", reportIds);
+					+ " FROM birtreport_tbl WHERE deleted = 0 AND " + makeBulkInClauseForInteger("report_id", reportIds);
 			list = select(logger, query, new ComBirtReportRowMapper());
 			for (ComBirtReport comBirtReport : list) {
 				getReportProperties(comBirtReport);
@@ -123,25 +124,46 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	}
 
 	@Override
+	public List<ReportEntry> findAllByEmailPart(String email, int companyID) {
+		String query = "SELECT " + getJoinedReportEntryColumns() + " FROM birtreport_tbl r WHERE company_id = ? AND deleted = 0 AND hidden = 0 AND EXISTS(" +
+				"SELECT 1 FROM birtreport_recipient_tbl rr WHERE rr.birtreport_id = r.report_id AND " + getPartialSearchFilter("rr.email") + ")";
+
+		return select(logger, query, REPORT_ENTRY_ROW_MAPPER, companyID, email);
+	}
+
+	@Override
+	public List<ReportEntry> findAllByEmailPart(String email) {
+		String query = "SELECT " + getJoinedReportEntryColumns() + " FROM birtreport_tbl r WHERE hidden = 0 AND deleted = 0 AND EXISTS(" +
+				"SELECT 1 FROM birtreport_recipient_tbl rr WHERE rr.birtreport_id = r.report_id AND " + getPartialSearchFilter("rr.email") + ")";
+
+		return select(logger, query, REPORT_ENTRY_ROW_MAPPER, email);
+	}
+
+	private String getJoinedReportEntryColumns() {
+		return "report_id, company_id, shortname, description, hidden, change_date";
+	}
+
+	@Override
 	// TODO: EMMGUI-714: remove when old design will be removed
 	public PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String direction, int pageNumber, int rownums) {
-		String sql = "SELECT report_id, shortname, description, hidden, change_date, (SELECT MAX(delivery_date) FROM birtreport_sent_mailings_tbl WHERE birtreport_sent_mailings_tbl.report_id = birtreport_tbl.report_id) AS delivery_date FROM birtreport_tbl WHERE company_id = ? AND hidden = 0";
+		String sql = "SELECT report_id, company_id, shortname, description, hidden, change_date, (SELECT MAX(delivery_date) FROM birtreport_sent_mailings_tbl WHERE birtreport_sent_mailings_tbl.report_id = birtreport_tbl.report_id) AS delivery_date FROM birtreport_tbl WHERE company_id = ? AND hidden = 0 AND deleted = 0";
 
 		if (!SORTABLE_FIELDS.contains(sort)) {
 			sort = "shortname";
 		}
 
 		boolean sortAscending = AgnUtils.sortingDirectionToBoolean(direction, true);
+		String sortTable = "delivery_date".equalsIgnoreCase(sort) ? "birtreport_sent_mailings_tbl" : "birtreport_tbl";
 
-		return selectPaginatedList(logger, sql, "birtreport_tbl", sort, sortAscending, pageNumber, rownums, REPORT_ENTRY_ROW_MAPPER, companyId);
+		return selectPaginatedList(logger, sql, sortTable, sort, sortAscending, pageNumber, rownums, REPORT_ENTRY_ROW_MAPPER, companyId);
 	}
 
 	@Override
 	public PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId) {
 		String sort = filter.getSort();
-		StringBuilder query = new StringBuilder("SELECT br.report_id, br.shortname, br.description, br.hidden, br.change_date, MAX(bsm.delivery_date) AS delivery_date FROM birtreport_tbl br LEFT JOIN birtreport_sent_mailings_tbl bsm ON bsm.report_id = br.report_id");
+		StringBuilder query = new StringBuilder("SELECT br.report_id, br.company_id, br.shortname, br.description, br.hidden, br.change_date, MAX(bsm.delivery_date) AS delivery_date FROM birtreport_tbl br LEFT JOIN birtreport_sent_mailings_tbl bsm ON bsm.report_id = br.report_id");
 		List<Object> params = applyOverviewFilter(filter, companyId, query);
-		query.append(" GROUP BY br.report_id, br.shortname, br.description, br.hidden, br.change_date");
+		query.append(" GROUP BY br.report_id, br.company_id, br.shortname, br.description, br.hidden, br.change_date");
 
 		if (filter.getLastDeliveryDate().isPresent()) {
 			query.append(" HAVING");
@@ -164,14 +186,20 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		}
 
 		boolean sortAscending = AgnUtils.sortingDirectionToBoolean(filter.getOrder(), true);
+		String sortTable = "delivery_date".equalsIgnoreCase(sort) ? "birtreport_sent_mailings_tbl" : "birtreport_tbl";
 
-		return selectPaginatedList(logger, query.toString(), "birtreport_tbl", sort, sortAscending,
+		PaginatedListImpl<ReportEntry> list = selectPaginatedList(logger, query.toString(), sortTable, sort, sortAscending,
 				filter.getPage(), filter.getNumberOfRows(), REPORT_ENTRY_ROW_MAPPER, params.toArray());
+
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(companyId, filter.isShowDeleted()));
+		}
+
+		return list;
 	}
 
 	private List<Object> applyOverviewFilter(BirtReportOverviewFilter filter, int companyId, StringBuilder query) {
-		query.append(" WHERE br.company_id = ? AND br.hidden = 0");
-		List<Object> params = new ArrayList<>(List.of(companyId));
+		List<Object> params = applyRequiredOverviewFilter(query, companyId, filter.isShowDeleted());
 
 		if (StringUtils.isNotBlank(filter.getName())) {
 			query.append(getPartialSearchFilterWithAnd("br.shortname"));
@@ -190,6 +218,18 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		return params;
 	}
 
+	private int getTotalUnfilteredCountForOverview(int companyId, boolean deleted) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM birtreport_tbl br");
+		List<Object> params = applyRequiredOverviewFilter(query, companyId, deleted);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId, boolean deleted) {
+		query.append(" WHERE br.company_id = ? AND br.hidden = 0 AND deleted = ?");
+		return new ArrayList<>(List.of(companyId, BooleanUtils.toInteger(deleted)));
+	}
+
 	@Override
 	public List<ComBirtReport> getAllReportsByCompanyID(int companyId) {
 		return select(logger, "SELECT report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, intervalpattern, nextstart, hidden FROM birtreport_tbl WHERE company_id = ?", new ComBirtReportRowMapper(), companyId);
@@ -198,18 +238,18 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@Override
 	public String getReportName(int companyId, int reportId) {
 		return select(logger,
-				"SELECT shortname FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND hidden = 0",
+				"SELECT shortname FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND deleted = 0 AND hidden = 0",
 				String.class, reportId, companyId);
 	}
 
 	@Override
 	public boolean isReportExist(int companyId, int reportId) {
-		return selectInt(logger, "SELECT count(report_id) FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND hidden = 0", reportId, companyId) > 0;
+		return selectInt(logger, "SELECT count(report_id) FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND hidden = 0 AND deleted = 0", reportId, companyId) > 0;
 	}
 
 	@Override
 	public List<Integer> getSampleReportIds(int companyId) {
-		return select(logger, "SELECT report_id FROM birtreport_tbl WHERE company_id = ? AND (LOWER(shortname) LIKE '%sample%' OR LOWER(shortname) LIKE '%example%' OR LOWER(shortname) LIKE '%muster%' OR LOWER(shortname) LIKE '%beispiel%')",
+		return select(logger, "SELECT report_id FROM birtreport_tbl WHERE company_id = ? AND deleted = 0 AND (LOWER(shortname) LIKE '%sample%' OR LOWER(shortname) LIKE '%example%' OR LOWER(shortname) LIKE '%muster%' OR LOWER(shortname) LIKE '%beispiel%')",
 				IntegerRowMapper.INSTANCE, companyId);
 	}
 
@@ -228,16 +268,38 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		}
 	}
 
+	@Override
+	public boolean markDeleted(int reportId, int companyId) {
+		return update(logger, "UPDATE birtreport_tbl SET active = 0, deleted = 1, change_date = CURRENT_TIMESTAMP"
+				+ " WHERE report_id = ? AND company_id = ?", reportId, companyId) > 0;
+	}
+
+	@Override
+	public void restore(Set<Integer> ids, int companyId) {
+		update(logger, "UPDATE birtreport_tbl SET deleted = 0, change_date = CURRENT_TIMESTAMP"
+			+ " WHERE company_id = ? AND " + makeBulkInClauseForInteger("report_id", ids), companyId);
+	}
+
+	@Override
+	public List<Integer> getMarkedAsDeletedBefore(Date date, int companyId) {
+		return select(logger,
+			"SELECT report_id FROM birtreport_tbl WHERE company_id = ? AND deleted = 1 AND change_date < ?",
+			IntegerRowMapper.INSTANCE, companyId, date);
+	}
+
 	private static class ReportEntryRowMapper implements RowMapper<ReportEntry> {
 		@Override
 		public ReportEntry mapRow(ResultSet resultSet, int i) throws SQLException {
 			ReportEntry report = new ReportEntry();
 			report.setId(resultSet.getInt("report_id"));
+			report.setCompanyId(resultSet.getInt("company_id"));
 			report.setShortname(resultSet.getString("shortname"));
 			report.setDescription(resultSet.getString("description"));
 			report.setHidden(resultSet.getBoolean("hidden"));
 			report.setChangeDate(resultSet.getTimestamp("change_date"));
-			report.setDeliveryDate(resultSet.getTimestamp("delivery_date"));
+			if (DbUtilities.resultsetHasColumn(resultSet, "delivery_date")) {
+				report.setDeliveryDate(resultSet.getTimestamp("delivery_date"));
+			}
 			return report;
 		}
 	}
@@ -248,7 +310,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		if (report.getId() != 0) {
 			logger.error("ReportID is invalid for insert of new report: {}", report.getId());
 			return false;
-		} else if (CollectionUtils.isEmpty(report.getEmailRecipientList())) {
+		} else if (recipientsRequired(report)) {
 			throw new Exception("Recipients for report are empty: " + report.getId());
 		}
 		
@@ -329,6 +391,11 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		}
 	}
 
+    private static boolean recipientsRequired(ComBirtReport report) {
+        return report.getSettings().stream().anyMatch(ComBirtReportSettings::isEnabled)
+                && CollectionUtils.isEmpty(report.getEmailRecipientList());
+    }
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean update(ComBirtReport report) throws Exception {
@@ -338,7 +405,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean update(ComBirtReport report, List<Integer> justDeactivateSettingTypes) throws Exception {
-		if (CollectionUtils.isEmpty(report.getEmailRecipientList())) {
+		if (recipientsRequired(report)) {
 			throw new Exception("Recipients for report are empty: " + report.getId());
 		}
 	
@@ -381,10 +448,15 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	}
 
 	private void storeBirtReportEmailRecipients(ComBirtReport report) {
-		update(logger, "DELETE FROM birtreport_recipient_tbl WHERE birtreport_id = ?", report.getId());
-		if (report.getEmailRecipientList() != null) {
-			for (String email : AgnUtils.removeObsoleteItemsFromList(report.getEmailRecipientList())) {
-				update(logger, "INSERT INTO birtreport_recipient_tbl (birtreport_id, email) VALUES (?, ?)", report.getId(), email);
+		storeBirtReportEmailRecipients(report.getEmailRecipientList(), report.getId());
+	}
+
+	@Override
+	public void storeBirtReportEmailRecipients(List<String> emails, int reportId) {
+		update(logger, "DELETE FROM birtreport_recipient_tbl WHERE birtreport_id = ?", reportId);
+		if (emails != null) {
+			for (String email : AgnUtils.removeObsoleteItemsFromList(emails)) {
+				update(logger, "INSERT INTO birtreport_recipient_tbl (birtreport_id, email) VALUES (?, ?)", reportId, email);
 			}
 		}
 	}
@@ -634,6 +706,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 				+ ")"
 				+ " AND active = 1"
 				+ " AND running = 0"
+				+ " AND deleted = 0"
 				+ (includedCompanyIds != null && !includedCompanyIds.isEmpty() ? " AND company_id IN (" + StringUtils.join(includedCompanyIds, ", ") + ")" : "")
 				+ (excludedCompanyIds != null && !excludedCompanyIds.isEmpty() ? " AND company_id NOT IN (" + StringUtils.join(excludedCompanyIds, ", ") + ")" : "")
 				+ " AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP)"
@@ -658,7 +731,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@Override
 	public List<ComBirtReport> selectErroneousReports() {
 		try {
-			return select(logger, "SELECT * FROM birtreport_tbl WHERE active > 0 AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP) AND ((lastresult IS NOT NULL AND lastresult != 'OK') OR (nextstart IS NOT NULL AND nextstart < ?))", new ComBirtReportRowMapper(), DateUtilities.getDateOfHoursAgo(1));
+			return select(logger, "SELECT * FROM birtreport_tbl WHERE active > 0 AND deleted = 0 AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP) AND ((lastresult IS NOT NULL AND lastresult != 'OK') OR (nextstart IS NOT NULL AND nextstart < ?))", new ComBirtReportRowMapper(), DateUtilities.getDateOfHoursAgo(1));
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading erroneous reports from database", e);
 		}

@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailing.service.impl;
 import java.util.Date;
 import java.util.Objects;
 
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +43,12 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
      */
     private TriggerdialogService triggerdialogService = null;
 
-    @Override
+	@Override
+	public int getSentMails(int maildropId) {
+		return deliveryStatDao.getSentMails(maildropId);
+	}
+
+	@Override
     public DeliveryStat getDeliveryStats(int companyID, int mailingID, MailingType mailingType) {
         if (triggerdialogService != null && triggerdialogService.isPostMailing(mailingDao.getMailing(mailingID, companyID))) {
         	DeliveryStat deliveryStatistic;
@@ -172,14 +177,14 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
 	                deliveryStatistic.setGenerateStartTime(lastWorldMailingBackendLog.getCreationDate());
 	                deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SENT);
 	
-	                deliveryStatistic.setSentMails(deliveryStatDao.getSentMails(lastWorldMailingStatusID));
+	                deliveryStatistic.setSentMails(getSentMails(lastWorldMailingStatusID));
 	                deliveryStatistic.setSendStartTime(deliveryStatDao.getSendStartTime(lastWorldMailingStatusID));
 	                deliveryStatistic.setSendEndTime(deliveryStatDao.getSendEndTime(lastWorldMailingStatusID));
 	            }
 	        } else {
 	            // detailed stats for mailings beeing generated:
 	            try {
-	                MailingBackendLog mailingBackendLog = deliveryStatDao.getLastMailingBackendLog(statusID);
+	                MailingBackendLog mailingBackendLog = deliveryStatDao.getLastWorldMailingBackendLog(mailingID);
 	                if (mailingBackendLog != null) {
 	                    deliveryStatistic.setTotalMails(mailingBackendLog.getTotalMails());
 	                    deliveryStatistic.setGeneratedMails(mailingBackendLog.getCurrentMails());
@@ -193,7 +198,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
 	                        return deliveryStatistic;
 	                    }
 	
-	                    deliveryStatistic.setSentMails(deliveryStatDao.getSentMails(statusID));
+	                    deliveryStatistic.setSentMails(getSentMails(statusID));
 	                    deliveryStatistic.setSendStartTime(deliveryStatDao.getSendStartTime(statusID));
 	                    deliveryStatistic.setSendEndTime(deliveryStatDao.getSendEndTime(statusID));
 	

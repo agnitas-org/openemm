@@ -22,14 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.util.EmmCalendar;
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import org.agnitas.util.EmmCalendar;
+import org.apache.commons.lang3.StringUtils;
 
 public class ComBirtReportMailingSettings extends ComBirtReportSettings {
 
@@ -50,6 +49,7 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
     public static final int DATE_RANGE_MONTH = 7;
     public static final int DATE_RANGE_CUSTOM = 8;
     public static final int DATE_RANGE_DAY = 9;
+    public static final int DATE_RANGE_LAST_MONTH = 11;
 
     @Override
     public void loadDefaults() {
@@ -170,6 +170,13 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
                     calendar.add(EmmCalendar.DAY_OF_YEAR, -30);
                     calendar.add(EmmCalendar.SECOND, -1);
                     startDate = reportDateFormat.format(calendar.getTime());
+                    break;
+                case DATE_RANGE_LAST_MONTH:
+                    calendar.add(Calendar.MONTH, -1);
+                    calendar.set(Calendar.DAY_OF_MONTH, 1);
+                    startDate = reportDateFormat.format(calendar.getTime());
+                    calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+                    stopDate = reportDateFormat.format(calendar.getTime());
                     break;
                 case DATE_RANGE_CUSTOM:
                     startDate = getReportSettingAsString(BirtReportSettingsUtils.START_DATE);

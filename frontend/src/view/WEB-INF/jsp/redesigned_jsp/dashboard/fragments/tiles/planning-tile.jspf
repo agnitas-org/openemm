@@ -14,7 +14,7 @@
 <script id="dashboard-tile-planning" type="text/x-mustache-template">
     <div class="tile draggable-tile tile-tall" id="dashboard-planning" data-initializer="dashboard-planning">
         <div class="tile-header">
-            <h1 class="tile-title">{{- tileName }}</h1>
+            <h1 class="tile-title text-truncate">{{- tileName }}</h1>
         </div>
         <div class="tile-body">
             <div data-date-range>

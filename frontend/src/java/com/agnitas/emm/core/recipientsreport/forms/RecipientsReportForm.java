@@ -12,8 +12,11 @@ package com.agnitas.emm.core.recipientsreport.forms;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormDateTime;
 import org.agnitas.web.forms.PaginationForm;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class RecipientsReportForm extends PaginationForm {
 
@@ -84,5 +87,15 @@ public class RecipientsReportForm extends PaginationForm {
 
     public void setReportDate(DateRange reportDate) {
         this.reportDate = reportDate;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(fileName) || (types != null && types.length > 0) || reportDate.isPresent()
+                || datasourceId != null || adminId > 0;
+    }
+
+    @Override
+    public boolean ascending() {
+        return AgnUtils.sortingDirectionToBoolean(getOrder(), false);
     }
 }

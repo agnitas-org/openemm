@@ -297,7 +297,7 @@ AGN.Opt.Templates['datetime-picker'] = '\
   <div class="col-sm-8"> \
     <div class="input-group"> \
       <div class="input-group-controls"> \
-        <input type="text" id="{{- property }}_date" class="form-control datepicker-input js-datepicker" \
+        <input type="text" id="{{- property }}_date" class="form-control datepicker-input js-datepicker" {{- extraAttrs }} \
           data-value="{{- date}}" data-datepicker-options="format: {{- dateFormat}}"/> \
       </div> \
       <div class="input-group-btn"> \
@@ -310,7 +310,7 @@ AGN.Opt.Templates['datetime-picker'] = '\
   <div class="col-sm-4"> \
     <div class="input-group"> \
       <div class="input-group-controls"> \
-        <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" \
+        <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" {{- extraAttrs }} \
              data-timepicker-options=\"mask: \'h:s\'\"/> \
       </div> \
       <div class="input-group-addon"> \

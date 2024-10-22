@@ -10,18 +10,17 @@
 
 package com.agnitas.emm.core.target.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.agnitas.beans.SortingWebStorageEntry;
+import org.apache.commons.collections4.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.apache.commons.collections4.CollectionUtils;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-// TODO: EMMGUI-714: remove and replace with RowsCountWebStorageEntry when old design will be removed
+// TODO: EMMGUI-714: remove and replace with SortingWebStorageEntry when old design will be removed
 //  since filter for this table was removed in redesigned UI
-public class FilterTypesAndRowsCountWebStorageEntry extends RowsCountWebStorageEntry {
+public class FilterTypesAndRowsCountWebStorageEntry extends SortingWebStorageEntry {
     @JsonProperty("types")
     private List<String> filterTypes = Collections.emptyList();
 

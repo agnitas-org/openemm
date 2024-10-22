@@ -20,10 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.component.service.ComponentService;
+import com.agnitas.emm.core.components.service.ComponentService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.catalina.connector.ClientAbortException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -236,6 +237,9 @@ public class ShowFormImageServlet extends HttpServlet {
 	private void writeImageToResponse(HttpServletRequest request, HttpServletResponse response, CachedImageData image) {
 		try {
 			response.setContentType(image.mimeType);
+			if (BooleanUtils.toBoolean(request.getParameter("download"))) {
+				response.setHeader("Content-Disposition", "attachment");
+			}
 			try(ServletOutputStream out = response.getOutputStream()) {
 				out.write(image.imageData);
 				out.flush();

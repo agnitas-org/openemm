@@ -133,7 +133,7 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
         if (configService.getBooleanValue(ConfigValue.UseWkhtmltox, admin.getCompanyID())) {
             return generatePDFWithWkHtmlToPdf(url, title, admin, windowStatusForWaiting, landscape ? "Landscape" : "Portrait", footerMsgKey, customCss);
         }
-        File pdf = generatePDFWithPuppeteer(url, landscape, customCss);
+        File pdf = generatePDFWithPuppeteer(url, landscape, customCss, windowStatusForWaiting);
         try {
             return addAdditionalElements(admin, pdf, landscape, title, footerMsgKey);
         } catch (DocumentException ex) {
@@ -144,6 +144,11 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
     }
 
     @Override
+    public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException {
+		return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, "");
+	}
+
+	@Override
     public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException {
         return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, windowStatusForWaiting);
     }
@@ -287,18 +292,18 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
     }
 
     @Override
-    public File generatePDFWithPuppeteer(String url, boolean landscape, String customCss) throws IOException {
+    public File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowWaitStatus) throws IOException {
         File customCssFile = createFileWithCustomCss(customCss);
         try {
-            return createPdf(url, customCssFile.getAbsolutePath(), landscape);
+            return createPdf(url, customCssFile.getAbsolutePath(), landscape, windowWaitStatus);
         } finally {
             Files.deleteIfExists(customCssFile.toPath());
         }
     }
 
-    private File createPdf(String url, String customCssPath, boolean landscape) throws IOException {
+    private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus) throws IOException {
         File pdf = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
-        String command = generatePuppeteerPdfToolCommand(url, pdf.getAbsolutePath(), landscape, customCssPath);
+        String command = generatePuppeteerPdfToolCommand(url, pdf.getAbsolutePath(), landscape, customCssPath, windowWaitStatus);
         ProcessUtils.runCommand(command);
         if (!pdf.exists() || pdf.length() == 0) {
             throw new IOException("Pdf generation failed. Command: " + command);
@@ -306,8 +311,8 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
         return pdf;
     }
 
-    private String generatePuppeteerPdfToolCommand(String url, String path, boolean landscape, String customCssPath) {
-        return String.format("node %s %s %s %s %s", getPdfToolPath(), path, landscape, url, customCssPath);
+    private String generatePuppeteerPdfToolCommand(String url, String path, boolean landscape, String customCssPath, String windowWaitStatus) {
+        return String.format("node %s %s %s %s %s %s", getPdfToolPath(), path, landscape, url, customCssPath, windowWaitStatus);
     }
 
     private File createFileWithCustomCss(String customCss) throws IOException {

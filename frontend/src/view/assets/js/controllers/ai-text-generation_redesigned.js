@@ -1,47 +1,42 @@
-AGN.Lib.Controller.new('ai-text-generation', function() {
+AGN.Lib.Controller.new('ai-text-generation', function () {
 
   const Form = AGN.Lib.Form;
-  const Select = AGN.Lib.Select;
   let lastGeneratedText;
 
   this.addDomInitializer('ai-text-generation', function () {
-    const languageSelect = Select.get($('#ai-language'));
+    const languageSelect = AGN.Lib.Select.get(this.el.find('[data-ai-language]'));
     if (languageSelect.hasOption(window.adminLocale)) {
       languageSelect.selectValue(window.adminLocale);
     }
   });
 
-  this.addAction({
-    enterdown: 'skip-form-submit'
-  }, function () {
+  this.addAction({enterdown: 'skip-form-submit'}, function () {
     this.event.preventDefault();
   });
 
-  this.addAction({click: 'generateText'}, function() {
-    const $tile = this.el.closest('.tile');
+  this.addAction({click: 'generateText'}, function () {
+    const $scope = getParentScope$(this.el);
 
-    if (validateSettings($tile)) {
-      const settings = getSettingsFromUi($tile);
+    if (validateSettings($scope)) {
+      const settings = getSettingsFromUi($scope);
 
-      $.post(AGN.url("/mailing/content/generateText.action"), settings).done(resp => {
+      $.post(AGN.url('/mailing/content/generateText.action'), settings).done(resp => {
         lastGeneratedText = resp.data;
-        displayGeneratedText(resp.data, $tile);
+        displayGeneratedText(resp.data, $scope);
+        this.el.find('.text').text(t('ai.regenerateText'));
       }).fail(() => AGN.Lib.Messages.defaultError());
     }
   });
 
-  function validateSettings($tile) {
+  function validateSettings($scope) {
     let isValid = true;
-    const $numberOfWords = $tile.find("[id^='ai-numberOfWords']");
-    const $contentDescription = $tile.find("[id^='ai-content-description']");
+    const $numberOfWords = $scope.find('[data-ai-numberOfWords]');
+    const $contentDescription = $scope.find('[data-ai-contentDescription]');
 
     const numberOfWordsErrors = AGN.Lib.Validator.get('number').errors($numberOfWords, {min: 1, required: true});
     if (numberOfWordsErrors.length > 0) {
       isValid = false;
-
-      numberOfWordsErrors.forEach(function(error, index) {
-        Form.showFieldError$($numberOfWords, error.msg);
-      });
+      numberOfWordsErrors.forEach((error, index) => Form.showFieldError$($numberOfWords, error.msg));
     } else {
       Form.cleanFieldFeedback$($numberOfWords);
     }
@@ -56,13 +51,17 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
     return isValid;
   }
 
-  this.addAction({click: 'assumeGeneratedText'}, function() {
-    const $tile = this.el.closest('.tile');
-    const tabId = this.el.data('tab-id');
-    const text = $tile.find('.ai-generated-text').val();
+  this.addAction({click: 'applyGeneratedText'}, function () {
+    const $scope = getParentScope$(this.el);
+    const text = getAiResult$($scope).val();
 
-    openEditorTab(tabId);
-    setEditorContent(text, $tile, tabId);
+    if ($scope.is('.tile')) {
+      const tabId = this.el.closest('[data-tab-id]').data('tab-id');
+      openEditorTab(tabId);
+      setEditorContent(text, $scope, tabId);
+    } else {
+      AGN.Lib.Confirm.get(this.el).positive(text);
+    }
   });
 
   function openEditorTab(tabId) {
@@ -78,17 +77,15 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
     }
   }
 
-  function setEditorContent(content, $tile, tabId) {
-    const $textArea = $tile.find('.js-wysiwyg');
+  function setEditorContent(content, $scope, tabId) {
+    const $textArea = $scope.find('.js-wysiwyg');
 
     if ($('#tab-content-wysiwyg').is(":visible") || $(`[id^='tab-grid-wysiwyg${tabId}']`).is(":visible")) {
       var editor = CKEDITOR.instances[$textArea.attr('id')];
       if (editor.status === 'ready') {
         editor.setData(content)
       } else {
-        editor.on("instanceReady", function (event) {
-          event.editor.setData(content);
-        });
+        editor.on("instanceReady", event => event.editor.setData(content));
       }
     }
     if ($('#contentEditor').is(":visible") || $(`[id^='tab-grid-html${tabId}']`).is(":visible")) {
@@ -98,15 +95,23 @@ AGN.Lib.Controller.new('ai-text-generation', function() {
 
   function getSettingsFromUi($scope) {
     return {
-      language: $scope.find('[id^="ai-language"]').val(),
-      numberOfWords: $scope.find('[id^="ai-numberOfWords"]').val(),
-      tonality: $scope.find('[id^="ai-tonality"]').val(),
-      contentDescription: $scope.find('[id^="ai-content-description"]').val()
+      language: $scope.find('[data-ai-language]').val(),
+      numberOfWords: $scope.find('[data-ai-numberOfWords]').val(),
+      tonality: $scope.find('[data-ai-tonality]').val(),
+      contentDescription: $scope.find('[data-ai-contentDescription]').val()
     }
   }
 
   function displayGeneratedText(text, $scope) {
-    $scope.find('.ai-generated-text').val(text);
-    $scope.find('#ai-assume-generated-text').removeClass('hidden');
+    getAiResult$($scope).val(text).trigger('change');
+    $scope.find('#ai-apply-text-btn').removeClass('hidden');
+  }
+
+  function getAiResult$($scope) {
+    return $scope.find('[data-ai-result]');
+  }
+
+  function getParentScope$($el) {
+    return $el.closest('.tile, .modal');
   }
 });

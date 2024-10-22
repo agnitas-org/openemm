@@ -14,7 +14,11 @@ import java.io.InputStream;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public interface UserFormImporter {
+    FormImportResult importUserForm(MultipartFile file, Locale locale, int companyId);
+
 	FormImportResult importUserForm(int companyID, InputStream input, Locale locale, Map<Integer, Integer> actionIdReplacements) throws Exception;
 
 	FormImportResult importUserForm(int companyID, InputStream input, String formName, String description, Locale locale, Map<Integer, Integer> actionIdReplacements) throws Exception;

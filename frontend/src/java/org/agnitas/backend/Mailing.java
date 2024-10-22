@@ -195,6 +195,10 @@ public class Mailing {
 			}
 		}
 	}
+	
+	public long findMailingByName (String mailingName, long companyID) throws SQLException {
+		return exists () ? mailing.findMailingByName (data.dbase, mailingName, companyID) : 0L;
+	}
 
 	public long mailingID() {
 		return exists() ? mailing.mailingID() : 0L;

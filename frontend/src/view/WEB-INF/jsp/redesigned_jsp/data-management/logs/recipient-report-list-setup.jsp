@@ -3,11 +3,9 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="agnTitleKey" 			value="statistic.protocol" 	          scope="request" />
-<c:set var="agnSubtitleKey" 		value="statistic.protocol" 	          scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 		          scope="request" />
 <c:set var="sidemenu_sub_active" 	value="statistic.protocol" 	          scope="request" />
 <c:set var="agnHighlightKey" 		value="statistic.protocol" 	          scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 				          scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="ImportExport" 		          scope="request" />
 <c:set var="agnHelpKey" 			value="Logs" 				          scope="request" />
 <c:set var="agnEditViewKey" 	    value="recipient-reports-overview" 	  scope="request" />

@@ -13,7 +13,7 @@
 <c:set var="actionUrl" value="/${isRestfulUser ? 'restfulUser' : 'admin'}/${adminRightsForm.adminID}/rights/view.action" />
 <mvc:form id="PermissionForm" servletRelativeAction="${actionUrl}" modelAttribute="adminRightsForm"
           data-controller="user|groups-permissions"
-          cssClass="tiles-container d-flex hidden" data-editable-view="${agnEditViewKey}">
+          cssClass="tiles-container" data-editable-view="${agnEditViewKey}">
 
     <%@ include file="../permissions.jspf" %>
 

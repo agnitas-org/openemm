@@ -1,6 +1,12 @@
 
 #dashboard-news {
-  .tile .tile-body {
-    line-height: initial;
+  .tile--sm {
+    .tile-header {
+      padding-block: $gap-x-sm;
+    }
+
+    .tile-body {
+      line-height: initial;
+    }
   }
 }

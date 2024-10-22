@@ -1,11 +1,11 @@
 
 <script id="save-before-pdf-modal" type="text/x-mustache-template">
     <div class="modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="workflow.pdf.saveCampaign"/></h1>
-                    <button type="button" class="btn-close shadow-none js-confirm-negative" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -15,7 +15,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <a href="#" class="btn btn-primary flex-grow-1" data-dismiss="modal" data-action="workflow-save">
+                    <a href="#" class="btn btn-primary" data-dismiss="modal" data-action="workflow-save">
                         <mvc:message code="button.Save"/>
                     </a>
                 </div>

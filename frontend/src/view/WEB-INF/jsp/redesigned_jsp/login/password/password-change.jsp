@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
@@ -15,7 +15,7 @@
 
 <c:set var="backToLogin" value="true" scope="request" />
 
-<div data-controller="logon-password-change">
+<div>
     <div id="suggestion-view" class="row g-3 ${isExpired or isAnotherAttempt ? 'hidden' : ''}">
         <div class="col-12">
             <c:if test="${isExpiring}">

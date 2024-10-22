@@ -14,6 +14,8 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.emm.common.exceptions.InvalidCharsetException;
+import com.agnitas.emm.common.exceptions.TooManyFilesInZipToImportException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.dto.FileDto;
@@ -32,6 +34,7 @@ import com.agnitas.emm.data.DataProvider;
 import com.agnitas.emm.data.ExcelDataProvider;
 import com.agnitas.emm.data.JsonDataProvider;
 import com.agnitas.emm.data.OdsDataProvider;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
@@ -43,6 +46,8 @@ import com.agnitas.web.mvc.impl.PopupsImpl;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
@@ -79,6 +84,7 @@ import org.agnitas.web.ProfileImportReporter;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.FileSystemResource;
@@ -228,7 +234,7 @@ public class RecipientImportController {
 
         boolean isProfileValid = validateImportProfile(profile, popups);
 
-        if (!isProfileValid || !isFileValid(fileDto.toFile(), profile, admin, popups)) {
+        if (!isProfileValid || !isFileValid(fileDto.toFile(), profile, popups)) {
             if (admin.permissionAllowed(Permission.IMPORT_CHANGE) && importProfileService.isManageAllowed(profile, admin)) {
                 return String.format("redirect:/import-profile/%d/view.action", profile.getId());
             }
@@ -236,7 +242,7 @@ public class RecipientImportController {
             return MESSAGES_VIEW;
         }
 
-        ServiceResult<List<List<String>>> parsingResult = parseImportFileContent(fileDto.toFile(), profile, admin);
+        ServiceResult<List<List<String>>> parsingResult = parseImportFileContent(fileDto.toFile(), profile);
         if (!parsingResult.isSuccess()) {
             popups.addPopups(parsingResult);
             return MESSAGES_VIEW;
@@ -254,9 +260,35 @@ public class RecipientImportController {
             model.addAttribute("possibleToSelectMailinglist", true);
         }
 
-        model.addAttribute("parsedContent", parsingResult.getResult());
+        if (admin.isRedesignedUiUsed()) {
+            List<List<String>> result = parsingResult.getResult();
+            model.addAttribute("columnsNames", result.get(0));
+            model.addAttribute("columnsData", previewResultDataToJson(
+                    result.subList(1, result.size()),
+                    result.get(0)
+            ));
+        } else {
+            model.addAttribute("parsedContent", parsingResult.getResult());
+        }
+
 
         return "recipient_import_preview";
+    }
+
+    private JSONArray previewResultDataToJson(List<List<String>> data, List<String> columns) {
+        final JSONArray jsonArray = new JSONArray();
+
+        for (List<String> rowData : data) {
+            final JSONObject entry = new JSONObject();
+
+            for (int i = 0; i < rowData.size(); i++) {
+                entry.element(columns.get(i), StringEscapeUtils.escapeHtml4(rowData.get(i)));
+            }
+
+            jsonArray.add(entry);
+        }
+
+        return jsonArray;
     }
 
     private boolean existsWaitingForInteractionWorker(HttpSession session) {
@@ -265,7 +297,8 @@ public class RecipientImportController {
     }
 
     @RequestMapping("/execute.action")
-    public Object execute(@ModelAttribute("form") RecipientImportForm form, Admin admin, Popups popups, HttpSession session) throws Exception {
+    public Object execute(@ModelAttribute("form") RecipientImportForm form,
+                          Admin admin, Popups popups, HttpSession session) throws Exception {
         ProfileImportWorker importWorker;
 
         if (isWorkerExists(session)) {
@@ -282,7 +315,7 @@ public class RecipientImportController {
         }
 
         Callable<Object> worker = () -> {
-            importWorker.call();
+            importWorker.call(); // Safe call. Implementation of call() prevents worker from running twice.
 
             Map<String, Object> attributesMap = new HashMap<>();
 
@@ -307,7 +340,7 @@ public class RecipientImportController {
 
         Map<String, Object> attributesMap = new HashMap<>();
 
-        PollingUid pollingUid = PollingUid.builder(session.getId(), IMPORT_DATA_KEY).setRetained(false).build();
+        PollingUid pollingUid = new PollingUid(session.getId(), IMPORT_DATA_KEY, importWorker.isIgnoresErroneousData());
         return new Pollable<>(pollingUid, SHORT_TIMEOUT, new ModelAndView(viewProgress(importWorker, attributesMap, false), attributesMap), worker);
     }
 
@@ -378,7 +411,7 @@ public class RecipientImportController {
     }
 
     @RequestMapping("/errors/edit.action")
-    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session, Popups popups) {
+    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session, Popups popups, Admin admin) {
         Callable<Object> worker = () -> {
             ProfileImportWorker importWorker = extractImportWorker(session);
             Map<String, Object> attributesMap = new HashMap<>();
@@ -405,7 +438,11 @@ public class RecipientImportController {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_WIZARD_ERRORS_OVERVIEW, form);
 
         PollingUid pollingUid = new PollingUid(session.getId(), ERRORS_EDIT_KEY);
-        return new Pollable<>(pollingUid, SHORT_TIMEOUT, "recipient_import_loading", worker);
+        if (admin.isRedesignedUiUsed()) {
+            return new Pollable<>(pollingUid, Pollable.SHORT_TIMEOUT, new ModelAndView("redirect:/recipient/import/errors/edit.action", form.toMap()), worker);
+        } else {
+            return new Pollable<>(pollingUid, SHORT_TIMEOUT, "recipient_import_loading", worker);
+        }
     }
 
     @PostMapping("/errors/save.action")
@@ -504,15 +541,24 @@ public class RecipientImportController {
     }
 
     @PostMapping("/file/delete.action")
-    public @ResponseBody BooleanResponseDto deleteFile(HttpSession session) throws IOException {
-        FileDto fileDto = getUploadedFileFromSession(session);
+    public @ResponseBody BooleanResponseDto deleteFile(HttpSession session) {
+        return new BooleanResponseDto(deleteFileFromSession(session));
+    }
 
-        if (fileDto != null) {
-            session.removeAttribute(RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME);
-            Files.deleteIfExists(fileDto.toFile().toPath());
+    private boolean deleteFileFromSession(HttpSession session) {
+        try {
+            FileDto fileDto = getUploadedFileFromSession(session);
+
+            if (fileDto != null) {
+                session.removeAttribute(RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME);
+                Files.deleteIfExists(fileDto.toFile().toPath());
+            }
+
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Error occurred when delete import file!", e);
+            return false;
         }
-
-        return new BooleanResponseDto(true);
     }
 
     private String continueImportExecution() {
@@ -711,8 +757,8 @@ public class RecipientImportController {
                 .collect(Collectors.toList());
     }
 
-    private ServiceResult<List<List<String>>> parseImportFileContent(File importFile, ImportProfile profile, Admin admin) throws Exception {
-		DataProvider dataProvider = getDataProvider(profile, importFile, admin);
+    private ServiceResult<List<List<String>>> parseImportFileContent(File importFile, ImportProfile profile) throws Exception {
+		DataProvider dataProvider = getDataProvider(profile, importFile);
 		List<String> dataPropertyNames = dataProvider.getAvailableDataPropertyNames();
         List<List<String>> previewParsedContent = new LinkedList<>();
 
@@ -884,9 +930,19 @@ public class RecipientImportController {
         }
     }
 
-    private boolean isFileValid(File importFile, ImportProfile profile, Admin admin, Popups popups) throws Exception {
-		DataProvider dataProvider = getDataProvider(profile, importFile, admin);
-		List<String> dataPropertyNames = dataProvider.getAvailableDataPropertyNames();
+    private boolean isFileValid(File importFile, ImportProfile profile, Popups popups) throws Exception {
+		DataProvider dataProvider = getDataProvider(profile, importFile);
+		List<String> dataPropertyNames;
+        try {
+            dataPropertyNames = dataProvider.getAvailableDataPropertyNames();
+        } catch (InvalidCharsetException e) {
+            LOGGER.error("Invalid import file: {}", e.getMessage(), e);
+            popups.alert("error.import.charset");
+            return false;
+        } catch (TooManyFilesInZipToImportException e) {
+            LOGGER.error(e.getMessage());
+            throw new RequestErrorException("error.import.zip.files");
+        }
 		
 		if (dataPropertyNames == null || dataPropertyNames.isEmpty()) {
 			popups.alert("error.emptyImportFile");
@@ -899,14 +955,21 @@ public class RecipientImportController {
         }
 
 		Set<String> processedColumns = new CaseInsensitiveSet();
+		Set<String> duplicateColumns = new CaseInsensitiveSet();
         for (String dataPropertyName : dataPropertyNames) {
             if (StringUtils.isBlank(dataPropertyName)) {
+            	popups.alert("error.import.column.name.empty");
                 return false;
             } else if (processedColumns.contains(dataPropertyName)) {
-                return false;
+            	duplicateColumns.add(dataPropertyName);
             } else {
             	processedColumns.add(dataPropertyName);
             }
+        }
+        
+        if (!duplicateColumns.isEmpty()) {
+        	popups.alert("error.import.column.name.duplicate", StringUtils.join(duplicateColumns, ", "));
+        	return false;
         }
 
         for (ColumnMapping mapping : profile.getColumnMapping()) {
@@ -922,19 +985,17 @@ public class RecipientImportController {
 
     private boolean isValidSeparatorUsed(Separator validSeparator, List<String> columns) {
         if (columns.size() != 1) {
-            return true; // columns was parsed successfully
+            return true; // columns were parsed successfully
         }
 
         String columnLine = columns.get(0);
 
         return Stream.of(Separator.values())
                 .filter(s -> !s.equals(validSeparator))
-                .noneMatch(s -> {
-                    return columnLine.contains(String.valueOf(s.getValueChar()));
-                });
+                .noneMatch(s -> columnLine.contains(String.valueOf(s.getValueChar())));
     }
 
-	private DataProvider getDataProvider(ImportProfile importProfile, File importFile, Admin admin) throws Exception {
+	private DataProvider getDataProvider(ImportProfile importProfile, File importFile) throws Exception {
 		switch (ImportDataType.getImportDataTypeForName(importProfile.getDatatype())) {
 			case CSV:
 				Character valueCharacter = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
@@ -948,8 +1009,7 @@ public class RecipientImportController {
 					false,
 					true,
 					importProfile.isNoHeaders(),
-					null,
-                    admin.permissionAllowed(Permission.IMPORT_FILE_EXTENDED_CHECK));
+					null);
 			case Excel:
 				return new ExcelDataProvider(
 					importFile,
@@ -1043,12 +1103,16 @@ public class RecipientImportController {
     }
 
     protected FileDto getImportFile(RecipientImportForm form, Admin admin, HttpSession session) throws IOException {
-        FileDto uploadedFile = getUploadedFileFromSession(session);
+        FileDto uploadedFile;
 
-        if (uploadedFile == null) {
+        if (form.getUploadFile() != null) {
+            deleteFileFromSession(session);
+
             File importFile = ImportUtils.createTempImportFile(form.getUploadFile(), admin);
             uploadedFile = new LocalFileDto(importFile.getAbsolutePath(), form.getUploadFile().getOriginalFilename());
             session.setAttribute(RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME, uploadedFile);
+        } else {
+            uploadedFile = getUploadedFileFromSession(session);
         }
 
         return uploadedFile;

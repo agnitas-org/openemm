@@ -11,10 +11,17 @@
 package com.agnitas.emm.core.datasource.bean.impl;
 
 import com.agnitas.emm.core.datasource.bean.DataSource;
+import org.agnitas.dao.SourceGroupType;
+
+import java.util.Date;
 
 public class DataSourceImpl implements DataSource {
+
     private int id;
     private String description;
+    private Date timestamp;
+    private SourceGroupType sourceGroupType;
+    private String extraData; // stores additional information depending on source group
 
     @Override
     public int getId() {
@@ -34,5 +41,35 @@ public class DataSourceImpl implements DataSource {
     @Override
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    @Override
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public SourceGroupType getSourceGroupType() {
+        return sourceGroupType;
+    }
+
+    @Override
+    public void setSourceGroupType(SourceGroupType sourceGroupType) {
+        this.sourceGroupType = sourceGroupType;
+    }
+
+    @Override
+    public String getExtraData() {
+        return extraData;
+    }
+
+    @Override
+    public void setExtraData(String extraData) {
+        this.extraData = extraData;
     }
 }

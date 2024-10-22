@@ -1,6 +1,4 @@
-(function(){
-
-  var Tile = AGN.Lib.Tile;
+(() => {
 
   function isHeaderTitle(el) {
     const titleSelector = '.tile-header .tile-title';
@@ -21,25 +19,13 @@
     if ($tile.data('toggle-tile') === 'mobile' && !isCurrentScreenMobile) {
       return;
     }
+
     if ((isCurrentScreenMobile && !isHeaderControls(e.target)) || isHeaderTitle(e.target)) {
-      Tile.toggle($tile);
+      AGN.Lib.Tile.toggle($tile);
       AGN.Lib.Scrollbar.get($tile)?.update();
       return;
     }
     e.preventDefault();
-  });
-
-  $(document).on('click', '[data-toggle-tile-all]', function(e) {
-    var action = $(this).data('toggle-tile-all');
-    _.each($('[data-toggle-tile]'), function(tile) {
-      var trigger = $(tile);
-      if(action == 'expand') {
-        Tile.show(trigger);
-      } else {
-        Tile.hide(trigger);
-      }
-      e.preventDefault();
-    });
   });
 
 })();

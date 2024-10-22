@@ -216,7 +216,6 @@
 	<bean id="RecipientQueryBuilder" class="org.agnitas.service.impl.RecipientQueryBuilderImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="targetDao" ref="TargetDao" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
         <property name="configService" ref="ConfigService"/>
@@ -232,7 +231,7 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="sendActionbasedMailingService" ref="SendActionbasedMailingService" />
-		<property name="maildropStatusDao" ref="MaildropStatusDao" />
+		<property name="maildropService" ref="MaildropService" />
 		<property name="recipientService" ref="recipientService" />
 		<property name="extensibleUIDService" ref="ExtensibleUIDService" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />

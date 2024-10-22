@@ -52,4 +52,8 @@ public class PlaceholderUtils {
 
         return false;
     }
+
+    public static boolean isMultiPh(ComGridPlaceholder ph) {
+        return ph.getPlaceholderType() == GridCustomPlaceholderType.Multi.getId();
+    }
 }

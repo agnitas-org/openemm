@@ -13,8 +13,11 @@ package org.agnitas.backend.dao;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.backend.DBase;
+import org.agnitas.backend.Media;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Log;
 
 /**
@@ -131,5 +134,73 @@ public class RecipientDAO {
 			}
 		}
 		return 0L;
+	}
+	
+	public long findOrCreateRecipient (DBase dbase, String email, long companyID, long mailinglistID, UserStatus userStatus) throws SQLException {
+		long	customerID = 0L;
+		
+		try (DBase.With with = dbase.with()) {
+			List <Map <String, Object>>	rq;
+			Map <String, Object>		row;
+			long				fallbackCustomerID = 0L;
+
+			rq = dbase.query (with.cursor (),
+					  "SELECT cust.customer_id, bind.user_status " +
+					  "FROM customer_" + companyID + "_tbl cust LEFT OUTER JOIN customer_" + companyID + "_binding_tbl bind ON bind.customer_id = cust.customer_id " +
+					  "WHERE cust.email = :email AND (bind.mailinglist_id IS NULL OR bind.mailinglist_id = :mailinglistID)",
+					  "email", email, "mailinglistID", mailinglistID);
+			if (rq != null) {
+				for (int n = 0; n < rq.size (); ++n) {
+					row = rq.get (n);
+					long	dbCustomerID = dbase.asLong (row.get ("customer_id"));
+
+					if (row.get ("user_status") == null) {
+						fallbackCustomerID = max (fallbackCustomerID, dbCustomerID);
+					} else {
+						customerID = max (customerID, dbCustomerID);
+					}
+				}
+			}
+			if (customerID == 0L) {
+				if (fallbackCustomerID > 0L) {
+					customerID = fallbackCustomerID;
+				} else {
+					String	query;
+					
+					if (dbase.isOracle ()) {
+						dbase.update (with.cursor (),
+							      "INSERT INTO customer_" + companyID + "_tbl " +
+							      "       (customer_id, email, gender, mailtype) " +
+							      "VALUES " +
+							      "       (customer_" + companyID + "_tbl_seq.nextval, :email, 2, 1)",
+							      "email", email);
+						query = "SELECT customer_" + companyID + "_tbl_seq.currval FROM DUAL";
+					} else {
+						dbase.update (with.cursor (),
+							      "INSERT INTO customer_" + companyID + "_tbl " +
+							      "       (email, gender, mailtype) " +
+							      "VALUES " +
+							      "       (:email, 2, 1)",
+							      "email", email);
+						query = "SELECT last_insert_id()";
+					}
+					customerID = dbase.queryLong (with.cursor (), query);
+				}
+				if (customerID > 0L) {
+					dbase.update (with.cursor (),
+						      "INSERT INTO customer_" + companyID + "_binding_tbl " +
+						      "       (customer_id, mailinglist_id, mediatype, user_status, user_type, timestamp, creation_date) " +
+						      "VALUES " +
+						      "       (:customerID, :mailinglistID, :mediaType, :userStatus, :userType, current_timestamp, current_timestamp)",
+						      "customerID", customerID, "mailinglistID", mailinglistID,
+						      "mediaType", Media.TYPE_EMAIL, "userStatus", UserStatus.Suspend.getStatusCode (),
+						      "userType", "W");
+				}
+			}
+		}
+		return customerID;
+	}
+	private long max (long a, long b) {
+		return a > b ? a : b;
 	}
 }

@@ -36,7 +36,7 @@
             <div class="col-12">
                 <div class="tile tile--sm">
                     <div class="tile-header">
-                        <label class="form-label m-0"><mvc:message code="default.Content" /></label>
+                        <h3 class="tile-title text-dark"><mvc:message code="default.Content" /></h3>
 
                         <div class="tile-title-controls">
                             <select id="service-mail-content-type-{{-index}}" name="service-mail-content-type-{{-index}}" class="form-control js-select"

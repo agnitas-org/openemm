@@ -84,7 +84,6 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.emm.core.Permission;
@@ -97,7 +96,9 @@ import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
 import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.data.CsvDataProvider;
 import com.agnitas.emm.data.DataProvider;
 import com.agnitas.emm.data.ExcelDataProvider;
@@ -108,13 +109,13 @@ import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
-import com.agnitas.service.ColumnInfoService;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
 public class ProfileImportWorker {
-    private static final transient Logger logger = LogManager.getLogger(ProfileImportWorker.class);
+
+    private static final Logger logger = LogManager.getLogger(ProfileImportWorker.class);
 
 	private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
 	
@@ -131,7 +132,7 @@ public class ProfileImportWorker {
 
 	private ConfigService configService;
     private ImportRecipientsDao importRecipientsDao;
-    private ColumnInfoService columnInfoService;
+    private RecipientFieldService recipientFieldService;
     private ImportProcessActionDao importProcessActionDao = null;
     private EmmActionService emmActionService = null;
 	private ProfileFieldEncryptor profileFieldEncryptor = null;
@@ -170,7 +171,9 @@ public class ProfileImportWorker {
 	private Map<Integer, Map<MediaTypes, Map<UserStatus, Integer>>> mailinglistStatusesForImportedRecipients;
 	private EmailValidator emailValidator = null;
 	private ImportQuotaCheckService importQuotaService;
-	
+	private int throttleSecondsPerImportBlock = 0;
+	private List<String> unknownGenderSet;
+
 	private boolean checkHtmlTags = true;
 	private boolean allowSafeHtmlTags = false;
 
@@ -204,8 +207,8 @@ public class ProfileImportWorker {
 		this.importRecipientsDao = importRecipientsDao;
 	}
 	
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = recipientFieldService;
 	}
 
 	public void setImportProcessActionDao(ImportProcessActionDao importProcessActionDao) {
@@ -234,6 +237,14 @@ public class ProfileImportWorker {
 
 	public void setImportFile(RemoteFile importFile) {
 		this.importFile = importFile;
+	}
+
+	public void setThrottleImportPerBlock(int throttleSecondsPerImportBlock) {
+		this.throttleSecondsPerImportBlock = throttleSecondsPerImportBlock;
+	}
+
+	public int getThrottleImportPerBlock() {
+		return throttleSecondsPerImportBlock;
 	}
 
 	public RemoteFile getImportFile() {
@@ -407,6 +418,7 @@ public class ProfileImportWorker {
 			} else {
 				emailValidator = AgnitasEmailValidator.getInstance();
 			}
+			unknownGenderSet = AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.GenderUnknownDefaultValues, importProfile.getCompanyId()));
 
 			importValidationCheck();
 
@@ -655,24 +667,34 @@ public class ProfileImportWorker {
 	}
 
 	private void importValidationCheck() throws Exception {
-		CaseInsensitiveMap<String, ProfileField> profilefields;
-		if (admin != null) {
-			profilefields = columnInfoService.getColumnInfoMap(importProfile.getCompanyId(), admin.getAdminID());
-		} else {
-			profilefields = columnInfoService.getColumnInfoMap(importProfile.getCompanyId());
-		}
-		
+		Map<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>();
+    	for (RecipientFieldDescription recipientField : recipientFieldService.getRecipientFields(importProfile.getCompanyId())) {
+    		recipientFieldsMap.put(recipientField.getColumnName(), recipientField);
+    	}
+    	
 		Set<String> mappedDbColumns = new HashSet<>();
 		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 			if (!ColumnMapping.DO_NOT_IMPORT.equals(mapping.getDatabaseColumn())) {
-				if (!profilefields.containsKey(mapping.getDatabaseColumn())) {
-					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
-				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.NotVisible) {
-					throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
-				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
-					throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
-				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
-					throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+				if (admin != null) {
+					if (!recipientFieldsMap.containsKey(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getAdminPermission(admin.getAdminID()) == ProfileFieldMode.NotVisible) {
+						throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
+					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getAdminPermission(admin.getAdminID()) == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
+					} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+					}
+				} else {
+					if (!recipientFieldsMap.containsKey(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getDefaultPermission() == ProfileFieldMode.NotVisible) {
+						throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
+					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getDefaultPermission() == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
+					} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
+						throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+					}
 				}
 			}
 		}
@@ -974,8 +996,8 @@ public class ProfileImportWorker {
         try {
             additionalDbColumns.add(databaseColumn);
             additionalDbValues.add(getDefValForDB(columnMapping));
-        } catch (@SuppressWarnings("unused") Exception e) {
-            throw new ImportException(false, "error.import.invalidDataForField", databaseColumn);
+        } catch (Exception e) {
+            throw new ImportException(false, "error.import.invalidDataForField", databaseColumn, e);
         }
     }
     
@@ -1168,6 +1190,10 @@ public class ProfileImportWorker {
 				}
 				
 				if ((dataItemIndex + 1) % batchBlockSize == 0) {
+					if (throttleSecondsPerImportBlock > 0) {
+						Thread.sleep(throttleSecondsPerImportBlock * 1000);
+					}
+					
 					try {
 						int[] results = preparedStatement.executeBatch();
 						connection.commit();
@@ -1276,7 +1302,6 @@ public class ProfileImportWorker {
 
 	/**
 	 * Change data in temporary error table and revalidate the data
-	 * @throws Exception
 	 */
 	public void setBeansAfterEditOnErrorEditPage(Map<String, String> changedValues) throws Exception {
 		List<Integer> updatedCsvIndexes = importRecipientsDao.updateTemporaryErrors(importProfile.getCompanyId(), temporaryErrorTableName, importedDataFileAttributes, changedValues);
@@ -1285,6 +1310,10 @@ public class ProfileImportWorker {
 
 	public void ignoreErroneousData() {
 		ignoreErrors = true;
+	}
+
+	public boolean isIgnoresErroneousData() {
+		return ignoreErrors;
 	}
 
 	private void revalidateTemporaryErrorTable(List<Integer> revalidateCsvIndexes) throws Exception {
@@ -1395,6 +1424,10 @@ public class ProfileImportWorker {
 		// Apply gender rules
 		if ("gender".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 			Integer genderValue = importProfile.getGenderValueByFieldValue(dataValueString);
+
+			if (genderValue == null && unknownGenderSet.contains(StringUtils.lowerCase(dataValueString))) {
+				genderValue = Gender.UNKNOWN.getStorageValue();
+			}
 			if (genderValue == null) {
 				Gender estimatedGender = Gender.getGenderByDefaultGenderMapping(dataValueString);
 				if (estimatedGender != Gender.UNKNOWN) {
@@ -1629,7 +1662,7 @@ public class ProfileImportWorker {
 					}
 				}
 					
-				preparedStatement.setString(columnIndex + 1, dataValueString);
+				preparedStatement.setNString(columnIndex + 1, dataValueString);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(dataValueString);
 				}
@@ -1641,7 +1674,7 @@ public class ProfileImportWorker {
 					batchValueEntry.add(null);
 				}
 			} else {
-				preparedStatement.setString(columnIndex + 1, dataValueString);
+				preparedStatement.setNString(columnIndex + 1, dataValueString);
 				if (batchValueEntry != null) {
 					batchValueEntry.add(dataValueString);
 				}

@@ -1,0 +1,11 @@
+<div class="input-group">
+    <span class="input-group-text input-group-text--disabled text-start d-block"><mvc:message code="${labelCode}"/></span>
+    <div class="d-flex gap-1 w-100">
+        <input class="form-control border-left-radius-0 flex-grow-1" type="text" readonly value="${count}">
+        <c:if test="${count > 0}">
+            <a href="<c:url value="/recipient/import/wizard/downloadCsv.action?downloadName=${downloadName}"/>" class="btn btn-icon btn-primary" data-tooltip="<mvc:message code="button.Download"/>">
+                <i class="icon icon-download"></i>
+            </a>
+        </c:if>
+    </div>
+</div>

@@ -172,13 +172,9 @@ AGN.Lib.Controller.new('img-editor', function() {
     }
   }
 
-  this.addAction({input: 'change-size'}, changeSize);
+  this.addAction({input: 'change-size'}, () => changeSize());
 
-  this.addAction({input: 'change-size-via-percentage'}, changeSizeVIaPercentage);
-
-  function changeSizeVIaPercentage() {
-    changeSize(true);
-  }
+  this.addAction({input: 'change-size-via-percentage'}, () => changeSize(true));
 
   function getImgHeight$() {
     return $('#img-height');
@@ -214,12 +210,14 @@ AGN.Lib.Controller.new('img-editor', function() {
     let newWidth = getImgWidth$().val();
     let newHeight = getImgHeight$().val();
 
-    if ($("#img-width").is(":focus")) {
-      const percentage = newWidth / oldWidth;
-      newHeight = Math.round(percentage * oldHeight);
-    } else if ($("#img-height").is(":focus")) {
-      const percentage = newHeight / oldHeight;
-      newWidth = Math.round(percentage * oldWidth);
+    if (isProportionsLocked()) {
+      if ($("#img-width").is(":focus")) {
+        const percentage = newWidth / oldWidth;
+        newHeight = Math.round(percentage * oldHeight);
+      } else if ($("#img-height").is(":focus")) {
+        const percentage = newHeight / oldHeight;
+        newWidth = Math.round(percentage * oldWidth);
+      }
     }
     return {newWidth, newHeight};
   }
@@ -275,6 +273,16 @@ AGN.Lib.Controller.new('img-editor', function() {
 
   function disableResize() {
     toggleResize(false);
+  }
+
+  this.addAction({change: 'lock-proportions'}, async function() {
+    let locked = isProportionsLocked();
+    toggleBtn('lock-proportions', locked);
+    getCanvas$().resizable('option', 'aspectRatio', locked)
+  });
+
+  function isProportionsLocked() {
+    return $('[data-action="lock-proportions"]').prop('checked');
   }
 
   function toggleResize(state) {

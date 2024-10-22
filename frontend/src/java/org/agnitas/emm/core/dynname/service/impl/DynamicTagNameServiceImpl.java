@@ -12,7 +12,7 @@ package org.agnitas.emm.core.dynname.service.impl;
 
 import java.util.List;
 
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.dynname.service.DynamicTagNameService;
 import org.agnitas.emm.core.dynname.service.NameModel;
 import org.agnitas.emm.core.dynname.service.validation.NameModelValidator;

@@ -1,90 +1,103 @@
 (function() {
-    var Def = AGN.Lib.WM.Definitions,
-        Confirm = AGN.Lib.Confirm;
+  const Def = AGN.Lib.WM.Definitions;
+  const Confirm = AGN.Lib.Confirm;
 
-    var Dialogs = {
-        Activation: activationDialog,
-        Deactivation: deactivationDialog,
-        confirmTestingStartStop: confirmTestingStartStop,
-        confirmMailingDataTransfer: confirmMailingDataTransfer,
-        confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding,
-        confirmCopy: confirmCopy
+  const Dialogs = {
+    Activation: activationDialog,
+    Deactivation: deactivationDialog,
+    confirmTestingStartStop: confirmTestingStartStop,
+    confirmMailingDataTransfer: confirmMailingDataTransfer,
+    confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding,
+    createAutoOpt: createAutoOpt,
+    confirmCopy: confirmCopy,
+    connectionNotAllowed: connectionNotAllowed,
+    createMailing: createMailing,
+    mailingInUseDialog: mailingInUseDialog,
+    simpleDialog: simpleDialog,
+  };
+
+  function activationDialog(mailings, isUnpause) {
+    const confirm = Confirm.createFromTemplate({ rows: mailings.length }, 'activate-campaign-dialog');
+    if (!isUnpause) {
+      createDialogMailingsTable(mailings);
+    }
+    return confirm;
+  }
+
+  function createDialogMailingsTable(mailings) {
+    const columns = getDialogMailingsTableCols();
+    const options = getDialogMailingsTableOptions();
+    new AGN.Lib.Table($('#activate-modal .table-wrapper'), columns, mailings, options);
+  }
+
+  function getDialogMailingsTableCols() {
+    return [
+      {
+        field: "name",
+        headerName: t('defaults.name'),
+        filter: false,
+        suppressMovable: true,
+        sortable: true,
+        sort: "asc",
+        resizable: false,
+        cellRenderer: 'NotEscapedStringCellRenderer'
+      }
+    ];
+  }
+
+  function getDialogMailingsTableOptions() {
+    return {
+      pagination: false,
+      singleNameTable: true,
+      showRecordsCount: "simple"
     };
+  }
 
-    function activationDialog(onSuccess, mailingNames, isUnpause) {
-        var $activatingDialog = $('#activating-campaign-dialog');
-        if (!isUnpause) {
-          $('#activating-campaign-mailings').html(mailingNames);
-        }
-        $activatingDialog.css('visibility', 'visible');
-        $activatingDialog.show();
-        var activateBtn = $('#activating-campaign-activate-button');
-        activateBtn.off('click');
-        activateBtn.on('click', function() {
-            onSuccess();
-            $activatingDialog.dialog('close');
-            return false;
-        });
-        $activatingDialog.dialog({
-            open: function() {
-                var title = $activatingDialog.parent().find('.ui-dialog-title');
-                title.empty();
-                title.append('<span class="dialog-title-image">' + t(isUnpause ? 'workflow.activating.unpauseTitle' : 'workflow.activating.title') + '</span>');
-                title.find('.dialog-title-image').css('padding-left', '0px');
-            },
-            modal: true,
-            resizable: false,
-            width: 650,
-            minHeight: 0,
-            close: function() {
-                return false;
-            }
-        });
-    }
+  function mailingInUseDialog(mailingNameTitle) {
+    const message = t('workflow.mailing.copyQuestion');
+    const btnText = `${t('workflow.button.copy')} ${t('workflow.defaults.and')} ${t('workflow.defaults.edit').toLowerCase()}`;
+    return simpleDialog(mailingNameTitle, message, btnText);
+  }
 
-    function deactivationDialog(onSuccess) {
-        var $inactivatingDialog = $('#inactivating-campaign-dialog');
-        $inactivatingDialog.css('visibility', 'visible');
-        $inactivatingDialog.show();
-        var deactivatingBtn = $('#inactivating-campaign-inactivate-button');
-        deactivatingBtn.off('click');
-        deactivatingBtn.on('click', function() {
-            onSuccess();
-            $inactivatingDialog.dialog('close');
-            return false;
-        });
-        $inactivatingDialog.dialog({
-            open: function() {
-                var title = $inactivatingDialog.parent().find('.ui-dialog-title');
-                title.empty();
-                title.append('<span class="dialog-title-image">' + t('workflow.inactivating.title') + '</span>');
-                title.find('.dialog-title-image').css('padding-left', '0px');
-            },
-            modal: true,
-            resizable: false,
-            width: 650,
-            minHeight: 0,
-            close: function() {
-                return false;
-            }
-        });
-    }
+  function deactivationDialog() {
+    const title = t('workflow.inactivating.title');
+    const message = t('workflow.inactivating.question');
+    return simpleDialog(title, message);
+  }
 
-    function confirmMailingDataTransfer(paramsToAsk) {
-        return Confirm.createFromTemplate({Def: Def, paramsToAsk: paramsToAsk}, 'mailing-data-transfer-modal');
-    }
+  function confirmMailingDataTransfer(paramsToAsk) {
+    return Confirm.from('mailing-data-transfer-modal', {Def: Def, paramsToAsk: paramsToAsk});
+  }
 
-    function confirmOwnWorkflowExpanding() {
-        return Confirm.createFromTemplate({}, 'own-workflow-expanding-modal');
-    }
+  function confirmOwnWorkflowExpanding() {
+    return Confirm.from('own-workflow-expanding-modal');
+  }
 
-    function confirmTestingStartStop(isStartTesting) {
-        return Confirm.createFromTemplate({startTesting: isStartTesting, shortname: Def.shortname}, 'testing-modal');
-    }
+  function createAutoOpt() {
+    return Confirm.from('create-auto-opt-modal');
+  }
+  
+  function confirmTestingStartStop(isStartTesting) {
+    return Confirm.from('testing-modal', {startTesting: isStartTesting, shortname: Def.shortname});
+  }
 
-    function confirmCopy(hasContent) {
-        return Confirm.createFromTemplate({hasContent: hasContent === true}, 'workflow-copy-modal');
-    }
+  function confirmCopy(hasContent) {
+    return Confirm.from('workflow-copy-modal', {hasContent: hasContent === true});
+  }
 
-    AGN.Lib.WM.Dialogs = Dialogs;
+  function connectionNotAllowed() {
+    const title = t('workflow.dialog.connectionNotAllowedTitle');
+    const message = t('workflow.dialog.connectionNotAllowedMessage');
+    return simpleDialog(title, message);
+  }
+
+  function simpleDialog(title, message, btnText = t('defaults.ok')) {
+    return Confirm.from('workflow-simple-dialog-modal', {title, message, btnText});
+  }
+
+  function createMailing() {
+    return Confirm.from('create-mailing-modal');
+  }
+
+  AGN.Lib.WM.Dialogs = Dialogs;
 })();

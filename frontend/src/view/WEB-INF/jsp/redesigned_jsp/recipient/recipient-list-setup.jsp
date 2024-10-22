@@ -1,15 +1,14 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  buffer="32kb"  errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="agnNavigationKey" 		value="recipient_list"         scope="request" />
 <c:set var="agnTitleKey" 			value="Recipients" 		       scope="request" />
-<c:set var="agnSubtitleKey" 		value="Recipients" 		       scope="request" />
 <c:set var="sidemenu_active" 		value="Recipients" 		       scope="request" />
 <c:set var="sidemenu_sub_active" 	value="default.Overview" 	   scope="request" />
 <c:set var="agnHighlightKey" 		value="default.Overview" 	   scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 			       scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Recipients" 		       scope="request" />
 <c:set var="agnHelpKey" 			value="recipientList" 	       scope="request" />
 <c:set var="agnEditViewKey" 	    value="recipients-overview"    scope="request" />

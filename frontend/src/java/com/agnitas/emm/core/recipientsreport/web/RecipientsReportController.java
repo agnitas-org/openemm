@@ -10,16 +10,24 @@
 
 package com.agnitas.emm.core.recipientsreport.web;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.recipientsreport.RecipientReportDownloadException;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportSearchParams;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.beans.FileResponseBody;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
@@ -29,29 +37,28 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
-import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Set;
+
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 @Controller
 @RequestMapping("/recipientsreport")
@@ -60,6 +67,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class RecipientsReportController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(RecipientsReportController.class);
+    private static final String REDIRECT_TO_OVERVIEW = "redirect:/recipientsreport/list.action?restoreSort=true";
     
     private final RecipientsReportService recipientsReportService;
     private final WebStorage webStorage;
@@ -80,9 +88,16 @@ public class RecipientsReportController implements XssCheckAware {
         binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));
     }
 
+    @ExceptionHandler(RecipientReportDownloadException.class)
+    public String onRecipientReportDownloadException(RecipientReportDownloadException ex, Popups popups) {
+        ex.getErrors().forEach(popups::alert);
+        return REDIRECT_TO_OVERVIEW;
+    }
+
     @RequestMapping("/list.action")
-    public String list(Admin admin, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
+    public String list(@RequestParam(required = false) boolean restoreSort, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams,
+                       Admin admin, Model model) {
+        FormUtils.syncPaginationData(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm, restoreSort);
         FormUtils.syncSearchParams(searchParams, reportForm, true);
 
         Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
@@ -110,14 +125,14 @@ public class RecipientsReportController implements XssCheckAware {
     }
 
     private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.RECIPIENTS_REPORT_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/search.action")
     public String search(RecipientsReportForm filter, RecipientsReportSearchParams searchParams, RedirectAttributes ra) {
         FormUtils.syncSearchParams(searchParams, filter, false);
         ra.addFlashAttribute("recipientsReportForm", filter);
-        return "redirect:/recipientsreport/list.action";
+        return REDIRECT_TO_OVERVIEW;
     }
 
     @GetMapping("/{reportId:\\d+}/view.action")
@@ -147,69 +162,56 @@ public class RecipientsReportController implements XssCheckAware {
     }
 
     @GetMapping("/{reportId:\\d+}/download.action")
-    public ResponseEntity<Resource> download(Admin admin, @PathVariable int reportId) throws Exception {
-        RecipientsReport.RecipientReportType reportType = recipientsReportService.getReportType(admin.getCompanyID(), reportId);
-        
-        if (reportType != null) {
-            switch (reportType) {
-                case EXPORT_REPORT:
-                    if (admin.permissionAllowed(Permission.WIZARD_EXPORT)) {
-                        return handleExportReportDownload(reportId, admin);
-                    }
-                    break;
-                case IMPORT_REPORT:
-                    if (admin.permissionAllowed(Permission.WIZARD_IMPORT)) {
-                        return handleImportReportDownload(reportId, admin);
-                    }
-                    break;
-                default:
-                    //nothing do
-            }
+    public Object download(@PathVariable int reportId, Admin admin, Popups popups) throws Exception {
+        DownloadRecipientReport file = recipientsReportService.getRecipientReportForDownload(reportId, admin);
+        if (file == null) {
+            popups.alert(ERROR_MSG);
+            return REDIRECT_TO_OVERVIEW;
         }
-        
-        return null;
+        writeDownloadUserActivityLog(admin, reportId, file);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(file.getFilename()))
+                .contentType(file.getMediaType())
+                .body(new ByteArrayResource(file.getContent()));
     }
 
-    private ResponseEntity<Resource> handleExportReportDownload(int reportId, Admin admin) throws Exception {
-        DownloadRecipientReport fileData = recipientsReportService.getExportDownloadFileData(admin, reportId);
-        
-        if (fileData == null) {
-            return null;
-        }
-        
-        writeDownloadUserActivityLog(admin, fileData.getFilename(), reportId, "Export report");
+    @GetMapping(value = "/bulk/download.action")
+    public ResponseEntity<StreamingResponseBody> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin) {
+        File zip = recipientsReportService.getZipToDownload(bulkIds, admin);
+        writeUserActivityLog(admin, "Import/Export logs download", String.format("downloaded %d log(s) as ZIP archive", bulkIds.size()));
 
+        String downloadFileName = String.format("logs_%s.zip", admin.getDateFormat().format(new Date()));
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileData.getFilename()))
-                .contentType(fileData.getMediaType())
-                .body(new ByteArrayResource(fileData.getContent()));
+                .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", downloadFileName))
+                .contentLength(zip.length())
+                .contentType(MediaType.parseMediaType(MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                .body(new FileResponseBody(zip, true));
     }
-    
-    private ResponseEntity<Resource> handleImportReportDownload(int reportId, Admin admin) throws Exception {
-        DownloadRecipientReport fileData = recipientsReportService.getImportDownloadFileData(admin, reportId);
-        
-        if (fileData == null) {
-            return null;
-        }
-        
-        if (fileData.isSuplemental()) {
-            writeDownloadUserActivityLog(admin, fileData.getFilename(), reportId, "Import report's supplemental data");
-        } else {
-            writeDownloadUserActivityLog(admin, fileData.getFilename(), reportId, "Import report");
-        }
-        
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileData.getFilename()))
-                .contentType(fileData.getMediaType())
-                .body(new ByteArrayResource(fileData.getContent()));
-    }
-    
+
     private void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, new UserAction(action, description), logger);
     }
 
-    private void writeDownloadUserActivityLog(Admin admin, String fileName, int reportId, String downloadType) {
+    private void writeDownloadUserActivityLog(Admin admin, int reportId, DownloadRecipientReport download) {
+        String downloadType = getDownloadType(download);
         writeUserActivityLog(admin, "Import/Export logs download",
-                String.format("%s - report ID: %d, file name: %s", downloadType, reportId, fileName));
+                String.format("%s - report ID: %d, file name: %s", downloadType, reportId, download.getFilename()));
+    }
+
+    private static String getDownloadType(DownloadRecipientReport report) {
+        if (report.getType() == null) {
+            return "Unknown report type";
+        }
+        switch (report.getType()) {
+            case EXPORT:
+                return "Export report";
+            case IMPORT:
+                if (report.isSuplemental()) {
+                    return "Import report's supplemental data";
+                }
+                return "Import report";
+            default:
+                return report.getType().name();
+        }
     }
 }

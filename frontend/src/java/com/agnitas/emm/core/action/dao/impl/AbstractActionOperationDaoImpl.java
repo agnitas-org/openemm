@@ -17,6 +17,7 @@ import com.agnitas.emm.core.action.dao.ActionOperationDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
 public abstract class AbstractActionOperationDaoImpl<T> extends BaseDaoImpl implements ActionOperationDao, InitializingBean {
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		// nothing to do
@@ -25,25 +26,25 @@ public abstract class AbstractActionOperationDaoImpl<T> extends BaseDaoImpl impl
 	@Override
 	@SuppressWarnings("unchecked")
 	public final void getOperation(AbstractActionOperationParameters operation) {
-		processGetOperation((T) operation);
+		processGetOperation((T) operation); // suppress warning for this cast
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
 	public final void saveOperation(AbstractActionOperationParameters operation) {
-		processSaveOperation((T) operation);
+		processSaveOperation((T) operation); // suppress warning for this cast
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
 	public final void updateOperation(AbstractActionOperationParameters operation) {
-		processUpdateOperation((T) operation);
+		processUpdateOperation((T) operation); // suppress warning for this cast
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
 	public void deleteOperation(AbstractActionOperationParameters operation) {
-		processDeleteOperation((T) operation);
+		processDeleteOperation((T) operation); // suppress warning for this cast
 	}
 	
 	protected abstract void processGetOperation(T operation);
@@ -53,5 +54,4 @@ public abstract class AbstractActionOperationDaoImpl<T> extends BaseDaoImpl impl
 	protected abstract void processUpdateOperation(T operation);
 	
 	protected abstract void processDeleteOperation(T operation);
-
 }

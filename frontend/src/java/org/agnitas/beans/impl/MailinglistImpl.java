@@ -10,9 +10,9 @@
 
 package org.agnitas.beans.impl;
 
-import java.util.Date;
-
 import org.agnitas.beans.Mailinglist;
+
+import java.util.Date;
 
 public class MailinglistImpl implements Mailinglist {
 	/**
@@ -50,6 +50,7 @@ public class MailinglistImpl implements Mailinglist {
 	protected boolean isFrequencyCounterEnabled;
 	private String senderEmail;
 	private String replyEmail;
+	private boolean restrictedForSomeAdmins;
 
 	@Override
 	public int getId() {
@@ -153,5 +154,15 @@ public class MailinglistImpl implements Mailinglist {
 	@Override
 	public void setReplyEmail(String replyEmail) {
 		this.replyEmail = replyEmail;
+	}
+
+	@Override
+	public boolean isRestrictedForSomeAdmins() {
+		return restrictedForSomeAdmins;
+	}
+
+	@Override
+	public void setRestrictedForSomeAdmins(boolean restrictedForSomeAdmins) {
+		this.restrictedForSomeAdmins = restrictedForSomeAdmins;
 	}
 }

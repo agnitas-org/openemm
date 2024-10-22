@@ -321,8 +321,8 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 					// Check for unallowed html tags
 					try {
 						HtmlChecker.checkForNoHtmlTags(userForm.getFormName());
-					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-						throw new RestfulClientException("Userform name contains unallowed HTML tags");
+					} catch(final HtmlCheckerException e) {
+						throw new RestfulClientException("Userform name contains unallowed HTML tags", e);
 					}
 				} else {
 					throw new RestfulClientException("Invalid data type for 'formname'. String expected");
@@ -333,8 +333,8 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 					// Check for unallowed html tags
 					try {
 						HtmlChecker.checkForUnallowedHtmlTags(userForm.getDescription(), false);
-					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-						throw new RestfulClientException("Userform description contains unallowed HTML tags");
+					} catch(final HtmlCheckerException e) {
+						throw new RestfulClientException("Userform description contains unallowed HTML tags", e);
 					}
 				} else {
 					throw new RestfulClientException("Invalid data type for 'description'. String expected");

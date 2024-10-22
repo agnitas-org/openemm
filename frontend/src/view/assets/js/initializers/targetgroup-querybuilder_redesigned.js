@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   const READ_ONLY_PARAMS = {
     header_readonly: true,
@@ -22,7 +22,7 @@
     const isTargetGroupLocked = config.isTargetGroupLocked;
     const helpLanguage = config.helpLanguage;
 
-    _.each(queryBuilders, function (el) {
+    _.each(queryBuilders, el => {
       const $el = $(el);
       const operator_groups = buildOperatorGroups();
 
@@ -38,8 +38,7 @@
         plugins: {
           'sortable': {
             inherit_no_drop: true,
-            inherit_no_sortable: true,
-            icon: 'icon icon-arrows-alt'
+            inherit_no_sortable: true
           }
         },
         rules: rules
@@ -425,11 +424,7 @@
 
     function requestMailingLinks(mailingId, success) {
       $.ajax({
-        type: 'POST',
-        url: AGN.url('/workflow/getMailingLinks.action'),
-        data: {
-          mailingId: mailingId
-        },
+        url: AGN.url(`/mailing/ajax/${mailingId}/links.action`),
         success: success
       });
     }

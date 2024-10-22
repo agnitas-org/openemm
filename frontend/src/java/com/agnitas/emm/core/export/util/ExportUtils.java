@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.export.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,6 +20,9 @@ import org.agnitas.beans.ExportPredef;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.service.ColumnInfoService;
 
 public final class ExportUtils {
@@ -42,6 +46,37 @@ public final class ExportUtils {
 
     public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export, int companyId, Admin admin, ColumnInfoService columnInfoService) throws Exception {
         Set<String> customColumns = getCustomColumnMappingsFromExport(export, companyId, admin, columnInfoService)
+                .stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toSet());
+        return export.getExportColumnMappings().stream()
+                .filter(column -> !customColumns.contains(column.getDbColumn())).collect(Collectors.toList());
+    }
+    
+    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) throws Exception {
+    	List<RecipientFieldDescription> profileFields = new ArrayList<>();
+        for (RecipientFieldDescription field : recipientFieldService.getRecipientFields(companyId)) {
+			ProfileFieldMode permission;
+    		if (admin != null) {
+    			permission = field.getAdminPermission(admin.getAdminID());
+    		} else {
+    			permission = field.getDefaultPermission();
+    		}
+    		if (permission == ProfileFieldMode.Editable || permission == ProfileFieldMode.ReadOnly) {
+    			profileFields.add(field);
+			}
+        }
+    	
+        Set<String> profileFieldNames = profileFields
+			.stream()
+			.map(profileField -> profileField.getColumnName().toLowerCase())
+			.collect(Collectors.toSet());
+        profileFieldNames.add("mailing_bounce");
+        return export.getExportColumnMappings().stream()
+            .filter(mapping -> !profileFieldNames.contains(mapping.getDbColumn().toLowerCase()))
+            .collect(Collectors.toList());
+    }
+
+    public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) throws Exception {
+        Set<String> customColumns = getCustomColumnMappingsFromExport(export, companyId, admin, recipientFieldService)
                 .stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toSet());
         return export.getExportColumnMappings().stream()
                 .filter(column -> !customColumns.contains(column.getDbColumn())).collect(Collectors.toList());

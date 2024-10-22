@@ -99,114 +99,115 @@ AGN.Lib.Controller.new('birt-reports', function () {
     });
   }
 
-  const ReportSettings = function ($container, config) {
-    this.$container = $container;
-    this.config = config;
-    this.settingsType = config.settingsType;
-    this.select = AGN.Lib.Select.get($container.find(config.selectors.filterBlockId));
-    this.mailingSelect = AGN.Lib.Select.get($container.find(config.selectors.normalMailing));
+  class ReportSettings {
+    constructor($container, config) {
+      this.$container = $container;
+      this.config = config;
+      this.settingsType = config.settingsType;
+      this.select = AGN.Lib.Select.get($container.find(config.selectors.filterBlockId));
+      this.mailingSelect = AGN.Lib.Select.get($container.find(config.selectors.normalMailing));
 
-    this.init(config);
+      this.init(config);
 
-    $container.find(config.selectors.mailingType).on('change', event => {
-      this.handleMailingTypeChanges($(event.target));
-    });
-    $container.find(config.selectors.mailingFilter).on('change', event => {
-      this.handleMailingFilterChanges($(event.target));
-    });
-    $container.find(config.selectors.filterBlockId).on('change', event => {
-      this.handleMailingFilterValueChanges($(event.target));
-    });
-  };
-
-  ReportSettings.prototype.init = function (config) {
-    const mailingType = config.data.mailingType;
-    const mailingFilter = config.data.mailingFilter;
-    const predefineMailing = config.data.predefineMailing;
-    const selectedMailings = config.data.selectedMailings;
-
-    const jqXHR = this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
-    jqXHR.done(() => $form.dirty('setAsClean'));
-  };
-
-  ReportSettings.prototype.handleMailingTypeChanges = function ($el) {
-    const mailingFilter = this.getMailingFilter();
-    const mailingFilterValue = this.getMailingFilterValue();
-    this.updateNormalMailingField($el.val(), mailingFilter, mailingFilterValue);
-  };
-
-  ReportSettings.prototype.handleMailingFilterChanges = function ($el) {
-    const mailingType = this.getMailingType();
-    this.updateAllComparisonDependentFields(mailingType, $el.val());
-  };
-
-  ReportSettings.prototype.handleMailingFilterValueChanges = function ($el) {
-    const mailingFilter = this.getMailingFilter();
-    const mailingType = this.getMailingType();
-    this.updateNormalMailingField(mailingType, mailingFilter, $el.val());
-  };
-
-  ReportSettings.prototype.updateAllComparisonDependentFields = function (mailingType, mailingFilter, predefinedMailing, selectedMailings) {
-    this.select.resetOptions();
-
-    if (mailingFilter > 0) {
-      let data = [];
-
-      if (mailingFilter == 1) {
-        data = ARCHIVE_LIST;
-      } else if (mailingFilter == 2) {
-        data = MAILINGLIST_LIST;
-      } else if (mailingFilter == 4) {
-        data = TARGETS_LIST;
-      }
-
-      _.each(data, item => this.select.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
-
-      this.select.selectValueOrSelectFirst(predefinedMailing);
-      predefinedMailing = this.select.getSelectedValue();
-    }
-
-    return this.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
-  };
-
-  ReportSettings.prototype.updateNormalMailingField = function (mailingType, mailingFilter, predefinedMailing, selectedMailings) {
-    const deferred = $.Deferred();
-    this.mailingSelect.resetOptions();
-
-    if ((this.settingsType == config.constant.COMPARISON_SETTINGS && mailingType == 2) ||
-      (this.settingsType == config.constant.MAILING_SETTINGS && mailingType == 3)) {
-      $.ajax({
-        type: "GET",
-        url: AGN.url('/statistics/report/getFilteredMailing.action'),
-        data: {
-          type: mailingFilter,
-          value: predefinedMailing ? predefinedMailing : 0,
-          mailingType: config.constant.NORMAL_MAILING_TYPE
-        }
-      }).done(data => {
-        _.each(data, item => this.mailingSelect.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
-
-        this.mailingSelect.selectValue(selectedMailings ? selectedMailings : '');
-        deferred.resolve();
+      $container.find(config.selectors.mailingType).on('change', event => {
+        this.handleMailingTypeChanges($(event.target));
+      });
+      $container.find(config.selectors.mailingFilter).on('change', event => {
+        this.handleMailingFilterChanges($(event.target));
+      });
+      $container.find(config.selectors.filterBlockId).on('change', event => {
+        this.handleMailingFilterValueChanges($(event.target));
       });
     }
 
-    return deferred.promise();
-  };
+    init(config) {
+      const mailingType = config.data.mailingType;
+      const mailingFilter = config.data.mailingFilter;
+      const predefineMailing = config.data.predefineMailing;
+      const selectedMailings = config.data.selectedMailings;
 
-  ReportSettings.prototype.getMailingFilter = function () {
-    const filter = this.$container.find(this.config.selectors.mailingFilter);
-    return parseInt(filter.val()) | 0;
-  };
+      const jqXHR = this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
+      jqXHR.done(() => $form.dirty('setAsClean'));
+    };
 
-  ReportSettings.prototype.getMailingFilterValue = function () {
-    const filterValue = this.select.getSelectedValue();
-    return parseInt(filterValue) | 0;
-  };
+    handleMailingTypeChanges($el) {
+      const mailingFilter = this.getMailingFilter();
+      const mailingFilterValue = this.getMailingFilterValue();
+      this.updateNormalMailingField($el.val(), mailingFilter, mailingFilterValue);
+    };
 
-  ReportSettings.prototype.getMailingType = function () {
-    const mailingType = this.$container.find(`${this.config.selectors.mailingType}:checked`);
-    return parseInt(mailingType.val()) | 0;
-  };
+    handleMailingFilterChanges($el) {
+      this.updateAllComparisonDependentFields(this.mailingType, $el.val());
+    };
 
+    handleMailingFilterValueChanges($el) {
+      const mailingFilter = this.getMailingFilter();
+      this.updateNormalMailingField(this.mailingType, mailingFilter, $el.val());
+    };
+
+    updateAllComparisonDependentFields(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
+      this.select.resetOptions();
+
+      if (mailingFilter > 0) {
+        let data = [];
+
+        if (mailingFilter == 1) {
+          data = ARCHIVE_LIST;
+        } else if (mailingFilter == 2) {
+          data = MAILINGLIST_LIST;
+        } else if (mailingFilter == 4) {
+          data = TARGETS_LIST;
+        }
+
+        _.each(data, item => this.select.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
+
+        this.select.selectValueOrSelectFirst(predefinedMailing);
+        predefinedMailing = this.select.getSelectedValue();
+      }
+
+      return this.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
+    };
+
+    updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
+      const deferred = $.Deferred();
+      this.mailingSelect.resetOptions();
+
+      if ((this.settingsType == config.constant.COMPARISON_SETTINGS && mailingType == 2) ||
+        (this.settingsType == config.constant.MAILING_SETTINGS && mailingType == 3)) {
+        $.ajax({
+          type: "GET",
+          url: AGN.url('/statistics/report/getFilteredMailing.action'),
+          data: {
+            type: mailingFilter,
+            value: predefinedMailing ? predefinedMailing : 0,
+            mailingType: config.constant.NORMAL_MAILING_TYPE
+          }
+        }).done(data => {
+          _.each(data, item => this.mailingSelect.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
+
+          this.mailingSelect.selectValue(selectedMailings ? selectedMailings : '');
+          deferred.resolve();
+        });
+      }
+
+      return deferred.promise();
+    };
+
+    getMailingFilter() {
+      const filter = this.$container.find(this.config.selectors.mailingFilter);
+      return parseInt(filter.val()) | 0;
+    };
+
+    getMailingFilterValue() {
+      return parseInt(this.select.getSelectedValue()) | 0;
+    };
+
+    get $mailingType() {
+      return this.$container.find(`${this.config.selectors.mailingType}`);
+    }
+
+    get mailingType() {
+      return parseInt(this.$mailingType.val()) || 0;
+    };
+  }
 });

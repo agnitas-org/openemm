@@ -1,0 +1,169 @@
+#xl-calendar-tile {
+
+  $th-width: 30px;
+
+  .tile-controls {
+    .select-container {
+      min-width: 200px;
+    }
+  }
+
+  .tile-body {
+    display: grid;
+    grid-template-columns: 3fr minmax(100px, 1fr);
+    gap: $gap-md;
+  }
+
+  #xl-calendar {
+    min-height: 0;
+
+    #xl-calendar-table       { grid-area: days; }
+    #xl-calendar-weekdays    { grid-area: weekdays; }
+    #xl-calendar-weeks       { grid-area: weeknumbers; }
+
+    display: grid;
+    grid-template-areas:
+        'weeknumbers weekdays'
+        'weeknumbers days   ';
+    grid-template-columns: $th-width 3fr;
+    grid-template-rows: $th-width 1fr;
+
+    #xl-calendar-weeks {
+      @include flex-column(0);
+      padding-top: $th-width;
+
+      div {
+        @include font($font-size-md, 500);
+        color: var(--text-dark-gray-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-grow: 1;
+      }
+    }
+
+    #xl-calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      height: $th-width;
+
+      div {
+        @include font($font-size-md, 500);
+        color: var(--text-dark-gray-color);
+        text-align: center;
+      }
+    }
+
+    #xl-calendar-table {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-auto-rows: 1fr;
+      @include border($border-radius);
+      overflow: hidden;
+
+      // background-color + gap = border
+      background-color: $light-grey;
+      gap: 1px;
+    }
+
+    .xl-calendar-day {
+      @extend .unselectable;
+      @include flex-column(0);
+      position: relative;
+      background-color: var(--main-bg-color);
+      padding-bottom: $gap-sm;
+
+      &:first-child {
+        @include border-start-radius;
+      }
+
+      &:last-child {
+        @include border-end-radius;
+      }
+
+      &__header {
+        display: flex;
+        justify-content: space-between;
+        font-weight: $form-label-font-weight;
+        color: var(--table-head-text-color);
+        padding: $gap-sm;
+      }
+
+      &__body {
+        position: relative;
+        @include flex-column($gap-x-sm);
+        @include perfect-scrollbar($border-color, $gap-x-sm, 2px);
+        padding-inline: $gap-sm;
+        flex-grow: 1;
+      }
+
+      &--alien {
+        background-color: var(--xl-calendar-alien-day-bg-color);
+      }
+
+      &--today {
+        border: 2px solid $primary;
+      }
+
+      &:hover, &--hovered {
+        background-color: var(--xl-calendar-hovered-day-bg-color);
+
+        [data-action="create-xl-calendar-comment"] {
+          display: block;
+        }
+      }
+    }
+
+    [data-action="create-xl-calendar-comment"] {
+      display: none;
+      text-align: right;
+      font-size: $gap-sm;
+      color: $primary;
+    }
+  }
+
+  &:has(#xl-calendar-mode-switch:not(:checked)) {
+    #xl-calendar .xl-calendar-day {
+      &:first-child {
+        border-bottom-left-radius: 0;
+      }
+
+      &:last-child {
+        border-top-right-radius: 0;
+      }
+    }
+  }
+
+  .xl-calendar-label {
+    display: flex;
+    gap: $gap-x-sm;
+    outline: none;
+  }
+
+  .show-more-mailings {
+    border-color: $primary;
+    background-color: $primary;
+    color: $white;
+    text-align: center;
+  }
+
+  &.tile-x-wide, &:not(.tile-x-wide):has(#xl-calendar-mode-switch:checked) {
+    #xl-calendar {
+      grid-template-columns: max-content;
+    }
+  }
+
+  &.tile-x-wide {
+    .icon-switch:has(#xl-calendar-mode-switch) {
+      display: none;
+    }
+  }
+
+  [data-action="load-more-day-mailings"] {
+    color: $white;
+    text-align: center;
+    span {
+      border-color: $primary !important;
+    }
+  }
+}

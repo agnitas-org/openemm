@@ -2,7 +2,7 @@
 <project basedir="." default="all" name="OpenEMM">
 	<tstamp />
 
-	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="lib_ant/xmltask.jar" />
+	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="lib_ant/ant-xmltask-1.17.jar" />
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="lib_ant/ant-contrib-1.0b3.jar" />
 	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
 
@@ -32,7 +32,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="11" />
+				<property name="javaVersion" value="17" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
@@ -358,7 +358,7 @@
 		<mergexml source="${basecss}/build/templates/web-basic.xml" change="${basecss}/build/templates/web-openemm.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" />
 
 		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
-			<insert path="/:web-app/:welcome-file-list[1]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='welcome-file-list'][1]" position="after">
 				<![CDATA[&#09;
 	<context-param>
 		<param-name>sessionfilestore</param-name>
@@ -442,7 +442,7 @@
 		<!-- RESTful services mappings in web.xml -->
 		<echo message="Including Restful Services" />
 		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
-			<insert path="/:web-app/:servlet-mapping[last()]" position="after">
+			<insert path="/*[local-name()='web-app']/*[local-name()='servlet-mapping'][last()]" position="after">
 			<![CDATA[&#09;
 	<!-- RESTful services -->
 			<servlet>
@@ -456,6 +456,11 @@
 			]]>
 			</insert>
 		</xmltask>
+		
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
 
 		<!-- Deactivate jobqueue (default: keep job queue)-->
 		<property name = "deactivateJobQueue" value="false" />
@@ -465,8 +470,13 @@
 				<echo message="Deactivating job queue" />
 				<delete file="${deploydir}${appname}/WEB-INF/cronContext.xml" />
 				<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
-					<replace path="/:web-app/:context-param[:param-name='contextConfigLocation']/:param-value/text()">/WEB-INF/applicationContext*.xml</replace>
+					<replace path="/*[local-name()='web-app']/*[local-name()='context-param'][*[local-name()='param-name']/text()='contextConfigLocation']/*[local-name()='param-value']/text()">/WEB-INF/applicationContext*.xml</replace>
 				</xmltask>
+				
+				<!-- Remove unwanted namespace attributes -->
+				<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
+					<replacetoken> xmlns=""</replacetoken>
+				</replace>
 				<echo message="cronContext.xml removed" />
 			</then>
 		</if>
@@ -477,8 +487,7 @@
 	<target name="applicationContext" depends="deploy">
 		<echo message="rewriting applicationContext for asp" />
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
-		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext.xml">
-		</xmltask>
+		<copy file="${emmSourcePath}/view/WEB-INF/applicationContext.xml" tofile="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
 		<echo message="...applicationContext.xml done" />
 	</target>
 

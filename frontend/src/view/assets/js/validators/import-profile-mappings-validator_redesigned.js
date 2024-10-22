@@ -1,12 +1,8 @@
-AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
+(function () {
 
   let config;
 
   AGN.Lib.Validator.new('import-profile-mappings/form', {
-    init: function () {
-      const $config = $("#config\\:import-profile-mappings-validator");
-      config = $config.exists() ? $config.json() : {};
-    },
     valid: function ($e, options) {
       return !this.errors($e, options).length;
     },
@@ -18,7 +14,16 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
   });
 
   function isValidDataLength(columnInfo, value) {
-    return value.length <= columnInfo.maxDataSize;
+    return value.length <= getMaxColumnLength(columnInfo);
+  }
+
+  function getMaxColumnLength(columnInfo) {
+    const dataType = columnInfo.simpleDataType.toLowerCase();
+    if (dataType === 'float' || dataType === 'numeric') {
+      return columnInfo.numericPrecision + columnInfo.numericScale;
+    }
+
+    return columnInfo.characterLength;
   }
 
   function getDefValFieldValue($defValField) {
@@ -33,9 +38,9 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
     const value = getDefValFieldValue($defValField);
     if (value && getColNameByDefValField($defValField) !== config.doNotImportValue) {
       const columnInfo = getValFieldColumnInfo($defValField);
-      const dataType = columnInfo.dataType.toLowerCase();
+      const dataType = columnInfo.simpleDataType.toLowerCase();
 
-      if (columnInfo.column === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
+      if (columnInfo.columnName === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
         errors.push({field: $defValField, msg: t('import.columnMapping.error.invalidEmail')});
       } else if (dataType === 'date' || dataType === 'datetime') {
         if (isDbDateFunction($defValField.val().trim())) {
@@ -45,7 +50,7 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
       } else if (!isValidValueForDataType(dataType, value)) {
         errors.push({field: $defValField, msg: t('import.columnMapping.error.type', dataType)});
       } else if (!isValidDataLength(columnInfo, value)) {
-        errors.push({field: $defValField, msg: t('import.columnMapping.error.length', columnInfo.maxDataSize)});
+        errors.push({field: $defValField, msg: t('import.columnMapping.error.length', getMaxColumnLength(columnInfo))});
       }
     }
   }
@@ -120,4 +125,8 @@ AGN.Lib.CoreInitializer.new('import-profile-mappings-validator', function () {
     const currentTimeCheckbox = $('[data-action=set-today-date]');
     return currentTimeCheckbox.exists() && currentTimeCheckbox.is(":checked");
   }
-});
+
+  AGN.Lib.DomInitializer.new('import-profile-mappings-validator', function () {
+    config = this.config;
+  });
+})();

@@ -20,7 +20,6 @@ public class MailingSendOptions {
     private int maxRecipients;
     private int blockSize;
     private int stepping;
-    private int defaultStepping;
     private int followupFor;
     private int overwriteTestRecipientId; // GWUA-5664
     private boolean checkForDuplicateRecords;
@@ -35,7 +34,7 @@ public class MailingSendOptions {
     private boolean reportSendAfter24h;
     private boolean reportSendAfter48h;
     private boolean reportSendAfter1Week;
-    private boolean clearance; // GWUA-5738
+    private boolean requestApproval; // GWUA-5738
     private String reportSendEmail;
 
     public static Builder builder() {
@@ -55,10 +54,6 @@ public class MailingSendOptions {
 
     public int getBlockSize() {
         return blockSize;
-    }
-
-    public int getDefaultStepping() {
-        return defaultStepping;
     }
 
     public int getFollowupFor() {
@@ -125,12 +120,12 @@ public class MailingSendOptions {
         return overwriteTestRecipientId;
     }
 
-    public boolean isClearance() {
-        return clearance;
+    public boolean isRequestApproval() {
+        return requestApproval;
     }
 
-    public void setClearance(boolean clearance) {
-        this.clearance = clearance;
+    public void setRequestApproval(boolean requestApproval) {
+        this.requestApproval = requestApproval;
     }
 
     public static class Builder {
@@ -138,7 +133,6 @@ public class MailingSendOptions {
         private boolean isActivateAgainToday;
         private int maxRecipients;
         private int blockSize;
-        private int defaultStepping;
         private int followupFor;
         private boolean checkForDuplicateRecords;
         private boolean skipWithEmptyTextContent;
@@ -154,7 +148,7 @@ public class MailingSendOptions {
         private boolean reportSendAfter1Week;
         private String reportSendEmail;
         private DeliveryType deliveryType;
-        private boolean clearance; // GWUA-5738
+        private boolean requestApproval; // GWUA-5738
 
         public Builder setDate(Date date) {
             this.date = date;
@@ -168,11 +162,6 @@ public class MailingSendOptions {
 
         public Builder setBlockSize(int blockSize) {
             this.blockSize = blockSize;
-            return this;
-        }
-
-        public Builder setDefaultStepping(int defaultStepping) {
-            this.defaultStepping = defaultStepping;
             return this;
         }
 
@@ -256,8 +245,8 @@ public class MailingSendOptions {
             return this;
         }
 
-        public Builder setClearance(boolean clearance) {
-            this.clearance = clearance;
+        public Builder setRequestApproval(boolean requestApproval) {
+            this.requestApproval = requestApproval;
             return this;
         }
 
@@ -267,7 +256,6 @@ public class MailingSendOptions {
             options.date = date;
             options.maxRecipients = maxRecipients;
             options.blockSize = blockSize;
-            options.defaultStepping = defaultStepping;
             options.followupFor = followupFor;
             options.checkForDuplicateRecords = checkForDuplicateRecords;
             options.skipWithEmptyTextContent = skipWithEmptyTextContent;
@@ -284,7 +272,7 @@ public class MailingSendOptions {
             options.deliveryType = deliveryType;
             options.isActivateAgainToday = isActivateAgainToday;
             options.overwriteTestRecipientId = overwriteTestRecipientId;
-            options.clearance = clearance;
+            options.requestApproval = requestApproval;
 
             return options;
         }

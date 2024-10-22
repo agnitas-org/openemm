@@ -8,6 +8,8 @@
   var StaticForm,
       Form = AGN.Lib.Form;
 
+  var CSRF = AGN.Lib.CSRF;
+
   // inherit from Form
   StaticForm = function($form) {
     Form.apply(this, [$form]);
@@ -28,6 +30,10 @@
     }
 
     this.$form.trigger('form:submit');
+
+    if (CSRF.isProtectionEnabled()) {
+      self.$form.find('[name="' + CSRF.getParameterName() + '"]').val(CSRF.readActualToken());
+    }
 
     _.each(fieldsMissing, function(value, field) {
       var $input = $('<input type="hidden" name="' + field + '"/>');

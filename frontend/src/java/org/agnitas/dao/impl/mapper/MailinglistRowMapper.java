@@ -59,6 +59,10 @@ public class MailinglistRowMapper extends AbstractBaseRowMapper<Mailinglist> {
             mailinglist.setReplyEmail(getValue("reply_email", resultSet::getString));
         }
 
+        if (columnNames.contains("is_restricted")) {
+            mailinglist.setRestrictedForSomeAdmins(getValue("is_restricted", resultSet::getBoolean));
+        }
+
         return mailinglist;
 
     }

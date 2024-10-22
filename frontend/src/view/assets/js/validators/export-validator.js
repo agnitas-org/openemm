@@ -49,7 +49,7 @@
   }
   
   function getProfileFieldColumnNames() {
-    return $.map($('select[name="columns"] option') ,function(option) {
+    return $.map($('select[name="userColumns"] option') ,function(option) {
       return option.value.toLowerCase();
     });
   }

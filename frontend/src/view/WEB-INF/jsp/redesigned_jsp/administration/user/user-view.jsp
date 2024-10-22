@@ -1,11 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://www.springframework.org/tags"    prefix="s" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="adminForm" type="com.agnitas.emm.core.admin.form.AdminForm"--%>
 <%--@elvariable id="createdCompanies" type="java.util.List"--%>
@@ -19,12 +18,12 @@
 <c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%=AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK%>"/>
 <c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%=AdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY%>"/>
 
-<mvc:form cssClass="tiles-container d-flex hidden" id="user-form" servletRelativeAction="/${isRestfulUser ? 'restfulUser' : 'admin'}/${adminForm.adminID}/view.action"
+<mvc:form cssClass="tiles-container" id="user-form" servletRelativeAction="/${isRestfulUser ? 'restfulUser' : 'admin'}/${adminForm.adminID}/view.action"
           data-form-focus="username" modelAttribute="adminForm" accept-charset="UTF-8"
           data-form="resource" data-form-dirty-checking="" data-editable-view="${agnEditViewKey}">
-    <div id="general-info-tile" class="tile" style="flex: 1" data-editable-tile>
+    <div id="general-info-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="settings.general.information"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="settings.general.information"/></h1>
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
@@ -101,14 +100,16 @@
                             <c:choose>
                                 <%--if new--%>
                                 <c:when test="${adminForm.adminID eq 0}">
-                                    <mvc:select cssClass="form-control js-select" path="companyID" size="1">
-                                        <mvc:options itemLabel="shortname" itemValue="id" items="${createdCompanies}"/>
+                                    <mvc:select cssClass="form-control js-select" path="companyID">
+                                        <c:forEach var="createdCompany" items="${createdCompanies}">
+                                            <mvc:option value="${createdCompany.id}">${createdCompany.shortname} (${createdCompany.id})</mvc:option>
+                                        </c:forEach>
                                     </mvc:select>
                                 </c:when>
                                 <c:otherwise>
                                     <mvc:hidden path="companyID"/>
                                     <mvc:hidden path="initialCompanyName"/>
-                                    <input type="text" class="form-control" value="${adminForm.initialCompanyName}" readonly />
+                                    <input type="text" class="form-control" value="${adminForm.initialCompanyName} (${adminForm.companyID})" readonly />
                                 </c:otherwise>
                             </c:choose>
                         </div>
@@ -129,9 +130,9 @@
             </div>
         </div>
     </div>
-    <div id="user-settings-tile" class="tile" style="flex: 1" data-editable-tile>
+    <div id="user-settings-tile" class="tile" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="settings.UserSettings"/></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="settings.UserSettings"/></h1>
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
@@ -163,7 +164,7 @@
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="statisticLoadType"><mvc:message code="statistic.summary"/></label>
-                    <mvc:select path="adminPreferences.statisticLoadType" size="1" id="statisticLoadType" cssClass="form-control">
+                    <mvc:select path="adminPreferences.statisticLoadType" size="1" id="statisticLoadType" cssClass="form-control js-select">
                         <mvc:option value="${STATISTIC_LOADTYPE_ON_CLICK}"><mvc:message code="statistic.summary.load.onclick"/></mvc:option>
                         <mvc:option value="${STATISTIC_LOADTYPE_IMMEDIATELY}"><mvc:message code="statistic.summary.load.immediately"/></mvc:option>
                     </mvc:select>

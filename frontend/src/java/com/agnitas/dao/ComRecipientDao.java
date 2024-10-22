@@ -20,6 +20,7 @@ import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -27,6 +28,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
@@ -83,6 +85,7 @@ public interface ComRecipientDao {
     List<Recipient> getDuplicateRecipients(int companyId, String email, String select, Object[] queryParams) throws Exception;
 
     PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
+    int getIntResult(SqlPreparedStatementManager statementManager) throws Exception;
 
     // TODO: EMMGUI-714: remove when old design will be removed
     PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
@@ -368,7 +371,8 @@ public interface ComRecipientDao {
 	String selectCustomerValue(String selectValue, int companyID, int customerId);
 
     int bulkUpdateEachRecipientsFields(int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception;
-    
+    int getAffectedRecipientsForBulkUpdateFields(int companyId, int adminId, int mailingListId, String targetExpression, Map<String, Object> updateValues) throws Exception;
+
     int getRecipientsAmountForTargetGroup(int companyId, int adminId, int mailingListId, String sqlTargetExpression);
 
 	List<Map<String, Object>> getBouncedRecipients(int companyId, Date fromDate);
@@ -435,6 +439,8 @@ public interface ComRecipientDao {
 
 	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<String> profileFieldsList, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
 
+    List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(int companyId, int adminId);
+
 	List<ComRecipientLiteImpl> listAdminAndTestRecipientsByAdmin(int companyID, int adminID);
 	
 	/**
@@ -467,4 +473,12 @@ public interface ComRecipientDao {
     int getBounceDetail(int mailingId, int recipientId, int companyId);
 
 	int getNumberOfRecipients(int companyID, int mailinglistID, RecipientType... recipientTypes);
+
+    List<Recipient> findAllByEmailPart(String email, int companyId);
+
+    boolean tableExists(int companyId);
+
+    void updateEmail(String email, int id, int companyId);
+
+    List<Integer> findIdsByEmail(String email, int companyId);
 }

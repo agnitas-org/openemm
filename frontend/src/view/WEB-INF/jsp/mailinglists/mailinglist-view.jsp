@@ -50,39 +50,37 @@
                 </div>
             </div>
 
-            <emm:ShowByPermission token="mailinglists.addresses">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="description" class="control-label">
-                            <mvc:message var="senderEmailMsg" code="mailing.SenderEmail"/>
-                            ${senderEmailMsg}
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <%@include file="domain-addresses-dropdown.jspf" %>
-                        <c:choose>
-                            <c:when test="${domainAddressesDropdown eq null}">
-                                <mvc:text path="senderEmail" cssClass="form-control" id="senderEmail" placeholder="${senderEmailMsg}"/>
-                            </c:when>
-                            <c:otherwise>
-                                ${domainAddressesDropdown}
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="description" class="control-label">
+                        <mvc:message var="senderEmailMsg" code="mailing.SenderEmail"/>
+                        ${senderEmailMsg}
+                    </label>
                 </div>
+                <div class="col-sm-8">
+                    <%@include file="domain-addresses-dropdown.jspf" %>
+                    <c:choose>
+                        <c:when test="${domainAddressesDropdown eq null}">
+                            <mvc:text path="senderEmail" cssClass="form-control" id="senderEmail" placeholder="${senderEmailMsg}"/>
+                        </c:when>
+                        <c:otherwise>
+                            ${domainAddressesDropdown}
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
 
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="description" class="control-label">
-                            <mvc:message var="replyToEmailMsg" code="mailing.ReplyEmail"/>
-                            ${replyToEmailMsg}
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:text path="replyEmail" cssClass="form-control" id="replyToEmail" placeholder="${replyToEmailMsg}"/>
-                    </div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="description" class="control-label">
+                        <mvc:message var="replyToEmailMsg" code="mailing.ReplyEmail"/>
+                        ${replyToEmailMsg}
+                    </label>
                 </div>
-            </emm:ShowByPermission>
+                <div class="col-sm-8">
+                    <mvc:text path="replyEmail" cssClass="form-control" id="replyToEmail" placeholder="${replyToEmailMsg}"/>
+                </div>
+            </div>
 
             <%@include file="mailinglist-manage-approval-fragment.jspf.jsp" %>
 

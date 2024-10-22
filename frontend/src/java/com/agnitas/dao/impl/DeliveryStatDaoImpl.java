@@ -76,6 +76,14 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 			query = "SELECT current_mails, total_mails, `timestamp`, creation_date FROM mailing_backend_log_tbl WHERE status_id = ? ORDER BY creation_date DESC LIMIT 1";
 		}
 		return selectObjectDefaultNull(logger, query, new MailingBackendLogRowMapper(), statusId);
+	}	
+    
+    @Override
+	public MailingBackendLog getLastWorldMailingBackendLog(int mailingId) {
+        String sql = isOracleDB()
+                ? "SELECT * FROM (SELECT current_mails, total_mails, timestamp, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC) WHERE rownum = 1"
+                : "SELECT current_mails, total_mails, `timestamp`, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC LIMIT 1";
+		return selectObjectDefaultNull(logger, sql, new MailingBackendLogRowMapper(), mailingId);
 	}
 
 	@Override

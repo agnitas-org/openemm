@@ -12,7 +12,7 @@ package com.agnitas.emm.core.dyncontent.service.impl;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
 import org.agnitas.beans.DynamicTagContent;
@@ -35,6 +35,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,12 +46,12 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	private static final Logger LOGGER = LogManager.getLogger(DynamicTagContentServiceImpl.class);
 	
 	private final DynamicTagContentDao dynamicTagContentDao;
-	private final ComMailingDao mailingDao;
+	private final MailingDao mailingDao;
 	private final ComTargetDao targetDao;
     private final ContentModelValidator contentModelValidator;
     private final ApplicationContext applicationContext;
 
-	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, ComMailingDao mailingDao, ComTargetDao targetDao,
+	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, MailingDao mailingDao, ComTargetDao targetDao,
 										ContentModelValidator contentModelValidator, ApplicationContext applicationContext) {
 		this.dynamicTagContentDao = dynamicTagContentDao;
 		this.mailingDao = mailingDao;
@@ -156,7 +158,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		// Read existing content item by company_id and content_id to get the mailingid.
 		// Do not change this object, because changes will not be stored.
 		DynamicTagContent dynamicTagContentForReadOnly = getContent(contentModel);
-		
+
+		logTimePoint("updateContentImpl -> before // Basically check new targetgroup settings");
 		// Basically check new targetgroup settings
 		if (contentModel.getTargetId() != 0 && targetDao.getTarget(contentModel.getTargetId(), contentModel.getCompanyId()) == null) {
 			throw new TargetNotExistException(contentModel.getTargetId());
@@ -166,6 +169,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		String dynName = dynamicTagContentForReadOnly.getDynName();
 		int dynOrder = dynamicTagContentForReadOnly.getDynOrder();
 
+		logTimePoint("updateContentImpl -> before // Read existing mailing data");
 		// Read existing mailing data
 		Mailing mailing = mailingDao.getMailing(mailingId, contentModel.getCompanyId());
 		if (mailing == null) {
@@ -189,7 +193,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		if (dynamicTagContentToChange == null) {
 			throw new RuntimeException("dynamicTagContentToChange was not found");
 		}
-		
+
+		logTimePoint("updateContentImpl -> before // Re-check new targetgroup settings");
 		// Re-check new targetgroup settings for DynamicTagContent loaded via mailing
 		if (contentModel.getTargetId() != 0 && targetDao.getTarget(contentModel.getTargetId(), contentModel.getCompanyId()) == null) {
 			throw new TargetNotExistException(contentModel.getTargetId());
@@ -232,6 +237,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 			dynamicTagContentToChange.setTargetID(contentModel.getTargetId());
 		}
 
+		logTimePoint("updateContentImpl -> before // Set new content text");
 		// Set new content text
 		boolean textContentWasChanged = false;
 		if (!StringUtils.equals(dynamicTagContentToChange.getDynContent(), contentModel.getContent())) {
@@ -239,6 +245,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 			textContentWasChanged = true;
 		}
 
+		logTimePoint("updateContentImpl -> before // Validate content text and check for new or removed trackable links and images");
 		// Validate content text and check for new or removed trackable links and images
 		try {
         	mailing.buildDependencies(false, applicationContext);
@@ -247,7 +254,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
         	
         	throw new DynamicTagContentInvalid(e.getMessage());
         }
-		
+
+		logTimePoint("updateContentImpl -> before // Save changes");
 		// Save changes
 		try {
 			mailingDao.saveMailing(mailing, false, false);
@@ -279,6 +287,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 			}
 		}
 
+		logTimePoint("updateContentImpl -> before // Log content change");
 		// Log content change
 		if (textContentWasChanged) {
 			userActions.add(new UserAction("edit textblock content", description));
@@ -311,8 +320,11 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	@Override
 	@Transactional
 	public void updateContent(ContentModel model, List<UserAction> userActions) {
+		logTimePoint("updateContent -> before assertIsValidToUpdate");
 	    contentModelValidator.assertIsValidToUpdate(model);
+		logTimePoint("updateContent -> before updateContentImpl");
 		updateContentImpl(model, userActions);
+		logTimePoint("updateContent -> before updateStatus");
         mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
 	}
 
@@ -328,5 +340,12 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		}
 
 		return dynamicTagContentDao.filterContentsOfNotSentMailings(dependencies);
+	}
+
+	// GWUA-5995
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+	public static void logTimePoint(String name) {
+		LocalDateTime now = LocalDateTime.now();
+		LOGGER.error("GWUA-5995: " + name + ": " + formatter.format(now));
 	}
 }

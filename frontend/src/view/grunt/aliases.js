@@ -6,7 +6,7 @@ module.exports = {
   "uglify:compile": ['uglify:compile_js', 'uglify:compile_birtjs'],
   "build": ['sass:build', 'uglify:build_js', 'uglify:build_birtjs', 'svg_sprite'],
   "compile": ['svg_sprite', 'sass:build', 'cssmin:compile', 'uglify:compile', 'usebanner:css', 'usebanner:js', 'usebanner:birtjs'],
-  "styleguide": ['svg_sprite', 'uglify:build', 'sass:build', 'clean:styleguide','copy:assets_for_styleguide', 'shell:styleguide', 'clean:styleguide_source_assets'],
+  "styleguide": ['svg_sprite', 'uglify:build', 'sass:build_redesigned', 'clean:styleguide','copy:assets_for_styleguide', 'shell:styleguide', 'clean:styleguide_source_assets'],
   "docs": ['connect:docs:keepalive'],
   "compile_js": ['compile_js_classic', 'compile_js_redesigned'],
   "compile_js_classic": ['uglify:build_js', 'uglify:compile_js', 'usebanner:js'],

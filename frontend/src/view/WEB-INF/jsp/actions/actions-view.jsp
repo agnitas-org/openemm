@@ -15,6 +15,7 @@
 <%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.GET_ARCHIVE_LIST" %>
 <%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.EXECUTE_SCRIPT" %>
 <%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.CONTENT_VIEW" %>
+<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.SEND_LAST_NEWSLETTER" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -46,6 +47,7 @@
                     "GET_ARCHIVE_MAILING" : "<%= GET_ARCHIVE_MAILING.getName() %>",
                     "GET_CUSTOMER" : "<%= GET_CUSTOMER.getName() %>",
                     "IDENTIFY_CUSTOMER" : "<%= IDENTIFY_CUSTOMER.getName() %>",
+					"SEND_LAST_NEWSLETTER" : "<%= SEND_LAST_NEWSLETTER.getName() %>",
                     "SEND_MAILING" : "<%= SEND_MAILING.getName() %>",
                     "SERVICE_MAIL" : "<%= SERVICE_MAIL.getName() %>",
                     "SUBSCRIBE_CUSTOMER" : "<%= SUBSCRIBE_CUSTOMER.getName() %>",
@@ -193,6 +195,7 @@
     <%@include file="ops/SubscribeCustomer.jsp"%>
     <%@include file="ops/IdentifyCustomer.jsp"%>
     <%@include file="ops/UpdateCustomer.jsp"%>
+    <%@include file="ops/SendLastNewsletter.jsp" %>
 
     <script id="common-module-data" type="text/x-mustache-template">
         <div class="inline-tile" data-action-module >

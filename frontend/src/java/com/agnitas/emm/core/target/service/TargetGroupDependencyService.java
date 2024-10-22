@@ -13,14 +13,13 @@ package com.agnitas.emm.core.target.service;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
 import com.agnitas.messages.Message;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface TargetGroupDependencyService {
 
-    List<TargetGroupDependentEntry> findDependencies(int targetGroupId, int companyId);
+    boolean exists(int id, int companyId);
 
-    Optional<TargetGroupDependentEntry> findAnyActualDependency(List<TargetGroupDependentEntry> dependencies);
+    Optional<TargetGroupDependentEntry> findAnyActualDependency(int targetId, int companyId);
 
     Message buildErrorMessage(TargetGroupDependentEntry dependency, String targetName);
 

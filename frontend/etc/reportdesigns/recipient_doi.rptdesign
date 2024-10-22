@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -230,6 +230,11 @@ return false;
 ]]></method>
         </script-data-set>
     </data-sets>
+    <styles>
+        <style name="chart" id="673">
+            <property name="fontFamily">"Arial"</property>
+        </style>
+    </styles>
     <page-setup>
         <simple-master-page name="Simple MasterPage" id="2">
             <property name="topMargin">0.25in</property>

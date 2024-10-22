@@ -35,7 +35,7 @@ public class ImportController {
     private static final Logger LOGGER = LogManager.getLogger(ImportController.class);
 
     public enum ImportType {
-        MAILING, CLASSIC_TEMPLATE, LB_TEMPLATE, USER_FORM
+        MAILING, TEMPLATE, USER_FORM, BUILDING_BLOCK
     }
     
     private final MailingImportService mailingImportService;

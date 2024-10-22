@@ -10,17 +10,13 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.Connection;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.MailingStatisticsDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.UserStatus;
@@ -33,13 +29,16 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.MailingStatisticsDao;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import java.sql.Connection;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStatisticsDao {
     /** The logger. */
@@ -350,7 +349,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         try {
             return select(logger, "SELECT target_expression FROM mailing_tbl WHERE mailing_id = ?", String.class, followUpMailingID);
         } catch (final Exception e) {
-            logger.error("Database Error getting target-id Strings in ComMailingDaoImpl", e);
+            logger.error("Database Error getting target-id Strings in MailingDaoImpl", e);
             return null;
         }
     }
@@ -396,18 +395,18 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 				.sorted(Comparator.comparingInt(Mediatype::getPriority))
 				.map(x -> x.getMediaType())
 				.collect(Collectors.toList());
-			
+
 			Set<MediaTypes> alreadyCountedMediatypes = new HashSet<>();
 			for (MediaTypes mediaType : activeMediaTypesSortedByPrio) {
 				if (mediaType == MediaTypes.EMAIL) {
-					Map<MailType, Integer> emailRecipientNumbers = getMailingRecipientAmountsForEmail(companyId, mailing.getMailinglistID(), MailType.getFromInt(mailing.getEmailParam().getMailFormat()), mailing.getTargetExpression(), mailing.getSplitID(), mailing.isEncryptedSend(), alreadyCountedMediatypes);
-					returnMap.put(SEND_STATS_TEXT, returnMap.get(SEND_STATS_TEXT) + emailRecipientNumbers.get(MailType.TEXT));
+                    Map<MailType, Integer> emailRecipientNumbers = getMailingRecipientAmountsForEmail(companyId, mailing.getMailinglistID(), MailType.getFromInt(mailing.getEmailParam().getMailFormat()), mailing.getTargetExpression(), mailing.getSplitID(), mailing.isEncryptedSend(), alreadyCountedMediatypes);
+                    returnMap.put(SEND_STATS_TEXT, returnMap.get(SEND_STATS_TEXT) + emailRecipientNumbers.get(MailType.TEXT));
 					returnMap.put(SEND_STATS_HTML, returnMap.get(SEND_STATS_HTML) + emailRecipientNumbers.get(MailType.HTML));
 					returnMap.put(SEND_STATS_OFFLINE, returnMap.get(SEND_STATS_OFFLINE) + emailRecipientNumbers.get(MailType.HTML_OFFLINE));
 				} else {
 					returnMap.putIfAbsent(mediaType.getMediaCode(), 0);
 					returnMap.put(mediaType.getMediaCode(), returnMap.get(mediaType.getMediaCode()) + getMailingRecipientAmountForNonEmailMediaType(companyId, mailing.getMailinglistID(), mediaType, mailing.getTargetExpression(), mailing.getSplitID(), mailing.isEncryptedSend(), alreadyCountedMediatypes));
-				}
+                }
 				alreadyCountedMediatypes.add(mediaType);
 			}
 			return returnMap;
@@ -425,8 +424,8 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 					+ " AND bind.mailinglist_id = ?"
 					+ " AND bind.user_status = ?"
 					+ " AND bind.mediatype = ?";
-			
-			final String targetAndSplitSql = targetService.getSQLFromTargetExpression(targetExpression, splitID, companyID);
+
+            final String targetAndSplitSql = targetService.getSQLFromTargetExpression(targetExpression, splitID, companyID);
 			if (StringUtils.isNotBlank(targetAndSplitSql)) {
 				sqlStatement += " AND (" + targetAndSplitSql + ")";
 			}

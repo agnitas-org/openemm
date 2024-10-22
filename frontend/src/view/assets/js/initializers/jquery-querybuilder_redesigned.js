@@ -9,20 +9,17 @@ $.fn.queryBuilder.defaults({templates: { group: `
     </div>
     
     <div class="group-actions">
-      <button type="button" class="btn btn-sm btn-primary" data-add="rule">
+      <button type="button" class="btn btn-inverse btn-icon" data-add="rule" data-tooltip="{{= it.translate("add_rule") }}">
         <i class="{{= it.icons.add_rule }}"></i>
-        <span class="text">{{= it.translate("add_rule") }}</span>
       </button>
       {{? it.settings.allow_groups===-1 || it.settings.allow_groups>=it.level }}
-        <button type="button" class="btn btn-sm btn-primary" data-add="group">
+        <button type="button" class="btn btn-inverse btn-icon" data-add="group" data-tooltip="{{= it.translate("add_group") }}">
           <i class="{{= it.icons.add_group }}"></i>
-          <span class="text">{{= it.translate("add_group") }}</span>
         </button>
       {{?}}
       {{? it.level>1 }}
-        <button type="button" class="btn btn-sm btn-danger" data-delete="group">
+        <button type="button" class="btn btn-danger btn-icon" data-delete="group" data-tooltip="{{= it.translate("delete_group") }}">
           <i class="{{= it.icons.remove_group }}"></i>
-          <span class="text">{{= it.translate("delete_group") }}</span>
         </button>
       {{?}}
     </div>
@@ -40,7 +37,7 @@ $.fn.queryBuilder.defaults({templates: { rule: `
 <li id="{{= it.rule_id }}" class="rule-container">
   <div class="rule-header">
     <div class="rule-actions">
-      <button type="button" class="btn btn-icon-sm btn-danger" data-delete="rule">
+      <button type="button" class="btn btn-icon btn-danger" data-delete="rule">
         <i class="{{= it.icons.remove_rule }}"></i>
       </button>
     </div>
@@ -95,7 +92,7 @@ $.fn.queryBuilder.defaults({templates: { ruleValueSelect: '\
 $.fn.queryBuilder.defaults({ icons: {
   add_group: 'icon icon-plus-circle',
   add_rule: 'icon icon-plus',
-  remove_group: 'icon icon-times',
+  remove_group: 'icon icon-trash-alt',
   remove_rule: 'icon icon-trash-alt',
   error: 'icon icon-exclamation-triangle'
 }});

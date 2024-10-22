@@ -10,28 +10,16 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
+import com.agnitas.util.LongRunningSelectResultCacheDao;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
@@ -54,16 +42,26 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
-import com.agnitas.util.LongRunningSelectResultCacheDao;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	private static final Logger logger = LogManager.getLogger(BIRTDataSet.class);
@@ -664,11 +662,16 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
             
             return selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         } else {
+			if (!useTargetGroup) {
+				// mailing_account_tbl has no customer ids and therefore cannot be used for target group specific numbers
+				return getNumberOfSentMailingsFromMailingAccount(mailingID, recipientsType, startDate, endDate);
+			}
+
         	if (DbUtilities.checkIfTableExists(getDataSource(), "mailtrack_" + companyID + "_tbl") && isMailingTrackingActivated(companyID) && !isMailTrackingExpired(companyID, mailingID)) {
                 StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) FROM");
         		List<Object> parameters = new ArrayList<>();
                 
-                if (targetSql != null && targetSql.contains("cust.")) {
+        		if (targetSql != null && targetSql.contains("cust.")) {
         			queryBuilder.append(" customer_").append(companyID).append("_tbl cust,");
         		}
              
@@ -682,28 +685,16 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     				parameters.add(endDate);
         		}
                 
-                if (targetSql != null && targetSql.contains("cust.")) {
+            	if (targetSql != null && targetSql.contains("cust.")) {
         			queryBuilder.append(" AND cust.customer_id = track.customer_id");
         		}
         		
-        		if (useTargetGroup) {
-        			queryBuilder.append(" AND (").append(targetSql).append(")");
-        		}
-                
-        		int numberSentMailingsByMailTrack = selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
-        		
-        		if (numberSentMailingsByMailTrack == 0 && !useTargetGroup) {
-        			// Fallback for newly activated automation package with newly created and therefore empty mailtrack table
-					return getNumberOfSentMailingsFromMailingAccount(mailingID, recipientsType, startDate, endDate);
-        		} else {
-        			return numberSentMailingsByMailTrack;
-        		}
-        	} else if (!useTargetGroup) {
-        		// mailing_account_tbl has no customer ids and therefore cannot be used for target group specific numbers
-        		return getNumberOfSentMailingsFromMailingAccount(mailingID, recipientsType, startDate, endDate);
-        	} else {
-        		return -1;
+				queryBuilder.append(" AND (").append(targetSql).append(")");
+
+        		return selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         	}
+
+			return -1;
         }
 	}
 

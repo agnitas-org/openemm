@@ -2,28 +2,36 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
 
   const Template = AGN.Lib.Template;
   const Form = AGN.Lib.Form;
-  let fileExtensions = {};
+
+  const UPLOAD_DATA_ATTR_NAME = 'data-mediapool-upload';
+  const UPLOAD_SELECTOR = `[${UPLOAD_DATA_ATTR_NAME}]`;
+
   const duplicatedElementsData = {};
+  let fileExtensions = {};
+
   let $container;
   let $cancelBtn;
+  let $dropzone;
 
   this.addDomInitializer('mediapool-upload', function () {
     fileExtensions = this.config.fileExtensions;
     $container = $('#components-uploads-container');
     $cancelBtn = $('#upload-reset-btn');
+    $dropzone = $('#dropzone');
 
-    $('#dropzone').on('upload:reset', function () {
+    $dropzone.on('upload:reset', function () {
       $container.empty();
-      $container.prev().removeClass('hidden');
-      $cancelBtn.parent().addClass('hidden');
+      toggleUploadNotification(true);
+      toggleCancelBtnVisibility(false);
     });
   });
 
   this.addAction({'upload:add': 'mediapool-upload'}, function () {
     const file = this.data.file;
     const index = this.data.index;
-    $container.prev().addClass('hidden');
-    $cancelBtn.parent().removeClass('hidden');
+
+    toggleUploadNotification(false);
+    toggleCancelBtnVisibility(true);
 
     nameDuplicationCheckRequest(file.name, resp => {
       const extension = getFileExtension(file);
@@ -73,42 +81,36 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
 
   this.addAction({click: 'upload-files'}, function () {
     const form = Form.get(this.el);
-    const files = form._dataNextRequest;
-
     let valid = form.validate();
 
-    let i = 0;
-    for (key in files) {
-      const $overwriteSlider = $(`#item-overwrite-${i}`);
-      const fileName = $(`#item-file-name-${i}`).val();
+    findUploads$().each(function () {
+      const $el = $(this);
+      const $overwriteSlider = $el.find('[data-action="overwrite-data"]');
+
+      const fileName = $el.find('[name$=".fileName"]').val();
       const overwrite = $overwriteSlider.is(':checked');
 
       nameDuplicationCheckRequest(fileName, resp => {
         if (resp.data && !overwrite) {
           valid = false;
           $overwriteSlider.data('item-id', resp.data.id);
-          $(`[name='uploads["${i}"].id']`).val(resp.data.id);
-          toggleDuplicationRelatedBlocksVisibility(i, false);
+          $(`[name='uploads[${getUploadIndex($el)}].id']`).val(resp.data.id);
+          toggleDuplicationRelatedBlocksVisibility($el, true);
 
           AGN.Lib.Messages.warn('fields.mediapool.warnings.overwrite_inactive', fileName);
         } else if (!overwrite) {
-          toggleDuplicationRelatedBlocksVisibility(i, true);
+          toggleDuplicationRelatedBlocksVisibility($el, false);
         }
       });
-
-      i++;
-    }
+    });
 
     if (valid) {
-      for (let i = 0; i < files.length; i++) {
-        form.setValue(`uploads[${i}].file`, files[i]);
-      }
       form.submit();
     }
   });
 
-  function nameDuplicationCheckRequest(filename, success, async = false) {
-    function commonSuccess(resp) {
+  function nameDuplicationCheckRequest(fileName, success, async = false) {
+    const commonSuccess = resp => {
       if (resp.data) {
         duplicatedElementsData[resp.data.id] = resp.data;
       }
@@ -117,23 +119,18 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
     }
 
     $.ajax(AGN.url('/mediapool/findElementWithName.action'), {
-      data: filename,
-      contentType: 'application/json',
+      data: {fileName},
       async: async,
-      type: 'POST',
+      type: 'GET',
       success: commonSuccess
     });
   }
 
-  function toggleDuplicationRelatedBlocksVisibility(index, hide) {
-    $(`#duplication-error-block-${index}`).toggleClass('hidden', hide);
-    $(`#overwrite-block-${index}`).toggleClass('hidden', hide);
-  }
-
   this.addAction({change: 'overwrite-data'}, function () {
     const $el = $(this.el);
+    const $tile = $el.closest('.tile');
+
     const itemId = $el.data('item-id');
-    const index = $el.data('index');
 
     let newTitle = '';
     let newCategory = '';
@@ -143,11 +140,11 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
       newCategory = String(item.category.categoryId);
     }
 
-    $(`#item-title-${index}`).val(newTitle);
-    $(`#item-category-${index}`).val(newCategory).trigger('change');
+    $tile.find('[name$=".title"]').val(newTitle);
+    $tile.find('[name$=".categoryId"]').val(newCategory).trigger('change');
   });
 
-  this.addAction({change: 'change-mobile-base'}, function() {
+  this.addAction({change: 'change-mobile-base'}, function () {
     const $el = this.el;
     const config = AGN.Lib.Helpers.objFromString($el.data('config'));
 
@@ -156,7 +153,64 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
     const isMobile = selectedValue && selectedValue.length > 0;
     const fileName = isMobile ? config.mobilePrefix + selectedValue : config.initialValue;
 
-    const $fileName = $(`#item-file-name-${config.index}`);
+    const $fileName = $el.closest('.tile').find('[name$=".fileName"]');
     $fileName.val(fileName).prop('readonly', isMobile);
   });
+
+  this.addAction({click: 'remove-upload'}, function () {
+    const index = getUploadIndex(this.el);
+    const form = Form.get(this.el);
+
+    AGN.Lib.Upload.get($dropzone).removeSelection(index);
+    this.el.closest('.tile').remove();
+
+    updateIndexes(index);
+    form.initFields();
+
+    if (!findUploads$().exists()) {
+      toggleUploadNotification(true);
+      toggleCancelBtnVisibility(false);
+    }
+  });
+
+  function updateIndexes(fromIndex) {
+    const $uploads = findUploads$().filter(function () {
+      const index = getUploadIndex($(this));
+      return parseInt(index) > parseInt(fromIndex);
+    });
+
+    $uploads.each(function () {
+      const $el = $(this);
+      const index = getUploadIndex($el) - 1;
+
+      $el.find('[name*="uploads["]').each(function () {
+        const $input = $(this);
+        $input.attr('name', $input.attr('name').replace(/uploads\[\d+]/g, `uploads[${index}]`));
+      });
+
+      $el.attr(UPLOAD_DATA_ATTR_NAME, index);
+    });
+  }
+
+  function findUploads$() {
+    return $(UPLOAD_SELECTOR);
+  }
+
+  function getUploadIndex($el) {
+    const $upload = $el.is(UPLOAD_SELECTOR) ? $el : $el.closest(UPLOAD_SELECTOR);
+    return $upload.attr(UPLOAD_DATA_ATTR_NAME);
+  }
+
+  function toggleUploadNotification(show) {
+    $container.prev().toggleClass('hidden', !show);
+  }
+
+  function toggleCancelBtnVisibility(show) {
+    $cancelBtn.parent().toggleClass('hidden', !show);
+  }
+
+  function toggleDuplicationRelatedBlocksVisibility($scope, show) {
+    $scope.find('[data-duplication-error-block]').toggleClass('hidden', !show);
+    $scope.find('[data-overwrite-block]').toggleClass('hidden', !show);
+  }
 });

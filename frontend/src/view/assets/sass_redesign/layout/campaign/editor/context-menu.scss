@@ -1,0 +1,45 @@
+
+.context-menu-root.context-menu-list {
+  @include border;
+  @include flex-column;
+  overflow: hidden;
+  padding: $gap-x-sm;
+  z-index: 40 !important; /* be careful modifying this, synchronize with JS: Z_INDEX_CONTEXT_MENU */
+  color: $campaign-icon-title-color;
+  background-color: var(--main-bg-color);
+  
+  &::before { // inner border
+    content: "";
+    @include border;
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    inset: 4px;
+    z-index: -1;
+  }
+
+  .context-menu-item {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    background-color: var(--main-bg-color);
+    @include font($font-size-base, $font-weight-base);
+    padding: $gap-x-sm $gap-sm;
+
+    span {
+      font-family: "Poppins";
+    }
+    
+    &:first-of-type {
+      @include border-top-radius;
+    }
+
+    &:last-of-type {
+      @include border-bottom-radius;
+    }
+
+    &:hover {
+      background-color: $primary;
+      color: $white;
+    }
+  }
+}

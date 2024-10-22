@@ -54,7 +54,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
@@ -95,7 +95,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 
 	protected RestfulUserActivityLogDao userActivityLogDao;
 	protected MailingService mailingService;
-	protected ComMailingDao mailingDao;
+	protected MailingDao mailingDao;
 	protected RecipientService recipientService;
 	protected RecipientFieldService recipientFieldService;
 	protected MailinglistDao mailinglistDao;
@@ -109,7 +109,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	protected MailingSendService mailingSendService;
 
 	public SendRestfulServiceHandler(final ConfigService configService, final MailingPreviewService mailingPreviewService, final RestfulUserActivityLogDao userActivityLogDao, final MailingService mailingService,
-			final ComMailingDao mailingDao, final RecipientService recipientService, final MailinglistDao mailinglistDao, final MaildropService maildropService, final ClassicTemplateGenerator classicTemplateGenerator,
+			final MailingDao mailingDao, final RecipientService recipientService, final MailinglistDao mailinglistDao, final MaildropService maildropService, final ClassicTemplateGenerator classicTemplateGenerator,
 			final SendActionbasedMailingService sendActionbasedMailingService, final DatasourceDescriptionDao datasourceDescriptionDao, final ComBindingEntryDao bindingEntryDao,
 			final RecipientFieldService recipientFieldService, final MailingSendService mailingSendService) {
 		this.configService = Objects.requireNonNull(configService, "configService is null");

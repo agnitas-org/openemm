@@ -437,11 +437,7 @@
 
     function requestMailingLinks(mailingId, success) {
       $.ajax({
-        type: 'POST',
-        url: AGN.url('/workflow/getMailingLinks.action'),
-        data: {
-          mailingId: mailingId
-        },
+        url: AGN.url('/mailing/ajax/' + mailingId + '/links.action'),
         success: success
       });
     }

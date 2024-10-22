@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -26,7 +26,7 @@ import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 public final class MailingPropertiesRulesImpl implements MailingPropertiesRules {
 	
 	private MaildropService maildropService;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	
 	@Override
 	public final boolean isMailingContentEditable(final int mailingID, final Admin admin) {
@@ -65,7 +65,7 @@ public final class MailingPropertiesRulesImpl implements MailingPropertiesRules 
 	}
 	
 	@Required
-	public final void setMailingDao(final ComMailingDao dao) {
+	public final void setMailingDao(final MailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "MailingDao is null");
 	}
 }

@@ -354,7 +354,7 @@ AGN.Lib.Controller.new('import-profile-mappings', function () {
     }
 
     function getColumnDefValInputType(colName) {
-        const type = config.columns[colName].dataType.toLowerCase();
+        const type = config.columns[colName].simpleDataType.toLowerCase();
         switch (type) {
             case 'date':
             case 'datetime':

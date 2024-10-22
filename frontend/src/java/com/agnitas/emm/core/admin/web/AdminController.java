@@ -13,7 +13,6 @@ package com.agnitas.emm.core.admin.web;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.form.AdminListForm;
 import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
@@ -27,6 +26,7 @@ import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonController;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ComCSVService;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.ServiceResult;
@@ -34,6 +34,7 @@ import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import com.lowagie.text.DocumentException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,10 +49,13 @@ import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.util.MvcUtils;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormSearchParams;
 import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,6 +73,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -84,15 +89,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class AdminController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(AdminController.class);
-    
+
     private static final String ADMIN_ENTRIES_KEY = "adminEntries";
     private static final String USERNAME_DUPLICATE_MSG = "error.username.duplicate";
     private static final String REDIRECT_TO_LIST = "redirect:/admin/list.action";
@@ -147,6 +155,11 @@ public class AdminController implements XssCheckAware {
         return getNewAdminForm();
     }
 
+    @ModelAttribute
+    public AdminListFormSearchParams getAdminFormSearchParams(){
+        return new AdminListFormSearchParams();
+    }
+
     protected AdminForm getNewAdminForm() {
         return new AdminForm();
     }
@@ -156,8 +169,9 @@ public class AdminController implements XssCheckAware {
                                        final Model model, final HttpSession session,
                                        @RequestParam(value = FormSearchParams.RESET_PARAM_NAME, required = false) boolean resetSearchParams,
                                        @RequestParam(value = FormSearchParams.RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
+                                       @RequestParam(required = false) boolean restoreSort,
                                        @ModelAttribute AdminListFormSearchParams adminListSearchParams) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_OVERVIEW, form);
+        FormUtils.syncPaginationData(webStorage, WebStorage.ADMIN_OVERVIEW, form, restoreSort);
         if (resetSearchParams) {
             FormUtils.resetSearchParams(adminListSearchParams, form);
         } else {
@@ -188,7 +202,7 @@ public class AdminController implements XssCheckAware {
         FormUtils.syncSearchParams(searchParams, form, false);
         model.addFlashAttribute("adminListForm", form);
 
-        return REDIRECT_TO_LIST;
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
     @RequestMapping("/{adminID}/view.action")
@@ -197,7 +211,7 @@ public class AdminController implements XssCheckAware {
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
         if (adminToEdit.getGroups() == null || adminToEdit.getGroups().isEmpty()) {
             popups.alert("error.admin.invalidGroup");
@@ -222,14 +236,15 @@ public class AdminController implements XssCheckAware {
     }
 
     private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.USERS_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
-    
-    private static final boolean canEditAltg(final Admin admin, final AdminForm adminForm) {
+
+    private static boolean canEditAltg(final Admin admin, final AdminForm adminForm) {
     	return admin.getCompanyID() == adminForm.getCompanyID();
     }
-    
+
     @RequestMapping("/{adminID}/welcome.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String sendWelcome(final Admin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
     	String clientIp = request.getRemoteAddr();
     	final int adminIdToEdit = form.getAdminID();
@@ -240,13 +255,28 @@ public class AdminController implements XssCheckAware {
     	return MESSAGES_VIEW;
     }
 
+    @RequestMapping("/welcome.action")
+    public String sendWelcome(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, HttpServletRequest req, Popups popups) {
+        validateSelectedIds(bulkIds);
+
+        logonService.sendWelcomeMail(
+                bulkIds,
+                req.getRemoteAddr(),
+                admin.getCompanyID(),
+                LogonController.PASSWORD_RESET_LINK_PATTERN
+        );
+
+        popups.success("admin.password.sent");
+        return MESSAGES_VIEW;
+    }
+
     @RequestMapping("/{adminID}/rights/view.action")
     public String viewRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
         final int adminIdToEdit = form.getAdminID();
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
 
         prepareRightsViewPageData(admin, form, model, adminToEdit);
@@ -340,7 +370,7 @@ public class AdminController implements XssCheckAware {
         if (!checkPassword(form, popups)) {
             return MESSAGES_VIEW;
         }
-        
+
         admin.setRestful(false);
 
         return saveAdminAndGetView(form, admin, popups);
@@ -387,6 +417,7 @@ public class AdminController implements XssCheckAware {
     }
 
     @RequestMapping("/{adminID}/confirmDelete.action")
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     public String confirmDelete(@RequestParam(required = false) String backToUrl, AdminForm form, Admin admin, Popups popups, Model model) {
         final int adminIdToDelete = form.getAdminID();
         final int companyID = admin.getCompanyID();
@@ -398,7 +429,7 @@ public class AdminController implements XssCheckAware {
         }
 
         if (deleteConfirmSR.getResult() == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST);
+            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
         }
 
         popups.addPopups(deleteConfirmSR);
@@ -406,7 +437,8 @@ public class AdminController implements XssCheckAware {
     }
 
     @RequestMapping("/{adminID}/delete.action")
-    public String delete(@RequestParam(required = false) String backToUrl, Admin admin, AdminForm form, Popups popups,
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    public String delete(Admin admin, AdminForm form, Popups popups,
                          final HttpServletResponse response, final HttpSession session,
                          RedirectAttributes redirectAttributes) {
         final ServiceResult<Admin> result = adminService.delete(admin, form.getAdminID());
@@ -428,14 +460,62 @@ public class AdminController implements XssCheckAware {
         }
 
        redirectAttributes.addAttribute(FormSearchParams.RESTORE_PARAM_NAME, true);
-        return StringUtils.isNotEmpty(backToUrl)
-                ? "redirect:" + backToUrl
-                : REDIRECT_TO_LIST;
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
-    @ModelAttribute
-    public AdminListFormSearchParams getAdminFormSearchParams(){
-        return new AdminListFormSearchParams();
+    @GetMapping(value = "/deleteRedesigned.action")
+    @PermissionMapping("confirmDelete")
+    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+        validateSelectedIds(bulkIds);
+
+        ServiceResult<List<Admin>> result = adminService.getAllowedForDeletion(bulkIds, admin.getCompanyID());
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        List<String> usernames = result.getResult().stream().map(Admin::getUsername).collect(Collectors.toList());
+
+        MvcUtils.addDeleteAttrs(model, usernames,
+                "settings.admin.delete", "settings.admin.delete.question",
+                "bulkAction.delete.admin", "bulkAction.delete.admin.question");
+        return DELETE_VIEW;
+    }
+
+    @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @PermissionMapping("delete")
+    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, @RequestParam(required = false) String backToUrl, Admin admin, Popups popups, HttpServletResponse response, HttpSession session) {
+        validateSelectedIds(bulkIds);
+
+        List<Admin> deletedAdmins = adminService.delete(bulkIds, admin.getCompanyID());
+        writeUALForDelete(admin, deletedAdmins);
+
+        if (deletedAdmins.stream().anyMatch(a -> a.getAdminID() == admin.getAdminID())) {
+            session.invalidate();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return "redirect:/logonRedesigned.action";
+        }
+
+        popups.success(SELECTION_DELETED_MSG);
+
+        return StringUtils.isNotEmpty(backToUrl)
+                ? "redirect:" + backToUrl
+                : REDIRECT_TO_LIST + "?restoreSort=true";
+    }
+
+    private void validateSelectedIds(Set<Integer> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
+    }
+
+    private void writeUALForDelete(Admin admin, List<Admin> deletedAdmins) {
+        List<String> identifiers = deletedAdmins.stream()
+                .map(a -> String.format("%s (%d)", a.getUsername(), a.getAdminID()))
+                .collect(Collectors.toList());
+
+        userActivityLogService.writeUserActivityLog(admin, "delete users","users: " + StringUtils.join(identifiers, ", "));
     }
 
     private boolean adminUsernameChangedToExisting(final AdminForm aForm) {
@@ -496,7 +576,7 @@ public class AdminController implements XssCheckAware {
             popups.alert("error.admin.limit");
             return MESSAGES_VIEW;
         }
-        
+
         // Set values to persisted values to not overwrite with invalid values
         if(!canEditAltg(admin, form) && oldSavingAdmin != null) {
         	form.setAltgId(oldSavingAdmin.getAccessLimitingTargetGroupID());
@@ -522,7 +602,7 @@ public class AdminController implements XssCheckAware {
 		} else {
 			adminChangesLogService.getChangesAsUserActions(form, oldSavingAdmin, oldSavingAdminPreferences)
 				.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
-			
+
 			if (result.isPasswordChanged()) {
 				userActivityLogService.writeUserActivityLog(admin, "change password", form.getUsername() + " (" + form.getAdminID() + ")");
 			}
@@ -614,6 +694,10 @@ public class AdminController implements XssCheckAware {
     }
 
     private void updateCurrentAdmin(final Admin currentAdmin, final Admin savedAdmin) {
+        if (!currentAdmin.getAdminLang().equals(savedAdmin.getAdminLang())) {
+            AgnUtils.updateBrowserCacheMarker();
+        }
+
         currentAdmin.setAdminLang(savedAdmin.getAdminLang());
         currentAdmin.setAdminCountry(savedAdmin.getAdminCountry());
         currentAdmin.setAdminTimezone(savedAdmin.getAdminTimezone());

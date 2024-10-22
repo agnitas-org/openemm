@@ -1,8 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action"%>
 <%@page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="targetEditForm" type="com.agnitas.emm.core.target.form.TargetEditForm"--%>
 <%--@elvariable id="mailTrackingAvailable" type="java.lang.Boolean"--%>
@@ -12,27 +14,25 @@
 <%--@elvariable id="complexityGrade" type="com.agnitas.emm.core.target.beans.TargetComplexityGrade"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
 
-<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
-<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
-<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
-
 <c:set var="DISABLED" value="${isLocked or hidden}"/>
 <c:url var="saveUrl" value="/target/${targetEditForm.targetId}/save.action"/>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
-<div id="target-view" class="tiles-container d-flex hidden" data-controller="target-group-view" data-initializer="target-group-view" data-editable-view="${agnEditViewKey}">
+<div id="target-view" class="tiles-container" data-controller="target-group-view" data-initializer="target-group-view" data-editable-view="${agnEditViewKey}">
     <script id="config:target-group-view" type="application/json">
         {
             "errorPositionDetails": ${emm:toJson(errorPositionDetails)}
         }
     </script>
 
-    <div class="tiles-block flex-column" style="flex: 600">
-        <mvc:form id="settings-tile" cssClass="tile" servletRelativeAction="/target/${targetEditForm.targetId}/view.action" modelAttribute="targetEditForm" data-editable-tile=""
+    <div class="tiles-block flex-column" style="flex: 800">
+        <mvc:form id="settings-tile" servletRelativeAction="/target/${targetEditForm.targetId}/view.action" modelAttribute="targetEditForm"
+                  cssClass="tile ${targetEditForm.targetId gt 0 ? 'h-auto flex-none' : ''}" data-editable-tile=""
                   data-form="resource" data-validator-options="skip_empty: false" data-action="save-target"
                   data-submit-type="${not empty workflowForwardParams ? 'static' : ''}">
+
             <mvc:hidden path="targetId" />
             <mvc:hidden path="viewFormat" />
             <mvc:hidden path="previousViewFormat" value="${targetEditForm.viewFormat}"/>
@@ -43,7 +43,7 @@
             </c:if>
 
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="Settings" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
 
                 <div class="tile-controls">
                     <%@include file="fragments/altg-badge.jspf" %>
@@ -61,7 +61,7 @@
                 </div>
             </div>
 
-            <div class="tile-body">
+            <div class="tile-body js-scrollable">
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label" for="shortname">
@@ -78,7 +78,7 @@
                             ${descriptionMsg}
                         </label>
 
-                        <mvc:textarea path="description" id="description" cssClass="form-control v-resizable" readonly="${DISABLED}" placeholder="${descriptionMsg}"/>
+                        <mvc:textarea path="description" id="description" cssClass="form-control" readonly="${DISABLED}" placeholder="${descriptionMsg}" rows="1" />
                     </div>
 
                     <emm:ShowByPermission token="settings.extended">
@@ -97,64 +97,67 @@
                     </emm:HideByPermission>
 
                     <%@include file="fragments/view-altg-toggle.jspf" %>
+                    <%@include file="fragments/target-schedule-deletion.jspf" %>
                 </div>
             </div>
         </mvc:form>
 
         <c:if test="${targetEditForm.targetId gt 0}">
-            <c:if test="${not DISABLED and emm:permissionAllowed('targets.change', pageContext.request)}">
-                <div id="evaluation-tile" class="tile" data-editable-tile>
-                    <div class="tile-header">
-                        <h1 class="tile-title"><mvc:message code="GWUA.evaluation" /></h1>
+            <div class="tiles-block" style="flex: 1">
+                <c:if test="${not DISABLED and emm:permissionAllowed('targets.change', pageContext.request)}">
+                    <div id="evaluation-tile" class="tile" data-editable-tile style="flex: 1">
+                        <div class="tile-header">
+                            <h1 class="tile-title text-truncate"><mvc:message code="statistic.Recipient" /></h1>
 
-                        <div class="tile-controls min-w-0">
-                            <mvc:select path="targetEditForm.mailinglistId" size="1" cssClass="form-control js-select" data-select-options="dropdownAutoWidth: true, width: 'auto'" form="settings-tile">
-                                <mvc:option value="0"><mvc:message code="statistic.All_Mailinglists" /></mvc:option>
-                                <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname" />
-                            </mvc:select>
+                            <div class="tile-controls min-w-0">
+                                <mvc:select path="targetEditForm.mailinglistId" size="1" cssClass="form-control js-select" data-select-options="dropdownAutoWidth: true, width: 'auto'" form="settings-tile">
+                                    <mvc:option value="0"><mvc:message code="statistic.All_Mailinglists" /></mvc:option>
+                                    <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname" />
+                                </mvc:select>
 
-                            <button type="button" class="btn btn-primary btn-icon-sm" data-tooltip="<mvc:message code="button.save.evaluate" />"
-                                    data-form-target="#settings-tile" data-form-url="${saveUrl}" data-form-set="showStatistic: true" data-form-submit>
-                                <i class="icon icon-play-circle"></i>
-                            </button>
+                                <button type="button" class="btn btn-primary btn-icon" data-tooltip="<mvc:message code="button.save.evaluate" />"
+                                        data-form-target="#settings-tile" data-form-url="${saveUrl}" data-form-set="showStatistic: true" data-form-submit>
+                                    <i class="icon icon-play-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tile-body js-scrollable" style="overflow-y: auto !important;">
+                            <c:choose>
+                                <c:when test="${showStatistic and not empty statisticUrl}">
+                                    <div class="h-100">
+                                        <div class="h-100">
+                                            <iframe src="${statisticUrl}" class="js-simple-iframe min-h-100" style="width: 100%"> Your
+                                                Browser does not support IFRAMEs, please update! </iframe>
+                                        </div>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="notification-simple notification-simple--lg">
+                                        <i class="icon icon-info-circle"></i>
+                                        <span><mvc:message code="target.statistic.start" /></span>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
+                </c:if>
 
-                    <div class="tile-body js-scrollable" style="overflow-y: auto !important;">
-                        <c:choose>
-                            <c:when test="${showStatistic and not empty statisticUrl}">
-                                <iframe src="${statisticUrl}" border="0" scrolling="auto" frameborder="0" style="width: 100%; height: 100px"> Your
-                                    Browser does not support IFRAMEs, please update! </iframe>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="notification-simple notification-simple--lg">
-                                    <i class="icon icon-info-circle"></i>
-                                    <span><mvc:message code="GWUA.targetGroup.notEvaluated" /></span>
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
+                <div id="used-in-tile" class="tile" data-editable-tile style="flex: 1">
+                    <div class="tile-body" data-load="<c:url value='/target/${targetEditForm.targetId}/dependents.action'/>"></div>
                 </div>
-            </c:if>
-
-            <div id="used-in-tile" class="tile" data-editable-tile>
-                <div class="tile-header">
-                    <h1 class="tile-title"><mvc:message code="default.usedIn" /></h1>
-                </div>
-
-                <div class="tile-body" data-load="<c:url value='/target/${targetEditForm.targetId}/dependents.action'/>"></div>
             </div>
         </c:if>
     </div>
 
-    <div id="definition-tile" class="tile" style="flex: 1230" data-editable-tile="main">
+    <div id="definition-tile" class="tile" style="flex: 1030" data-editable-tile="main">
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="TargetDefinition" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="TargetDefinition" /></h1>
 
             <div class="tile-title-controls">
                 <emm:ShowByPermission token="settings.extended">
-                    <input id="use-advanced-tab" type="checkbox" class="icon-switch" data-form-target="#settings-tile" data-action="toggle-editor-tab" ${targetEditForm.viewFormat == 'QUERY_BUILDER' ? '' : 'checked'}>
-                    <label for="use-advanced-tab" class="text-switch__label">
+                    <label class="text-switch">
+                        <input type="checkbox" data-form-target="#settings-tile" data-action="toggle-editor-tab" ${targetEditForm.viewFormat == 'QUERY_BUILDER' ? '' : 'checked'}>
                         <span><mvc:message code="default.basic" /></span>
                         <span><mvc:message code="default.advanced" /></span>
                     </label>
@@ -163,13 +166,13 @@
 
             <div class="tile-controls">
                 <c:choose>
-                    <c:when test="${complexityGrade eq COMPLEXITY_GREEN}">
+                    <c:when test="${complexityGrade eq TargetComplexityGrade.GREEN}">
                         <span class="status-badge complexity.status.green" data-tooltip="<mvc:message code="target.group.complexity.low"/>"></span>
                     </c:when>
-                    <c:when test="${complexityGrade eq COMPLEXITY_YELLOW}">
+                    <c:when test="${complexityGrade eq TargetComplexityGrade.YELLOW}">
                         <span class="status-badge complexity.status.yellow" data-tooltip="<mvc:message code="warning.target.group.performance.yellow"/>"></span>
                     </c:when>
-                    <c:when test="${complexityGrade eq COMPLEXITY_RED}">
+                    <c:when test="${complexityGrade eq TargetComplexityGrade.RED}">
                         <span class="status-badge complexity.status.red" data-tooltip="<mvc:message code="warning.target.group.performance.red"/>"></span>
                     </c:when>
                 </c:choose>

@@ -51,6 +51,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -104,8 +105,9 @@ public class WebserviceUserManagerController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/users.action")
-    public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.WS_MANAGER_OVERVIEW, userListForm);
+    public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm,
+                       @RequestParam(required = false) boolean restoreSort, Model model) throws WebserviceUserServiceException {
+        FormUtils.syncPaginationData(webStorage, WebStorage.WS_MANAGER_OVERVIEW, userListForm, restoreSort);
 
         model.addAttribute("webserviceUserList",
                 webserviceUserService.getPaginatedWSUserList(admin.getCompanyID(),
@@ -125,9 +127,10 @@ public class WebserviceUserManagerController implements XssCheckAware {
 
     @RequestMapping(value = "/usersRedesigned.action")
     @PermissionMapping("list")
-    public String listRedesigned(Admin admin, @ModelAttribute("filter") WebserviceUserOverviewFilter filter, @ModelAttribute WebserviceUserFormSearchParams searchParams, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
+    public String listRedesigned(Admin admin, @ModelAttribute("filter") WebserviceUserOverviewFilter filter, @ModelAttribute WebserviceUserFormSearchParams searchParams,
+                                 @RequestParam(required = false) boolean restoreSort, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
         FormUtils.syncSearchParams(searchParams, filter, true);
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.WS_MANAGER_OVERVIEW, filter);
+        FormUtils.syncPaginationData(webStorage, WebStorage.WS_MANAGER_OVERVIEW, filter, restoreSort);
 
         model.addAttribute("webserviceUserList", webserviceUserService.getPaginatedWSUserList(filter, admin));
         model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID(), true));
@@ -143,7 +146,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         FormUtils.syncSearchParams(searchParams, filter, false);
         model.addFlashAttribute("filter", filter);
 
-        return "redirect:/administration/wsmanager/usersRedesigned.action";
+        return "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true";
     }
 
     @PostMapping(value = "/user/new.action")
@@ -152,8 +155,8 @@ public class WebserviceUserManagerController implements XssCheckAware {
         if (creationValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
                 return isRedesign(admin)
-                        ? "redirect:/administration/wsmanager/usersRedesigned.action"
-                        : "redirect:/administration/wsmanager/users.action";
+                        ? "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true"
+                        : "redirect:/administration/wsmanager/users.action?restoreSort=true";
             }
         }
 
@@ -161,8 +164,8 @@ public class WebserviceUserManagerController implements XssCheckAware {
 
         popups.alert("error.webserviceuser.cannot_create");
         return isRedesign(admin)
-                ? "redirect:/administration/wsmanager/usersRedesigned.action"
-                : "redirect:/administration/wsmanager/users.action";
+                ? "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true"
+                : "redirect:/administration/wsmanager/users.action?restoreSort=true";
     }
 
     @PostMapping(value = "/user/update.action")
@@ -178,7 +181,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
     }
 
     private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.USERS_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     private void processCompanyId(final Admin admin, final WebserviceUserForm userForm) {

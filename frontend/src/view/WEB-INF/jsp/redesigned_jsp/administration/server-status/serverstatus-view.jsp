@@ -2,7 +2,6 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 
 <%--@elvariable id="sendDiagnosisResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="jobStartResult" type="com.agnitas.service.SimpleServiceResult"--%>
@@ -17,7 +16,7 @@
 <c:url var="jobStartUrl" value="/serverstatus/job/start.action"/>
 <c:url var="testMailSendUrl" value="/serverstatus/testemail/send.action"/>
 
-<div id="system-status-overview" class="tiles-container hidden" data-controller="system-status" data-editable-view="${agnEditViewKey}">
+<div id="system-status-overview" class="tiles-container" data-controller="system-status" data-editable-view="${agnEditViewKey}">
 	<div class="tiles-block flex-column" style="flex: 1.743">
 		<%@ include file="fragments/general-info-tile.jspf" %>
 
@@ -29,7 +28,7 @@
 
 	<div id="settings-tile" class="tile" data-editable-tile>
 		<div class="tile-header">
-			<h1 class="tile-title"><mvc:message code="Settings" /></h1>
+			<h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
 		</div>
 		<div class="tile-body js-scrollable">
 			<div class="row g-3">
@@ -65,15 +64,13 @@
 				<mvc:form cssClass="col-12" servletRelativeAction="/serverstatus/licensedata/licenseupload.action" modelAttribute="licenceDataUploadForm" data-form="resource" enctype="multipart/form-data">
 					<div class="tile tile--sm tile--highlighted">
 						<div class="tile-header">
-							<h3><mvc:message code="serverStatus.general.licenseDataUpload" /></h3>
+							<h3 class="tile-title"><mvc:message code="serverStatus.general.licenseDataUpload" /></h3>
 						</div>
 						<div class="tile-body">
 							<div class="row g-3">
 								<div class="col-12 d-flex gap-1">
-									<div class="input-group">
-										<input type="file" name="file" class="form-control" required>
-									</div>
-									<button type="submit" class="btn btn-icon-sm btn-primary">
+									<input type="file" name="file" class="form-control" required>
+									<button type="submit" class="btn btn-icon btn-primary">
 										<i class="icon icon-cloud-upload-alt"></i>
 									</button>
 								</div>
@@ -91,7 +88,7 @@
 				<mvc:form cssClass="col-12" data-form="resource" modelAttribute="serverStatusForm">
 					<div class="tile tile--sm tile--highlighted">
 						<div class="tile-header">
-							<h3><mvc:message code="settings.Config"/></h3>
+							<h3 class="tile-title"><mvc:message code="settings.Config"/></h3>
 						</div>
 						<div class="tile-body">
 							<div class="row g-3">

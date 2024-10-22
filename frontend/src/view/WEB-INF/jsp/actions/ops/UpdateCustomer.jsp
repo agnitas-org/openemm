@@ -1,11 +1,6 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<emm:instantiate var="trackingPoints" type="java.util.LinkedHashMap">
-    <c:set target="${trackingPoints}" property="-1"><mvc:message code="statistic.revenue"/></c:set>
-    <%@include file="load-tracking-points.jsp"%>
-</emm:instantiate>
-
 <emm:instantiate var="updateCustomerColumnInfo" type="java.util.LinkedHashMap">
     <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
                         hide="change_date, timestamp, creation_date, datasource_id, bounceload, email, customer_id,

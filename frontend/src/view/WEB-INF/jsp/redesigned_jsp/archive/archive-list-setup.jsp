@@ -3,15 +3,12 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="agnTitleKey" 			       value="mailing.archive" 	   scope="request"/>
-<c:set var="agnSubtitleKey" 		       value="mailing.archive" 	   scope="request"/>
-<c:set var="sidemenu_active" 		       value="Mailings" 		   scope="request"/>
-<c:set var="sidemenu_sub_active" 	       value="mailing.archive" 	   scope="request"/>
-<c:set var="agnHighlightKey" 		       value="default.Overview"    scope="request"/>
-<c:set var="isBreadcrumbsShown" 	       value="true" 			   scope="request"/>
-<c:set var="agnBreadcrumbsRootKey"	       value="Mailings" 	       scope="request"/>
-<mvc:message var="agnHeadLineFirstCrumb"   code="mailing.archive"      scope="request"/>
-<c:set var="agnHelpKey" 			       value="mailingArchive" 	   scope="request"/>
+<c:set var="agnTitleKey" 			  value="mailing.archive" 	   scope="request"/>
+<c:set var="sidemenu_active" 		  value="Mailings" 		       scope="request"/>
+<c:set var="sidemenu_sub_active" 	  value="mailing.archive" 	   scope="request"/>
+<c:set var="agnHighlightKey" 		  value="default.Overview"     scope="request"/>
+<c:set var="agnBreadcrumbsRootKey"	  value="mailing.archive" 	   scope="request"/>
+<c:set var="agnHelpKey" 			  value="mailingArchive" 	   scope="request"/>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

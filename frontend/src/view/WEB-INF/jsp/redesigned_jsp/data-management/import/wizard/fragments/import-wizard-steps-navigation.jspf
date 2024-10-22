@@ -1,0 +1,35 @@
+
+<c:set var="lastStep" value="7"/>
+
+<c:if test="${not empty backUrl}">
+    <a href="${backUrl}" type="button" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code="button.Back" />">
+        <i class="icon icon-angle-left fs-1"></i>
+    </a>
+</c:if>
+
+<div class="progress">
+    <div class="progress-bar-white-bg"></div>
+    <div class="progress-bar"
+         role="progressbar"
+         aria-valuenow="${step}"
+         aria-valuemin="0"
+         aria-valuemax="${lastStep}"
+         style="width: calc(${step} * (100% / ${lastStep}))"></div>
+    <div class="progress-bar-primary-bg"></div>
+    <div class="progress-fraction">${step}/${lastStep}</div>
+</div>
+
+<c:choose>
+    <c:when test="${step != lastStep}">
+        <button type="button" class="btn btn-icon btn-primary" data-tooltip="<mvc:message code="button.Proceed" />" data-form-confirm>
+            <i class="icon icon-angle-right fs-1"></i>
+        </button>
+    </c:when>
+    <c:otherwise>
+        <button type="button" class="btn btn-primary btn-sm-horizontal" data-form-confirm>
+            <span class="text"><mvc:message code="ImportData" /></span>
+            <i class="icon icon-play-circle"></i>
+        </button>
+    </c:otherwise>
+</c:choose>
+

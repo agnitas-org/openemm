@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -75,7 +74,7 @@ public class RecipientModelValidator extends BaseValidator {
         assertValidProfilefieldContent(model);
     }
     
-    private final void assertValidProfilefieldContent(final RecipientModel model) {
+    private void assertValidProfilefieldContent(final RecipientModel model) {
 		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, model.getCompanyId());
 		final List<String> profileFieldsWithUnallowedHtml = new ArrayList<>();
 		
@@ -84,15 +83,15 @@ public class RecipientModelValidator extends BaseValidator {
 				if(entry.getValue() != null) {
 					HtmlChecker.checkForUnallowedHtmlTags(entry.getValue().toString(), allowHtmlTags);
 				}
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch (final HtmlCheckerException e) {
 				profileFieldsWithUnallowedHtml.add(entry.getKey());
 			}
 		}
 		
 		if (!profileFieldsWithUnallowedHtml.isEmpty()) {
 			throw new IllegalArgumentException(String.format(
-					"Profile fields containing HTML code: %s", 
-					profileFieldsWithUnallowedHtml.stream().collect(Collectors.joining(", "))));
+                "Profile fields containing HTML code: %s",
+                String.join(", ", profileFieldsWithUnallowedHtml)));
 		}
     }
 }

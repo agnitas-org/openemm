@@ -1,0 +1,72 @@
+
+
+/*doc
+---
+title: Icon badges
+name: badges_12_icons
+parent: badges_03_special
+---
+
+The square badge can contain any icon inside. To do that you should use class `.icon-badge`.
+
+```htmlexample
+<span class="icon-badge">
+  <i class="icon icon-lock"></i>
+</span>
+```
+
+Default background color for such badges is primary. But you can easy change it.
+
+```htmlexample
+<span class="icon-badge text-bg-success">
+  <i class="icon icon-check"></i>
+</span>
+```
+
+You can also increase the size of the badge using the class `.icon-badge--lg`.
+
+```htmlexample
+<span class="icon-badge icon-badge--lg">
+  <i class="icon icon-check"></i>
+</span>
+```
+
+If you need to add multiple icons inside you can use `.multi-icon-badge`.
+
+```htmlexample
+<span class="multi-icon-badge">
+  <i class="icon icon-file-import"></i>
+  <i class="icon icon-cogs"></i>
+  <i class="icon icon-file-export"></i>
+</span>
+```
+
+*/
+
+.icon-badge {
+  @extend .square-badge;
+  font-size: $status-badge-font-size;
+  color: $white;
+  background-color: $primary;
+
+  &--lg {
+    @include size($status-badge-size-lg);
+    border-radius: $border-radius;
+    font-size: $font-size-md;
+  }
+}
+
+.multi-icon-badge {
+  @include flex-row($gap-x-sm);
+  align-items: center;
+  padding-inline: $gap-x-sm - 1;
+  height: $status-badge-size;
+  max-width: min-content;
+  border-radius: $border-radius-sm;
+  background-color: $stat-or-badge-dark-grey;
+  color: $white;
+
+  .icon {
+    font-size: $status-badge-font-size;
+  }
+}

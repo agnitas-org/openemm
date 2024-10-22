@@ -8,11 +8,9 @@
 <%--@elvariable id="hidden" type="java.lang.Boolean"--%>
 
 <c:set var="agnTitleKey"             value="Target"                                                                scope="request" />
-<c:set var="agnSubtitleKey"          value="Target"                                                                scope="request" />
 <c:set var="sidemenu_active"         value="Targetgroups"                                                          scope="request" />
-<c:set var="isBreadcrumbsShown"      value="true"                                                                  scope="request" />
 <c:set var="agnBreadcrumbsRootKey"   value="Targetgroups"                                                          scope="request" />
-<c:url var="agnBreadcrumbsRootUrl"   value="/target/list.action"                                                   scope="request" />
+<c:url var="agnBreadcrumbsRootUrl"   value="/target/list.action?restoreSort=true"                                  scope="request" />
 <c:set var="agnHelpKey"              value="targetGroupView"                                                       scope="request" />
 <c:set var="agnHighlightKey"         value="${targetEditForm.targetId ne 0 ? 'target.Edit' : 'target.NewTarget'}"  scope="request" />
 <c:set var="agnEditViewKey"          value="target-group-view"                                                     scope="request" />
@@ -37,8 +35,6 @@
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="0" value="${element}" />
 
-            <c:set target="${element}" property="btnCls" value="btn dropdown-toggle" />
-            <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'" />
             <c:set target="${element}" property="iconBefore" value="icon-wrench" />
             <c:set target="${element}" property="name"><mvc:message code="action.Action" /></c:set>
 
@@ -134,7 +130,6 @@
             <c:url var="saveUrl" value="/target/${targetEditForm.targetId}/save.action"/>
             <emm:instantiate var="element" type="java.util.LinkedHashMap">
                 <c:set target="${itemActionsSettings}" property="3" value="${element}" />
-                <c:set target="${element}" property="btnCls" value="btn" />
                 <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#settings-tile' data-form-submit-event" />
                 <c:set target="${element}" property="iconBefore" value="icon-save" />
                 <c:set target="${element}" property="name">

@@ -10,25 +10,26 @@
 
 package com.agnitas.service;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.agnitas.messages.Message;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 public class SimpleServiceResult extends ServiceResult<Void> {
 
-    public SimpleServiceResult(final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
+    public SimpleServiceResult(final boolean success, final Collection<Message> successMessages, final Collection<Message> warningMessages, final Collection<Message> errorMessages) {
         this(success, successMessages, warningMessages, errorMessages, null);
     }
 
-    public SimpleServiceResult(final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages, final List<Message> infoMessages) {
+    public SimpleServiceResult(final boolean success, final Collection<Message> successMessages, final Collection<Message> warningMessages, final Collection<Message> errorMessages, final Collection<Message> infoMessages) {
         super(null, success, successMessages, warningMessages, errorMessages, infoMessages);
     }
     public SimpleServiceResult(boolean success, Message... messages) {
         super(null, success, messages);
     }
 
-    public SimpleServiceResult(boolean success, List<Message> messages) {
+    public SimpleServiceResult(boolean success, Collection<Message> messages) {
         super(null, success, messages);
     }
 
@@ -40,11 +41,11 @@ public class SimpleServiceResult extends ServiceResult<Void> {
         return new SimpleServiceResult(true, null, Arrays.asList(warningMessages), null);
     }
 
-    public static SimpleServiceResult simpleWarning(final List<Message> warningMessages) {
+    public static SimpleServiceResult simpleWarning(final Collection<Message> warningMessages) {
         return simpleWarning(true, warningMessages);
     }
 
-    public static SimpleServiceResult simpleWarning(boolean success, final List<Message> warningMessages) {
+    public static SimpleServiceResult simpleWarning(boolean success, final Collection<Message> warningMessages) {
         return new SimpleServiceResult(success, null, warningMessages, null);
     }
 
@@ -52,11 +53,19 @@ public class SimpleServiceResult extends ServiceResult<Void> {
         return new SimpleServiceResult(false, null, null, Arrays.asList(errorMessages));
     }
 
-    public static SimpleServiceResult simpleError(final List<Message> errorMessages) {
+    public static SimpleServiceResult simpleError(final Collection<Message> errorMessages) {
         return new SimpleServiceResult(false, null, null, errorMessages);
     }
 
     public static SimpleServiceResult simpleInfo(boolean success, Message ... messages) {
         return new SimpleServiceResult(success, null, null, null, Arrays.asList(messages));
+    }
+
+    public static SimpleServiceResult of(ServiceResult<?> result) {
+        return new SimpleServiceResult(result.isSuccess(),
+                result.getSuccessMessages(),
+                result.getWarningMessages(),
+                result.getErrorMessages(),
+                result.getInfoMessages());
     }
 }

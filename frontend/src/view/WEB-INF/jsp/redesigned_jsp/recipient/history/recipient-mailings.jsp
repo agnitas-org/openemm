@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="contactHistoryJson" type="net.sf.json.JSONArray"--%>
 <%--@elvariable id="deliveryHistoryEnabled" type="java.lang.Boolean"--%>
@@ -19,16 +19,21 @@
 <mvc:message var="openingsMsg" code='statistic.openings'/>
 <mvc:message var="clicksMsg" code='statistic.Clicks'/>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
-    <div id="table-tile" class="tile js-data-table" data-table="recipient-mailing-history-overview" data-editable-tile="main">
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.search"/></h1>
-        </div>
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <div id="table-tile" class="tile" data-editable-tile="main">
         <div class="tile-body d-flex flex-column gap-3 js-scrollable">
             <div class="notification-simple notification-simple--info notification-simple--lg">
-                <span id="remaining-generations-text"><mvc:message code="info.recipient.data.retention" arguments="${expireSuccess},${expireRecipient}"/></span>
+                <span><mvc:message code="info.recipient.data.retention" arguments="${expireSuccess},${expireRecipient}"/></span>
             </div>
-            <div class="js-data-table-body" data-web-storage="recipient-mailing-history-overview"></div>
+            <div class="table-wrapper" data-web-storage="recipient-mailing-history-overview" data-js-table="recipient-mailing-history-overview">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <c:forEach var="entry" items="${contactHistoryJson}">
@@ -51,7 +56,8 @@
                     {
                         "headerName": "${typeMsg}",
                         "editable": false,
-                        "field": "typeTitle"
+                        "field": "typeTitle",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${nameMsg}",
@@ -68,7 +74,8 @@
                     {
                         "headerName": "${subjectMsg}",
                         "editable": false,
-                        "field": "subject"
+                        "field": "subject",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${deliveryDateMsg}",
@@ -92,7 +99,8 @@
                         "headerName": "${openingsMsg}",
                         "type": "numberRangeColumn",
                         "editable": false,
-                        "field": "openings"
+                        "field": "openings",
+                        "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${clicksMsg}",
@@ -110,11 +118,12 @@
     <div id="filter-tile" class="tile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">
@@ -186,20 +195,22 @@
 </div>
 
 <script id="delivery-date-cell" type="text/x-mustache-template">
-    {{ if (value === 'soft-bounce') { }}
-        <mvc:message code="bounces.softbounce"/>
-    {{ } else if (value === 'hard-bounce') { }}
-        <mvc:message code="statistic.bounces.hardbounce"/>
-    {{ } else if (!value) { }}
-        <mvc:message code="recipient.history.mailing.feedback.no"/>
-    {{ } else { }}
-        {{- AGN.Lib.DateFormat.formatAdminDate(value) }}
-    {{ } }}
+    <span class="text-truncate-table">
+        {{ if (value === 'soft-bounce') { }}
+            <mvc:message code="bounces.softbounce"/>
+        {{ } else if (value === 'hard-bounce') { }}
+            <mvc:message code="statistic.bounces.hardbounce"/>
+        {{ } else if (!value) { }}
+            <mvc:message code="recipient.history.mailing.feedback.no"/>
+        {{ } else { }}
+            {{- AGN.Lib.DateFormat.formatAdminDate(value) }}
+        {{ } }}
+    </span>
 </script>
 
 <script id="clicks-cell" type="text/x-mustache-template">
     {{ var clicksHistoryUrl = AGN.url('/recipient/' + ${recipient.customerId} + '/mailing/' + entry.mailingId + '/clicksHistory.action') }}
-    <a href="{{- clicksHistoryUrl  }}" class="btn btn-pill" data-confirm><i class="icon icon-external-link-alt"></i><span>{{- value }}</span></a>
+    <a href="{{- clicksHistoryUrl  }}" class="table__btn btn btn-inverse" data-confirm><i class="icon icon-external-link-alt"></i><span>{{- value }}</span></a>
 </script>
 
 <script type="text/javascript">

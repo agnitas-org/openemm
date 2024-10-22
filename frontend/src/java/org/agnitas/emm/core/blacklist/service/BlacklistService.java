@@ -21,7 +21,6 @@ import org.agnitas.dao.UserStatus;
 
 
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
-import com.agnitas.emm.core.globalblacklist.beans.GlobalBlacklistDto;
 
 
 public interface BlacklistService {
@@ -44,8 +43,6 @@ public interface BlacklistService {
 
     boolean add(int companyId, int adminId, String email, String reason) throws Exception;
 
-    void add(GlobalBlacklistDto globalBlacklistDto);
-
     boolean update(int companyId, String email, String reason);
 
     PaginatedListImpl<BlacklistDto> getAll(BlacklistOverviewFilter filter, int companyId);
@@ -53,9 +50,11 @@ public interface BlacklistService {
     List<BlacklistDto> getAll(int companyId) throws Exception;
 
     List<Mailinglist> getBindedMailingLists(int companyId, String email);
+    List<Mailinglist> getBindedMailingLists(Set<String> emails, int companyId);
 
     boolean delete(int companyId, String email, Set<Integer> mailinglistIds);
-    
+    boolean delete(Set<String> emails, Set<Integer> mailinglistIds, int companyId);
+
     boolean blacklistCheck(String email, int companyId);
     
     boolean blacklistCheckCompanyOnly(String email, int companyId);

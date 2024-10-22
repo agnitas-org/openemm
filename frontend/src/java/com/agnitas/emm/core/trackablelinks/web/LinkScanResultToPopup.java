@@ -39,18 +39,18 @@ public final class LinkScanResultToPopup {
 	 * @param result LinkScanResult
 	 * @param warnings popup container
 	 */
-	public static final void linkWarningsToPopups(final LinkScanResult result, final Popups warnings) {
+	public static void linkWarningsToPopups(final LinkScanResult result, final Popups warnings) {
 		insecureLinksToActionMessages(result, warnings);
 		// Add more warnings here in the order to be displayed
 	}
 	
 	/**
-	 * Processes the warning of type {@link LinkWarning#WarningType#INSECURE}.
+	 * Processes the warning of type {@link LinkWarning.WarningType.INSECURE}.
 	 * 
 	 * @param result link scan result
 	 * @param warnings container for warnings
 	 */
-	private static final void insecureLinksToActionMessages(final LinkScanResult result, final Popups warnings) {
+	private static void insecureLinksToActionMessages(final LinkScanResult result, final Popups warnings) {
 		final List<LinkWarning> list = filterWarningsByType(result, WarningType.INSECURE);
 		
 		if(!list.isEmpty()) {

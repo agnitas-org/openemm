@@ -17,6 +17,7 @@
 <%--@elvariable id="emailSettingsEditable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isCopying" type="java.lang.Boolean"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
+<%--@elvariable id="isPostMediatypeActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="gridTemplateName" type="java.lang.String"--%>
 <%--@elvariable id="templateShortname" type="java.lang.String"--%>
 <%--@elvariable id="prioritizedMediatypes" type="java.util.List<com.agnitas.emm.core.mediatypes.common.MediaTypes>"--%>
@@ -30,9 +31,9 @@
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}"/>
 <c:set var="isNewGridMailing" value="${mailingId le 0 and isMailingGrid}"/>
 
-<div class="tile" style="flex: 1" data-editable-tile>
+<div class="tile" data-editable-tile>
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="mailing.generalSettings"/></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="mailing.generalSettings"/></h1>
     </div>
     <div class="tile-body grid gap-3 js-scrollable" style="--bs-columns: 1">
         <div data-field="validator">
@@ -43,9 +44,9 @@
                       data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}" disabled="${isSettingsReadonly}"/>
         </div>
         <div>
-            <c:set var="descriptionMsg"><mvc:message code="Description"/></c:set>
+            <mvc:message var="descriptionMsg" code="Description"/>
             <label class="form-label" for="mailingDescription">${descriptionMsg}</label>
-            <mvc:textarea id="mailingDescription" cssClass="form-control v-resizable js-scrollable" path="description" rows="1" cols="32" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
+            <mvc:textarea id="mailingDescription" cssClass="form-control js-scrollable" path="description" rows="1" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
         </div>
         <emm:ShowByPermission token="settings.extended">
             <div class="form-check form-switch mt-auto">
@@ -61,8 +62,11 @@
         </emm:HideByPermission>
 
         <emm:ShowByPermission token="mailing.show.types">
-            <%@include file="fragments/mailing-settings-followup-help-block.jspf" %>
-            <div class="${not followupAllowed ? 'has-feedback' : ''}">
+            <c:set var="followupNotice" value=""/>
+            <c:set var="mailingTypeContainerClass" value=""/>
+            <%@include file="fragments/mailing-settings-followup-notice.jspf" %>
+
+            <div class="${mailingTypeContainerClass}">
                 <label class="form-label">
                     <label for="settingsGeneralMailType"><mvc:message code="mailing.Mailing_Type"/></label>
                     <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/MailingTypeMsg.xml"></a>
@@ -82,12 +86,7 @@
                     </mvc:option>
                     <%@include file="fragments/mailingtype-extended-options.jspf" %>
                 </mvc:select>
-                <c:if test="${not followupAllowed}">
-                    <div class="form-control-feedback-message">
-                        <i class="icon icon-exclamation-triangle"></i>
-                        <mvc:message code="forbidden.mailing.followup"/>
-                    </div>
-                </c:if>
+                ${followupNotice}
             </div>
             <%@include file="fragments/mailing-settings-followup-additional-inputs.jspf" %>
         </emm:ShowByPermission>
@@ -96,12 +95,12 @@
         </emm:HideByPermission>
 
         <c:if test="${gridTemplateId <= 0}">
-            <div>
+            <div class="${isPostMediatypeActive ? 'hidden' : ''}">
                 <label class="form-label">
                     <mvc:message code="mediatype.mediatypes"/>
                     <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/MediaTypesMsg.xml"></a>
                 </label>
-                <ul id="mediatypes-list" class=" list-group">
+                <ul id="mediatypes-list" class="list-group">
                     <c:forEach var="mediaType" items="${prioritizedMediatypes}">
                         <c:set var="mediaTypeName" value="${fn:toLowerCase(mediaType.name())}"/>
                         <c:set var="mediaTypeCode" value="${mediaType.mediaCode}"/>
@@ -109,13 +108,13 @@
                         <c:set var="mt" value="${mailingSettingsForm[mtFormName]}" />
                         <c:set var="mediatypeItem">
                             <li class="list-group-item" data-priority="${mt.priority}" data-mediatype="${mediaTypeName}" data-action="change-mediatype">
-                                <div class="form-check form-switch">
+                                <div class="form-check form-switch" data-field="toggle-vis" data-field-vis-scope="#mailingSettingsForm">
                                     <c:choose>
                                         <c:when test="${mediaTypeName eq 'email'}">
-                                            <c:set var="filedsToToggle" value="#subject-field, #pre-header-field, #format-fields, #sender-fields, #reply-to-fields, #envelope-email-field, #mailing-bcc-recipients, #onepixel-field, #edit-frame-content-btn"/>
+                                            <c:set var="filedsToToggle" value="#subject-field, #pre-header-field, #format-fields, #sender-fields, #reply-to-fields, #envelope-email-field, #mailing-bcc-recipients, #onepixel-field"/>
                                         </c:when>
                                         <c:when test="${mediaTypeName eq 'sms'}">
-                                            <c:set var="filedsToToggle" value="#sms-address-field, #smsTemplate, #edit-frame-content-btn"/>
+                                            <c:set var="filedsToToggle" value="#sms-address-field, #smsTemplate"/>
                                         </c:when>
                                         <c:otherwise>
                                             <c:set var="filedsToToggle" value=""/>
@@ -123,7 +122,7 @@
                                     </c:choose>
                                     <mvc:checkbox id="${mediaTypeName}-mediatype-switch" cssClass="form-check-input" path="${mediaTypeName}Mediatype.active" role="switch" value="true" disabled="${not MAILING_EDITABLE or mt.readonly or isSettingsReadonly}"
                                                   data-field-vis="" data-field-vis-nondisabled="" data-field-vis-show="${filedsToToggle}" />
-                                    <div class="hidden" data-field-vis-default="" data-field-vis-hide="${filedsToToggle}"></div>
+                                    <div class="hidden" data-field-vis-default="" data-field-vis-hide="${filedsToToggle}" ></div>
                                     <label class="form-label form-check-label fw-normal"><mvc:message code="mailing.MediaType.${mediaTypeName}"/></label>
                                 </div>
                                 <c:if test="${mt.readonly}">
@@ -137,11 +136,11 @@
                                 </c:if>
                             </li>
                         </c:set>
-                        <c:if test="${mediaTypeName eq 'email'}">
-                            <emm:ShowByPermission token="mediatype.email">
-                                ${mediatypeItem}
-                            </emm:ShowByPermission>
-                        </c:if>
+
+                        <emm:ShowByPermission token="${mediaType.requiredPermission}">
+                            ${mediatypeItem}
+                        </emm:ShowByPermission>
+
                         <c:if test="${mediaTypeName ne 'email'}">
                             <%@include file="fragments/mailing-not-email-mediatypes.jspf"%>
                         </c:if>

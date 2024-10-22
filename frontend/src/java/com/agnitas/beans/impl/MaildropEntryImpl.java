@@ -11,11 +11,14 @@
 package com.agnitas.beans.impl;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 
 import com.agnitas.beans.MaildropEntry;
 
 public class MaildropEntryImpl implements MaildropEntry {
+
 	private int companyID;
 	private int id;
 	private int mailingID;
@@ -30,6 +33,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	private int adminTestTargetID;
 	private int overwriteTestRecipient; // GWUA-5664
 	private String mailGenerationOptimizationMode;
+	private Set<Integer> altgIds = new HashSet<>();
 
 	@Override
 	public int getAdminTestTargetID() {
@@ -279,6 +283,16 @@ public class MaildropEntryImpl implements MaildropEntry {
     public void setOverwriteTestRecipient(int overwriteTestRecipient) {
         this.overwriteTestRecipient = overwriteTestRecipient;
     }
+
+	@Override
+	public void setAltgIds(Set<Integer> altgIds) {
+		this.altgIds = altgIds;
+	}
+
+	@Override
+	public Set<Integer> getAltgIds() {
+		return altgIds;
+	}
 
 	@Override
 	public String toString() {

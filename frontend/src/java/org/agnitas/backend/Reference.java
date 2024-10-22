@@ -18,6 +18,10 @@ public class Reference {
 		/* empty by intention */
 	}
 
+	public String voucherName () {
+		return name ();
+	}
+	
 	public String name() {
 		return null;
 	}

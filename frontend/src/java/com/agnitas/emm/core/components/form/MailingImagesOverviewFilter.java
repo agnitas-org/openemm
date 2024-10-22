@@ -11,10 +11,14 @@
 package com.agnitas.emm.core.components.form;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
+import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 
-public class MailingImagesOverviewFilter {
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+public class MailingImagesOverviewFilter extends PaginationForm {
 
     private String fileName;
     private DateRange uploadDate = new DateRange();
@@ -51,5 +55,9 @@ public class MailingImagesOverviewFilter {
 
     public void setMimetypes(List<String> mimetypes) {
         this.mimetypes = mimetypes;
+    }
+
+    public boolean isUiFiltersSet() {
+        return isNotBlank(fileName) || isMobile != null || uploadDate.isPresent() || CollectionUtils.isNotEmpty(mimetypes);
     }
 }

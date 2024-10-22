@@ -1,111 +1,87 @@
-(function(){
+(() => {
 
-  var Load;
+  class Load {
 
-  /* Loads an url and replace the content of the element with
-     the results
+    static DATA_KEY = 'agn:load';
 
-     data-load="url"
-     data-load-target="jQuery Selector"
-     data-load-interval="int"
-  */
-  Load = function($element) {
-    var callback, self = this;
+    constructor($element) {
+      this.el = $element;
+      this.url = $element.data('load');
+      this.interval = parseInt($element.data('load-interval'));
+      this.target = $element.data('load-target');
 
-    self.el = $element;
-    self.url = $element.data('load');
-    self.interval = parseInt($element.data('load-interval'));
-    self.target = $element.data('load-target');
+      if (this.interval) {
+        this._interval = window.setInterval(() => this.load(), this.interval);
+      }
 
-    if (self.interval) {
-      callback = function() {
-        self.load()
-      };
-      self._interval = window.setInterval(callback, self.interval);
+      this.el.removeAttr('data-load');
+      this.el.data(Load.DATA_KEY, this);
     }
 
-    self.el.removeAttr('data-load');
-  };
-
-  Load.load = function($element, isAlwaysLoad) {
-    var loadObj;
-
-    loadObj = $element.data('_load');
-
-    if (loadObj) {
-      loadObj.load();
-      return
+    stop() {
+      window.clearInterval(this._interval)
     }
 
-    if ($element.is(':hidden') && isAlwaysLoad !== true) {
-      // Postpone loading of hidden elements (keep an attribute)
-      return;
+    load() {
+      if (this.loading) {
+        return;
+      }
+
+      this.loading = true;
+
+      $.get(this.url)
+        .always(() => {
+          if (this.interval) {
+            this.loading = false;
+          }
+        })
+        .done(resp => {
+          const $resp = $(resp);
+          if ($resp.all('[data-load-stop]').exists()) {
+            this.stop();
+          }
+
+          let $target;
+          if (!this.target) {
+            $target = resp;
+          } else if (this.target == 'body') {
+            $target = /<body[^>]*>((.|[\n\r])*)<\/body>/im.exec(resp)[1];
+          } else {
+            $target = $resp.all(this.target);
+          }
+
+          if (this.el.is('[data-load-replace]')) {
+            this.el.replaceWith($target);
+            this.el = $target;
+          } else {
+            this.el.html($target);
+          }
+
+          AGN.Lib.Controller.init(this.el);
+          AGN.runAll(this.el);
+        })
+        .fail(() => this.stop);
     }
 
-    loadObj = new Load($element);
-    loadObj.load();
-    $element.data('_load', loadObj);
-  };
+    static load($element) {
+      const instance = Load.get($element);
+      if (instance) {
+        instance.load();
+        return;
+      }
 
-  Load.get = function ($el) {
-    return $el.data('_load');
+      if ($element.is(':hidden')) {
+        // Postpone loading of hidden elements (keep an attribute)
+        return;
+      }
+
+      new Load($element).load();
+    }
+
+    static get($el) {
+      return $el.data(Load.DATA_KEY);
+    }
   }
-
-  Load.prototype.stop = function() {
-    window.clearInterval(this._interval)
-  };
-
-  Load.prototype.load = function() {
-    var jqxhr,
-        self = this;
-
-    if (self.loading) {
-      return;
-    }
-
-    self.loading = true;
-    jqxhr = $.get(self.url);
-
-    jqxhr.always(function() {
-      if (self.interval) {
-        self.loading = false;
-      }
-    });
-
-    jqxhr.fail(function() {
-      self.stop();
-    });
-
-    jqxhr.done(function(resp) {
-      var $resp = $(resp),
-          $target,
-          $loadStop;
-
-      $loadStop = $resp.all('[data-load-stop]');
-
-      if ($loadStop.length != 0) {
-        self.stop();
-      }
-
-      if (!self.target) {
-        $target = resp;
-      } else if (self.target == 'body') {
-        $target = /<body[^>]*>((.|[\n\r])*)<\/body>/im.exec(resp)[1];
-      } else {
-        $target = $resp.all(self.target);
-      }
-
-      if (self.el.is('[data-load-replace]')) {
-        self.el.replaceWith($target);
-        self.el = $target;
-      } else {
-        self.el.html($target);
-      }
-      
-      AGN.Lib.Controller.init(self.el);
-      AGN.runAll(self.el);
-    });
-  };
 
 
   AGN.Lib.Load = Load;

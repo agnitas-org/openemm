@@ -20,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -36,11 +36,11 @@ public class ActionOperationSendMailingImpl implements EmmActionOperation {
 
     private static final Logger logger = LogManager.getLogger(ActionOperationSendMailingImpl.class);
 
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private SendActionbasedMailingService sendActionbasedMailingService;
 
     @Required
-    public void setMailingDao(final ComMailingDao mailingDao) {
+    public void setMailingDao(final MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 

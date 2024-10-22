@@ -78,7 +78,7 @@ public abstract class ComAjaxServletBase extends HttpServlet {
 		    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             try {
-                request.getRequestDispatcher("/logon.action?method=init")
+                request.getRequestDispatcher("/logonRedesigned.action?method=init")
                         .forward(request, response);
             } catch (ServletException | IOException e) {
                 logger.error("Error occurred: " + e.getMessage(), e);

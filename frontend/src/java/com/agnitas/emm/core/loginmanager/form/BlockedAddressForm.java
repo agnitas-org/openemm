@@ -10,19 +10,20 @@
 
 package com.agnitas.emm.core.loginmanager.form;
 
+// TODO: remove after EMMGUI-714 will be finished and old design will be removed (if not used)
 public class BlockedAddressForm {
 	
-	private int trackingId;
+	private long trackingId;
 	
 	private String ipAddress;
 	
 	private String username;
 	
-	public int getTrackingId() {
+	public long getTrackingId() {
 		return trackingId;
 	}
 	
-	public void setTrackingId(int trackingId) {
+	public void setTrackingId(long trackingId) {
 		this.trackingId = trackingId;
 	}
 	

@@ -1,9 +1,9 @@
-(function() {
+(() => {
 
-  const Tooltip = {};
   const Template = AGN.Lib.Template;
   const Helpers = AGN.Lib.Helpers;
-  const Popover = AGN.Lib.Popover;
+
+  const Tooltip = {};
 
   Tooltip.get = function ($e) {
     const tooltip = bootstrap.Tooltip.getInstance($e);
@@ -13,17 +13,13 @@
     return null;
   }
 
-  const createTemplate = (function() {
-    const make = Template.prepare('tooltip-template');
-
-    return function (tooltipStyle, arrowStyle, innerStyle) {
-      return make({
-        tooltipStyle: tooltipStyle,
-        arrowStyle: arrowStyle,
-        innerStyle: innerStyle
-      });
-    };
-  })();
+  const createTemplate = function (tooltipStyle, arrowStyle, innerStyle) {
+    return Template.text('tooltip-template', {
+      tooltipStyle: tooltipStyle,
+      arrowStyle: arrowStyle,
+      innerStyle: innerStyle
+    });
+  };
 
   function getTooltipOptions(title, style, trigger) {
     return {
@@ -57,15 +53,7 @@
     Tooltip.remove($e);
 
     const tooltip = new bootstrap.Tooltip($e, options);
-    // $e.on({
-    //   'dragstart.tooltip': function() {
-    //     $e.bsTooltip('hide');
-    //     $e.bsTooltip('disable');
-    //   },
-    //   'dragstop.tooltip': function() {
-    //     $e.bsTooltip('enable');
-    //   }
-    // });
+
     $e.on('remove', function(){
       Tooltip.remove($e);
     })
@@ -86,20 +74,8 @@
 
   Tooltip.remove = function($e) {
     const tooltip = bootstrap.Tooltip.getInstance($e);
-    if (tooltip) {
-      tooltip.dispose();
-    }
-    // $e.off('dragstart.tooltip dragstop.tooltip');
+    tooltip?.dispose();
   };
-
-//   Tooltip.setEnabled = function($e, isEnabled) {
-//     if (isEnabled || isEnabled === undefined) {
-//       $e.bsTooltip('enable');
-//     } else {
-//       $e.bsTooltip('hide');
-//       $e.bsTooltip('disable');
-//     }
-//   };
 
   Tooltip.setShown = function($e, isShown) {
     if (isShown || isShown === undefined) {
@@ -114,45 +90,5 @@
   };
 
   AGN.Lib.Tooltip = Tooltip;
-  
-  class HelpTooltip {
-    static defaultOptions = {
-      trigger: 'hover',
-      html: true,
-      popperConfig: {
-        placement: 'bottom-start'
-      }
-    }
 
-    constructor($el) {
-      this.$el = $el;
-      this.elementData = this.$el.data('tooltip-help');
-      this.$el.one('mouseenter', () => Popover.getOrCreate($el, this.getOptions($el)).show())
-    }
-
-    getOptions($el) {
-      return $.extend(HelpTooltip.defaultOptions, this.getElementSpecificOptions($el));
-    }
-
-    #getXOffset() {
-      const data = this.elementData;
-      const elWidth = this.$el.outerWidth();
-      return data.placement === 'bottom-end' ? -elWidth : elWidth;
-    }
-
-    getElementSpecificOptions() {
-      const data = this.elementData;
-      const offset = [this.#getXOffset(), 0];
-
-      if (!data.content) {  // can be content text or object with popper.js properties
-        return { "content": data, offset };
-      }
-      if (data.placement) {
-        data.popperConfig = { placement: data.placement }
-      }
-      data.offset = offset;
-      return data;
-    }
-  }
-  AGN.Lib.HelpTooltip = HelpTooltip;
 })();

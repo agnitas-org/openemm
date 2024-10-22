@@ -52,6 +52,7 @@ public interface MailinglistApprovalService {
      * Get all mailinglist which are not available for the admin.
      */
 	List<Integer> getDisabledMailinglistsForAdmin(int companyId, int adminId);
+	List<Integer> getDisabledMailinglists(Admin admin);
 
 	/**
 	 * Check is admin have access to certain mailing list.

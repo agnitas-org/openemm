@@ -39,7 +39,7 @@ import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
-import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientRemark;
+import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
@@ -427,45 +427,45 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     @Override
-    public Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId) {
-        return bindingEntryDao.getRecipientRemarksStat(mailinglistId, targetId, companyId);
+    public Map<String, Integer> getRecipientStatusStat(int mailinglistId, int targetId, int companyId) {
+        return bindingEntryDao.getRecipientStatusStat(mailinglistId, targetId, companyId);
     }
 
     @Override
-    public JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summed) {
+    public JSONArray getFilteredRecipientStatusesJson(Map<String, Integer> statuses, boolean summed) {
         JSONArray jsonArray = new JSONArray();
-        remarks.entrySet().stream()
-                .filter(remarkEntry -> summed == SummedRecipientRemark.getNames().contains(remarkEntry.getKey()))
-                .map(remarkEntry -> getRemarkJson(remarkEntry.getKey(), remarkEntry.getValue()))
+        statuses.entrySet().stream()
+                .filter(statusEntry -> summed == SummedRecipientStatus.getNames().contains(statusEntry.getKey()))
+                .map(statusEntry -> getRecipientStatusJson(statusEntry.getKey(), statusEntry.getValue()))
                 .forEach(jsonArray::add);
         return jsonArray;
     }
 
-    private JSONObject getRemarkJson(String remark, int value) {
+    private JSONObject getRecipientStatusJson(String status, int value) {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("remark", remark);
+        jsonObject.put("name", status);
         jsonObject.put("value", value);
         return jsonObject;
     }
 
     @Override
-    public byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) {
-        Map<String, Integer> remarks = getRecipientRemarksStat(mailingListId, targetId, admin.getCompanyID());
+    public byte[] getRecipientStatusesCSV(Admin admin, int mailingListId, int targetId) {
+        Map<String, Integer> statuses = getRecipientStatusStat(mailingListId, targetId, admin.getCompanyID());
         Locale locale = admin.getLocale();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
-            writeRemarksToCsv(csvWriter, remarks, locale);
+            writeRecipientStatusesToCsv(csvWriter, statuses, locale);
         } catch (Exception e) {
             return new byte[0];
         }
         return outputStream.toByteArray();
     }
 
-    private void writeRemarksToCsv(CsvWriter csvWriter, Map<String, Integer> remarks, Locale locale) throws Exception {
+    private void writeRecipientStatusesToCsv(CsvWriter csvWriter, Map<String, Integer> statuses, Locale locale) throws Exception {
         csvWriter.writeValues(localStr("recipient.Remark", locale), localStr("Value", locale));
-        for (Map.Entry<String, Integer> remark : remarks.entrySet()) {
-            csvWriter.writeValues(remark.getKey(), remark.getValue());
+        for (Map.Entry<String, Integer> status : statuses.entrySet()) {
+            csvWriter.writeValues(status.getKey(), status.getValue());
         }
     }
 

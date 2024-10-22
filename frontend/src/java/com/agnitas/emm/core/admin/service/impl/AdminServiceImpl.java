@@ -10,40 +10,6 @@
 
 package com.agnitas.emm.core.admin.service.impl;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.impl.AdminEntryImpl;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.preferences.PreferenceItem;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Company;
@@ -55,6 +21,7 @@ import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.admin.AdminException;
@@ -75,6 +42,40 @@ import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.core.supervisor.dao.GrantedSupervisorLoginDao;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.impl.AdminEntryImpl;
+import org.agnitas.beans.impl.CompanyStatus;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.Tuple;
+import org.agnitas.util.preferences.PreferenceItem;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class AdminServiceImpl implements AdminService {
 	
@@ -93,6 +94,7 @@ public class AdminServiceImpl implements AdminService {
 	protected EmmLayoutBaseDao emmLayoutBaseDao;
 	protected PermissionService permissionService;
 	private AdminNotifier adminNotifier;
+	private BulkActionValidationService<Integer, Admin> bulkActionValidationService;
 
 	@Required
 	public void setAdminDao(AdminDao adminDao) {
@@ -112,6 +114,11 @@ public class AdminServiceImpl implements AdminService {
 	@Required
 	public void setAdminPreferencesDao(AdminPreferencesDao adminPreferencesDao) {
 		this.adminPreferencesDao = adminPreferencesDao;
+	}
+
+	@Required
+	public void setBulkActionValidationService(BulkActionValidationService<Integer, Admin> bulkActionValidationService) {
+		this.bulkActionValidationService = bulkActionValidationService;
 	}
 
 	@Required
@@ -205,7 +212,7 @@ public class AdminServiceImpl implements AdminService {
 	public ServiceResult<Admin> isPossibleToDeleteAdmin(final int adminId, final int companyId) {
 		final Admin admin = getAdmin(adminId, companyId);
 		if(admin == null) {
-			return ServiceResult.error();
+			return ServiceResult.error(Message.of("error.general.missing"));
 		}
 		final Company company = admin.getCompany();
 		if(company != null && company.getStatAdmin() == adminId && CompanyStatus.ACTIVE == company.getStatus()) {
@@ -251,6 +258,11 @@ public class AdminServiceImpl implements AdminService {
 		}
 		
 		return result;
+	}
+
+	@Override
+	public AdminEntry findByEmail(String email, int companyId) {
+		return adminDao.findByEmail(email, companyId);
 	}
 
 	@Override
@@ -479,7 +491,12 @@ public class AdminServiceImpl implements AdminService {
 			int pageSize){
 		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, creationDate, lastLoginDate, username, sort, direction, pageNumber, pageSize, false);
 	}
-	
+
+	@Override
+	public PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize) {
+		return adminDao.getList(companyId, sort, dir, pageNumber, pageSize);
+	}
+
 	@Override
 	public List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin) {
 		List<AdminEntry> admins = Collections.singletonList(new AdminEntryImpl(admin));
@@ -516,6 +533,44 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		return adminDao.getAllAdminsByCompanyId(isRestful, admin.getCompanyID());
+	}
+
+	@Override
+	public List<AdminEntry> findAllByEmailPart(String email, int companyID) {
+		return adminDao.findAllByEmailPart(email, companyID);
+	}
+
+	@Override
+	public List<AdminEntry> findAllByEmailPart(String email) {
+		return adminDao.findAllByEmailPart(email);
+	}
+
+	@Override
+	public ServiceResult<List<Admin>> getAllowedForDeletion(Set<Integer> ids, int companyID) {
+		return bulkActionValidationService.checkAllowedForDeletion(ids, id -> isPossibleToDeleteAdmin(id, companyID));
+	}
+
+	@Override
+	public List<Admin> delete(Set<Integer> ids, int companyId) {
+		return getAllowedForDeletion(ids, companyId).getResult()
+				.stream()
+				.filter(a -> deleteAdmin(a.getAdminID(), a.getCompanyID()))
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public SimpleServiceResult delete(int id, int companyId) {
+		ServiceResult<List<Admin>> deletionCheck = getAllowedForDeletion(Set.of(id), companyId);
+		if (deletionCheck.isSuccess()) {
+			deletionCheck.getResult().forEach(a -> deleteAdmin(a.getAdminID(), a.getCompanyID()));
+		}
+
+		return SimpleServiceResult.of(deletionCheck);
+	}
+
+	@Override
+	public void updateEmail(String email, int id, int companyId) {
+		adminDao.updateEmail(email, id, companyId);
 	}
 
 	@Override

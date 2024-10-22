@@ -11,6 +11,7 @@
 <%--@elvariable id="hasAnyDisabledMailingLists" type="java.lang.Boolean"--%>
 <%--@elvariable id="calculatedRecipients" type="java.lang.Integer"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
+<%--@elvariable id="column" type="com.agnitas.beans.ProfileField"--%>
 
 <c:set var="SIMPLE_DATE_TYPE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
 <c:set var="DATETIME_TYPE" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
@@ -117,15 +118,24 @@
                                     sortable="false">
 						<mvc:hidden path="recipientFieldChanges[${column.column}].shortname" value="${column.column}"/>
 						<mvc:hidden path="recipientFieldChanges[${column.column}].type" value="${column.simpleDataType}"/>
-						<mvc:text path="recipientFieldChanges[${column.column}].newValue" cssClass="form-control"/>
-					</display:column>
-
-					<display:column headerClass="js-table-sort" class="field_allowed_values"
-									titleKey="settings.FieldFixedValue"
-									sortable="false">
-						<c:if test="${not empty column.allowedValues}">
-							${fn:join(column.allowedValues, '; ')}
-						</c:if>
+                        <c:choose>
+                            <c:when test="${not empty column.allowedValues}">
+                                <mvc:select path="recipientFieldChanges[${column.column}].newValue" cssClass="form-control">
+                                    <c:if test="${column.nullable}">
+                                        <mvc:option value="">NULL</mvc:option>
+                                    </c:if>
+                                    <c:if test="${not empty column.defaultValue}">
+                                        <mvc:option value="${column.defaultValue}">${column.defaultValue}</mvc:option>
+                                    </c:if>
+                                    <c:forEach items="${column.allowedValues}" var="fixedValue">
+                                        <mvc:option value="${fixedValue}">${fixedValue}</mvc:option>
+                                    </c:forEach>
+                                </mvc:select>
+                            </c:when>
+                            <c:otherwise>
+                                <mvc:text path="recipientFieldChanges[${column.column}].newValue" cssClass="form-control"/>
+                            </c:otherwise>
+                        </c:choose>
 					</display:column>
 
 					<display:column headerClass="js-table-sort" class="js-checkable field_isClear"

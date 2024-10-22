@@ -27,11 +27,11 @@
 
             <div class="col-auto d-flex align-items-end">
                 {{ if(isNewMapping) { }}
-                    <button type="button" class="btn btn-primary btn-icon-sm" data-action="add-gender-mapping" data-tooltip="<mvc:message code='button.Add'/>">
+                    <button type="button" class="btn btn-primary btn-icon" data-action="add-gender-mapping" data-tooltip="<mvc:message code='button.Add'/>">
                         <i class="icon icon-plus"></i>
                     </button>
                 {{ } else { }}
-                    <button type="button" class="btn btn-danger btn-icon-sm" data-action="delete-gender-mapping" data-tooltip="<mvc:message code='button.Delete'/>">
+                    <button type="button" class="btn btn-danger btn-icon" data-action="delete-gender-mapping" data-tooltip="<mvc:message code='button.Delete'/>">
                         <i class="icon icon-trash-alt"></i>
                     </button>
                 {{ } }}
@@ -84,11 +84,11 @@
 
         <div data-mappings-actions class="col-auto d-flex align-items-end">
             {{ if (isNewMapping) { }}
-                <button type="button" class="btn btn-primary btn-icon-sm" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
+                <button type="button" class="btn btn-primary btn-icon" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
                     <i class="icon icon-plus"></i>
                 </button>
             {{ } else { }}
-                <button type="button" class="btn btn-danger btn-icon-sm" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
+                <button type="button" class="btn btn-danger btn-icon" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
                     <i class="icon icon-trash-alt"></i>
                 </button>
             {{ } }}
@@ -99,28 +99,39 @@
 
 <script id="column-mappings-modal" type="text/x-mustache-template">
     <mvc:form id="column-mappings-edit-modal" cssClass="modal" tabindex="-1" data-validator="import-profile-mappings/form">
-        <div class="modal-dialog modal-fullscreen-xl-down modal-xl modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-xl-down modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="import.ManageColumns"/></h1>
-                    <div class="modal-controls">
-                        <button id="bulk-mappings-delete-btn" type="button" class="btn btn-inverse btn-sm fw-semibold hidden" data-action="bulk-mappings-delete">
-                            <i class="icon icon-trash-alt"></i>
-                            <mvc:message code="bulkAction.delete.csvColumn" />
-                        </button>
-                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
-                            <span class="sr-only"><mvc:message code="button.Cancel"/></span>
-                        </button>
-                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
                 </div>
 
                 <div class="modal-body">
-                    <div class="table-box">
-                        <div class="table-scrollable">
-                            <table class="table-rounded">
+                    <div class="table-wrapper">
+                        <div class="table-wrapper__header justify-content-end">
+                            <div class="table-wrapper__controls">
+                                <div class="bulk-actions hidden">
+                                    <p class="bulk-actions__selected">
+                                        <span><%-- Updates by JS --%></span>
+                                        <mvc:message code="default.list.entry.select" />
+                                    </p>
+                                    <div class="bulk-actions__controls">
+                                        <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.csvColumn" />" data-action="bulk-mappings-delete">
+                                            <i class="icon icon-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper__body">
+                            <table class="table--borderless js-table">
                                 <thead>
                                 <tr>
-                                    <th class="bulk-ids-column"><input type="checkbox" class="form-check-input" data-action="select-all-columns-mappings"/></th>
+                                    <th><input type="checkbox" class="form-check-input" data-bulk-checkboxes /></th>
                                     <th><mvc:message code="import.CsvColumn"/></th>
                                     <th><mvc:message code="import.DbColumn"/></th>
                                     <th class="fit-content"><mvc:message code="import.profile.column.mandatory"/></th>
@@ -136,11 +147,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="table-wrapper__footer"></div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary flex-grow-1" data-action="save-extended-mappings">
+                    <button type="button" class="btn btn-primary" data-action="save-extended-mappings">
                         <i class="icon icon-save"></i>
                         <span class="text"><mvc:message code="button.Save"/></span>
                     </button>
@@ -156,11 +168,11 @@
     <tr data-mapping-row="{{= index}}" {{- isNewMapping ? 'data-mapping-new' : ''}}>
     <td>
         {{ if (!isNewMapping) { }}
-            <input type="checkbox" class="form-check-input" data-mapping-checkbox data-action="select-column-mapping" />
+            <input type="checkbox" class="form-check-input" data-mapping-checkbox data-bulk-checkbox />
         {{ } }}
     </td>
 
-    <td>{{= fileColumn}}</td>
+    <td><span>{{= fileColumn}}</span></td>
 
     <td>
         <select class="form-control js-select" data-action="change-database-column" data-mapping-db-column data-select-options="dropdownAutoWidth: true">
@@ -205,13 +217,13 @@
 
     <td class="table-actions">
         {{ if (isNewMapping) { }}
-            <button type="button" class="btn btn-primary btn-icon-sm" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
+            <a type="button" class="icon-btn text-primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
                 <i class="icon icon-plus"></i>
-            </button>
+            </a>
         {{ } else { }}
-            <button type="button" class="btn btn-danger btn-icon-sm" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
+            <a type="button" class="icon-btn text-danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
                 <i class="icon icon-trash-alt"></i>
-            </button>
+            </a>
         {{ } }}
     </td>
 

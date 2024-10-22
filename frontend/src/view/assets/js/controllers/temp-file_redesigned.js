@@ -1,9 +1,9 @@
-AGN.Lib.Controller.new('temp-file', function() {
+AGN.Lib.Controller.new('temp-file', function () {
 
   const Form = AGN.Lib.Form;
   let modalAlreadyRequested;
 
-  this.addAction({'upload:add': 'show-upload-file-form'}, function() {
+  this.addAction({'upload:add': 'show-upload-file-form'}, function () {
     if (modalAlreadyRequested) {
       return;
     }
@@ -16,13 +16,13 @@ AGN.Lib.Controller.new('temp-file', function() {
       success: resp => {
         AGN.Lib.Page.render(resp);
         $('.modal').on('modal:close', clearDropzone);
-
-        $getUploadForm().on('upload:filesSet', (e, files) => {
-          addFilesInfoToModal(files);
-          modalAlreadyRequested = false;
-        });
       }
     });
+  });
+
+  this.addAction({'upload:dropped': 'addFilesToModal'}, function () {
+    addFilesInfoToModal(this.data);
+    modalAlreadyRequested = false;
   });
 
   function addFilesInfoToModal(files) {
@@ -58,13 +58,17 @@ AGN.Lib.Controller.new('temp-file', function() {
       {
         field: 'name',
         headerName: t('defaults.name'),
-        filter: false
+        filter: false,
+        suppressMovable: true,
+        cellRenderer: 'NotEscapedStringCellRenderer'
       },
       {
         field: 'size',
         headerName: t('defaults.size'),
         filter: false,
-        width: 50
+        suppressMovable: true,
+        width: 50,
+        cellRenderer: 'NotEscapedStringCellRenderer'
       }
     ];
   }
@@ -74,18 +78,18 @@ AGN.Lib.Controller.new('temp-file', function() {
   }
 
   function addFilesTableToModal(files) {
-    // rows + header + table-controls
-    const tableHeight = (files.length + 2) * 40;
     const table = new AGN.Lib.Table(
-      $(`<div class="js-data-table-body">`),
+      AGN.Lib.Template.dom('js-table-wrapper'),
       getFilesTableColumnDefs(),
       getFilesDataForTable(files),
       {pagination: false}
     );
 
-    const $tableWrapper = $(`<div class="col-12" style="height: ${tableHeight}px; max-height: 220px">`);
-    $tableWrapper.append(table.$el);
-
+    const $tableWrapper = $('<div class="col-12">').append(table.$el);
+    table.$el.css({
+      '--ag-rows-count': files.length,
+      'max-height': '235px'
+    });
     $getUploadForm().find('.row:first').prepend($tableWrapper);
   }
 

@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.import_profile.web;
 
 import static com.agnitas.emm.core.import_profile.component.ImportProfileColumnMappingChangesDetector.NO_VALUE;
-import static java.text.MessageFormat.format;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
@@ -19,23 +18,23 @@ import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ColumnMappingImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.ImportProfileService;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.CsvDataInvalidItemCountException;
-import org.agnitas.util.CsvReader;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.Separator;
@@ -55,10 +54,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.import_profile.bean.ImportProfileColumnMapping;
@@ -66,7 +64,9 @@ import com.agnitas.emm.core.import_profile.component.ImportProfileColumnMappingC
 import com.agnitas.emm.core.import_profile.component.ImportProfileColumnMappingsValidator;
 import com.agnitas.emm.core.import_profile.form.ImportProfileColumnsForm;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.data.CsvDataProvider;
 import com.agnitas.emm.data.DataProvider;
 import com.agnitas.emm.data.ExcelDataProvider;
@@ -91,26 +91,23 @@ public class ImportProfileColumnsController {
     private static final String LOG_HEAD = "%s (%d), csv column %s (%d)";
 
     private final ImportProfileService importProfileService;
-    private final ProfileFieldDao profileFieldDao;
+    private final RecipientFieldService recipientFieldService;
     private final ExtendedConversionService conversionService;
     private final ImportProfileColumnMappingsValidator mappingsValidator;
     private final UserActivityLogService userActivityLogService;
     private final ImportProfileColumnMappingChangesDetector changesDetector;
-    private final ConfigService configService;
     private final ComRecipientDao recipientDao;
 
-    public ImportProfileColumnsController(ImportProfileService importProfileService, ProfileFieldDao profileFieldDao, ExtendedConversionService conversionService,
+    public ImportProfileColumnsController(ImportProfileService importProfileService, RecipientFieldService recipientFieldService, ExtendedConversionService conversionService,
                                           ImportProfileColumnMappingsValidator mappingsValidator, UserActivityLogService userActivityLogService,
-                                          ImportProfileColumnMappingChangesDetector changesDetector,
-                                          ConfigService configService, ComRecipientDao recipientDao) {
+                                          ImportProfileColumnMappingChangesDetector changesDetector, ComRecipientDao recipientDao) {
 
         this.importProfileService = importProfileService;
-        this.profileFieldDao = profileFieldDao;
+        this.recipientFieldService = recipientFieldService;
         this.conversionService = conversionService;
         this.mappingsValidator = mappingsValidator;
         this.userActivityLogService = userActivityLogService;
         this.changesDetector = changesDetector;
-        this.configService = configService;
         this.recipientDao = recipientDao;
     }
 
@@ -125,26 +122,25 @@ public class ImportProfileColumnsController {
         model.addAttribute("profileFields", getProfileFieldsMap(profile, admin));
         model.addAttribute("columnMappings", profile.getColumnMapping());
         model.addAttribute("isReadonly", profile.isAutoMapping());
-        model.addAttribute("isEncryptedImportAllowed", importProfileService.isEcryptedImportAllowed(admin));
+        model.addAttribute("isEncryptedImportAllowed", importProfileService.isEncryptedImportAllowed(admin));
 
         return "import_wizard_profile_columns_view";
     }
-
-    private Map<String, ProfileField> getProfileFieldsMap(ImportProfile profile, Admin admin) throws Exception {
-        TreeMap<String, ProfileField> profileFieldsMap = new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID()));
-        return filterHiddenColumns(profileFieldsMap, profile.getKeyColumns(), admin);
-    }
-
-    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, List<String> keyColumns, Admin admin) {
-        for (String hiddenColumn : RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID))) {
-            profileFields.remove(hiddenColumn);
-        }
-
-        // User may also map readonly columns, but in import action, those are are checked to be only used as keycolumns
-        return profileFields.entrySet().stream()
-                .filter(e -> e.getValue().getModeEdit() == ProfileFieldMode.Editable
-                        || (e.getValue().getModeEdit() == ProfileFieldMode.ReadOnly && keyColumns.contains(e.getValue().getColumn())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    
+    private Map<String, RecipientFieldDescription> getProfileFieldsMap(ImportProfile profile, Admin admin) throws Exception {
+    	List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
+    	Map<String, RecipientFieldDescription> recipientFieldsMap = new HashMap<>();
+    	for (RecipientFieldDescription recipientField : recipientFields) {
+    		if (!RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)).contains(recipientField.getColumnName())) {
+    			ProfileFieldMode adminPermission = recipientField.getAdminPermission(admin.getAdminID());
+    	        // User may also map readonly columns, but in import action, those are checked to be only used as keycolumns
+    			if (adminPermission == ProfileFieldMode.Editable
+    					|| (adminPermission == ProfileFieldMode.ReadOnly && profile.getKeyColumns().contains(recipientField.getColumnName()))) {
+    				recipientFieldsMap.put(recipientField.getColumnName(), recipientField);
+    			}
+            }
+    	}
+        return recipientFieldsMap;
     }
 
     @PostMapping("/columns/save.action")
@@ -217,18 +213,24 @@ public class ImportProfileColumnsController {
             ServiceResult<List<ColumnMapping>> readingResult = performMappingsReading(file, profile, admin);
             popups.addPopups(readingResult);
             return readingResult.getResult();
+        } catch (InvalidCharsetException e) {
+            logReadMappingException(e);
+            popups.alert("error.import.charset");
         } catch (CsvDataInvalidItemCountException e) {
-            LOGGER.error(format("Error while mapping import columns: {0}", e.getMessage()), e);
+            logReadMappingException(e);
             popups.alert("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber());
         } catch (ImportException e) {
-            LOGGER.error(format("Error while mapping import columns: {0}", e.getMessage()), e);
+            logReadMappingException(e);
             popups.alert(e.getErrorMessageKey(), e.getAdditionalErrorData());
         } catch (Exception e) {
-            LOGGER.error(format("Error while mapping import columns: {0}", e.getMessage()), e);
-            popups.alert("error.import.exception", e.getMessage());
+            logReadMappingException(e);
+            popups.alert(Message.of("error.import.exception", e.getMessage()));
         }
-
         return Collections.emptyList();
+    }
+
+    private static void logReadMappingException(Exception e) {
+        LOGGER.error("Error while mapping import columns: {}", e.getMessage(), e);
     }
 
     private ServiceResult<List<ColumnMapping>> performMappingsReading(File importFile, ImportProfile importProfile, Admin admin) throws Exception {
@@ -250,8 +252,21 @@ public class ImportProfileColumnsController {
             errorMessages.add(Message.of("error.import.column.name.empty"));
         }
 
-        if (CsvReader.checkForDuplicateCsvHeader(dataPropertyNames, importProfile.isAutoMapping()) != null) {
-            errorMessages.add(Message.of("error.import.column.csv.duplicate"));
+        Set<String> processedColumns = new CaseInsensitiveSet();
+		Set<String> duplicateColumns = new CaseInsensitiveSet();
+        for (String dataPropertyName : dataPropertyNames) {
+            if (StringUtils.isBlank(dataPropertyName)) {
+            	errorMessages.add(Message.of("error.import.column.name.empty"));
+            	break;
+            } else if (processedColumns.contains(dataPropertyName)) {
+            	duplicateColumns.add(dataPropertyName);
+            } else {
+            	processedColumns.add(dataPropertyName);
+            }
+        }
+        
+        if (duplicateColumns.size() > 0) {
+        	errorMessages.add(Message.of("error.import.column.name.duplicate", StringUtils.join(duplicateColumns, ", ")));
         }
 
         Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(admin.getCompanyID(), admin.getAdminID(), importProfile.getKeyColumns());

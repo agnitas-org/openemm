@@ -10,13 +10,18 @@
 
 package com.agnitas.dao.impl;
 
+import static org.apache.commons.lang3.StringUtils.defaultString;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
+import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -35,8 +40,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComTitleDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComTitleDaoImpl.class);
 		
 	@Override
 	public Title getTitle(int titleID, int companyID) {
@@ -57,7 +61,82 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 			}
 		}
 	}
-	
+
+	@Override
+	public PaginatedListImpl<Title> overview(SalutationOverviewFilter filter) {
+		List<Object> params = new ArrayList<>();
+		String sql = "SELECT * FROM ("
+			+ " SELECT t.title_id, t.description, t.company_id,"
+			+ "   MAX(CASE WHEN tg.gender = 0 THEN tg.title END) AS gender0,"
+			+ "   MAX(CASE WHEN tg.gender = 1 THEN tg.title END) AS gender1,"
+			+ "   MAX(CASE WHEN tg.gender = 2 THEN tg.title END) AS gender2,"
+			+ "   MAX(CASE WHEN tg.gender = 4 THEN tg.title END) AS gender4,"
+			+ "   MAX(CASE WHEN tg.gender = 5 THEN tg.title END) AS gender5"
+			+ " FROM title_tbl t"
+			+ "   LEFT JOIN title_gender_tbl tg ON t.title_id = tg.title_id"
+			+ " GROUP BY t.title_id, t.description, t.company_id) sub"
+			+ applyOverviewFilter(filter, params);
+
+		String sortCol = filter.getSortOrDefault("title_id");
+		String sortClause = " ORDER BY " + sortCol + (isOracleDB()
+			? " " + filter.getOrder() + " NULLS LAST"
+			: " IS NULL, " + sortCol + " " + filter.getOrder());
+
+		PaginatedListImpl<Title> list = selectPaginatedListWithSortClause(logger, sql, sortClause, sortCol,
+			filter.ascending(), filter.getPage(), filter.getNumberOfRows(),
+			new OverviewRowMapper(), params.toArray());
+
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
+		}
+		return list;
+	}
+
+	private int getTotalUnfilteredCountForOverview(int companyId) {
+		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM title_tbl t");
+		List<Object> params = applyRequiredOverviewFilter(query, companyId);
+
+		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+	}
+
+	private StringBuilder applyOverviewFilter(SalutationOverviewFilter filter, List<Object> params) {
+		StringBuilder sql = new StringBuilder();
+		params.addAll(applyRequiredOverviewFilter(sql, filter.getCompanyId()));
+		if (filter.getSalutationId() != null) {
+			sql.append(getPartialSearchFilterWithAnd("title_id", filter.getSalutationId(), params));
+		}
+		if (StringUtils.isNotBlank(filter.getName())) {
+			sql.append(getPartialSearchFilterWithAnd("description"));
+			params.add(filter.getName());
+		}
+		if (StringUtils.isNotBlank(filter.getGender0())) {
+			sql.append(getPartialSearchFilterWithAnd("gender0"));
+			params.add(filter.getGender0());
+		}
+		if (StringUtils.isNotBlank(filter.getGender1())) {
+			sql.append(getPartialSearchFilterWithAnd("gender1"));
+			params.add(filter.getGender1());
+		}
+		if (StringUtils.isNotBlank(filter.getGender2())) {
+			sql.append(getPartialSearchFilterWithAnd("gender2"));
+			params.add(filter.getGender2());
+		}
+		if (StringUtils.isNotBlank(filter.getGender4())) {
+			sql.append(getPartialSearchFilterWithAnd("gender4"));
+			params.add(filter.getGender4());
+		}
+		if (StringUtils.isNotBlank(filter.getGender5())) {
+			sql.append(getPartialSearchFilterWithAnd("gender5"));
+			params.add(filter.getGender5());
+		}
+		return sql;
+	}
+
+	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
+		query.append(" WHERE company_id IN (0, ?)");
+		return new ArrayList<>(List.of(companyId));
+	}
+
 	@Override
 	public PaginatedListImpl<SalutationEntry> getSalutationList(int companyID, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
 		if (StringUtils.isBlank(sortColumn)) {
@@ -73,8 +152,9 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	 * Get a List of light title entries for dropdown display in a JSP
 	 */
 	@Override
-	public List<Title> getTitles(int companyID) {
-		return select(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?) ORDER BY LOWER(description)", new TitleLight_RowMapper(), companyID);
+	public List<Title> getTitles(int companyID, boolean includeGenders) {
+		String query = "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?) ORDER BY LOWER(description)";
+		return select(logger, query, includeGenders ? new Title_RowMapper() : new TitleLight_RowMapper(), companyID);
 	}
 
 	@Override
@@ -127,6 +207,24 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 					}
 				}
 			}
+		}
+	}
+
+	private static class OverviewRowMapper implements RowMapper<Title> {
+		@Override
+		public Title mapRow(ResultSet resultSet, int row) throws SQLException {
+			Title title = new TitleImpl();
+			title.setId(resultSet.getInt("title_id"));
+			title.setCompanyID(resultSet.getInt("company_id"));
+			title.setDescription(resultSet.getString("description"));
+			title.setTitleGender(new TreeMap<>(Map.of(
+				0, defaultString(resultSet.getString("gender0")),
+				1, defaultString(resultSet.getString("gender1")),
+				2, defaultString(resultSet.getString("gender2")),
+				4, defaultString(resultSet.getString("gender4")),
+				5, defaultString(resultSet.getString("gender5"))
+				)));
+			return title;
 		}
 	}
 

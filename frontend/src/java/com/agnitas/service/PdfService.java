@@ -36,17 +36,20 @@ public interface PdfService {
      */
     File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException;
 
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException;
+
     File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException;
 
     /**
      * Generates a .pdf file of the given web page
      *
-     * @param url URL of the web page that should be rendered
-     * @param landscape if resulting pdf should have landscape orientation (false - portrait)
-     * @param customCss custom CSS code to be applied to a web page
+     * @param url                    URL of the web page that should be rendered
+     * @param landscape              if resulting pdf should have landscape orientation (false - portrait)
+     * @param customCss              custom CSS code to be applied to a web page
+     * @param windowStatusForWaiting js window.status status to be waited before generation
      * @return .pdf file of the web page
      */
-    File generatePDFWithPuppeteer(String url, boolean landscape, String customCss) throws Exception;
+    File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowStatusForWaiting) throws Exception;
 
     /**
      * Extends given .pdf file with Agnitas logo at top right and provided title and footer

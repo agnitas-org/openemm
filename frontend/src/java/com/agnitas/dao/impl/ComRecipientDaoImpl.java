@@ -10,43 +10,40 @@
 
 package com.agnitas.dao.impl;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLDataException;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.ComRecipientMailing;
+import com.agnitas.beans.ComRecipientReaction;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.WebtrackingHistoryEntry;
+import com.agnitas.beans.impl.ComRecipientHistoryImpl;
+import com.agnitas.beans.impl.ComRecipientLiteImpl;
+import com.agnitas.beans.impl.ComRecipientMailingImpl;
+import com.agnitas.beans.impl.ComRecipientReactionImpl;
+import com.agnitas.beans.impl.RecipientDates;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
+import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mailing.bean.impl.MailingRecipientStatRowImpl;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
+import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
+import com.agnitas.emm.core.recipient.RecipientException;
+import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.restful.RestfulClientException;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.util.NumericUtil;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.DatasourceDescription;
@@ -78,11 +75,11 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ParameterParser;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.SqlPreparedInsertStatementManager;
+import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.SqlPreparedUpdateStatementManager;
 import org.agnitas.util.Tuple;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -96,43 +93,48 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.ComRecipientMailing;
-import com.agnitas.beans.ComRecipientReaction;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.WebtrackingHistoryEntry;
-import com.agnitas.beans.impl.ComRecipientHistoryImpl;
-import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.beans.impl.ComRecipientMailingImpl;
-import com.agnitas.beans.impl.ComRecipientReactionImpl;
-import com.agnitas.beans.impl.RecipientDates;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.bean.impl.MailingRecipientStatRowImpl;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
-import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
-import com.agnitas.emm.core.recipient.RecipientException;
-import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import com.agnitas.emm.core.recipient.service.RecipientType;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.emm.restful.RestfulClientException;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.util.NumericUtil;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLDataException;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComRecipientDao {
 
 	private static final Logger logger = LogManager.getLogger(ComRecipientDaoImpl.class);
+	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	private static final String[] MAILINGLIST_VALUE_FIELDS = {
 		ComRecipientHistory.USER_TYPE,
@@ -230,6 +232,33 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		} else {
 			return new ArrayList<>();
 		}
+	}
+
+	@Override
+	public List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(int companyId, int adminId) {
+		if (companyId <= 0 || adminId <= 0) {
+			return new ArrayList<>();
+		}
+		List<Object> params = Stream.of(UserType.Admin, UserType.TestUser, UserType.TestVIP)
+			.map(UserType::getTypeCode).collect(Collectors.toList());
+		String sql = "SELECT cust.email, cust.gender, cust.title, cust.firstname, cust.lastname"
+			+ String.format(" FROM %s cust WHERE cust.customer_id IN (", getCustomerTableName(companyId))
+			+ String.format(" SELECT bind.customer_id FROM %s bind ", getCustomerBindingTableName(companyId))
+			+ " WHERE bind.user_type IN (?,?,?)"
+			+ " AND bind.user_status = 1";
+
+		if (configService.isDisabledMailingListsSupported()) {
+			sql += " AND bind.mailinglist_id NOT IN " + DISABLED_MAILINGLIST_QUERY;
+			params.add(adminId);
+		}
+		sql += ") ORDER BY cust.customer_id";
+		return select(logger, sql, (rs, i) -> new RecipientSalutationDto(
+			rs.getString("email"),
+			rs.getString("firstname"),
+			rs.getString("lastname"),
+			rs.getString("title"),
+			rs.getInt("gender")
+		), params.toArray());
 	}
 
 	@Override
@@ -376,7 +405,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			} else {
 				return false;
 			}
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
@@ -744,7 +773,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 					}
 					stringValue = AgnUtils.stripTrailingZeros(value.toString());
 				} else if (value instanceof Date || value instanceof Timestamp) {
-					stringValue = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(value);
+					stringValue = DATE_FORMAT.format(value);
 				} else {
 					stringValue = value.toString();
 				}
@@ -784,6 +813,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			mailingRecipientStatRow.setRecipient(recipient);
 			return mailingRecipientStatRow;
 		}
+	}
+
+	@Override
+	public int getIntResult(SqlPreparedStatementManager statementManager) throws Exception {
+		return selectInt(logger, statementManager.getPreparedSqlString(), statementManager.getPreparedSqlParameters());
 	}
 
 	@Override
@@ -1195,7 +1229,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 		try {
 			return selectInt(logger, sql, keyColumnValue, passwordColumnValue);
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (Exception e) {
 			return 0;
 		}
 	}
@@ -1267,7 +1301,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			
 			try {
 				recipientMailing.setMailingType(MailingType.fromCode(resultSet.getInt("mailing_type")));
-			} catch (@SuppressWarnings("unused") Exception e) {
+			} catch (Exception e) {
 				throw new SQLException("Invalid MailingType code: " + resultSet.getInt("mailing_type"));
 			}
 			recipientMailing.setSendDate(resultSet.getTimestamp("send_date"));
@@ -1287,7 +1321,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	public List<ComRecipientHistory> getRecipientProfileHistory(int recipientID, int companyID) {
 		try {
 			return recipientProfileHistoryService.listProfileFieldHistory(recipientID, companyID);
-		} catch(@SuppressWarnings("unused") ProfileFieldHistoryFeatureNotEnabledException e) {
+		} catch(ProfileFieldHistoryFeatureNotEnabledException e) {
 			if (logger.isInfoEnabled()) {
 				logger.info(String.format("Profile field history feature not enabled for company ID %d", companyID));
 			}
@@ -1575,7 +1609,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 							SimpleDateFormat format = new SimpleDateFormat(customer.getCustParametersNotNull(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT));
 							format.setLenient(false);
 							date = format.parse(customer.getCustParametersNotNull(fieldName));
-						} catch (@SuppressWarnings("unused") ParseException e) {
+						} catch (ParseException e) {
 							throw new Exception("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
 						}
 						insertStatementManager.addValue(fieldName, date);
@@ -1626,7 +1660,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
     private Date tryParseIso8601DateTimeStr(String fieldName, String valueStr) throws Exception {
         try {
             return DateUtilities.parseIso8601DateTimeString(valueStr);
-        } catch (@SuppressWarnings("unused") ParseException e) {
+        } catch (ParseException e) {
             throw new Exception("Invalid date value for field '" + fieldName + "': " + valueStr);
         }
     }
@@ -1687,7 +1721,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 							SimpleDateFormat format = new SimpleDateFormat(customer.getCustParametersNotNull(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT));
 							format.setLenient(false);
 							date = format.parse(customer.getCustParametersNotNull(fieldName));
-						} catch (@SuppressWarnings("unused") ParseException e) {
+						} catch (ParseException e) {
 							throw new Exception("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
 						}
 						updateStatementManager.addValue(fieldName, date);
@@ -1695,7 +1729,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 						Date date;
 						try {
 							date = DateUtilities.parseIso8601DateTimeString(customer.getCustParametersNotNull(fieldName));
-						} catch (@SuppressWarnings("unused") ParseException e) {
+						} catch (ParseException e) {
 							throw new Exception("Invalid date value for field '" + fieldName + "': " + customer.getCustParametersNotNull(fieldName));
 						}
 						updateStatementManager.addValue(fieldName, date);
@@ -1752,7 +1786,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 						// Check for unallowed html content
 						try {
 							HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
-						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+						} catch(final HtmlCheckerException e) {
 							throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
 						}
 					}
@@ -1886,7 +1920,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				public void setValues(PreparedStatement ps, int i) throws SQLException {
 					logger.fatal(String.format("i=%d, uuid='%s', customer-id=%d", i, uuid.toString(), nonZeroIds.get(i)));
 					
-					ps.setString(1,uuid.toString());
+					ps.setNString(1, uuid.toString());
 					ps.setInt(2, nonZeroIds.get(i));
 				}
 	
@@ -1924,7 +1958,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 						// Check for unallowed html content
 						try {
 							HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
-						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+						} catch(final HtmlCheckerException e) {
 							throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
 						}
 					}
@@ -2079,7 +2113,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				// Check for unallowed html content
 				try {
 					HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				} catch(final HtmlCheckerException e) {
 					throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
 				}
 			}
@@ -2154,7 +2188,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				// Check for unallowed html content
 				try {
 					HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
-				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				} catch(final HtmlCheckerException e) {
 					throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
 				}
 			}
@@ -2481,7 +2515,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		String sql = "SELECT COUNT(customer_id) FROM " + getCustomerTableName(companyID) + " cust WHERE " + target + " AND " + RecipientStandardField.Bounceload.getColumnName() + " = 0";
 		try {
 			recipients = selectInt(logger, sql);
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (Exception e) {
 			recipients = 0;
 		}
 		return recipients;
@@ -2584,6 +2618,10 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean notAdminsAndTests) {
+		final int stepSize = configService.getIntegerValue(ConfigValue.DeleteBindingStepsize, companyID);
+		if (stepSize <= 0) {
+			throw new RuntimeException("Invalid config value for 'DeleteBindingStepsize': less or equal than zero");
+		}
 		StringBuilder sql = new StringBuilder("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE mailinglist_id = ?");
 
 		if (activeOnly) {
@@ -2593,8 +2631,15 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		if (notAdminsAndTests) {
 			sql.append(" ").append(String.format("AND user_type <> '%s' AND user_type <> '%s' AND user_type <> '%s'", UserType.Admin.getTypeCode(), UserType.TestUser.getTypeCode(), UserType.TestVIP.getTypeCode()));
 		}
-
-		update(logger, sql.toString(), mailinglistID);
+		
+		int touchedLines = 0;
+		do {
+			if (isOracleDB()) {
+				touchedLines = update(logger, sql.toString() + " AND ROWNUM <= ?", mailinglistID, stepSize);
+			} else {
+				touchedLines = update(logger, sql.toString() + " LIMIT ?", mailinglistID, stepSize);
+			}
+		} while (touchedLines == stepSize);
 	}
 
 	@Override
@@ -2713,7 +2758,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			} else {
 				return 0;
 			}
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (Exception e) {
 			return 0;
 		}
 	}
@@ -3025,7 +3070,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		
 			try {
 				value = Double.parseDouble(updateValue);
-			} catch (@SuppressWarnings("unused") Exception e) {
+			} catch (Exception e) {
 				value = 0.0;
 			}
 		} else if (columnType == SimpleDataType.Characters) {
@@ -3033,7 +3078,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			// Check for unallowed html content
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(updateValue, allowHtmlTags);
-			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			} catch(final HtmlCheckerException e) {
 				throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + columnName);
 			}
 			
@@ -3069,7 +3114,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				}
 				try {
 					value = Double.parseDouble(updateValue);
-				} catch (@SuppressWarnings("unused") Exception e) {
+				} catch (Exception e) {
 					throw new Exception("Invalid value for increment of '" + columnName + "': " + updateValue);
 				}
 			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
@@ -3081,7 +3126,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				}
 				try {
 					value = Double.parseDouble(updateValue);
-				} catch (@SuppressWarnings("unused") Exception e) {
+				} catch (Exception e) {
 					throw new Exception("Invalid value for decrement of '" + columnName + "': " + updateValue);
 				}
 			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
@@ -3130,24 +3175,10 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public int bulkUpdateEachRecipientsFields(int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception {
-		if (companyId <= 0 || MapUtils.isEmpty(updateValues)) {
-			return 0;
-		}
-		
 		List<String> alreadyRunningImports = select(logger, "SELECT description FROM import_temporary_tables WHERE import_table_name = ?", StringRowMapper.INSTANCE, "customer_" + companyId + "_tbl");
 		if (alreadyRunningImports.size() > 0) {
 			throw new ImportException(false, "error.import.AlreadyRunning", alreadyRunningImports.get(0));
 		}
-		
-		Set<String> guiBulkImmutableFields = RecipientStandardField.getBulkImmutableRecipientStandardFieldColumnNames();
-		Map<String, Object> excludedImmutable = updateValues.entrySet().stream()
-				.filter(pair -> !guiBulkImmutableFields.contains(pair.getKey()))
-				.collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-		
-		if(excludedImmutable.size() == 0) {
-            logger.error("No field to change found. Maybe all fields given are immutable for company {}", companyId);
-            throw new Exception("No field to change found. Maybe all fields given are immutable?");
-        }
 		
 		update(logger, "INSERT INTO import_temporary_tables (session_id, temporary_table_name, import_table_name, host, description) VALUES(?, ?, ?, ?, ?)", "", "", "customer_" + companyId + "_tbl", AgnUtils.getHostName(), "Bulk recipient update");
 		
@@ -3159,7 +3190,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			String whereSubStatement = getWhereSubStatement(subStatementParameter, companyId, adminId, mailingListId, sqlTargetExpression);
 			
 			int touchedLines = 0;
-			for(Map.Entry<String, Object> fieldData: excludedImmutable.entrySet()) {
+			for(Map.Entry<String, Object> fieldData : updateValues.entrySet()) {
 				String fieldName = StringUtils.lowerCase(fieldData.getKey());
 				Object fieldValue = replaceEmptyStringsWithNull(fieldData.getValue());
 				List<Object> fieldParams = new ArrayList<>();
@@ -3186,7 +3217,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 					int updated = update(logger, sqlUpdateStatement.toString(), fieldParams.toArray());
 					touchedLines += updated;
 				} catch (Exception e) {
-					if(e.getCause() instanceof SQLDataException) {
+					if (e.getCause() instanceof SQLDataException) {
 						throw new ProfileFieldBulkUpdateException(fieldName, fieldValue, companyId, e.getCause());
 					}
 					throw e;
@@ -3196,6 +3227,42 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		} finally {
 			update(logger, "DELETE FROM import_temporary_tables WHERE import_table_name = ? AND description = ?", "customer_" + companyId + "_tbl", "Bulk recipient update");
 		}
+	}
+
+	@Override
+	public int getAffectedRecipientsForBulkUpdateFields(int companyId, int adminId, int mailingListId, String targetExpression, Map<String, Object> updateValues) throws Exception {
+		final Set<Integer> uniqueIds = new HashSet<>();
+
+		List<Object> baseParams = new ArrayList<>();
+		String baseQuery = "SELECT customer_id FROM " + getCustomerTableName(companyId) + " cust "
+				+ getWhereSubStatement(baseParams, companyId, adminId, mailingListId, targetExpression);
+
+		for (Map.Entry<String, Object> fieldData : updateValues.entrySet()) {
+			final String fieldName = StringUtils.lowerCase(fieldData.getKey());
+			final Object fieldValue = replaceEmptyStringsWithNull(fieldData.getValue());
+
+			StringBuilder query = new StringBuilder(baseQuery);
+			List<Object> params = new ArrayList<>(baseParams);
+
+			query.append(" AND ");
+			if (fieldValue != null) {
+				query.append("(cust.").append(fieldName).append(" != ? OR cust.").append(fieldName).append(" IS NULL)");
+				params.add(fieldValue);
+			} else {
+				query.append("cust.").append(fieldName).append(" IS NOT NULL");
+			}
+
+			try {
+                uniqueIds.addAll(select(logger, query.toString(), IntegerRowMapper.INSTANCE, params.toArray()));
+			} catch (Exception e) {
+				if (e.getCause() instanceof SQLDataException) {
+					throw new ProfileFieldBulkUpdateException(fieldName, fieldValue, companyId, e.getCause());
+				}
+				throw e;
+			}
+		}
+
+		return uniqueIds.size();
 	}
 
 	@Override
@@ -3452,7 +3519,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
             try {
 				// optional field
                 entry.setClickedUrl(new URL(rs.getString("full_url")));
-            } catch (@SuppressWarnings("unused") SQLException | MalformedURLException ignored) {
+            } catch (SQLException | MalformedURLException ignored) {
             	// do nothing
             }
 
@@ -3733,6 +3800,28 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		}
 
 		return getRecipientList(companyID, selectSql, sqlParametersForData.toArray(new Object[0]));
+	}
+
+	@Override
+	public List<Recipient> findAllByEmailPart(String email, int companyId) {
+		String selectSql = "SELECT * FROM " + getCustomerTableName(companyId) + " WHERE " + RecipientStandardField.Bounceload.getColumnName() + " = 0 AND" +
+				getPartialSearchFilter("email");
+		return getRecipientList(companyId, selectSql, new Object[]{email});
+	}
+
+	@Override
+	public List<Integer> findIdsByEmail(String email, int companyId) {
+		return select(logger, "SELECT customer_id FROM " + getCustomerTableName(companyId) + " WHERE email = ?", IntegerRowMapper.INSTANCE, email);
+	}
+
+	@Override
+	public void updateEmail(String email, int id, int companyId) {
+		update(logger, "UPDATE " + getCustomerTableName(companyId) + " SET email = ? WHERE customer_id = ?", email, id);
+	}
+
+	@Override
+	public boolean tableExists(int companyId) {
+		return DbUtilities.checkIfTableExists(dataSource, getCustomerTableName(companyId));
 	}
 
 	@Override

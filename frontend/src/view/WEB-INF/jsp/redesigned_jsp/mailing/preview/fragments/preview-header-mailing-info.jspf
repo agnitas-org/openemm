@@ -56,14 +56,14 @@
                 </c:choose>
             </c:set>
 
-            <input id="preview-to" type="text" class="form-control" readonly value="${previewToEmail}">
+            <input id="preview-to" type="text" class="form-control" readonly value="${fn:escapeXml(previewToEmail)}">
         </div>
 
         <div class="col">
             <label for="preview-subject" class="form-label ${isTagFailureInSubject ? 'text-danger' : ''}" title="${isTagFailureInSubject ? errorDyntagsMsg : ''}">
                 <mvc:message code="mailing.Subject"/>
             </label>
-            <input id="preview-subject" type="text" class="form-control" readonly value="${form.subject}">
+            <input id="preview-subject" type="text" class="form-control" readonly value="${fn:escapeXml(form.subject)}">
         </div>
 
         <c:if test="${form.preHeader ne null}">
@@ -71,7 +71,7 @@
                 <label for="preview-preheader" class="form-label ${isTagFailureInPreHeader ? 'text-danger' : ''}" title="${isTagFailureInPreHeader ? errorDyntagsMsg : ''}">
                     <mvc:message code="mailing.preheader"/>
                 </label>
-                <input id="preview-preheader" type="text" class="form-control" readonly value="${form.preHeader}">
+                <input id="preview-preheader" type="text" class="form-control" readonly value="${fn:escapeXml(form.preHeader)}">
             </div>
         </c:if>
 

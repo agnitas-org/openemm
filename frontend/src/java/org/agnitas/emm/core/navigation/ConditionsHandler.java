@@ -10,17 +10,21 @@
 
 package org.agnitas.emm.core.navigation;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import jakarta.servlet.http.HttpServletRequest;
+import org.agnitas.emm.core.navigation.condition.NavItemCondition;
+import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class ConditionsHandler {
@@ -33,19 +37,30 @@ public class ConditionsHandler {
         fillConditionsMap(conditions);
     }
 
-    public boolean checkCondition(final String conditionId, HttpServletRequest req) {
+    public NavItemCondition.ConditionResult checkCondition(final String conditionId, HttpServletRequest req) {
         final NavItemCondition condition = conditionsMap.get(conditionId);
-        if(condition == null){
+        if (condition == null) {
             LOGGER.warn("Invalid condition id sent: {}.", conditionId);
-            return false;
+            return new NavItemCondition.ConditionResult(false);
         }
-        return condition.isSatisfied(req);
+
+        Map<String, String> params = Collections.emptyMap();
+
+        Object paramsAttr = req.getAttribute("agnNavConditionsParams");
+        if (paramsAttr instanceof Map) {
+            params = ((Map<?, ?>) paramsAttr).entrySet()
+                    .stream()
+                    .map(e -> new Tuple<>(e.getKey().toString(), e.getValue().toString()))
+                    .collect(Collectors.toMap(Tuple::getFirst, Tuple::getSecond));
+        }
+
+        return condition.check(req, params);
     }
 
     private void fillConditionsMap(final Collection<NavItemCondition> conditions) {
         for (NavItemCondition condition : CollectionUtils.emptyIfNull(conditions)) {
             if (conditionsMap.containsKey(condition.getId())) {
-                throw new IllegalArgumentException("Cannot be several conditionds with one name!");
+                throw new IllegalArgumentException("Cannot be several conditions with one name!");
             }
             conditionsMap.put(condition.getId(), condition);
         }

@@ -10,15 +10,9 @@
 
 package org.agnitas.dao.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.sql.DataSource;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ProfileRecipientFields;
@@ -41,34 +35,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.json.JsonObject;
+import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements ImportRecipientsDao {
-	/**
-	 * The logger.
-	 */
-	private static final transient Logger logger = LogManager.getLogger(ImportRecipientsDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ImportRecipientsDaoImpl.class);
 	
     public static final String MYSQL_COMPARE_DATE_FORMAT = "%Y-%m-%d %H:%i:%s";
     public static final String JAVA_COMPARE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final int MAX_WRITE_PROGRESS = 90;
     public static final int MAX_WRITE_PROGRESS_HALF = MAX_WRITE_PROGRESS / 2;
-
-    @Override
-    public List<String> getTemporaryTableNamesBySessionId(String sessionId) {
-        List<String> result = new ArrayList<>();
-        String query = "SELECT temporary_table_name FROM import_temporary_tables WHERE session_id = ?";
-
-		List<Map<String, Object>> resultList = select(logger, query, sessionId);
-        for (Map<String, Object> row : resultList) {
-            final String temporaryTableName = (String) row.get("temporary_table_name");
-            result.add(temporaryTableName);
-        }
-        return result;
-    }
 
     @Override
 	public boolean isKeyColumnIndexed( int companyId, List<String> keyColumns) {
@@ -133,7 +115,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	}
 
 	@Override
-	public String createTemporaryCustomerErrorTable(int companyID, int datasourceID, List<String> csvColumns, String sessionId) throws Exception {
+	public String createTemporaryCustomerErrorTable(int companyID, int datasourceID, List<String> csvColumns, String sessionId) {
 		String tempTableName = "tmp_err" + companyID + "_" + datasourceID;
 		
 		retryableUpdate(companyID, logger, "INSERT INTO import_temporary_tables (session_id, temporary_table_name, host) VALUES(?, ?, ?)", sessionId, tempTableName, AgnUtils.getHostName());
@@ -188,23 +170,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 			throw new Exception("Cannot create column with basename " + baseColumnName + " in table " + tableName);
 		}
 		retryableUpdate(companyID, logger, "ALTER TABLE " + tableName + " ADD " + importIndexColumn + " INTEGER");
-		retryableUpdate(companyID, logger, "CREATE INDEX " + indexName + " ON " + tableName + " (" + importIndexColumn + ")");
-		return importIndexColumn;
-	}
-
-	@Override
-	public String addIndexedStringColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception {
-		String importIndexColumn = baseColumnName;
-		int testIndex = 0;
-		int testIndexMaximum = 10;
-		while (DbUtilities.checkTableAndColumnsExist(getDataSource(), tableName, importIndexColumn) && testIndex < testIndexMaximum) {
-			testIndex++;
-			importIndexColumn = baseColumnName + testIndex;
-		}
-		if (testIndex >= testIndexMaximum) {
-			throw new Exception("Cannot create column with basename " + baseColumnName + " in table " + tableName);
-		}
-		retryableUpdate(companyID, logger, "ALTER TABLE " + tableName + " ADD " + importIndexColumn + " VARCHAR" + (isOracleDB() ? "2" : "") + "(4000)");
 		retryableUpdate(companyID, logger, "CREATE INDEX " + indexName + " ON " + tableName + " (" + importIndexColumn + ")");
 		return importIndexColumn;
 	}
@@ -519,22 +484,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
     }
 
 	@Override
-	public void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName) {
-		List<String> columnNames = new ArrayList<>();
-		Object[] parameters = new Object[importedCsvFileColumnIndexes.size() + 3];
-		for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
-			columnNames.add("data_" + (i + 1));
-			parameters[i] = csvDataLine.get(importedCsvFileColumnIndexes.get(i));
-		}
-		parameters[importedCsvFileColumnIndexes.size()] = csvLineIndex;
-		parameters[importedCsvFileColumnIndexes.size() + 1] = reasonCode == null ? "Unknown" : reasonCode.toString();
-		parameters[importedCsvFileColumnIndexes.size() + 2] = erroneousFieldName;
-		
-		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", csvLineIndex);
-		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
-	}
-	
-	@Override
 	public void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName) {
 		List<String> columnNames = new ArrayList<>();
 		Object[] parameters = new Object[csvDataLine.size() + 3];
@@ -547,22 +496,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		parameters[csvDataLine.size() + 2] = erroneousFieldName;
 
 		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", csvLineIndex);
-		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
-	}
-
-	@Override
-	public void addErroneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName) {
-		List<String> columnNames = new ArrayList<>();
-		Object[] parameters = new Object[importedDBColumns.size() + 3];
-		for (int i = 0; i < importedDBColumns.size(); i++) {
-			columnNames.add("data_" + (i + 1));
-			parameters[i] = jsonDataObject.get(columnMappingByDbColumn.get(importedDBColumns.get(i)).getFileColumn());
-		}
-		parameters[columnNames.size()] = jsonObjectCount;
-		parameters[columnNames.size() + 1] = reasonCode == null ? "Unknown" : reasonCode.toString();
-		parameters[columnNames.size() + 2] = jsonAttributeName;
-
-		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", jsonObjectCount);
 		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
 	}
 
@@ -643,20 +576,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	public boolean hasRepairableErrors(String temporaryErrorTableName) {
 		int repairableItems = selectInt(logger, "SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE errorfixed = 0");
 		return repairableItems > 0;
-	}
-
-	@Override
-	public int dropLeftoverTables(int companyID, String hostName) {
-		List<String> tableNames = select(logger, "SELECT temporary_table_name FROM import_temporary_tables WHERE LOWER(host) = ?", StringRowMapper.INSTANCE, hostName.toLowerCase());
-		int droppedTables = 0;
-		for (String tableName : tableNames) {
-			if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
-				DbUtilities.dropTable(getDataSource(), tableName);
-				droppedTables++;
-			}
-			retryableUpdate(companyID, logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tableName);
-		}
-		return droppedTables;
 	}
 
 	@Override
@@ -830,11 +749,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	@Override
 	public CaseInsensitiveMap<String, DbColumnType> getCustomerDbFields(int companyId) throws Exception {
 		return DbUtilities.getColumnDataTypes(getDataSource(), "customer_" + companyId + "_tbl");
-	}
-
-	@Override
-	public boolean checkUnboundCustomersExist(int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND " + RecipientStandardField.Bounceload.getColumnName() + " = 0)") > 0;
 	}
 
 	@Override

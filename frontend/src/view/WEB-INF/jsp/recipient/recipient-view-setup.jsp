@@ -12,6 +12,7 @@
 
 <c:url var="recipientsOverviewLink" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+    <c:param name="restoreSort" value="true"/>
 </c:url>
 
 <c:url var="saveAndBackToListLink" value="/recipient/saveAndBackToList.action"/>
@@ -147,6 +148,7 @@
                 <c:set target="${option}" property="url">
                     <c:url value="/recipient/list.action">
                         <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+                        <c:param name="restoreSort" value="true"/>
                     </c:url>
                 </c:set>
                 <c:set target="${option}" property="icon" value="icon-times"/>

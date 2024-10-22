@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.component;
 
-import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.target.beans.TargetGroupDependencyType;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 @Component
 public class TargetDependentMailingComponentsCollector implements TargetGroupDependenciesCollector {
 
-    private final ComMailingComponentDao componentDao;
+    private final MailingComponentDao componentDao;
 
     @Autowired
-    public TargetDependentMailingComponentsCollector(ComMailingComponentDao componentDao) {
+    public TargetDependentMailingComponentsCollector(MailingComponentDao componentDao) {
         this.componentDao = componentDao;
     }
 

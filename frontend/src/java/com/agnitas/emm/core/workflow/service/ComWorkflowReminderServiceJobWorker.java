@@ -19,7 +19,7 @@ public class ComWorkflowReminderServiceJobWorker extends JobWorker {
     @Override
     public String runJob() {
         ComReminderService reminderService = serviceLookupFactory.getBeanWorkflowStartStopReminderService();
-        reminderService.send(getCompaniesConstrains());
+        reminderService.send(getCompaniesConstraints());
 		
 		return null;
     }

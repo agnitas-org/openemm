@@ -38,9 +38,11 @@ window.I18n = {
       },
       mailing: {
         invalidPriorityCount: '<mvc:message javaScriptEscape="true" code="mailing.priority.maxMails"/>',
-        exclusiveLockingFailed: '<mvc:message javaScriptEscape="true" code="error.mailing.locked.advanced" arguments="%s"/>'
+        exclusiveLockingFailed: '<mvc:message javaScriptEscape="true" code="error.mailing.locked.advanced" arguments="%s"/>',
+        smsSymbolsProhibited: '<mvc:message javaScriptEscape="true" code="error.mailing.sms.char.invalid" arguments="%s" />'
       },
       enterEmailAddresses: '<mvc:message javaScriptEscape="true" code="enterEmailAddresses"/>',
+      <%--TODO: EMMGUI-714 check usage and remove--%>
       inUse: '<mvc:message javaScriptEscape="true" code="error.email.duplicated"/>',
       content: {
         empty: '<mvc:message javaScriptEscape="true" code="error.content.empty"/>'
@@ -88,8 +90,10 @@ window.I18n = {
     defaults: {
       apply: '<mvc:message javaScriptEscape="true" code="button.Apply"/>',
       delete: '<mvc:message javaScriptEscape="true" code="Delete" />',
+      reset: '<mvc:message javaScriptEscape="true" code="button.Reset" />',
       today: '<mvc:message javaScriptEscape="true" code="calendar.today.button" />',
       clear: '<mvc:message javaScriptEscape="true" code="button.Delete" />',
+      add: '<mvc:message javaScriptEscape="true" code="button.Add" />',
       days: '<mvc:message javaScriptEscape="true" code="days" />',
       Days: '<mvc:message javaScriptEscape="true" code="Days" />',
       entries: '<mvc:message javaScriptEscape="true" code="default.entries" />',
@@ -108,26 +112,31 @@ window.I18n = {
       logout: '<mvc:message javaScriptEscape="true" code="default.Logout"/>',
       relogin: '<mvc:message javaScriptEscape="true" code="logout.relogin"/>',
       active: '<mvc:message javaScriptEscape="true" code="default.status.active" />',
+      selection: {
+        removed: '<mvc:message javaScriptEscape="true" code="default.selection.deleted" />'
+      },
       remember: {
         choice: '<mvc:message javaScriptEscape="true" code="remember.choice"/>'
       },
       andMore: '<mvc:message javaScriptEscape="true" code="error.showNumberOfLeft" arguments="%s"/>',
       previewMode: '<mvc:message javaScriptEscape="true" code="mailing.preview.mode"/>',
-      window: {
-        popout: '<mvc:message javaScriptEscape="true" code="GWUA.window.popout"/>'
-      },
       upload: '<mvc:message javaScriptEscape="true" code="UploadFile"/>',
       files: '<mvc:message javaScriptEscape="true" code="mailing.files"/>',
       name: '<mvc:message javaScriptEscape="true" code="default.Name"/>',
       size: '<mvc:message javaScriptEscape="true" code="default.Size"/>',
       changesNotSaved: '<mvc:message javaScriptEscape="true" code="changes_not_saved"/>',
-      listShowMax: '<mvc:message javaScriptEscape="true" code="default.list.show.max"/>',
       leaveQuestion: '<mvc:message javaScriptEscape="true" code="grid.layout.leaveQuestion"/>',
-      OutOf: '<mvc:message javaScriptEscape="true" code="OutOf"/>',
+      rowsToDisplay: '<mvc:message javaScriptEscape="true" code="default.list.display.rows"/>',
+      toggleTruncation: '<mvc:message javaScriptEscape="true" code="view.truncation.toggle"/>',
       value: '<mvc:message javaScriptEscape="true" code="Value"/>',
       description: '<mvc:message javaScriptEscape="true" code="default.description"/>',
+      showMore: '<mvc:message javaScriptEscape="true" code="default.more"/>',
+      showMoreNew: '<mvc:message javaScriptEscape="true" code="default.more"/>',
       table: {
-        empty: '<mvc:message javaScriptEscape="true" code="noResultsFound"/>'
+        empty: '<mvc:message javaScriptEscape="true" code="noResultsFound"/>',
+        editColumns: '<mvc:message  javaScriptEscape="true" code="list.columns.edit" />',
+        saveColumns: '<mvc:message  javaScriptEscape="true" code="list.columns.save" />',
+        maxColumnsSelected: '<mvc:message javaScriptEscape="true" code="error.maximum.recipient.columns"/>'
       }
     },
     selects: {
@@ -157,6 +166,11 @@ window.I18n = {
         errors: {
           notMatching: '<mvc:message javaScriptEscape="true" code="error.password.mismatch"/>',
           unsafe: '<mvc:message javaScriptEscape="true" code="insecure" />'
+        }
+      },
+      dateTime: {
+        errors: {
+          incompleteDate: '<mvc:message javaScriptEscape="true" code="error.date.invalid" />'
         }
       },
       required: {
@@ -369,19 +383,22 @@ window.I18n = {
       mailing: {
         new: '<mvc:message javaScriptEscape="true" code="dashboard.mailing.new"/>',
         archive: '<mvc:message javaScriptEscape="true" code="mailing.archive"/>',
+        copyQuestion: '<mvc:message javaScriptEscape="true" code="workflow.mailing.copyQuestion"/>',
         edit_mailing_link: '<mvc:message javaScriptEscape="true" code="workflow.mailing.editMailingLink"/>',
         autooptimization: '<mvc:message javaScriptEscape="true" code="mailing.autooptimization"/>',
         action_based: '<mvc:message javaScriptEscape="true" code="mailing.action.based.mailing"/>',
         date_based: '<mvc:message javaScriptEscape="true" code="mailing.Rulebased_Mailing"/>',
         followup: '<mvc:message javaScriptEscape="true" code="mailing.Followup_Mailing"/>',
         "mediatype_sms": '<mvc:message javaScriptEscape="true" code="UserRight.mediatype.sms"/>',
-        "mediatype_post": '<mvc:message javaScriptEscape="true" code="UserRight.mediatype.post"/>'
+        "mediatype_post": '<mvc:message javaScriptEscape="true" code="UserRight.mediatype.post"/>',
+        typeChanged: '<mvc:message javaScriptEscape="true" code="info.workflow.start.mailing.type.change"/>'
       },
 
       icon: '<mvc:message javaScriptEscape="true" code="campaign.manager.icon" />',
 
       mailinglist: {
-        short: '<mvc:message javaScriptEscape="true" code="workflow.mailinglist.short"/>'
+        short: '<mvc:message javaScriptEscape="true" code="workflow.mailinglist.short"/>',
+        onlyOne: '<mvc:message javaScriptEscape="true" code="workflow.mailing.oneMailinglistWarning"/>'
       },
       target: {
         short: '<mvc:message javaScriptEscape="true" code="workflow.target.short"/>'
@@ -412,7 +429,8 @@ window.I18n = {
         save_modified_campaign:'<mvc:message javaScriptEscape="true" code="workflow.pdf.saveModifiedCampaign"/>',
       },
       inactivating: {
-        title: '<mvc:message javaScriptEscape="true" code="workflow.inactivating.title"/>'
+        title: '<mvc:message javaScriptEscape="true" code="workflow.inactivating.title"/>',
+        question: '<mvc:message javaScriptEscape="true" code="workflow.inactivating.question"/>'
       },
 
       ownWorkflow: {
@@ -439,6 +457,10 @@ window.I18n = {
         failed: 'FAILED',
         testing_failed: '<mvc:message javaScriptEscape="true" code="workflow.view.status.testing.failed"/>',
         paused: '<mvc:message javaScriptEscape="true" code="workflow.view.status.paused"/>'
+      },
+      dialog: {
+        connectionNotAllowedTitle: '<mvc:message javaScriptEscape="true" code="error.workflow.connection.deactivated"/>',
+        connectionNotAllowedMessage: '<mvc:message javaScriptEscape="true" code="error.workflow.connection.notAllowed"/>'    
       }
     },
     logon: {
@@ -460,13 +482,13 @@ window.I18n = {
       blacklisted: {
         question: '<mvc:message javaScriptEscape="true" code="recipient.blacklisted.question"/>'
       },
+      <%--TODO: EMMGUI-714 check usage and remove--%>
       existing: {
         btn: '<mvc:message javaScriptEscape="true" code="recipient.existing.switch"/>'
       },
       hide: {
         question: '<mvc:message javaScriptEscape="true" code="recipient.hide.question"/>'
-      },
-      maxColumnsSelected: '<mvc:message javaScriptEscape="true" code="error.maximum.recipient.columns"/>'
+      }
     },
     calendar: {
       error: {
@@ -493,7 +515,11 @@ window.I18n = {
         velocity_not_allowed: '<mvc:message javaScriptEscape="true" code="userform.velocityNotAllowed" />',
         invalid_name: '<mvc:message javaScriptEscape="true" code="error.form.invalid_name" />',
         illegal_directive: '<mvc:message javaScriptEscape="true" code="error.form.illegal_directive" arguments="%s" />',
-        invalid_link: '<mvc:message javaScriptEscape="true" code="error.invalid_link" arguments="${[\"%s\", \"%s\"]}" />'
+        invalid_link: '<mvc:message javaScriptEscape="true" code="error.invalid_link" arguments="${[\"%s\", \"%s\"]}" />',
+        invalid_successHtml: '<mvc:message javaScriptEscape="true" code="error.userform.success.html.missing" />',
+        invalid_successUrl: '<mvc:message javaScriptEscape="true" code="error.userform.success.url.missing" />',
+        invalid_errorHtml: '<mvc:message javaScriptEscape="true" code="error.userform.error.html.missing" />',
+        invalid_errorUrl: '<mvc:message javaScriptEscape="true" code="error.userform.error.url.missing" />'
       },
       formBuilder: {
         success:{
@@ -531,6 +557,7 @@ window.I18n = {
         GetCustomer: '<mvc:message javaScriptEscape="true" code="action.op.GetCustomer" />',
         IdentifyCustomer: '<mvc:message javaScriptEscape="true" code="action.op.IdentifyCustomer" />',
         SendMailing: '<mvc:message javaScriptEscape="true" code="action.op.SendMailing" />',
+        SendLastNewsletter: '<mvc:message javaScriptEscape="true" code="action.op.SendLastNewsletter" />',
         ServiceMail: '<mvc:message javaScriptEscape="true" code="action.op.ServiceMail" />',
         SubscribeCustomer: '<mvc:message javaScriptEscape="true" code="action.op.SubscribeCustomer" />',
         UnsubscribeCustomer: '<mvc:message javaScriptEscape="true" code="action.op.UnsubscribeCustomer" />',
@@ -655,6 +682,28 @@ window.I18n = {
       validation: {
         target_group_duplicated: '<mvc:message javaScriptEscape="true" code="error.mailing.content.target.duplicated"/>',
         all_recipients_not_last: '<mvc:message javaScriptEscape="true" code="error.mailing.content.target.order"/>'
+      },
+      status: {
+        active: '<mvc:message javaScriptEscape="true" code="mailing.status.active" />',
+        admin: '<mvc:message javaScriptEscape="true" code="mailing.status.admin" />',
+        canceled: '<mvc:message javaScriptEscape="true" code="mailing.status.canceled" />',
+        canceledAndCopied: '<mvc:message javaScriptEscape="true" code="mailing.status.canceledAndCopied" />',
+        disable: '<mvc:message javaScriptEscape="true" code="mailing.status.disable" />',
+        edit: '<mvc:message javaScriptEscape="true" code="mailing.status.edit" />',
+        generationFinished: '<mvc:message javaScriptEscape="true" code="mailing.status.generation-finished" />',
+        inGeneration: '<mvc:message javaScriptEscape="true" code="mailing.status.in-generation" />',
+        new: '<mvc:message javaScriptEscape="true" code="mailing.status.new" />',
+        norecipients: '<mvc:message javaScriptEscape="true" code="mailing.status.norecipients" />',
+        ready: '<mvc:message javaScriptEscape="true" code="mailing.status.ready" />',
+        scheduled: '<mvc:message javaScriptEscape="true" code="mailing.status.scheduled" />',
+        sending: '<mvc:message javaScriptEscape="true" code="mailing.status.sending" />',
+        sent: '<mvc:message javaScriptEscape="true" code="mailing.status.sent" />',
+        test: '<mvc:message javaScriptEscape="true" code="mailing.status.test" />'
+      },
+      mediatype: {
+        email: '<mvc:message javaScriptEscape="true" code="mailing.MediaType.email" />',
+        post: '<mvc:message javaScriptEscape="true" code="mailing.MediaType.post" />',
+        sms: '<mvc:message javaScriptEscape="true" code="mailing.MediaType.sms" />'
       }
     },
     wysiwyg: {
@@ -696,6 +745,11 @@ window.I18n = {
         block_not_set: '<mvc:message javaScriptEscape="true" code="error.mailing.contentblock.empty" />'
       }
     },
+    login: {
+      error: {
+        capslock: '<mvc:message javaScriptEscape="true" code="error.login.capslock" />'
+      }
+    },
     <%--TODO: EMMGUI-714: remove when old design will be removed. (if not used) --%>
     birtreport: {
       deactivateAll: '<mvc:message javaScriptEscape="true" code="report.deactivate.all" />',
@@ -707,7 +761,9 @@ window.I18n = {
         empty: '<mvc:message javaScriptEscape="true" code="dashboard.tile.add"/>',
         'add-ons': '<mvc:message javaScriptEscape="true" code="settings.premium.features"/>',
         'imports-exports': '<mvc:message javaScriptEscape="true" code="dashboard.tile.import.export"/>',
-        calendar: '<mvc:message javaScriptEscape="true" code="calendar.Calendar"/>',
+        calendar: '<mvc:message javaScriptEscape="true" code="calendar.small"/>',
+        'xl-calendar': '<mvc:message javaScriptEscape="true" code="calendar.large"/>',
+        'week-calendar': '<mvc:message javaScriptEscape="true" code="calendar.week"/>',
         news: '<mvc:message javaScriptEscape="true" code="News"/>',
         mailings: '<mvc:message javaScriptEscape="true" code="Mailings"/>',
         statistics: '<mvc:message javaScriptEscape="true" code="Statistics"/>',
@@ -721,7 +777,7 @@ window.I18n = {
     editableView: {
       edit: '<mvc:message javaScriptEscape="true" code="default.view.edit" />',
       save: '<mvc:message javaScriptEscape="true" code="default.view.save" />',
-      saved: '<mvc:message javaScriptEscape="true" code="GWUA.default.view.save"/>',
+      saved: '<mvc:message javaScriptEscape="true" code="default.saved.view"/>',
       tile: {
         state: {
           visible: '<mvc:message javaScriptEscape="true" code="default.tile.hide" />',
@@ -739,7 +795,14 @@ window.I18n = {
         remainingGenerations: '<mvc:message javaScriptEscape="true" code="image.ai.quota" arguments="%s"/>'
       }
     },
+    ai: {
+      textGeneration: '<mvc:message javaScriptEscape="true" code="mailing.ai.text.generation" />',
+      regenerateText: '<mvc:message javaScriptEscape="true" code="button.Regenerate" />'
+    },
     url: {
         invalid: '<mvc:message javaScriptEscape="true" code="error.linkUrlWrong"/>'
+    },
+    status: {
+      push: '<mvc:message javaScriptEscape="true" code="PushNotification" />'
     }
-  };
+};

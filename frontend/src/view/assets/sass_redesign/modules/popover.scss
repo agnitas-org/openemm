@@ -1,7 +1,7 @@
 
 .popover {
   background-color: var(--main-bg-color);
-  color: var(--default-text-color);
+  color: var(--text-color-default);
 
   .popover-arrow {
     display: none;
@@ -20,7 +20,7 @@
 }
 
 .popover-body {
-  color: var(--default-text-color);
+  color: var(--text-color-default);
 }
 
 .popover-header {

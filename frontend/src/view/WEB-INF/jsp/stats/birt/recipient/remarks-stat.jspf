@@ -1,17 +1,17 @@
 
-<%--@elvariable id="summedRemarks" type="net.sf.json.JSONArray"--%>
-<%--@elvariable id="notSummedRemarks" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="summedStatuses" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="notSummedStatuses" type="net.sf.json.JSONArray"--%>
 
-<div id='recipient-remarks' class="container-fluid" data-sizing="container" style="padding-block: 10px;">
+<div id='recipient-statuses' class="container-fluid" data-sizing="container" style="padding-block: 10px;">
     <div class="row" data-sizing="bottom">
-        <div class="col-md-6 js-data-table" data-table="summed-remarks" style="height: 100%">
+        <div class="col-md-6 js-data-table" data-table="summed-statuses" style="height: 100%">
             <div class="js-data-table-body"></div>
 
-            <script id="summed-remarks" type="application/json">
+            <script id="summed-statuses" type="application/json">
                 {
                     "columns": [
                          {
-                            "field": "remark",
+                            "field": "name",
                             "headerName": "<mvc:message code='recipient.Remark'/>",
                             "cellStyle": {"user-select": "text"},
                             "editable": false
@@ -28,19 +28,19 @@
                         "showRecordsCount": false,
                         "autoHeight": true
                     },
-                    "data": ${summedRemarks}
+                    "data": ${summedStatuses}
                 }
             </script>
         </div>
 
-        <div class="col-md-6 js-data-table" data-table="not-summed-remarks" style="height: 100%">
+        <div class="col-md-6 js-data-table" data-table="not-summed-statuses" style="height: 100%">
             <div class="js-data-table-body"></div>
 
-            <script id="not-summed-remarks" type="application/json">
+            <script id="not-summed-statuses" type="application/json">
                 {
                     "columns": [
                          {
-                            "field": "remark",
+                            "field": "name",
                             "headerName": "<mvc:message code='recipient.Remark'/>",
                             "cellStyle": {"user-select": "text"},
                             "editable": false
@@ -57,7 +57,7 @@
                         "showRecordsCount": false,
                         "autoHeight": true
                     },
-                    "data": ${notSummedRemarks}
+                    "data": ${notSummedStatuses}
                 }
             </script>
         </div>

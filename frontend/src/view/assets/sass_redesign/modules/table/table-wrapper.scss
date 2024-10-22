@@ -1,0 +1,471 @@
+
+/*doc
+---
+title: Tables
+name: tables
+category: Components - Tables
+---
+
+Tables are an important part of the system. In principal they are made up of a header, body and an optional footer.
+
+The basic structure is as follows:
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header"></div>
+    <div class="table-wrapper__body">
+      <table class="table--borderless">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Agnitas</td>
+            <td>Company</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-wrapper__footer"></div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Full Example
+name: tables_01_example
+parent: tables
+---
+
+This is a full example showcasing what eventually makes up a complete table.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header">
+        <h1 class="table-wrapper__title">Overview</h1>
+        <div class="table-wrapper__controls">
+            <div class="bulk-actions hidden">
+                <p class="bulk-actions__selected">
+                    <span></span>
+                    entries selected
+                </p>
+                <div class="bulk-actions__controls">
+                    <a href="#" class="icon-btn text-primary">
+                        <i class="icon icon-file-download"></i>
+                    </a>
+
+                    <a href="#" class="icon-btn text-danger">
+                        <i class="icon icon-trash-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+            <label class="icon-switch">
+                <input type="checkbox" data-preview-table="#styleguide-full-table" checked="">
+                <i class="icon icon-image"></i>
+                <i class="icon icon-th-list"></i>
+            </label>
+
+            <button type="button" class="btn btn-inverse" data-toggle-table-truncation="">
+                <i class="icon icon-ellipsis-h"></i>
+                <span>Toggle truncation</span>
+            </button>
+
+            <p class="table-wrapper__entries-label">
+                <b><span>2</span></b>
+                <span class="text-truncate">Entries</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="table-wrapper__body">
+        <table id="styleguide-full-table" class="table table--borderless js-table">
+            <thead>
+            <tr>
+                <th class="hidden"></th>
+                <th class="mobile-hidden"><input class="form-check-input" type="checkbox" data-bulk-checkboxes=""></th>
+                <th class="fit-content mobile-hidden">File type</th>
+                <th>File name</th>
+                <th>Description</th>
+                <th class="fit-content">Creation date</th>
+                <th class="fit-content">Dimensions</th>
+                <th class="fit-content mobile-hidden">Size</th>
+                <th class="table-preview-hidden fit-content mobile-hidden"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="thumbnail-cell">
+                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=1" alt="">
+                </td>
+                <td class="mobile-hidden">
+                    <input class="form-check-input" type="checkbox" name="bulkIds" value="1" data-bulk-checkbox="">
+                </td>
+                <td>
+                    <span class="text-uppercase table-badge">PNG</span>
+                </td>
+                <td class="fluid-cell">
+                    <span>Picture_1.png</span>
+                </td>
+                <td class="table-preview-hidden">
+                    <span>Looooooooooooooooooooooong description1</span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-calendar-alt"></i>
+                    <span>6/27/2024 12:16</span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-ruler-combined"></i>
+                    <span data-dimensions></span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-weight-hanging"></i>
+                    <span>52.9 kB</span>
+                </td>
+                <td class="table-actions mobile-hidden">
+                    <div>
+                        <a href="#" class="icon-btn text-danger" data-bulk-action="delete">
+                            <i class="icon icon-trash-alt"></i>
+                        </a>
+
+                        <a href="#" class="icon-btn text-primary" data-bulk-action="download">
+                            <i class="icon icon-file-download"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="thumbnail-cell">
+                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=2" alt="">
+                </td>
+                <td class="mobile-hidden">
+                    <input class="form-check-input" type="checkbox" name="bulkIds" value="2" data-bulk-checkbox="">
+                </td>
+                <td>
+                    <span class="text-uppercase table-badge">JPG</span>
+                </td>
+                <td class="fluid-cell">
+                    <span>Picture_2.jpg</span>
+                </td>
+                <td class="table-preview-hidden">
+                    <span>Looooooooooooooooooooooong description2</span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-calendar-alt"></i>
+                    <span>6/27/2024 12:16</span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-ruler-combined"></i>
+                    <span data-dimensions=""></span>
+                </td>
+                <td class="secondary-cell">
+                    <i class="icon icon-weight-hanging"></i>
+                    <span>79.9 kB</span>
+                </td>
+                <td class="table-actions mobile-hidden">
+                    <div>
+                        <a href="#" class="icon-btn text-danger" data-bulk-action="delete">
+                            <i class="icon icon-trash-alt"></i>
+                        </a>
+                        <a href="#" class="icon-btn text-primary" data-bulk-action="download">
+                            <i class="icon icon-file-download"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="table-wrapper__footer">
+        <div class="table-wrapper__rows-selection">
+            <select name="numberOfRows" class="form-control js-select compact" data-select-options="width: 'auto', dropdownAutoWidth: true">
+                <option value="20">20</option>
+                <option value="50" selected="selected">50</option>
+                <option value="100">100</option>
+            </select>
+            <span>rows to display</span>
+        </div>
+        <ul class="pagination">
+            <li class="disabled">
+                <i class="icon icon-angle-double-left"></i>
+            </li>
+            <li class="disabled">
+                <i class="icon icon-angle-left"></i>
+            </li>
+            <li class="active"><span>1</span></li>
+            <li><a href="#">2</a></li>
+            <li><a href="#">3</a></li>
+            <li>
+                <a href="#"><i class="icon icon-angle-right"></i></a>
+            </li>
+            <li>
+                <a href="#"><i class="icon icon-angle-double-right"></i></a>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Table Elements
+name: tables_02_elements
+parent: tables
+---
+*/
+
+/*doc
+---
+title: Table Header
+name: tables_03_header
+parent: tables_02_elements
+---
+
+The table header is complex component of a table.
+
+It consists of 2 main areas: a title and controls.
+
+The title is always positioned on the left. Controls are mostly displayed on the right
+*/
+
+/*doc
+---
+title: Title
+name: tables_04_title
+parent: tables_03_header
+---
+
+The title is always `<h1>` heading element `.table-wrapper__title`.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header">
+        <h1 class="table-wrapper__title">Overview</h1>
+    </div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Controls
+name: tables_05_controls
+parent: tables_03_header
+---
+
+`.table-wrapper__controls` is a container for displaying various elements, such as inputs, selects, switches, buttons, etc., which are located on the right side, in pair with title.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header">
+        <div class="table-wrapper__controls">
+          <label class="icon-switch">
+            <input type="checkbox" checked="">
+            <i class="icon icon-image"></i>
+            <i class="icon icon-th-list"></i>
+          </label>
+
+          <a href="#" type="button" class="btn btn-inverse">
+              <i class="icon icon-plus"></i>
+              <span class="text">New</span>
+          </a>
+
+          <div class="input-group">
+            <span class="input-group-text">Select</span>
+            <select class="form-control js-select">
+              <option value="1">Text1</option>
+              <option value="2">Text2</option>
+            </select>
+          </div>
+
+          <div class="form-check form-switch">
+            <input id="header-switch" class="form-check-input" role="switch" type="checkbox">
+            <label class="form-label form-check-label text-truncate" for="header-switch">Switch</label>
+          </div>
+        </div>
+    </div>
+</div>
+```
+
+There can also be presented specific table controls, here are some of them:
+
+##Bulk actions
+
+They consist of a `.bulk-actions` container, a label with selected posts, which has a `.bulk-actions__selected` class,
+and a `.bulk-actions__controls` container which contains the action buttons themselves.
+
+Usually the container is given the class `.hidden` and the label with the number of selected records remains empty, since this component is controlled by JS code.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header">
+        <div class="table-wrapper__controls">
+            <div class="bulk-actions">
+              <p class="bulk-actions__selected">
+                  <span>200</span>
+                  <span>entries selected<span>
+              </p>
+              <div class="bulk-actions__controls">
+                <a href="#" class="icon-btn text-primary">
+                    <i class="icon icon-file-download"></i>
+                </a>
+                <a href="#" class="icon-btn text-primary">
+                    <i class="icon icon-th-list"></i>
+                </a>
+                <a href="#" class="icon-btn text-danger">
+                    <i class="icon icon-trash-alt"></i>
+                </a>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+##Entries label
+
+The component `.table-wrapper__entries-label` is needed to display the number of displayed records.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__header">
+        <div class="table-wrapper__controls">
+          <p class="table-wrapper__entries-label">
+            <b>13 / 406</b>
+            <span>Entries</span>
+          </p>
+        </div>
+    </div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Table Body
+name: tables_06_body
+parent: tables_02_elements
+---
+
+`.table-wrapper__body` is the main body of a `.table-wrapper`.
+It contains the table itself and takes up all the available space between the header and footer.
+
+```htmlexample
+<div class="table-wrapper">
+    <div class="table-wrapper__body">
+      <table class="table--borderless">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Agnitas</td>
+            <td>Company</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Table Footer
+name: tables_07_footer
+parent: tables_02_elements
+---
+
+The `.table-wrapper__footer` mainly consists of a drop-down for selecting the number of records to display,
+which is located inside the `.table-wrapper__rows-selection` container, as well as `.pagination`.
+
+```htmlexample
+<div class="table-wrapper">
+  <div class="table-wrapper__footer">
+        <div class="table-wrapper__rows-selection">
+          <select name="numberOfRows" class="form-control js-select compact" data-select-options="width: 'auto', dropdownAutoWidth: true">
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+
+          <span>rows to display</span>
+        </div>
+    <ul class="pagination">
+        <li class="disabled">
+            <i class="icon icon-angle-double-left"></i>
+        </li>
+        <li class="disabled">
+            <i class="icon icon-angle-left"></i>
+        </li>
+        <li class="active"><span>1</span></li>
+        <li><a href="#">2</a></li>
+        <li><a href="#">3</a></li>
+        <li>
+            <a href="#"><i class="icon icon-angle-right"></i></a>
+        </li>
+        <li>
+            <a href="#"><i class="icon icon-angle-double-right"></i></a>
+        </li>
+    </ul>
+  </div>
+</div>
+```
+*/
+
+@mixin table-scrollbar() {
+  @include perfect-scrollbar(var(--scrollbar-color), 5px, 3px);
+}
+
+.table-wrapper {
+  @include flex-column;
+  height: 100%;
+  container-type: inline-size;
+  overflow: hidden;
+
+  &--no-pagination {
+    .pagination {
+      display: none;
+    }
+  }
+
+  &:has(.ag-root-wrapper) {
+    .table-wrapper__header::after {
+      display: none !important;
+    }
+
+    .modal & {
+      max-height: 500px;
+      height: calc(var(--ag-rows-count) * #{$table-row-height} + 99px);
+    }
+
+    @include mobile {
+      height: calc(var(--ag-rows-count) * #{$table-row-height} + 99px);
+    }
+  }
+}
+
+.table-wrapper__body {
+  @include hide-scroll;
+  position: relative;
+  flex-grow: 1;
+
+  @include table-scrollbar;
+
+  > .ps__rail-y {
+    margin-top: $table-header-height;
+  }
+}

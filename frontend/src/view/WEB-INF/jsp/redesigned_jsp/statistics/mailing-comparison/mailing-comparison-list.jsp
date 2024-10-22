@@ -1,15 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="targetGroupList" type="java.util.List"--%>
 <%--@elvariable id="selectionMax" type="java.lang.Integer"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 
-<div class="filter-overview hidden" data-editable-view="${agnEditViewKey}">
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
     <mvc:form id='table-tile' cssClass="tile" servletRelativeAction="/statistics/mailing/comparison/list.action"
               modelAttribute="mailingComparisonFilter"
               data-resource-selector="#available-mailings" data-editable-tile="main">
@@ -22,18 +23,25 @@
             }
         </script>
 
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview"/></h1>
-        </div>
-
         <div class="tile-body d-flex flex-column gap-3" id="available-mailings">
             <div class="notification-simple notification-simple--lg notification-simple--info">
                 <span><mvc:message code="error.NrOfMailings" /></span>
             </div>
 
-            <div class="table-box">
-                <div class="table-scrollable">
-                    <display:table class="table table-hover table-rounded js-table"
+            <div class="table-wrapper">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../../common/table/entries-label.jsp">
+                            <jsp:param name="filteredEntries" value="${mailings.fullListSize}"/>
+                            <jsp:param name="totalEntries" value="${mailings.notFilteredFullListSize}"/>
+                        </jsp:include>
+                    </div>
+                </div>
+
+                <div class="table-wrapper__body">
+                    <agnDisplay:table class="table table-hover table--borderless js-table"
                                    id="mailing"
                                    pagesize="${mailings.pageSize}"
                                    sort="external"
@@ -42,26 +50,28 @@
                                    partialList="true"
                                    size="${mailings.fullListSize}"
                                    excludedParams="*">
-                        <%@ include file="../../displaytag/displaytag-properties.jspf" %>
+                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
 
-                        <display:column class="js-checkable" sortable="false" headerClass="fit-content">
+                        <agnDisplay:column headerClass="fit-content">
                             <input class="form-check-input" type="checkbox" name="bulkIds" value="${mailing.id}" data-select-restrict/>
-                        </display:column>
+                        </agnDisplay:column>
 
-                        <display:column property="shortname" titleKey="Mailing"
-                                        sortable="true" sortProperty="shortname" headerClass="js-table-sort"/>
+                        <agnDisplay:column titleKey="Mailing" sortable="true" sortProperty="shortname" headerClass="js-table-sort">
+                            <span>${mailing.shortname}</span>
+                        </agnDisplay:column>
 
-                        <display:column property="description" titleKey="Description"
-                                        sortable="true" sortProperty="description" headerClass="js-table-sort"/>
+                        <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort">
+                            <span>${mailing.description}</span>
+                        </agnDisplay:column>
 
-                        <display:column property="senddate" titleKey="mailing.senddate" format="{0, date, ${adminDateFormat}}"
+                        <agnDisplay:column property="senddate" titleKey="mailing.senddate" format="{0, date, ${adminDateFormat}}"
                                         sortable="true" sortProperty="senddate" headerClass="js-table-sort"/>
 
-                        <display:column class="table-actions hidden" headerClass="hidden">
+                        <agnDisplay:column class="table-actions hidden" headerClass="hidden">
                             <c:url var="viewMailingStatisticLink" value="/statistics/mailing/${mailing.id}/view.action"/>
                             <a href="${viewMailingStatisticLink}" class="hidden" data-view-row="page"></a>
-                        </display:column>
-                    </display:table>
+                        </agnDisplay:column>
+                    </agnDisplay:table>
                 </div>
             </div>
         </div>
@@ -71,11 +81,12 @@
               data-resource-selector="#table-tile" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
         <div class="tile-body js-scrollable">

@@ -23,6 +23,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParam
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSendLastNewsletterParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
@@ -68,6 +69,9 @@ public class ComActionOperationFactoryImpl implements ActionOperationFactory {
 				return new ActionOperationIdentifyCustomerParameters();
 			case SUBSCRIBE_CUSTOMER:
 				return new ActionOperationSubscribeCustomerParameters();
+			case SEND_LAST_NEWSLETTER:
+				return new ActionOperationSendLastNewsletterParameters();
+				
 			default:
 				throw new RuntimeException("Unsupported type");
 		}
@@ -78,8 +82,4 @@ public class ComActionOperationFactoryImpl implements ActionOperationFactory {
 		return Arrays.asList(ActionOperationType.values());
 	}
 
-	@Override
-	public String[] getTypeNames() {
-		return Arrays.stream(ActionOperationType.values()).map(ActionOperationType::getName).toArray(String[]::new);
-	}
 }

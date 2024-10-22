@@ -10,16 +10,14 @@
 
 package org.agnitas.beans.impl;
 
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.impl.ComRecipientDaoImpl;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import jakarta.servlet.http.HttpServletRequest;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Recipient;
@@ -38,25 +36,25 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.impl.AdminDaoImpl;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
-import com.agnitas.service.ColumnInfoService;
-
-import jakarta.servlet.http.HttpServletRequest;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Manually executed test
  * Needs a running RDIR on localhost and a special form with action in DB
  */
 public class RecipientImpl implements Recipient {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AdminDaoImpl.class);
 
-	protected ColumnInfoService columnInfoService;
+	private static final Logger logger = LogManager.getLogger(RecipientImpl.class);
+
+	protected RecipientFieldService recipientFieldService;
 	protected ComRecipientDao recipientDao;
 	protected BlacklistService blacklistService;
 	protected BindingEntryFactory bindingEntryFactory;
@@ -96,8 +94,8 @@ public class RecipientImpl implements Recipient {
 		this.bindingEntryDao = bindingEntryDao;
 	}
 
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = recipientFieldService;
 	}
 
 	public void setBindingEntryFactory(BindingEntryFactory bindingEntryFactory) {
@@ -319,7 +317,12 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public int getGender() {
-		return ((Number) custParameters.get("gender")).intValue();
+		Object gender = custParameters.get("gender");
+		if (gender instanceof String) {
+			return Integer.parseInt((String) gender);
+		}
+		
+		return ((Number) gender).intValue();
 	}
 
 	@Override
@@ -329,7 +332,13 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public Timestamp getTimestamp() {
-		return ((Timestamp) custParameters.get("timestamp"));
+		String dateStr = ((String) custParameters.get("timestamp"));
+		try {
+			return new Timestamp(ComRecipientDaoImpl.DATE_FORMAT.parse(dateStr).getTime());
+		} catch (ParseException e) {
+			logger.error("Error occured when parse timestamp! Timestamp = {}", dateStr);
+			return null;
+		}
 	}
 
 
@@ -345,8 +354,8 @@ public class RecipientImpl implements Recipient {
 		custDBStructure = new CaseInsensitiveMap<>();
 
 		try {
-			for (ProfileField fieldDescription : columnInfoService.getColumnInfos(companyID)) {
-				custDBStructure.put(fieldDescription.getColumn(), fieldDescription.getDataType());
+			for (RecipientFieldDescription fieldDescription : recipientFieldService.getRecipientFields(companyID)) {
+				custDBStructure.put(fieldDescription.getColumnName(), fieldDescription.getDatabaseDataType());
 			}
 			return true;
 		} catch (Exception e) {
@@ -485,7 +494,7 @@ public class RecipientImpl implements Recipient {
 			if (!isAllowedName(entry.getKey())) {
 				continue;
 			}
-			if (colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
+			if (colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_TIMESTAMP) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
 				if (StringUtils.isNotBlank((String) caseInsensitiveParameters.get(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT))) {
 					String value = (String) caseInsensitiveParameters.get(entry.getKey());
 					if (StringUtils.isNotBlank(value)) {
@@ -510,7 +519,7 @@ public class RecipientImpl implements Recipient {
 			} else if (caseInsensitiveParameters.get(name + suffix) != null) {
 				String aValue = (String) caseInsensitiveParameters.get(name + suffix);
 				if (name.equalsIgnoreCase("EMAIL")) {
-					if (aValue.length() == 0) {
+					if (aValue.isEmpty()) {
 						aValue = " ";
 					}
 					aValue = aValue.toLowerCase();
@@ -566,7 +575,7 @@ public class RecipientImpl implements Recipient {
 	@Override
 	public void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr, String referrer) throws Exception {
 		@SuppressWarnings("unchecked")
-		Map<String, Object> requestParameters = (Map<String, Object>) params.get("requestParameters");
+		Map<String, Object> requestParameters = (Map<String, Object>) params.get("requestParameters"); // suppress warning for this cast
 		int mailingID;
 
 		try {

@@ -29,7 +29,7 @@ import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
 import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 /**
  * Implementation of {@link RecipientProfileHistoryService} interface.

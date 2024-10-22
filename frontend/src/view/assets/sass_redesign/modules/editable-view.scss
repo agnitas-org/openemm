@@ -15,6 +15,10 @@
   }
 }
 
+[data-editable-view]:not(.is-initialized) {
+  display: none !important;
+}
+
 [data-editable-view]:not(.edit-mode) {
   .tile--hidden, .tile-container--hidden {
     // NOTE: using display: none breaks the ':visible' selector checks on child elements.

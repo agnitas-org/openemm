@@ -50,7 +50,7 @@ AGN.Lib.Controller.new('company-insights', function () {
     const colors = [
       $typeOfReactorChart.css('--chart-very-dark-blue-color'),
       $typeOfReactorChart.css('--chart-blue-color'),
-      $typeOfReactorChart.css('--chart-cyan-color')
+      $typeOfReactorChart.css('--chart-light-cyan-color')
     ];
 
     new Chart($typeOfReactorChart[0].getContext('2d'), {
@@ -354,7 +354,7 @@ AGN.Lib.Controller.new('company-insights', function () {
       $reactionDevicesChart.css('--chart-dark-blue-color'),
       $reactionDevicesChart.css('--chart-blue-color'),
       $reactionDevicesChart.css('--chart-light-blue-color'),
-      $reactionDevicesChart.css('--chart-cyan-color')
+      $reactionDevicesChart.css('--chart-light-cyan-color')
     ];
 
     Chart.getChart($reactionDevicesChart)?.destroy();
@@ -432,7 +432,7 @@ AGN.Lib.Controller.new('company-insights', function () {
           },
           {
             label: data['otherTitle'],
-            backgroundColor: $devicesProgressChart.css('--chart-cyan-color'),
+            backgroundColor: $devicesProgressChart.css('--chart-light-cyan-color'),
             data: otherValues
           },
           {

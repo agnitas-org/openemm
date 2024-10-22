@@ -68,7 +68,6 @@ public interface RecipientProfileHistoryService {
 	 */
 	List<ComRecipientHistory> listProfileFieldHistory(final int subscriberID, int companyId) throws RecipientProfileHistoryException;
 	
-	@SuppressWarnings("unused")
 	default void disableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
 		// default implementation
 	}

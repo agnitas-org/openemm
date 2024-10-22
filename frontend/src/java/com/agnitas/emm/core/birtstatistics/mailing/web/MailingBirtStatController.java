@@ -10,32 +10,29 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.birtstatistics.DateMode;
+import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
@@ -53,30 +50,39 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
-import com.agnitas.emm.core.birtstatistics.DateMode;
-import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class MailingBirtStatController implements XssCheckAware {
 	
@@ -105,20 +111,22 @@ public class MailingBirtStatController implements XssCheckAware {
     protected ComTargetService targetService;
     protected ComBirtReportService birtReportService;
     protected ComOptimizationService optimizationService;
+    private final MaildropService maildropService;
 
     public MailingBirtStatController(
             ComMailingBaseService mailingBaseService,
-    		MailinglistApprovalService mailinglistApprovalService,
-			WebStorage webStorage,
-			ConversionService conversionService,
-			UserActivityLogService userActivityLogService,
-			AdminService adminService,
-			GridServiceWrapper gridServiceWrapper,
-			BirtStatisticsService birtStatisticsService,
-			CompanyService companyService,
-			ComTargetService targetService,
-			ComBirtReportService birtReportService,
-            ComOptimizationService optimizationService) {
+            MailinglistApprovalService mailinglistApprovalService,
+            WebStorage webStorage,
+            ConversionService conversionService,
+            UserActivityLogService userActivityLogService,
+            AdminService adminService,
+            GridServiceWrapper gridServiceWrapper,
+            BirtStatisticsService birtStatisticsService,
+            CompanyService companyService,
+            ComTargetService targetService,
+            ComBirtReportService birtReportService,
+            ComOptimizationService optimizationService,
+            MaildropService maildropService) {
         this.mailingBaseService = mailingBaseService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.webStorage = webStorage;
@@ -131,22 +139,23 @@ public class MailingBirtStatController implements XssCheckAware {
         this.targetService = targetService;
         this.birtReportService = birtReportService;
         this.optimizationService = optimizationService;
+        this.maildropService = maildropService;
     }
 
     @RequestMapping("/list.action")
     public String list(Admin admin, MailingStatatisticListForm form, Model model, Popups popups) {
-        if(!validate(form, popups)){
-            return "messages";
+        if (!validate(form, popups)){
+            return MESSAGES_VIEW;
         }
 
-        syncFormProps(form);
+        syncFormProps(form, admin);
 
         // init search properties;
         MailingsListProperties props = getMailingsListProperties(admin, form);
 
         model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
         model.addAttribute("mailingStatisticList", mailingBaseService.getPaginatedMailingsData(admin, props));
-        model.addAttribute("availableAdditionalFields", MailingAdditionalColumn.values());
+        model.addAttribute("availableAdditionalFields", getAvailableAdditionalFields(admin));
         model.addAttribute("availableMailingLists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
         if (!isRedesignedUiUsed(admin)) {
             model.addAttribute("availableTargetGroups", targetService.getTargetLights(admin));
@@ -155,14 +164,37 @@ public class MailingBirtStatController implements XssCheckAware {
         return "stats_mailing_list";
     }
 
+    private static MailingAdditionalColumn[] getAvailableAdditionalFields(Admin admin) {
+        if (isRedesignedUiUsed(admin)) {
+            return new MailingAdditionalColumn[]{
+                    MailingAdditionalColumn.CREATION_DATE,
+                    MailingAdditionalColumn.TEMPLATE,
+                    MailingAdditionalColumn.SUBJECT,
+                    MailingAdditionalColumn.TARGET_GROUPS,
+                    MailingAdditionalColumn.MAILING_ID,
+                    MailingAdditionalColumn.RECIPIENTS_COUNT
+            };
+        } else {
+            return MailingAdditionalColumn.values();
+        }
+    }
+
     private static boolean isRedesignedUiUsed(Admin admin) {
         return admin.isRedesignedUiUsed();
     }
 
+    @PostMapping("/setSelectedFields.action")
+    public @ResponseBody BooleanResponseDto updateSelectedFields(@RequestParam(required = false) List<String> selectedFields, Popups popups) {
+        webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> storage.setSelectedFields(selectedFields));
+        popups.success(CHANGES_SAVED_MSG);
+
+        return new BooleanResponseDto(popups, !popups.hasAlertPopups());
+    }
+
     @RequestMapping("/{mailingId:\\d+}/view.action")
     public String view(Admin admin, Model model, @PathVariable int mailingId, MailingStatisticForm form, Popups popups) throws Exception {
-        if(!validateDates(admin, form, popups)){
-            return "messages";
+        if (!validateDates(admin, form, popups)){
+            return MESSAGES_VIEW;
         }
         
         Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
@@ -236,9 +268,6 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     protected MailingsListProperties getMailingsListProperties(final Admin admin, final MailingStatatisticListForm statForm) {
-        boolean hasTargetGroups = statForm.getAdditionalFieldsSet()
-                .contains(MailingAdditionalColumn.TARGET_GROUPS.getSortColumn());
-
         MailingsListProperties props = new MailingsListProperties();
         props.setSearchQuery(statForm.getSearchQueryText());
         props.setSearchName(statForm.isSearchNameChecked());
@@ -246,13 +275,13 @@ public class MailingBirtStatController implements XssCheckAware {
         props.setSearchNameStr(statForm.getFilterName());
         props.setSearchDescriptionStr(statForm.getFilterDescription());
         props.setRedesignedUiUsed(isRedesignedUiUsed(admin));
+        props.setMailingStatisticsOverview(true);
         props.setTypes("0,1,2,3,4"); // all mailing types
         props.setStatuses(Collections.singletonList(MailingStatus.SENT.getDbKey())); // just sent mailings
         props.setSort(StringUtils.defaultString(statForm.getSort(), "senddate")); // sort by send date by default
         props.setDirection(StringUtils.defaultString(statForm.getDir(), "desc")); // desc order by default
         props.setPage(statForm.getPage());
         props.setRownums(statForm.getNumberOfRows());
-        props.setIncludeTargetGroups(hasTargetGroups);
         props.setAdditionalColumns(statForm.getAdditionalFieldsSet());
         props.setMailingLists(statForm.getFilteredMailingListsAsList());
         if (isRedesignedUiUsed(admin)) {
@@ -285,7 +314,12 @@ public class MailingBirtStatController implements XssCheckAware {
         }
         SimpleDateFormat localeFormat = admin.getDateFormat();
 
-        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingStatisticDto.getMailingId()));
+        if (isRedesignedUiUsed(admin)) {
+            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingStatisticDto.getMailingId()));
+        }
         model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
         model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
@@ -333,11 +367,17 @@ public class MailingBirtStatController implements XssCheckAware {
         return DateMode.NONE == oldDateMode || DateMode.NONE == dateMode ? dateMode : oldDateMode;
     }
 
-    private void syncFormProps(MailingStatatisticListForm form){
+    private void syncFormProps(MailingStatatisticListForm form, Admin admin){
         webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0) {
                 storage.setRowsCount(form.getNumberOfRows());
-                storage.setSelectedFields(Arrays.asList(form.getAdditionalFields()));
+                if (isRedesignedUiUsed(admin)) {
+                    if (!form.isInEditColumnsMode()) {
+                        form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+                    }
+                } else {
+                    storage.setSelectedFields(Arrays.asList(form.getAdditionalFields()));
+                }
             } else {
                 form.setNumberOfRows(storage.getRowsCount());
                 form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));

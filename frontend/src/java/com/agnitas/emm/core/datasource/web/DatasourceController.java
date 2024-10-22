@@ -49,7 +49,7 @@ public class DatasourceController implements XssCheckAware {
     public String list(Admin admin, DatasourceForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, WebStorage.DATASOURCE_OVERVIEW, form);
-            model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
+            model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin));
             userActivityLogService.writeUserActivityLog(admin, "datasource list", "show datasource IDs");
         } catch (Exception e) {
             logger.error("Error occurred: {}", e.getMessage(), e);

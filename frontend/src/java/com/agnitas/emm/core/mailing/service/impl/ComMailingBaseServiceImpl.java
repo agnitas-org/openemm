@@ -71,7 +71,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComUndoDynContentDao;
 import com.agnitas.dao.ComUndoMailingComponentDao;
@@ -103,7 +103,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     private static final Logger logger = LogManager.getLogger(ComMailingBaseServiceImpl.class);
 
     private ComMailingBaseService selfReference;
-    private ComMailingDao mailingDao;
+    private MailingDao mailingDao;
     private GridServiceWrapper gridServiceWrapper;
     protected ComRecipientDao recipientDao;
     protected ExecutorService workerExecutorService;
@@ -209,16 +209,25 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     @Override
     public int saveMailingWithUndo(Mailing mailing, int adminId, boolean preserveTrackableLinks) {
         int mailingId = mailing.getId();
-        if (mailingId > 0) {
-            int gridTemplateId = gridServiceWrapper.getGridTemplateIdByMailingId(mailingId);
-            if (gridTemplateId > 0) {
-                gridServiceWrapper.saveUndoGridMailing(mailingId, gridTemplateId, adminId);
-            } else {
-                mailingDao.saveUndoMailing(mailingId, adminId);
-                deleteUndoDataOverLimit(mailingId);
-            }
-        }
+        saveUndoData(mailingId, adminId);
         return mailingDao.saveMailing(mailing, preserveTrackableLinks);
+    }
+
+    @Override
+    public boolean saveUndoData(int mailingId, int adminId) {
+        if (mailingId <= 0) {
+            return false;
+        }
+
+        int gridTemplateId = gridServiceWrapper.getGridTemplateIdByMailingId(mailingId);
+        if (gridTemplateId > 0) {
+            gridServiceWrapper.saveUndoGridMailing(mailingId, gridTemplateId, adminId);
+        } else {
+            mailingDao.saveUndoMailing(mailingId, adminId);
+            deleteUndoDataOverLimit(mailingId);
+        }
+
+        return true;
     }
 
     private void deleteUndoDataOverLimit(int mailingId) {
@@ -434,6 +443,16 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         } catch (MailingNotExistException ex) {
             return false;
         }
+    }
+
+    @Override
+    public int getMailinglistId(int mailingId, int companyId) {
+        return mailingDao.getMailinglistId(mailingId, companyId);
+    }
+
+    @Override
+    public boolean isTemplate(int companyId, int mailingId) {
+        return mailingDao.isTemplate(mailingId, companyId);
     }
 
     @Lookup
@@ -722,7 +741,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
@@ -908,7 +927,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public void activateTrackingLinksOnEveryPosition(Admin admin, Mailing mailing, ApplicationContext context) throws Exception {
+    public void activateTrackingLinksOnEveryPosition(Mailing mailing, ApplicationContext context) throws Exception {
         List<String> links = mailing.getTrackableLinks().values().stream()
                 .filter(Objects::nonNull)
                 .map(TrackableLink::getFullUrl)
@@ -921,7 +940,6 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                 link.setMeasureSeparately(true);
             }
         });
-        saveMailingWithUndo(mailing, admin.getAdminID(), false);
     }
 
 	@Override

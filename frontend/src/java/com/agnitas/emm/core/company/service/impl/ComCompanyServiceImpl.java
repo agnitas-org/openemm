@@ -10,36 +10,6 @@
 
 package com.agnitas.emm.core.company.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-
-import com.agnitas.emm.core.components.entity.TestRunOption;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.factory.CompanyFactory;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.LicenseType;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
-import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Company;
@@ -65,12 +35,45 @@ import com.agnitas.emm.core.company.form.CompanyCreateForm;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
+import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.LicenseError;
 import com.agnitas.web.mvc.Popups;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.factory.CompanyFactory;
+import org.agnitas.beans.impl.CompanyStatus;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.LicenseType;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+
+import static org.agnitas.util.AgnUtils.escapeForRFC5322;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 public class ComCompanyServiceImpl implements ComCompanyService {
 
@@ -155,6 +158,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
+    public PaginatedListImpl<AdminEntry> getAdmins(PaginationForm form, int companyId) {
+        return adminService.getList(companyId,  form.getSort(), form.getDir(), form.getPage(), form.getNumberOfRows());
+    }
+
+    @Override
     public int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception {
         Company company = companyFactory.newCompany();
         company.setCreatorID(admin.getCompanyID());
@@ -219,7 +227,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     public boolean deactivateCompany(int companyIdForDeactivation) {
         Company company = companyDao.getCompany(companyIdForDeactivation);
         if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.ACTIVE) {
-            companyDao.updateCompanyStatus(company.getId(), CompanyStatus.TODELETE);
+            companyDao.updateCompanyStatus(company.getId(), CompanyStatus.LOCKED);
             if (logger.isInfoEnabled()) {
                 logger.info("Company: " + companyIdForDeactivation + " deactivated");
             }
@@ -232,29 +240,51 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     @Override
     public boolean reactivateCompany(int companyIdForReactivation) {
         Company company = companyDao.getCompany(companyIdForReactivation);
+
         if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
-        	// Check maximum number of companies
-    		int maximumNumberOfCompanies = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies);
-    		int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful);
-    		if (maximumNumberOfCompanies >= 0) {
-    			int numberOfCompanies = getNumberOfCompanies();
-    			if (numberOfCompanies >= maximumNumberOfCompanies) {
-    				if (gracefulExtension > 0
-    						&& numberOfCompanies < maximumNumberOfCompanies + gracefulExtension) {
-    					logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
-	    			} else {
-	    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
-	    			}
-    			}
-    		}
-    		
-            companyDao.updateCompanyStatus(company.getId(), CompanyStatus.ACTIVE);
-            if (logger.isInfoEnabled()) {
-                logger.info("Company: " + companyIdForReactivation + " reactivated");
-            }
+            doReactivateCompany(companyIdForReactivation);
             return true;
         } else {
         	return false;
+        }
+    }
+
+    @Override
+    public boolean markCompanyForDeletion(final int companyId) {
+        final Company company = companyDao.getCompany(companyId);
+
+        if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.LOCKED) {
+            companyDao.updateCompanyStatus(company.getId(), CompanyStatus.TODELETE);
+
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Company %d marked for deletion"));
+            }
+
+            return true;
+        } else {
+        	return false;
+        }
+    }
+
+    protected void doReactivateCompany(int id) {
+        // Check maximum number of companies
+        int maximumNumberOfCompanies = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies);
+        int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies_Graceful);
+        if (maximumNumberOfCompanies >= 0) {
+            int numberOfCompanies = getNumberOfCompanies();
+            if (numberOfCompanies >= maximumNumberOfCompanies) {
+                if (gracefulExtension > 0
+                        && numberOfCompanies < maximumNumberOfCompanies + gracefulExtension) {
+                    logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
+                } else {
+                    throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+                }
+            }
+        }
+
+        companyDao.updateCompanyStatus(id, CompanyStatus.ACTIVE);
+        if (logger.isInfoEnabled()) {
+            logger.info("Company: {} reactivated", id);
         }
     }
 
@@ -288,13 +318,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setStatAdmin(settingsDto.getExecutiveAdministrator());
         company.setContactTech(settingsDto.getTechnicalContacts());
 
-        /* update export notify admin field if HasDataExportNotify checkbox true,
-                otherwise set export notify admin value 0 */
-        if (settingsDto.isHasDataExportNotify()) {
-            company.setExportNotifyAdmin(settingsDto.getExecutiveAdministrator());
-        } else {
-            company.setExportNotifyAdmin(0);
-        }
         company.setSecretKey(RandomStringUtils.randomAscii(32));
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
@@ -305,6 +328,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
     
     protected void saveConfigValues(Admin admin, int companyId, CompanySettingsDto settings) {
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.DashboardCalendarShowALlEntries, companyId, admin, settings.isShowAllDashboardCalendarMailings());
         if (admin.permissionAllowed(Permission.COMPANY_AUTHENTICATION)) {
             // Write 2FA settings
             writeHostAuthSettings(settings, companyId, admin);
@@ -407,8 +431,9 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireStatistics, companyId, admin, newExpireStatistics);
 	    	}
 	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireStatistics, companyId, admin, settings.getExpireStatistics());
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireSuccess, companyId, admin, settings.getExpireSuccess());
-	        
+
         	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getExpireRecipient());
 	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireBounce, companyId, admin, settings.getExpireBounce());
@@ -429,34 +454,55 @@ public class ComCompanyServiceImpl implements ComCompanyService {
             checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.DefaultTestRunOption, companyId, admin, settings.getDefaultTestRunOption().getId());
         }
 
+        if (admin.isRedesignedUiUsed()) {
+            checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.IndividualLinkTrackingForAllMailings, companyId, admin, settings.isIndividualLinkTrackingForMailings());
+
+            checkChangeAndLogCompanyInfoValue(ConfigValue.Backend_AdminTestMark, companyId, admin, settings.getAdminTestMarkPlacement().getStorageValue());
+
+            if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.TO_ADDRESS) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
+                checkChangeAndLogCompanyInfoValue(
+                        ConfigValue.Backend_AdminTestMarkToAdmin,
+                        companyId,
+                        admin,
+                        escapeForRFC5322(defaultIfBlank(settings.getAdminMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToAdmin.getDefaultValue()))
+                );
+                checkChangeAndLogCompanyInfoValue(
+                        ConfigValue.Backend_AdminTestMarkToTest,
+                        companyId,
+                        admin,
+                        escapeForRFC5322(defaultIfBlank(settings.getTestMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToTest.getDefaultValue()))
+                );
+            }
+
+            if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.SUBJECT) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
+                checkChangeAndLogCompanyInfoValue(
+                        ConfigValue.Backend_AdminTestMarkSubjectAdmin,
+                        companyId,
+                        admin,
+                        defaultIfBlank(settings.getAdminMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectAdmin.getDefaultValue())
+                );
+                checkChangeAndLogCompanyInfoValue(
+                        ConfigValue.Backend_AdminTestMarkSubjectTest,
+                        companyId,
+                        admin,
+                        defaultIfBlank(settings.getTestMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectTest.getDefaultValue())
+                );
+            }
+            checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.EnableResponseInbox, companyId, admin, settings.isResponseInboxEnabled());
+        }
+
         if (settings.isRegenerateTargetSqlOnce()) {
         	regenerateTargetSql(companyId);
         	settings.setRegenerateTargetSqlOnce(false);
         }
-        if (settings.isAutoDeeptracking()){
-            companyDao.setAutoDeeptracking(companyId, true);
-        }else {
-            companyDao.setAutoDeeptracking(companyId, false);
-        }
+
+        companyDao.setAutoDeeptracking(companyId, settings.isAutoDeeptracking());
     }
 
 	private void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
     	// Password policy
     	checkChangeAndLogCompanyInfoValue(ConfigValue.PasswordPolicy, companyId, admin, PasswordPolicies.findByName(settings.getPasswordPolicyName()).getPolicyName());
-     	
-        // Password expire days
-        final Optional<PasswordExpireSettings> optional = PasswordExpireSettings.findByDays(settings.getPasswordExpireDays());
-        
-		if (optional.isPresent()) {
-			final PasswordExpireSettings passwordExpireSettings = optional.get();
-			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.UserPasswordExpireDays, companyId, admin, passwordExpireSettings.getExpireDays());
-		} else {
-    		try {
-    			throw new Exception("Stack trace");	// Throw exception to get stack trace
-    		} catch(final Exception e) {
-    			logger.error(String.format("Invalid password expire days settings name: '%d'", settings.getPasswordExpireDays()), e);
-    		}
-		}
+        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.UserPasswordExpireDays, companyId, admin, settings.getPasswordExpireDays());
     }
 
 	private void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyId, final Admin admin) {
@@ -730,7 +776,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     private void regenerateTargetSql(int companyID) {
-    	for (TargetLight targetLight : targetDao.getTargetLights(companyID, false)) {
+    	for (TargetLight targetLight : targetDao.getTargetLights(companyID)) {
 			if (!targetLight.isLocked()) {
 	    		try {
 					ComTarget target = targetDao.getTarget(targetLight.getId(), companyID);

@@ -10,6 +10,7 @@
 
 package com.agnitas.dao;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -29,13 +30,15 @@ public interface AdminGroupDao {
 
     AdminGroup getUserGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor);
 
+    List<AdminGroup> getAdminGroupsByCompanyId(int companyId);
+
     /**
      * Loads list of AdminGroups for specified company id
-     * @param companyId
-     *          The companyID for the AdminGroups.
+     * @param companyId the companyID for the AdminGroups
+     * @param includeDeleted whether to get entries that marked as deleted
      * @return List of AdminGroups or empty list
      */
-	List<AdminGroup> getAdminGroupsByCompanyId( int companyId);
+	List<AdminGroup> getAdminGroupsByCompanyId( int companyId, boolean includeDeleted);
 
 	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, List<Integer> additionalAdminGroupIds);
 
@@ -46,7 +49,9 @@ public interface AdminGroupDao {
     int saveAdminGroup(AdminGroup adminGroup) throws Exception;
     
     int delete(int companyId, int adminGroupId);
-    
+
+    void markDeleted(int groupId, int companyId);
+
     boolean adminGroupExists(int companyId, String username);
 
     List<String> getAdminsOfGroup(int companyId, int groupId);
@@ -62,4 +67,8 @@ public interface AdminGroupDao {
 	List<Integer> getParentGroupIds(int adminGroupId);
 
 	List<String> getGroupNamesUsingGroup(int companyId, int groupId);
+
+    void restore(Set<Integer> ids, int companyId);
+
+    List<Integer> getMarkedAsDeletedBefore(Date date, int companyId);
 }

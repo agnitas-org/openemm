@@ -227,7 +227,6 @@ public class JsonDataProvider extends DataProvider {
 
 	@Override
 	public File filterDataItems(final List<Integer> indexList, final String fileSuffix) throws Exception {
-		@SuppressWarnings("resource")
 		OutputStream outputStream = null;
 		@SuppressWarnings("resource")
 		JsonWriter jsonWriter = null;

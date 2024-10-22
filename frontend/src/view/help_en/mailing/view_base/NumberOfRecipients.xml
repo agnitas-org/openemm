@@ -1,4 +1,4 @@
 <HelpBalloon>
     <title><![CDATA[Number of recipients]]></title>
-    <content><![CDATA[This field indicates the maximum number of recipients that can be reached by the mailing.]]></content>
+    <content><![CDATA[This field shows the number of recipients to whom the mailing was successfully delivered.]]></content>
 </HelpBalloon>

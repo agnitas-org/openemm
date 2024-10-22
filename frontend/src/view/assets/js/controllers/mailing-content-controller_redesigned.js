@@ -76,6 +76,24 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
       .toggleClass('mailing.status.no-content', empty);
   }
 
+  this.addAction({'editor:change': 'validate-on-change'}, function () {
+    Form.get(this.el).validateField(this.el);
+  });
+
+  this.addAction({'editor:change': 'validate-sms-content'}, function () {
+    Form.cleanFieldFeedback$(this.el);
+
+    const errors = AGN.Lib.Validator.get('reject-not-allowed-chars').errors(this.el, {
+      msgKey: 'error.mailing.smsSymbolsProhibited',
+      chars: '#gsm-7-bit-chars'
+    });
+
+    _.each(errors, error => {
+      Form.markField(this.el);
+      Form.appendFeedbackMessage(this.el, error.msg);
+    });
+  });
+
   this.addAction({click: 'switch-dyn-tag'}, function () {
     let currentDynTag = $dynTagSettings.data('conf')?.dynTag;
     if (currentDynTag && !currentDynTag.isValid) {
@@ -107,6 +125,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
       targetGroups: _.cloneDeep(mailingContent.targetGroups),
       isFullHtmlTags: dynTag.name === 'HTML-Version',
       showHTMLEditor: dynTag.isHtmlDynTag,
+      usedInSmsContent: config.smsDynNames?.length && config.smsDynNames.includes(dynTag.name),
       isEditableMailing: config.isEditableMailing,
       isContentGenerationAllowed: config.isContentGenerationAllowed
     };
@@ -116,14 +135,41 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     if (mailingContent.dynTags.some(dynTag => !dynTag.isValid)) {
       return;
     }
-    triggerModify();
+    if (isAiTextGeneratedAndNotApplied()) {
+      AGN.Lib.Confirm
+        .from('mailing-ai-text-generation-apply-question', {dynTagName: $dynTagSettings.data('conf')?.dynTag?.name})
+        .then(applyAItextAndSave);
+      return;
+    }
+    triggerModify(); // store last changes
+    save(this.el.data('url'));
+  });
+
+  function getAiGeneratedText() {
+    return $('[data-ai-result]').val()?.trim();
+  }
+
+  function isAiTextGeneratedAndNotApplied() {
+    const $aiTextGenerationBlock = $('#tab-content-ai-text-generation');
+    return $aiTextGenerationBlock.is(":visible") && getAiGeneratedText();
+  }
+
+  function applyAItextAndSave() {
+    $dynTagEditor.trigger("apply-ai-text-on-save", [getAiGeneratedText()]);
+    save();
+  }
+  
+  function save(url) {
     const dynTagsToSave = mailingContent.dynTags.filter(dynTag => dynTag.modified);
     $.post({
-      url: this.el.data('url'),
+      url: url,
       contentType: 'application/json',
       data: JSON.stringify(dynTagsToSave)
-    }).done(resp => AGN.Lib.Page.render(resp));
-  });
+    }).done(resp => {
+      $dynTagEditor.trigger("tile:show");
+      AGN.Lib.Page.render(resp)
+    });
+  }
 
   this.addAction({click: 'edit-content-modal'}, function () {
     triggerModify();

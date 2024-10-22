@@ -10,6 +10,7 @@
 
 package org.agnitas.util;
 
+// TODO: EMMGUI-714 Remove after remove of old design
 public class GuiConstants {
 
 	// Constants to be set to affectedMailingsMessageType and affectedReportsMessageType (see messages-transitional.jsp)

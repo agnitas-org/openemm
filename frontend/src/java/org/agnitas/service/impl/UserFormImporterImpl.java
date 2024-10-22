@@ -22,21 +22,24 @@ import java.util.Map;
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.DateUtilities;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
-import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
+import com.agnitas.messages.Message;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
@@ -45,8 +48,9 @@ import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImp
 import jakarta.annotation.Resource;
 
 public class UserFormImporterImpl extends ActionImporter implements UserFormImporter {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormImporterImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormImporterImpl.class);
+    private static final String FORM_NAME_KEY = "formname";
 	
 	@Resource(name="UserFormDao")
 	protected UserFormDao userFormDao;
@@ -55,8 +59,36 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 	protected FormTrackableLinkDao trackableLinkDao;
 
 	@Resource(name="userformService")
-	protected ComUserformService userFormService;
+	protected UserformService userFormService;
 
+    @Override
+    public FormImportResult importUserForm(MultipartFile file, Locale locale, int companyId) {
+        Message error = validateImportFile(file);
+        if (error != null) {
+            return FormImportResult.error(error);
+        }
+        return tryImportUserForm(file, locale, companyId);
+    }
+
+    private FormImportResult tryImportUserForm(MultipartFile file, Locale locale, int companyId) {
+        try (InputStream input = file.getInputStream()) {
+            return importUserForm(companyId, input, locale, null);
+        } catch (Exception e) {
+            logger.error("Mailing import failed", e);
+            return FormImportResult.error("error.userform.import");
+        }
+    }
+
+    private Message validateImportFile(MultipartFile uploadFile) {
+        if (uploadFile.isEmpty()) {
+            return Message.of("error.file.missingOrEmpty");
+        }
+        if (!"json".equalsIgnoreCase(FilenameUtils.getExtension(uploadFile.getOriginalFilename()))) {
+            return Message.of("error.import.invalidDataType", "json");
+        }
+        return null;
+    }
+    
 	@Override
 	public FormImportResult importUserForm(int companyID, InputStream input, Locale locale, Map<Integer, Integer> actionIdReplacements) throws Exception {
 		return importUserForm(companyID, input, null, null, locale, actionIdReplacements);
@@ -71,6 +103,10 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 
 			JsonObject jsonObject = (JsonObject) jsonNode.getValue();
 
+            if (!jsonObject.containsPropertyKey(FORM_NAME_KEY)) {
+                return FormImportResult.error("error.import.userform.missing");
+            }
+            
 			String version = (String) jsonObject.get("version");
 			checkJsonVersion(version);
 
@@ -91,12 +127,12 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 
 			UserForm userForm = new UserFormImpl();
 			
-			String userFormName = StringUtils.defaultIfEmpty(formName, (String) jsonObject.get("formname"));
+			String userFormName = StringUtils.defaultIfEmpty(formName, (String) jsonObject.get(FORM_NAME_KEY));
 			// Check for unallowed html tags
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(userFormName, false);
 			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-				throw new Exception("Invalid userform data containing HTML for field: " + "formname");
+				throw new Exception("Invalid userform data containing HTML for field: " + FORM_NAME_KEY);
 			}
 			
 			description = StringUtils.defaultIfEmpty(description, (String) jsonObject.get("description"));

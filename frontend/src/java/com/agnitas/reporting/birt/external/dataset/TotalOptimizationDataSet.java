@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -165,7 +166,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				"        ELSE 0" +
 				"   END) AS group_id, " +
 				"  (CASE WHEN ao.final_mailing_id =  m.mailing_id THEN MAX(ao.result_mailing_id) ELSE 0 END) AS result_mailing" +
-				"  FROM mailing_tbl m LEFT JOIN mailing_mt_tbl mt ON m.mailing_id = mt.mailing_id, " +
+				"  FROM mailing_tbl m LEFT JOIN mailing_mt_tbl mt ON m.mailing_id = mt.mailing_id AND mt.status = ? AND mt.priority = (SELECT MIN(priority) FROM mailing_mt_tbl WHERE mailing_id = m.mailing_id AND status = ?)," +
                 "  auto_optimization_tbl ao LEFT JOIN dyn_target_tbl tg ON ao.target_id = tg.target_id" +
 				"  WHERE m.mailing_id IN (ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id)" +
 				"  AND optimization_id = ? AND m.company_id = ?" +
@@ -187,7 +188,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 			mdata.setResultMailing(resultSet.getInt("result_mailing"));
 			mdata.setSendDate(resultSet.getTimestamp("last_send_date"));
 			return mdata;
-		}, optimizationId, companyId);
+		}, MediaTypeStatus.Active.getCode(), MediaTypeStatus.Active.getCode(), optimizationId, companyId);
 	}
 
     protected String getSubjectFromMTParam(String mtParam) {

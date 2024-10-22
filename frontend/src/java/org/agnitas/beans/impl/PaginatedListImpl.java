@@ -10,21 +10,22 @@
 
 package org.agnitas.beans.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.displaytag.pagination.PaginatedList;
 import org.displaytag.properties.SortOrderEnum;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PaginatedListImpl<T> implements PaginatedList {
 
-	private List<T>  partialList;
+	private final List<T> partialList;
 	private int fullListSize;
 	private int pageSize;
 	private int pageNumber = 1;
 	private String sortCriterion;
 	private SortOrderEnum sortDirection = SortOrderEnum.ASCENDING; // DESC or ASC
+	private long notFilteredFullListSize = -1; // stores total count of entries when UI filters were set
 
 	public PaginatedListImpl() {
 		this.partialList = new ArrayList<>();
@@ -57,7 +58,7 @@ public class PaginatedListImpl<T> implements PaginatedList {
 		this.sortDirection = sortedAscending ? SortOrderEnum.ASCENDING : SortOrderEnum.DESCENDING;
 	}
 
-	public PaginatedListImpl(List<T> partialList, int fullListSize, int pageSize, int pageNumber, String sortCriterion, SortOrderEnum sortDirection) {
+	public PaginatedListImpl(List<T> partialList, int fullListSize, int pageSize, int pageNumber, String sortCriterion, SortOrderEnum sortDirection, long notFilteredFullListSize) {
 		super();
 		this.partialList = partialList;
 		this.fullListSize = fullListSize;
@@ -65,6 +66,7 @@ public class PaginatedListImpl<T> implements PaginatedList {
 		this.pageNumber = pageNumber;
 		this.sortCriterion = sortCriterion;
 		this.sortDirection = sortDirection == null ? SortOrderEnum.ASCENDING : sortDirection;
+		this.notFilteredFullListSize = notFilteredFullListSize;
 	}
 
 	@Override
@@ -94,8 +96,6 @@ public class PaginatedListImpl<T> implements PaginatedList {
 
 	/**
 	 * The sort criterion can be set after the creation of the object, to fit the camelcase sort criterion defined in JSPs
-	 * 
-	 * @param sortCriterion
 	 */
 	public void setSortCriterion(String sortCriterion) {
 		this.sortCriterion = sortCriterion; 
@@ -113,5 +113,13 @@ public class PaginatedListImpl<T> implements PaginatedList {
 
 	public int getPageSize() {
 		return pageSize;
+	}
+
+	public long getNotFilteredFullListSize() {
+		return notFilteredFullListSize;
+	}
+
+	public void setNotFilteredFullListSize(long notFilteredFullListSize) {
+		this.notFilteredFullListSize = notFilteredFullListSize;
 	}
 }

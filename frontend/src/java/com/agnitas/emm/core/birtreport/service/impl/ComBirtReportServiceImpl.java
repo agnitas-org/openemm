@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -38,11 +38,15 @@ import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Const;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,6 +56,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.text.SimpleDateFormat;
@@ -71,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,7 +113,7 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.MAILI
 public class ComBirtReportServiceImpl implements ComBirtReportService {
     /** The logger. */
     private static final Logger logger = LogManager.getLogger(ComBirtReportServiceImpl.class);
-    
+
     public static final String KEY_START_DATE = "from";
     public static final String KEY_END_DATE = "to";
     public static final int ROWS_NUMBER = 100;
@@ -116,7 +122,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     private ComBirtReportDao birtReportDao;
 
     /** DAO accessing mailing data. */
-    protected ComMailingDao mailingDao;
+    protected MailingDao mailingDao;
 
     private DataSource dataSource;
 
@@ -329,7 +335,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                         }
                     }
                 } else {
-                	from = LocalDate.now();
+                    from = LocalDate.now();
                     to = LocalDate.now();
                 }
                 break;
@@ -386,7 +392,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
      * @param mailingDao DAO accessing mailing data
      */
     @Required
-    public void setMailingDao(ComMailingDao mailingDao) {
+    public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
@@ -435,9 +441,36 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     @Override
+    public List<ReportEntry> findAllByEmailPart(String email, int companyID) {
+        return birtReportDao.findAllByEmailPart(email, companyID);
+    }
+
+    @Override
+    public List<ReportEntry> findAllByEmailPart(String email) {
+        return birtReportDao.findAllByEmailPart(email);
+    }
+
+    @Override
+    @Transactional
+    public void storeBirtReportEmailRecipients(List<String> emails, int reportId) {
+        birtReportDao.storeBirtReportEmailRecipients(emails, reportId);
+    }
+
+    @Override
+    public void restore(Set<Integer> bulkIds, int companyId) {
+        birtReportDao.restore(bulkIds, companyId);
+    }
+
+    @Override
+    public void deleteExpired(Date expireDate, int companyId) {
+        birtReportDao.getMarkedAsDeletedBefore(expireDate, companyId)
+            .forEach(reportId -> birtReportDao.deleteReport(reportId, companyId));
+    }
+
+    @Override
     public BirtReportDto getBirtReport(Admin admin, int reportId) {
         int companyId = admin.getCompanyID();
-        ComBirtReport comBirtReport = birtReportDao.get(reportId, companyId);
+        ComBirtReport comBirtReport = getBirtReport(reportId, companyId);
 
         if (comBirtReport != null) {
             if (!admin.permissionAllowed(Permission.DEEPTRACKING)) {
@@ -453,10 +486,15 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     @Override
+    public ComBirtReport getBirtReport(int reportId, int companyId) {
+        return birtReportDao.get(reportId, companyId);
+    }
+
+    @Override
     public BirtReportDownload evaluate(Admin admin, BirtReportForm form) throws Exception {
         int companyId = admin.getCompanyID();
-        ComBirtReport comBirtReport = birtReportDao.get(form.getReportId(), companyId);
-        comBirtReport.setActiveTab(getSettingsTypeKeyToEvaluate(form, admin));
+        ComBirtReport comBirtReport = getBirtReport(form.getReportId(), companyId);
+        comBirtReport.setActiveTab(getSettingsTypeKeyToEvaluate(form.getActiveTab(), admin));
         ComBirtReportSettings settings = comBirtReport.getActiveReportSetting();
         updateSelectedReportSettings(admin, settings);
         Set<String> missingParameters =
@@ -483,12 +521,76 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         }
     }
 
-    private int getSettingsTypeKeyToEvaluate(BirtReportForm form, Admin admin) {
+    @Override
+    public List<BirtReportDownload> evaluate(int id, int activeTab, Admin admin) throws Exception {
+        List<BirtReportDownload> result = new ArrayList<>();
+
+        ComBirtReport report = getBirtReport(id, admin.getCompanyID());
+
+        for (ReportSettingsType type : getBirtReportSettingsTypesForEvaluation(report, activeTab, admin)) {
+            ComBirtReportSettings settings = report.getSetting(type);
+            updateSelectedReportSettings(admin, settings);
+            Set<String> missingParameters =
+                    settings.getMissingReportParameters(report.getReportType());
+
+            if (missingParameters.isEmpty()) {
+                BirtReportDownload birtReportDownload = new BirtReportDownload();
+                birtReportDownload.setReportId(id);
+
+                BirtReportStatisticDto statisticDto = conversionService.convert(report, BirtReportStatisticDto.class);
+                String reportUrl = birtStatisticsService.getReportStatisticsUrl(admin, statisticDto);
+                logger.warn("Birt report statistic evaluation, report URL: {}", reportUrl);
+                birtReportDownload.setBirtFileUrl(reportUrl);
+
+                String localizedFileName = birtReportFileService.buildLocalizedFileName(
+                        settings, admin.getCompanyID(), admin.getLocale(), report.getFormatName()
+                );
+
+                birtReportDownload.setFileName(localizedFileName);
+                birtReportDownload.setShortname(report.getShortname());
+                result.add(birtReportDownload);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<ReportSettingsType> getBirtReportSettingsTypesForEvaluation(Map<ReportSettingsType, Map<String, Object>> settings, int activeTab, Admin admin) {
+        List<ReportSettingsType> types = settings.entrySet().stream()
+                .filter(e -> isSettingsEnabled(e.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        if (!types.isEmpty()) {
+            return types;
+        }
+
+        int typeCode = getSettingsTypeKeyToEvaluate(activeTab, admin);
+        return List.of(ReportSettingsType.getTypeByCode(typeCode));
+    }
+
+    private boolean isSettingsEnabled(Map<String, Object> settings) {
+        return BooleanUtils.toBoolean((String) settings.get(ENABLED_KEY));
+    }
+
+    private List<ReportSettingsType> getBirtReportSettingsTypesForEvaluation(ComBirtReport report, int activeTab, Admin admin) {
+        Map<ReportSettingsType, Map<String, Object>> settings = Stream.of(ReportSettingsType.values())
+                .collect(Collectors.toMap(Function.identity(), st -> report.getSetting(st).getSettingsMap()));
+
+        return getBirtReportSettingsTypesForEvaluation(settings, activeTab, admin);
+    }
+
+    private int getSettingsTypeKeyToEvaluate(int activeTab, Admin admin) {
         if (!AgnUtils.isMailTrackingAvailable(admin)
-                && ReportSettingsType.getTypeByCode(form.getActiveTab()).isMailTrackingRequired()) {
+                && ReportSettingsType.getTypeByCode(activeTab).isMailTrackingRequired()) {
             return ReportSettingsType.COMPARISON.getKey();
         }
-        return form.getActiveTab();
+        return activeTab;
+    }
+
+    private boolean markDeleted(int reportId, int companyId) {
+        return birtReportDao.markDeleted(reportId, companyId);
     }
 
     @Override
@@ -611,7 +713,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     @Override
     public void copySampleReports(int toCompanyId, int fromCompanyId) throws Exception {
         for (int reportId : birtReportDao.getSampleReportIds(fromCompanyId)) {
-            ComBirtReport report = birtReportDao.get(reportId, fromCompanyId);
+            ComBirtReport report = getBirtReport(reportId, fromCompanyId);
             report.setId(0);
             report.setCompanyID(toCompanyId);
             report.setReportActive(0);
@@ -622,6 +724,30 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
 
             birtReportDao.insert(report);
         }
+    }
+
+    @Override
+    public List<String> getNames(Set<Integer> ids, int companyID) {
+        return ids.stream()
+                .filter(id -> isReportExist(companyID, id))
+                .map(id -> getReportName(companyID, id))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ServiceResult<UserAction> markDeleted(Set<Integer> ids, int companyID) {
+        List<Integer> deletedIds = ids.stream()
+                .filter(id -> isReportExist(companyID, id))
+                .filter(id -> markDeleted(id, companyID))
+                .collect(Collectors.toList());
+
+        return ServiceResult.success(
+                new UserAction(
+                        "delete reports",
+                        String.format("Reports IDs %s", StringUtils.join(deletedIds, ", "))
+                ),
+                Message.of(Const.Mvc.SELECTION_DELETED_MSG)
+        );
     }
 
     @Override

@@ -4,8 +4,8 @@ AGN.Lib.Controller.new('mailing-priorities', function () {
   const Helpers = AGN.Lib.Helpers;
   const DateFormat = AGN.Lib.DateFormat;
 
-  const ENTRY_SELECTOR = '.mailing-priority__entry';
-  const ENTRIES_CONTAINER_SELECTOR = '.mailing-priority__container';
+  const ENTRY_SELECTOR = '.mailing-priority';
+  const ENTRIES_CONTAINER_SELECTOR = '.mailing-priority-container';
 
   let $orderedArea;
   let $unorderedArea;
@@ -49,7 +49,7 @@ AGN.Lib.Controller.new('mailing-priorities', function () {
 
     const $container = $('.tiles-container');
     $(ENTRIES_CONTAINER_SELECTOR).sortable({
-      handle: '.priority-entry__drag-btn',
+      handle: '.mailing-priority__drag-btn',
       opacity: 0.4,
       connectWith: ENTRIES_CONTAINER_SELECTOR,
       items: ENTRY_SELECTOR,
@@ -126,7 +126,7 @@ AGN.Lib.Controller.new('mailing-priorities', function () {
         }
         index++;
 
-        $e.find('.priority-entry__order').text(`${priority}.`);
+        $e.find('.mailing-priority__order').text(`${priority}.`);
       });
   }
 

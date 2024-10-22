@@ -21,7 +21,7 @@
 		<lookup-method name="getBeanCompanyDao" bean="CompanyDao"/>
 		<lookup-method name="getBeanDynamicTagDao" bean="DynamicTagDao"/>
 		<lookup-method name="getBeanMailingDao" bean="MailingDao"/>
-		<lookup-method name="getBeanMaildropStatusDao" bean="MaildropStatusDao"/>
+		<lookup-method name="getBeanMaildropService" bean="MaildropService"/>
 		<lookup-method name="getBeanMailingParameterDao" bean="MailingParameterDao"/>
 		<lookup-method name="getBeanGuiLoginTrackDao" bean="GuiLoginTrackDao"/>
 		<lookup-method name="getBeanWsLoginTrackDao" bean="WsLoginTrackDao"/>
@@ -42,7 +42,7 @@
 		<lookup-method name="getBeanAnonymizeStatisticsDao" bean="AnonymizeStatisticsDao"/>
 	</bean>
 
-    <bean id="MailingDao" class="com.agnitas.dao.impl.ComMailingDaoImpl">
+    <bean id="MailingDao" class="com.agnitas.dao.impl.MailingDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="undoMailingDao" ref="UndoMailingDao" />
@@ -54,9 +54,10 @@
 		<property name="mediatypesDao" ref="MediatypesDao" />
 		<property name="databaseInformation" ref="DatabaseInformation" />
 		<property name="configService" ref="ConfigService" />
-		<property name="maildropStatusDao" ref="MaildropStatusDao" />
+		<property name="maildropService" ref="MaildropService" />
 		<property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator" />
         <property name="dynamicTagDao" ref="DynamicTagDao"/>
+		<property name="mailingParameterDao" ref="MailingParameterDao" />
     </bean>
 
     <bean id="SupervisorDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultSupervisorDaoImpl"/>

@@ -45,7 +45,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
@@ -100,7 +100,7 @@ public class RedirectServlet extends HttpServlet {
 	private EmmActionService emmActionService;
 	private ComCompanyDao companyDao;
 	private ConfigService configService;
-	private ComMailingDao mailingDao;
+	private MailingDao mailingDao;
 	private IntelliAdMailingSettingsCache intelliAdMailingSettingsCache;
 	private SnowflakeMailingCache snowflakeMailingCache;
 	private RecipientService recipientService;
@@ -623,13 +623,13 @@ public class RedirectServlet extends HttpServlet {
 	}
 
 	@Required
-	public void setMailingDao(ComMailingDao comMailingDao) {
-		this.mailingDao = comMailingDao;
+	public void setMailingDao(MailingDao mailingDao) {
+		this.mailingDao = mailingDao;
 	}
 
-	private ComMailingDao getMailingDao() {
+	private MailingDao getMailingDao() {
 		if (mailingDao == null) {
-			mailingDao = (ComMailingDao) getApplicationContext().getBean("MailingDao");
+			mailingDao = (MailingDao) getApplicationContext().getBean("MailingDao");
 		}
 		return mailingDao;
 	}

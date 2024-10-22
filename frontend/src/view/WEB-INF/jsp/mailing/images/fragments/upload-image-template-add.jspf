@@ -19,11 +19,8 @@
         <td>
             <select name="images[{{= count }}].mobileBase" class="form-control js-select">
                 <option value="" selected="selected"><mvc:message code="default.none"/></option>
-                <c:forEach items="${images}" var="image">
-                    <c:if test="${image.type == MAILING_COMPONENT_IMAGE_TYPE  
-                               || image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE && !image.mobile}">
-                        <option value="${image.name}">${image.name}</option>
-                    </c:if>
+                <c:forEach items="${imagesForMobileAlternative}" var="imageName">
+                    <option value="${imageName}">${imageName}</option>
                 </c:forEach>
             </select>
         </td>

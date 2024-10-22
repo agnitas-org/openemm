@@ -1,15 +1,15 @@
-(function(){
+(() =>{
+
 const Helpers = AGN.Lib.Helpers;
 const Popover = AGN.Lib.Popover;
 
 class Table {
   constructor($el, columns, data, options) {
     this.$el = $el;
-    this.$el.html(this.#template);
-    this.$tableControls = this.$el.find('.table-controls-wrapper');
+    this.$el.append(this.#template);
     this.$el.data('_table', this);
 
-    columns.forEach(function(column) {
+    columns.forEach(column => {
       if (column.cellRenderer) {
         column.cellRenderer = AGN.Opt.TableCellRenderers[column.cellRenderer];
       }
@@ -36,14 +36,15 @@ class Table {
     this.grid = new agGrid.Grid(this.$table.get(0), this.gridOptions);
     this.api = this.gridOptions.api;
     this.columnApi = this.gridOptions.columnApi;
+    this.#setAvailableActionsData(data);
     this.api.setRowData(this.gridOptions.singleNameTable ? data.map(name => ({name})) : data);
     this.redraw();
     this.#bindFilters();
     this.popoverTimer = undefined;
+    window.setTimeout(() => AGN.Lib.CoreInitializer.run('scrollable', $el), 100)
   };
 
   #defaultGridOptions(columns) {
-    const self = this;
     return {
       autoSizePadding: 4,
       columnDefs: columns,
@@ -52,11 +53,6 @@ class Table {
       scrollbarWidth: 0,
       pagination: true,
       showRecordsCount: true,
-      filtersDescription: {
-        enabled: false,
-        templateName: '',
-        templateParams: {}
-      },
       paginationPageSize: 100,
       rowSelection: 'multiple',
       unSortIcon: true,
@@ -65,36 +61,31 @@ class Table {
          ${AGN.Lib.Template.text('notification-info', {message: t('defaults.table.empty')})}
         </div>
       `,
-      onCellClicked: function(cell) {
-        switch (cell.colDef.cellAction) {
-          case 'select':
-            cell.node.setSelected(!cell.node.isSelected());
-            break;
-
-          case 'goTo':
-            const url = cell.data.show;
-            if (url) {
-              if (cell.event.ctrlKey) {
-                window.open(url, "_blank");
-              } else {
-                window.location.href = url;
-              }
-            }
-            break;
+      onCellClicked: cell => {
+        if (cell.colDef.cellAction === 'select') {
+          cell.node.setSelected(!cell.node.isSelected());
         }
       },
       onCellMouseOver: _.throttle(params => this.showCellPopoverIfTruncated(params), 50),
       onCellMouseOut: _.throttle(params => this.hideCellPopover(params), 50),
+      onSelectionChanged: () => this.updateBulkActions(),
+      onRowDataUpdated: () => {
+        this.api.forEachNode(node => this.#setAvailableActionsData([node.data]));
+        this.updateBulkActions();
+      },
       suppressRowClickSelection: true,
-      headerHeight: 30,
+      headerHeight: 33,
       suppressPaginationPanel: true,
-      onPaginationChanged: function() {
-        self.renderPagination();
+      onPaginationChanged: () => {
+        this.renderPagination();
+        this.$el.css('--ag-rows-count', this.#getDisplayedRowsCount());
       },
       defaultColDef: {
         filter: true,
         sortable: true,
         resizable: true,
+        autoHeight: true,
+        wrapText: true,
         headerComponentParams: {
           template:`
           <div class="ag-cell-label-container" role="presentation">
@@ -140,6 +131,7 @@ class Table {
           editable: false,
           checkboxSelection: true,
           headerCheckboxSelection: true,
+          headerCheckboxSelectionCurrentPageOnly: true,
           headerComponent: AGN.Opt.TableHeaderComponents['NoLabelHeader'],
           resizable: false,
           suppressMenu: true,
@@ -150,16 +142,16 @@ class Table {
             textAlign: 'center'
           }
         },
-        deleteColumn: {
+        tableActionsColumn: {
           headerName: '',
           editable: false,
           resizable: false,
           suppressMenu: true,
           sortable: false,
           cellAction: null,
-          cellRenderer: AGN.Opt.TableCellRenderers['DeleteCellRenderer'],
-          suppressSizeToFit: true,
-          'button-tooltip': t('defaults.delete')
+          filter: SwitchFilter,
+          cellRenderer: AGN.Opt.TableCellRenderers['TableActionsCellRenderer'],
+          suppressSizeToFit: true
         },
         textCaseInsensitiveColumn: {
           comparator: AGN.Lib.TableCaseInsensitiveComparator
@@ -183,14 +175,19 @@ class Table {
         sortUnSort: '<i class="icon icon-sort"/>'
       },
       localeText: window.I18n.tables,
-      onFilterChanged: function() {
-        const rowCount = self.api.getModel().rowsToDisplay.length;
+      onFilterChanged: () => {
+        const rowCount = this.api.getModel().rowsToDisplay.length;
         if (rowCount === 0) {
-          self.api.showNoRowsOverlay();
+          this.api.showNoRowsOverlay();
         } else {
-          self.api.hideOverlay();
+          this.api.hideOverlay();
         }
+        this.api.forEachNode(node => this.#setAvailableActionsData([node.data]));
+        this.api.deselectAll();
+        this.updateBulkActions();
       },
+      isRestoreMode: () => this.isRestoreMode,
+      getRowClass: () => this.isRestoreMode ? 'ag-row-no-hover' : ''
     }
   }
 
@@ -221,9 +218,14 @@ class Table {
 
   static dateCellRenderer(params, withTime = false) {
     const format = withTime ? window.adminDateTimeFormat : window.adminDateFormat;
-    const wrapper = AGN.Lib.TableCellWrapper(params?.data?.show);
+    const wrapper = AGN.Lib.TableCellWrapper(params?.api?.gridOptionsService?.gridOptions, params?.data);
+
+    const contentDiv = document.createElement("div");
+    contentDiv.classList.add("text-truncate-table");
+    wrapper.appendChild(contentDiv);
+
     const date = params?.value?.date || params.value;
-    wrapper.innerHTML = date ? moment(date).format(format.replaceAll('d', 'D').replaceAll('y', 'Y')) : '';
+    contentDiv.innerHTML = date ? moment(date).format(format.replaceAll('d', 'D').replaceAll('y', 'Y')) : '';
     return wrapper;
   }
 
@@ -236,9 +238,8 @@ class Table {
   }
 
   // max-height
-  get #template() { // 30px - table controls
-    return `<div class="ag-theme-${this.theme}" style="width: 100%; height: calc(100% - 30px)"></div>
-            <div class="table-controls-wrapper"></div>`
+  get #template() {
+    return `<div class="ag-theme-${this.theme}" style="width: 100%; height: 100%"></div>`
   }
 
   get $table() {
@@ -259,23 +260,11 @@ class Table {
   renderPagination() {
     const api = this.api;
     if (!api) {
-      return
+      return;
     }
 
     const currentPage = api.paginationGetCurrentPage() + 1;
     const totalPages = api.paginationGetTotalPages();
-    const pageSelects = [currentPage];
-    const paginationBottomTemplate = AGN.Lib.Template.prepare('table-controls');
-
-    _.times(5, function(i) {
-      if (currentPage - (i + 1) > 0) {
-        pageSelects.unshift(currentPage - (i + 1))
-      }
-
-      if (currentPage + (i + 1) <= totalPages) {
-        pageSelects.push(currentPage + (i + 1))
-      }
-    });
 
    const paginationData = {
       pagination: this.gridOptions.pagination,
@@ -283,29 +272,86 @@ class Table {
       currentPage: currentPage,
       totalPages: totalPages,
       pageSize: api.paginationGetPageSize(),
-      itemStart: (api.paginationGetPageSize() * (currentPage - 1)) + 1,
-      itemEnd: currentPage == totalPages ? api.paginationGetRowCount() : api.paginationGetPageSize() * currentPage,
-      itemTotal: this.gridOptions.pagination ? api.paginationGetRowCount() : api.getDisplayedRowCount(),
-      pageSelects: pageSelects
+      pageSelects: this.#generatePageNumbers(currentPage, totalPages)
     }
 
-    const filtersDescription = this.gridOptions.filtersDescription;
-    if (filtersDescription.enabled && filtersDescription.templateName) {
-      this.$paginationTop.find('#filtersDescription').html(AGN.Lib.Template.text(filtersDescription.templateName), filtersDescription.templateParams);
+    this.#updateDisplayedEntriesCount();
+
+    const $tableFooter = AGN.Lib.Template.dom('table-footer', paginationData);
+    const $existingFooter = this.$el.find('.table-wrapper__footer');
+
+    if ($existingFooter.exists()) {
+      $existingFooter.replaceWith($tableFooter);
+    } else {
+      this.$el.append($tableFooter);
     }
-    this.$tableControls.html(paginationBottomTemplate(paginationData));
-    AGN.Lib.CoreInitializer.run('select', this.$tableControls);
+    AGN.Lib.CoreInitializer.run('select', $tableFooter);
     this.api.redrawRows();
   };
 
+  #generatePageNumbers(currentPage, totalPages) {
+    const maxPagesCount = parseInt(this.$el.css('--table-max-pages-count'));
+
+    let startPage, endPage;
+
+    if (totalPages <= maxPagesCount) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      if (currentPage <= Math.ceil(maxPagesCount / 2)) {
+        startPage = 1;
+        endPage = maxPagesCount;
+      } else if (currentPage + Math.floor(maxPagesCount / 2) > totalPages) {
+        startPage = totalPages - maxPagesCount + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - Math.floor(maxPagesCount / 2);
+        endPage = currentPage + Math.floor(maxPagesCount / 2) - 1;
+      }
+    }
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  }
+
+  #updateDisplayedEntriesCount() {
+    const api = this.api;
+
+    const totalRowsCount = api.getModel().getRootNode().childrenAfterGroup.length;
+    const filteredRowsCount = this.gridOptions.pagination ? api.paginationGetRowCount() : api.getDisplayedRowCount();
+
+    const $entriesCount = this.$el.find('.table-wrapper__entries-label');
+    const $entriesCountText = $entriesCount.children().first();
+
+    if (totalRowsCount > filteredRowsCount) {
+      $entriesCountText.text(`${filteredRowsCount} / ${totalRowsCount}`);
+    } else {
+      $entriesCountText.text(filteredRowsCount);
+    }
+
+    $entriesCount.removeClass('hidden');
+  }
+
+  #getDisplayedRowsCount() {
+    if (!this.gridOptions.pagination) {
+      return this.api.getDisplayedRowCount();
+    }
+
+    const total = this.api.paginationGetRowCount();
+    const page = this.api.paginationGetCurrentPage();
+    const size = this.api.paginationGetPageSize();
+
+    return Math.min(total - page * size, size);
+  }
+
   redraw() {
     const columnsToAutoResize = this.columnApi.getAllDisplayedColumns()
-      .filter(function(column) {
-        return column.getColDef().suppressSizeToFit === true;
-      })
-      .map(function(column) {
-        return column.getColId();
-      });
+      .filter(column => column.getColDef().suppressSizeToFit === true)
+      .map(column => column.getColId());
 
     if (columnsToAutoResize.length) {
       this.columnApi.autoSizeColumns(columnsToAutoResize);
@@ -316,7 +362,7 @@ class Table {
   };
 
   #bindFilters() {
-    $('#filter-tile').on('enterdown', (e) => {
+    $('#filter-tile').on('enterdown', e => {
       e.preventDefault();
       this.applyFilter.bind(this)();
     });
@@ -330,7 +376,7 @@ class Table {
     const numberRangeFilterModel = this.#getFilterModelForNumberRangeCols(columns['numberRangeColumn']);
     const textFilterModel = this.#getFilterModelForTextCols(columns['textCaseInsensitiveColumn']);
     const selectFilterModel = this.#getFilterModelForSelectCols(columns['select']);
-    const emptyFilterModel = this.#getEmptyFilterModelForCols(_.union(columns['dateColumn'], columns['dateTimeColumn'], columns['customColumn'], columns['setColumn']));
+    const emptyFilterModel = this.#getEmptyFilterModelForCols(_.union(columns['dateColumn'], columns['dateTimeColumn'], columns['customColumn'], columns['setColumn'], columns['tableActionsColumn']));
     const otherFilterModel = this.#getFilterModelForTextCols(columns['undefined']);
     this.api.setFilterModel({
       ...numberRangeFilterModel,
@@ -340,6 +386,7 @@ class Table {
       ...otherFilterModel,
       ...emptyFilterModel,
     });
+    this.isRestoreMode = $('#deleted-filter').prop('checked');
   }
 
   #getFilterModelForNumberRangeCols(numberRangeColumns = []) {
@@ -383,20 +430,46 @@ class Table {
     }, {});
   }
 
+  findRowByElement($el) {
+    return this.api.rowModel.getRowNode($el.closest('.ag-row').attr('row-id'));
+  }
+
+  updateBulkActions() {
+    const selectedRows = this.api.getSelectedRows();
+    const actions = selectedRows.flatMap(row => row.rowActions);
+    this.$el.trigger('table:updateBulkActions', [selectedRows.length, actions]);
+  }
+
+  #setAvailableActionsData(rows) {
+    const buttonsCfg = this.api.getColumnDefs().find(def => def.type === 'tableActionsColumn')?.buttons;
+    if (!buttonsCfg) {
+      return;
+    }
+    rows.forEach(row => row.rowActions = buttonsCfg
+        .filter(cfg => this.allowedToShowRowAction(cfg, row))
+        .map(cfg => cfg.name));
+  }
+
+  allowedToShowRowAction(cfg, row) {
+    if (this.isRestoreMode) {
+      return cfg.name === 'restore';
+    }
+    if (cfg.hide === true) {
+      return false;
+    }
+    const actionCondition = AGN.Opt.TableActionsConditions[cfg.name];
+    return !actionCondition || actionCondition(row);
+  }
+
   static get($needle) {
     return Table.getWrapper($needle).data('_table');
   };
 
   static getWrapper($needle) {
-    let $table = $($needle.data('table-body'));
-
-    if ($table.length == 0) {
-      $table = $needle.closest('.js-data-table-body');
-    }
-
-    return $table;
+    return $needle.closest('.table-wrapper');
   };
 }
 
 AGN.Lib.Table = Table;
+
 })();

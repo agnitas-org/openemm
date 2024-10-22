@@ -6,7 +6,7 @@
 <%--@elvariable id="webserviceUserForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserForm"--%>
 <%--@elvariable id="PERMISSIONS_ENABLED" type="java.lang.Boolean"--%>
 
-<mvc:form cssClass="tiles-container d-flex flex-column hidden"
+<mvc:form cssClass="tiles-container flex-column"
           servletRelativeAction="/administration/wsmanager/user/update.action"
           data-form-focus="password"
           id="wsuser-edit-form"
@@ -25,9 +25,9 @@
         }
     </script>
 
-    <div id="edit-settings-tile" class="tile h-auto flex-shrink-0" data-editable-tile>
+    <div id="edit-settings-tile" class="tile h-auto flex-none" data-editable-tile>
         <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="settings.webservice.user.edit" /></h1>
+            <h1 class="tile-title text-truncate"><mvc:message code="settings.webservice.user.edit" /></h1>
             <div class="tile-controls">
                 <div class="form-check form-switch">
                     <mvc:checkbox path="active" id="active" cssClass="form-check-input" role="switch" />
@@ -56,20 +56,16 @@
                 <label for="passwordRepeat" class="form-label"><mvc:message code="settings.admin.Confirm"/> *</label>
                 <input type="password" id="passwordRepeat" class="form-control js-password-match" size="52" maxlength="99" readonly />
             </div>
-            <div class="col">
-                <label for="contactInfo" class="form-label"><mvc:message code="Description" /></label>
-                <mvc:text path="contactInfo" cssClass="form-control" id="contactInfo"/>
-            </div>
-        </div>
+         </div>
     </div>
 
     <c:if test="${PERMISSIONS_ENABLED}">
-        <div class="tiles-block" style="flex: 1">
+        <div class="tiles-block">
             <div id="user-rights-tile" class="tile" data-editable-tile="main" style="flex: 3">
                 <div class="tile-header">
-                    <h1 class="tile-title"><mvc:message code="UserRights.edit"/></h1>
+                    <h1 class="tile-title text-truncate"><mvc:message code="UserRights.edit"/></h1>
                 </div>
-                <div class="tile-body js-scrollable" style="display: grid; grid-template-columns: minmax(300px, 1fr) 3fr; gap: 10px">
+                <div class="tile-body" style="display: grid; grid-template-columns: minmax(300px, 1fr) 3fr; gap: 10px">
                     <div class="permission-categories">
                         <input type="radio" class="btn-check" name="view-category" autocomplete="off" id="0-category-btn">
                         <label class="permission-categories__btn" for="0-category-btn" data-category-index="0" data-action="change-category">
@@ -90,7 +86,7 @@
 
                     <div id="0-category-permissions" class="tile">
                         <div class="tile-header text-dark">
-                            <h1 class="tile-title"><mvc:message code="webserviceuser.permissionGroups"/></h1>
+                            <h1 class="tile-title text-truncate"><mvc:message code="webserviceuser.permissionGroups"/></h1>
                             <div class="tile-controls">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-0" data-toggle-checkboxes="on">
@@ -122,7 +118,7 @@
                             <c:set var="categoryIndex" value="${status.index + 1}"/>
                             <div id="${categoryIndex}-category-permissions" class="tile">
                                 <div class="tile-header text-dark">
-                                    <h1 class="tile-title"><mvc:message code="webservice.permissionCategory.${category}"/></h1>
+                                    <h1 class="tile-title text-truncate"><mvc:message code="webservice.permissionCategory.${category}"/></h1>
                                     <div class="tile-controls">
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-${categoryIndex}" data-toggle-checkboxes="on">
@@ -155,11 +151,12 @@
             <div id="filter-tile" class="tile" data-action="handle-filter-enterdown" data-editable-tile style="flex: 1">
                 <div class="tile-header">
                     <h1 class="tile-title">
-                        <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                        <i class="icon icon-caret-up mobile-visible"></i>
+                        <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
                     </h1>
                     <div class="tile-controls">
-                        <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                        <a class="btn btn-icon btn-icon-sm btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                        <a class="btn btn-icon btn-inverse" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                        <a class="btn btn-icon btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
                     </div>
                 </div>
                 <div class="tile-body js-scrollable">

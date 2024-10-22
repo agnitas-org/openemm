@@ -16,7 +16,7 @@
     <div class="col-12" data-field="toggle-vis">
         <div class="tile tile--sm">
             <div class="tile-header">
-                <h3 class="text-dark"><mvc:message code="default.interval" /></h3>
+                <h3 class="tile-title text-dark"><mvc:message code="default.interval" /></h3>
             </div>
             <div class="tile-body border-top p-3" data-action="save-interval-settings">
                 <div class="row g-3">

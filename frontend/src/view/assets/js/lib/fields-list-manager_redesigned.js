@@ -9,7 +9,7 @@
             </div>
             {{ if (!isDisabled) { }}
                 <div class="col-auto">
-                     <button type="button" class="btn btn-primary btn-icon-sm" data-action="create-email" data-email-manager-row-add>
+                     <button type="button" class="btn btn-primary btn-icon" data-action="create-email" data-email-manager-row-add>
                         <i class="icon icon-plus"></i>
                     </button>
                 </div>
@@ -19,7 +19,7 @@
   `);
 
   const DELETE_BTN_TEMPLATE = _.template(`
-     <button type="button" class="btn btn-danger btn-icon-sm" data-action="delete-email" data-email-manager-row-delete>
+     <button type="button" class="btn btn-danger btn-icon" data-action="delete-email" data-email-manager-row-delete>
       <i class="icon icon-trash-alt"></i>
     </button>
   `);

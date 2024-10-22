@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.service.RecipientType;
@@ -70,7 +70,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	private ComRecipientDao recipientDao;
 	private ComBindingEntryDao bindingEntryDao;
 	private MailinglistDao mailinglistDao;
-	private ComEmmActionService emmActionService;
+	private EmmActionService emmActionService;
 	private ConfigService configService;
 
 	@Required
@@ -94,7 +94,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	@Required
-	public void setEmmActionService(ComEmmActionService emmActionService) {
+	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
 	}
 

@@ -1,11 +1,11 @@
 <script id="userform-images-upload-modal-template" type="text/x-mustache-template">
     <mvc:form id="components-upload-modal" cssClass="modal" tabindex="-1" servletRelativeAction="/mailing/${mailingId}/images/upload.action" enctype="multipart/form-data"
               data-form="resource" data-custom-loader="true" data-initializer="upload" data-linked-dropzone="#dropzone">
-        <div class="modal-dialog modal-fullscreen-xl-down modal-xl modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen-xl-down modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="button.Upload"/></h1>
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
@@ -17,7 +17,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary flex-grow-1" data-action="upload-images">
+                    <button type="button" class="btn btn-primary" data-action="upload-images" ${isChangeAllowed ? '' : 'disabled'}>
                         <i class="icon icon-file-upload"></i>
                         <span><mvc:message code="button.Upload"/></span>
                     </button>
@@ -62,10 +62,8 @@
 
                             <select id="images[{{= index }}].mobileBase" name="images[{{= index }}].mobileBase" class="form-control js-select">
                                 <option value="" selected="selected"><mvc:message code="default.none"/></option>
-                                <c:forEach items="${images}" var="image">
-                                    <c:if test="${image.type == MAILING_COMPONENT_IMAGE_TYPE || image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE && !image.mobile}">
-                                        <option value="${image.name}">${image.name}</option>
-                                    </c:if>
+                                <c:forEach items="${imagesForMobileAlternative}" var="imageName">
+                                    <option value="${imageName}">${imageName}</option>
                                 </c:forEach>
                             </select>
                         </div>

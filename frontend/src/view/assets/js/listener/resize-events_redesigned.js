@@ -1,4 +1,4 @@
-(function(){
+(() => {
 
   const $window = $(window);
   const DISPLAY_TYPE = {DESKTOP: 1, MOBILE: 2};

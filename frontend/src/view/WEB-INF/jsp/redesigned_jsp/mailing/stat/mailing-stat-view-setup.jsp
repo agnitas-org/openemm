@@ -6,12 +6,12 @@
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 
 <%--@elvariable id="mailingStatisticForm" type="com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm"--%>
-<%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
+<%--@elvariable id="isActiveMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="downloadBirtUrl" type="java.lang.String"--%>
 
-<emm:CheckLogon/>
 <emm:Permission token="stats.mailing"/>
-
 
 <c:set var="isReportCanBeShown" value="true" scope="request"/>
 <c:if test="${mailingStatisticForm.statisticType eq 'TOP_DOMAINS' && isEverSent eq false}">
@@ -20,14 +20,12 @@
 <c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
 <c:set var="agnTitleKey" 			value="Mailing" 				scope="request" />
-<c:set var="agnSubtitleKey" 		value="Mailing" 				scope="request" />
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
 <c:set var="sidemenu_sub_active" 	value="default.Overview"		scope="request" />
 <c:set var="agnHighlightKey" 		value="Statistics" 				scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Mailings" 				scope="request" />
 <c:set var="agnBreadcrumbsRootUrl" 	value="${mailingsOverviewLink}" scope="request" />
-<c:set var="agnEditViewKey" value="mailing-stat" scope="request"/>
+<c:set var="agnEditViewKey"         value="mailing-stat"            scope="request" />
 
 <c:set var="SUMMARY_TYPE" value="<%= StatisticType.SUMMARY %>" scope="request"/>
 <c:set var="CLICK_PER_LINK_TYPE" value="<%= StatisticType.CLICK_STATISTICS_PER_LINK %>" scope="request"/>
@@ -43,13 +41,9 @@
 <c:set var="ALPHA_TRACKING_POINT_TYPE" value="<%= StatisticType.ALPHA_TRACKING_POINT %>" scope="request"/>
 <c:set var="DEVICES_TYPE" value="<%= StatisticType.DEVICES_OVERVIEW %>" scope="request"/>
 
-<c:set var="agnSubtitleValue" scope="request">
-    <i class="icon-fa5 icon-fa5-envelope"></i>&nbsp;${mailingStatisticForm.shortname}
-</c:set>
-
 <c:choose>
     <c:when test="${isMailingGrid}">
-        <%@ include file="../fragments/mailing-grid-navigation.jspf" %>
+        <c:set var="agnNavigationKey" value="GridMailingView" scope="request" />
 
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="templateID" value="${mailingStatisticForm.templateId}"/>
@@ -57,23 +51,20 @@
         </emm:instantiate>
     </c:when>
     <c:otherwise>
-        <c:choose>
-            <c:when test="${isPostMailing}">
-                <c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
-            </c:when>
-            <c:when test="${limitedRecipientOverview}">
-                <c:set var="agnNavigationKey"   value="mailingView_DisabledMailinglist"     scope="request" />
-            </c:when>
-            <c:otherwise>
-                <c:set var="agnNavigationKey"   value="mailingView"                         scope="request" />
-            </c:otherwise>
-        </c:choose>
+        <c:set var="agnNavigationKey" value="mailingView" scope="request" />
+
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingStatisticForm.mailingID}"/>
             <c:set target="${agnNavHrefParams}" property="init" value="true"/>
         </emm:instantiate>
     </c:otherwise>
 </c:choose>
+
+<emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
+    <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="${isActiveMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
+    <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+</emm:instantiate>
 
 <emm:instantiate var="reportNameToHelpKeyMap" type="java.util.HashMap">
     <c:set target="${reportNameToHelpKeyMap}" property="${SUMMARY_TYPE}" value="summary"/>
@@ -117,8 +108,6 @@
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
     
-            <c:set target="${element}" property="btnCls" value="btn dropdown-toggle"/>
-            <c:set target="${element}" property="extraAttributes" value="data-bs-toggle='dropdown'"/>
             <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
             <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
     
@@ -140,7 +129,6 @@
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-        <c:set target="${element}" property="btnCls" value="btn"/>
         <c:set target="${element}" property="extraAttributes" value="data-form-target='#stat-form' data-form-submit"/>
         <c:set target="${element}" property="iconBefore" value="icon icon-sync"/>
         <c:set target="${element}" property="name">

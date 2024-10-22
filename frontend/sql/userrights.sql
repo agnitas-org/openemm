@@ -8,6 +8,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'actions.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.management.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.new' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.sendWelcome' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'admin.setgroup' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -122,6 +123,7 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'actions
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'actions.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.delete');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.management.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.new');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.sendWelcome');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.setgroup');

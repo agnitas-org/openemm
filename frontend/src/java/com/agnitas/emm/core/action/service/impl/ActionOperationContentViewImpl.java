@@ -13,7 +13,7 @@ package com.agnitas.emm.core.action.service.impl;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.dao.MailingDao;
+import com.agnitas.dao.MailingDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;

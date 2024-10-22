@@ -5,7 +5,7 @@
 <emm:CheckLogon/>
 <emm:Permission token="wizard.export" />
 
-<c:url var="exportListUrl" value="/export/list.action"/>
+<c:url var="exportListUrl" value="/export/list.action?restoreSort=true"/>
 
 <c:set var="agnTitleKey" 			value="export" 				scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 		scope="request" />

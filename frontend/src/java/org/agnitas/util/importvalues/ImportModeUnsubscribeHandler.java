@@ -29,7 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldService.RecipientStandardField;
+import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class ImportModeUnsubscribeHandler implements ImportModeHandler {
     

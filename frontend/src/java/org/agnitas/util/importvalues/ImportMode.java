@@ -61,6 +61,11 @@ public class ImportMode {
 
 	/** Mark existing recipients as blacklisted. Mark all blacklisted recipients as admin_out, which are not included in import data **/
 	public static final ImportMode BLACKLIST_EXCLUSIVE = new ImportMode(12, "import.mode.blacklist_exclusive", "ImportModeBlacklistExclusiveHandler");
+	
+	/** Insert and update customers, but set all existing active customers, that are not included in the current import data, to status suspended(7)
+	 * Newly added customers are set to status active(1)
+	 * Existing customers with status 7 are set to status active(1) */
+	public static final ImportMode ADD_AND_UPDATE_EXCLUSIVE_LIGHT = new ImportMode(13, "import.mode.add_upd_excl_light", "ImportModeExclusiveLightHandler");
 
 	/**
 	 * int value for db storage

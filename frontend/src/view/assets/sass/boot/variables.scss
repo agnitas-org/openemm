@@ -315,6 +315,7 @@ $c-campaign-inactive         : #707173;
 $c-campaign-completed        : #387c00;
 $c-campaign-tested           : #7f51b2;
 $c-campaign-testing          : #109e4d;
+$c-campaign-testing_failed   : #880010;
 $c-campaign-paused           : #707173;
 
 $i-campaign-open             : $fa-var-check;
@@ -332,6 +333,7 @@ $campaign-states:(
   completed   $c-campaign-completed,
   tested      $c-campaign-tested,
   testing     $c-campaign-testing,
+  testing_failed $c-campaign-testing_failed,
   paused      $c-campaign-paused
 );
 
@@ -342,6 +344,7 @@ $campaign-state-icons:(
   completed   $i-campaign-completed,
   tested      $i-campaign-tested,
   testing     $i-campaign-testing,
+  testing_failed $i-campaign-testing,
   paused      $i-campaign-paused
 );
 

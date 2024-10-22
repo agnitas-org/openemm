@@ -53,11 +53,11 @@ public class MailingSendForm extends PaginationForm {
     private String statusmailRecipients = "";
     private String workStatus = "";
     private String[] filterTypes; // TODO: EMMGUI-714: remove when old design will be removed
-    private int offlineHtmlEmailsCount;
-    private int totalSentCount;
-    private int htmlEmailsCount;
-    private int textEmailsCount;
-    private Map<Integer, Integer> sentStatistics = new HashMap<>();
+    private int offlineHtmlEmailsCount;  // TODO: EMMGUI-714: remove after remove of old design
+    private int totalSentCount;  // TODO: EMMGUI-714: remove after remove of old design
+    private int htmlEmailsCount;  // TODO: EMMGUI-714: remove after remove of old design
+    private int textEmailsCount; // TODO: EMMGUI-714: remove after remove of old design
+    private Map<Integer, Integer> sentStatistics = new HashMap<>();  // TODO: EMMGUI-714: remove after remove of old design
     private int templateId;
     private boolean isActivateAgainToday;
     private Date date;

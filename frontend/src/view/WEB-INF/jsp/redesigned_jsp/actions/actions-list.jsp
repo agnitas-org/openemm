@@ -1,11 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.commons.ActivenessStatus" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="actionListJson" type="net.sf.json.JSONArray"--%>
@@ -13,55 +13,87 @@
 <c:set var="active" value="<%= ActivenessStatus.ACTIVE %>"/>
 <c:set var="inactive" value="<%= ActivenessStatus.INACTIVE %>"/>
 
-<c:set var="isDeletionAllowed" value="false"/>
-<emm:ShowByPermission token="actions.delete">
-    <c:set var="isDeletionAllowed" value="true"/>
-</emm:ShowByPermission>
+<mvc:message var="deactivateMsg" code="btndeactivate" />
+<mvc:message var="activateMsg"   code="button.Activate" />
 
-<div class="filter-overview hidden" data-controller="emm-activeness" data-editable-view="${agnEditViewKey}">
+<c:set var="isDeletionAllowed" value="${emm:permissionAllowed('actions.delete', pageContext.request)}"/>
+<c:set var="isChangeAllowed"   value="${emm:permissionAllowed('actions.change', pageContext.request)}"/>
 
-    <script data-initializer="emm-activeness" type="application/json">
+<c:url var="confirmDeleteUrl" value="/action/deleteRedesigned.action"/>
+<c:url var="confirmRestoreUrl" value="/action/restore.action"/>
+
+<div class="filter-overview" data-controller="activeness-overview" data-editable-view="${agnEditViewKey}">
+
+    <script type="application/json" data-initializer="activeness-overview">
         {
-            "urls": {
-                "SAVE": "/action/saveActiveness.action"
-            }
+            "url": "<c:url value="/action/changeActiveness.action" />"
         }
     </script>
 
-    <div id="table-tile" class="tile js-data-table" data-table="action-lists" data-editable-tile="main">
-        <div class="tile-header">
-            <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-        </div>
-
+    <div id="table-tile" class="tile" data-editable-tile="main">
         <div class="tile-body">
-            <div class="js-data-table-body" data-web-storage="action-overview"></div>
+            <div class="table-wrapper" data-web-storage="action-overview" data-js-table="action-list">
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <div class="table-wrapper__controls">
+                        <div class="bulk-actions hidden">
+                            <p class="bulk-actions__selected">
+                                <span><%-- Updates by JS --%></span>
+                                <mvc:message code="default.list.entry.select" />
+                            </p>
+                            <div class="bulk-actions__controls">
+                                <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-action">
+                                    <i class="icon icon-check-circle"></i>
+                                </a>
+                                <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-action">
+                                    <i class="icon icon-times-circle"></i>
+                                </a>
 
-            <c:forEach var="entry" items="${actionListJson}">
-                <c:url var="viewLink" value="/action/${entry['id']}/view.action"/>
-                <c:set target="${entry}" property="show" value="${viewLink}"/>
+                                <c:if test="${isDeletionAllowed}">
+                                    <a href="#" class="icon-btn text-danger js-data-table-bulk-delete" data-tooltip="<mvc:message code="bulkAction.delete.action" />"
+                                       data-bulk-action="delete-action" data-bulk-url="${confirmDeleteUrl}">
+                                        <i class="icon icon-trash-alt"></i>
+                                    </a>
+                                    <a href="#" class="icon-btn text-primary" data-tooltip="${deactivateMsg}" data-bulk-action="restore" data-bulk-url="${confirmRestoreUrl}">
+                                        <i class="icon icon-redo"></i>
+                                    </a>
+                                </c:if>
+                            </div>
+                        </div>
+                        <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                        <jsp:include page="../common/table/entries-label.jsp" />
+                    </div>
+                </div>
+            </div>
 
-                <c:url var="deleteLink" value="/action/deleteRedesigned.action?bulkIds=${entry['id']}"/>
-                <c:set target="${entry}" property="delete" value="${deleteLink}"/>
-            </c:forEach>
-
-            <script id="action-lists" type="application/json">
+            <script id="action-list" type="application/json">
                 {
                     "columns": [
                         {
                             "field": "select",
                             "type": "bulkSelectColumn",
-                            "headerCheckboxSelectionFilteredOnly": true,
-                            "hide": ${not isDeletionAllowed}
+                            "hide": ${not isChangeAllowed and not isDeletionAllowed}
+                        },
+                        {
+                            "headerName": "<mvc:message code='Status'/>",
+                            "editable": false,
+                            "field": "active",
+                            "type": "select",
+                            "cellRenderer": "MustacheTemplateCellRender",
+                            "cellRendererParams": {"templateName": "action-activeness-status"},
+                            "suppressSizeToFit": true,
+                            "cellStyle": {"display": "flex", "align-items": "center"}
                         },
                         {
                             "headerName": "<mvc:message code='MailinglistID'/>",
                             "editable": false,
+                            "suppressSizeToFit": true,
                             "cellRenderer": "StringCellRenderer",
                             "field": "id",
                             "type": "numberColumn"
                         },
                         {
-                            "headerName": "<mvc:message code='userform.usesActions'/>",
+                            "headerName": "<mvc:message code='default.Name'/>",
                             "editable": false,
                             "cellRenderer": "NotEscapedStringCellRenderer",
                             "field": "shortname"
@@ -78,10 +110,9 @@
                             "suppressMenu": true,
                             "field": "formNames",
                             "suppressSizeToFit": true,
-                            "cellStyle": {"textAlign": "center"},
+                            "cellStyle": {"display": "flex", "align-items": "center"},
                             "cellRenderer": "MustacheTemplateCellRender",
-                            "cellRendererParams": {"templateName": "action-usage-badge"},
-                            "width": 50
+                            "cellRendererParams": {"templateName": "action-usage-badge"}
                         },
                         {
                             "headerName": "<mvc:message code='default.creationDate'/>",
@@ -96,23 +127,19 @@
                             "type": "dateColumn"
                         },
                         {
-                            "headerName": "<mvc:message code='default.status.active'/>",
-                            "editable": false,
-                            "field": "activeStatus",
-                            "type": "select",
-                            "cellRenderer": "MustacheTemplateCellRender",
-                            "cellRendererParams": {"templateName": "action-activeness"},
-                            "suppressSizeToFit": true,
-                            "noViewLink": true,
-                            "cellStyle": {"display": "flex", "align-items": "center"}
-                        },
-                        {
-                            "field": "delete",
-                            "type": "deleteColumn",
-                            "hide": ${not isDeletionAllowed}
+                            "field": "deleted",
+                            "type": "tableActionsColumn",
+                            "buttons": [
+                              {"name": "activate-action",    "template": "action-activate-btn",   "hide": ${not isChangeAllowed}},
+                              {"name": "deactivate-action",  "template": "action-deactivate-btn", "hide": ${not isChangeAllowed}},
+                              {"name": "delete-action",      "template": "action-delete-btn",     "hide": ${not isDeletionAllowed}},
+                              {"name": "restore",            "template": "action-restore-btn",    "hide": true}
+                            ],
+                            "hide": ${not isChangeAllowed and not isDeletionAllowed}
                         }
                     ],
-                    "data": ${actionListJson}
+                    "data": ${actionListJson},
+                    "options": {"viewLinkTemplate": "/action/{{- id }}/view.action"}
                 }
             </script>
         </div>
@@ -121,81 +148,122 @@
     <div id="filter-tile" class="tile" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
-                <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-icon-sm btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                <a class="btn btn-icon btn-icon-sm btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
+                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="id-filter"><mvc:message code="MailinglistID" /></label>
-                    <input type="number" id="id-filter" class="form-control"/>
-                </div>
+        <div class="tile-body form-column js-scrollable">
+            <div>
+                <label class="form-label" for="id-filter"><mvc:message code="MailinglistID" /></label>
+                <input type="number" id="id-filter" class="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="shortname-filter"><mvc:message code="Name" /></label>
-                    <input type="text" id="shortname-filter" class="form-control"/>
-                </div>
+            <div>
+                <label class="form-label" for="shortname-filter"><mvc:message code="Name" /></label>
+                <input type="text" id="shortname-filter" class="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="description-filter"><mvc:message code="Description" /></label>
-                    <input type="text" id="description-filter" class="form-control"/>
-                </div>
+            <div>
+                <label class="form-label" for="description-filter"><mvc:message code="Description" /></label>
+                <input type="text" id="description-filter" class="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="creationDate-from-filter"><mvc:message code="default.creationDate" /></label>
-                    <div class="inline-input-range" data-date-range>
-                        <div class="date-picker-container">
-                            <input type="text" id="creationDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
-                        </div>
-                        <div class="date-picker-container">
-                            <input type="text" id="creationDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
-                        </div>
+            <div>
+                <label class="form-label" for="creationDate-from-filter"><mvc:message code="default.creationDate" /></label>
+                <div class="inline-input-range" data-date-range>
+                    <div class="date-picker-container">
+                        <input type="text" id="creationDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="creationDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
                     </div>
                 </div>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="changeDate-from-filter"><mvc:message code="default.changeDate" /></label>
-                    <div class="inline-input-range" data-date-range>
-                        <div class="date-picker-container">
-                            <input type="text" id="changeDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
-                        </div>
-                        <div class="date-picker-container">
-                            <input type="text" id="changeDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
-                        </div>
+            <div>
+                <label class="form-label" for="changeDate-from-filter"><mvc:message code="default.changeDate" /></label>
+                <div class="inline-input-range" data-date-range>
+                    <div class="date-picker-container">
+                        <input type="text" id="changeDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="changeDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
                     </div>
                 </div>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="activeStatus-filter"><mvc:message code="Status" /></label>
-                    <select id="activeStatus-filter" class="form-control">
-                        <option value=""><mvc:message code="default.All" /></option>
-                        <option value="${active}"><mvc:message code="workflow.view.status.active" /></option>
-                        <option value="${inactive}"><mvc:message code="workflow.view.status.inActive" /></option>
-                    </select>
+            <div>
+                <label class="form-label" for="active-filter"><mvc:message code="Status" /></label>
+                <select id="active-filter" class="form-control js-select" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
+                    <option value=""><mvc:message code="default.All" /></option>
+                    <option value="true" data-badge-class="status.success"><mvc:message code="workflow.view.status.active" /></option>
+                    <option value="false" data-badge-class="status.error"><mvc:message code="workflow.view.status.inActive" /></option>
+                </select>
+
+                <div class="form-check form-switch mt-1">
+                    <input type="checkbox" id="deleted-filter" value="true" class="form-check-input" role="switch"/>
+                    <label class="form-label form-check-label" for="deleted-filter">
+                        <mvc:message code="default.list.deleted.show"/>
+                    </label>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <script id="action-usage-badge" type="text/x-mustache-template">
     {{ if (value.length > 0) { }}
-        <span class="pill-badge" data-tooltip="<mvc:message code="default.Name"/>: {{- value.join(', ') }}">
+        <span class="table-badge" data-tooltip="<mvc:message code="default.Name"/>: {{- value.join(', ') }}">
             <mvc:message code="default.Yes"/>
         </span>
     {{ } else { }}
-        <span class="pill-badge"><mvc:message code="No"/></span>
+        <span class="table-badge"><mvc:message code="No"/></span>
     {{ } }}
 </script>
 
-<script id="action-activeness" type="text/x-mustache-template">
-    {{ var checked = value == '${active}' ? 'checked' : '';}}
-    <div class="form-check form-switch">
-        <input type="checkbox" {{- checked }} class="form-check-input" role="switch" data-action="toggle-active" data-item-id="{{- entry.id}}">
-    </div>
+<script id="action-activeness-status" type="text/x-mustache-template">
+    {{ if (value === 'true') { }}
+        <span class="status-badge status.success" data-tooltip="<mvc:message code="workflow.view.status.active" />"></span>
+    {{ } else { }}
+        <span class="status-badge status.error" data-tooltip="<mvc:message code="workflow.view.status.inActive" />"></span>
+    {{ } }}
+</script>
+
+<script id="action-delete-btn" type="text/x-mustache-template">
+    <a href="${confirmDeleteUrl}{{= '?bulkIds=' + id }}" type="button" class="icon-btn text-danger js-data-table-delete"
+       data-bulk-action="delete" data-tooltip="<mvc:message code="Delete" />">
+        <i class="icon icon-trash-alt"></i>
+    </a>
+</script>
+
+<script id="action-restore-btn" type="text/x-mustache-template">
+    <a data-bulk-url="${confirmRestoreUrl}" type="button" class="icon-btn text-primary"
+       data-tooltip="<mvc:message code='default.restore' />" data-restore-row>
+        <i class="icon icon-redo"></i>
+    </a>
+</script>
+
+<script id="action-activate-btn" type="text/x-mustache-template">
+    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
+        <i class="icon icon-check-circle"></i>
+    </a>
+</script>
+
+<script id="action-deactivate-btn" type="text/x-mustache-template">
+    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
+        <i class="icon icon-times-circle"></i>
+    </a>
+</script>
+
+<script type="text/javascript">
+  AGN.Opt.TableActionsConditions['activate-action'] = data => {
+    return data.active === 'false';
+  };
+  AGN.Opt.TableActionsConditions['deactivate-action'] = data => {
+    return data.active === 'true';
+  };
 </script>

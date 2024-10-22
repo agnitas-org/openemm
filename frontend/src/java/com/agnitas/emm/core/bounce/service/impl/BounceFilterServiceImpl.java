@@ -10,31 +10,32 @@
 
 package com.agnitas.emm.core.bounce.service.impl;
 
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Const;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.service.BounceFilterService;
-import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
-import com.agnitas.service.ExtendedConversionService;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 @Service("BounceFilterService")
 public class BounceFilterServiceImpl implements BounceFilterService {
@@ -42,18 +43,21 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     private final MailloopDao mailloopDao;
     private final ExtendedConversionService conversionService;
     private final BlacklistService blacklistService;
+    private final BulkActionValidationService<Integer, BounceFilterDto> bulkActionValidationService;
 
-    public BounceFilterServiceImpl(MailloopDao mailloopDao, ExtendedConversionService conversionService, BlacklistService blacklistService) {
+    public BounceFilterServiceImpl(MailloopDao mailloopDao, ExtendedConversionService conversionService, BlacklistService blacklistService,
+                                   BulkActionValidationService<Integer, BounceFilterDto> bulkActionValidationService) {
         this.mailloopDao = mailloopDao;
         this.conversionService = conversionService;
         this.blacklistService = blacklistService;
+        this.bulkActionValidationService = bulkActionValidationService;
     }
 
 	@Override
 	public int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
 		return saveBounceFilter(admin.getCompanyID(), AgnUtils.getTimeZone(admin), bounceFilter, isNew);
 	}
-    
+
     @Override
     public int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
         bounceFilter.setChangeDate(DateUtilities.midnight(adminTimeZone));
@@ -62,7 +66,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         }
         Mailloop mailloop = conversionService.convert(bounceFilter, Mailloop.class);
         mailloop.setCompanyID(companyId);
-        
+
         if (StringUtils.isNotEmpty(mailloop.getFilterEmail())) {
         	if (blacklistService.blacklistCheck(mailloop.getFilterEmail(), companyId)) {
         		throw new BlacklistedFilterEmailException();
@@ -71,11 +75,11 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         		throw new EmailInUseException();
         	}
         }
-        
+
         if (StringUtils.isNotEmpty(mailloop.getForwardEmail()) && blacklistService.blacklistCheck(mailloop.getForwardEmail(), companyId)) {
             throw new BlacklistedForwardEmailException();
         }
-        
+
         return mailloopDao.saveMailloop(mailloop);
     }
 
@@ -96,7 +100,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     @Override
     public PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int pageNumber, int pageSize) {
         PaginatedListImpl<MailloopEntry> paginatedListFromDb = mailloopDao.getPaginatedMailloopList(admin.getCompanyID(), sort, direction, pageNumber, pageSize);
-    
+
         List<BounceFilterDto> convertedList = conversionService.convert(paginatedListFromDb.getList(), MailloopEntry.class, BounceFilterDto.class);
 
         String companyDomain = admin.getCompany().getMailloopDomain();
@@ -127,22 +131,38 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
 
     @Override
+    // TODO: EMMGUI-714 remove after remove of old design
     public boolean deleteBounceFilter(int filterId, int companyId) {
-        validateDeletion(Set.of(filterId));
-        return mailloopDao.deleteMailloop(filterId, companyId);
-    }
-
-    @Override
-    public void delete(Set<Integer> ids, int companyId) {
-        validateDeletion(ids);
-        ids.forEach(id -> mailloopDao.deleteMailloop(id, companyId));
-    }
-
-    @Override
-    public void validateDeletion(Set<Integer> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        ServiceResult<List<BounceFilterDto>> result = getAllowedForDeletion(Set.of(filterId), companyId);
+        if (result.isSuccess()) {
+            deleteMailloop(filterId, companyId);
+            return true;
         }
+
+        return false;
+    }
+
+    @Override
+    public ServiceResult<UserAction> delete(Set<Integer> ids, int companyId) {
+        List<Integer> allowedIds = getAllowedForDeletion(ids, companyId)
+                .getResult()
+                .stream()
+                .map(BounceFilterDto::getId)
+                .collect(Collectors.toList());
+
+        allowedIds.forEach(id -> deleteMailloop(id, companyId));
+
+        return ServiceResult.success(
+                new UserAction(
+                        "delete response processings",
+                        "deleted response processings with following ids: " + StringUtils.join(allowedIds, ", ")
+                ),
+                Message.of(Const.Mvc.SELECTION_DELETED_MSG)
+        );
+    }
+
+    protected void deleteMailloop(int id, int companyId) {
+        mailloopDao.deleteMailloop(id, companyId);
     }
 
 	@Override
@@ -153,7 +173,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
 
 		return false;
 	}
-    
+
     @Override
     public List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId) {
         if (companyId <= 0 || mailingId <= 0) {
@@ -172,7 +192,28 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
 
     @Override
-    public List<String> getBounceFilterNames(Set<Integer> ids, int companyId) {
-        return mailloopDao.getBounceFilterNames(ids, companyId);
+    public ServiceResult<List<BounceFilterDto>> getAllowedForDeletion(Set<Integer> ids, int companyId) {
+        return bulkActionValidationService.checkAllowedForDeletion(
+                ids,
+                id -> getBounceFilterForDeletion(id, companyId, ids.size() > 1)
+        );
+    }
+
+    protected ServiceResult<BounceFilterDto> getBounceFilterForDeletion(int id, int companyId, boolean isBulkDeletion) {
+        if (isBulkDeletion && containsReply(id)) {
+            return ServiceResult.errorKeys("error.mailloop.delete.inbox");
+        }
+
+        BounceFilterDto bounceFilter = getBounceFilter(companyId, id);
+        if (bounceFilter == null) {
+            return ServiceResult.errorKeys("error.general.missing");
+        }
+
+        return ServiceResult.success(bounceFilter);
+    }
+
+    @Override
+    public boolean containsReply(int filterId) {
+        return false;
     }
 }

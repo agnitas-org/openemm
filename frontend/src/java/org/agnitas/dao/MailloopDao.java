@@ -10,14 +10,13 @@
 
 package org.agnitas.dao;
 
-import java.util.List;
-import java.util.Set;
-
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
+
+import java.util.List;
 
 public interface MailloopDao {
     /**
@@ -87,5 +86,4 @@ public interface MailloopDao {
     
     boolean isAddressInUse(String filterAddress);
 
-    List<String> getBounceFilterNames(Set<Integer> ids, int companyId);
 }

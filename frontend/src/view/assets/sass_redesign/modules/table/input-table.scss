@@ -2,17 +2,23 @@
 .input-table {
   width: 100%;
 
-  tbody {
+  tbody, thead {
     @include flex-column($gap-x-sm);
   }
+
+  thead {
+    color: var(--label-color);
+  }
+
   tr {
     @include flex-row($gap-x-sm);
-    td {
+    td, th {
       &:not(:last-child) {
         flex: 1;
+        min-width: 0;
       }
       &:last-child {
-        width: 30px;
+        width: $btn-icon-size;
       }
     }
   }
@@ -20,6 +26,7 @@
   &.input-table--readonly {
     tr td:last-child {
       flex: 1;
+      min-width: 0;
     }
   }
 }

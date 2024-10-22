@@ -28,6 +28,7 @@ import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
@@ -87,16 +88,17 @@ import java.util.zip.ZipOutputStream;
 
 import static org.agnitas.beans.MailingComponentType.HostedImage;
 import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class MailingImagesController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingImagesController.class);
 
-    protected static final String REDIRECT_TO_LIST_STR = "redirect:/mailing/%d/images/list.action";
-    private static final String CHANGES_SAVED_MSG = "default.changes_saved";
+    protected static final String REDIRECT_TO_LIST_STR = "redirect:/mailing/%d/images/list.action?restoreSort=true";
 
     protected final ComMailingComponentsService mailingComponentsService;
     protected final PreviewImageService previewImageService;
@@ -105,11 +107,12 @@ public class MailingImagesController implements XssCheckAware {
     private final UserActivityLogService userActivityLogService;
     private final ComMailingBaseService mailingBaseService;
     private final MaildropService maildropService;
+    private final WebStorage webStorage;
 
     public MailingImagesController(ComMailingBaseService mailingBaseService, PreviewImageService previewImageService,
                                    MaildropService maildropService, UserActivityLogService userActivityLogService,
                                    ComMailingComponentsService mailingComponentsService, ConfigService configService,
-                                   MailinglistApprovalService mailinglistApprovalService) {
+                                   MailinglistApprovalService mailinglistApprovalService, WebStorage webStorage) {
         this.configService = configService;
         this.maildropService = maildropService;
         this.mailingBaseService = mailingBaseService;
@@ -117,6 +120,7 @@ public class MailingImagesController implements XssCheckAware {
         this.userActivityLogService = userActivityLogService;
         this.mailingComponentsService = mailingComponentsService;
         this.mailinglistApprovalService = mailinglistApprovalService;
+        this.webStorage = webStorage;
     }
 
     @ExceptionHandler(XSSHtmlException.class)
@@ -142,11 +146,12 @@ public class MailingImagesController implements XssCheckAware {
     }
 
     @GetMapping("/list.action")
-    public String list(@PathVariable int mailingId, @ModelAttribute("filter") MailingImagesOverviewFilter filter, @ModelAttribute MailingImagesFormSearchParams searchParams,
-                       Admin admin, Model model) {
+    public String list(@PathVariable int mailingId, @RequestParam(required = false) boolean restoreSort, @ModelAttribute("filter") MailingImagesOverviewFilter filter,
+                       @ModelAttribute MailingImagesFormSearchParams searchParams, Admin admin, Model model) {
         if (isRedesignedUiUsed(admin)) {
             FormUtils.syncSearchParams(searchParams, filter, true);
         }
+        FormUtils.syncPaginationData(webStorage, WebStorage.MAILING_IMAGES_OVERVIEW, filter, restoreSort);
         addModelAttrs(mailingId, filter, admin, model);
 
         writeUserActivityLog(admin, "images list", "active tab - images");
@@ -155,7 +160,8 @@ public class MailingImagesController implements XssCheckAware {
 
     protected void addModelAttrs(int mailingId, MailingImagesOverviewFilter filter, Admin admin, Model model) {
         setMailingModelAttrs(mailingId, admin, model);
-        model.addAttribute("images", mailingComponentsService.getMailingImages(admin.getCompanyID(), mailingId, filter));
+        model.addAttribute("images", mailingComponentsService.getMailingImagesOverview(admin.getCompanyID(), mailingId, filter));
+        model.addAttribute("imagesForMobileAlternative", mailingComponentsService.getMailingImagesNamesForMobileAlternative(mailingId, admin.getCompanyID()));
         if (isRedesignedUiUsed(admin)) {
             model.addAttribute("adminDateTimeFormat", admin.getDateTimeFormat());
             model.addAttribute("imagesMimetypes", ImageUtils.ALLOWED_MIMETYPES);
@@ -175,16 +181,19 @@ public class MailingImagesController implements XssCheckAware {
         Mailing mailing = mailingBaseService.getMailing(companyId, mailingId);
         model.addAttribute("mailingShortname", mailing.getShortname());
         model.addAttribute("isTemplate", mailing.isIsTemplate());
-        if (!isRedesignedUiUsed(admin)) {
-            model.addAttribute("isMailingUndoAvailable", mailingId > 0 && mailingBaseService.checkUndoAvailable(mailingId));
-            model.addAttribute("workflowId", mailingId > 0 ? mailingBaseService.getWorkflowId(mailingId, companyId) : 0);
+        model.addAttribute("isMailingUndoAvailable", mailingId > 0 && mailingBaseService.checkUndoAvailable(mailingId));
+        model.addAttribute("workflowId", mailingId > 0 ? mailingBaseService.getWorkflowId(mailingId, companyId) : 0);
+        if (isRedesignedUiUsed(admin)) {
+            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, companyId));
+            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        } else {
+            model.addAttribute("limitedRecipientOverview", maildropService.isActiveMailing(mailing.getId(), companyId)
+                    && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
         }
-        model.addAttribute("limitedRecipientOverview", maildropService.isActiveMailing(mailing.getId(), companyId)
-                && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
     }
 
     private static boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed(Permission.MAILING_UI_MIGRATION);
+        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/{imageId:\\d+}/confirmDelete.action")
@@ -224,7 +233,7 @@ public class MailingImagesController implements XssCheckAware {
             popups.alert("bulkAction.nothing.image");
             return MESSAGES_VIEW;
         }
-        if (isImagesCantBeDeleted(bulkIds, mailingId, admin.getCompanyID(), popups)) {
+        if (isImagesCantBeDeleted(bulkIds, mailingId, admin, popups)) {
             return MESSAGES_VIEW;
         }
 
@@ -237,8 +246,8 @@ public class MailingImagesController implements XssCheckAware {
 
     @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     @PermissionMapping("delete")
-    public String deleteRedesgigned(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups, HttpSession session) {
-        if (isImagesCantBeDeleted(bulkIds, mailingId, admin.getCompanyID(), popups)) {
+    public String deleteRedesigned(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups, HttpSession session) {
+        if (isImagesCantBeDeleted(bulkIds, mailingId, admin, popups)) {
             return MESSAGES_VIEW;
         }
 
@@ -260,9 +269,19 @@ public class MailingImagesController implements XssCheckAware {
         return true;
     }
 
-    private boolean isImagesCantBeDeleted(Set<Integer> imageIds, int mailingId, int companyId, Popups popups) {
-        return mailingComponentsService.getComponents(companyId, mailingId, new HashSet<>(imageIds))
+    private boolean isImagesCantBeDeleted(Set<Integer> imageIds, int mailingId, Admin admin, Popups popups) {
+        if (!isDeleteAllowed(mailingId, admin)) {
+            popups.alert(PERMISSION_DENIED_MSG);
+        }
+        return mailingComponentsService.getComponents(admin.getCompanyID(), mailingId, new HashSet<>(imageIds))
                 .stream().anyMatch(image -> isImageCantBeDeleted(image, popups));
+    }
+
+    private boolean isDeleteAllowed(int mailingId, Admin admin) {
+        return admin.permissionAllowed(
+            mailingBaseService.isTemplate(admin.getCompanyID(), mailingId)
+                ? Permission.TEMPLATE_CHANGE
+                : Permission.MAILING_CHANGE);
     }
 
     private void logDeletion(MailingComponent image, Admin admin) {
@@ -279,7 +298,7 @@ public class MailingImagesController implements XssCheckAware {
             popups.alert("bulkAction.nothing.image");
             return MESSAGES_VIEW;
         }
-        if (isImagesCantBeDeleted(new HashSet<>(form.getBulkIds()), mailingId, admin.getCompanyID(), popups)) {
+        if (isImagesCantBeDeleted(new HashSet<>(form.getBulkIds()), mailingId, admin, popups)) {
             return MESSAGES_VIEW;
         }
         return "mailing_images_bulk_delete";
@@ -288,7 +307,7 @@ public class MailingImagesController implements XssCheckAware {
     @RequestMapping(value = "/bulkDelete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     // TODO: EMMGUI-714: remove when old design will be removed
     public String bulkDelete(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups, HttpSession session) {
-        if (isImagesCantBeDeleted(new HashSet<>(form.getBulkIds()), mailingId, admin.getCompanyID(), popups)) {
+        if (isImagesCantBeDeleted(new HashSet<>(form.getBulkIds()), mailingId, admin, popups)) {
             return MESSAGES_VIEW;
         }
         if (mailingComponentsService.deleteImages(admin.getCompanyID(), mailingId, new HashSet<>(form.getBulkIds()))) {

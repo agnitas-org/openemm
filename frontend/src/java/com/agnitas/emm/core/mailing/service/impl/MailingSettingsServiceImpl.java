@@ -33,6 +33,7 @@ import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.UserMessageException;
 import org.agnitas.util.MissingEndTagException;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.UnclosedTagException;
@@ -41,6 +42,7 @@ import org.agnitas.web.forms.WorkflowParameters;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -156,7 +158,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         int mailingId = mailing.getId();
         return handleSaveExceptions(mailingId, popups, () -> {
             mailingValidator.validateMailingBeforeSave(mailing, admin.getLocale(), popups);
-            mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
+            mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
+            mailingService.saveMailingWithNewContent(mailing, admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
             if (mailing.isIsTemplate()) {
                 mailingService.updateMailingsWithDynamicTemplate(mailing, applicationContext);
             }
@@ -229,12 +232,17 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         setMediatypesToForm(mailing, form);
         setMailingParamsToForm(form, mailing.getId(), admin.getCompanyID());
         if (mailing.getPlanDate() != null) {
-            SimpleDateFormat dateFormat = admin.getDateFormat();
-            form.setPlanDate(dateFormat.format(mailing.getPlanDate()));
+            form.setPlanDate(definePlanDateFormat(mailing.getPlanDate(), admin).format(mailing.getPlanDate()));
         } else {
             form.setPlanDate("");
         }
         return form;
+    }
+
+    private static SimpleDateFormat definePlanDateFormat(Date planDate, Admin admin) {
+        return new SimpleDateFormat("HH:mm:ss").format(planDate).equals("00:00:00") // time was not set
+                ? admin.getDateFormat()
+                : admin.getDateTimeFormat();
     }
 
     protected MailingSettingsForm getNewSettingsForm() {
@@ -267,9 +275,18 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     }
 
     private Date getMailingPlanDateFromForm(MailingSettingsForm form, Admin admin) throws ParseException {
-        return isNotEmpty(form.getPlanDate())
-                ? admin.getDateFormat().parse(form.getPlanDate())
-                : null;
+        if (StringUtils.isBlank(form.getPlanDate())) {
+            return null;
+        }
+        String formPlanDate = StringUtils.trimToEmpty(form.getPlanDate());
+        if (formPlanDate.split(" ").length == 2) { // date and time is set
+            Date planDate = admin.getDateTimeFormat().parse(formPlanDate);
+            if ("00:00".equals(formPlanDate.split(" ")[1])) {
+                return DateUtils.addSeconds(planDate, 1); // add a second to indicate in db DATE column that the time was not left empty and user set 00:00 by intention
+            }
+            return planDate;
+        }
+        return admin.getDateFormat().parse(formPlanDate); // date is set, time is not
     }
 
     protected String generateMailingTargetExpression(Mailing mailing, MailingSettingsForm form, Admin admin, MailingSettingsOptions options) {
@@ -318,7 +335,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     }
 
     protected void setMediatypesToMailing(Mailing mailing, MailingSettingsOptions options, MailingSettingsForm form) throws Exception {
-        boolean clearance = mailing.getEmailParam().isClearance();
+        boolean requestApproval = mailing.getEmailParam().isRequestApproval();
+        String approvedBy = mailing.getEmailParam().getApprovedBy();
         mailing.setMediatypes(form.getMediatypes().entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 mt -> conversionService.convert(mt.getValue(), Mediatype.class))));
@@ -327,7 +345,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailingEmailMediatype.setLinefeed(formEmailMediatype.getLinefeed());
         mailingEmailMediatype.setCharset(formEmailMediatype.getCharset());
         mailingEmailMediatype.setOnepixel(formEmailMediatype.getOnepixel());
-        mailingEmailMediatype.setClearance(clearance);
+        mailingEmailMediatype.setRequestApproval(requestApproval);
+        mailingEmailMediatype.setApprovedBy(approvedBy);
         setMailingFollowupProperties(mailing, form);
         if (mailing.isGridMailing()) {
             mailingEmailMediatype.setStatus(MediaTypeStatus.Active.getCode());
@@ -394,7 +413,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailingValidator.validateMailingBeforeSave(mailing, admin.getLocale(), popups);
         boolean approved = mailingService.isApproved(mailing.getId(), mailing.getCompanyID());
 
-        mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
+        mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
+        mailingService.saveMailingWithNewContent(mailing, admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
         if (options.getGridTemplateId() > 0) {
             saveMailingGridInfo(options.getGridTemplateId(), mailing.getId(), admin);
         }
@@ -403,7 +423,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             mailingService.updateMailingsWithDynamicTemplate(mailing, applicationContext);
         }
 
-        if (approved) {
+        if (approved && !options.isNew()) {
             mailingService.writeRemoveApprovalLog(mailing.getId(), admin);
         }
     }
@@ -433,6 +453,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     private boolean handleMailingPrepareExceptions(int mailingId, Popups popups, ExceptionHandler prepareFunc) {
         try {
             prepareFunc.execute();
+        } catch (UserMessageException e) {
+            popups.alert(e.getErrorMessageKey(), e.getAdditionalErrorData());
         } catch (ParseException e) {
             popups.alert("error.mailing.wrong.plan.date.format");
         } catch (MissingEndTagException e) {
@@ -603,8 +625,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         setMailingTargetsToForm(form, mailing);
         form.setTargetExpression(mailing.getTargetExpression());
         if (mailing.getPlanDate() != null) {
-            SimpleDateFormat dateFormat = admin.getDateFormat();
-            form.setPlanDate(dateFormat.format(mailing.getPlanDate()));
+            SimpleDateFormat dateTimeFormat = admin.getDateTimeFormat();
+            form.setPlanDate(dateTimeFormat.format(mailing.getPlanDate()));
         }
         form.setMailingType(mailing.getMailingType());
     }

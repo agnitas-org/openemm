@@ -1,0 +1,27 @@
+/*doc
+---
+title: Close button
+name: buttons_03_close
+parent: buttons
+---
+
+Typically used in a <a href="components_-_modals.html">modal</a> header.
+
+```htmlexample
+<button type="button" class="btn-close">
+    <span class="sr-only">Text for the screen reader</span>
+</button>
+```
+*/
+
+.btn-close {
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative;
+  color: var(--input-icon-color);
+
+  &:after {
+    @include fa-content($fa-var-times-circle);
+    @include center-absolute;
+  }
+}

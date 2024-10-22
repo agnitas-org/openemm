@@ -1,25 +1,18 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
+
+<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
+<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="filter" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter"--%>
-<c:set var="allowedCreation" value="false"/>
-<emm:ShowByPermission token="webservice.user.create">
-    <c:set var="allowedCreation" value="true"/>
-</emm:ShowByPermission>
 
-<c:set var="allowedChange" value="false"/>
-<emm:ShowByPermission token="webservice.user.change">
-    <c:set var="allowedChange" value="true"/>
-</emm:ShowByPermission>
-
-<div id="soap-users-overview" class="tiles-container hidden" data-editable-view="${agnEditViewKey}">
-    <c:if test="${allowedCreation}">
+<div id="soap-users-overview" class="tiles-container flex-column" data-editable-view="${agnEditViewKey}">
+    <c:if test="${emm:permissionAllowed('webservice.user.create', pageContext.request)}">
         <div id="new-user-tile" class="tile" data-editable-tile>
             <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="settings.webservice.user.new" /></h1>
+                <h1 class="tile-title text-truncate"><mvc:message code="settings.webservice.user.new" /></h1>
             </div>
             <mvc:form servletRelativeAction="/administration/wsmanager/user/new.action" id="wsuser-creation-form"
                       data-resource-selector="#wsuser-creation-form, #table-tile" modelAttribute="webserviceUserForm"
@@ -79,7 +72,7 @@
         </div>
     </c:if>
 
-    <div class="tiles-block" style="flex: 1">
+    <div class="tiles-block">
         <mvc:form servletRelativeAction="/administration/wsmanager/usersRedesigned.action" id="table-tile" modelAttribute="filter" cssClass="tile" data-editable-tile="main">
             <script type="application/json" data-initializer="web-storage-persist">
                 {
@@ -89,35 +82,47 @@
                 }
             </script>
 
-            <div class="tile-header">
-                <h1 class="tile-title"><mvc:message code="default.Overview" /></h1>
-            </div>
             <div class="tile-body">
-                <div class="table-box">
-                    <div class="table-scrollable">
-                        <display:table class="table table-rounded js-table table-hover" id="wsUser"
+                <div class="table-wrapper">
+                    <div class="table-wrapper__header">
+                        <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                        <div class="table-wrapper__controls">
+                            <%@include file="../../../common/table/toggle-truncation-btn.jspf" %>
+                            <jsp:include page="../../../common/table/entries-label.jsp">
+                                <jsp:param name="filteredEntries" value="${webserviceUserList.fullListSize}"/>
+                                <jsp:param name="totalEntries" value="${webserviceUserList.notFilteredFullListSize}"/>
+                            </jsp:include>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper__body">
+                        <agnDisplay:table class="table table--borderless js-table table-hover" id="wsUser"
                                        name="webserviceUserList" requestURI="/administration/wsmanager/usersRedesigned.action"
                                        pagesize="${filter.numberOfRows}" excludedParams="*">
 
-                            <%@ include file="../../../displaytag/displaytag-properties.jspf" %>
+                            <%@ include file="../../../common/displaytag/displaytag-properties.jspf" %>
 
-                            <display:column headerClass="js-table-sort" property="userName" titleKey="logon.username" sortable="true" sortProperty="username"/>
+                            <agnDisplay:column headerClass="js-table-sort" titleKey="logon.username" sortable="true" sortProperty="username">
+                                <span>${wsUser.userName}</span>
+                            </agnDisplay:column>
 
-                            <display:column headerClass="js-table-sort" titleKey="Status" sortable="true" sortProperty="active">
-                                <mvc:message code="${wsUser.active ? 'workflow.view.status.active' : 'webserviceuser.not_active'}"/>
-                            </display:column>
+                            <agnDisplay:column headerClass="js-table-sort" titleKey="Status" sortable="true" sortProperty="active">
+                                <span><mvc:message code="${wsUser.active ? 'workflow.view.status.active' : 'webserviceuser.not_active'}"/></span>
+                            </agnDisplay:column>
 
                             <emm:ShowByPermission token="master.companies.show">
-                                <display:column headerClass="js-table-sort" titleKey="webserviceuser.company" sortable="true" sortProperty="company_name" value="${wsUser.clientName} (${wsUser.companyId})"/>
+                                <agnDisplay:column headerClass="js-table-sort" titleKey="webserviceuser.company" sortable="true" sortProperty="company_name">
+                                    <span>${wsUser.clientName} (${wsUser.companyId})</span>
+                                </agnDisplay:column>
                             </emm:ShowByPermission>
 
-                            <display:column headerClass="js-table-sort" property="dataSourceId" titleKey="webserviceuser.default_datasource_id" sortable="true" sortProperty="default_data_source_id"/>
+                            <agnDisplay:column headerClass="js-table-sort" property="dataSourceId" titleKey="webserviceuser.default_datasource_id" sortable="true" sortProperty="default_data_source_id"/>
 
-                            <display:column class="hidden" headerClass="hidden" sortable="false">
+                            <agnDisplay:column class="hidden" headerClass="hidden" sortable="false">
                                 <c:url var="viewWsUserLink" value="/administration/wsmanager/user/${wsUser.userName}/view.action"/>
                                 <a href="${viewWsUserLink}" class="hidden" data-view-row="page"></a>
-                            </display:column>
-                        </display:table>
+                            </agnDisplay:column>
+                        </agnDisplay:table>
                     </div>
                 </div>
             </div>
@@ -128,11 +133,12 @@
 
             <div class="tile-header">
                 <h1 class="tile-title">
-                    <i class="icon icon-caret-up desktop-hidden"></i><mvc:message code="report.mailing.filter"/>
+                    <i class="icon icon-caret-up mobile-visible"></i>
+                    <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
                 </h1>
                 <div class="tile-controls">
-                    <a class="btn btn-icon btn-icon-sm btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-sync"></i></a>
-                    <a class="btn btn-icon btn-icon-sm btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+                    <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                    <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
                 </div>
             </div>
 

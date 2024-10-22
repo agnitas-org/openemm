@@ -26,6 +26,7 @@ import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.form.CompanyCreateForm;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.web.mvc.Popups;
+import org.agnitas.web.forms.PaginationForm;
 
 public interface ComCompanyService {
 
@@ -50,6 +51,7 @@ public interface ComCompanyService {
 	CompanyViewForm getCompanyForm(int companyId);
 
 	List<AdminEntry> getAdmins(int companyId);
+	PaginatedListImpl<AdminEntry> getAdmins(PaginationForm form, int companyId);
 
 	int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;	// TODO Replace CompanyCreateForm. This class belongs to presentation layer only.
 
@@ -58,6 +60,10 @@ public interface ComCompanyService {
     boolean deleteCompany(int companyIdForRemove);
     
     boolean deactivateCompany(int companyIdForDeactivation);
+
+	boolean reactivateCompany(int companyIdForDeactivation);
+
+	boolean markCompanyForDeletion(final int companyId);
 
 	boolean isCompanyNameUnique(int companyId, String shortname);
 
@@ -75,8 +81,6 @@ public interface ComCompanyService {
 	 * @return password policy for company ID
 	 */
 	public PasswordPolicies getPasswordPolicy(final int companyID);
-
-	boolean reactivateCompany(int companyIdForDeactivation);
 
 	int getCompanyDatasource(int companyId);
 

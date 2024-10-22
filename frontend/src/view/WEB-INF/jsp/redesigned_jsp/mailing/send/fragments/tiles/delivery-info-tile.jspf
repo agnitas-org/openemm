@@ -1,7 +1,7 @@
 
 <div id="delivery-info-tile" class="tile" data-editable-tile="">
     <div class="tile-header">
-        <h1 class="tile-title"><mvc:message code="delivery.information" /></h1>
+        <h1 class="tile-title text-truncate"><mvc:message code="delivery.information" /></h1>
 
         <c:if test="${isWorkflowDriven}">
             <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParams.workflowId}/view.action" scope="page">
@@ -30,11 +30,11 @@
 
                             <div class="bordered-box-sm bordered-box--readonly d-flex flex-column gap-2">
                                 <c:choose>
-                                    <c:when test="${empty targetGroupNames}">
+                                    <c:when test="${empty targetGroupsNames}">
                                         <p><mvc:message code="statistic.all_subscribers" /></p>
                                     </c:when>
                                     <c:otherwise>
-                                        <c:forEach var="target" items="${targetGroupNames}">
+                                        <c:forEach var="target" items="${targetGroupsNames}">
                                             <p>${target}</p>
                                         </c:forEach>
                                     </c:otherwise>

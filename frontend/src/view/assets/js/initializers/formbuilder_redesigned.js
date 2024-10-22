@@ -1,9 +1,5 @@
-AGN.Lib.DomInitializer.new('formbuilder', function($scope) {
+AGN.Lib.DomInitializer.new('formbuilder', function($scope = $(document)) {
     var Tooltip = AGN.Lib.Tooltip;
-
-    if (!$scope) {
-        $scope = $(document);
-    }
 
     var config = this.config;
     var $commonConfig = $('script#' + CSS.escape('config:formbuilderCommon') + '[type="application/json"]');
