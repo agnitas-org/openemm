@@ -259,6 +259,7 @@ struct block { /*{{{*/
 	DO_DECL (tagpos);		/* all tags with position in ..	*/
 					/* .. content			*/
 	bool_t		inuse;		/* required during generation	*/
+	int		dvalue;		/* # of resolved agnDVALUE tags	*/
 	/*}}}*/
 };
 
@@ -291,8 +292,6 @@ struct blockspec { /*{{{*/
 	DO_DECL (postfix);		/* .. postfix buffer		*/
 	/* optional modifiers						*/
 	int		linelength;	/* if >0, enforce linebreaks	*/
-	xmlChar		*linesep;	/* the line separator		*/
-	int		seplength;	/* the length of the line sep.	*/
 	add_t		opl;		/* insert onepixel URLs		*/
 	bool_t		clearance;	/* add clearance fragment	*/
 	/*}}}*/
@@ -523,6 +522,7 @@ struct blockmail { /*{{{*/
 	tag_t		*ltag;
 	int		taglist_count;
 	bool_t		clear_empty_dyn_block;
+	bool_t		clear_empty_dyn_block_without_dvalue;
 	/* tag function global data */
 	void		*tfunc;
 	/* global tags */
@@ -538,6 +538,8 @@ struct blockmail { /*{{{*/
 	/* URLs in the mailing */
 	DO_DECL (url);
 	DO_DECL (link_resolve);
+	/* virtuals */
+	var_t		*virtuals;
 
 	/* layout of the customer table */
 	DO_DECL (field);
@@ -567,11 +569,6 @@ struct blockmail { /*{{{*/
 	xmlBufferPtr	vip;
 	/* optional template for onepixel link */
 	xmlBufferPtr	onepix_template;
-	/* if not NULL, use only pictures with this prefix
-	 * for offline html */
-	char		*offline_picture_prefix;
-	/* length of offline_picture_prefix */
-	int		opp_len;
 	/* force usage of ecs UID */
 	bool_t		force_ecs_uid;
 	/* which version for uid to use */
@@ -746,8 +743,6 @@ extern postfix_t	*postfix_alloc (void);
 extern postfix_t	*postfix_free (postfix_t *p);
 extern blockspec_t	*blockspec_alloc (void);
 extern blockspec_t	*blockspec_free (blockspec_t *b);
-extern bool_t		blockspec_set_lineseparator (blockspec_t *b, const xmlChar *sep, int slen);
-extern bool_t		blockspec_find_lineseparator (blockspec_t *b);
 extern mailtypedefinition_t
 			*mailtypedefinition_alloc (void);
 extern mailtypedefinition_t
@@ -781,7 +776,6 @@ extern void		blockmail_setup_dkim (blockmail_t *b);
 extern void		blockmail_setup_vip_block (blockmail_t *b);
 extern void		blockmail_setup_onepixel_template (blockmail_t *b);
 extern void		blockmail_setup_tagpositions (blockmail_t *b);
-extern void		blockmail_setup_offline_picture_prefix (blockmail_t *b);
 extern void		blockmail_setup_auto_url_prefix (blockmail_t *b, const char *nprefix);
 extern void		blockmail_setup_anon (blockmail_t *b, bool_t anon, bool_t anon_preserve_links);
 extern void		blockmail_setup_selector (blockmail_t *b, const char *selector);
@@ -887,6 +881,8 @@ extern const char	*head_value (head_t *h);
 extern bool_t		head_set_value (head_t *h, buffer_t *value);
 extern bool_t		head_matchn (head_t *h, const char *name, int namelength);
 extern bool_t		head_match (head_t *h, const char *name);
+extern bool_t		head_startswithn (head_t *h, const char *name, int namelength);
+extern bool_t		head_startswith (head_t *h, const char *name);
 extern char		*head_is (head_t *h, const char *name);
 extern header_t		*header_alloc (void);
 extern header_t		*header_copy (header_t *source);

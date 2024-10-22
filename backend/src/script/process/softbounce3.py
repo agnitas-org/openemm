@@ -279,6 +279,7 @@ class Softbounce (Runtime):
 	def merge_new_bounces (self) -> None: #{{{
 		logger.info ('Start merging new bounces into softbounce_email_tbl')
 		with self.db.request () as cursor:
+			seen: Set[str] = set ()
 			for company_id in (
 				self.db.streamc (
 					'SELECT distinct company_id '
@@ -290,6 +291,7 @@ class Softbounce (Runtime):
 				.sorted ()
 			):
 				logger.info ('Working on %d' % company_id)
+				seen.clear ()
 				p = ProgressDB ('merge', self.db)
 				for row in self.db.queryc (
 					'SELECT mt.customer_id, mt.mailing_id, cust.email, sb.bnccnt '
@@ -301,7 +303,7 @@ class Softbounce (Runtime):
 						'company_id': company_id
 					}
 				):
-					if row.bnccnt is None:
+					if row.bnccnt is None and row.email not in seen:
 						cursor.update (
 							'INSERT INTO softbounce_email_tbl '
 							'           (company_id, email, bnccnt, mailing_id, creation_date, timestamp) '
@@ -324,6 +326,7 @@ class Softbounce (Runtime):
 								'email': row.email
 							}
 						)
+					seen.add (row.email)
 					p ()
 				p.fin ()
 				rows = cursor.update (
@@ -479,7 +482,7 @@ class Softbounce (Runtime):
 								'WHERE customer_id = :customer_id AND user_status IN (:user_status_active, :user_status_suspend)',
 								{
 									'user_status': UserStatus.BOUNCE.value,
-									'user_remark': 'bounce:soft',
+									'user_remark': 'bounce:conversion',
 									'mailing_id': mailing_id,
 									'customer_id': customer_id,
 									'user_status_active': UserStatus.ACTIVE.value,
@@ -500,7 +503,7 @@ class Softbounce (Runtime):
 									}
 								)
 				else:
-					logger.info (f'Email {email} has matching profile (anymore) -> discarded')
+					logger.info (f'Email {email} has no matching profile (anymore) -> discarded')
 				self.db.update (
 					'DELETE FROM softbounce_email_tbl '
 					'WHERE company_id = :company_id AND email = :email',

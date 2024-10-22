@@ -55,6 +55,7 @@ execute_script (const char *filename, const char *script, char **argv, int argc)
 	if (! rc) {
 		lua_State	*lua;
 		int		n;
+		const char	*ptr;
 		char		*path;
 			
 		if (! (lua = alua_alloc (Worthy))) {
@@ -67,12 +68,15 @@ execute_script (const char *filename, const char *script, char **argv, int argc)
 				lua_seti (lua, -2, n + 1);
 			}
 			lua_setglobal (lua, "argv");
-			for (n = 0; n < 2; ++n) {
+			for (n = 0; n < 3; ++n) {
 				switch (n) {
 				case 0:
-					path = mkpath (path_home (), ".cqrc", NULL);
+					path = (ptr = getenv ("CQRC")) ? strdup (ptr) : NULL;
 					break;
 				case 1:
+					path = mkpath (path_home (), ".cqrc", NULL);
+					break;
+				case 2:
 					path = mkpath (path_home (), "scripts", "cq.rc", NULL);
 					break;
 				default:

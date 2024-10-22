@@ -108,6 +108,7 @@ True
 		self.config: Dict[Tuple[str, str], str] = {}
 
 	def __enter__ (self) -> EMMConfig:
+		self.check (True)
 		return self
 		
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
@@ -328,6 +329,7 @@ class EMMCompany (_Config):
 		self.enabled_cache: Dict[Tuple[str, bool], EMMCompany.Enable] = {}
 
 	def __enter__ (self) -> EMMCompany:
+		self.check (True)
 		return self
 		
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
@@ -504,6 +506,7 @@ class EMMMailerset (_Config):
 		self.mailers: Dict[str, EMMMailerset.Mailer] = {}
 
 	def __enter__ (self) -> EMMMailerset:
+		self.check (True)
 		return self
 		
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:

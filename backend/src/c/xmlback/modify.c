@@ -1301,7 +1301,7 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 			if (slen > 0)
 				xmlBufferAdd (block -> out, cont + spos, slen);
 			if (doit & DOIT_NEWLINE) {
-				xmlBufferAdd (block -> out, bspec -> linesep, bspec -> seplength);
+				xmlBufferCCat (block -> out, "\n");
 				changed = true;
 			}
 			if (doit & DOIT_SKIP) {
@@ -1362,8 +1362,7 @@ modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspe
 	if (rc &&
 	    (block -> tid == TID_EMail_Text) &&
 	    bspec &&
-	    (bspec -> linelength > 0) &&
-	    bspec -> linesep) {
+	    (bspec -> linelength > 0)) {
 		rc = modify_linelength (blockmail, block, bspec);
 	}
 	return rc;

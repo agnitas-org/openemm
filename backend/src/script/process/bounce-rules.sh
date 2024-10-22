@@ -21,13 +21,11 @@ from	typing import Literal, Optional
 from	typing import Dict, List, Set
 from	agn3.db import DB
 from	agn3.emm.bounce import Bounce
-from	agn3.emm.build import spec
-from	agn3.emm.config import EMMCompany
 from	agn3.exceptions import error
-from	agn3.ignore import Ignore
 from	agn3.parameter import Parameter
 from	agn3.parser import Line, Field, Lineparser
 from	agn3.runtime import CLI
+from	agn3.stream import Stream
 #
 class Main (CLI):
 	__slots__ = ['dryrun', 'caller']
@@ -121,64 +119,24 @@ class Main (CLI):
 		return ok
 
 	def update_bounce_configuration (self, db: DB, parameter: Parameter) -> bool:
-		rc = True
-		orig = Parameter ()
-		emmcompany = EMMCompany (db = db, keys = [Bounce.name_company_info_conversion])
-		description = 'written'
-		with Ignore (KeyError):
-			orig.loads (emmcompany.get (Bounce.name_company_info_conversion))
-			description = 'updated'
-		description += f' by EMM backend update release {spec.version}'
-		target = Parameter ()
-		to_remove: Set[str] = set ()
-		for (key, value) in orig.items ():
-			with Ignore (KeyError):
-				new_value = parameter[key]
-				if new_value != '-':
-					target[key] = value
-				elif self.dryrun:
-					print (f'Parameter: removed "{key}" from parameter set')
-		for (key, value) in parameter.items ():
-			if value != '-':
-				target[key] = value
-				try:
-					old_value = orig[key]
-					if self.dryrun and old_value != value:
-						print (f'Parameter: updated "{key}" from "{old_value}" to "{value}"')
-				except KeyError:
-					if self.dryrun:
-						print (f'Parameter: added "{key}" with "{value}"')
-			else:
-				to_remove.add (key)
-		if orig != target:
-			if self.dryrun:
-				print (f'Would update parameter from {orig} to {target} using {parameter}')
-			else:
-				if not emmcompany.write (
-					0, Bounce.name_company_info_conversion, target.dumps (),
-					description = description
-				):
-					print ('Failed writing changed parameter to database')
-					rc = False
-		elif self.dryrun:
-			print ('Parameter not changed')
-		if db.exists (Bounce.bounce_config_table):
-			with Bounce (db = db) as bounce:
-				original = bounce.get_config (0, 0, Bounce.name_conversion)
-				obj = original.copy ()
-				for (key, value) in target.items ():
+		with Bounce (db = db) as bounce:
+			original = bounce.get_config (0, 0, Bounce.name_conversion)
+			new = Stream (parameter.items ()).filter (lambda kv: kv[1] != '-').map (lambda kv: (kv[0], int (kv[1]))).dict ()
+			obj = original.copy ()
+			for (key, value) in new.items ():
+				if key not in original:
 					obj[key] = int (value)
-				for key in to_remove:
-					if key in obj:
-						del obj[key]
-				if original != obj:
-					if self.dryrun:
-						print (f'Would update {Bounce.bounce_config_table} from {original} to {obj}')
-					else:
-						bounce.set_config (0, 0, Bounce.name_conversion, obj)
-				elif self.dryrun:
-					print ('Configuration not changed')
-		return rc
+			for key in list (obj.keys ()):
+				if key not in new:
+					del obj[key]
+			if original != obj:
+				if self.dryrun:
+					print (f'Would update {Bounce.bounce_config_table} from:\n{original}\nto\n{obj}')
+				else:
+					bounce.set_config (0, 0, Bounce.name_conversion, obj)
+			else:
+				print (f'No changes in {Bounce.bounce_config_table}')
+		return True
 
 	def update_bounce_rules (self, db: DB, rules: List[Line]) -> bool:
 		valid = True

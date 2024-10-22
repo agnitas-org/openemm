@@ -13,11 +13,11 @@ from	__future__ import annotations
 import	logging, csv
 from	datetime import datetime, timedelta
 from	types import TracebackType
-from	typing import Any, Callable, Iterable, Optional, Union
+from	typing import Any, Callable, Iterable, Literal, Optional, Union
 from	typing import Dict, IO, List, NamedTuple, Set, Tuple, Type
-from	typing import cast
+from	typing import cast, overload
 from	.dbdriver import DBDriver
-from	.dbcore import _T, Row, Core, Cursor
+from	.dbcore import _T, Row, Core, Cursor, Description
 from	.definitions import epoch, program
 from	.exceptions import error
 from	.ignore import Ignore
@@ -44,7 +44,7 @@ handling."""
 		'_last_error', 
 		'_table_cache', '_view_cache', '_synonym_cache', '_index_cache', '_tablespace_cache',
 		'_scratch_tables', '_scratch_number',
-		'_cache', '_checkpoints'
+		'_cache', '_cached_description', '_checkpoints'
 	]
 	def __init__ (self, dbid: Optional[str] = None) -> None:
 		"""``dbid'' is the database id to create a new driver instance"""
@@ -60,6 +60,7 @@ handling."""
 		self._scratch_tables: List[str] = []
 		self._scratch_number = 0
 		self._cache = None
+		self._cached_description: Optional[List[Tuple[Any, ...]]] = None
 		self._checkpoints: Optional[Dict[str, DB.Checkpoint]] = None
 		
 	def __del__ (self) -> None:
@@ -168,12 +169,27 @@ handling."""
 			return self.db.qvalidate (statement, parameter)
 		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
 
-	def description (self, normalize: bool = False) -> List[Any]:
-		if self.cursor is not None:
+	@overload
+	def description (self, normalize: Literal[False] = ...) -> List[Tuple[Any, ...]]: ...
+	@overload
+	def description (self, normalize: Literal[True]) -> List[Description]: ...
+	@overload
+	def description (self, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]: ...
+	def description (self, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]:
+		if self._cache is not None:
+			if self._cached_description and self.db is not None:
+				return Description.normalize (self.db, self._cached_description) if normalize else self._cached_description
+		elif self.cursor is not None:
 			return self.cursor.description (normalize)
 		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
 	
-	def layout (self, table: str, normalize: bool = False) -> List[Any]:
+	@overload
+	def layout (self, table: str, normalize: Literal[False] = ...) -> List[Tuple[Any, ...]]: ...
+	@overload
+	def layout (self, table: str, normalize: Literal[True]) -> List[Description]: ...
+	@overload
+	def layout (self, table: str, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]: ...
+	def layout (self, table: str, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]:
 		with self.request () as cursor:
 			cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
 			return cursor.description (normalize)
@@ -194,8 +210,11 @@ handling."""
 			try:
 				rc = self._cache[key]
 			except KeyError:
-				self._cache[key] = rc = self.check_open_cursor ().queryc (statement, parameter, cleanup)
-			return rc
+				cursor = self.check_open_cursor ()
+				rows = cursor.queryc (statement, parameter, cleanup)
+				self._cache[key] = rc = (cursor.description (), rows)
+			self._cached_description = rc[0]
+			return rc[1]
 		#
 		return self.check_open_cursor ().query (statement, parameter, cleanup)
 

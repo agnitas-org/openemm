@@ -16,9 +16,9 @@ from	datetime import datetime
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Protocol, Sequence, TypeVar, Union
+from	typing import Any, Callable, Literal, Optional, Protocol, Sequence, TypeVar, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
-from	typing import cast
+from	typing import cast, overload
 from	.dbapi import DBAPI
 from	.dbconfig import DBConfig
 from	.definitions import syscfg, fqdn, program, base, home, user
@@ -43,6 +43,30 @@ class Paramstyle (Enum):
 	qmark = 0
 	named = 2
 	format = 3
+
+class Description (NamedTuple):
+	name: str
+	typ: DBType
+	display_size: Optional[int] = None
+	size: Optional[int] = None
+	precision: Optional[int] = None
+	scale: Optional[int] = None
+	null_ok: bool = True
+	trailing: Optional[Tuple[Any, ...]] = None
+	@classmethod
+	def normalize (cls, db: Core, description: List[Tuple[Any, ...]]) -> List[Description]:
+		return [
+			cls (
+				name = _d[0].lower (),
+				typ = db.typ (_d),
+				display_size = _d[2],
+				size = _d[3],
+				precision = _d[4],
+				scale = _d[5],
+				null_ok = bool (_d[6]),
+				trailing = tuple (_d[7:]) if len (_d) > 7 else None
+			) for _d in description
+		]
 
 _valid_name = re.compile ('^[a-z][a-z0-9_]*$', re.IGNORECASE)
 def row_maker (rowspec: Sequence[str]) -> Type[Row]:
@@ -141,33 +165,21 @@ write the content directly to the database."""
 			self.db.log ('Cursor opeing failed: no database available')
 		return self.curs is not None
 
-	class Field (NamedTuple):
-		name: str
-		typ: DBType
-		display_size: Optional[int] = None
-		size: Optional[int] = None
-		precision: Optional[int] = None
-		scale: Optional[int] = None
-		null_ok: bool = True
-		trailing: Optional[Tuple[Any, ...]] = None
-	def description (self, normalize: bool = False) -> List[Any]:
+	@overload
+	def description (self, normalize: Literal[False] = ...) -> List[Tuple[Any, ...]]: ...
+	@overload
+	def description (self, normalize: Literal[True]) -> List[Description]: ...
+	@overload
+	def description (self, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]: ...
+	def description (self, normalize: bool = False) -> Union[List[Description], List[Tuple[Any, ...]]]:
 		"""returns the layout description of last query call
 
 if ``normalize'' is True then a normalized version is returned to be
 portable across different databases."""
 		if self.curs is not None and self.curs.description is not None:
-			return [
-				Cursor.Field (
-					name = _d[0].lower (),
-					typ = self.db.typ (_d),
-					display_size = _d[2],
-					size = _d[3],
-					precision = _d[4],
-					scale = _d[5],
-					null_ok = bool (_d[6]),
-					trailing = tuple (_d[7:]) if len (_d) > 7 else None
-				) for _d in self.curs.description
-			] if normalize else self.curs.description
+			if normalize:
+				return Description.normalize (self.db, self.curs.description)
+			return self.curs.description
 		raise error ('no active query')
 
 	def make_row (self, data: List[Any]) -> Row:

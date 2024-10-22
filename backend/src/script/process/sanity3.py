@@ -11,114 +11,134 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, logging
-from	typing import Optional
-from	typing import Dict
+import	logging, argparse
+from	typing import Callable, Iterable, Optional
+from	typing import List, TypeVar
 from	agn3.crontab import Crontab
 from	agn3.db import DB
-from	agn3.definitions import base
-from	agn3.io import relink
-from	agn3.sanity import Sanity, Report
+from	agn3.definitions import syscfg
+from	agn3.runtime import CLI
+from	agn3.sanity import Sanity, Report, File
+from	agn3.stream import Stream
 #
 logger = logging.getLogger (__name__)
 #
-class OpenEMM (Sanity):
+_T = TypeVar ('_T')
+#
+direct_path = syscfg.has ('direct-path', default = False)
+#
+def service (*svc: str, rc: List[_T]) -> List[_T]:
+	return rc if syscfg.service (*svc) else []
+def distinct (l: Iterable[_T]) -> List[_T]:
+	return Stream (l).distinct ().list ()
+
+directories = distinct (
+	service ('openemm', rc = [
+		'log', 'var',
+		'log/done', 'log/fail',
+		'var/lock', 'var/log', 'var/run', 'var/fsdb', 'var/spool', 'var/tmp', 'var/lib',
+		'var/spool/ARCHIVE', 'var/spool/DELETED',
+		'var/spool/META', 'var/spool/DIRECT',
+		'var/spool/ADMIN', 'var/spool/ADMIN0', 'var/spool/RECOVER',
+		'var/spool/QUEUE', 'var/spool/MIDQUEUE', 'var/spool/SLOWQUEUE',
+		'var/spool/mail', 'var/spool/filter'
+	])
+)
+files: List[File] = []
+executables: List[str] = []
+#
+
+def check_openemm (r: Report) -> None:
+	with DB () as db:
+		db.update ('UPDATE company_tbl SET enabled_uid_version = 0 WHERE enabled_uid_version IS NULL OR enabled_uid_version != 0')
+		db.update ('UPDATE mailing_tbl SET creation_date = COALESCE(change_date, CURRENT_TIMESTAMP) WHERE company_id = 1 AND creation_date IS NULL')
+		db.sync ()
+		for (key, value) in [
+			('mask-envelope-from', 'false'),
+			('direct-path', 'true')
+		]:
+			rq = db.querys (
+				'SELECT count(*) AS cnt '
+				'FROM company_info_tbl '
+				'WHERE company_id = 0 AND cname = :cname',
+				{'cname': key}
+			)
+			if rq is None or not rq.cnt:
+				count = db.update (
+					'INSERT INTO company_info_tbl ('
+					'       company_id, cname, cvalue, description, creation_date, timestamp'
+					') VALUES ('
+					'       0, :cname, :cvalue, NULL, current_timestamp, current_timestamp'
+					')', {
+						'cname': key,
+						'cvalue': value
+					}, commit = True
+				)
+				if count == 1:
+					logger.info (f'Added configuration value {value} for {key}')
+				else:
+					logger.error (f'Failed to set configuration value {value} for {key}: {db.last_error ()}')
+		#
+		for (key, value) in [
+			('LOGLEVEL', 'DEBUG'),
+			('MAILDIR', '${home}/var/spool/ADMIN'),
+			('BOUNDARY', 'OPENEMM'),
+			('MAILER', 'OpenEMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}')
+		]:
+			data: dict[str, Optional[str]] = {
+				'cls': 'mailout',
+				'name': 'ini.{key}'.format (key = key.lower ())
+			}
+			rq = db.querys (
+				'SELECT value '
+				'FROM config_tbl '
+				'WHERE class = :cls AND name = :name AND hostname IS NULL',
+				data
+			)
+			if rq is not None:
+				if rq.value != value:
+					logger.info (f'{key}: keep DB value "{rq.value}" and not overwrite it with default value {value}')
+			else:
+				data['value'] = value
+				db.update (
+					'INSERT INTO config_tbl '
+					'       (class, name, value, hostname, description, creation_date, change_date) '
+					'VALUES '
+					'       (:cls, :name, :value, NULL, NULL, current_timestamp, current_timestamp)',
+					data,
+					commit = True
+				)
+	Crontab ().update ([
+		'10 2 * * * $home/bin/janitor.sh',
+		'45 20 * * * $home/bin/bouncemanagement.sh',
+	], runas = 'openemm')
+
+checks: List[Callable[[Report], None]] = distinct (
+	service ('openemm', rc = [check_openemm])
+)
+#
+class EMM (Sanity):
 	def __init__ (self) -> None:
-		relink (os.path.join (base, 'release', 'backend', 'current', 'bin'), os.path.join (base, 'bin'))
 		super ().__init__ (
-			directories = [
-				'log', 'var',
-				'log/done', 'log/fail',
-				'var/lock', 'var/log', 'var/run', 'var/fsdb', 'var/spool', 'var/tmp', 'var/lib',
-				'var/spool/ARCHIVE', 'var/spool/DELETED',
-				'var/spool/META', 'var/spool/DIRECT',
-				'var/spool/ADMIN', 'var/spool/ADMIN0', 'var/spool/RECOVER',
-				'var/spool/QUEUE', 'var/spool/MIDQUEUE', 'var/spool/SLOWQUEUE',
-				'var/spool/mail', 'var/spool/filter'
-			], executables = [
-				'java'
-			], checks = [
-				self.__db_sanity,
-				self.__crontab
-			], runas = 'openemm', startas = 'openemm', umask = 0o22
+			directories = directories,
+			files = files,
+			executables = executables,
+			checks = checks,
+			umask = 0o22
 		)
 	
-	def __db_sanity (self, r: Report) -> None:
-		with DB () as db:
-			db.update ('UPDATE company_tbl SET enabled_uid_version = 0 WHERE enabled_uid_version IS NULL OR enabled_uid_version != 0')
-			db.update ('UPDATE mailing_tbl SET creation_date = change_date WHERE company_id = 1 AND creation_date IS NULL AND change_date IS NOT NULL')
-			db.sync ()
-			for (key, value) in [
-				('mask-envelope-from', 'false'),
-				('direct-path', 'true')
-			]:
-				rq = db.querys (
-					'SELECT count(*) AS cnt '
-					'FROM company_info_tbl '
-					'WHERE company_id = 0 AND cname = :cname',
-					{'cname': key}
-				)
-				if rq is None or not rq.cnt:
-					count = db.update (
-						'INSERT INTO company_info_tbl ('
-						'       company_id, cname, cvalue, description, creation_date, timestamp'
-						') VALUES ('
-						'       0, :cname, :cvalue, NULL, current_timestamp, current_timestamp'
-						')', {
-							'cname': key,
-							'cvalue': value
-						}, commit = True
-					)
-					if count == 1:
-						logger.info (f'Added configuration value {value} for {key}')
-					else:
-						logger.error (f'Failed to set configuration value {value} for {key}: {db.last_error ()}')
-			#
-			for (key, value) in [
-				('LOGLEVEL', 'DEBUG'),
-				('MAILDIR', '${home}/var/spool/ADMIN'),
-				('BOUNDARY', 'OPENEMM'),
-				('MAILER', 'OpenEMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}')
-			]:
-				data: Dict[str, Optional[str]] = {
-					'cls': 'mailout',
-					'name': 'ini.{key}'.format (key = key.lower ())
-				}
-				rq = db.querys (
-					'SELECT value '
-					'FROM config_tbl '
-					'WHERE class = :cls AND name = :name AND hostname IS NULL',
-					data
-				)
-				if rq is not None:
-					if rq.value != value:
-						logger.info (f'{key}: keep DB value "{rq.value}" and not overwrite it with default value {value}')
-				else:
-					data['value'] = value
-					db.update (
-						'INSERT INTO config_tbl '
-						'       (class, name, value, hostname, description, creation_date, change_date) '
-						'VALUES '
-						'       (:cls, :name, :value, NULL, NULL, current_timestamp, current_timestamp)',
-						data,
-						commit = True
-					)
-	
-	def __crontab (self, r: Report) -> None:
-		Crontab ().update ([
-			'10 2 * * * $home/bin/janitor.sh openemm',
-			'45 20 * * * $home/bin/bouncemanagement.sh',
-		], runas = 'openemm')
+class Main (CLI):
+	__slots__: List[str] = []
+	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
+		parser.add_argument ('to_check', nargs = '*', help = 'backward compatibility, no more in use')
 
-class Sanities:
-	checks = {'openemm': OpenEMM}
-
-def main () -> None:
-	try:
-		OpenEMM ()
-	except Exception as e:
-		logger.exception (f'Sanity check failed: {e}')
-		raise
-
+	def executor (self) -> bool:
+		try:
+			EMM ()
+		except Exception as e:
+			logger.exception (f'sanity failed due to: {e}')
+			raise
+		return True
+#
 if __name__ == '__main__':
-	main ()
+	Main.main ()

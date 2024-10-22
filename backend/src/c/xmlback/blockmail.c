@@ -175,7 +175,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 
 		b -> ltag = NULL;
 		b -> taglist_count = 0;
-		b -> clear_empty_dyn_block = false;
+		b -> clear_empty_dyn_block = true;
+		b -> clear_empty_dyn_block_without_dvalue = true;
 
 		b -> gtag = NULL;
 		b -> globaltag_count = 0;
@@ -193,6 +194,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		DO_ZERO (b, url);
 		DO_ZERO (b, link_resolve);
 
+		b -> virtuals = NULL;
+		
 		DO_ZERO (b, field);
 		b -> mailtype_index = -1;
 		
@@ -211,8 +214,6 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> spf = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
-		b -> offline_picture_prefix = NULL;
-		b -> opp_len = 0;
 		b -> force_ecs_uid = false;
 		b -> uid_version = 0;
 
@@ -337,6 +338,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 		
 		DO_FREE (b, url);
 		DO_FREE (b, link_resolve);
+		if (b -> virtuals)
+			var_free_all (b -> virtuals);
 		DO_FREE (b, field);
 		if (b -> target_groups)
 			free (b -> target_groups);
@@ -352,8 +355,6 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			xmlBufferFree (b -> vip);
 		if (b -> onepix_template)
 			xmlBufferFree (b -> onepix_template);
-		if (b -> offline_picture_prefix)
-			free (b -> offline_picture_prefix);
 		free (b);
 	}
 	return NULL;
@@ -752,6 +753,8 @@ blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 	
 	if (tmp = company_info_find (b, "clear-empty-dyn-block"))
 		b -> clear_empty_dyn_block = atob (tmp -> val);
+	if (tmp = company_info_find (b, "clear-empty-dyn-block-enhanced"))
+		b -> clear_empty_dyn_block_without_dvalue = atob (tmp -> val);
 	if (b -> ltag) {
 		int	n, m;
 		dyn_t	*d, *dd;
@@ -763,22 +766,6 @@ blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 				for (m = 0; m < dd -> block_count; ++m)
 					block_setup_tagpositions (dd -> block[m], b);
 		}
-	}
-}/*}}}*/
-void
-blockmail_setup_offline_picture_prefix (blockmail_t *b) /*{{{*/
-{
-	var_t	*tmp;
-	
-	if (tmp = company_info_find (b, "offline-picture-prefix")) {
-		if (b -> offline_picture_prefix) {
-			free (b -> offline_picture_prefix);
-			b -> offline_picture_prefix = NULL;
-		}
-		if (tmp -> val && (b -> offline_picture_prefix = strdup (tmp -> val)))
-			b -> opp_len = strlen (b -> offline_picture_prefix);
-		else
-			b -> opp_len = 0;
 	}
 }/*}}}*/
 void

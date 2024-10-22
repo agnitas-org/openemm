@@ -206,12 +206,26 @@ returning the final value"""
 		#
 		return self.new (filter (check_for_error, self.iterator))
 
+	@overload
+	def regexp (self,
+		pattern: Union[str, Pattern[str]],
+		flags: int = 0,
+		key: Optional[Callable[[_T], str]] = None,
+		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _O]] = None
+	) -> Stream[_O]: ...
+	@overload
 	def regexp (self,
 		pattern: Union[str, Pattern[str]],
 		flags: int = 0,
 		key: Optional[Callable[[_T], str]] = None,
 		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _T]] = None
-	) -> Stream[_T]:
+	) -> Stream[_T]: ...
+	def regexp (self,
+		pattern: Union[str, Pattern[str]],
+		flags: int = 0,
+		key: Optional[Callable[[_T], str]] = None,
+		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _T | _O]] = None
+	) -> Stream[_T | _O]:
 		"""Create a new stream for each element matching
 regular expression ``pattern''. ``flags'' is passed to re.compile. If
 ``predicate'' is not None, this must be a callable which accepts three
@@ -525,8 +539,16 @@ is added unmapped to the new stream."""
 				return sum ((1 for _ in self.iterator))
 		return sum ((1 for _v in self.iterator if _v in args))
 	
-	def counter (self) -> typing.Counter[_T]:
-		return Counter (self.iterator)
+	@overload
+	def counter (self, predicate: None = ...) -> typing.Counter[_T]: ...
+	@overload
+	def counter (self, predicate: Callable[[_T], _T]) -> typing.Counter[_T]: ...
+	@overload
+	def counter (self, predicate: Callable[[_T], _O]) -> typing.Counter[_O]: ...
+	def counter (self, predicate: Optional[Callable[[_T], _O]] = None) -> Union[typing.Counter[_T], typing.Counter[_O]]:
+		if predicate is None:
+			return Counter (self.iterator)
+		return Counter ((predicate (_e) for _e in self.iterator))
 		
 	def any (self, predicate: Callable[[_T], bool] = bool) -> bool:
 		"""Return True if at least one element matches ``predicate''"""

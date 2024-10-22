@@ -12,7 +12,8 @@
 from	__future__ import annotations
 import	os, re
 from	typing import Any, Final, Optional
-from	typing import Dict, Iterator
+from	typing import Dict, Iterator, Tuple
+from	typing import overload
 from	.definitions import base, syscfg, dbid_default
 #
 class DBConfig:
@@ -62,7 +63,11 @@ reads and stores configuration from a configuration file"""
 		def __contains__ (self, id: str) -> bool:
 			return id in self.data
 
-		def __call__ (self, id: str, default: Any = None) -> Any:
+		@overload
+		def __call__ (self, id: str, default: None = ...) -> None | str: ...
+		@overload
+		def __call__ (self, id: str, default: str) -> str: ...
+		def __call__ (self, id: str, default: None | str = None) -> Any:
 			try:
 				return self[id]
 			except KeyError:
@@ -101,6 +106,15 @@ reads and stores configuration from a configuration file"""
 
 	def __iter__ (self) -> Iterator[str]:
 		return iter (self.data)
+	
+	def keys (self) -> Iterator[str]:
+		return iter (self.data.keys ())
+	
+	def values (self) -> Iterator[DBConfig.DBRecord]:
+		return iter (self.data.values ())
+
+	def items (self) -> Iterator[Tuple[str, DBConfig.DBRecord]]:
+		return iter (self.data.items ())
 
 	def inject (self, id: str, param: Dict[str, str]) -> None:
 		"""adds a configuration which is not part of the configuration file

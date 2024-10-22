@@ -48,13 +48,14 @@ class PluginService (Plugin):
 		raise AttributeError ('%s: not implemented' % name)
 
 class Process:
-	__slots__ = ['cfg', 'name', 'plugin', 'status', 'comment', 'commands']
+	__slots__ = ['cfg', 'name', 'plugin', 'optional', 'status', 'comment', 'commands']
 	known_commands = ['status', 'start', 'stop', 'restart']
 	known_statuses = ['ok', 'fail', 'running', 'stopped', 'incomplete']
-	def __init__ (self, cfg: Config, name: str, plugin: Callable[[str, Tuple[Any, ...], Any], Any]) -> None:
+	def __init__ (self, cfg: Config, name: str, plugin: Callable[[str, Tuple[Any, ...], Any], Any], optional: bool = False) -> None:
 		self.cfg = cfg
 		self.name = name
 		self.plugin = plugin
+		self.optional = optional
 		self.status = None
 		self.comment = None
 		self.commands: Dict[str, List[str]] = {}
@@ -73,6 +74,8 @@ class Process:
 		if not self.can (command):
 			return (False, None, None)
 		cmd = self.commands[command]
+		if self.optional and not os.access (cmd[0], os.X_OK):
+			return (False, None, None)
 		#
 		try:
 			pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
@@ -284,7 +287,7 @@ class Service:
 				self.cfg.ns['service'] = name
 				if self.active (name):
 					try:
-						proc = Process (self.cfg, name, lambda method, args, default: self.call (name, method, args, default))
+						proc = Process (self.cfg, name, lambda method, args, default: self.call (name, method, args, default), optional = self.cfg.bget ('optional'))
 						proc.do_status ()
 						procs.append (proc)
 						depend = self.cfg.lget ('depends-on')

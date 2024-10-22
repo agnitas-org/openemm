@@ -158,7 +158,7 @@ head_set_value (head_t *h, buffer_t *value) /*{{{*/
 bool_t
 head_matchn (head_t *h, const char *name, int namelength) /*{{{*/
 {
-	if (head_find_name (h, NULL) && (h -> _namelength > 0) && (h -> _namelength == namelength) && (! strcmp (h -> _name, name)))
+	if (head_find_name (h, NULL) && (h -> _namelength == namelength) && (! strcmp (h -> _name, name)))
 		return true;
 	return false;
 }/*}}}*/
@@ -166,6 +166,18 @@ bool_t
 head_match (head_t *h, const char *name) /*{{{*/
 {
 	return head_matchn (h, name, strlen (name));
+}/*}}}*/
+bool_t
+head_startswithn (head_t *h, const char *name, int namelength) /*{{{*/
+{
+	if (head_find_name (h, NULL) && (h -> _namelength >= namelength) && (! strncmp (h -> _name, name, namelength)))
+		return true;
+	return false;
+}/*}}}*/
+bool_t
+head_startswith (head_t *h, const char *name) /*{{{*/
+{
+	return head_startswithn (h, name, strlen (name));
 }/*}}}*/
 char *
 head_is (head_t *h, const char *name) /*{{{*/

@@ -884,7 +884,7 @@ class UpdateBounce (Update): #{{{
 		rc = False
 		try:
 			record = UpdateBounce.line_parser (line)
-			if record.licence_id != 0 and record.licence_id != licence:
+			if record.licence_id != licence:
 				logger.debug (f'Ignore bounce for other licenceID {record.licence_id}')
 				return True
 			if record.customer_id == 0:
@@ -986,6 +986,11 @@ class UpdateBounce (Update): #{{{
 							}
 							if db.update (query, data, commit = True) == 1:
 								self.rvcount += 1
+								query = 'UPDATE mailing_tbl SET delivered = delivered - 1 WHERE mailing_id = :mailing_id AND delivered IS NOT NULL AND delivered > 0'
+								data = {
+									'mailing_id': record.mailing_id
+								}
+								db.update (query, data, commit = True)
 						if breakdown.detail == Detail.HardbounceNotEncrypted:
 							if self.sys_encrypted_sending_enabled[company_id]:
 								query = (
@@ -1128,13 +1133,10 @@ class UpdateAccount (Update): #{{{
 					count = db.update (
 						'UPDATE mailing_tbl '
 						'SET work_status = :work_status_sending '
-						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status IN (:work_status_finished, :work_status_edit, :work_status_ready, :work_status_generating))',
+						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status != :work_status_sent)',
 						{
 							'work_status_sending': WorkStatus.Sending.value,
-							'work_status_finished': WorkStatus.Finished.value,
-							'work_status_edit': WorkStatus.Edit.value,
-							'work_status_ready': WorkStatus.Ready.value,
-							'work_status_generating': WorkStatus.Generating.value,
+							'work_status_sent': WorkStatus.Sent.value,
 							'mailing_id': mailing_id
 						},
 						commit = True

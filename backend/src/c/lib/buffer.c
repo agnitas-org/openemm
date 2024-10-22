@@ -823,6 +823,49 @@ buffer_universal_newline (buffer_t *b, int start) /*{{{*/
 	if (src != dst)
 		b -> length -= src - dst;
 }/*}}}*/
+bool_t
+buffer_universal_crlf (buffer_t *b, int start) /*{{{*/
+{
+	bool_t		ok;
+	buffer_t	*scratch;
+	
+	ok = true;
+	if (start < buffer_length (b))
+		if (scratch = buffer_alloc (buffer_length (b) + 128)) {
+			int	pending;
+			int	n;
+			byte_t	*src;
+			bool_t	modified;
+		
+			modified = false;
+			for (n = pending = start, src = b -> buffer + start; ok && (n < b -> length); )
+				if (*src == '\r') {
+					++n, ++src;
+					if ((n < b -> length) && (*src == '\n'))
+						++n, ++src;
+				} else {
+					if (*src == '\n') {
+						if (pending < n)
+							ok = buffer_stiff (scratch, b -> buffer + pending, n - pending);
+						pending = n + 1;
+						if (ok && (ok = buffer_stiffsn (scratch, "\r\n", 2)))
+							modified = true;
+					}
+					++n, ++src;
+				}
+			if (ok && modified) {
+				if (pending < n)
+					ok = buffer_stiff (scratch, b -> buffer + pending, n - pending);
+				if (ok) {
+					buffer_truncate (b, start);
+					ok = buffer_appendbuf (b, scratch);
+				}
+			}
+			buffer_free (scratch);
+		} else
+			ok = false;
+	return ok;
+}/*}}}*/
 	
 struct pool { /*{{{*/
 	buffer_t	*root;

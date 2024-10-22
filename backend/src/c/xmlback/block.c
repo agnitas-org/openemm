@@ -83,6 +83,7 @@ block_alloc (void) /*{{{*/
 		b -> bout = NULL;
 		DO_ZERO (b, tagpos);
 		b -> inuse = false;
+		b -> dvalue = 0;
 	}
 	return b;
 }/*}}}*/

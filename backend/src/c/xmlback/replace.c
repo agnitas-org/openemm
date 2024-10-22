@@ -210,10 +210,9 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 							if (dyn_match (dyn, blockmail -> eval, rec))
 								break;
 					if (dyn && dyn_match_selector (root, selector)) {
-						block_t	*use;
-						int	*indexes;
+						block_t	*use = NULL;
+						bool_t	framed = false;
 
-						use = NULL;
 						if (sp -> type & TP_DYNAMICVALUE) {
 							for (n = 0; (! use) && (n < dyn -> block_count); ++n)
 								switch (dyn -> block[n] -> nr) {
@@ -226,11 +225,14 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 										use = dyn -> block[n];
 									break;
 								}
-						} else if (sp -> type & TP_DYNAMIC)
+						} else if (sp -> type & TP_DYNAMIC) {
 							use = sp -> content;
+							framed = true;
+						}
 						if (use && (! use -> inuse)) {
 							bool_t	save_disable_link_extension;
 							int	save_icount, save_ipos;
+							int	*indexes;
 							int	icount;
 							bool_t	dynamic;
 							int	*idx;
@@ -251,8 +253,11 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 											icount = -1;
 										}
 										rec -> rvdata -> ipos++;
-									}
+									} else
+										block -> dvalue++;
+									use -> dvalue = 0;
 									if (replace_tags (blockmail, rec, use, level + 1, code_urls, NULL, NULL, ishtml, ispdf)) {
+										block -> dvalue += use -> dvalue;
 										if (root -> disable_link_extension) {
 											if (ptmp = protect_alloc ()) {
 												if (pprev)
@@ -271,6 +276,17 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 											 */
 											clear_output = true;
 										}
+										if (framed &&
+										    blockmail -> clear_empty_dyn_block &&
+										    blockmail -> clear_empty_dyn_block_without_dvalue &&
+										    (use -> dvalue == 0))
+											for (n = 0; n < dyn -> block_count; ++n)
+												if ((((dyn -> block[n] -> nr == 0) && (! ishtml)) || ((dyn -> block[n] -> nr == 1) && ishtml)) &&
+												    replace_tags (blockmail, rec, dyn -> block[n], level + 1, code_urls, NULL, NULL, ishtml, ispdf)) {
+													if (is_empty (dyn -> block[n] -> in))
+														xmlBufferEmpty (use -> in);
+													break;
+												}
 										if (replace)
 											individual_replace (replace, block -> in, xmlBufferContent (use -> in), xmlBufferLength (use -> in));
 										else

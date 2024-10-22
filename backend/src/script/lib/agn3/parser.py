@@ -24,7 +24,7 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.stream import Stream
 #
-__all__ = ['ParseTimestamp', 'parse_timestamp', 'Period', 'Unit', 'unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
+__all__ = ['Parsable', 'ParseTimestamp', 'parse_timestamp', 'Period', 'Unit', 'unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
 #
 Parsable = Union[None, int, float, str]
 #
@@ -53,6 +53,12 @@ the instance is called directly, i.e.:
 			year -= 1
 		return datetime (year, month, int (day), int (hour), int (min), int (sec))
 
+	@overload
+	def __call__ (self, expr: Any, default: None = ..., *args: Any) -> Optional[datetime]: ...
+	@overload
+	def __call__ (self, expr: Any, default: datetime, *args: Any) -> datetime: ...
+	@overload
+	def __call__ (self, expr: Any, default: Callable[..., datetime], *args: Any) -> datetime: ...
 	def __call__ (self, expr: Any, default: Union[None, datetime, Callable[..., datetime]] = None, *args: Any) -> Optional[datetime]:
 		"""parses a string to a datetime.datetime representation
 
@@ -152,6 +158,7 @@ convertion values can be added. Examples:
 		
 		'B':	1,				# byte
 		'K':	1024,				# kByte
+		'k':	1024,				# -"-
 		'M':	1024 * 1024,			# MByte
 		'G':	1024 * 1024 * 1024,		# GByte
 		'T':	1024 * 1024 * 1024 * 1024,	# TByte

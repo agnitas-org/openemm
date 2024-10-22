@@ -129,6 +129,7 @@ class UIDCache:
 		secret_key: str
 		enabled_uid_version: int
 		minimal_uid_version: int
+		status: str
 		
 	class Mailing (NamedTuple):
 		mailing_id: int
@@ -153,12 +154,11 @@ class UIDCache:
 				company = None
 				if self.db.isopen ():
 					rq = self.db.querys (
-						'SELECT secret_key, enabled_uid_version, uid_version '
+						'SELECT secret_key, enabled_uid_version, uid_version, status '
 						'FROM company_tbl '
-						'WHERE company_id = :company_id AND status = :status',
+						'WHERE company_id = :company_id',
 						{
-							'company_id': company_id,
-							'status': 'active'
+							'company_id': company_id
 						}
 					)
 					if rq is not None:
@@ -166,12 +166,17 @@ class UIDCache:
 							company_id = company_id,
 							secret_key = rq.secret_key,
 							enabled_uid_version = rq.enabled_uid_version,
-							minimal_uid_version = rq.uid_version
+							minimal_uid_version = rq.uid_version,
+							status = rq.status
 						)
 				self.companies[company_id] = company
-			if company is not None:
+			if company is not None and company.status == 'active':
 				return company
-			raise error (f'{self.licence_id}: company {company_id} not found or active')
+			raise error ('{licence_id}: company {company_id} not {reason}'.format (
+				licence_id = self.licence_id,
+				company_id = company_id,
+				reason = 'found' if company is None else f'active, but {company.status}'
+			))
 			
 		def find_mailing (self, mailing_id: int) -> UIDCache.Mailing:
 			try:

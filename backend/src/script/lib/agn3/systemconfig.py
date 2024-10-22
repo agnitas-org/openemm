@@ -11,8 +11,9 @@
 #
 from	__future__ import annotations
 import	os, json, platform, pwd, re, base64
+from	types import TracebackType
 from	typing import Any, Callable, Final, Optional, TypeVar, Union
-from	typing import Dict, ItemsView, KeysView, List, Set, ValuesView, Tuple
+from	typing import Dict, ItemsView, KeysView, List, Set, ValuesView, Tuple, Type
 from	typing import overload
 from	.exceptions import error
 from	.ignore import Ignore
@@ -141,6 +142,7 @@ True
 True
 """
 		__slots__ = ['selections', 'selections_set', '_user', '_fqdn', '_host']
+		ignore_keyerror = Ignore (KeyError)
 		def __init__ (self, user: str, fqdn: str, host: str) -> None:
 			self.selections = [
 				f'{user}@{fqdn}',
@@ -167,17 +169,30 @@ True
 		def host (self) -> str:
 			return self._host
 
+		def __enter__ (self) -> Systemconfig.Selection:
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			return None
+
 		def pick (self, collection: Dict[Optional[str], _T]) -> _T:
 			for selection in self.selections:
-				with Ignore (KeyError):
+				with self.ignore_keyerror:
 					return collection[selection]
 			raise KeyError ()
 	
 		def pick_pattern (self, collection: Dict[str, _T], key: str) -> _T:
 			for selection in self.selections:
-				with Ignore (KeyError):
+				with self.ignore_keyerror:
 					return collection[f'{key}[{selection}]' if selection is not None else key]
 			raise KeyError ()
+		
+		def select (self, collection: Dict[str, _T], key: str) -> Dict[Optional[str], _T]:
+			rc: Dict[Optional[str], _T] = {}
+			for selection in self.selections:
+				with self.ignore_keyerror:
+					rc[selection] = collection[f'{key}[{selection}]' if selection is not None else key]
+			return rc
 	
 		def __contains__ (self, hostname: Union[None, str, Set[Optional[str]]]) -> bool:
 			if isinstance (hostname, set):
@@ -530,11 +545,12 @@ file, if it is available. """
 
 	def service (self, *service: str) -> bool:
 		return bool (self.services.intersection (service))
-		
+	
+
 	@property
 	def services (self) -> Set[str]:
 		self._check ()
 		if not self._services:
 			self._services.update (['openemm'])
 		return self._services
-		
+

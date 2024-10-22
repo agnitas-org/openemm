@@ -37,7 +37,6 @@ bin mode=0755:
 
 lib:
 	src/script/data/bav.rc
-	src/script/data/bav.rule
 
 scripts mode=0755:
 	src/script/tools/activator3.py
@@ -50,6 +49,8 @@ scripts mode=0755:
 	src/script/tools/service3.py
 	src/script/tools/service3.cfg		mode=0644
 	src/script/lib/cq.rc			mode=0644
+	src/script/lib/requirements.py
+	src/script/lib/requirements.txt		mode=0644
 	
 scripts/agn3:
 	src/script/lib/agn3/*.*
@@ -66,9 +67,6 @@ scripts/once mode=0755:
 	
 scripts/once/tags:
 	lib/tags/*.lua
-
-scripts/requirements:
-	src/script/lib/requirements.txt		mode=0644
 """
 
 def toint (s: Any) -> int:
@@ -162,7 +160,7 @@ class Builder:
 				tf.addfile (ti)
 			#
 			# on-the-fly created file
-			build_spec = f'{self.version};{datetime.fromtimestamp (now):%Y-%m-%d %H:%M:%S};openemm.org;openemm'.encode ('UTF-8')
+			build_spec = f'{self.version};{datetime.fromtimestamp (now):%Y-%m-%d %H:%M:%S};openemm.org;openemm;openemm'.encode ('UTF-8')
 			ti = tarfile.TarInfo (os.path.join (self.directory, 'scripts', 'build.spec'))
 			ti.size = len (build_spec)
 			ti.mtime = now

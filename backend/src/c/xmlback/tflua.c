@@ -18,7 +18,7 @@
 # define	PP_ID_LUA		0x111a
 # define	ID_CTX			"__ctx__"
 # define	ID_CUST			"__cust__"
-# define	setnfield(nnn)		(lua_pushnil (il -> lua), lua_setfield (il -> lua, -2, (nnn)))				
+# define	setnfield(nnn)		(lua_pushnil (il -> lua), lua_setfield (il -> lua, -2, (nnn)))
 # define	setifield(vvv,nnn)	(lua_pushnumber (il -> lua, (vvv)), lua_setfield (il -> lua, -2, (nnn)))
 # define	setbfield(vvv,nnn)	(lua_pushboolean (il -> lua, (vvv) ? 1 : 0), lua_setfield (il -> lua, -2, (nnn)))
 # define	setsfield(vvv,nnn)	(lua_pushstring (il -> lua, (vvv)), lua_setfield (il -> lua, -2, (nnn)))
@@ -103,7 +103,21 @@ fetch_value (lua_State *lua, const char *column) /*{{{*/
 {
 	fetchn_value (lua, column, strlen (column));
 }/*}}}*/
-
+static void
+create_table (lua_State *lua, const char *name, var_t *content) /*{{{*/
+{
+	var_t	*v;
+	
+	lua_createtable (lua, 0, 0);
+	for (v = content; v; v = v -> next) {
+		if (v -> val)
+			lua_pushstring (lua, v -> val);
+		else
+			lua_pushnil (lua);
+		lua_setfield (lua, -2, v -> var);
+	}
+	lua_setfield (lua, -2, name);
+}/*}}}*/
 struct iflua { /*{{{*/
 	log_t		*lg;
 	bool_t		sandbox;
@@ -543,6 +557,7 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 		}
 	}
 	lua_setfield (il -> lua, -2, "media");
+	create_table (il -> lua, "virtual", il -> blockmail -> virtuals);
 	lua_setfield (il -> lua, LUA_REGISTRYINDEX, ID_CTX);
 }/*}}}*/
 static int

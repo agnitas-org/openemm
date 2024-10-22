@@ -22,6 +22,7 @@ if [ ! "$BASE" ] ; then
 fi
 export BASE
 #
+#
 export	SYSTEM_CONFIG='{
 	"trigger-port": "8450",
 	"direct-path": "true",
@@ -107,6 +108,7 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 	fi
 fi
 # .. and for python3 ..
+req="$BASE/scripts/.requirements.txt"
 for softwarebase in $softwarebases; do
 	path="$softwarebase/python3"
 	if [ -d $path/bin ] ; then
@@ -231,7 +233,26 @@ onErrorSendMail () {
 }
 #
 setupVirtualEnviron() {
-	pyversion="`python3 -c \"import sys; print ('.'.join (str (_v) for _v in sys.version_info))\"`"
+	local	python3 minor_minimum candidate
+	
+	python3="`which python3.11 2>/dev/null`"
+	if [ $? -ne 0 ] || [ ! "$python3" ]; then
+		python3=""
+		minor_minimum="8"
+		for candidate in `which -a python3 2>/dev/null`; do
+			if [ -x "$candidate" ]; then
+				"$candidate" -c "import sys; sys.exit ($minor_minimum > sys.version_info.minor)"
+				if [ $? -eq 0 ]; then
+					python3="$candidate"
+					break
+				fi
+			fi
+		done
+		if [ ! "$python3" ]; then
+			die "no python3 found with matches at least the minimum version of 3.$minor_minimum"
+		fi
+	fi
+	pyversion="`$python3 -c \"import sys; print ('.'.join (str (_v) for _v in sys.version_info))\"`"
 	osversion="`$cq -ec 'return osid'`"
 	if [ "$osversion" ]; then
 		pyversion="${pyversion}-${osversion}"
@@ -241,7 +262,10 @@ setupVirtualEnviron() {
 		venv="${venv}-${application}"
 	fi
 	if [ ! -d "$venv" ]; then
-		python3 -m venv --system-site-packages "$venv"
+		$python3 -m venv --system-site-packages "$venv"
+		if [ -f "$req" ]; then
+			rm -f "$req"
+		fi
 	fi
 	if [ ! "$VIRTUAL_ENV" ] || [ ! "$VIRTUAL_ENV" = "$venv" ]; then
 		if [ -d "$venv" ]; then
@@ -306,14 +330,6 @@ require() {
 }
 requires() {
 	require "$@" || exit 1
-}
-py3available() {
-	[ "`which python3 2>/dev/null`" ] || return 1
-	python3 -c "import sys; sys.exit (0 if sys.version_info.major == 3 and sys.version_info.minor >= 8 else 1)" || return 1
-	setupVirtualEnviron || return 1
-}
-py3required() {
-	py3available || die "Please install a python3 version 3.8 or later"
 }
 #
 getproc() {
@@ -490,34 +506,50 @@ export PYTHONPATH
 export VERSION="$version"
 export LICENCE="$licence"
 #
-py3required
+setupVirtualEnviron || die "failed to setup virtual environment"
 if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:false`" = "true" ]; then
-	rq="$BASE/scripts/requirements"
-	if [ -d "$rq" ]; then
-		[ -d "$BASE/var/tmp" ] || mkdir -p "$HOME/var/tmp"
-		upgrade() {
-			__log="$BASE/var/tmp/upgrade.log.$$"
-			python3 -m pip --require-virtualenv install "$@" > $__log 2>&1
-			rc=$?
-			if [ $rc -ne 0 ]; then
-				cat $__log
+	"$BASE/scripts/requirements.py"
+	rc=$?
+	case "$rc" in
+	0)
+		if [ -f "$req" ]; then
+			[ -d "$BASE/var/tmp" ] || mkdir -p "$HOME/var/tmp"
+			upgrade() {
+				__log="$BASE/var/tmp/upgrade.log.$$"
+				python3 -m pip --require-virtualenv install "$@" > $__log 2>&1
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					cat $__log
+				fi
+				rm -f $__log
+				return $rc
+			}
+			messagen "Upgrade \"pip\" .. "
+			upgrade --upgrade pip
+			messagen "process \"$req\" .. "
+			upgrade --requirement "$req"
+			if [ $? -ne 0 ]; then
+				echo "# failed to process at `date +%c`" >> "$req"
+				die "Failed to install/upgrade python packages from file \"$req\""
 			fi
-			rm -f $__log
-			return $rc
-		}
-		upgrade --upgrade pip
-		for req in $rq/*; do
-			if [ -f "$req" ]; then
-					messagen "Process `basename $req` .. "
-					upgrade --requirement "$req" || die "Failed to install/upgrade python packages from file \"$req\""
-					message "done."
-				rm -f "$req"
-			fi
-		done
-		if [ -d "$rq" ]; then
-			rmdir --ignore-fail-on-non-empty "$rq"
+			message "done."
+		else
+			die "Missing created requirements file \"$req\""
 		fi
-	fi
+		;;
+	1)
+		die "Failed to preparse requirements file due to invalid input file"
+		;;
+	2)
+		die "Failed to preparse requirements file due to missing input file"
+		;;
+	3)
+		# already processed, nothing to do
+		;;
+	*)
+		die "Failed to preparse requirements file with exit status $rc"
+		;;
+	esac
 else
 	requires msgpack
 fi

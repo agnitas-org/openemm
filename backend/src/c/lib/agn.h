@@ -348,6 +348,7 @@ typedef struct { /*{{{*/
 	const char	*timestamp;
 	const char	*host;
 	const char	*user;
+	const char	*typ;
 	/*}}}*/
 }	build_t;
 
@@ -409,6 +410,7 @@ extern void		buffer_ltrim (buffer_t *b);
 extern void		buffer_rtrim (buffer_t *b);
 extern void		buffer_trim (buffer_t *b);
 extern void		buffer_universal_newline (buffer_t *b, int start);
+extern bool_t		buffer_universal_crlf (buffer_t *b, int start);
 
 extern pool_t		*pool_alloc (void);
 extern pool_t		*pool_free (pool_t *p);

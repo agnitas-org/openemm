@@ -50,7 +50,8 @@ class DPath (AIORuntime):
 
 	def setup (self) -> None:
 		for path in self.incoming_directory, self.archive_directory, self.recover_directory:
-			create_path (path)
+			if path != os.devnull:
+				create_path (path)
 				
 	def executors (self) -> Optional[List[Callable[[], bool]]]:
 		return [

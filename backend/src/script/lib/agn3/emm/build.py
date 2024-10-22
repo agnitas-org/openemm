@@ -11,38 +11,53 @@
 #
 from	__future__ import annotations
 import	os, re
+from	dataclasses import dataclass, field
 from	datetime import datetime
-from	typing import Final, Optional
+from	typing import ClassVar, Optional
 from	typing import Match, Tuple
 from	typing import cast
 from	..definitions import base, fqdn, user, version
 from	..exceptions import error
-from	..ignore import Ignore
-from	..parser import parse_timestamp, Field, Lineparser
+from	..parser import parse_timestamp
 from	..stream import Stream
 #
 __all__ = ['spec', 'require']
 #
+@dataclass
 class Spec:
-	__slots__ = ['spec']
-	build_spec_path: Final[str] = os.path.join (base, 'scripts', 'build.spec')
-	parser = Lineparser (
-		lambda a: a.split (';', 3),
-		'version',
-		Field ('timestamp', lambda t: parse_timestamp (t)),
-		'host',
-		'user'
-	)
-	def __init__ (self, build_spec_path: Optional[str] = None) -> None:
-		self.spec = Spec.parser.target_class (version, datetime.now (), fqdn, user)
-		path = build_spec_path if build_spec_path is not None else Spec.build_spec_path
-		if os.path.isfile (path):
-			with open (path, 'r', errors = 'backslashreplace') as fd:
-				build_spec = fd.read ().strip ()
-				with Ignore (error):
-					self.spec = Spec.parser (build_spec)
+	version: str = version
+	timestamp: datetime = field (default_factory = datetime.now)
+	host: str = fqdn
+	user: str = user
+	typ: str = 'classic'
+	build_spec_path: ClassVar[str] = os.path.join (base, 'scripts', 'build.spec')
 
-spec = Spec ().spec
+	@classmethod
+	def parse (cls, build_spec: str) -> Spec:
+		spec = cls ()
+		if build_spec:
+			for (index, value) in enumerate (build_spec.strip ().split (';')):
+				if index == 0:
+					spec.version = value
+				elif index == 1:
+					spec.timestamp = parse_timestamp (value, spec.timestamp)
+				elif index == 2:
+					spec.host = value
+				elif index == 3:
+					spec.user = value
+				elif index == 4:
+					spec.typ = value
+		return spec
+		
+	@classmethod
+	def build (cls, build_spec_path: Optional[str] = None) -> Spec:
+		path = build_spec_path if build_spec_path is not None else cls.build_spec_path
+		if os.path.isfile (path):
+			with open (path, errors = 'backslashreplace') as fd:
+				return cls.parse (fd.readline ())
+		return cls ()
+
+spec = Spec.build ()
 
 def require (version: str) -> None:
 	reduce_to_num_pattern = re.compile ('[0-9]+')

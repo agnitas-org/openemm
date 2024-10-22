@@ -37,7 +37,7 @@ build_alloc (void) /*{{{*/
 						while ((n > 0) && strchr (" \t\r\n\v", (b -> version[n - 1])))
 							--n;
 						b -> version[n] = '\0';
-						b -> timestamp = b -> host = b -> user = b -> version + n;
+						b -> timestamp = b -> host = b -> user = b -> typ = b -> version + n;
 						if (ptr = strchr (b -> version, ';')) {
 							*ptr++ = '\0';
 							b -> timestamp = ptr;
@@ -47,6 +47,12 @@ build_alloc (void) /*{{{*/
 								if (ptr = strchr (ptr, ';')) {
 									*ptr++ = '\0';
 									b -> user = ptr;
+									if (ptr = strchr (ptr, ';')) {
+										*ptr++ = '\0';
+										b -> typ = ptr;
+										if (ptr = strchr (ptr, ';'))
+											*ptr = '\0';
+									}
 								}
 							}
 						}

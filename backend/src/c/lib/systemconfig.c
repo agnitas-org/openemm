@@ -390,6 +390,7 @@ config_extra (systemconfig_t *c) /*{{{*/
 	config_add (c, "build.timestamp", build && build -> timestamp ? build -> timestamp : "unknown");
 	config_add (c, "build.host", build && build -> host ? build -> host : "unknown");
 	config_add (c, "build.user", build && build -> user ? build -> user : "unknwon");
+	config_add (c, "build.typ", build && build -> typ ? build -> typ : "classic");
 	if (build)
 		build_free (build);
 	if ((fd = open (PATH_OSRELEASE, O_RDONLY)) != -1) {

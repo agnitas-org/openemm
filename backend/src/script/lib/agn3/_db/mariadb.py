@@ -111,15 +111,16 @@ with Ignore (ImportError):
 
 	class MariaDB (Core):
 		"""MariaDB specific Core implementation"""
-		__slots__ = ['host', 'user', 'passwd', 'name']
+		__slots__ = ['host', 'user', 'passwd', 'name', 'secure']
 		BINARY_FLAG = 128
-		def __init__ (self, host: str, user: str, passwd: str, name: str) -> None:
+		def __init__ (self, host: str, user: str, passwd: str, name: str, secure: str) -> None:
 			super ().__init__ ('mariadb', cast (DBAPI.Vendor, mariadb_driver), CursorMariaDB)
 			self.fallbacks.insert (0, 'mysql')
 			self.host = host
 			self.user = user
 			self.passwd = passwd
 			self.name = name
+			self.secure = atob (secure)
 
 		def typ (self, entry: Tuple[Any, ...]) -> DBType:
 			if len (entry) > 7:
@@ -142,10 +143,12 @@ with Ignore (ImportError):
 			}
 			if port is not None:
 				config['port'] = port
+			if self.secure:
+				config['ssl'] = True
 			config.update (self.connect_options)
 			auto_reconnect = atob (config.pop ('auto_reconnect', False))
 			self.db = self.driver.connect (**config)
 			if auto_reconnect:
 				cast (DBAPI.DriverMariaDB, self.db).auto_reconnect = auto_reconnect
 
-	mariadb = Driver ('mariadb', None, lambda cfg: MariaDB (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name')))
+	mariadb = Driver ('mariadb', None, lambda cfg: MariaDB (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name'), cfg ('secure')))

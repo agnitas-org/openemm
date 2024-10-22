@@ -147,7 +147,7 @@ class Queue (Generic[_T]):
 		await self._wake_putter ()
 
 class AIORuntime (Runtime):
-	__slots__ = ['_loop', '_stop', '_apply_delay', '_channels', '_tasks']
+	__slots__ = ['_loop', '_stop', '_apply_delay', '_channels', '_tasks', '_protected']
 	with Ignore (ImportError):
 		import	uvloop
 		asyncio.set_event_loop_policy (uvloop.EventLoopPolicy ())
@@ -284,11 +284,11 @@ class AIORuntime (Runtime):
 		def cancel (self) -> None:
 			if not self.task.done ():
 				self.task.cancel ()
+			elif self.task.cancelled ():
+				logger.debug (f'cancel {self.name}: task already cancelled')
 			elif (e := self.task.exception ()) is not None:
 				logger.info (f'cancel {self.name}: task already terminated due to exception')
 				self._log_exception (logger.info, e)
-			elif self.task.cancelled ():
-				logger.debug (f'cancel {self.name}: task already cancelled')
 			
 		def _log_exception (self, method: Callable[[str], None], e: BaseException) -> None:
 			_log_exception (method, e, self.task)
@@ -344,6 +344,33 @@ class AIORuntime (Runtime):
 				await asyncio.sleep (timeout if timeout is not None else 0)
 			return None
 	
+	class Protect (Generic[_T]):
+		__slots__ = ['task', 'timeout', 'protected']
+		def __init__ (self, task: asyncio.Task[_T], timeout: Union[None, int, float], protected: Dict[asyncio.Task[Any], AIORuntime.Protect[Any]]) -> None:
+			self.task = task
+			self.timeout = timeout
+			self.protected = protected
+
+		def _enter (self) -> asyncio.Future[_T]:
+			self.protected[self.task] = self
+			return asyncio.shield (self.task)
+		
+		def _exit (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.protected.pop (self.task, None)
+			return None
+			
+		def __enter__ (self) -> asyncio.Future[_T]:
+			return self._enter ()
+		
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			return self._exit (exc_type, exc_value, traceback)
+
+		async def __aenter__ (self) -> asyncio.Future[_T]:
+			return self._enter ()
+		
+		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			return self._exit (exc_type, exc_value, traceback)
+		
 	class Workers:
 		__slots__ = [
 			'base_group', 'limit', 'work_id',
@@ -435,6 +462,7 @@ class AIORuntime (Runtime):
 	def executor (self, controller: Optional[Callable[[], Coroutine[Any, Any, None]]] = None) -> bool:
 		self._channels = AIORuntime.Channels (self)
 		self._tasks = AIORuntime.Tasks ()
+		self._protected: Dict[asyncio.Task[Any], AIORuntime.Protect[Any]] = {}
 		async def execution (controller: Callable[[], Coroutine[Any, Any, None]]) -> None:
 			self._loop = asyncio.get_running_loop ()
 			self._stop = self.future (type (None))
@@ -448,9 +476,24 @@ class AIORuntime (Runtime):
 			self._tasks.terminate ()
 			myself = asyncio.current_task ()
 			for task in asyncio.all_tasks ():
-				if task != myself:
-					if not task.done ():
+				if task != myself and not task.done ():
+					try:
+						protect = self._protected[task]
+						with Ignore (asyncio.CancelledError):
+							if protect.timeout is not None:
+								try:
+									logger.info (f'{task}: protected task running, waiting for {protect.timeout} seconds to finish')
+									await asyncio.wait_for (task, protect.timeout)
+									logger.info (f'{task}: protected task finished within timeout {protect.timeout} seconds')
+								except asyncio.TimeoutError:
+									logger.info (f'{task}: protected task cancelled after reaching timeout {protect.timeout} seconds')
+							else:
+								logger.info (f'{task}: protected task running, waiting for finish')
+								await task
+								logger.info (f'{task}: protected task finished')
+					except KeyError:
 						task.cancel ()
+						logger.info (f'{task}: running task cancelled during shutdown')
 			await self.aioyield ()
 		try:
 			asyncio.run (execution (controller if controller is not None else self.controller), debug = self.ctx.debug)
@@ -517,6 +560,9 @@ class AIORuntime (Runtime):
 	
 	def cancel_task (self, name: str) -> None:
 		self._tasks.cancel (name)
+	
+	def protect (self, coro: Coroutine[Any, Any, _T], timeout: Union[None, int, float] = None) -> AIORuntime.Protect[_T]:
+		return AIORuntime.Protect (asyncio.create_task (coro), timeout, self._protected)
 	
 	async def wait_task (self, tasks: List[AIORuntime.Task[_U]], timeout: Union[None, int, float] = None) -> Tuple[Optional[AIORuntime.Task[_U]], Optional[_U]]:
 		with Ignore (Timeout):

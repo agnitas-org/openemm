@@ -13,21 +13,22 @@
 from	__future__ import annotations
 import	os, re, subprocess, errno, logging
 import	traceback
+from	contextlib import suppress
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, Union
+from	typing import Any, Callable, Generic, Match, NoReturn, Optional, TypeVar, Union
 from	typing import Dict, Generator, List, Set, Tuple, Type
 from	.exceptions import error
 from	.stream import Stream
-from	.template import Template
 #
 __all__ = [
 	'abstract', 'defer',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
 	'listsplit', 'listjoin', 
+	'Stretch', 'stretch',
 	'Escape', 'escape', 'unescape',
-	'Range', 'Config', 'Plugin',
+	'Range', 'Config', 'Plugin', 'Template',
 	'Progress'
 ]
 #
@@ -264,6 +265,51 @@ def listjoin (elements: Optional[List[str]], remove_empty: bool = True) -> str:
 	if elements is not None:
 		return ', '.join ([_e for _e in elements if _e])
 	return ''
+
+class Stretch:
+	"""Stretches a string by escaping control characters
+
+>>> stretch = Stretch ()
+>>> stretch ('abc123')
+'abc123'
+>>> stretch ('abc123\\ndef456')
+'abc123\\\\ndef456'
+>>> stretch ('\\\\')
+'\\\\\\\\'
+>>> stretch = Stretch ([10])
+>>> stretch ('abc123\\ndef456')
+'abc123\\ndef456'
+>>> stretch = Stretch ([10, 10, 44])
+>>> stretch = Stretch (list (Stretch.transtable))
+>>> stretch.translate_table
+{}
+"""
+	__slots__ = ['translate_table']
+	transdict = dict ((chr (_c), f'\\x{_c:02x}') for _c in range (32))
+	transdict.update ({
+		'\\': '\\\\',
+		'\r': '\\r',
+		'\n': '\\n',
+		'\t': '\\t',
+		'\f': '\\f',
+		'\v': '\\v',
+		'\b': '\\b',
+		'\x1b': '\\e',
+		'\x7f': '<DEL>'
+	})
+	transtable = str.maketrans (transdict)
+	def __init__ (self, exclude: Optional[List[int]] = None) -> None:
+		self.translate_table = self.transtable.copy ()
+		if exclude is not None:
+			suppress_keyerror = suppress (KeyError)
+			for cpos in exclude:
+				with suppress_keyerror:
+					del self.translate_table[cpos]
+
+	def __call__ (self, s: str) -> str:
+		return s.translate (self.translate_table)
+
+stretch = Stretch ()
 
 class Escape:
 	__slots__ = ['escape_pattern', 'escape_replace', 'unescape_pattern', 'unescape_replace']
@@ -599,6 +645,89 @@ not implemented itself.
 			return self._ns[name]
 		return self._ca (name)
 
+class Template:
+	__slots__ = ['lazy', 'tmpl', 'var', 'tglobals', 'extra']
+	def __init__ (self, lazy: bool = False) -> None:
+		self.lazy: bool = lazy
+		self.tmpl: Optional[str] = None
+		self.var: Dict[str, Any] = {}
+		self.tglobals: Optional[Dict[str, Any]] = None
+		self.extra: Optional[Dict[str, Any]] = None
+	
+	__templ = re.compile (r'\$(\$|[a-z][a-z0-9]*|{[^}]+}|`[^`]+`|\([^)]+\))', re.IGNORECASE | re.MULTILINE)
+	def __retrieve (self, src: Dict[str, Any], name: str) -> str:
+		val = src[name]
+		return str (val) if val is not None else ''
+	
+	def __replace (self, mtch: Match[str]) -> str:
+		s = mtch.group ()
+		if s == '$$':
+			return '$'
+		#
+		if s.startswith ('${') or s.startswith ('$`'):
+			op = s[1]
+			s = s[2:-1]
+			extra: Optional[Dict[str, Any]]
+			if self.extra is not None:
+				extra = self.extra.copy ()
+			else:
+				extra = None
+			if self.tglobals is None:
+				self.tglobals = self.var.copy ()
+			try:
+				if op == '{':
+					return str (eval (s, self.tglobals, extra))
+				else:
+					out = []
+					def _out_set (s: Any) -> None:
+						if s:
+							out.append (str (s))
+					self.tglobals['out'] = _out_set
+					self.tglobals['var'] = self.var
+					self.tglobals['error'] = error
+					exec (s, self.tglobals, extra)
+					return ''.join (out)
+			except Exception as e:
+				self.failure (e, s)
+		elif s.startswith ('$('):
+			s = s[2:-1]
+		else:
+			s = s[1:]
+		if self.extra and s in self.extra:
+			return self.__retrieve (self.extra, s)
+		#
+		try:
+			return self.__retrieve (self.var, s)
+		except KeyError:
+			self.missing (s)
+			if not self.lazy:
+				raise error (f'Failed to match "{s}" in "{self.tmpl}" using {self.var}, {self.extra}')
+		return ''
+	
+	def __setitem__ (self, var: str, val: Any) -> None:
+		self.var[var] = val
+	
+	def __getitem__ (self, var: str) -> Any:
+		return self.var[var]
+	
+	def __delitem__ (self, var: str) -> None:
+		del self.var[var]
+	
+	def __call__ (self, tmpl: str, extra: Optional[Dict[str, Any]] = None) -> str:
+		self.tmpl = tmpl
+		self.extra = extra
+		return self.__templ.sub (self.__replace, self.tmpl)
+	
+	def reset (self) -> None:
+		self.var = {}
+		self.tglobals = None
+	
+	def missing (self, variable: str) -> None:
+		pass
+	
+	def failure (self, exception: Exception, expression: str) -> None:
+		raise exception
+	
 class Progress (Stream.Progress):
 	"""Visiualize progress in logfile
 
@@ -621,18 +750,18 @@ formated or $rawcount for unformated current count) and offering
 ``ns'' as a namespace for further customization."""
 		self.name = name
 		self.display = display
-		self.template = Template (template if template is not None else 'Now at #$count')
-		self.template.compile ()
+		self.template = template if template is not None else 'Now at #$count'
 		self.ns = ns.copy () if ns is not None else {}
 		self.last = -1
 		self.count = 0
-		
+
+	_template = Template ()
 	def show (self, final: bool = False) -> None:
 		"""Write an entry to the logfile, if count has changed"""
 		if self.count != self.last or (final and self.count == 0):
 			self.ns['rawcount'] = str (self.count)
 			self.ns['count'] = f'{self.count:,d}'
-			self.log (self.template.fill (self.ns))
+			self.log (self._template (self.template, self.ns))
 			self.last = self.count
 			self.handle ()
 	

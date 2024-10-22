@@ -15,19 +15,21 @@ from	types import TracebackType
 from	typing import Optional
 from	typing import Type
 from	.definitions import base, program
-from	.exceptions import LockError
+from	.exceptions import LockError, error
 from	.ignore import Ignore
+from	.io import create_path
 #
 __all__ = ['Lock']
 #
 logger = logging.getLogger (__name__)
 #
 class Lock:
-	__slots__ = ['id', 'lazy', 'lockpath', 'lockpid', 'is_locked']
+	__slots__ = ['id', 'lazy', 'silent', 'lockpath', 'lockpid', 'is_locked']
 	lock_directory = os.environ.get ('LOCK_HOME', os.path.join (base, 'var', 'lock'))
-	def __init__ (self, id: Optional[str] = None, lazy: bool = False) -> None:
+	def __init__ (self, id: Optional[str] = None, lazy: bool = False, silent: bool = False) -> None:
 		self.id = id if id is not None else program
 		self.lazy = lazy
+		self.silent = silent
 		self.lockpath = os.path.join (self.lock_directory, f'{self.id}.lock')
 		self.lockpid: Optional[int] = None
 		self.is_locked = False
@@ -58,33 +60,43 @@ program is used."""
 				os.close (fd)
 				self.lockpid = lockpid
 				self.is_locked = True
-				logger.info (f'{self.id}: lock created')
+				if not self.silent:
+					logger.info (f'{self.id}: lock created')
 				break
 			except OSError as e:
-				if e.errno == errno.EEXIST:
-					try:
-						fd = os.open (self.lockpath, os.O_RDONLY)
-						line = str (os.read (fd, 32), 'UTF-8').split ()[0]
-						os.close (fd)
-						pid = int (line)
-						if pid > 0:
-							try:
-								os.kill (pid, 0)
-							except OSError as e:
-								if e.errno == errno.ESRCH:
-									try:
-										os.unlink (self.lockpath)
-										logger.info (f'{self.id}: stale lockfile removed')
-									except OSError as e:
-										logger.warning (f'{self.id}: failed to remove stale lockfile {self.lockpath}: {e}')
-								else:
-									break
-					except (IndexError, ValueError):
-						with Ignore (OSError):
-							st = os.stat (self.lockpath)
-							if st.st_size == 0:
-								os.unlink (self.lockpath)
-								logger.info (f'{self.id}: removed corrupted (empty) lockfile')
+				if state == 0:
+					if e.errno == errno.EEXIST:
+						try:
+							fd = os.open (self.lockpath, os.O_RDONLY)
+							line = str (os.read (fd, 32), 'UTF-8').split ()[0]
+							os.close (fd)
+							pid = int (line)
+							if pid > 0:
+								try:
+									os.kill (pid, 0)
+								except OSError as e2:
+									if e2.errno == errno.ESRCH:
+										try:
+											os.unlink (self.lockpath)
+											logger.info (f'{self.id}: stale lockfile removed')
+										except OSError as e3:
+											logger.warning (f'{self.id}: failed to remove stale lockfile {self.lockpath}: {e3}')
+									else:
+										break
+						except (IndexError, ValueError):
+							with Ignore (OSError):
+								st = os.stat (self.lockpath)
+								if st.st_size == 0:
+									os.unlink (self.lockpath)
+									logger.info (f'{self.id}: removed corrupted (empty) lockfile')
+					elif e.errno == errno.ENOENT:
+						lockdirectory = os.path.abspath (os.path.dirname (self.lockpath))
+						try:
+							if create_path (lockdirectory):
+								logger.info (f'{self.id}: created missing lock directory {lockdirectory}')
+						except error as e:
+							logger.warning (f'{self.id}: failed to create missing lock directory {lockdirectory}: {e}')
+					
 		if not self.is_locked and not self.lazy:
 			raise LockError (f'{self.lockpath}: lock exists')
 		return self.is_locked
@@ -95,7 +107,8 @@ program is used."""
 			if self.lockpid is not None and self.lockpid == os.getpid ():
 				try:
 					os.unlink (self.lockpath)
-					logger.info (f'{self.id}: removed lockfile')
+					if not self.silent:
+						logger.info (f'{self.id}: removed lockfile')
 				except OSError as e:
 					if e.errno != errno.ENOENT:
 						logger.warning (f'{self.id}: failed to remove lockfile {self.lockpath}: {e}')

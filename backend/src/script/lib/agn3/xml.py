@@ -505,7 +505,7 @@ that all of them had been crossed.
 		pass
 	def startPrefixMapping (self, prefix: Optional[str], uri: str) -> None:
 		pass
-	def endPrefixMapping (self, prefix: str) -> None:
+	def endPrefixMapping (self, prefix: Optional[str]) -> None:
 		pass
 	def startElementNS (self, name: Tuple[str, str], qname: str, attrs: xmlreader.AttributesNSImpl) -> None:
 		pass

@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	sys, os, errno, re, csv, subprocess, base64, logging
+import	os, errno, re, csv, subprocess, base64, logging
 import	socket, mimetypes
 from	collections import defaultdict
 from	datetime import datetime
@@ -23,21 +23,21 @@ from	email.header import Header
 from	email.policy import EmailPolicy, compat32
 from	email.utils import parseaddr
 from	functools import partial
-from	typing import Any, Callable, Optional, Union
-from	typing import DefaultDict, Dict, Generator, IO, Iterator, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
+from	typing import Any, Callable, ClassVar, Optional, Union
+from	typing import DefaultDict, Dict, Generator, IO, Iterator, List, Match, NamedTuple, Pattern, Set, Tuple
 from	typing import cast
 from	.db import DB, TempDB
-from	.definitions import base, fqdn, user, program, syscfg
+from	.definitions import base, fqdn, user, syscfg
+from	.emm.config import EMMCompany
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
 from	.io import csv_default
-from	.log import log
-from	.parser import parse_timestamp
 from	.stream import Stream
+from	.tools import atob
 from	.uid import UID, UIDHandler
 #
-__all__ = ['EmailMessage', 'sendmail', 'manage_procmailrc', 'EMail', 'CSVEMail', 'StatusMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
+__all__ = ['Message', 'EmailMessage', 'sendmail', 'manage_procmailrc', 'EMail', 'CSVEMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
 #
 logger = logging.getLogger (__name__)
 #
@@ -46,7 +46,7 @@ class SentStatus (NamedTuple):
 	return_code: int = 0
 	command_output: str = ''
 	command_error: str = ''
-	
+
 def manage_procmailrc (content: str, procmailrc: str = os.path.join (base, '.procmailrc')) -> None:
 	try:
 		with open (procmailrc, 'r') as fd:
@@ -154,6 +154,71 @@ class EMail (IDs):
 						
 	@staticmethod
 	def sign (message: str, sender: Optional[str] = None, company_id: Optional[int] = None) -> str:
+		with Ignore (ImportError, SyntaxError, error):
+			import	dkim
+			
+			with DB () as db:
+				domains: List[str] = []
+				if sender is not None:
+					sender_domain = sender.split ('@')[-1]
+					while sender_domain.find ('.') != -1:
+						domains.append (sender_domain)
+						sender_domain = sender_domain.split ('.', 1)[-1]
+				emmcompany = EMMCompany (db, keys = ['dkim-local-key', 'dkim-global-key'])
+				if company_id is not None:
+					emmcompany.set_company_id (company_id)
+				local_key = emmcompany.get ('dkim-local-key', company_id = company_id, default = False, convert = atob)
+				global_key = emmcompany.get ('dkim-global-key', company_id = company_id, default = False, convert = atob)
+				query = (
+					'SELECT company_id, domain, selector, domain_key '
+					'FROM dkim_key_tbl '
+					'WHERE company_id {compare} AND '
+					'      (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND '
+					'      (valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP) AND '
+					'	domain IS NOT NULL AND selector IS NOT NULL AND domain_key IS NOT NULL '
+					'ORDER BY company_id DESC, creation_date DESC'
+					.format (compare = 'IN (0, :company_id)' if company_id else '= 0')
+				)
+				data: Dict[str, Any] = {} if not company_id else {'company_id': company_id}
+				domain: Optional[str] = None
+				selector: Optional[str] = None
+				key: Optional[str] = None
+				for row in db.query (query, data):
+					if row.company_id == 0:
+						if global_key:
+							domain, selector, key = row.domain, row.selector, row.domain_key
+						break
+					elif local_key and company_id:
+						domain, selector, key = row.domain, row.selector, row.domain_key
+					elif row.domain in domains:
+						domain, selector, key = row.domain, row.selector, row.domain_key
+						break
+				if domain and selector and key:
+					logger.debug (f'Using {selector}._domainkey.{domain} for signing')
+					try:
+						signature = dkim.sign (
+							message = message.encode ('UTF-8'),
+							selector = selector.encode ('UTF-8'),
+							domain = domain.encode ('UTF-8'),
+							privkey = key.encode ('UTF-8'),
+							linesep = b'\n',
+							length = True
+						)
+					except Exception as e:
+						logger.warning (f'failed to sign message: {e}')
+					else:
+						if signature:
+							signature_string = signature.decode ('UTF-8')
+							if message[:5].lower () == 'from ':
+								with Ignore (ValueError):
+									(unixfrom, message) = message.split ('\n', 1)
+									message = f'{unixfrom}\n{signature_string}{message}'
+							else:
+								message = signature_string + message
+						else:
+							logger.error ('Mail NOT signed')
+				else:
+					logger.debug ('signing: no dkim information found')
 		return message
 
 	class Content:
@@ -440,12 +505,11 @@ class EMail (IDs):
 				mfrom = self.mfrom
 		elif self.sender:
 			mfrom = parseaddr (self.sender)[1]
-		status = sendmail (
+		return sendmail (
 			recipients = [parseaddr (_r[1])[1] for _r in self.receivers],
 			mail = mail,
 			sender = mfrom
 		)
-		return status
 #
 EMail.force_encoding ('UTF-8', 'qp')
 #
@@ -498,141 +562,6 @@ the ``charset'' of the csv content and the csv ``dialect'' to be used."""
 			rc = len (s)
 		return rc
 
-class StatusMail:
-	"""Create status mail
-	
-Create a status mail for a process for internal use"""
-	__slots__ = ['name', 'email', 'recv', 'cc', 'sender']
-	OK = 'OK'
-	WARN = 'WARNING'
-	ERROR = 'ERROR'
-	FATAL = 'FATAL'
-	recv_ok = ['dagents@agnitas.de']
-	recv_fail = ['dagents@agnitas.de', 'admins@agnitas.de']
-	def __init__ (self, status: str, name: Optional[str] = None, sender: Optional[str] = None, assetID: Optional[str] = None) -> None:
-		"""``status'' is the final status of the process
-(these are one of the class constants OK, WARN, ERROR or FATAL),
-``name'' is the name of the process (or the name of program, if None),
-the mail is send by ``sender'' (or the user running the process, if
-None) and ``assetID'' represents the unique ID of the process. The
-receiver are statically definied and are taken depending on the
-status."""
-		self.name = name if name is not None else program
-		self.email = EMail ()
-		now = datetime.now ()
-		self.recv = self.recv_ok[:] if status == self.OK else self.recv_fail[:]
-		self.cc: List[str] = []
-		self.sender = sender
-		self.email.set_subject ('[{status}] {year:04d}{month:02d}{day:02d} {name} (on {user}@{fqdn}){asset_id}'.format (
-			status = status,
-			year = now.year,
-			month = now.month,
-			day = now.day,
-			name = name,
-			user = user,
-			fqdn = fqdn,
-			asset_id = f' {assetID}' if assetID is not None else ''
-		))
-	
-	def add_cc (self, cc: str) -> None:
-		"""Add ``cc'' for a carbon copy of the mail (which may either be a str or a list)"""
-		self.cc.append (cc)
-	
-	def set_text (self, text: str, charset: Optional[str] = None) -> None:
-		"""Set the text for the status mail"""
-		self.email.set_text (text, charset)
-	
-	is_id = re.compile ('^[a-z0-9_][a-z0-9_.-]*$', re.IGNORECASE)
-	parse_log = re.compile ('^\\[([0-9]{2}\\.[0-9]{2}\\.[0-9]{4}  [0-9]{2}:[0-9]{2}:[0-9]{2})\\] ([0-9]+) ([^/]+)/.*')
-	def add_logfile (self,
-		name: Optional[str] = None,
-		charset: str = 'UTF-8',
-		limit: int = 65536,
-		unlimited: bool = False,
-		keep_debug: bool = False,
-		start_when: Optional[datetime] = None,
-		my_pid: bool = False
-	) -> None:
-		"""Add the logfile produces by the process from file
-``name'' (if None, the default AGNTIAS logfile for this process is
-used) encoded in character set ``charset'' (UTF-8, if None), ``limit''
-is the size in bytes to limit the size of the appended logfile, to
-enforce no limit, set ``unlimited'' to True. If ``keep_debug'' is
-True, then loglevel DEBUG messages are copied as well to the output.
-If ``start_when'' is an instance of datetime, then only these logfile
-entries are added, that had a timestamp matching this one or later. If
-``my_pid'' is True, then only logfile entries with my own PID are
-added."""
-		fname = name if name is not None else (self.name if self.name is not None else program)
-		if not os.path.isfile (fname) and self.is_id.match (fname) is not None:
-			fname = log.filename (fname)
-		skip_levels: Set[str] = set ()
-		if not keep_debug:
-			skip_levels.add ('DEBUG')
-		if start_when is not None:
-			start_when = datetime (start_when.year, start_when.month, start_when.day, start_when.hour, start_when.minute, start_when.second)
-		pid = os.getpid () if my_pid else None
-		try:
-			content: str
-			with open (fname, 'r', encoding = charset) as fd:
-				if not skip_levels:
-					if not unlimited and limit > 0:
-						content = fd.read (limit)
-						if len (content) == limit:
-							pos = content.rfind ('\n')
-							if pos > 0:
-								content = content[:pos]
-							content += '\n...\n'
-					else:
-						content = fd.read ()
-				else:
-					collect: List[str] = []
-					collected = 0
-					def match_date (ts: str) -> bool:
-						if start_when is None:
-							return True
-						parsed = parse_timestamp (ts)
-						if parsed is not None:
-							return parsed >= start_when
-						return True
-					for line in fd:
-						m = self.parse_log.match (line)
-						if m is not None:
-							(timestamp, logpid, level) = m.groups ()
-							if (
-									level not in skip_levels
-								and
-									match_date (timestamp)
-								and 
-									(pid is None or pid == int (logpid))
-							):
-								if not unlimited and collected >= limit:
-									collect.append ('...\n')
-									break
-								collect.append (line)
-								collected += len (line)
-					content = ''.join (collect)
-		except IOError as e:
-			content = f'** Failed to open {fname}: {e} **'
-		self.email.add_text_attachment (content, charset = charset, filename = fname)
-	
-	def send_mail (self, print_mail: bool = False, outstream: TextIO = sys.stdout) -> bool:
-		"""Send the mail or print it, if ``print_mail'' is True to ``outstream''"""
-		if self.sender is not None:
-			self.email.set_from (self.sender)
-		for r in self.recv:
-			self.email.add_to (r)
-		if self.cc:
-			for r in self.cc:
-				self.email.add_cc (r)
-		if print_mail:
-			outstream.write (self.email.build_mail ())
-			outstream.flush ()
-			status = True
-		else:
-			(status, rc, out, err) = self.email.send_mail ()
-		return status
-
 class ParseMessageID:
 	"""Parse a message-id for using as agnUID
 
@@ -642,7 +571,7 @@ class ParseMessageID:
 >>> uh = UIDHandler (enable_cache = False)
 >>> class SimpleCache:
 ...  def done (self): pass
-...  def find (self, uid): return (UIDCache.Company (company_id = 1, secret_key = 'abc123', enabled_uid_version = UIDHandler.default_version, minimal_uid_version = 0), UIDCache.Mailing (mailing_id = 2, company_id = 1, creation_date = datetime (1970, 1, 1)))
+...  def find (self, uid): return (UIDCache.Company (company_id = 1, secret_key = 'abc123', enabled_uid_version = UIDHandler.default_version, minimal_uid_version = 0, status = 'active'), UIDCache.Mailing (mailing_id = 2, company_id = 1, creation_date = datetime (1970, 1, 1)))
 ... 
 >>> uh.cache = SimpleCache ()
 >>> prefix = f'Az19700101000000_{licence}'
@@ -704,35 +633,131 @@ customer.
 This class can be subclassed and the method parse() can be
 overwritten to implement further logic for resolving the customer."""
 	__slots__ = [
-		'content', 'invalids', 'message', 'uid_handler', 'uid_handler_borrow',
-		'uids', 'unparsable', 'parsed', 'ignore', 'unsubscribe', 'message_status'
+		'content', 'invalids', 'message', 'uid_handler', 'uid_handler_borrow', 'collect_content',
+		'uids', 'unparsable', 'parsed', 'ignore', 'unsubscribe', 'message_status',
+		'delivery_status'
 	]
 	@dataclass
 	class ClassifiedUID:
 		valid: bool
 		uid: UID
 		counter: int = 1
-	def __init__ (self, content: str, invalids: bool = False, uid_handler: Optional[UIDHandler] = None) -> None:
+
+	@dataclass
+	class NameType:
+		name_type: str
+		name: str
+		@classmethod
+		def parse (cls, s: str, default_type: str = '') -> None | ParseEMail.NameType:
+			try:
+				return cls (*(_n.strip () for _n in s.split (';', 1)))
+			except:
+				return cls (default_type, s)
+
+	@dataclass
+	class RecipientStatus:
+		original_recipient: None | ParseEMail.NameType = None
+		final_recipient: None | ParseEMail.NameType = None
+		action: None | str = None
+		status: None | str = None
+		status_text: None | str = None
+		dsn: None | int = None
+		remote_mta: None | ParseEMail.NameType = None
+		diagnostic_code: None | ParseEMail.NameType = None
+		last_attempt_date: None | str = None
+		final_log_id: None | str = None
+		will_retry_until: None | str = None
+		remain: dict[str, str] = field (default_factory = dict)
+		
+	@dataclass
+	class DeliveryStatus:
+		original_envelope_id: None | str = None
+		reporting_mta: None | ParseEMail.NameType = None
+		dsn_gateway: None | ParseEMail.NameType = None
+		received_from_mta: None | ParseEMail.NameType = None
+		arrival_date: None | str = None
+		recipients: list[ParseEMail.RecipientStatus] = field (default_factory = list)
+		@classmethod
+		def parse (cls, headers: list[tuple[str, Any]]) -> ParseEMail.DeliveryStatus:
+			rc = cls ()
+			for (key, option) in cls._traverse (headers):
+				if key == 'original-envelope-id':
+					rc.original_envelope_id = option
+				elif key == 'reporting-mta':
+					rc.reporting_mta = ParseEMail.NameType.parse (option, default_type = 'dns')
+				elif key == 'dsn-gateway':
+					rc.dsn_gateway = ParseEMail.NameType.parse (option)
+				elif key == 'received-from-mta':
+					rc.received_from_mta = ParseEMail.NameType.parse (option)
+				elif key == 'arrival-date':
+					rc.arrival_date = option
+			return rc
+		
+		pattern_status: ClassVar[Pattern[str]] = re.compile ('^([0-9]\\.[0-9]{1,3}\\.[0-9]{1,3}).*')
+		pattern_dsn: ClassVar[Pattern[str]] = re.compile ('[0-9]\\.[0-9]+\\.[0-9]+')
+		def add (self, headers: list[tuple[str, Any]]) -> None:
+			def dsn_reduce (dsn_text: str) -> int:
+				return Stream (dsn_text.split ('.')).map (lambda e: int (e[:1])).reduce (lambda s, e: s * 10 + e, identity = 0)
+			recv = ParseEMail.RecipientStatus ()
+			for (key, option) in self._traverse (headers):
+				if key == 'original-recipient':
+					recv.original_recipient = ParseEMail.NameType.parse (option, default_type = 'rfc822')
+				elif key == 'final-recipient':
+					recv.final_recipient = ParseEMail.NameType.parse (option, default_type = 'rfc822')
+				elif key == 'action':
+					recv.action = option
+				elif key == 'status':
+					if (mtch := self.pattern_status.match (option)) is not None:
+						recv.status = mtch.group (1)
+						recv.dsn = dsn_reduce (recv.status)
+					recv.status_text = option
+				elif key == 'remote-mta':
+					recv.remote_mta = ParseEMail.NameType.parse (option, default_type = 'dns')
+				elif key == 'diagnostic-code':
+					recv.diagnostic_code = ParseEMail.NameType.parse (option, default_type = 'smtp')
+				elif key == 'last-attempt-date':
+					recv.last_attempt_date = option
+				elif key == 'final-log-id':
+					recv.final_log_id = option
+				elif key == 'will-retry-until':
+					recv.will_retry_until = option
+				else:
+					recv.remain[key] = option
+			if recv.diagnostic_code is not None and recv.diagnostic_code.name:
+				if recv.dsn is None or recv.dsn % 100 == 0:
+					for check in (dsn_reduce (_m) for _m in self.pattern_dsn.findall (recv.diagnostic_code.name)):
+						if (recv.dsn is None or check > recv.dsn) and check < 600:
+							recv.dsn = check
+			self.recipients.append (recv)
+		
+		@staticmethod
+		def _traverse (headers: list[tuple[str, Any]]) -> Generator[tuple[str, str], None, None]:
+			return ((_k.lower (), str (_v)) for (_k, _v) in headers)
+
+	def __init__ (self, content: bytes | str, invalids: bool = False, uid_handler: Optional[UIDHandler] = None, collect_content: None | Callable[[str, str], None] = None) -> None:
 		"""Parses EMail found in ``content''"""
 		self.content = content
 		self.invalids = invalids
-		self.message = EMail.from_string (self.content)
+		self.message = EMail.from_bytes (self.content) if isinstance (self.content, bytes) else EMail.from_string (self.content) 
 		if uid_handler is not None:
 			self.uid_handler = uid_handler
 			self.uid_handler_borrow = True
 		else:
 			self.uid_handler = UIDHandler (enable_cache = True)
 			self.uid_handler_borrow = False
+		self.collect_content = collect_content
 		self.uids: Dict[str, ParseEMail.ClassifiedUID] = {}
 		self.unparsable: Set[str] = set ()
 		self.parsed = False
 		self.ignore = False
 		self.unsubscribe = False
 		self.message_status: DefaultDict[str, List[Dict[str, Union[str, Header]]]] = defaultdict (list)
+		self.delivery_status: None | ParseEMail.DeliveryStatus = None
 
 	def __del__ (self) -> None:
-		if not self.uid_handler_borrow:
-			self.uid_handler.done ()
+		with Ignore (AttributeError):
+			if not self.uid_handler_borrow:
+				self.uid_handler.done ()
 
 	def __iter__ (self) -> Generator[Tuple[bool, UID], None, None]:
 		for cuid in self.uids.values ():
@@ -813,7 +838,7 @@ overwritten to implement further logic for resolving the customer."""
 				self._find_link (elem)
 				self._find (elem, self.pattern_list_unsubscribe, lambda m: m.group (1))
 			
-	def _parse_header (self, payload: EmailMessage) -> None:
+	def _parse_header (self, payload: Message) -> None:
 		for header in ['message-id', 'references', 'in-reply-to']:
 			try:
 				value = payload[header]
@@ -825,36 +850,48 @@ overwritten to implement further logic for resolving the customer."""
 				logger.debug (f'{header}: ignore invalid header: {e}')
 		self._find_subject (payload['subject'])
 		self._find_list_unsubscribe (payload['list-unsubscribe'])
-	
-	def _parse_payload (self, message: EmailMessage, level: int) -> None:
-		self._parse_header (message)
+
+	def _payload_decode (self, message: Message) -> None | str:
 		payload = message.get_payload (decode = True)
-		content: Optional[str] = None
 		if payload is not None:
 			if isinstance (payload, str):
-				content = payload
-			elif isinstance (payload, bytes):
+				return payload
+			if isinstance (payload, bytes):
 				available_charsets = message.get_charsets ()
 				charsets = [_c for _c in available_charsets if _c] if available_charsets else []
-				for charset in charsets if charsets else ['UTF-8']:
-					with Ignore (UnicodeDecodeError, LookupError):
-						content = payload.decode (charset)
-						break
+				for errors in 'strict', 'backslashreplace':
+					for charset in charsets if charsets else ['UTF-8', 'ISO-8859-15', 'us-ascii']:
+						with Ignore (UnicodeDecodeError, LookupError):
+							return payload.decode (charset, errors = errors)
+		return None
+		
+	def _parse_payload (self, message: Message, level: int, report: bool) -> None:
+		self._parse_header (message)
+		content = self._payload_decode (message)
 		if self.parse_payload (message, content, level):
 			content_type = message.get_content_type ()
 			if content_type is None or content_type.startswith ('text/'):
 				if content is not None:
 					if content_type == 'text/rfc822-headers':
-						submessage = EMail.from_string (content)
-						self._parse_payload (submessage, level + 1)
+						embedded_message = EMail.from_string (content)
+						self._parse_payload (embedded_message, level + 1, report)
 					else:
 						self._find_link (content)
+					if self.collect_content:
+						self.collect_content (content_type.split ('/', 1)[-1] if content_type else 'plain', content)
 			elif message.is_multipart ():
-				store_status =  content_type.startswith ('message/')
+				sub_report = report or content_type == 'multipart/report'
+				delivery_status = report and content_type == 'message/delivery-status' and self.delivery_status is None
+				store_status = content_type.startswith ('message/')
 				for submessage in message.get_payload ():
 					if isinstance (submessage, str):
-						self._find_Link (submessage)
+						self._find_link (submessage)
 					else:
+						if delivery_status:
+							if self.delivery_status is None:
+								self.delivery_status = ParseEMail.DeliveryStatus.parse (submessage.items ())
+							else:
+								self.delivery_status.add (submessage.items ())
 						if store_status:
 							try:
 								headers = submessage.items ()
@@ -873,7 +910,7 @@ overwritten to implement further logic for resolving the customer."""
 									headers = []
 							if headers:
 								self.message_status[content_type].append (dict (headers))
-						self._parse_payload (submessage, level + 1)
+						self._parse_payload (submessage, level + 1, sub_report)
 
 	def _parse_message_status (self) -> None:
 		for (content_type, status_list) in self.message_status.items ():
@@ -887,7 +924,7 @@ overwritten to implement further logic for resolving the customer."""
 
 	def parse (self) -> None:
 		self.uids.clear ()
-		self._parse_payload (self.message, 1)
+		self._parse_payload (self.message, 1, False)
 		self._parse_message_status ()
 		self.parsed = True
 
@@ -927,7 +964,7 @@ overwritten to implement further logic for resolving the customer."""
 		"""Returns the most probable customer found in the mail"""
 		return cast (Optional[ParseEMail.Origin], Stream (self.get_origins ()).last (no = None))
 
-	def parse_payload (self, message: EmailMessage, content: Optional[str], level: int) -> bool:
+	def parse_payload (self, message: Message, content: Optional[str], level: int) -> bool:
 		"""Hook for custom parsing"""
 		return True
 

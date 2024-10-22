@@ -58,7 +58,7 @@ class FSDB:
 					if stat.S_ISDIR (st.st_mode):
 						depth.append (path)
 					elif stat.S_ISREG (st.st_mode):
-						key = self.__convert_path_to_key (path)
+						key = self._convert_path_to_key (path)
 						if key is not None:
 							yield key
 
@@ -77,7 +77,7 @@ class FSDB:
 			if value is None:
 				raise KeyError (key)
 			return value
-		path = self.__convert_key_to_path (key)
+		path = self._convert_key_to_path (key)
 		if path is not None:
 			with Ignore (IOError, UnicodeDecodeError), open (path) as fd:
 				content = fd.read ()
@@ -91,7 +91,7 @@ class FSDB:
 		raise KeyError (key)
 	
 	def store (self, key: str, content: str) -> None:
-		path = self.__convert_key_to_path (key)
+		path = self._convert_key_to_path (key)
 		if path is not None:
 			with Ignore (KeyError):
 				del self.cache[key]
@@ -118,7 +118,7 @@ class FSDB:
 			raise ValueError (f'{key}: invalid key')
 	
 	def remove (self, key: str) -> None:
-		path = self.__convert_key_to_path (key)
+		path = self._convert_key_to_path (key)
 		if path is not None:
 			with Ignore (KeyError):
 				del self.cache[key]
@@ -128,21 +128,21 @@ class FSDB:
 			raise ValueError (f'{key}: invalid key')
 
 	hash_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-'
-	def __convert_key_to_path (self, key: str) -> Optional[str]:
+	def _convert_key_to_path (self, key: str) -> Optional[str]:
 		if os.path.sep in key:
 			return None
 		elements = key.split (':')
-		elements.insert (-1, self.__hash_representation (elements[-1]))
+		elements.insert (-1, self._hash_representation (elements[-1]))
 		return os.path.join (FSDB.path, os.path.join (*elements))
 
-	def __convert_path_to_key (self, path: str) -> Optional[str]:
+	def _convert_path_to_key (self, path: str) -> Optional[str]:
 		if path.startswith (FSDB.path):
 			elements = path[-(len (FSDB.path) - 2):].split ('/')
 			with Ignore (UnicodeEncodeError):
-				if len (elements) > 1 and elements.pop (-2) == self.__hash_representation (elements[-1]):
+				if len (elements) > 1 and elements.pop (-2) == self._hash_representation (elements[-1]):
 					return ':'.join (elements)
 		return None
 
-	def __hash_representation (self, name: str) -> str:
+	def _hash_representation (self, name: str) -> str:
 		hash_value = calc_hash (name)
 		return FSDB.hash_chars[(hash_value >> 6) % len (FSDB.hash_chars)] + FSDB.hash_chars[hash_value % len (FSDB.hash_chars)]

@@ -260,12 +260,16 @@ parse_info (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base, var_t **vbas
 							temp -> var = var;
 							temp -> val = val;
 							var = NULL;
+							val = NULL;
 							if (prev)
 								prev -> next = temp;
 							else
 								*vbase = temp;
 							prev = temp;
-						}
+						} else
+							st = false;
+						if (val)
+							free (val);
 					} else
 						st = false;
 					if (var)
@@ -281,6 +285,48 @@ static bool_t
 parse_company_info (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 {
 	return parse_info (blockmail, doc, base, & blockmail -> company_info, "company_info");
+}/*}}}*/
+static bool_t
+parse_mailkeys (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
+{
+	bool_t		st;
+	xmlNodePtr	node;
+	
+	st = true;
+	log_idpush (blockmail -> lg, "mailkeys");
+	for (node = base; node && st; node = node -> next)
+		if (node -> type == XML_ELEMENT_NODE)
+			if (! xmlstrcmp (node -> name, "key")) {
+				char	*method, *key;
+				
+				if (method = extract_property (blockmail, node, "method")) {
+					if (key = extract_simple_content (blockmail, doc, node)) {
+						if (! strcmp (method, "dkim")) {
+							adkim_t	*adkim;
+
+							DO_EXPAND (adkim, blockmail, adkim);
+							if (extract_numeric_property (blockmail, & adkim -> id, node, "id") &&
+							    (adkim -> domain = extract_property (blockmail, node, "domain")) &&
+							    (adkim -> selector = extract_property (blockmail, node, "selector"))) {
+								adkim -> key = key;
+								key = NULL;
+							} else
+								st = false;
+							if (! st)
+								DO_SHRINK (blockmail, adkim);
+						} else
+							log_out (blockmail -> lg, LV_WARNING, "%s: unsupported method", method);
+						if (key)
+							free (key);
+					}
+					free (method);
+				} else {
+					log_out (blockmail -> lg, LV_ERROR, "missing property \"method\"");
+					st = false;
+				}
+			}
+	log_idpop (blockmail -> lg);
+	return st;
 }/*}}}*/
 static bool_t
 parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
@@ -334,6 +380,8 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 					free (ptr);
 				} else
 					st = false;
+			} else if (! xmlstrcmp (node -> name, "mailkeys")) {
+				st = parse_mailkeys (blockmail, doc, node -> children);
 			} else
 				unknown (blockmail, node);
 			if (! st)
@@ -409,7 +457,7 @@ parse_general (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				char	*value = extract_simple_content (blockmail, doc, node);
 				
 				if (value) {
-					if (! strcmp (value, "extended")) {
+					if ((! strcmp (value, "extended")) && (blockmail -> maildrop_status_id != 0) && (blockmail -> status_field != 'V') && (blockmail -> status_field != 'P')) {
 						blockmail -> mailtrack = mailtrack_alloc (blockmail -> licence_id, blockmail -> company_id, blockmail -> mailing_id, blockmail -> maildrop_status_id);
 					}
 					free (value);
@@ -860,14 +908,12 @@ parse_type (blockmail_t *blockmail, mailtypedefinition_t *mtyp, xmlDocPtr doc, x
 								bspec -> clearance = atob (ptr);
 								free (ptr);
 							}
-							if (! bspec -> block -> binary)
-								blockspec_find_lineseparator (bspec);
 							st = parse_blockspec (blockmail, bspec, doc, node -> children);
 							if (! st)
 								DO_SHRINK (mtyp, blockspec);
 						} else
 							st = false;
-					} else if ((! blockmail -> offline_picture_prefix) || (! blockmail -> opp_len)) {
+					} else {
 						log_out (blockmail -> lg, LV_ERROR, "blockspec %d has no matching block in %s", (int) val, blockmail -> fname);
 						st = false;
 					}
@@ -1238,6 +1284,53 @@ parse_urls (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 	return st;
 }/*}}}*/
 static bool_t
+parse_virtuals (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
+{
+	bool_t		st;
+	xmlNodePtr	node;
+	var_t		*prev, *temp;
+	char		*var, *val;
+	
+	st = true;
+	log_idpush (blockmail -> lg, "virtuals");
+	if (blockmail -> virtuals) {
+		for (prev = blockmail -> virtuals; prev -> next; prev = prev -> next)
+			;
+	} else
+		prev = NULL;
+	for (node = base; node && st; node = node -> next)
+		if (node -> type == XML_ELEMENT_NODE) {
+			if (! xmlstrcmp (node -> name, "virtual")) {
+				if (var = extract_property (blockmail, node, "name")) {
+					if (val = extract_simple_content (blockmail, doc, node)) {
+						if (temp = var_alloc (NULL, NULL)) {
+							temp -> var = var;
+							temp -> val = val;
+							var = NULL;
+							val = NULL;
+							if (prev)
+								prev -> next = temp;
+							else
+								blockmail -> virtuals = temp;
+							prev = temp;
+						} else
+							st = false;
+						if (val)
+							free (val);
+					} else
+						st = false;
+					if (var)
+						free (var);
+				}
+			} else
+				unknown (blockmail, node);
+			if (! st)
+				invalid (blockmail, node);
+		}
+	log_idpop (blockmail -> lg);
+	return st;
+}/*}}}*/
+static bool_t
 parse_details (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base,
 	       receiver_t *rec) /*{{{*/
 {
@@ -1453,7 +1546,6 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				if (st)
 					st = blockmail_extract_mediatypes (blockmail);
 			} else if (! xmlstrcmp (node -> name, "blocks")) {
-				blockmail_setup_offline_picture_prefix (blockmail);
 				st = parse_blocks (blockmail, doc, node -> children);
 			} else if (! xmlstrcmp (node -> name, "types"))
 				st = parse_types (blockmail, doc, node -> children);
@@ -1511,6 +1603,8 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				st = parse_dynamics (blockmail, doc, node -> children);
 			else if (! xmlstrcmp (node -> name, "urls"))
 				st = parse_urls (blockmail, doc, node -> children);
+			else if (! xmlstrcmp (node -> name, "virtuals"))
+				st = parse_virtuals (blockmail, doc, node -> children);
 			else if (! xmlstrcmp (node -> name, "receivers")) {
 				blockmail_setup_company_configuration (blockmail);
 				blockmail_setup_mfrom (blockmail);

@@ -33,7 +33,7 @@ from	agn3.emm.config import EMMCompany
 from	agn3.emm.datasource import Datasource, DSKey
 from	agn3.emm.types import MediaType, UserStatus
 from	agn3.exceptions import error, Stop
-from	agn3.ignore import Ignore, Experimental
+from	agn3.ignore import Ignore
 from	agn3.io import which
 from	agn3.log import log_limit, log
 from	agn3.parser import ParseTimestamp, unit, Line, Field, Lineparser, Tokenparser
@@ -41,7 +41,7 @@ from	agn3.runtime import Runtime
 from	agn3.spool import Mailspool
 from	agn3.stream import Stream
 from	agn3.template import Placeholder
-from	agn3.tools import atoi, listsplit, unescape
+from	agn3.tools import atoi, sizefmt, listsplit, stretch, unescape
 from	agn3.uid import UID, UIDHandler
 #
 logger = logging.getLogger (__name__)
@@ -428,7 +428,7 @@ class Entry:
 @dataclass
 class Section:
 	name: str
-	entries: List[Entry] = field (default_factory = list)
+	entries: List[Entry] = field (default_factory = list, repr = False)
 	def append (self, line: str) -> None:
 		try:
 			self.entries.append (Entry.parse (line))
@@ -449,6 +449,13 @@ class Scan:
 	dsn: Optional[str] = None
 	etext: Optional[str] = None
 	cinfo: Optional[CustomerInfo] = None
+	def normalize (self) -> None:
+		def normalize (s: Optional[str]) -> Optional[str]:
+			if s is not None:
+				return stretch (s.strip ())
+			return s
+		self.reason = normalize (self.reason)
+		self.etext = normalize (self.etext)
 
 class Rule:
 	__slots__ = ['rules', 'sections']
@@ -469,6 +476,7 @@ class Rule:
 		return [_s for (_n, _s) in self.sections.items () if _n in use]
 	
 	def __match (self, line: str, sects: List[Section]) -> Tuple[Optional[Section], Optional[Entry]]:
+		line = line[:1024]
 		for s in sects:
 			entry = s.match (line)
 			if entry:
@@ -525,7 +533,8 @@ class Rule:
 			try:
 				pl = pl.decode ('UTF-8')
 			except UnicodeDecodeError:
-				pl = pl.decode ('UTF-8', errors = 'backslashreplace')
+				if isinstance (pl, bytes):
+					pl = pl.decode ('UTF-8', errors = 'backslashreplace')
 		if isinstance (pl, str):
 			for line in pl.split ('\n'):
 				if not scan.section:
@@ -554,9 +563,15 @@ class Rule:
 				if scan.section and scan.dsn and scan.cinfo:
 					break
 	
-	def scan_message (self, cinfo: Optional[CustomerInfo], msg: EmailMessage, use: List[str]) -> Scan:
+	def scan_message (self, parsed_email: ParseEMail, cinfo: Optional[CustomerInfo], msg: EmailMessage, use: List[str]) -> Scan:
 		rc = Scan ()
 		rc.cinfo = cinfo
+		if parsed_email.delivery_status:
+			for recipient in parsed_email.delivery_status.recipients:
+				if recipient.dsn is not None:
+					rc.dsn = str (recipient.dsn)
+					if recipient.diagnostic_code is not None and recipient.diagnostic_code.name_type == 'smtp' and recipient.diagnostic_code.name:
+						rc.reason = recipient.diagnostic_code.name
 		sects = self.__collect_sections (use)
 		self.__scan (msg, rc, sects, True, 0)
 		if rc.section:
@@ -566,11 +581,8 @@ class Rule:
 				else:
 					rc.dsn = '4.9.9'
 		if not rc.etext:
-			if rc.reason:
-				rc.etext = rc.reason
-			else:
-				rc.etext = ''
-		rc.etext = rc.etext.strip ()
+			rc.etext = rc.reason if rc.reason else ''
+		rc.normalize ()
 		logger.debug ('Scan results to section={section}, entry={entry}, reason={reason}, dsn={dsn}, error={error}, origin={origin}'.format (
 			section = rc.section.name if rc.section is not None else '-',
 			entry = '{action}: {pattern}'.format (action = rc.entry.action if rc.entry.action else '-', pattern = rc.entry.pattern) if rc.entry is not None else '-',
@@ -702,7 +714,7 @@ class BAV:
 	__slots__ = [
 		'bounce', 'db',
 		'raw', 'msg', 'dryrun', 'limit', 'report',
-		'uid_handler', 'parsed_email', 'cinfo', 'parameter',
+		'uid_handler', 'parsed_email', 'content', 'cinfo', 'parameter',
 		'header_from', 'rid', 'sender', 'rule', 'reason'
 	]
 	x_agn = 'X-AGNMailloop'
@@ -715,7 +727,7 @@ class BAV:
 		realname: str
 		address: str
 	
-	def __init__ (self, bavconfig: BAVConfig, bounce: Bounce, db: DB, raw: str, msg: EmailMessage, dryrun: bool = False) -> None:
+	def __init__ (self, bavconfig: BAVConfig, bounce: Bounce, db: DB, raw: bytes, msg: EmailMessage, dryrun: bool = False) -> None:
 		self.bounce = bounce
 		self.db = db
 		self.raw = raw
@@ -724,7 +736,8 @@ class BAV:
 		self.limit: Optional[int] = None
 		self.report = Report (BAV.reportlog if not dryrun else None)
 		self.uid_handler = UIDHandler (enable_cache = True)
-		self.parsed_email = ParseEMail (raw, uid_handler = self.uid_handler)
+		self.content: DefaultDict[str, List[str]] = defaultdict (list)
+		self.parsed_email = ParseEMail (raw, uid_handler = self.uid_handler, collect_content = self._collect_content)
 		self.cinfo: Optional[CustomerInfo] = None
 		if (origin := self.parsed_email.get_origin ()) is not None and origin.valid:
 			self.cinfo = CustomerInfo (db, origin)
@@ -770,6 +783,8 @@ class BAV:
 									raise Stop ()
 		else:
 			self.parameter = bavconfig.parse ('')
+			if self.cinfo is not None and self.cinfo.company_id > 0:
+				self.parameter = self.parameter._replace (company_id = self.cinfo.company_id)
 
 		try:
 			self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
@@ -788,10 +803,10 @@ class BAV:
 		self.report['sender'] = self.sender
 		if not self.msg.get_unixfrom ():
 			self.msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
-		self.rule = Rule (bounce.get_rule (0 if self.cinfo is None else self.cinfo.company_id, atoi (self.rid)))
+		self.rule = Rule (bounce.get_rule (self.parameter.company_id, atoi (self.rid)))
 		self.reason = ''
-		with Experimental ('EMM-10272'), EMMCompany (db = db) as emmcompany:
-			company_id = self.cinfo.company_id if self.cinfo is not None else None
+		with EMMCompany (db = db) as emmcompany:
+			company_id = self.parameter.company_id
 			add_header: list[str]
 			ridname: Optional[str]
 			if (headers := emmcompany.get (
@@ -856,6 +871,10 @@ class BAV:
 			)) is not None:
 				self.limit = unit.parse (limit, default = None)
 
+	def _collect_content (self, content_type: str, content: str) -> None:
+		if (content := content.strip ()):
+			self.content[content_type.lower ()].append (content)
+
 	def mailtext (self, msg: EmailMessage, unixfrom: bool) -> str:
 		mailtext = EMail.as_string (msg, unixfrom)
 		return mailtext if self.limit is None or self.limit <= 0 else mailtext[:self.limit]
@@ -863,10 +882,14 @@ class BAV:
 	def save_message (self, action: str) -> None:
 		fname = BAV.save_pattern % (action, self.parameter.rid_name if self.parameter.rid_name else self.rid)
 		if self.dryrun:
-			print ('Would save message to "%s"' % fname)
+			print ('Would save message to "{fname}" truncating to {length} from final message size {size}'.format (
+				fname = fname,
+				length = sizefmt (self.limit) if self.limit else 'unlimted',
+				size = sizefmt (len (self.mailtext (self.msg, True).encode ('UTF-8', errors = 'backslashreplace')))
+			))
 		else:
 			try:
-				with open (fname, 'a') as fd:
+				with open (fname, 'a', errors = 'backslashreplace') as fd:
 					fd.write (self.mailtext (self.msg, True) + '\n')
 				logger.debug (f'Saved message to {fname}')
 			except IOError as e:
@@ -941,14 +964,15 @@ class BAV:
 					cnt = db.update (
 						'UPDATE customer_%d_binding_tbl '
 						'SET user_status = :userStatus, user_remark = :user_remark, timestamp = CURRENT_TIMESTAMP, exit_mailing_id = :mailing_id '
-						'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id'
+						'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id AND user_status != :blocklisted'
 						% company_id,
 						{
 							'userStatus': UserStatus.OPTOUT.value,
 							'user_remark': user_remark,
 							'mailing_id': mailing_id,
 							'customer_id': customer_id,
-							'mailinglist_id': mailinglist_id
+							'mailinglist_id': mailinglist_id,
+							'blocklisted': UserStatus.BLOCKLIST.value
 						}
 					)
 					if cnt > 0:
@@ -1155,13 +1179,12 @@ class BAV:
 					self.report['customer_id'] = customer_id
 
 	def execute_is_systemmail (self) -> bool:
-		if self.parsed_email.unsubscribe:
+		if self.parsed_email.unsubscribe or self.parsed_email.delivery_status is not None:
 			rc = True
 		else:
 			rc = self.rule.match_header (self.msg, ['systemmail']) is not None
 		self.report['systemmail'] = rc
 		return rc
-	
 	def execute_filter_or_forward (self, db: DB) -> bool:
 		if self.parsed_email.ignore:
 			action = 'ignore'
@@ -1234,7 +1257,7 @@ class BAV:
 			action = 'ignore'
 		else:
 			action = 'filtered'
-			scan = self.rule.scan_message (self.cinfo, self.msg, ['hard', 'soft'])
+			scan = self.rule.scan_message (self.parsed_email, self.cinfo, self.msg, ['hard', 'soft'])
 			if scan:
 				if scan.entry and scan.entry.action:
 					action = scan.entry.action
@@ -1301,9 +1324,9 @@ class BAVD (Runtime):
 			for fname in self.files:
 				print ('Try to interpret: %s' % fname)
 				try:
-					with open (fname, errors = 'backslashreplace') as fd:
+					with open (fname, 'rb') as fd:
 						content = fd.read ()
-					bav = BAV (bavconfig, bounce, db, content, EMail.from_string (content), True)
+					bav = BAV (bavconfig, bounce, db, content, EMail.from_bytes (content), True)
 					if bav.execute_is_systemmail ():
 						print ('--> Scan and unsubscribe')
 						ok = bav.execute_scan_and_unsubscribe (db)
@@ -1317,6 +1340,8 @@ class BAVD (Runtime):
 						print ('Failed')
 				except IOError as e:
 					print ('Failed to open %s: %r' % (fname, e.args))
+				finally:
+					db.sync ()
 	
 	def setup (self) -> None:
 		self.max_children = 10
@@ -1359,9 +1384,9 @@ class BAVD (Runtime):
 				for path in self.ws:
 					ok = False
 					try:
-						with open (path, errors = 'backslashreplace') as fd:
+						with open (path, 'rb') as fd:
 							body = fd.read ()
-						msg = EMail.from_string (body)
+						msg = EMail.from_bytes (body)
 						bav = BAV (bavconfig, self.bounce, db, body, msg)
 						if bav.execute_is_systemmail ():
 							with log ('scan'):
@@ -1374,6 +1399,8 @@ class BAVD (Runtime):
 						logger.error ('Failed to open %s: %r' % (path, e.args))
 					except Exception as e:
 						logger.exception ('Fatal: catched failure: %s' % e)
+					finally:
+						db.sync (ok)
 					if ok:
 						self.ws.success (bav.sender)
 					else:
