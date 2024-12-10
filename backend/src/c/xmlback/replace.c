@@ -348,7 +348,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 		if (rec -> media && rec -> media -> empty)
 			if ((block -> tid != TID_EMail_HTML_Preheader) && (block -> tid != TID_EMail_HTML_Clearance)) {
 				blockmail -> active = false;
-				blockmail -> reason = REASON_EMPTY_DOCUMENT;
+				blockmail -> reason = Reason_Empty_Document;
 			}
 	}
 	return st;

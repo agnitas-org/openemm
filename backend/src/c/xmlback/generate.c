@@ -618,14 +618,13 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 							break;
 						default:
 							if ((exit_status >= EX__BASE) && (exit_status <= EX__MAX)) {
-								char	reason[128];
-								
-								snprintf (reason, sizeof (reason) - 1, "inject=exit %d", exit_status);
-								st = write_bounce_log (g, blockmail, rec, "4.9.9", reason);
+								blockmail -> active = false;
+								blockmail -> reason = Reason_Reject;
+								blockmail -> reason_detail = exit_status;
 							}
 							break;
 						}
-					if (exit_status != EX_OK)
+					if ((exit_status != EX_OK) && ((exit_status < EX__BASE) || (exit_status > EX__MAX)))
 						st = false;
 				} else {
 					if (WIFSIGNALED (status))
@@ -890,29 +889,61 @@ generate_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 			log_out (blockmail -> lg, LV_ERROR, "Failed to write to %s: %m", g -> midlog);
 	}
 	if (! blockmail -> active) {
+		const char	*reason = NULL;
 		char		dsn[32];
+		buffer_t	*scratch;
 		char		*custom;
-		const char	*reason;
 		
 		snprintf (dsn, sizeof (dsn) - 1, "1.%d.%d", blockmail -> reason, blockmail -> reason_detail);
-		custom = NULL;
-		switch (blockmail -> reason) {
-		case REASON_UNSPEC:		reason = "skip=unspec reason";		break;
-		case REASON_NO_MEDIA:		reason = "skip=no media";		break;
-		case REASON_EMPTY_DOCUMENT:	reason = "skip=no document";		break;
-		case REASON_UNMATCHED_MEDIA:	reason = "skip=unmatched media";	break;
-		case REASON_CUSTOM:
-		default:
-			if ((blockmail -> reason == REASON_CUSTOM) && blockmail -> reason_custom) {
-				if (custom = malloc (strlen (blockmail -> reason_custom) + 6))
-					sprintf (custom, "skip=%s", blockmail -> reason_custom);
-			} else if (custom = malloc (32)) {
-				sprintf (custom, "skip=reason %d", blockmail -> reason);
+		if (scratch = buffer_alloc (256)) {
+			buffer_sets (scratch, "skip=");
+			switch (blockmail -> reason) {
+			case Reason_Unspec:
+				buffer_appends (scratch, "unspec reason");
+				break;
+			case Reason_No_Media:
+				buffer_format (scratch, "no media (%d)", blockmail -> reason_detail);
+				break;
+			case Reason_Empty_Document:
+				buffer_appends (scratch, "no document");
+				break;
+			case Reason_Unmatched_Media:
+				buffer_appends (scratch, "unmatched media");
+				break;
+			case Reason_Reject:
+				buffer_format (scratch, "reject (exit code %d)", blockmail -> reason_detail);
+				break;
+			case Reason_Custom:
+				if (blockmail -> reason_custom && *(blockmail -> reason_custom))
+					buffer_appends (scratch, blockmail -> reason_custom);
+				else
+					buffer_appends (scratch, "generic custom reason");
 			}
-			reason = custom;
-			break;
+			reason = buffer_string (scratch);
+		}
+		custom = NULL;
+		if (! reason) {
+			switch (blockmail -> reason) {
+			case Reason_Unspec:		reason = "skip=unspec reason";		break;
+			case Reason_No_Media:		reason = "skip=no media";		break;
+			case Reason_Empty_Document:	reason = "skip=no document";		break;
+			case Reason_Unmatched_Media:	reason = "skip=unmatched media";	break;
+			case Reason_Reject:		reason = "skip=reject";			break;
+			case Reason_Custom:
+			default:
+				if ((blockmail -> reason == Reason_Custom) && blockmail -> reason_custom) {
+					if (custom = malloc (strlen (blockmail -> reason_custom) + 6))
+						sprintf (custom, "skip=%s", blockmail -> reason_custom);
+				} else if (custom = malloc (32)) {
+					sprintf (custom, "skip=reason %d", blockmail -> reason);
+				}
+				reason = custom;
+				break;
+			}
 		}
 		st = write_bounce_log (g, blockmail, rec, dsn, reason ? reason : "skip=not specified");
+		if (scratch)
+			buffer_free (scratch);
 		if (custom)
 			free (custom);
 	} else if (! rec -> media) {

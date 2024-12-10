@@ -104,7 +104,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> outputdata = NULL;
 		b -> counter = NULL;
 		b -> active = false;
-		b -> reason = REASON_UNSPEC;
+		b -> reason = Reason_Unspec;
 		b -> reason_detail = 0;
 		b -> reason_custom = NULL;
 		b -> control = NULL;

@@ -372,7 +372,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	st = true;
 	m = NULL;
 	blockmail -> active = true;
-	blockmail -> reason = REASON_UNSPEC;
+	blockmail -> reason = Reason_Unspec;
 	blockmail -> reason_detail = 0;
 	if (blockmail -> reason_custom) {
 		free (blockmail -> reason_custom);
@@ -416,7 +416,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 								}
 							} else {
 								blockmail -> active = false;
-								blockmail -> reason = REASON_NO_MEDIA;
+								blockmail -> reason = Reason_No_Media;
 								blockmail -> reason_detail = type;
 							}
 							break;
@@ -439,7 +439,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 		strcpy (rec -> mid, m ? media_typeid (m -> type)  : "?");
 		if ((! rec -> media) && blockmail -> active) {
 			blockmail -> active = false;
-			blockmail -> reason = REASON_UNMATCHED_MEDIA;
+			blockmail -> reason = Reason_Unmatched_Media;
 			blockmail -> reason_detail = 0;
 		}
 		if (blockmail -> active && docreate)

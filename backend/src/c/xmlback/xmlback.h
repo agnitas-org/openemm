@@ -107,11 +107,15 @@
 # define	SP_BLOCK		1
 
 /* possible reasons for inactive user */
-# define	REASON_UNSPEC		0
-# define	REASON_NO_MEDIA		1
-# define	REASON_EMPTY_DOCUMENT	2
-# define	REASON_UNMATCHED_MEDIA	3
-# define	REASON_CUSTOM		4
+typedef enum { /*{{{*/
+	Reason_Unspec,
+	Reason_No_Media,
+	Reason_Empty_Document,
+	Reason_Unmatched_Media,
+	Reason_Reject,
+	Reason_Custom
+	/*}}}*/
+}	reason_t;
 
 typedef struct iflua	iflua_t;
 typedef enum { /*{{{*/
@@ -446,7 +450,7 @@ struct blockmail { /*{{{*/
 	void		*outputdata;	/* output related private data	*/
 	counter_t	*counter;	/* counter for created mails	*/
 	bool_t		active;		/* if user is active		*/
-	int		reason;		/* code, if user not active	*/
+	reason_t	reason;		/* code, if user not active	*/
 	int		reason_detail;	/* specific reason, if available*/
 	char		*reason_custom;	/* custom reason text		*/
 	buffer_t	*control;	/* control block		*/

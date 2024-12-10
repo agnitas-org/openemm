@@ -37,8 +37,7 @@ export	SYSTEM_CONFIG='{
 	"mailout-server": "localhost",
 	"mailout-port": "8093",
 	"direct-path-server": "localhost",
-	"direct-path-port": "9403",
-	"python-auto-install-modules": "true"
+	"direct-path-port": "9403"
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
@@ -507,7 +506,7 @@ export VERSION="$version"
 export LICENCE="$licence"
 #
 setupVirtualEnviron || die "failed to setup virtual environment"
-if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:false`" = "true" ]; then
+if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:true`" = "true" ]; then
 	"$BASE/scripts/requirements.py"
 	rc=$?
 	case "$rc" in
