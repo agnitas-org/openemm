@@ -68,6 +68,8 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     @Override
     @Transactional
     public void saveColumnsMappings(List<ColumnMapping> columnMappings, int profileId, Admin admin) {
+        boolean encryptedImportAllowed = isEncryptedImportAllowed(admin);
+
         List<Integer> columnsForRemove = Collections.emptyList();
 
         if (profileId != 0) {
@@ -79,6 +81,10 @@ public class ImportProfileServiceImpl implements ImportProfileService {
 
         for (ColumnMapping mapping : columnMappings) {
             mapping.setProfileId(profileId);
+
+            if (!encryptedImportAllowed) {
+                mapping.setEncrypted(false);
+            }
 
             if (hiddenColumns.contains(mapping.getDatabaseColumn())) {
                 mapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);

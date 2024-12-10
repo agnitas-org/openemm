@@ -29,7 +29,7 @@
 		<div id="sys-status-external-view">
 			<header>
 				<div class="header__content">
-					<a href="<c:url value="/logonRedesigned.action"/>">
+					<a href="<c:url value="/logon.action"/>">
 						<img class="header__logo" src="<c:url value="/assets/core/images/serverstatus/logo_combined.png" />" alt="AGNITAS AG"/>
 					</a>
 					<h1><mvc:message code="settings.server.status" /></h1>

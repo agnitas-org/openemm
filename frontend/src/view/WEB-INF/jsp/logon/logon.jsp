@@ -41,7 +41,7 @@
     </head>
     <body data-initializer="logon" class="hidden">
         <div class="l-logon-mask" id="l-logon-mask">
-            <mvc:form id="logon-form" servletRelativeAction="/logon.action" modelAttribute="form"
+            <mvc:form id="logon-form" servletRelativeAction="/logonOld.action" modelAttribute="form"
                       data-form="resource"
                       data-resource-selector="#logon-form"
                       data-form-focus="username"

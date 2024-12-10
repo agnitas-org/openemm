@@ -9,5 +9,6 @@ AGN.Lib.CoreInitializer.new('editable-view', function ($scope = $(document)) {
 
   if ($scope.is(EditableTile.SELECTOR)) {
     EditableView.get($scope)?.add($scope);
+    $(window).trigger('agn:resize');
   }
 });

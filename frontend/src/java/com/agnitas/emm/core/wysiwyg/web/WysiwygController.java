@@ -17,7 +17,6 @@ import com.agnitas.service.AgnTagService;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import net.sf.json.JSONObject;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -27,7 +26,7 @@ public class WysiwygController implements XssCheckAware {
 
     private final AgnTagService agnTagService;
     private final WysiwygService wysiwygService;
-    private final ComMailingComponentsService mailingComponentsService;
+    protected final ComMailingComponentsService mailingComponentsService;
 
     public WysiwygController(AgnTagService agnTagService, WysiwygService wysiwygService, ComMailingComponentsService mailingComponentsService) {
         this.agnTagService = agnTagService;
@@ -51,33 +50,5 @@ public class WysiwygController implements XssCheckAware {
     public @ResponseBody JSONObject getNamesUrlsJsonMap(final Admin admin,
                                                         @RequestParam(name = "mi", required = false) final int mailingId) {
         return wysiwygService.getImagesLinksWithDescriptionJson(admin, mailingId);
-    }
-
-    @RequestMapping("/image-browser.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String imageBrowser(@RequestParam int mailingID, Admin admin, Model model) {
-        int companyID = admin.getCompanyID();
-
-        model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
-        model.addAttribute("companyId", companyID);
-        model.addAttribute("mailingImages", mailingComponentsService.getImagesNames(mailingID, companyID));
-        addExtendedAttrsForImgBrowser(companyID, model);
-        return "wysiwyg_agn_tags_window";
-    }
-
-    // TODO: EMMGUI-714: remove when old design will be removed
-    protected void addExtendedAttrsForImgBrowser(int companyId, Model model) {}
-
-    @RequestMapping("/image-browserRedesigned.action")
-    @PermissionMapping("imageBrowser")
-    public String imageBrowserRedesigned(@RequestParam int mailingID, Admin admin, Model model) {
-        addAttributesForImageBrowser(mailingID, admin, model);
-        return "wysiwyg_image_browser_window";
-    }
-
-    protected void addAttributesForImageBrowser(int mailingId, Admin admin, Model model) {
-        model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
-        model.addAttribute("companyId", admin.getCompanyID());
-        model.addAttribute("mailingImages", mailingComponentsService.getImagesNames(mailingId, admin.getCompanyID()));
     }
 }

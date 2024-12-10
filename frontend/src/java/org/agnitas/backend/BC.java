@@ -590,7 +590,7 @@ public class BC {
 
 		partCounter = partUserstatus + " AND " + partMailinglist;
 		if (isSelectedTestMailing ()) {
-			partSelect = "bind.user_status != " + UserStatus.Blacklisted.getStatusCode ();
+			partSelect = "bind.user_status != " + UserStatus.Blacklisted.getStatusCode () + " AND " + partMailinglist;
 		} else {
 			partSelect = partUserstatus + " AND " + partMailinglist;
 			if ((partUserstatusBounce != null) && data.ahvEnabled()) {

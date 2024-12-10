@@ -18,6 +18,7 @@
 <%--@elvariable id="adminDateTimeFormatWithSeconds" type="java.lang.String"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientForm"--%>
 <%--@elvariable id="allowedEmptyEmail" type="java.lang.Boolean"--%>
+<%--@elvariable id="showProfileFieldsHint" type="java.lang.Boolean"--%>
 <%--@elvariable id="disableTrackingVeto" type="java.lang.Boolean"--%>
 <%--@elvariable id="columnDefinitions" type="java.util.List<com.agnitas.emm.core.recipient.dto.RecipientColumnDefinition>"--%>
 <%--@elvariable id="dataSource" type="org.agnitas.beans.DatasourceDescription"--%>
@@ -144,6 +145,12 @@
 
         <div class="tile-body js-scrollable">
             <div class="d-flex flex-column gap-3">
+                <c:if test="${showProfileFieldsHint}">
+                    <div class="notification-simple notification-simple--info notification-simple--lg">
+                        <span><mvc:message code="GWUA.recipient.fieldsUpdate.hint" /></span>
+                    </div>
+                </c:if>
+
                 <c:forEach items="${columnDefinitions}" var="definition">
                     <c:if test="${definition.readable}">
                         <c:set var="hasFixedValues" value="${not empty definition.fixedValues}"/>

@@ -144,9 +144,9 @@ public class Permission {
 	public static final Permission RECIPIENT_SHOW = new Permission("recipient.show", true, PermissionType.Standard);
 	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, PermissionType.Premium);
 	
-	public static final Permission REPORT_BIRT_DELETE = new Permission("report.birt.delete", false, PermissionType.Standard);
-	public static final Permission REPORT_BIRT_CHANGE = new Permission("report.birt.change", false, PermissionType.Standard);
-	public static final Permission REPORT_BIRT_SHOW = new Permission("report.birt.show", false, PermissionType.Standard);
+	public static final Permission REPORT_BIRT_DELETE = new Permission("report.birt.delete", true, PermissionType.Standard);
+	public static final Permission REPORT_BIRT_CHANGE = new Permission("report.birt.change", true, PermissionType.Standard);
+	public static final Permission REPORT_BIRT_SHOW = new Permission("report.birt.show", true, PermissionType.Standard);
 	
 	public static final Permission ROLE_CHANGE = new Permission("role.change", true, PermissionType.Standard);
 	public static final Permission ROLE_DELETE = new Permission("role.delete", true, PermissionType.Standard);

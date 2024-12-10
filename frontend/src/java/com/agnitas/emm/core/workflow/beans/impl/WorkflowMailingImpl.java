@@ -16,6 +16,7 @@ import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowMailing;
 
 public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements WorkflowMailing {
+
     private int autoReport;
     private boolean skipEmptyBlocks = false;
     private boolean doubleCheck = true;
@@ -79,9 +80,11 @@ public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements Wor
 
     @Override
     public boolean equalsIgnoreI18n(Object o) {
+        if (!super.equalsIgnoreI18n(o)) {
+            return false;
+        }
         WorkflowMailingImpl that = (WorkflowMailingImpl) o;
-        return super.equalsIgnoreI18n(o)
-            && autoReport == that.autoReport
+        return autoReport == that.autoReport
             && skipEmptyBlocks == that.skipEmptyBlocks
             && doubleCheck == that.doubleCheck
             && maxRecipients == that.maxRecipients

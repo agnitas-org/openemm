@@ -13,7 +13,7 @@
     </c:set>
 </c:if>
 
-<mvc:form cssClass="row g-3" servletRelativeAction="/logonRedesigned.action" modelAttribute="form"
+<mvc:form cssClass="row g-3" servletRelativeAction="/logon.action" modelAttribute="form"
           data-form-focus="username" data-disable-controls="login">
 
     <script data-initializer="login" type="application/json">

@@ -35,7 +35,7 @@
 				<div class="sysstat__header">
 					<div class="sysstat__header__content">
 						<div class="sysstat__header__logo">
-							<a href="/logon.action"><img class="sysstat__header__logo_img" src="/assets/core/images/serverstatus/logo_combined.png" alt="AGNITAS AG"/></a>
+							<a href="/logonOld.action"><img class="sysstat__header__logo_img" src="/assets/core/images/serverstatus/logo_combined.png" alt="AGNITAS AG"/></a>
 						</div>
 						<div class="sysstat__header__label">
 							<mvc:message code="settings.server.status" />

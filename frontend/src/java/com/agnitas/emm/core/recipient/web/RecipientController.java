@@ -477,6 +477,7 @@ public class RecipientController implements XssCheckAware {
 		if (admin.isRedesignedUiUsed()) {
 			model.addAttribute("dataSource", findDataSource(recipient.getIntValue("datasource_id")));
 			model.addAttribute("latestDataSource", findDataSource(recipient.getIntValue("latest_datasource_id")));
+			model.addAttribute("showProfileFieldsHint", !configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, companyId));
 		}
 		loadViewData(admin, model);
 

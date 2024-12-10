@@ -69,7 +69,7 @@ public class ComManualServlet extends HttpServlet {
 					if (requestUri.contains(MANUAL_CONTEXT)) {
 						response.sendRedirect(requestUri.substring(0, requestUri.indexOf(MANUAL_CONTEXT)) + "logon.action");
 					} else {
-						response.sendRedirect("/logonRedesigned.action");
+						response.sendRedirect("/logon.action");
 					}
 				} else {
 					String manualRequestUriPart = StringUtils.strip(requestUri.substring(requestUri.indexOf(MANUAL_CONTEXT) + MANUAL_CONTEXT.length()), "/");

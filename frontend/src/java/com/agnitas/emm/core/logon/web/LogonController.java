@@ -76,11 +76,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class LogonController implements XssCheckAware {
-	/** The logger. */
+
     private static final Logger logger = LogManager.getLogger(LogonController.class);
 
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
-    // TODO: EMMGUI-714: replace with redesigned page
     public static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
 
     protected final ComLogonService logonService;
@@ -110,7 +109,7 @@ public class LogonController implements XssCheckAware {
     public String onUnexpectedLogonStateException(UnexpectedLogonStateException e) {
         logger.debug("Unexpected logon state", e);
 
-        return "redirect:/logonRedesigned.action";
+        return "redirect:/logon.action";
     }
 
     @ExceptionHandler(HostAuthenticationServiceException.class)
@@ -118,18 +117,18 @@ public class LogonController implements XssCheckAware {
         logger.error("Host authentication exception", e);
         popups.alert("Error");
 
-        return "redirect:/logonRedesigned.action";
+        return "redirect:/logon.action";
     }
 
     @Anonymous
-    @GetMapping("/logon.action")
+    @GetMapping("/logonOld.action")
     // TODO: EMMGUI-714: remove when old design will be removed
     public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups, final HttpSession session) {
         return viewLogon(logonStateBundle, model, request, popups, session, false);
     }
 
     @Anonymous
-    @GetMapping("/logonRedesigned.action")
+    @GetMapping("/logon.action")
     public String logonViewRedesigned(LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form,
                                       @RequestParam(value = "afterLogout", required = false) boolean isAfterLogout, Model model,
                                       HttpServletRequest request, Popups popups, HttpSession session) {
@@ -157,14 +156,14 @@ public class LogonController implements XssCheckAware {
     }
 
     @Anonymous
-    @PostMapping("/logon.action")
+    @PostMapping("/logonOld.action")
     // TODO: EMMGUI-714: remove when old design will be removed
     public String logon(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         return doLogon(logonStateBundle, form, model, request, popups, false);
     }
 
     @Anonymous
-    @PostMapping("/logonRedesigned.action")
+    @PostMapping("/logon.action")
     public String logonRedesigend(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         return doLogon(logonStateBundle, form, model, request, popups, true);
     }
@@ -332,7 +331,7 @@ public class LogonController implements XssCheckAware {
         // Admin/supervisor must have an e-mail address where a security code is going to be sent.
         if (StringUtils.isBlank(email)) {
             popups.alert("logon.error.hostauth.no_address");
-            return redesigned ? "redirect:/logonRedesigned.action" : "redirect:/logon.action";
+            return redesigned ? "redirect:/logon.action" : "redirect:/logonOld.action";
         }
 
         if (hostId == null) {
@@ -345,11 +344,11 @@ public class LogonController implements XssCheckAware {
         } catch (CannotSendSecurityCodeException e) {
             logger.error("Cannot send security code to {}", e.getReceiver());
             popups.alert("logon.error.hostauth.send_failed", email);
-            return redesigned ? "redirect:/logonRedesigned.action" : "redirect:/logon.action";
+            return redesigned ? "redirect:/logon.action" : "redirect:/logonOld.action";
         } catch (Exception e) {
             logger.error("Error generating or sending security code", e);
             popups.alert("logon.error.hostauth.send_failed", email);
-            return redesigned ? "redirect:/logonRedesigned.action" : "redirect:/logon.action";
+            return redesigned ? "redirect:/logon.action" : "redirect:/logonOld.action";
         }
 
         model.addAttribute("adminMailAddress", getEmailForHostAuthentication(logonStateBundle.getAdmin()));
@@ -450,7 +449,7 @@ public class LogonController implements XssCheckAware {
         if (model.containsAttribute(PASSWORD_CHANGED_KEY)) {
             logonStateBundle.requireLogonState(LogonState.COMPLETE);
             if (redesigned) {
-                popups.success("password.changed.proceed", request.getContextPath() + "/logonRedesigned.action");
+                popups.success("password.changed.proceed", request.getContextPath() + "/logon.action");
             }
             return redesigned ? "login_password_changed" : "logon_password_changed";
         } else {
@@ -588,7 +587,7 @@ public class LogonController implements XssCheckAware {
                 writeUserActivityLog(admin, "change password", admin.getUsername() + " (" + admin.getAdminID() + ")");
                 writeUserActivityLog(admin, UserActivityLogActions.LOGIN_LOGOUT.getLocalValue(), "logged in after password reset via " + admin.getEmail() + " from " + AgnUtils.getIpAddressForStorage(request));
 
-                return redesigned ? "forward:/logonRedesigned.action" : "forward:/logon.action";
+                return redesigned ? "forward:/logon.action" : "forward:/logonOld.action";
             }
 
             popups.addPopups(result);
@@ -660,7 +659,7 @@ public class LogonController implements XssCheckAware {
             writeUserActivityLog(admin, new UserAction(UserActivityLogActions.LOGIN_LOGOUT.getLocalValue(), "log out"));
 
             if (admin.isRedesignedUiUsed()) {
-                return "redirect:/logonRedesigned.action?afterLogout=true";
+                return "redirect:/logon.action?afterLogout=true";
             }
         }
 

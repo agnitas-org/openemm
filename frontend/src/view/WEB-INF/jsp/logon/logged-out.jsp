@@ -13,7 +13,7 @@
 <c:url var="editionLogoSrc" value="/layout/0/edition_logo.png"/>
 <c:url var="agnitasEmmLogoSvgSrc" value="/layout/0/logo.svg"/>
 <c:url var="agnitasEmmLogoPngSrc" value="/layout/0/logo.png"/>
-<c:url var="logonPageLink" value="/logon.action"/>
+<c:url var="logonPageLink" value="/logonOld.action"/>
 
 <c:if test="${not empty layoutdir and layoutdir != 'assets/core'}">
     <%-- Use custom title and edition logo --%>

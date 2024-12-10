@@ -476,7 +476,6 @@
 </div>
 
 <%@include file="fragments/modal/mailing-data-transfer-modal.jspf" %>
-<%@include file="fragments/modal/create-mailing-modal.jspf" %>
 <%@include file="fragments/modal/workflow-activate-modal.jspf" %>
 <%@include file="fragments/modal/workflow-simple-dialog-modal.jspf" %>
 <%@include file="fragments/modal/workflow-copy-modal.jspf" %>

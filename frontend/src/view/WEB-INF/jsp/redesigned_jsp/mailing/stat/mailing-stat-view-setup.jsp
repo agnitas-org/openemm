@@ -95,6 +95,18 @@
     </emm:instantiate>
 </emm:instantiate>
 
+<c:if test="${isReportCanBeShown && not empty downloadBirtUrl}">
+    <emm:instantiate var="agnMailingExtraOptions" type="java.util.LinkedHashMap" scope="request">
+        <emm:instantiate var="option" type="java.util.LinkedHashMap">
+            <c:set target="${agnMailingExtraOptions}" property="0" value="${option}"/>
+            <c:set target="${option}" property="url">${downloadBirtUrl}</c:set>
+            <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
+            <c:set target="${option}" property="name"><mvc:message code="export.message.csv"/></c:set>
+        </emm:instantiate>
+        <%@ include file="fragments/create-single-mailing-stats-report.jspf" %>
+    </emm:instantiate>
+</c:if>
+
 <jsp:include page="../mailing-actions-dropdown.jsp">
     <jsp:param name="elementIndex" value="0"/>
     <jsp:param name="mailingId" value="${mailingStatisticForm.mailingID}"/>
@@ -103,29 +115,6 @@
 </jsp:include>
 
 <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
-    <c:if test="${isReportCanBeShown && not empty downloadBirtUrl}">
-        <%-- Actions dropdown --%>
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-    
-            <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
-            <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
-    
-            <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
-                <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
-            </emm:instantiate>
-    
-            <%-- Items for dropdown --%>
-            <emm:instantiate var="option" type="java.util.LinkedHashMap">
-                <c:set target="${optionList}" property="0" value="${option}"/>
-                <c:set target="${option}" property="url">${downloadBirtUrl}</c:set>
-                <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
-                <c:set target="${option}" property="name"><mvc:message code="export.message.csv"/></c:set>
-            </emm:instantiate>
-            <%@ include file="fragments/create-single-mailing-stats-report.jspf" %>
-        </emm:instantiate>
-    </c:if>
-    
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 

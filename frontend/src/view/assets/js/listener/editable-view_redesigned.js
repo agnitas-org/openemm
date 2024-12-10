@@ -12,6 +12,8 @@
     } else {
       editableView.enableEditMode();
     }
+
+    $(window).trigger('agn:resize');
   });
 
   Action.new({click: '[data-edit-tile-visibility]'}, function () {

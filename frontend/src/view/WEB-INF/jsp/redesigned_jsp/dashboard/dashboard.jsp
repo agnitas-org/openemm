@@ -224,7 +224,3 @@
         </div>
     </div>
 </script>
-
-<script id="new-mailing-modal-template" type="text/x-mustache-template">
-    <%@include file="../mailing/fragments/mailing-creation-modal.jspf" %>
-</script>

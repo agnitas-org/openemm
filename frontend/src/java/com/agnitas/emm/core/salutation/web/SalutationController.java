@@ -216,8 +216,11 @@ public class SalutationController implements XssCheckAware {
     }
 
     @RequestMapping(value = {"/create.action", "/0/view.action"})
-    public String create(@ModelAttribute("form") SalutationForm form, Admin admin) {
+    public String create(@ModelAttribute("form") SalutationForm form, Admin admin, Model model) {
         form.setDescription(I18nString.getLocaleString("default.salutation.shortname", admin.getLocale()));
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("recipients", recipentService.getAdminAndTestRecipientsSalutation(admin));
+        }
         return "salutation_view";
     }
 

@@ -195,6 +195,10 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 
     @Override
 	public void writeUserActivityLog(Admin admin, UserAction action, Logger callerLog) {
+		if (action == null) {
+			callerLog.error("Can't write UAL because action is null.");
+			return;
+		}
 		writeUserActivityLog(admin, action.getAction(), action.getDescription(), callerLog);
 	}
 }

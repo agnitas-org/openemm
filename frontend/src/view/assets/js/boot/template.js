@@ -284,7 +284,7 @@ AGN.Opt.Templates['session-expired'] = '\
               {{= t(\'logon.session.notification\') }} \
             </div>\
             <div class="form-group"> \
-              <a href="{{= AGN.url("/logon.action", true) }}"> \
+              <a href="{{= AGN.url("/logonOld.action", true) }}"> \
                 {{= t(\'defaults.relogin\') }} \
               </a> \
             </div>\

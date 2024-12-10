@@ -20,7 +20,7 @@
 
 <c:url var="agnitasEmmLogoSvgSrc" value="/layout/0/logo.svg"/>
 <c:url var="agnitasEmmLogoPngSrc" value="/layout/0/logo.png"/>
-<c:url var="loginUrl" value="/logonRedesigned.action" />
+<c:url var="loginUrl" value="/logon.action" />
 
 <!doctype html>
 <html lang="en">

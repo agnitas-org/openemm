@@ -294,7 +294,7 @@ public class MailingController implements XssCheckAware {
         };
         return new Pollable<>(
                 Pollable.uid(req.getSession().getId(), MAILING_OVERVIEW_KEY, form.toArray()),
-                Pollable.SHORT_TIMEOUT,
+                Pollable.LONG_TIMEOUT,
                 new ModelAndView(REDIRECT_TO_LIST, form.toMap()),
                 listWorker);
     }
@@ -2086,18 +2086,22 @@ public class MailingController implements XssCheckAware {
     @GetMapping("/create.action")
     public String create(Admin admin, HttpServletRequest req, Model model) {
         updateForwardParameters(req, true);
-        List<MailingCreationOption> allowedOptions = Arrays.stream(MailingCreationOption.values())
-                .filter(option -> admin.permissionAllowed(option.getRequiredPermission()))
-                .collect(Collectors.toList());
-        if (allowedOptions.size() == 1) {
-            return autoSelectOptionNew(allowedOptions.get(0), req);
+        if (!admin.isRedesignedUiUsed()) {
+            List<MailingCreationOption> allowedOptions = Arrays.stream(MailingCreationOption.values())
+                    .filter(option -> admin.permissionAllowed(option.getRequiredPermission()))
+                    .collect(Collectors.toList());
+            if (allowedOptions.size() == 1) {
+                return autoSelectOptionNew(allowedOptions.get(0), req);
+            }
         }
-        addAttrsForCreationPage(model, admin);
+        addAttrsForCreationPage(req, admin, model);
         return "mailing_create_start";
     }
 
-    protected void addAttrsForCreationPage(Model model, Admin admin) {
-        // empty for OpenEMM
+    protected void addAttrsForCreationPage(HttpServletRequest req, Admin admin, Model model) {
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("workflowId", WorkflowParametersHelper.getWorkflowIdFromSession(req.getSession()));
+        }
     }
 
     private String autoSelectOptionNew(MailingCreationOption optionToSelect, HttpServletRequest req) {

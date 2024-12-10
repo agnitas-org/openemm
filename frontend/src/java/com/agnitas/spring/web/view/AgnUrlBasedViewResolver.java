@@ -41,6 +41,7 @@ public class AgnUrlBasedViewResolver extends UrlBasedViewResolver {
         customRedesignedViewMappings.put("settings_admin_rights", "user_permissions");
         customRedesignedViewMappings.put("settings_restfuluser_permissions", "user_permissions");
         customRedesignedViewMappings.put("export_result", "evaluation_finished");
+        customRedesignedViewMappings.put("mailing_create_start", "mailing_creation_modal");
     }
 
     @Override

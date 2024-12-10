@@ -274,7 +274,7 @@
       if ([Def.NODE_TYPE_MAILING_MEDIATYPE_POST, Def.NODE_TYPE_MAILING_MEDIATYPE_SMS].includes(this.node.type)) {
         this.openSelectTemplateToCreateMailingView(Def.constants.forwards.MAILING_CREATE_STANDARD.url);
       } else {
-        Dialogs.createMailing().done(url => this.openSelectTemplateToCreateMailingView(url));
+        this.openSelectTemplateToCreateMailingView('/mailing/create.action');
       }
     };
 

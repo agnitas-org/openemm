@@ -397,7 +397,7 @@ public class RestfulUserController implements XssCheckAware {
             if (admin.getAdminID() == deletedAdmin.getAdminID()) {
                 session.invalidate();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return "redirect:/logon.action";
+                return "redirect:/logonOld.action";
             }
 
             popups.success("default.selection.deleted");

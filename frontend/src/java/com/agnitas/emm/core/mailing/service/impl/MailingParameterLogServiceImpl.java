@@ -86,37 +86,36 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
 			String nameOld = StringUtils.defaultIfEmpty(oldParameter.getName(), PLACEHOLDER_EMPTY);
 			String nameNew = StringUtils.defaultIfEmpty(newParameter.getName(), PLACEHOLDER_EMPTY);
 			if (!StringUtils.equals(nameOld, nameNew)) {
-				changes.add(String.format("Changed name from '%s' to '%s'.",
-						nameOld, nameNew));
+				changes.add(String.format("Changed name from '%s' to '%s'.", nameOld, nameNew));
 			}
 			
 			String valueOld = StringUtils.defaultIfEmpty(oldParameter.getValue(), PLACEHOLDER_EMPTY);
 			String valueNew = StringUtils.defaultIfEmpty(newParameter.getValue(), PLACEHOLDER_EMPTY);
 			if (!StringUtils.equals(valueOld, valueNew)) {
-				changes.add(String.format("Changed value from '%s' to '%s'.",
-						valueOld, valueNew));
+				changes.add(String.format("Changed value from '%s' to '%s'.", valueOld, valueNew));
 			}
 			
 			String descriptionOld = StringUtils.defaultIfEmpty(oldParameter.getDescription(), PLACEHOLDER_EMPTY);
 			String descriptionNew = StringUtils.defaultIfEmpty(newParameter.getDescription(), PLACEHOLDER_EMPTY);
 			if (!StringUtils.equals(descriptionOld, descriptionNew)) {
-				changes.add(String.format("Changed description from '%s' to '%s'.",
-						descriptionOld, descriptionNew));
+				changes.add(String.format("Changed description from '%s' to '%s'.", descriptionOld, descriptionNew));
+			}
+			int oldMailingId = oldParameter.getMailingID();
+			int newMailingId = newParameter.getMailingID();
+			if (oldMailingId != newMailingId) {
+				changes.add(String.format("Changed mailing from id = '%d' to id = '%d'.", oldMailingId, newMailingId));
 			}
 		} else if (oldParameter != null) {
 			String nameOld = StringUtils.defaultIfEmpty(oldParameter.getName(), PLACEHOLDER_EMPTY);
 			String valueOld = StringUtils.defaultIfEmpty(oldParameter.getValue(), PLACEHOLDER_EMPTY);
 			
-			changes.add(String.format("Deleted parameter '%s' = '%s'.",
-					nameOld, valueOld));
+			changes.add(String.format("Deleted parameter '%s' = '%s'.", nameOld, valueOld));
 		} else if (newParameter != null) {
 			String nameNew = StringUtils.defaultIfEmpty(newParameter.getName(), PLACEHOLDER_EMPTY);
 			String valueNew = StringUtils.defaultIfEmpty(newParameter.getValue(), PLACEHOLDER_EMPTY);
 			
-			changes.add(String.format("Added parameter '%s' = '%s'.",
-					nameNew, valueNew));
+			changes.add(String.format("Added parameter '%s' = '%s'.", nameNew, valueNew));
 		}
-		
 		return changes;
 	}
 }

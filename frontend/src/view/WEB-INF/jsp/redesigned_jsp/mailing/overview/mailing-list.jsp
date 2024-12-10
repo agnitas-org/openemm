@@ -603,9 +603,3 @@
         </div>
     </div>
 </mvc:form>
-
-<c:if test="${not forTemplates}">
-    <script id="new-mailing-modal-template" type="text/x-mustache-template">
-        <%@include file="../fragments/mailing-creation-modal.jspf" %>
-    </script>
-</c:if>

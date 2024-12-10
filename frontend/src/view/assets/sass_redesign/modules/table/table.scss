@@ -368,6 +368,10 @@ $table-control-radius: $border-radius-sm;
     max-width: $max-preview-width;
     max-height: 100%;
   }
+
+  i {
+    font-size: 150px;
+  }
 }
 
 .table-row-wrapper {

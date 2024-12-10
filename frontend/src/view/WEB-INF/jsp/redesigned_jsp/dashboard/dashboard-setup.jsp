@@ -70,7 +70,10 @@
 
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${dropDownItems}" property="0" value="${option}"/>
-            <c:set target="${option}" property="extraAttributes" value="data-modal='new-mailing-modal-template'"/>
+            <c:set target="${option}" property="extraAttributes" value="data-confirm"/>
+            <c:set target="${option}" property="url">
+                <c:url value="/mailing/create.action"/>
+            </c:set>
             <c:set target="${option}" property="name">
                 <mvc:message code="dashboard.mailing.new"/>
             </c:set>

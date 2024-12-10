@@ -354,7 +354,7 @@
 	     </init-param>
 	     <init-param>
 	         <param-name>destinationUrl</param-name>
-	         <param-value>/logonRedesigned.action</param-value>
+	         <param-value>/logon.action</param-value>
 	     </init-param>
 	</servlet>
 	<servlet-mapping>

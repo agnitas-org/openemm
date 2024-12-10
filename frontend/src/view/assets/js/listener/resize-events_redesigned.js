@@ -33,5 +33,6 @@
   }
 
   $window.on('resize', updateViewport);
+  $window.on('agn:resize', updateViewport);
 
 })();

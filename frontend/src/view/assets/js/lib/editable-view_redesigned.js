@@ -72,7 +72,7 @@ To control the editing mode, you need to create a button. For it you need to spe
       this.state = state;
 
       this.toggle();
-      this.#setOverlay();
+      this.setOverlay();
       this.$el.data(EditableTile.DATA_KEY, this);
     }
 
@@ -88,17 +88,17 @@ To control the editing mode, you need to create a button. For it you need to spe
         this.state = STATE.VISIBLE;
       }
 
-      this.#setOverlay();
+      this.setOverlay();
     }
 
     toggle() {
       this.$el.toggleClass('tile--hidden', this.state === STATE.HIDDEN);
     }
 
-    #setOverlay() {
+    setOverlay() {
       const $overlay = AGN.Lib.Template.dom('tile-overlay', {state: this.state});
 
-      if (this.$overlay) {
+      if (this.$overlay && document.body.contains(this.$overlay[0])) {
         this.$overlay.replaceWith($overlay);
       } else {
         this.$el.append($overlay);
@@ -249,16 +249,19 @@ To control the editing mode, you need to create a button. For it you need to spe
     }
     
     #contains($tile) {
-      const editableTile = EditableView.get($tile);
+      const editableTile = EditableTile.get($tile);
       return editableTile && this.tiles.includes(editableTile);
     }
 
     add($tile) {
       if (this.#contains($tile)) {
+        EditableTile.get($tile).setOverlay();
         return;
       }
       const tile = new EditableTile($tile, this.getTileState($tile));
       this.tiles.push(tile);
+      this.#controlContainersVisibility();
+      this.#updateControlViewBtn();
     }
   }
 

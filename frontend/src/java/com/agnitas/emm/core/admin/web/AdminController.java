@@ -451,7 +451,7 @@ public class AdminController implements XssCheckAware {
             if (admin.getAdminID() == deletedAdmin.getAdminID()) {
                 session.invalidate();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return "redirect:/logon.action";
+                return "redirect:/logonOld.action";
             }
 
             popups.success(SELECTION_DELETED_MSG);
@@ -494,7 +494,7 @@ public class AdminController implements XssCheckAware {
         if (deletedAdmins.stream().anyMatch(a -> a.getAdminID() == admin.getAdminID())) {
             session.invalidate();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return "redirect:/logonRedesigned.action";
+            return "redirect:/logon.action";
         }
 
         popups.success(SELECTION_DELETED_MSG);

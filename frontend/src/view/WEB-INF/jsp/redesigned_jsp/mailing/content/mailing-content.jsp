@@ -67,7 +67,7 @@
                 }
             </script>
             
-            <div class="tile" data-editable-tile="main">
+            <div id="content-blocks-tile" class="tile" data-editable-tile="main">
                 <div class="tile-header">
                     <h1 class="tile-title text-truncate"><mvc:message code="webservice.permissionCategory.contentBlock"/></h1>
                 </div>

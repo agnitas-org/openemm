@@ -1,9 +1,11 @@
 <%@ page contentType="text/html; charset=utf-8" import="java.util.Locale" errorPage="/error.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="CKEDITOR_PATH" value="${emm:ckEditorPath(pageContext.request)}" scope="page"/>
 <c:set var="showAiTextGenerationBtn" value="${not empty param.showAiTextGenerationBtn and param.showAiTextGenerationBtn}" />
+
+<%@include file="ckeditor-browse-server-url.jspf" %>
 
 <script type="text/javascript">
     const baseUrl = "${pageContext.request.contextPath}";
@@ -18,12 +20,12 @@
     }
 
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
-        let imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
-        if (window.isRedesignedUI) {
-          imageBrowserUrl = !!mailingId ? '<c:url value="/wysiwyg/image-browserRedesigned.action?mailingID="/>' + mailingId : '';
+        let imageBrowserUrl = '${imageBrowserUrl}';
+        if (imageBrowserUrl && !!mailingId) {
+          imageBrowserUrl += !!window.isRedesignedUI + '&mailingID=' + mailingId;
         }
-        if (!isEditorVisible(textAreaId)) {
 
+        if (!isEditorVisible(textAreaId)) {
             const config = {
                 customConfig: 'emm_config.js',
                 fullPage: fullPage,

@@ -751,4 +751,8 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/administration/address-management/address-management-view-setup.jsp" type="template"/>
     </definition>
 
+    <definition name="mailing_creation_modal" extends="base_ajax_redesigned">
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/mailing/create/mailing-creation-modal.jsp" type="template"/>
+    </definition>
+
 </tiles-definitions>

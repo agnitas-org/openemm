@@ -10,7 +10,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label" for="auto-opt-mailings-count"><mvc:message code="GWUA.workflow.autoOptimization.mailingsCount.question"/></label>
+                    <label class="form-label" for="auto-opt-mailings-count"><mvc:message code="workflow.autooptimization.mailing.count"/></label>
                     <select id="auto-opt-mailings-count" name="confirm-choice" class="form-control js-select">
                         <option>2</option>
                         <option>3</option>

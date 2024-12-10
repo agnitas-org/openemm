@@ -132,7 +132,7 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
 
       if (!this.isSessionExpiredNotification) {
         const $modal = AGN.Lib.Modal.fromTemplate('session-expired');
-        $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logonRedesigned.action')));
+        $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logon.action')));
 
         this.isSessionExpiredNotification = true;
       }

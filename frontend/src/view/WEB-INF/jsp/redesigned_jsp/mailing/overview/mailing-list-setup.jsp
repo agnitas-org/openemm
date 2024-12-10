@@ -80,7 +80,10 @@
         <emm:instantiate var="newResourceSettings" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="element" type="java.util.LinkedHashMap">
                 <c:set target="${newResourceSettings}" property="0" value="${element}"/>
-                <c:set target="${element}" property="extraAttributes" value="data-modal='new-mailing-modal-template'" />
+                <c:set target="${element}" property="extraAttributes" value="data-confirm" />
+                <c:set target="${element}" property="url">
+                    <c:url value="/mailing/create.action"/>
+                </c:set>
             </emm:instantiate>
         </emm:instantiate>
     </c:otherwise>

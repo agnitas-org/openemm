@@ -56,7 +56,7 @@
                 </c:choose>
             </c:set>
 
-            <input id="preview-to" type="text" class="form-control" readonly value="${fn:escapeXml(previewToEmail)}">
+            <input id="preview-to" type="text" class="form-control" readonly value="${previewToEmail}">
         </div>
 
         <div class="col">
