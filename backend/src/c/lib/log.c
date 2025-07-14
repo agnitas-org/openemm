@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -231,16 +231,8 @@ log_alloc (const char *logpath, const char *program, const char *levelname) /*{{
 		if (st) {
 			st = (logpath && (*logpath == '/')) ? log_path_set (l, logpath) : log_path_default (l);
 		}
-		if (st && program) {
-			const char	*cptr;
-			
-			if (cptr = strrchr (program, PATH_SEP))
-				++cptr;
-			else
-				cptr = program;
-			if (! (l -> program = strdup (cptr)))
-				st = false;
-		}
+		if (st && program && (! (l -> program = strdup (cbasename (program)))))
+			st = false;
 		if (! st)
 			l = log_free (l);
 	}

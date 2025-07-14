@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -297,15 +297,14 @@ only ``errors'' leading to an exit code not equal 0. """
 			if modules is not None:
 				pip = which ('pip')
 				virtual_env = os.environ.get ('VIRTUAL_ENV')
-				def installer (module: str, update: bool = False) -> None:
+				def installer (module: str) -> None:
 					if virtual_env is None:
 						raise ImportError (f'{module}: not running in a virtual environment, missing modules are not installed on system installation')
 					if pip is None:
 						raise ImportError (f'{module}: no command for installation found')
-					n = call ([pip, '--quiet', '--no-input', '--exists-action', 'w', '--disable-pip-version-check', 'install'] + (['-U'] if update else []) + [module])
+					n = call ([pip, '--quiet', '--no-input', '--exists-action', 'w', '--disable-pip-version-check', 'install', module])
 					if n != 0:
-						what = 'update' if update else 'install'
-						raise ImportError (f'{module}: failed to {what}, {pip} returns {n}')
+						raise ImportError (f'{module}: failed to install, {pip} returns {n}')
 					
 				for module in modules:
 					try:
@@ -313,8 +312,6 @@ only ``errors'' leading to an exit code not equal 0. """
 						for stage in 0, 1:
 							try:
 								import_module (module)
-								if stage == 0:
-									installer (module, True)
 							except ModuleNotFoundError:
 								if stage == 1:
 									raise

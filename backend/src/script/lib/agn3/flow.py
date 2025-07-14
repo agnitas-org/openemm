@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -411,18 +411,19 @@ job."""
 		return time.time ()
 		
 	def _delayer (self, amount: float) -> None:
-		self.log ('delay', f'for {amount:.2f} seconds')
-		while self._running and amount > 0.0:
-			if amount >= 1.0:
-				delay = 1.0
-				amount -= 1.0
-			else:
-				delay = amount
-				amount = 0.0
-			self.intercept ()
-			if self._running:
-				time.sleep (delay)
-		self.log ('delay', 'done' if self._running else f'terminated with {amount:.2f} seconds left')
+		if amount > 0.0:
+			self.log ('delay', f'for {amount:.2f} seconds')
+			while self._running and amount > 0.0:
+				if amount >= 1.0:
+					delay = 1.0
+					amount -= 1.0
+				else:
+					delay = amount
+					amount = 0.0
+				self.intercept ()
+				if self._running:
+					time.sleep (delay)
+			self.log ('delay', 'done' if self._running else f'terminated with {amount:.2f} seconds left')
 		
 	def _offset (self, job: Schedule.Job, immediately: bool) -> int:
 		if not immediately and job.repeat and job.delay is not None and job.delay > 0:

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -113,9 +113,12 @@ list with different methods of persistance.
 	def items (self) -> ItemsView[str, str]:
 		return self.data.items ()
 
+	def update (self, parameter: Dict[str, str]) -> None:
+		self.data.update (parameter)
+		
 	def set (self, newdata: Dict[str, str]) -> None:
 		"""Set whole content"""
-		self.data = newdata
+		self.data = newdata.copy ()
 
 	def get (self, var: str, default: Any = None) -> Any:
 		"""Get value as string"""

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -58,7 +58,7 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 {
 	char	*uid;
 
-	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url -> url_id))) {
+	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url -> url_id, false))) {
 		char	parameter_separator[2];
 
 		parameter_separator[1] = '\0';
@@ -990,7 +990,7 @@ update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_
 		if (blockmail -> honeypot_url && (blockmail -> add_honeypot_link != Add_None))
 			hpl = blockmail -> add_honeypot_link;
 		if ((opl != Add_None) || (hpl != Add_None))
-			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0))) {
+			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0, false))) {
 				log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create generic agnUID");
 				rc = false;
 			}

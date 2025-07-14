@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -411,6 +411,52 @@ xtitle (const xchar_t *s, int *olen) /*{{{*/
 {
 	return mappers (s, strlen ((const char *) s), olen, xtotitle, xtolower);
 }/*}}}*/
+buffer_t *
+xescape (buffer_t *target, const xchar_t *source, long source_length, bool_t entities) /*{{{*/
+{
+	bool_t		rc;
+	int		clen;
+	unsigned long	codepoint;
+
+	if (target || (target = buffer_alloc (source_length + 1024)))
+		for (rc = true; rc && (source_length > 0); ) {
+			clen = xchar_length (*source);
+			switch (*source) {
+			default:
+				if (clen == 1) 
+					rc = buffer_append (target, source, clen);
+				else if (clen <= source_length) {
+					if (entities) {
+						if (rc = xchar_codepoint (source, clen, & codepoint))
+							rc = buffer_format (target, "&#x%lX;", codepoint);
+					} else
+						rc = buffer_append (target, source, clen);
+				} else
+					rc = false;
+				break;
+			case '&':
+				rc = buffer_appends (target, "&amp;");
+				break;
+			case '<':
+				rc = buffer_appends (target, "&lt;");
+				break;
+			case '>':
+				rc = buffer_appends (target, "&gt;");
+				break;
+			case '\'':
+				rc = buffer_appends (target, "&apos;");
+				break;
+			case '"':
+				rc = buffer_appends (target, "&quot;");
+				break;
+			}
+			source += clen;
+			source_length -= clen;
+		}
+	else
+		rc = false;
+	return rc ? target : NULL;
+}/*}}}*/
 
 xconv_t *
 xconv_free (xconv_t *xc) /*{{{*/
@@ -478,3 +524,160 @@ xconv_title (xconv_t *xc, const xchar_t *s, int slen, int *olen) /*{{{*/
 {
 	return converter (xc -> title, xtitlen, s, slen, olen);
 }/*}}}*/
+
+struct xw { /*{{{*/
+	xw_node_t	*root;
+	/*}}}*/
+};
+struct xw_node { /*{{{*/
+	char		*name;
+	var_t		*attr;
+	var_t		*tail;
+	buffer_t	*content;
+	xw_node_t	*parent;
+	xw_node_t	*sibling;
+	xw_node_t	*child_head;
+	xw_node_t	*child_tail;
+	/*}}}*/
+};
+static xw_node_t *
+xw_node_free (xw_node_t *xn) /*{{{*/
+{
+	if (xn) {
+		if (xn -> name)
+			free (xn -> name);
+		var_free_all (xn -> attr);
+		buffer_free (xn -> content);
+		free (xn);
+	}
+	return NULL;
+}/*}}}*/
+static xw_node_t *
+xw_node_free_all (xw_node_t *xn) /*{{{*/
+{
+	if (xn) {
+		xw_node_free_all (xn -> child_head);
+		xw_node_free_all (xn -> sibling);
+		xw_node_free (xn);
+	}
+	return NULL;
+}/*}}}*/
+static bool_t
+xw_node_write (xw_node_t *xn, buffer_t *output, bool_t entities) /*{{{*/
+{
+	bool_t	st = true;
+	
+	if (xn) {
+		var_t		*run;
+		xw_node_t	*node;
+		
+		st = buffer_stiffch (output, '<') && buffer_stiffs (output, xn -> name);
+		for (run = xn -> attr; run && st; run = run -> next)
+			st = buffer_stiffch (output, ' ') &&
+				buffer_stiffs (output, run -> var) &&
+				buffer_stiffs (output, "=\"") &&
+				xescape (output, char_2_xchar (run -> val), strlen (run -> val), entities) &&
+				buffer_stiffch (output, '"');
+		if (st)
+			if (xn -> child_head || (xn -> content && buffer_length (xn -> content))) {
+				st = buffer_stiffch (output, '>');
+				for (node = xn -> child_head; node && st; node = node -> sibling)
+					st = xw_node_write (node, output, entities);
+				if (xn -> content && buffer_length (xn -> content) && (! xescape (output, buffer_content (xn -> content), buffer_length (xn -> content), entities)))
+					st = false;
+				if (st)
+					st = buffer_stiffs (output, "</") &&
+						buffer_stiffs (output, xn -> name) &&
+						buffer_stiffch (output, '>');
+			} else
+				st = buffer_stiffs (output, "/>");
+	}
+	return st;
+}/*}}}*/
+xw_node_t *
+xw_node_alloc (xw_node_t *parent, const char *name) /*{{{*/
+{
+	xw_node_t	*xn;
+	
+	if (xn = (xw_node_t *) malloc (sizeof (xw_node_t))) {
+		if (xn -> name = strdup (name)) {
+			xn -> attr = NULL;
+			xn -> tail = NULL;
+			xn -> content = NULL;
+			xn -> parent = parent;
+			xn -> sibling = NULL;
+			xn -> child_head = NULL;
+			xn -> child_tail = NULL;
+			if (parent) {
+				if (parent -> child_tail)
+					parent -> child_tail -> sibling = xn;
+				else
+					parent -> child_head = xn;
+				parent -> child_tail = xn;
+			}
+		} else {
+			free (xn);
+			xn = NULL;
+		}
+	}
+	return xn;
+}/*}}}*/
+bool_t
+xw_node_attr (xw_node_t *xn, const char *name, const char *value) /*{{{*/
+{
+	var_t	*temp;
+	
+	if (temp = var_alloc (name, value)) {
+		if (xn -> attr)
+			xn -> tail -> next = temp;
+		else
+			xn -> attr = temp;
+		xn -> tail = temp;
+	}
+	return temp ? true : false;
+}/*}}}*/
+bool_t
+xw_node_content (xw_node_t *xn, const byte_t *content, long length) /*{{{*/
+{
+	if ((length > 0) && (xn -> content || (xn -> content = buffer_alloc (length + 1024))))
+		return buffer_append (xn -> content, content, length);
+	return length == 0 ? true : false;
+}/*}}}*/
+
+xw_t *
+xw_free (xw_t *xw) /*{{{*/
+{
+	if (xw) {
+		xw_node_free_all (xw -> root);
+		free (xw);
+	}
+	return NULL;
+}/*}}}*/
+xw_t *
+xw_alloc (const char *root_name) /*{{{*/
+{
+	xw_t	*xw;
+	
+	if (xw = (xw_t *) malloc (sizeof (xw_t))) {
+		xw -> root = root_name ? xw_node_alloc (NULL, root_name) : NULL;
+		if (root_name && (! xw -> root))
+			xw = xw_free (xw);
+	}
+	return xw;
+}/*}}}*/
+xw_node_t *
+xw_root (xw_t *xw) /*{{{*/
+{
+	return xw -> root;
+}/*}}}*/
+buffer_t *
+xw_output (xw_t *xw, bool_t entities) /*{{{*/
+{
+	buffer_t	*rc;
+	
+	if ((rc = buffer_alloc (8192)) &&
+	    ((! buffer_appends (rc, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")) || (xw -> root && ((! xw_node_write (xw -> root, rc, entities)) || (! buffer_appendch (rc, '\n'))))))
+		rc = buffer_free (rc);
+	return rc;
+}/*}}}*/
+

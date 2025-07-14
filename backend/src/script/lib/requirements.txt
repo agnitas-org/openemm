@@ -13,5 +13,4 @@ msgpack
 websockets
 asyncinotify
 asyncssh
-[db:mariadb version <= (10, 6, 8)] mariadb >= 1.0.7, < 1.1
-[db:mariadb version > (10, 6, 8)] mariadb
+[db:mariadb] mariadb

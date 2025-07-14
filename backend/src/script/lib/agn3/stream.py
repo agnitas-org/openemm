@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -191,7 +191,7 @@ returning the final value"""
 		exception: Union[None, str, Exception, Callable[[_T], Exception]] = None
 	) -> Stream[_T]:
 		"""Raise an error, if ``predicate'' returns False"""
-		def check_for_error (e: Any) -> bool:
+		def check_for_error (e: _T) -> bool:
 			if predicate (e):
 				if exception is not None:
 					if isinstance (exception, str):
@@ -209,35 +209,35 @@ returning the final value"""
 	@overload
 	def regexp (self,
 		pattern: Union[str, Pattern[str]],
-		flags: int = 0,
-		key: Optional[Callable[[_T], str]] = None,
-		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _O]] = None
-	) -> Stream[_O]: ...
+		flags: int = ...,
+		key: Optional[Callable[[_T], str]] = ...,
+		predicate: None = ...
+	) -> Stream[_T]: ...
 	@overload
 	def regexp (self,
 		pattern: Union[str, Pattern[str]],
-		flags: int = 0,
-		key: Optional[Callable[[_T], str]] = None,
-		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _T]] = None
-	) -> Stream[_T]: ...
+		flags: int = ...,
+		key: Optional[Callable[[_T], str]] = ...,
+		predicate: Callable[[Pattern[str], Match[str], _T], _O] = ...
+	) -> Stream[_O]: ...
 	def regexp (self,
 		pattern: Union[str, Pattern[str]],
 		flags: int = 0,
 		key: Optional[Callable[[_T], str]] = None,
-		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _T | _O]] = None
-	) -> Stream[_T | _O]:
+		predicate: Optional[Callable[[Pattern[str], Match[str], _T], _O]] = None
+	) -> Stream[_T] | Stream[_O]:
 		"""Create a new stream for each element matching
 regular expression ``pattern''. ``flags'' is passed to re.compile. If
 ``predicate'' is not None, this must be a callable which accepts three
 arguments, the compiled regular expression, the regular expression
 matching object and the element itself."""
 		expression = re.compile (pattern, flags) if isinstance (pattern, str) else pattern
-		def regexper () -> Iterator[_T]:
+		def regexper () -> Iterator[_T] | Iterator[_O]:
 			for elem in self.iterator:
 				m = expression.match (key (elem) if key is not None else str (elem))
 				if m is not None:
-					yield predicate (expression, m, elem) if predicate is not None else elem
-		return self.new (regexper ())
+					yield (predicate (expression, m, elem) if predicate is not None else elem)
+		return cast ('Stream[_T] | Stream[_O]', self.new (regexper ()))
 	
 	def map (self, predicate: Callable[[_T], _O]) -> Stream[_O]:
 		"""Create a new stream for each element mapped with ``predicate''"""
@@ -287,7 +287,7 @@ useful if the source is modified during a later stage of the stream"""
 	def reversed (self) -> Stream[_T]:
 		"""Create a new stream in reverse order"""
 		return self.new (reversed (self))
-		
+	
 	def peek (self, predicate: Union[None, str, Callable[[_T], Any]] = None) -> Stream[_T]:
 		"""Create a new stream while executing ``predicate'' for each element
 
@@ -381,6 +381,10 @@ is added unmapped to the new stream."""
 			return default (elem) if default else elem
 		return self.new ((switcher (_e) for _e in self.iterator))
 	
+	def do (self, predicate: Callable[[_T], Any]) -> Stream[_T]:
+		"""Execute a method on each member"""
+		return self.peek (predicate)
+
 	def snap (self, target: List[_T]) -> Stream[_T]:
 		"""Create a new stream saving each element in ``target'' (which must provide an append method)"""
 		return self.peek (lambda v: target.append (v))
@@ -431,12 +435,12 @@ is added unmapped to the new stream."""
 			return reduce (predicate, self.iterator)
 		return reduce (predicate, self.iterator, identity)
 
-	def __checkNo (self, no: Any, where: str) -> Any:
+	def __checkNo (self, no: None | _T | _O, where: str) -> None | _T | _O:
 		if no is self.__sentinel:
 			raise ValueError (f'no value available for Stream.{where}: empty result set')
 		return no
 		
-	def __position (self, finisher: Optional[Callable[[_T], Any]], no: Any, position: Callable[[int], int], where: str) -> Any:
+	def __position (self, finisher: Optional[Callable[[_T], _T | _O]], no: None | _T | _O, position: Callable[[int], int], where: str) -> None | _T | _O:
 		collect: DefaultDict[Any, int] = defaultdict (int)
 		for elem in self.iterator:
 			collect[elem] += 1
@@ -448,12 +452,12 @@ is added unmapped to the new stream."""
 	@overload
 	def first (self, finisher: None = ..., consume: bool = ..., no: _T = ...) -> _T: ...
 	@overload
-	def first (self, finisher: None = ..., consume: bool = ..., no: Any = ...) -> Any: ...
+	def first (self, finisher: None = ..., consume: bool = ..., no: _O = ...) -> _T | _O: ...
 	@overload
 	def first (self, finisher: Callable[[_T], _T], consume: bool = ..., no: _T = ...) -> _T: ...
 	@overload
 	def first (self, finisher: Callable[[_T], _O], consume: bool = ..., no: _O = ...) -> _O: ...
-	def first (self, finisher: Optional[Callable[[_T], Any]] = None, consume: bool = True, no: Any = __sentinel) -> Any:
+	def first (self, finisher: Optional[Callable[[_T], Any]] = None, consume: bool = True, no: None | _T | _O = __sentinel) -> None | _T | _O:
 		"""Returns the first element, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		try:
 			rc = next (self.iterator)
@@ -466,12 +470,12 @@ is added unmapped to the new stream."""
 	@overload
 	def last (self, finisher: None = ..., no: _T = ...) -> _T: ...
 	@overload
-	def last (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	def last (self, finisher: None = ..., no: _O = ...) -> _T | _O: ...
 	@overload
 	def last (self, finisher: Callable[[_T], _T], no: _T = ...) -> _T: ...
 	@overload
 	def last (self, finisher: Callable[[_T], _O], no: _O = ...) -> _O: ...
-	def last (self, finisher: Optional[Callable[[_T], Any]] = None, no: Any = __sentinel) -> Any:
+	def last (self, finisher: Optional[Callable[[_T], Any]] = None, no: None | _T | _O = __sentinel) -> None | _T | _O:
 		"""Returns the last element, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		rc = deque (self.iterator, maxlen = 1)
 		if len (rc):
@@ -479,26 +483,26 @@ is added unmapped to the new stream."""
 		return self.__checkNo (no, 'last')
 
 	@overload
-	def most (self, finisher: None = ..., no: _T = ...) -> _T: ...
+	def most (self, finisher: None = ..., no: None = ...) -> None | _T: ...
 	@overload
-	def most (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	def most (self, finisher: None = ..., no: _T = ...) -> _T: ...
 	@overload
 	def most (self, finisher: Callable[[_T], _T], no: _T = ...) -> _T: ...
 	@overload
 	def most (self, finisher: Callable[[_T], _O], no: _O = ...) -> _O: ...
-	def most (self, finisher: Optional[Callable[[_T], Any]] = None, no: Any = __sentinel) -> Any:
+	def most (self, finisher: Optional[Callable[[_T], _T | _O]] = None, no: None | _T | _O = __sentinel) -> None | _T | _O:
 		"""Returns the element with the most often occurance, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		return self.__position (finisher, no, lambda c: -1, 'most')
 	
 	@overload
-	def least (self, finisher: None = ..., no: _T = ...) -> _T: ...
+	def least (self, finisher: None = ..., no: None = ...) -> None | _T: ...
 	@overload
-	def least (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	def least (self, finisher: None = ..., no: _T = ...) -> _T: ...
 	@overload
 	def least (self, finisher: Callable[[_T], _T], no: _T = ...) -> _T: ...
 	@overload
 	def least (self, finisher: Callable[[_T], _O], no: _O = ...) -> _O: ...
-	def least (self, finisher: Optional[Callable[[_T], Any]] = None, no: Any = __sentinel) -> Any:
+	def least (self, finisher: Optional[Callable[[_T], _O | _T]] = None, no: None | _O | _T = __sentinel) -> None | _T | _O:
 		"""Returns the element with the least often occurance, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		return self.__position (finisher, no, lambda c: 0, 'least')
 	
@@ -509,24 +513,24 @@ is added unmapped to the new stream."""
 		return sum (cast (Iterable[int], self.iterator))
 
 	@overload
-	def min (self, no: _T = ...) -> _T: ...
+	def min (self, no: None = ...) -> None | _T: ...
 	@overload
-	def min (self, no: None = ...) -> Optional[_T]: ...
-	def min (self, no: Any = __sentinel) -> Any:
+	def min (self, no: _T = ...) -> _T: ...
+	def min (self, no: None | _T = __sentinel) -> None | _T:
 		"""Returns the minimum value of the stream"""
 		try:
-			return min (cast (Iterable[Comparable[_T]], self.iterator))
+			return cast (_T, min (cast (Iterable[Comparable[_T]], self.iterator)))
 		except ValueError:
 			return self.__checkNo (no, 'min')
 
 	@overload
-	def max (self, no: _T = ...) -> _T: ...
+	def max (self, no: None = ...) -> None | _T: ...
 	@overload
-	def max (self, no: None = ...) -> Optional[_T]: ...
-	def max (self, no: Any = __sentinel) -> Any:
+	def max (self, no: _T = ...) -> _T: ...
+	def max (self, no: None | _T = __sentinel) -> None | _T:
 		"""Returns the maximum value of the stream"""
 		try:
-			return max (cast (Iterable[Comparable[_T]], self.iterator))
+			return cast (_T, max (cast (Iterable[Comparable[_T]], self.iterator)))
 		except ValueError:
 			return self.__checkNo (no, 'max')
 	

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -28,7 +28,7 @@ __all__ = ['Systemconfig']
 _R = TypeVar ('_R')
 _T = TypeVar ('_T')
 #
-def _determinate_essentials () -> Tuple[str, str, str, str]:
+def _determinate_essentials () -> Tuple[str, str, str, str, Dict[str, str]]:
 	fqdn = platform.node ().lower ()
 	host = fqdn.split ('.', 1)[0]
 	try:
@@ -38,7 +38,18 @@ def _determinate_essentials () -> Tuple[str, str, str, str]:
 	except KeyError:
 		user = os.environ.get ('USER', '#{uid}'.format (uid = os.getuid ()))
 		home = os.environ.get ('HOME', '.')
-	return (fqdn, host, user, home)
+	os_spec: Dict[str, str] = {}
+	os_release = '/etc/os-release'
+	if os.access (os_release, os.R_OK):
+		with open (os_release, errors = 'backslashreplace') as fd:
+			ignore_value = Ignore (ValueError)
+			for line in fd:
+				with ignore_value:
+					(key, value) = (_l.strip () for _l in line.split ('=', 1))
+					if len (value) >= 2 and value[0] in '\'"' and value[-1] == value[0]:
+						value = value[1:-1]
+					os_spec[f'os.{key.lower ()}'] = value
+	return (fqdn, host, user, home, os_spec)
 
 class Systemconfig:
 	"""Handling system specific configuration
@@ -77,7 +88,7 @@ False
 	_config_environ_path: Final[str] = 'SYSTEM_CONFIG_PATH'
 	_default_path: Final[str] = '/opt/agnitas.com/etc/system.cfg'
 	_default_legacy_path: Final[str] = os.path.join (os.path.dirname (_default_path), 'licence.cfg')
-	(_fqdn, _host, _user, _home) = _determinate_essentials ()
+	(_fqdn, _host, _user, _home, _os) = _determinate_essentials ()
 	class Selection:
 		"""select an option from a hostname expression
 
@@ -89,7 +100,7 @@ the precedence of the hostname expressions are:
 - <host>
 - None
 
->>> (fqdn, host, user, _) = _determinate_essentials ()
+>>> (fqdn, host, user, _, _) = _determinate_essentials ()
 >>> s = Systemconfig ().selection ()
 >>> cfg = {}
 >>> s.pick (cfg)
@@ -305,6 +316,7 @@ file, if it is available. """
 	def _clear (self) -> None:
 		self._cfg.clear ()
 		self._services.clear ()
+		self._cfg.update (self._os)
 
 	def __str__ (self) -> str:
 		self._check ()

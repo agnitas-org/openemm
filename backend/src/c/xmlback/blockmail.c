@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -104,9 +104,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> outputdata = NULL;
 		b -> counter = NULL;
 		b -> active = false;
-		b -> reason = Reason_Unspec;
-		b -> reason_detail = 0;
-		b -> reason_custom = NULL;
+		b -> reason = reason_alloc ();
 		b -> control = NULL;
 		b -> body = NULL;
 		b -> rblocks = NULL;
@@ -259,8 +257,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			tracker_free (b -> tracker);
 		if (b -> counter)
 			counter_free_all (b -> counter);
-		if (b -> reason_custom)
-			free (b -> reason_custom);
+		if (b -> reason)
+			reason_free (b -> reason);
 		if (b -> control)
 			buffer_free (b -> control);
 		if (b -> body)

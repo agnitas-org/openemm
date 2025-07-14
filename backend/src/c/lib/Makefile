@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -41,8 +41,8 @@ lib include:
 	[ -d $@ ] || mkdir $@
 lib/libslang.a:	slang-1.4.9.tar.gz slang-1.4.9.patch
 	tar xaf slang-1.4.9.tar.gz && ( cd slang-1.4.9; patch -p1 < ../slang-1.4.9.patch; ./configure; make; mv src/objs/libslang.a ../lib; mv src/slang.h ../include; cd ..; rm -rf slang-1.4.9 )
-lib/liblua.a:	lua-5.4.6.tar.gz
-	tar xaf lua-5.4.6.tar.gz && ( cd lua-5.4.6; make linux; mv src/liblua.a ../lib; mv src/lauxlib.h src/lua.h src/luaconf.h src/lualib.h ../include; cd ..; rm -rf lua-5.4.6 )
+lib/liblua.a:	lua-5.4.7.tar.gz
+	tar xaf lua-5.4.7.tar.gz && ( cd lua-5.4.7; make linux; mv src/liblua.a ../lib; mv src/lauxlib.h src/lua.h src/luaconf.h src/lualib.h ../include; cd ..; rm -rf lua-5.4.7 )
 lib/libssl.a lib/libcrypto.a:	openssl-1.0.1j.tar.gz
 	tar xzf openssl-1.0.1j.tar.gz && ( cd openssl-1.0.1j; ./config no-shared no-dso --prefix=`dirname \`pwd\`` --openssldir=/home/openemm//etc/openssl; make; mv libcrypto.a libssl.a ../lib; rm -rf ../include/openssl; mkdir ../include/openssl; cp include/openssl/*.h ../include/openssl; cd ..; rm -rf rm -rf openssl-1.0.1j )
 lib/libz.a:	zlib-1.2.3.tar.gz

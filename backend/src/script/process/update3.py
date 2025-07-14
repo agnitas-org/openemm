@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -31,15 +31,16 @@ from	agn3.emm.ams import AMSLock
 from	agn3.emm.bounce import Bounce
 from	agn3.emm.columns import Columns
 from	agn3.emm.config import EMMCompany, Responsibility
+from	agn3.emm.event import Webhook
 from	agn3.emm.types import MediaType, UserStatus, WorkStatus
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import create_path, cstreamopen
-from	agn3.log import log, log_limit
+from	agn3.log import log, log_limit, interactive
 from	agn3.parameter import Parameter
 from	agn3.parser import Parsable, unit, ParseTimestamp, Line, Field, Lineparser, Tokenparser
 from	agn3.plugin import Plugin, LoggingManager
-from	agn3.runtime import Runtime
+from	agn3.runtime import Runtime, Locate
 from	agn3.stream import Stream
 from	agn3.template import Template
 from	agn3.tools import abstract, atob, atoi, listsplit
@@ -232,9 +233,9 @@ class Update: #{{{
 		self.tracker_expire = 0
 		self._mailings_to_company: Dict[int, Optional[int]] = {}
 
-	def setup (self) -> None:
+	def setup (self, debug: bool) -> None:
 		self.plugin = UpdatePlugin (manager = LoggingManager)
-		if self.check_for_duplicates:
+		if self.check_for_duplicates and not debug:
 			self.duplicate = Duplicate (name = self.name, expiration = 7)
 
 	def done (self) -> None:
@@ -297,7 +298,7 @@ class Update: #{{{
 		abstract ()
 
 	def execute (self, is_active: Callable[[], bool], delay: Optional[int]) -> None:
-		self.setup ()
+		self.setup (delay is None)
 		while is_active ():
 			self.step ()
 			if self.exists ():
@@ -407,6 +408,7 @@ class Update: #{{{
 
 class Detail: #{{{
 	Ignore = 0
+	Informative = 1
 	Internal = 100
 	Success = 200
 	SoftbounceOther = 400
@@ -420,6 +422,7 @@ class Detail: #{{{
 	Hardbounces = (HardbounceOther, HardbounceReceiver, HardbounceSystem, HardbounceNotEncrypted)
 	names = {
 		Ignore:			'Ignore',
+		Informative:		'Informative',
 		Internal:		'Internal',
 		Success:		'Success',
 		SoftbounceOther:	'SB-Other',
@@ -433,8 +436,9 @@ class Detail: #{{{
 #}}}
 class UpdateBounce (Update): #{{{
 	__slots__ = [
-		'mailing_map',
-		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount',
+		'mailing_map', 
+		'webhook',
+		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount', 'infcount',
 		'translate',
 		'delayed_processing', 'cache', 'succeeded',
 		'has_mailtrack', 'has_mailtrack_last_read', 'sys_encrypted_sending_enabled',
@@ -704,6 +708,7 @@ class UpdateBounce (Update): #{{{
 		super ().__init__ ()
 		self.tracker_age = '3d'
 		self.mailing_map: Dict[int, int] = {}
+		self.webhook = Webhook ()
 		self.igcount = 0
 		self.sucount = 0
 		self.sbcount = 0
@@ -712,6 +717,7 @@ class UpdateBounce (Update): #{{{
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
+		self.infcount = 0
 		self.translate = UpdateBounce.Translate ()
 		self.delayed_processing = UpdateBounce.DelayedProcessing ()
 		self.cache: Cache[Key, Dict[str, Any]] = Cache (limit = 65536)
@@ -746,6 +752,7 @@ class UpdateBounce (Update): #{{{
 		bounce_remark: Optional[str]
 		mailloop_remark: Optional[str]
 		infos: Optional[UpdateBounce.Info]
+		test: bool
 
 		@staticmethod
 		def new (dsn: str, info: str, company_id: int, translate: UpdateBounce.Translate) -> UpdateBounce.Breakdown:
@@ -757,7 +764,8 @@ class UpdateBounce (Update): #{{{
 				bounce_type = UserStatus.BOUNCE,
 				bounce_remark = None,
 				mailloop_remark = None,
-				infos = None
+				infos = None,
+				test = False
 			)
 			match = UpdateBounce.dsnparse.match (dsn)
 			if match is not None:
@@ -788,6 +796,7 @@ class UpdateBounce (Update): #{{{
 							rc.bounce_type = UserStatus.find_status (status)
 				else:
 					rc.rule, rc.detail = translate.trans (company_id, rc.code, infos)
+				rc.test = atob (infos.get ('test'))
 			if rc.bounce_remark is None:
 				rc.bounce_remark = f'bounce:{rc.detail} (from {dsn} using {rc.rule})'
 			return rc
@@ -836,6 +845,7 @@ class UpdateBounce (Update): #{{{
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
+		self.infcount = 0
 		with EMMCompany (db = db, keys = [
 			'bounce-mark-duplicate',
 		]) as emmcompany:
@@ -863,7 +873,7 @@ class UpdateBounce (Update): #{{{
 					}
 				)
 			db.sync ()
-		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blocklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
+		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blocklisted, %d revoked, %d ignored, %d informatives in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.infcount, self.lineno))
 		if self.delayed_processing:
 			with self.delayed_processing:
 				count = 0
@@ -911,6 +921,27 @@ class UpdateBounce (Update): #{{{
 					self.delayed_processing.add (now, line, record.mailing_id, record.media, record.customer_id)
 					return True
 				breakdown.timestamp = datetime.now ()
+			#
+			if breakdown.detail == Detail.Success or breakdown.detail in Detail.Hardbounces:
+				if breakdown.detail == Detail.Success:
+					if breakdown.test:
+						event = Webhook.Type.testmail_delivered
+					else:
+						event = Webhook.Type.mailing_delivered
+				else:
+					event = Webhook.Type.hard_bounce
+				self.webhook (
+					db,
+					event,
+					timestamp = breakdown.timestamp,
+					company_id = company_id,
+					mailing_id = record.mailing_id,
+					customer_id = record.customer_id
+				)
+			#
+			if breakdown.test:
+				logger.debug (f'Done with test: {line}')
+				return True
 			#
 			if breakdown.detail == Detail.Success:
 				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
@@ -1066,6 +1097,16 @@ class UpdateBounce (Update): #{{{
 												customer_ids.append (record.customer_id)
 												self.dupcount += 1
 										db.sync ()
+										#
+										for customer_id in customer_ids:
+											self.webhook (
+												db,
+												Webhook.Type.hard_bounce,
+												timestamp = breakdown.timestamp,
+												company_id = company_id,
+												mailing_id = record.mailing_id,
+												customer_id = customer_id
+											)
 					except error as e:
 						logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company_id, query, e))
 						rc = False
@@ -1079,6 +1120,361 @@ class UpdateBounce (Update): #{{{
 			logger.warning (f'{line}: invalid line: {e}')
 		return rc
 #}}}
+class Mailcheck: #{{{
+	__slots__ = [
+		'webhook', 'workstatus', 'lastcheck', 'total', 'info_sent'
+	]
+	persist_path: Final[str] = os.path.join (base, 'var', 'run', 'mailcheck.persist')
+	recheck_workstatus: Final[int] = unit ('1h')
+	class Mailing (NamedTuple):
+		mailing_id: int
+		company_id: int
+		statmail: Optional[str]
+
+	def __init__ (self) -> None:
+		self.webhook = Webhook ()
+		self.workstatus: Set[int] = set ()
+		self.lastcheck = 0
+		self.total: Dict[int, int] = {}
+		self.info_sent: Set[int] = set ()
+		
+	def setup (self) -> None:
+		with log ('mailcheck'):
+			self.info_sent = set ()
+			if os.path.isfile (self.persist_path):
+				with open (self.persist_path, 'rb') as fd:
+					self.info_sent = pickle.load (fd)
+					logger.info ('read {count:,d} already sent mailings from {path}'.format (
+						count = len (self.info_sent),
+						path = self.persist_path
+					))
+		
+	def done (self) -> None:
+		with log ('mailcheck'):
+			if not self.info_sent:
+				if os.path.isfile (self.persist_path):
+					try:
+						os.unlink (self.persist_path)
+						logger.info (f'{self.persist_path}: removed due to no more cached sent information')
+					except OSError as e:
+						logger.warning (f'{self.persist_path}: failed to remove: {e}')
+			else:
+				with open (self.persist_path, 'wb') as fd:
+					pickle.dump (self.info_sent, fd)
+					logger.info ('saved {count:,d} already sent mailings to {path}'.format (
+						count = len (self.info_sent),
+						path = self.persist_path
+					))
+	
+	def check_workstatus (self, db: DB, mailing_id: int) -> bool:
+		if mailing_id not in self.workstatus:
+			self.workstatus.add (mailing_id)
+			with log ('mailcheck'):
+				return self._update_workstatus (db, mailing_id, WorkStatus.Sending, exclude = WorkStatus.Sent)
+		return False
+
+	def update (self) -> None:
+		interval = unit.parse (syscfg.get (f'{program}:mailcheck-interval', '1m'), default = unit ('1m'))
+		mailcheck_limit = unit.parse (syscfg.get (f'{program}:mailcheck-limit', '7d'), default = unit ('7d'))
+		now = int (time.time ())
+		self.workstatus.clear ()
+		if self.lastcheck + interval < now:
+			recheck = bool (not self.lastcheck or self.lastcheck // self.recheck_workstatus != now // self.recheck_workstatus)
+			self.lastcheck = now
+			with DBIgnore (), DB () as db, Responsibility (db = db, log = False) as responsibility, log ('mailcheck'):
+				limit = datetime.now () - timedelta (seconds = mailcheck_limit)
+				if recheck:
+					self._recheck (db, responsibility, limit)
+				self._scan (db, responsibility, limit)
+				#
+				db.sync ()
+
+	def _recheck (self, db: DB, responsibility: Responsibility, limit: datetime) -> None:
+		logger.debug ('Starting recheck')
+		count = 0
+		updated = 0
+		for row in (
+			db.streamc (
+				'SELECT mt.mailing_id, mt.company_id, mt.work_status, blog.current_mails, blog.total_mails '
+				'FROM mailing_tbl mt '
+				'     INNER JOIN maildrop_status_tbl mdrop ON mdrop.mailing_id = mt.mailing_id '
+				'     LEFT OUTER JOIN world_mailing_backend_log_tbl blog ON blog.mailing_id = mt.mailing_id '
+				'WHERE mdrop.status_field = :status_field AND '
+				'      mdrop.senddate >= :limit AND '
+				'      mdrop.genstatus = 3 AND '
+				'      (mt.work_status IS NULL OR mt.work_status IN (:work_status_finished, :work_status_edit)) AND '
+				'      mt.deleted = 0',
+				{
+					'status_field': 'W',
+					'limit': limit,
+					'work_status_finished': WorkStatus.Finished.value,
+					'work_status_edit': WorkStatus.Edit.value
+				}
+			)
+			.filter (lambda r: r.company_id in responsibility)
+			.sorted (key = lambda r: r.mailing_id)
+		):
+			if row.current_mails is not None and row.total_mails is not None and row.current_mails == row.total_mails:
+				self.total[row.mailing_id] = row.total_mails
+			rq = db.querys (
+				'SELECT count(*) AS cnt '
+				'FROM mailing_account_tbl '
+				'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+				{
+					'mailing_id': row.mailing_id,
+					'status_field': 'W'
+				}
+			)
+			if rq is None or not rq.cnt:
+				log_limit (logger.info, f'{row.mailing_id}: recheck work status "{row.work_status}" not changed as no already sent mailings detected', duration = '1h')
+			elif self.check_workstatus (db, row.mailing_id):
+				logger.info (f'{row.mailing_id}: recheck changed work status from "{row.work_status}" to "{WorkStatus.Sending.value}"')
+				updated += 1
+			count += 1
+		if count > 0:
+			logger.debug (f'rechecked {count:,d} mailings where {updated:,d} are updated')
+
+	def _scan (self, db: DB, responsibility: Responsibility, limit: datetime) -> None:
+		for mailing in (
+			db.streamc (
+				'SELECT mailing_id, company_id, statmail_recp '
+				'FROM mailing_tbl mt '
+				'WHERE work_status = :work_status_sending AND deleted = 0 AND EXISTS ('
+				'      SELECT 1 FROM maildrop_status_tbl mdrop '
+				'      WHERE mdrop.mailing_id = mt.mailing_id AND '
+				'            mdrop.status_field = :status_field AND '
+				'            mdrop.senddate >= :limit AND '
+				'            mdrop.genstatus = 3 '
+				'      )',
+				{
+					'work_status_sending': WorkStatus.Sending.value,
+					'status_field': 'W',
+					'limit': limit
+				}
+			)
+			.filter (lambda r: r.company_id in responsibility)
+			.sorted (key = lambda r: r.mailing_id)
+			.map_to (Mailcheck.Mailing, lambda r: Mailcheck.Mailing (
+				mailing_id = r.mailing_id,
+				company_id = r.company_id,
+				statmail = r.statmail_recp
+			))
+		):
+			self.workstatus.add (mailing.mailing_id)
+			amount: Optional[int] = self.total.get (mailing.mailing_id)
+			if amount is None:
+				rq = db.querys (
+					'SELECT current_mails, total_mails '
+					'FROM world_mailing_backend_log_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{
+						'mailing_id': mailing.mailing_id
+					}
+				)
+				if rq is not None and rq.current_mails is not None and rq.total_mails is not None and rq.current_mails == rq.total_mails:
+					amount = self.total[mailing.mailing_id] = rq.total_mails
+			if amount is not None:
+				rq = db.querys (
+					'SELECT sum(no_of_mailings) + sum(skip) AS cnt '
+					'FROM mailing_account_tbl '
+					'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+					{
+						'mailing_id': mailing.mailing_id,
+						'status_field': 'W'
+					}
+				)
+				if rq is not None and rq.cnt is not None:
+					if mailing.mailing_id not in self.info_sent:
+						if not mailing.statmail:
+							self.info_sent.add (mailing.mailing_id)
+						else:
+							try:
+								(percent_str, receiver) = mailing.statmail.split ('%', 1)
+								percent = int (percent_str)
+							except ValueError:
+								percent = 50
+								receiver = mailing.statmail
+							if (
+								percent <= 0
+								or
+								(percent >= 100 and rq.cnt == amount)
+								or
+								(percent > 0 and percent < 100 and float (amount * percent) / 100.0 >= rq.cnt)
+							):
+								self._send_status_mail (db, amount, mailing, receiver.strip ())
+								self.info_sent.add (mailing.mailing_id)
+					#
+					if rq.cnt == amount:
+						rq = db.querys (
+							'SELECT min(timestamp) AS send_date '
+							'FROM mailing_account_tbl '
+							'WHERE mailing_id = :mailing_id AND status_field = :status_field AND timestamp IS NOT NULL',
+							{
+								'mailing_id': mailing.mailing_id,
+								'status_field': 'W'
+							}
+						)
+						send_date = rq.send_date if rq is not None else datetime.now ()
+						self._update_workstatus (db, mailing.mailing_id, WorkStatus.Sent, send_date = send_date)
+						logger.info (f'{mailing.mailing_id}: set work status to {WorkStatus.Sent.value}')
+						self.webhook (
+							db,
+							Webhook.Type.mailing_processed,
+							company_id = mailing.company_id,
+							mailing_id = mailing.mailing_id
+						)
+						with Ignore (KeyError):
+							del self.total[mailing.mailing_id]
+						with Ignore (KeyError):
+							self.info_sent.remove (mailing.mailing_id)
+
+	def _send_status_mail (self, db: DB, amount: int, mailing: Mailcheck.Mailing, receiver: str) -> None:
+		try:
+			with open (UpdateAccount.status_template) as fd:
+				template = fd.read ()
+		except IOError as e:
+			logger.warning (f'Failed to read template {UpdateAccount.status_template}: {e}')
+		else:
+			sender = syscfg.get ('status-sender')
+			rq = db.querys (
+				'SELECT min(timestamp) AS tstart, max(timestamp) AS tend, sum(no_of_mailings) AS sent, sum(skip) AS skip '
+				'FROM mailing_account_tbl '
+				'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+				{
+					'mailing_id': mailing.mailing_id,
+					'status_field': 'W'
+				}
+			)
+			if rq is None:
+				start = end = datetime.now ()
+				current = 0
+			else:
+				start = rq.tstart
+				end = rq.tend
+				current = rq.sent + rq.skip
+			rq = db.querys (
+				'SELECT shortname '
+				'FROM mailing_tbl '
+				'WHERE mailing_id = :mailing_id',
+				{
+					'mailing_id': mailing.mailing_id
+				}
+			)
+			mailing_name = rq.shortname if rq is not None and rq.shortname else f'MailingID {mailing.mailing_id}'
+			receivers = [_r for _r in listsplit (receiver) if _r]
+			ns = {
+				'sender': sender,
+				'receiver': ', '.join (receivers),
+				'current': current,
+				'count': amount,
+				'start': start,
+				'end': end,
+				'mailing_id': mailing.mailing_id,
+				'mailing_name': mailing_name,
+				'company_id': mailing.company_id,
+					
+				'format': lambda a: f'{a:,d}'
+			}
+			tmpl = Template (template)
+			try:
+				email = tmpl.fill (ns)
+			except error as e:
+				logger.warning (f'Failed to fill template {UpdateAccount.status_template}: {e}')
+			else:
+				mail = EMail ()
+				if sender:
+					mail.set_sender (sender)
+				for (nr, r) in enumerate (receivers):
+					if nr == 0:
+						mail.add_to (r)
+					else:
+						mail.add_cc (r)
+				charset = tmpl.property ('charset')
+				if charset:
+					mail.set_charset (charset)
+				subject = tmpl.property ('subject')
+				if not subject:
+					subject = tmpl['subject']
+					if not subject:
+						subject = f'Status report for mailing {mailing.mailing_id} [{mailing_name}]'
+				else:
+					tmpl = Template (subject)
+					subject = tmpl.fill (ns)
+				mail.set_subject (subject)
+				mail.set_text (email)
+				st = mail.send_mail ()
+				if not st[0]:
+					logger.warning (f'Failed to send status mail to {mailing.statmail}: {st}')
+				else:
+					logger.info (f'Status mail for {mailing_name} ({mailing_name}) sent to {mailing.statmail}')
+
+	def _update_workstatus (self,
+		db: DB,
+		mailing_id: int,
+		new_work_status: WorkStatus,
+		*,
+		include: None | WorkStatus | list[WorkStatus] = None,
+		exclude: None | WorkStatus | list[WorkStatus] = None,
+		send_date: None | datetime = None
+	) -> bool:
+		rq = db.querys ('SELECT work_status FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
+		if rq is None:
+			logger.info (f'{mailing_id}: mailing not found')
+			return False
+		if rq.work_status is not None:
+			with Ignore (KeyError):
+				if WorkStatus.by_name (rq.work_status) == new_work_status:
+					logger.debug (f'{mailing_id}: work startus is already "{new_work_status.value}"')
+					return True
+		old_work_status: str = '<unset>' if rq.work_status is None else rq.work_status
+		#
+		query = (
+			'UPDATE mailing_tbl '
+			'SET work_status = :new_work_status'
+		)
+		data: dict[str, int | str | datetime] = {
+			'new_work_status': new_work_status.value,
+			'mailing_id': mailing_id
+		}
+		if send_date is not None:
+			query += ', send_date = :send_date'
+			data['send_date'] = send_date
+		query += ' WHERE mailing_id = :mailing_id'
+		nr = 0
+		for (work_statuses, to_exclude) in [
+			(include, False),
+			(exclude, True)
+		]:
+			if work_statuses is not None:
+				wss = [work_statuses] if isinstance (work_statuses, WorkStatus) else work_statuses
+				if len (wss) == 1:
+					nr += 1
+					param = f'work_status{nr}'
+					query += ' AND work_status {op} :{param}'.format (
+						op = '!=' if to_exclude else '=',
+						param = param
+					)
+					data[param] = wss[0].value
+				elif len (wss) > 1:
+					params: list[str] = []
+					for (pos, ws) in enumerate (wss, start = nr + 1):
+						param = f'work_status{pos}'
+						data[param] = ws.value
+						params.append (param)
+					nr = pos
+					query += ' AND work_status {to_exclude}IN ({wss})'.format (
+						to_exclude = 'NOT ' if to_exclude else '',
+						wss = Stream (params).map (lambda p: f':{p}').join (', ')
+					)
+		count = db.update (query, data, commit = True)
+		logger.info ('{mailing_id}: {changed}changed work_status from "{old_work_status}" to "{new_work_status}"'.format (
+			mailing_id = mailing_id,
+			changed = 'NOT ' if count == 0 else '',
+			old_work_status = old_work_status,
+			new_work_status = new_work_status.value
+		))
+		return count > 0
+#}}}
 class UpdateAccount (Update): #{{{
 	__slots__ = [
 		'mailcheck', 'ignored', 'inserted', 'bccs', 'failed',
@@ -1090,315 +1486,10 @@ class UpdateAccount (Update): #{{{
 	track_path: Final[str] = os.path.join (base, 'var', 'run', 'update-account.track')
 	track_section_mailing: Final[str] = 'mailing'
 	track_section_status: Final[str] = 'status'
-	class Mailcheck:
-		__slots__ = ['workstatus', 'lastcheck', 'total', 'info_sent']
-		persist_path: Final[str] = os.path.join (base, 'var', 'run', 'mailcheck.persist')
-		recheck_workstatus: Final[int] = 60 * 60
-		def __init__ (self) -> None:
-			self.workstatus: Set[int] = set ()
-			self.lastcheck = 0
-			self.total: Dict[int, int] = {}
-			self.info_sent: Set[int] = set ()
-		
-		def setup (self) -> None:
-			with log ('mailcheck'):
-				try:
-					with open (self.persist_path, 'rb') as fd:
-						self.info_sent = pickle.load (fd)
-						logger.info ('read {count:,d} already sent mailings from {path}'.format (
-							count = len (self.info_sent),
-							path = self.persist_path
-						))
-				except Exception as e:
-					self.info_sent = set ()
-					logger.info (f'read no persisted records from {self.persist_path} due to {e}')
-		
-		def done (self) -> None:
-			with Ignore (OSError), log ('mailcheck'):
-				if not self.info_sent:
-					os.unlink (self.persist_path)
-					logger.info (f'removed {self.persist_path} due to no more cached sent information')
-				else:
-					with open (self.persist_path, 'wb') as fd:
-						pickle.dump (self.info_sent, fd)
-						logger.info ('saved {count:,d} already sent mailings to {path}'.format (
-							count = len (self.info_sent),
-							path = self.persist_path
-						))
-		
-		def check_workstatus (self, db: DB, mailing_id: int) -> bool:
-			if mailing_id not in self.workstatus:
-				self.workstatus.add (mailing_id)
-				with log ('mailcheck'):
-					count = db.update (
-						'UPDATE mailing_tbl '
-						'SET work_status = :work_status_sending '
-						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status != :work_status_sent)',
-						{
-							'work_status_sending': WorkStatus.Sending.value,
-							'work_status_sent': WorkStatus.Sent.value,
-							'mailing_id': mailing_id
-						},
-						commit = True
-					)
-					if count > 0:
-						logger.info (f'{mailing_id}: updated work status to "{WorkStatus.Sending.value}"')
-						return True
-					#
-					rq = db.querys (
-						'SELECT work_status, deleted '
-						'FROM mailing_tbl '
-						'WHERE mailing_id = :mailing_id',
-						{
-							'mailing_id': mailing_id
-						}
-					)
-					if rq is None:
-						logger.warning (f'{mailing_id}: no mailing found to update workstatus')
-					elif rq.work_status and rq.work_status not in (WorkStatus.Sending.value, WorkStatus.Sent.value, WorkStatus.Cancel.value):
-						deleted = ' [deleted]' if rq.deleted else ''
-						logger.warning (f'{mailing_id}{deleted}: do not change workstatus from "{rq.work_status}" to "{WorkStatus.Sending.value}"')
-					else:
-						logger.debug (f'{mailing_id}: no need to update workstatus from {rq.work_status} to "{WorkStatus.Sending.value}"')
-			return False
-
-		class Mailing (NamedTuple):
-			mailing_id: int
-			company_id: int
-			statmail: Optional[str]
-
-		def update (self) -> None:
-			interval = unit.parse (syscfg.get (f'{program}:mailcheck-interval', '1m'), default = 60)
-			mailcheck_limit = unit.parse (syscfg.get (f'{program}:mailcheck-limit', '7d'), default = 7 * 24 * 60 * 60)
-			now = int (time.time ())
-			if self.lastcheck + interval < now:
-				recheck = bool (not self.lastcheck or self.lastcheck // self.recheck_workstatus != now // self.recheck_workstatus)
-				self.lastcheck = now
-				with DBIgnore (), DB () as db, Responsibility (db = db, log = False) as responsibility, log ('mailcheck'):
-					limit = datetime.now () - timedelta (seconds = mailcheck_limit)
-					if recheck:
-						logger.debug ('Starting recheck')
-						count = 0
-						updated = 0
-						for row in (
-							db.streamc (
-								'SELECT mt.mailing_id, mt.company_id, mt.work_status '
-								'FROM mailing_tbl mt INNER JOIN maildrop_status_tbl mdrop ON mdrop.mailing_id = mt.mailing_id '
-								'WHERE mdrop.status_field = :status_field AND '
-								'      mdrop.senddate >= :limit AND '
-								'      mdrop.genstatus = 3 AND '
-								'      (mt.work_status IS NULL OR mt.work_status IN (:work_status_finished, :work_status_edit)) AND '
-								'      mt.deleted = 0',
-								{
-									'status_field': 'W',
-									'limit': limit,
-									'work_status_finished': WorkStatus.Finished.value,
-									'work_status_edit': WorkStatus.Edit.value
-								}
-							)
-							.filter (lambda r: r.company_id in responsibility)
-							.sorted (key = lambda r: r.mailing_id)
-						):
-							rq = db.querys (
-								'SELECT count(*) AS cnt '
-								'FROM mailing_account_tbl '
-								'WHERE mailing_id = :mailing_id AND status_field = :status_field',
-								{
-									'mailing_id': row.mailing_id,
-									'status_field': 'W'
-								}
-							)
-							if rq is None or not rq.cnt:
-								log_limit (logger.info, f'{row.mailing_id}: recheck work status "{row.work_status}" not changed as no already sent mailings detected', duration = '1h')
-							elif self.check_workstatus (db, row.mailing_id):
-								logger.info (f'{row.mailing_id}: recheck changed work status from "{row.work_status}" to "{WorkStatus.Sending.value}"')
-								updated += 1
-							count += 1
-						if count > 0:
-							logger.debug (f'rechecked {count:,d} mailings where {updated:,d} are updated')
-					#
-					for mailing in (
-						db.streamc (
-							'SELECT mailing_id, company_id, statmail_recp '
-							'FROM mailing_tbl mt '
-							'WHERE work_status = :work_status AND deleted = 0 AND EXISTS ('
-							'      SELECT 1 FROM maildrop_status_tbl mdrop '
-							'      WHERE mdrop.mailing_id = mt.mailing_id AND '
-							'            mdrop.status_field = :status_field AND '
-							'            mdrop.senddate >= :limit AND '
-							'            mdrop.genstatus = 3 '
-							'      )',
-							{
-								'work_status': WorkStatus.Sending.value,
-								'status_field': 'W',
-								'limit': limit
-							}
-						)
-						.filter (lambda r: r.company_id in responsibility)
-						.sorted (key = lambda r: r.mailing_id)
-						.map_to (UpdateAccount.Mailcheck.Mailing, lambda r: UpdateAccount.Mailcheck.Mailing (
-							mailing_id = r.mailing_id,
-							company_id = r.company_id,
-							statmail = r.statmail_recp
-						))
-					):
-						self.workstatus.add (mailing.mailing_id)
-						amount: Optional[int] = self.total.get (mailing.mailing_id)
-						if amount is None:
-							rq = db.querys (
-								'SELECT current_mails, total_mails '
-								'FROM world_mailing_backend_log_tbl '
-								'WHERE mailing_id = :mailing_id',
-								{
-									'mailing_id': mailing.mailing_id
-								}
-							)
-							if rq is not None and rq.current_mails is not None and rq.total_mails is not None and rq.current_mails == rq.total_mails:
-								amount = self.total[mailing.mailing_id] = rq.total_mails
-						if amount is not None:
-							rq = db.querys (
-								'SELECT sum(no_of_mailings) + sum(skip) AS cnt '
-								'FROM mailing_account_tbl '
-								'WHERE mailing_id = :mailing_id AND status_field = :status_field',
-								{
-									'mailing_id': mailing.mailing_id,
-									'status_field': 'W'
-								}
-							)
-							if rq is not None and rq.cnt is not None:
-								if mailing.mailing_id not in self.info_sent:
-									if not mailing.statmail:
-										self.info_sent.add (mailing.mailing_id)
-									else:
-										try:
-											(percent_str, receiver) = mailing.statmail.split ('%', 1)
-											percent = int (percent_str)
-										except ValueError:
-											percent = 50
-											receiver = mailing.statmail
-										if (
-											percent <= 0
-											or
-											(percent >= 100 and rq.cnt == amount)
-											or
-											(percent > 0 and percent < 100 and float (amount * percent) / 100.0 >= rq.cnt)
-										):
-											self.send_status_mail (db, amount, mailing, receiver.strip ())
-											self.info_sent.add (mailing.mailing_id)
-								#
-								if rq.cnt == amount:
-									rq = db.querys (
-										'SELECT min(timestamp) AS send_date '
-										'FROM mailing_account_tbl '
-										'WHERE mailing_id = :mailing_id AND status_field = :status_field AND timestamp IS NOT NULL',
-										{
-											'mailing_id': mailing.mailing_id,
-											'status_field': 'W'
-										}
-									)
-									send_date = rq.send_date if rq is not None else datetime.now ()
-									db.update (
-										'UPDATE mailing_tbl '
-										'SET work_status = :work_status, send_date = :send_date '
-										'WHERE mailing_id = :mailing_id',
-										{
-											'work_status': WorkStatus.Sent.value,
-											'send_date': send_date,
-											'mailing_id': mailing.mailing_id
-										},
-										commit = True
-									)
-									logger.info (f'{mailing.mailing_id}: set work status to sent')
-									with Ignore (KeyError):
-										del self.total[mailing.mailing_id]
-									with Ignore (KeyError):
-										self.info_sent.remove (mailing.mailing_id)
-					db.sync ()
-
-		def send_status_mail (self, db: DB, amount: int, mailing: UpdateAccount.Mailcheck.Mailing, receiver: str) -> None:
-			try:
-				with open (UpdateAccount.status_template) as fd:
-					template = fd.read ()
-			except IOError as e:
-				logger.warning (f'Failed to read template {UpdateAccount.status_template}: {e}')
-			else:
-				sender = syscfg.get ('status-sender')
-				rq = db.querys (
-					'SELECT min(timestamp) AS tstart, max(timestamp) AS tend, sum(no_of_mailings) AS sent, sum(skip) AS skip '
-					'FROM mailing_account_tbl '
-					'WHERE mailing_id = :mailing_id AND status_field = :status_field',
-					{
-						'mailing_id': mailing.mailing_id,
-						'status_field': 'W'
-					}
-				)
-				if rq is None:
-					start = end = datetime.now ()
-					current = 0
-				else:
-					start = rq.tstart
-					end = rq.tend
-					current = rq.sent + rq.skip
-				rq = db.querys (
-					'SELECT shortname '
-					'FROM mailing_tbl '
-					'WHERE mailing_id = :mailing_id',
-					{
-						'mailing_id': mailing.mailing_id
-					}
-				)
-				mailing_name = rq.shortname if rq is not None and rq.shortname else f'MailingID {mailing.mailing_id}'
-				receivers = [_r for _r in listsplit (receiver) if _r]
-				ns = {
-					'sender': sender,
-					'receiver': ', '.join (receivers),
-					'current': current,
-					'count': amount,
-					'start': start,
-					'end': end,
-					'mailing_id': mailing.mailing_id,
-					'mailing_name': mailing_name,
-					'company_id': mailing.company_id,
-					
-					'format': lambda a: f'{a:,d}'
-				}
-				tmpl = Template (template)
-				try:
-					email = tmpl.fill (ns)
-				except error as e:
-					logger.warning (f'Failed to fill template {UpdateAccount.status_template}: {e}')
-				else:
-					mail = EMail ()
-					if sender:
-						mail.set_sender (sender)
-					for (nr, r) in enumerate (receivers):
-						if nr == 0:
-							mail.add_to (r)
-						else:
-							mail.add_cc (r)
-					charset = tmpl.property ('charset')
-					if charset:
-						mail.set_charset (charset)
-					subject = tmpl.property ('subject')
-					if not subject:
-						subject = tmpl['subject']
-						if not subject:
-							subject = f'Status report for mailing {mailing.mailing_id} [{mailing_name}]'
-					else:
-						tmpl = Template (subject)
-						subject = tmpl.fill (ns)
-					mail.set_subject (subject)
-					mail.set_text (email)
-					st = mail.send_mail ()
-					if not st[0]:
-						logger.warning (f'Failed to send status mail to {mailing.statmail}: {st}')
-					else:
-						logger.info (f'Status mail for {mailing_name} ({mailing_name}) sent to {mailing.statmail}')
-
 	def __init__ (self) -> None:
 		super ().__init__ ()
 		self.tracker_age = '90d'
-		self.mailcheck = UpdateAccount.Mailcheck ()
+		self.mailcheck = Mailcheck ()
 		self.ignored = 0
 		self.inserted = 0
 		self.bccs = 0
@@ -1426,8 +1517,8 @@ class UpdateAccount (Update): #{{{
 			Field ('timestamp', ParseTimestamp (), optional = True, default = lambda n: datetime.now ())
 		)
 
-	def setup (self) -> None:
-		super ().setup ()
+	def setup (self, debug: bool) -> None:
+		super ().setup (debug)
 		self.mailcheck.setup ()
 	
 	def done (self) -> None:
@@ -1613,6 +1704,83 @@ class UpdateDeliver (Update): #{{{
 		else:
 			return True
 #}}}
+class UpdateWebhook (Update): #{{{
+	__slots__ = ['webhook', 'count']
+	name = 'webhook'
+	path = os.path.join (base, 'log', 'webhook.log')
+	line_parser = Lineparser (
+		lambda a: a.split (';', 5),
+		Field ('licence_id', int),
+		Field ('company_id', int),
+		Field ('mailing_id', int),
+		Field ('customer_id', int),
+		Field ('event_type', int),
+		Field ('timestamp', lambda n: Update.timestamp_parser (n)),
+	)
+	def __init__ (self) -> None:
+		super ().__init__ ()
+		self.webhook = Webhook ()
+		self.count = 0
+
+	def update_start (self, db: DB) -> bool:
+		self.count = 0
+		return True
+
+	def update_end (self, db: DB) -> bool:
+		logger.info (f'Added {self.count:,d} out of {self.lineno:,d} new events')
+		return True
+
+	def update_line (self, db: DB, line: str) -> bool:
+		try:
+			record = UpdateWebhook.line_parser (line)
+			if record.licence_id != licence:
+				raise error (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
+			#
+			company_id = record.company_id
+			mailing_id = record.mailing_id
+			customer_id = record.customer_id
+			if company_id == 0 and mailing_id > 0:
+				company_id_from_mailing_id = self.mailing_to_company (db, mailing_id)
+				if company_id_from_mailing_id is None:
+					logger.info ('mailing {mailing_id}: not found in databsae'.format (mailing_id = mailing_id))
+				else:
+					company_id = company_id_from_mailing_id
+			if company_id == 0:
+				raise error (f'{record}: no matching company found')
+			#
+			try:
+				event_type = self.webhook.event_type (record.event_type)
+			except KeyError:
+				raise error (f'{record}: no matching event_type for {record.event_type} found')
+			#
+			if self.webhook.active (db, record.licence_id, company_id, event_type):
+				self.count += db.update (
+					db.qselect (
+						oracle = (
+							'INSERT INTO webhook_backend_data_tbl '
+							'       (id, creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
+							'VALUES '
+							'       (webhook_backend_data_seq.nextval, CURRENT_TIMESTAMP, :event_timestamp, :event_type, :company_id, :mailing_id, :recipient_id)'
+						), mysql = (
+							'INSERT INTO webhook_backend_data_tbl '
+							'       (creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
+							'VALUES '
+							'       (CURRENT_TIMESTAMP, :event_timestamp, :event_type, :company_id, :mailing_id, :recipient_id)'
+						)
+					), {
+						'event_timestamp': record.timestamp,
+						'event_type': record.event_type,
+						'company_id': company_id,
+						'mailing_id': mailing_id if mailing_id > 0 else None,
+						'recipient_id': customer_id if customer_id > 0 else None
+					}
+				)
+		except Exception as e:
+			logger.warning (f'{line}: invalid line: {e}')
+			return False
+		else:
+			return True
+#}}}
 class UpdateMailtrack (Update): #{{{
 	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'insert_statement', 'max_count', 'max_count_last_updated']
 	name = 'mailtrack'
@@ -1753,6 +1921,7 @@ class UpdateMailtrack (Update): #{{{
 						start = time.time ()
 						while not amslock.lock (lockname, ttl = 1800):
 							if first:
+								first = False
 								logger.info (f'{company_id}: failed to lock for "{lockname}", retry until succeed')
 							time.sleep (1)
 						diff = int (time.time () - start)
@@ -1766,6 +1935,12 @@ class UpdateMailtrack (Update): #{{{
 					def unlock (lockname: str) -> None:
 						amslock.unlock (lockname)
 						logger.info (f'{company_id}: unlocked "{lockname}"')
+					def refresh (lockname: str) -> bool:
+						if amslock.refresh (lockname):
+							logger.debug (f'{company_id}: refreshed "{lockname}"')
+							return True
+						logger.warning (f'{company_id}: refresh of "{lockname}" failed')
+						return False
 					#
 					bulk_update: bool = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
 					bulk_update_chunk: int = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
@@ -1777,7 +1952,7 @@ class UpdateMailtrack (Update): #{{{
 					#
 					with db.logging (lambda m: logger.info (f'DB: {m}')):
 						lockname = lock (f'customer:{company_id}')
-						self.__update_profile (db, company_id, bulk_update, bulk_update_chunk, counter)
+						self.__update_profile (db, company_id, bulk_update, bulk_update_chunk, counter, refresh = partial (refresh, lockname))
 						unlock (lockname)
 					db.sync ()
 					logger.info (f'{company_id}: done')
@@ -1849,7 +2024,14 @@ class UpdateMailtrack (Update): #{{{
 		else:
 			logger.debug ('%d: mailtracking is disabled' % company_id)
 
-	def __update_profile (self, db: DB, company_id: int, bulk_update: bool, bulk_update_chunk: int, counter: UpdateMailtrack.CompanyCounter) -> None:
+	def __update_profile (self,
+		db: DB,
+		company_id: int,
+		bulk_update: bool,
+		bulk_update_chunk: int,
+		counter: UpdateMailtrack.CompanyCounter,
+		refresh: Optional[Callable[[], bool]]
+	) -> None:
 		customer_table = 'customer_{company_id}_tbl'.format (company_id = company_id)
 		lastsend_date = 'lastsend_date'
 		if not db.exists (customer_table):
@@ -1882,13 +2064,15 @@ class UpdateMailtrack (Update): #{{{
 						mysql = f' LIMIT {bulk_update_chunk}'
 					)
 					while True:
-						chunk_count = db.update (query, commit = True, sync_and_retry = True)
+						if refresh is not None and not refresh ():
+							refresh = None
+						chunk_count = db.update (query, commit = True, sync_and_retry = True, callback_between = refresh)
 						if chunk_count > 0:
 							count += chunk_count
 						else:
 							break
 				else:
-					count = db.update (query, commit = True, sync_and_retry = True)
+					count = db.update (query, commit = True, sync_and_retry = True, callback_between = refresh)
 			else:
 				query = (
 					'UPDATE {table} '
@@ -1914,7 +2098,8 @@ class UpdateMailtrack (Update): #{{{
 										'customer_id': row.customer_id,
 										lastsend_date: row.timestamp
 									},
-									sync_and_retry = True
+									sync_and_retry = True,
+									callback_between = refresh
 								)
 							except Exception as e:
 								if state == 0:
@@ -1928,6 +2113,8 @@ class UpdateMailtrack (Update): #{{{
 						if row_count % 10000 == 0:
 							logger.info (f'Now at #{row_count:,d} of #{counter.count:,d}')
 							cursor.sync ()
+							if refresh is not None and not refresh ():
+								refresh = None
 					cursor.sync ()
 			logger.info (f'{company_id}: update for {count:,d} {lastsend_date} in {customer_table} while having sent {counter.count:,d}')
 		else:
@@ -2115,7 +2302,7 @@ class UpdateMailloop (Update): #{{{
 			return True
 #}}}
 #
-class Main (Runtime):
+class Main (Runtime, Locate):
 	def supports (self, option: str) -> bool:
 		return option != 'dryrun'
 
@@ -2132,14 +2319,14 @@ class Main (Runtime):
 	def use_arguments (self, args: argparse.Namespace) -> None:
 		self.single = args.single
 		self.delay = args.delay
-		available = dict ((_c.name, _c) for _c in globals ().values () if type (_c) is type and issubclass (_c, Update) and _c is not Update)
+		available = Stream (self.locate (Update, source = globals ())).map (lambda u: (u.name, u)).dict ()
 		self.modules: List[Type[Update]] = [available[_m] for _m in args.parameter] if args.parameter else list (available.values ())
 		if self.single:
-			self.ctx.background = False
-			self.ctx.watchdog = False
+			interactive (True)
 
 	def prepare (self) -> None:
 		if self.single:
+			self.ctx.background = False
 			self.ctx.watchdog = False
 		else:
 			self.ctx.watchdog = True

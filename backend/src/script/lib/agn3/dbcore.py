@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -89,7 +89,7 @@ class Cursor:
 this is the base class for a database specific cursor and should
 inherit this class. This class should not be instantiated by an
 application, use ``Core.cursor()'' instead."""
-	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype', 'rowcount']
+	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype', 'rowmap', 'rowcount']
 	def __init__ (self, db: Core, autocommit: bool) -> None:
 		"""``db'' is the database specific subclass of Core.
 
@@ -100,6 +100,7 @@ write the content directly to the database."""
 		self.id: Optional[str] = None
 		self.curs: Optional[DBAPI.Cursor] = None
 		self.rowtype: Optional[Type[Row]] = None
+		self.rowmap: List[Callable[[Any], Any]] = []
 		self.rowcount = 0
 
 	def __enter__ (self) -> Cursor:
@@ -182,11 +183,15 @@ portable across different databases."""
 			return self.curs.description
 		raise error ('no active query')
 
+	def rowmapper (self, description: List[Tuple[Any, ...]]) -> List[Callable[[Any], Any]]:
+		return self.rowmap
+
 	def make_row (self, data: List[Any]) -> Row:
 		if self.rowtype is None:
 			d = self.description ()
 			self.rowtype = row_maker (['_{n}'.format (n = _n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d])
-		return self.rowtype (*data)
+			self.rowmap = self.rowmapper (d)
+		return self.rowtype (*data) if not self.rowmap else self.rowtype (*[_m (_v) for (_m, _v) in zip (self.rowmap, data)])
 		
 	def __iter__ (self) -> Iterator[Row]:
 		while True:
@@ -242,14 +247,24 @@ portable across different databases."""
 				return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
+			log_parameter = self.db.cleanup (statement, parameter) if isinstance (parameter, dict) and cleanup else parameter
 			if parameter is None:
-				self.db.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
+				self.db.log ('{what} "{statement}" failed: {error}'.format (
+					what = what,
+					statement = statement,
+					error = self.last_error ()
+				))
 			else:
-				self.db.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
-			raise error ('{what} using statement {statement} {parameter!r} start failed: {error}'.format (
+				self.db.log ('{what} "{statement}" using {parameter!r} failed: {error}'.format (
+					what = what,
+					statement = statement,
+					parameter = log_parameter,
+					error = self.last_error ()
+				))
+			raise error ('{what} using statement "{statement}" {parameter!r} start failed: {error}'.format (
 				what = what.lower (),
 				statement = statement,
-				parameter = parameter,
+				parameter = log_parameter,
 				error = self.last_error ()
 			))
 	
@@ -263,6 +278,7 @@ than are used in the query.
 
 This method return an iterable realizied by itself."""
 		self.rowtype = None
+		self.rowmap.clear ()
 		self.__execute ('Query', statement, parameter, cleanup)
 		self.db.log ('Query started')
 		return self
@@ -326,7 +342,8 @@ This method return an iterable realizied by itself."""
 		parameter: Union[Any, List[Any], Dict[str, Any]] = None,
 		commit: bool = False,
 		cleanup: bool = False,
-		sync_and_retry: bool = False
+		sync_and_retry: bool = False,
+		callback_between: Optional[Callable[[], Any]] = None
 	) -> int:
 		"""Performs non query database calls. For parameter see query. Returns number of changed rows, if applicated."""
 		if sync_and_retry:
@@ -337,6 +354,8 @@ This method return an iterable realizied by itself."""
 					if state == 0:
 						self.sync ()
 						self.db.log (f'Failed to update due to {e}, sync and retry')
+						if callback_between:
+							callback_between ()
 					else:
 						self.db.log (f'Failed to update even after sync and retry due to {e}')
 						raise
@@ -503,7 +522,7 @@ but can produce lots of output in prdocutive use."""
 				self.types[t] = (Stream (self.matches.items ())
 					.filter (lambda kv: Stream (kv[1]).filter (lambda v: bool (v == t)).count () > 0)
 					.map (lambda kv: kv[0])
-					.first (no = None)
+					.first (no = self.types[None])
 				)
 			except:
 				self.types[t] = self.types[None]

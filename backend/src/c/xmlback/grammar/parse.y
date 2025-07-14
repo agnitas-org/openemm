@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -66,6 +66,16 @@
 			buffer_append (r, rplc, rlen);
 		else
 			buffer_format (r, "%s (%s)", funcname, buffer_string (a));
+		buffer_free (a);
+		return r;
+	}
+	
+	static inline buffer_t *
+	interval (buffer_t *a, int div)
+	{
+		buffer_t	*r = buffer_alloc (a -> length + 64);
+		
+		buffer_format (r, "((%s) / %d.0)", buffer_string (a), div);
 		buffer_free (a);
 		return r;
 	}
@@ -301,4 +311,16 @@ value(R)::=	NOW OPEN CLOSE.			{
 value(R)::=	SYSDATE.			{
 	R = buffer_alloc (16);
 	buffer_sets (R, "sysdate");
+}
+value(R)::=	INTERVAL value(A) SECOND. {
+	R = interval (A, 24 * 60 * 60);
+}
+value(R)::=	INTERVAL value(A) MINUTE. {
+	R = interval (A, 24 * 60);
+}
+value(R)::=	INTERVAL value(A) HOUR. {
+	R = interval (A, 24);
+}
+value(R)::=	INTERVAL value(A) DAY. {
+	R = A;
 }

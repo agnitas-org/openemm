@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -159,7 +159,12 @@ static struct { /*{{{*/
 	{	T_NOW,		"now",		3,	true	},
 	{	T_NULL,		"null",		4,	true	},
 	{	T_SYSDATE,	"sysdate",	7,	true	},
-	{	T_SYSDATE,	"current_timestamp", 17,true	}
+	{	T_SYSDATE,	"current_timestamp", 17,true	},
+	{	T_INTERVAL,	"interval",	8,	true	},
+	{	T_SECOND,	"second",	6,	true	},
+	{	T_MINUTE,	"minute",	6,	true	},
+	{	T_HOUR,		"hour",		4,	true	},
+	{	T_DAY,		"day",		3,	true	}
 	/*}}}*/
 };
 # define	TTSIZE		(sizeof (toktab) / sizeof (toktab[0]))
@@ -373,7 +378,7 @@ transformtable_check (buffer_t *out) /*{{{*/
 	buffer_appends (out, "\nUnique check:\n");
 	for (n = 1, cnt = 0; n < TTSIZE; ++n)
 		for (m = 0; m < n; ++m)
-			if ((toktab[m].len <= toktab[n].len) && (! strncmp (toktab[m].token, toktab[n].token, toktab[m].len))) {
+			if ((! toktab[m].isword) && (! toktab[n].isword) && (toktab[m].len <= toktab[n].len) && (! strncmp (toktab[m].token, toktab[n].token, toktab[m].len))) {
 				++cnt;
 				buffer_format (out, "\t`%s' makes `%s' useless\n", toktab[m].token, toktab[n].token);
 				ok = false;

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -15,6 +15,7 @@
 # include	<sys/stat.h>
 # include	<sys/time.h>
 # include	<regex.h>
+# include	"grammar/grammar.h"
 # include	"tflua.c"
 
 # define	F_MAIN		"main"
@@ -289,16 +290,13 @@ do_unittest (iflua_t *il, bool_t quiet, int benchmark) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-static bool_t
-validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int benchmark) /*{{{*/
+static blockmail_t *
+setup_blockmail (const char *fname) /*{{{*/
 {
-	bool_t		rc;
-	log_t		*lg;
 	blockmail_t	*blockmail;
-	codeblock_t	*run;
-	receiver_t	*r;
+	log_t		*lg;
 
-	rc = false;
+	blockmail = NULL;
 	if (lg = log_alloc (NULL, fname, NULL)) {
 		lg -> level = LV_DEBUG;
 		log_tofd (lg, STDERR_FILENO);
@@ -374,66 +372,99 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 				if (cur -> var[0] == '_')
 					string_map_addss (blockmail -> smap, cur -> var + 1, cur -> val);
 			}
-			for (run = cb; run; run = run -> next) {
-				char	id[1024];
-				
-				if (run -> condition)
-					snprintf (id, sizeof (id) - 1, "%s - %s", fname, run -> condition);
-				else
-					strcpy (id, fname);
-				rc = false;
-				if (r = receiver_alloc (blockmail, 0)) {
-					iflua_t		*il;
-						
-					r -> customer_id = 100;
-					r -> user_type = 'W';
-					r -> user_status = 1;
-					{
-						xmlBufferPtr	buf = xmlBufferCreate ();
-						
-						xmlBufferCCat (buf, "HFrom: Info <info@example.com>\nHSubject: Test!\n");
-						header_set_content (r -> header, buf);
-						xmlBufferFree (buf);
-					}
-					if (il = iflua_alloc (blockmail, false)) {
-						il -> rec = r;
-						alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
-						if (quiet)
-							alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
-						lua_createtable (il -> lua, 0, 0);
-						lua_setglobal (il -> lua, "argv");
-						if (alua_load (il -> lua, id, run -> code, run -> length)) {
-							if (unittest)
-								rc = do_unittest (il, quiet, benchmark);
-							else {
-								rc = true;
-								lua_getglobal (il -> lua, F_MAIN);
-								if (lua_isfunction (il -> lua, -1)) {
-									if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
-										fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
-										fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
-										rc = false;
-									}
-								} else
-									lua_pop (il -> lua, 1);
-							}
-						} else {
-							fprintf (stderr, "Failed to execute code for %s\n", id);
-							fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
-						}
-						iflua_free (il);
-					} else
-						fprintf (stderr, "Failed to setup interpreter interface for %s\n", id);
-					receiver_free (r);
-				} else
-					fprintf (stderr, "Failed to setup receiver structure for %s\n", id);
-			}
-			blockmail_free (blockmail);
 		} else
 			fprintf (stderr, "Failed to setup blockmail structure for %s\n", fname);
-		log_free (lg);
 	} else
-		fprintf (stderr, "Failed to setup logging interface for %s\n", fname);
+		fprintf (stderr, "Failed to setup logging for %s\n", fname);
+	return blockmail;
+}/*}}}*/
+static bool_t
+validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int benchmark) /*{{{*/
+{
+	bool_t		rc;
+	blockmail_t	*blockmail;
+	codeblock_t	*run;
+	receiver_t	*r;
+
+	if (blockmail = setup_blockmail (fname)) {
+		rc = true;
+		for (run = cb; run; run = run -> next) {
+			char	id[1024];
+				
+			if (run -> condition)
+				snprintf (id, sizeof (id) - 1, "%s - %s", fname, run -> condition);
+			else
+				strcpy (id, fname);
+			rc = false;
+			if (r = receiver_alloc (blockmail, 0)) {
+				iflua_t		*il;
+						
+				r -> customer_id = 100;
+				r -> user_type = 'W';
+				r -> user_status = 1;
+				{
+					xmlBufferPtr	buf = xmlBufferCreate ();
+					
+					xmlBufferCCat (buf, "HFrom: Info <info@example.com>\nHSubject: Test!\n");
+					header_set_content (r -> header, buf);
+					xmlBufferFree (buf);
+				}
+				if (il = iflua_alloc (blockmail, false)) {
+					il -> rec = r;
+					alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
+					if (quiet)
+						alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
+					lua_createtable (il -> lua, 0, 0);
+					lua_setglobal (il -> lua, "argv");
+					if (alua_load (il -> lua, id, run -> code, run -> length)) {
+						if (unittest)
+							rc = do_unittest (il, quiet, benchmark);
+						else {
+							rc = true;
+							lua_getglobal (il -> lua, F_MAIN);
+							if (lua_isfunction (il -> lua, -1)) {
+								if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
+									fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
+									fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+									rc = false;
+								}
+							} else
+								lua_pop (il -> lua, 1);
+						}
+					} else {
+						fprintf (stderr, "Failed to execute code for %s\n", id);
+						fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+					}
+					iflua_free (il);
+				} else
+					fprintf (stderr, "Failed to setup interpreter interface for %s\n", id);
+				receiver_free (r);
+			} else
+				fprintf (stderr, "Failed to setup receiver structure for %s\n", id);
+		}
+		blockmail_free (blockmail);
+	} else
+		rc = false;
+	return rc;
+}/*}}}*/
+static bool_t
+condition_test (const char *condition) /*{{{*/
+{
+	bool_t		rc;
+	blockmail_t	*blockmail;
+
+	rc = false;
+	if (blockmail = setup_blockmail (condition)) {
+		xmlBufferPtr	buf;
+		
+		if (buf = xmlBufferCreate ()) {
+			xmlBufferCCat (buf, condition);
+			if (! (rc = eval_set_condition (blockmail -> eval, 0, 0, buf)))
+				fprintf (stderr, "%s: failed\n", condition);
+			xmlBufferFree (buf);
+		}
+		blockmail_free (blockmail);
+	}
 	return rc;
 }/*}}}*/
 int
@@ -448,7 +479,7 @@ main (int argc, char **argv) /*{{{*/
 	quiet = false;
 	unittest = false;
 	benchmark = 0;
-	while ((n = getopt (argc, argv, "hqub:")) != -1)
+	while ((n = getopt (argc, argv, "hqub:c:")) != -1)
 		switch (n) {
 		case 'q':
 			quiet = true;
@@ -462,6 +493,38 @@ main (int argc, char **argv) /*{{{*/
 				fprintf (stderr, "Use a number bigger than 0 to run benchmarks on unittests.\n");
 				return 1;
 			}
+			break;
+		case 'c':
+# ifndef	NDEBUG			
+			{
+				buffer_t	*out = buffer_alloc (512);
+				
+				if (! transformtable_check (out)) {
+					fprintf (stderr, "Failed to check transform table\n%s\n", buffer_string (out));
+					return 1;
+				}
+				buffer_free (out);
+			}
+# endif		/* NDEBUG */
+			if (optarg[0] == '@') {
+				FILE	*fp = fopen (optarg + 1, "r");
+				char	buf[65536];
+				char	*ptr;
+				
+				while (fgets (buf, sizeof (buf) - 1, fp)) {
+					if (ptr = strchr (buf, '\n'))
+						*ptr = '\0';
+					if (! condition_test (buf)) {
+						fprintf (stderr, "Failed to parse \"%s\"\n", buf);
+						return 1;
+					}
+				}
+				fclose (fp);
+			} else 
+				if (! condition_test (optarg)) {
+					fprintf (stderr, "Failed to parse \"%s\"\n", optarg);
+					return 1;
+				}
 			break;
 		case 'h':
 		default:

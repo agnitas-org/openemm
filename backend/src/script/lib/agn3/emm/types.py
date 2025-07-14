@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -87,10 +87,17 @@ class WorkStatus (Enum):
 	Edit = 'mailing.status.edit'
 	Generating = 'mailing.status.in-generation'
 	Finished = 'mailing.status.generation-finished'
+	InsufficientVouchers = 'mailing.status.insufficient-vouchers'
 	NoRecipient = 'mailing.status.norecipients'
 	Ready = 'mailing.status.ready'
 	Scheduled = 'mailing.status.scheduled'
 	Sending = 'mailing.status.sending'
 	Sent = 'mailing.status.sent'
 	Test = 'mailing.status.test'
+	@classmethod
+	def by_name (cls, name: str) -> WorkStatus:
+		try:
+			return [_v for _v in cls.__members__.values () if _v.value == name][0]
+		except IndexError:
+			raise KeyError (name)
 

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -361,7 +361,7 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 			}
 		}
 	}
-	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url_id))) {
+	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url_id, false))) {
 		lua_pushstring (il -> lua, uid);
 		free (uid);
 	} else
@@ -1096,7 +1096,7 @@ ev_convert (blockmail_t *blockmail, const char *expression) /*{{{*/
 	buffer_t	*scratch;
 
 	rc = NULL;
-	if (regcomp (& column, "\\$(([a-z0-9]+\\.)?[a-z][a-z0-9_]*)", REG_EXTENDED | REG_ICASE) == 0) {
+	if (regcomp (& column, "\\$(([a-z][a-z0-9_]*\\.)?[a-z][a-z0-9_]*)", REG_EXTENDED | REG_ICASE) == 0) {
 		parts = split_expression (expression, & error);
 		if (error) {
 			log_out (blockmail -> lg, LV_ERROR, "Failed to preparse expression \"%s\"", expression);

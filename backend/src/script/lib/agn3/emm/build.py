@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -13,7 +13,7 @@ from	__future__ import annotations
 import	os, re
 from	dataclasses import dataclass, field
 from	datetime import datetime
-from	typing import ClassVar, Optional
+from	typing import ClassVar
 from	typing import Match, Tuple
 from	typing import cast
 from	..definitions import base, fqdn, user, version
@@ -30,8 +30,9 @@ class Spec:
 	host: str = fqdn
 	user: str = user
 	typ: str = 'classic'
+	build_spec_env: ClassVar[str] = 'BUILD_SPEC'
+	build_spec_path_env: ClassVar[str] = 'BUILD_SPEC_PATH'
 	build_spec_path: ClassVar[str] = os.path.join (base, 'scripts', 'build.spec')
-
 	@classmethod
 	def parse (cls, build_spec: str) -> Spec:
 		spec = cls ()
@@ -50,11 +51,13 @@ class Spec:
 		return spec
 		
 	@classmethod
-	def build (cls, build_spec_path: Optional[str] = None) -> Spec:
-		path = build_spec_path if build_spec_path is not None else cls.build_spec_path
-		if os.path.isfile (path):
-			with open (path, errors = 'backslashreplace') as fd:
-				return cls.parse (fd.readline ())
+	def build (cls) -> Spec:
+		if (spec := os.environ.get (cls.build_spec_env)) is not None:
+			return cls.parse (spec)
+		for path in [os.environ.get (cls.build_spec_path_env), cls.build_spec_path]:
+			if path is not None and os.path.isfile (path):
+				with open (path, errors = 'backslashreplace') as fd:
+					return cls.parse (fd.readline ())
 		return cls ()
 
 spec = Spec.build ()

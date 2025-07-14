@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -38,6 +38,7 @@ class UID:
 	company_id: int = 0
 	mailing_id: int = 0
 	customer_id: int = 0
+	status_field: None | str = None
 	url_id: int = 0
 	bit_option: int = 0
 	prefix: Optional[str] = None
@@ -92,6 +93,7 @@ class UID:
 		set ('_c', self.company_id)
 		set ('_m', self.mailing_id)
 		set ('_r', self.customer_id)
+		set ('_f', self.status_field)
 		set ('_u', self.url_id)
 		set ('_o', self.bit_option)
 		return msgpack.dumps (Stream (self.ctx.items ()).sorted (key = lambda kv: kv[0]).dict ())
@@ -106,6 +108,7 @@ class UID:
 			self.company_id = self.ctx.get ('_c', self.company_id)
 			self.mailing_id = self.ctx.get ('_m', self.mailing_id)
 			self.customer_id = self.ctx.get ('_r', self.customer_id)
+			self.status_field = self.ctx.get ('_f', self.status_field)
 			self.url_id = self.ctx.get ('_u', self.url_id)
 			self.bit_option = self.ctx.get ('_o', self.bit_option)
 	

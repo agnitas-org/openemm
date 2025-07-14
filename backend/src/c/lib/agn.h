@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -352,7 +352,7 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	build_t;
 
-extern char		*buffer_dump (buffer_t *b);
+extern char		*buffer_dump (const buffer_t *b);
 extern buffer_t		*buffer_alloc (int nsize);
 extern buffer_t		*buffer_copy (const buffer_t *source);
 extern buffer_t		*buffer_realloc (buffer_t *b, int nsize);
@@ -392,7 +392,6 @@ extern bool_t		buffer_stiffcrlf (buffer_t *b);
 extern bool_t		buffer_vformat (buffer_t *b, const char *fmt, va_list par) __attribute__ ((format (printf, 2, 0)));
 extern bool_t		buffer_format (buffer_t *b, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 extern bool_t		buffer_strftime (buffer_t *b, const char *fmt, const struct tm *tt);
-extern bool_t		buffer_read (buffer_t *b, int fd, int size);
 extern byte_t		*buffer_cut (buffer_t *b, long start, long length, long *rlength);
 extern const char	*buffer_string (buffer_t *b);
 extern char		*buffer_stealstring (buffer_t *b);
@@ -406,18 +405,24 @@ extern bool_t		buffer_endswith (const buffer_t *b, const byte_t *needle, int nle
 extern bool_t		buffer_endswithsn (const buffer_t *b, const char *s, int slen);
 extern bool_t		buffer_endswiths (const buffer_t *b, const char *s);
 extern bool_t		buffer_endswithch (const buffer_t *b, char ch);
+extern const char	*buffer_line (const buffer_t *b, int start, int *length);
 extern void		buffer_ltrim (buffer_t *b);
 extern void		buffer_rtrim (buffer_t *b);
 extern void		buffer_trim (buffer_t *b);
-extern void		buffer_universal_newline (buffer_t *b, int start);
+extern bool_t		buffer_universal_newline (buffer_t *b, int start);
 extern bool_t		buffer_universal_crlf (buffer_t *b, int start);
+extern int		buffer_replace (buffer_t *b, const byte_t *find, int find_length, const byte_t *replace, int replace_length);
+extern int		buffer_write (const buffer_t *b, int fd);
+extern int		buffer_read (buffer_t *b, int fd);
 
 extern pool_t		*pool_alloc (void);
 extern pool_t		*pool_free (pool_t *p);
 extern void		pool_flush (pool_t *p);
 extern buffer_t		*pool_request (pool_t *p, int nsize);
+extern buffer_t		*pool_request_copy (pool_t *p, const buffer_t *source);
 extern buffer_t		*pool_release (pool_t *p, buffer_t *b);
 extern buffer_t		*buffer_request (int nsize);
+extern buffer_t		*buffer_request_copy (const buffer_t *source);
 extern buffer_t		*buffer_release (buffer_t *b);
 
 extern var_t		*var_alloc (const char *var, const char *val);
@@ -555,6 +560,7 @@ extern void		timeout_resume (void);
 extern int		tzdiff (time_t tim);
 extern bool_t		atob (const char *str);
 extern const char	*path_home (void);
+extern const char	*cbasename (const char *path);
 extern char		*mkpath (const char *start, ...);
 extern bool_t		mkdirs (const char *path, int mode);
 extern bool_t		struse (char **buf, const char *str);

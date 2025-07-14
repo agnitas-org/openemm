@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -46,17 +46,30 @@ pathstrip="$BASE/bin/pathstrip"
 cq="$BASE/bin/config-query"
 for path in $pathstrip $cq; do
 	if [ ! -x "$path" ]; then
-		die "incomplete installation: missing $path"
+		echo "incomplete installation: missing $path" 1>&2
+		exit 1
 	fi
 done
 #
 version="`$cq build.version`"
-if [ ! "$version" ]; then
-	if [ -f "$BASE/scripts/build.spec" ]; then
-		version="`cut '-d;' -f1 $BASE/scripts/build.spec`"
-	elif [ -x "$BASE/bin/xmlback" ]; then
+if [ ! "$version" ] || [ "$version" = "unknown" ]; then
+	if [ "$BUILD_SPEC" ]; then
+		version="`echo \"$BUILD_SPEC\" | cut '-d;' -f1`"
+	fi
+	if [ ! "$version" ]; then
+		for path in "$BUILD_SPEC_PATH" "$BASE/scripts/build.spec"; do
+			if [ "$path" ] && [ -f "$path" ]; then
+				version="`cut '-d;' -f1 \"$path\"`"
+				if [ "$version" ]; then
+					break
+				fi
+			fi
+		done
+	fi
+	if [ ! "$version" ]; then
 		version="`$BASE/bin/xmlback -V | awk '{ print $3 }'`"
-	else
+	fi
+	if [ ! "$version" ]; then
 		version="current"
 	fi
 fi
@@ -66,9 +79,10 @@ host="`uname -n | cut -d. -f1`"
 optbases="$BASE"
 softwarebases="$BASE/opt"
 # .. and for java ..
-LC_ALL=C
+LANG="en_US.UTF-8"
+LC_ALL="$LANG"
 NLS_LANG=american_america.UTF8
-export LC_ALL LANG NLS_LANG
+export LANG LC_ALL LANG NLS_LANG
 if [ ! "$JBASE" ] ; then
 	JBASE="$BASE/JAVA"
 fi
@@ -106,14 +120,16 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 		CLASSPATH="$cp"
 	fi
 fi
-# .. and for python3 ..
+# .. and for python ..
 req="$BASE/scripts/.requirements.txt"
-for softwarebase in $softwarebases; do
-	path="$softwarebase/python3"
-	if [ -d $path/bin ] ; then
-		PATH="$path/bin:$PATH"
-		break
-	fi
+for component in python2 python3; do
+	for softwarebase in $softwarebases; do
+		path="$softwarebase/$component"
+		if [ -d $path/bin ] ; then
+			PATH="$path/bin:$PATH"
+			break
+		fi
+	done
 done
 export PATH
 #
@@ -147,6 +163,18 @@ export SENDMAIL_DSN SENDMAIL_DSN_OPT
 #
 # B.) Routine collection
 #
+tty --silent
+_silent=$?
+silent_messagen() {
+	if [ $_silent -eq 0 ]; then
+		echo -n "$*"
+	fi
+}
+silent_message() {
+	if [ $_silent -eq 0 ]; then
+		echo "$*"
+	fi
+}
 messagen() {
 	echo -n "$*"
 }
@@ -224,10 +252,15 @@ uid() {
 	echo "$__uid"
 }
 #
+abspath() {
+	python3 -c 'import sys, os
+for path in sys.argv[1:]: print (os.path.abspath (path))' "$@"
+}
+#
 onErrorSendMail () {
 	__rc=$?
 	if [ $__rc -ne 0 ]; then
-		mailsend -s "[ERROR] `date +%Y%m%d` $0 [on `uname -n`]" -m "$@" `$cq alert-mail`
+		mailsend -s "[ERROR] `date +%Y%m%d` $0 [on `uname -n`]" -m "error $__rc during execution, see logfile for further details: $@" `$cq alert-mail`
 	fi
 }
 #
@@ -268,6 +301,7 @@ setupVirtualEnviron() {
 	fi
 	if [ ! "$VIRTUAL_ENV" ] || [ ! "$VIRTUAL_ENV" = "$venv" ]; then
 		if [ -d "$venv" ]; then
+			VIRTUAL_ENV_DISABLE_PROMPT=yes
 			source "$venv/bin/activate"
 		fi
 	fi
@@ -507,10 +541,18 @@ export LICENCE="$licence"
 #
 setupVirtualEnviron || die "failed to setup virtual environment"
 if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:true`" = "true" ]; then
-	"$BASE/scripts/requirements.py"
+	errout="$BASE/scripts/.error.$$.out"
+	"$BASE/scripts/requirements.py" -f "--logname=$logname" 2> "$errout"
 	rc=$?
+	if [ -f "$errout" ] && [ -s "$errout" ]; then
+		log "`cat \"$errout\"`"
+	fi
+	rm -f "$errout"
 	case "$rc" in
 	0)
+		# no further action needed
+		;;
+	10)
 		if [ -f "$req" ]; then
 			[ -d "$BASE/var/tmp" ] || mkdir -p "$HOME/var/tmp"
 			upgrade() {
@@ -523,27 +565,30 @@ if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:true`" = "true" 
 				rm -f $__log
 				return $rc
 			}
-			messagen "Upgrade \"pip\" .. "
+			silent_messagen "Upgrade \"pip\" .. "
 			upgrade --upgrade pip
-			messagen "process \"$req\" .. "
+			silent_messagen "process \"$req\" .. "
 			upgrade --requirement "$req"
 			if [ $? -ne 0 ]; then
 				echo "# failed to process at `date +%c`" >> "$req"
 				die "Failed to install/upgrade python packages from file \"$req\""
 			fi
-			message "done."
+			silent_message "done."
 		else
 			die "Missing created requirements file \"$req\""
 		fi
 		;;
-	1)
-		die "Failed to preparse requirements file due to invalid input file"
+	11)
+		# already processed, nothing to do
 		;;
-	2)
+	12)
 		die "Failed to preparse requirements file due to missing input file"
 		;;
-	3)
-		# already processed, nothing to do
+	13)
+		die "Failed to preparse requirements file due to invalid input file"
+		;;
+	14)
+		die "Failed to preparse requirements file due to internal error (see logfile for further information)"
 		;;
 	*)
 		die "Failed to preparse requirements file with exit status $rc"

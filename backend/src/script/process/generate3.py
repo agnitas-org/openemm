@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -36,7 +36,7 @@ from	agn3.log import log, log_limit
 from	agn3.parser import ParseTimestamp, Unit, Line, Field, Tokenparser
 from	agn3.process import Processtitle
 from	agn3.report import Report
-from	agn3.runtime import Runtime
+from	agn3.runtime import Runtime, Locate
 from	agn3.stream import Stream
 from	agn3.tools import listsplit
 #
@@ -106,7 +106,7 @@ class Task: #{{{
 	def execute (self) -> None:
 		pass
 #}}}
-class Sending (Task): #{{{
+class _Sending (Task): #{{{
 	def __init__ (self, *args: Any, **kwargs: Any) -> None:
 		super ().__init__ (*args, **kwargs)
 		self.in_queue: Dict[int, Entry] = {}
@@ -308,7 +308,7 @@ class Sending (Task): #{{{
 	def expired_entry (self, entry: Entry) -> bool:
 		return True
 #}}}
-class Rulebased (Sending): #{{{
+class Rulebased (_Sending): #{{{
 	name = 'rulebased'
 	interval = '1h'
 	immediately = True
@@ -482,7 +482,7 @@ class Rulebased (Sending): #{{{
 					}
 				)
 				language = rq.admin_lang if rq is not None else None
-				if not Report ('clearance', language = language).create (
+				if not Report.from_template ('clearance', language = language).create (
 					recipients = [email],
 					carbon_copies = carbon_copies,
 					blind_carbon_copies = blind_carbon_copies,
@@ -630,7 +630,7 @@ class Rulebased (Sending): #{{{
 				failures += 1
 		return failures == 0
 #}}}
-class Worldmailing (Sending): #{{{
+class Worldmailing (_Sending): #{{{
 	name = 'generate'
 	interval = '15m'
 	priority = 4
@@ -1020,7 +1020,7 @@ class JobqueueGenerate (Jobqueue): #{{{
 			self.setsignal (signal.SIGHUP, self.reload)
 			self.setsignal (signal.SIGUSR1, self.status)
 #}}}
-class Generate (Runtime):
+class Generate (Runtime, Locate):
 	__slots__ = ['oldest', 'processes', 'modules']
 	def supports (self, option: str) -> bool:
 		return option != 'dryrun'
@@ -1045,10 +1045,9 @@ class Generate (Runtime):
 	
 	def executor (self) -> bool:
 		with Activator () as activator:
-			modules = (Stream (globals ().values ())
-				.filter (lambda module: type (module) is type and issubclass (module, Task) and hasattr (module, 'interval'))
-				.filter (lambda module: bool (activator.check (['%s-%s' % (program, module.name)])))
-				.map (lambda module: (module.name, module))
+			modules = (Stream (self.locate (Task, source = globals ()))
+				.filter (lambda m: activator.check ([f'{program}-{m.name}']))
+				.map (lambda m: (m.name, m))
 				.dict ()
 			)
 		logger.info ('Active modules: %s' % ', '.join (sorted (modules.keys ())))

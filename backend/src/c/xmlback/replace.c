@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -348,7 +348,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 		if (rec -> media && rec -> media -> empty)
 			if ((block -> tid != TID_EMail_HTML_Preheader) && (block -> tid != TID_EMail_HTML_Clearance)) {
 				blockmail -> active = false;
-				blockmail -> reason = Reason_Empty_Document;
+				reason_empty_document (blockmail -> reason, block);
 			}
 	}
 	return st;

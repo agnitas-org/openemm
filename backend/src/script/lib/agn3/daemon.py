@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -23,7 +23,7 @@ from	typing import Any, Callable, Generic, NoReturn, Optional, Sequence, TypeVar
 from	typing import Deque, Dict, Generator, List, Set, Tuple, Type
 from	typing import cast
 from	.definitions import base
-from	.exceptions import error, Timeout
+from	.exceptions import error
 from	.ignore import Ignore
 from	.log import log
 from	.parser import Parsable, unit
@@ -149,7 +149,7 @@ class Timer:
 			if self.timeout is not None:
 				remain = self.timeout - (time.time () - self.start)
 				if remain < 0.0:
-					raise Timeout ()
+					raise TimeoutError ()
 				return remain
 			return None
 		raise error ('timer not started')
@@ -171,7 +171,7 @@ class Timer:
 	@staticmethod
 	def guard (timeout: int, method: Callable[[], _T]) -> _T:
 		def handler (sig: int, stack: Optional[FrameType]) -> Any:
-			raise Timeout ()
+			raise TimeoutError ()
 		with Signal (signal.SIGALRM, handler):
 			try:
 				signal.alarm (timeout)
@@ -375,7 +375,7 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 		#
 		rc = waitfor (os.WNOHANG)
 		if timeout:
-			with Ignore (Timeout), Timer (timeout) as timer:
+			with Ignore (TimeoutError), Timer (timeout) as timer:
 				while not rc.pid and rc.error is None:
 					timer (0.1)
 					rc = waitfor (os.WNOHANG)
@@ -547,7 +547,8 @@ is called at the exit of the context manager.
 					if self.log: self.log (member, f'terminating by {e}')
 					rc = e
 				if member.channel is not None:
-					member.channel.put (rc)
+					with Ignore ():
+						member.channel.put (rc)
 					member.channel.close ()
 					member.channel = None
 				member.state = Daemonic.State.dying
@@ -587,7 +588,7 @@ is called at the exit of the context manager.
 
 		def wait (self, timeout: Parsable = None) -> int:
 			counter = 0
-			with Ignore (Timeout), Timer (timeout) as timer:
+			with Ignore (TimeoutError), Timer (timeout) as timer:
 				while self.is_active ():
 					self.start ()
 					status = self.daemon.join (timeout = timer () if timeout else timeout)
@@ -639,7 +640,7 @@ is called at the exit of the context manager.
 							self.start ()
 						if self.active:
 							self.wait (0.1 if self.scheduled else timer ())
-			except Timeout:
+			except TimeoutError:
 				self.term (hard_kill_delay)
 			return self.status
 

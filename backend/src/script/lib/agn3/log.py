@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -26,7 +26,11 @@ from	.io import create_path
 from	.parser import Parsable, unit
 from	.sentinel import Sentinel, sentinel
 #
-__all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
+__all__ = [
+	'LogID', 'log', 'mark', 'log_limit',
+	'log_filter', 'log_filter_asynchttp', 'log_filter_asyncssh', 'log_filter_websockets',
+	'interactive'
+]
 #
 class Limiter:
 	__slots__ = ['seen', 'lock', 'enabled']
@@ -354,6 +358,21 @@ def log_filter (predicate: Callable[[logging.LogRecord], bool]) -> None:
 		def filter (self, record: logging.LogRecord) -> bool:
 			return predicate (record)
 	_rootHandler.addFilter (Filter ())
+
+def log_filter_asynchttp () -> None:
+	def filter_asynchttp (r: logging.LogRecord) -> bool:
+		return r.levelno > max (log.loglevel, logging.DEBUG) or r.name not in ('asyncio', 'aiohttp_xmlrpc.client')
+	log_filter (filter_asynchttp)
+	
+def log_filter_asyncssh () -> None:
+	def filter_asyncssh (r: logging.LogRecord) -> bool:
+		return r.levelno > max (log.loglevel, logging.INFO) or r.name.split ('.')[0] != 'asyncssh'
+	log_filter (filter_asyncssh)
+
+def log_filter_websockets () -> None:
+	def filter_websockets (r: logging.LogRecord) -> bool:
+		return r.levelno > log.loglevel or r.name.split ('.')[0] != 'websockets'
+	log_filter (filter_websockets)
 
 def _except (type_: Type[BaseException], value: BaseException, traceback: Optional[TracebackType]) -> None:
 	logging.critical (f'CAUGHT EXCEPTION: {value}', exc_info = value)

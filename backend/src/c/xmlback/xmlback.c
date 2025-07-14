@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -32,7 +32,6 @@ static output_t	output_table[] = { /*{{{*/
 		"\t\ttemporary=<flags>  true to write unique queue-ids, for test and admin mailings\n"
 		"\t\taccount-logfile=<path>    path to file to write accounting information to\n"
 		"\t\tbounce-logfile=<path>     path to write bounce information to\n"
-		"\t\tmessageid-logfile=<path>  path to write message-id mappings to\n"
 		"\t\tmailtrack-logfile=<path>  path to write mailtrack information to\n"
 		"\t\tpath=<path>        path to queue directory to write spool files to\n"
 		"\tOptions specific for email:\n"
@@ -337,13 +336,14 @@ main (int argc, char **argv) /*{{{*/
 		xmlNodePtr	base;
 	
 		st = false;
+		log_idset (lg, cbasename (argv[n]));
 		if (! (blockmail = blockmail_alloc (argv[n], out -> syncfile, lg)))
 			log_out (lg, LV_ERROR, "Unable to setup blockmail");
 		else {
 			blockmail -> raw = raw;
 			blockmail -> output = out;
 			blockmail -> outputdata = NULL;
-			log_idset (lg, "init");
+			log_idpush (lg, "init");
 			blockmail -> outputdata = (*out -> oinit) (blockmail, pparm);
 			blockmail_setup_auto_url_prefix (blockmail, auto_url_prefix);
 			blockmail -> gui = gui || auto_url_prefix;
@@ -355,7 +355,7 @@ main (int argc, char **argv) /*{{{*/
 			blockmail -> pointintime = pointintime;
 			blockmail -> target_ids = target_ids;
 			blockmail -> target_ids_count = target_ids_count;
-			log_idclr (lg);
+			log_idpop (lg);
 			if (! blockmail -> outputdata)
 				log_out (lg, LV_ERROR, "Unable to initialize output method %s for %s", out -> name, argv[n]);
 			else {
@@ -368,9 +368,9 @@ main (int argc, char **argv) /*{{{*/
 					log_out (lg, LV_ERROR, "Unable to open/parse file %s", argv[n]);
 				if (st)
 					blockmail_count_sort (blockmail);
-				log_idset (lg, "deinit");
+				log_idpush (lg, "deinit");
 				dst = (*out -> odeinit) (blockmail -> outputdata, blockmail, st);
-				log_idclr (lg);
+				log_idpop (lg);
 				if (! dst) {
 					log_out (lg, LV_ERROR, "Unable to deinitialize output method %s for %s", out -> name, argv[n]);
 					st = false;
@@ -379,6 +379,7 @@ main (int argc, char **argv) /*{{{*/
 			if (st)
 				blockmail_unsync (blockmail);
 			blockmail_free (blockmail);
+			log_idclr (lg);
 		}
 	}
 	if (fqdn)

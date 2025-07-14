@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -21,6 +21,7 @@ from	agn3.dbm import DBM
 from	agn3.definitions import base, unique
 from	agn3.emm.bounce import Bounce
 from	agn3.emm.config import Responsibility
+from	agn3.emm.event import Webhook
 from	agn3.emm.timestamp import Timestamp
 from	agn3.emm.types import UserStatus
 from	agn3.exceptions import error
@@ -403,6 +404,7 @@ class Softbounce (Runtime):
 		logger.info (f'Fade out done, removed {rows:,d} email(s) due to faded out bounce count to 0')
 	#}}}
 	def convert_to_hardbounce (self) -> None: #{{{
+		webhook = Webhook ()
 		logger.info ('Start converting softbounces to hardbounce')
 		for company_id in (self.db.streamc ('SELECT distinct company_id FROM softbounce_email_tbl')
 			.filter (lambda r: self.companies[r.company_id].active)
@@ -501,6 +503,13 @@ class Softbounce (Runtime):
 										'mailing_id': mailing_id,
 										'dsn': 599
 									}
+								)
+								webhook (
+									self.db,
+									Webhook.Type.hard_bounce,
+									company_id = company_id,
+									mailing_id = mailing_id,
+									customer_id = customer_id
 								)
 				else:
 					logger.info (f'Email {email} has no matching profile (anymore) -> discarded')

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,6 +14,7 @@ import	os, errno, time, stat, gzip, bz2, logging
 import	csv, hashlib, shlex, json
 from	collections import namedtuple
 from	functools import partial
+from	types import TracebackType
 from	typing import Any, Callable, Iterable, Literal, Optional, Protocol, Union
 from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast, overload
@@ -95,7 +96,7 @@ def which (program: str, *args: str, default: Optional[str] = None, mode: int = 
 ``args'' may contain more directories to search for if the programn
 can be expected in a known directory which is not part of $PATH.
 """
-	return cast (Optional[str], Stream (os.environ.get ('PATH', '').split (':') + list (args))
+	return (Stream (os.environ.get ('PATH', '').split (':') + list (args))
 		.distinct ()
 		.map (lambda p: os.path.join (p if p else os.path.curdir, program))
 		.filter (lambda p: os.access (p, mode))
@@ -225,14 +226,30 @@ beginning of the new file.
 		for line in iter (lambda: self.readline (), None):
 			yield line
 		self.save ()
+	
+	def __enter__ (self) -> Filepos:
+		self._fd ()
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		self.close ()
+		return None
+	
+	def _fd (self) -> TextIO:
+		if self.fd is not None:
+			return self.fd
+		self.__open ()
+		if self.fd is not None:
+			return self.fd
+		raise error (f'{self.fname}: not accessable')
 
 	def __stat (self, stat_file: bool) -> Optional[os.stat_result]:
-		fd = cast (TextIO, self.fd)
+		fd = self._fd ().fileno ()
 		try:
-			return os.stat (self.fname) if stat_file else os.fstat (fd.fileno ())
+			return os.stat (self.fname) if stat_file else os.fstat (fd)
 		except (OSError, IOError):
 			logger.exception ('Failed to stat file {f}'.format (
-				f = self.fname if stat_file else 'open file #{fno}'.format (fno = fd.fileno ())
+				f = self.fname if stat_file else f'open file #{fd}'
 			))
 		return None
 
@@ -287,43 +304,59 @@ beginning of the new file.
 
 	def save (self) -> None:
 		"""Save current position for recovery"""
+		tempfile = os.path.join (os.path.dirname (self.info), '.{basename}'.format (basename = os.path.basename (self.info)))
 		for state in 0, 1:
 			try:
-				with open (self.info, 'w') as fd:
+				with open (tempfile, 'w') as fd:
 					fd.write ('{inode}:{ctime}:{pos}\n'.format (
 						inode = self.inode,
 						ctime = self.ctime,
-						pos = cast (TextIO, self.fd).tell ()
+						pos = self._fd ().tell ()
 					))
 				break
 			except IOError as e:
-				logger.exception (f'Failed to write {self.info}: {e}', e)
-				if state == 0:
-					with Ignore (OSError):
-						os.unlink (self.info)
-				else:
+				logger.exception (f'Failed to write {tempfile}: {e}', e)
+				with Ignore (OSError):
+					os.unlink (tempfile)
+				if state == 1:
 					raise
+		if os.path.isfile (tempfile):
+			for state in 0, 1:
+				try:
+					os.rename (tempfile, self.info)
+					break
+				except OSError as e:
+					logger.exception (f'failed to rename "{tempfile}" to "{self.info}": {e}')
+					if state == 0:
+						with Ignore (OSError):
+							os.unlink (self.info)
+					else:
+						raise
 		self.count = 0
 
 	def close (self) -> None:
 		"""closes the file"""
-		if self.fd:
+		if self.fd is not None:
 			self.save ()
 			self.fd.close ()
 			self.fd = None
 
 	def __is_same_file (self) -> bool:
 		st = self.__stat (True)
-		return st is not None and st.st_ino == self.inode and int (st.st_ctime) == self.ctime and st.st_size > cast (TextIO, self.fd).tell ()
+		return st is not None and st.st_ino == self.inode and int (st.st_ctime) == self.ctime and st.st_size > self._fd ().tell ()
 
 	def __readline (self) -> Optional[str]:
-		line = cast (TextIO, self.fd).readline ()
-		if line != '':
+		fd = self._fd ()
+		current = fd.tell ()
+		line = fd.readline ()
+		if line.endswith ('\n'):
 			self.count += 1
 			if self.count >= self.checkpoint:
 				self.save ()
 			return line.rstrip ('\r\n')
 		else:
+			if line:
+				fd.seek (current, os.SEEK_SET)
 			return None
 
 	def readline (self) -> Optional[str]:

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -29,7 +29,6 @@ typedef struct { /*{{{*/
 	bool_t		istemp;		/* temp. filenames		*/
 	char		*acclog;	/* optional accounting log	*/
 	char		*bnclog;	/* optional bounce log		*/
-	char		*midlog;	/* optional message-id log	*/
 	char		*tracklog;	/* optional mailtracking log	*/
 	sendmail_t	*s;		/* output generating for mails	*/
 	/*}}}*/
@@ -82,6 +81,7 @@ write_bounce_log (gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char 
 		time_t		now;
 		struct tm	*tt;
 		char		ts[128];
+		char		status[128];
 			
 		time (& now);
 		if (tt = localtime (& now)) {
@@ -89,8 +89,13 @@ write_bounce_log (gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char 
 		} else {
 			ts[0] = '\0';
 		}
+		if (blockmail -> status_field) {
+			snprintf (status, sizeof (status) - 1, "status_field=%c\t", blockmail -> status_field);
+		} else {
+			status[0] = '\0';
+		}
 		st = true;
-		if (fprintf (fp, "%s;%d;%d;%d;%d;%s%s\n", dsn, blockmail -> licence_id, blockmail -> mailing_id, (rec -> media ? rec -> media -> type : Mediatype_Unspec), rec -> customer_id, ts, reason) < 0) {
+		if (fprintf (fp, "%s;%d;%d;%d;%d;%s%s%s\n", dsn, blockmail -> licence_id, blockmail -> mailing_id, (rec -> media ? rec -> media -> type : Mediatype_Unspec), rec -> customer_id, ts, status, reason) < 0) {
 			st = false;
 		}
 		if (fclose (fp) == EOF) {
@@ -295,12 +300,12 @@ spool_unique_by_number (spool_t *s) /*{{{*/
 	return true;
 }/*}}}*/
 static bool_t
-spool_write (spool_t *s, buffer_t *content) /*{{{*/
+spool_write (spool_t *s, const buffer_t *content) /*{{{*/
 {
 	return s -> devnull ? true : write_file (s -> buf, content);
 }/*}}}*/
 static bool_t
-spool_write_temp (spool_t *s, buffer_t *content) /*{{{*/
+spool_write_temp (spool_t *s, const buffer_t *content) /*{{{*/
 {
 	return s -> devnull ? true : write_file (s -> temp, content);
 }/*}}}*/
@@ -469,7 +474,7 @@ sendmail_osanity (sendmail_t *s, blockmail_t *blockmail) /*{{{*/
 	return st;
 }/*}}}*/
 static bool_t
-sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool, bool_t istemp, int customer_id, buffer_t *head) /*{{{*/
+sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool, bool_t istemp, int customer_id, const buffer_t *head) /*{{{*/
 {
 	bool_t	st = false;
 	
@@ -576,7 +581,7 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 		if (pid > 0) {
 			pid_t		npid;
 			int		status;
-			buffer_t	*flatten;
+			const buffer_t	*flatten;
 			int		size;
 
 			size = 0;
@@ -619,8 +624,7 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 						default:
 							if ((exit_status >= EX__BASE) && (exit_status <= EX__MAX)) {
 								blockmail -> active = false;
-								blockmail -> reason = Reason_Reject;
-								blockmail -> reason_detail = exit_status;
+								reason_reject (blockmail -> reason, exit_status);
 							}
 							break;
 						}
@@ -695,7 +699,6 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 		g -> istemp = false;
 		g -> acclog = NULL;
 		g -> bnclog = NULL;
-		g -> midlog = NULL;
 		g -> tracklog = NULL;
 		g -> s = sendmail_alloc ();
 		if (g -> s)
@@ -718,8 +721,6 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 					st = struse (& g -> acclog, tmp -> val);
 				} else if (var_partial_imatch (tmp, "bounce-logfile")) {
 					st = struse (& g -> bnclog, tmp -> val);
-				} else if (var_partial_imatch (tmp, "messageid-logfile")) {
-					st = struse (& g -> midlog, tmp -> val);
 				} else if (var_partial_imatch (tmp, "mailtrack-logfile")) {
 					st = struse (& g -> tracklog, tmp -> val);
 				} else {
@@ -855,8 +856,6 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 			free (g -> acclog);
 		if (g -> bnclog)
 			free (g -> bnclog);
-		if (g -> midlog)
-			free (g -> midlog);
 		if (g -> tracklog)
 			free (g -> tracklog);
 		if (g -> s)
@@ -871,83 +870,18 @@ generate_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	gen_t	*g = (gen_t *) data;
 	bool_t	st;
 
-	if (g -> midlog && rec -> message_id) {
-		FILE		*fp;
-		int		midlen = xmlBufferLength (rec -> message_id);
-		const xmlChar	*mid = xmlBufferContent (rec -> message_id);
-		
-		if (fp = fopen (g -> midlog, "a")) {
-			fprintf (fp, "%d;%d;%d;%d;%d;%*.*s\n",
-				 blockmail -> licence_id,
-				 blockmail -> company_id,
-				 blockmail -> mailinglist_id,
-				 blockmail -> mailing_id,
-				 rec -> customer_id,
-				 midlen, midlen, (const char *) mid);
-			fclose (fp);
-		} else
-			log_out (blockmail -> lg, LV_ERROR, "Failed to write to %s: %m", g -> midlog);
+	if (blockmail -> active && (! rec -> media)) {
+		blockmail -> active = false;
+		reason_unmatched_media (blockmail -> reason);
 	}
 	if (! blockmail -> active) {
 		const char	*reason = NULL;
 		char		dsn[32];
-		buffer_t	*scratch;
-		char		*custom;
 		
-		snprintf (dsn, sizeof (dsn) - 1, "1.%d.%d", blockmail -> reason, blockmail -> reason_detail);
-		if (scratch = buffer_alloc (256)) {
-			buffer_sets (scratch, "skip=");
-			switch (blockmail -> reason) {
-			case Reason_Unspec:
-				buffer_appends (scratch, "unspec reason");
-				break;
-			case Reason_No_Media:
-				buffer_format (scratch, "no media (%d)", blockmail -> reason_detail);
-				break;
-			case Reason_Empty_Document:
-				buffer_appends (scratch, "no document");
-				break;
-			case Reason_Unmatched_Media:
-				buffer_appends (scratch, "unmatched media");
-				break;
-			case Reason_Reject:
-				buffer_format (scratch, "reject (exit code %d)", blockmail -> reason_detail);
-				break;
-			case Reason_Custom:
-				if (blockmail -> reason_custom && *(blockmail -> reason_custom))
-					buffer_appends (scratch, blockmail -> reason_custom);
-				else
-					buffer_appends (scratch, "generic custom reason");
-			}
-			reason = buffer_string (scratch);
-		}
-		custom = NULL;
-		if (! reason) {
-			switch (blockmail -> reason) {
-			case Reason_Unspec:		reason = "skip=unspec reason";		break;
-			case Reason_No_Media:		reason = "skip=no media";		break;
-			case Reason_Empty_Document:	reason = "skip=no document";		break;
-			case Reason_Unmatched_Media:	reason = "skip=unmatched media";	break;
-			case Reason_Reject:		reason = "skip=reject";			break;
-			case Reason_Custom:
-			default:
-				if ((blockmail -> reason == Reason_Custom) && blockmail -> reason_custom) {
-					if (custom = malloc (strlen (blockmail -> reason_custom) + 6))
-						sprintf (custom, "skip=%s", blockmail -> reason_custom);
-				} else if (custom = malloc (32)) {
-					sprintf (custom, "skip=reason %d", blockmail -> reason);
-				}
-				reason = custom;
-				break;
-			}
-		}
-		st = write_bounce_log (g, blockmail, rec, dsn, reason ? reason : "skip=not specified");
-		if (scratch)
-			buffer_free (scratch);
-		if (custom)
-			free (custom);
-	} else if (! rec -> media) {
-		st = write_bounce_log (g, blockmail, rec, "1.0.0", "skip=missing media");
+		if (reason = reason_build (blockmail -> reason, dsn, sizeof (dsn) - 1))
+			st = write_bounce_log (g, blockmail, rec, dsn, reason);
+		else
+			st = false;
 	} else if (rec -> media -> type == Mediatype_EMail) {
 		st = sendmail_owrite (g -> s, g, blockmail, rec);
 	} else {

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -120,15 +120,15 @@ encode_none (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 bool_t
 encode_8bit (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 {
-	long		ospare;
 	const xmlChar	*content;
 	int		length;
+	long		ospare;
 	int		n;
 	int		start, eol;
 	
-	ospare = dest -> spare;
 	content = xmlBufferContent (src);
 	length = xmlBufferLength (src);
+	ospare = dest -> spare;
 	dest -> spare = length + (length / 20); /* make spare 105% of original size */
 	for (n = 0, start = 0; n < length; )
 		if (eol = iseol (content, length, n)) {
@@ -141,6 +141,9 @@ encode_8bit (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 			start = n;
 		} else
 			++n;
+	if (start < n)
+		if (! buffer_stiff (dest, content + start, n - start))
+			return false;
 	dest -> spare = ospare;
 	return true;
 }/*}}}*/
@@ -149,9 +152,9 @@ encode_quoted_printable (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 {
 	bool_t		st;
 	byte_t		hex[3];
-	long		ospare;
 	const xmlChar	*content;
 	int		length;
+	long		ospare;
 	int		n;
 	int		ccnt;
 	int		eol;
@@ -159,9 +162,9 @@ encode_quoted_printable (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 	
 	st = true;
 	hex[0] = '=';
-	ospare = dest -> spare;
 	content = xmlBufferContent (src);
 	length = xmlBufferLength (src);
+	ospare = dest -> spare;
 	dest -> spare = length + (length / 10); /* make spare 110% of original size */
 	for (n = 0, ccnt = 0; (n < length) && st; ++n) {
 		if ((ccnt > 72) && (! iseol (content, length, n))) {

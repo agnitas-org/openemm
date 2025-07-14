@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,6 +14,7 @@ from	__future__ import annotations
 import	os, re, subprocess, errno, logging
 import	traceback
 from	contextlib import suppress
+from	datetime import datetime, date
 from	enum import Enum
 from	types import TracebackType
 from	typing import Any, Callable, Generic, Match, NoReturn, Optional, TypeVar, Union
@@ -22,7 +23,7 @@ from	.exceptions import error
 from	.stream import Stream
 #
 __all__ = [
-	'abstract', 'defer',
+	'abstract', 'deprecated', 'defer',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
 	'listsplit', 'listjoin', 
@@ -44,6 +45,71 @@ def abstract () -> NoReturn:
 		msg = 'abstract method not implemented (no clue where)'
 	logger.error (msg)
 	raise NotImplementedError (msg)
+#
+class Decorator:
+	__slots__ = ['args', 'kwargs']
+	_seen: Set[Callable[..., Any]] = set ()
+	def __init__ (self, *args: Any, **kwargs: Any) -> None:
+		self.args = args
+		self.kwargs = kwargs
+	
+	def __call__ (self, *cargs: Any, **ckwargs: Any) -> Callable[..., Any]:
+		def wrapper (method: Callable[..., Any], callargs: None | tuple[Any], callkwargs: None | dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+			return self.handle (method, callargs, callkwargs, *args, **kwargs)
+		#
+		if len (cargs) == 1 and not ckwargs and callable (cargs[0]):
+			method = cargs[0]
+			if self.args or self.kwargs:
+				def inner (*args: Any, **kwargs: Any) -> Any:
+					return wrapper (method, self.args, self.kwargs, *args, **kwargs)
+			else:
+				def inner (*args: Any, **kwargs: Any) -> Any:
+					return wrapper (method, None, None, *args, **kwargs)
+			return inner
+		else:
+			def outer (method: Callable[..., Any]) -> Callable[..., Any]:
+				def inner (*args: Any, **kwargs: Any) -> Any:
+					return wrapper (method, cargs, ckwargs, *args, **kwargs)
+				return inner
+			return outer
+	
+	def handle (self, method: Callable[..., Any], callargs: None | tuple[Any], callkwargs: None | dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+		return method (*args, **kwargs)
+	
+class Deprecated (Decorator):
+	__slots__: list[str] = []
+	_seen: Set[Callable[..., Any]] = set ()
+	def handle (self, method: Callable[..., Any], callargs: None | tuple[Any], callkwargs: None | dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+		if method not in self._seen:
+			self._seen.add (method)
+			try:
+				name = method.__name__
+			except AttributeError:
+				name = str (method)
+			if len (args) > 0:
+				with suppress (AttributeError):
+					module = args[0].__module__
+					class_name = args[0].__class__.__name__
+					if module != '__main__':
+						name = f'{module}.{class_name}.{name}'
+					else:
+						name = f'{class_name}.{name}'
+			extra = ''
+			if callargs is not None and callkwargs is not None:
+				extras: list[str] = [str (_a) for _a in callargs]
+				for (option, value) in callkwargs.items ():
+					extras.append ('{option}: {value}'.format (
+						option = option,
+						value = f'{value:%Y-%m-%d}' if isinstance (value, datetime) or isinstance (value, date) else str (value)
+					))
+				if extras:
+					extra = ' ({extras})'.format (
+						extras = ', '.join (extras)
+					)
+			logger.warning (f'deprecated: {name}{extra}')
+		return method (*args, **kwargs)
+	
+deprecated = Deprecated ()
 #
 class defer (Generic[_T]):
 	__slots__ = ['instance', 'deferrer']
@@ -124,7 +190,7 @@ ValueError: could not convert string to float: 'y'
 	except:
 		return float (default)
 	
-def atob (s: Any) -> bool:
+def atob (s: Any = None) -> bool:
 	"""Interprets a value as a boolean
 
 >>> atob (0)
@@ -765,6 +831,13 @@ formated or $rawcount for unformated current count) and offering
 			self.last = self.count
 			self.handle ()
 	
+	def __enter__ (self) -> Progress:
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		self.fin ()
+		return None
+
 	def __getitem__ (self, key: str) -> str:
 		return self.ns[key]
 	

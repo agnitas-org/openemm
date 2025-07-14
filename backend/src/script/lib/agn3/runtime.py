@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,8 +14,8 @@ from	collections import namedtuple
 from	dataclasses import dataclass
 from	fnmatch import fnmatch
 from	traceback import print_exception
-from	typing import Any, Callable, Optional
-from	typing import Dict, List
+from	typing import Any, Callable, NoReturn, Optional, Sequence, TypeVar
+from	typing import Dict, List, Set, Type
 from	.config import Config
 from	.daemon import Daemonic, Watchdog
 from	.definitions import host, program, syscfg
@@ -28,11 +28,13 @@ from	.parameter import Parameter
 from	.parser import unit
 from	.process import Processtitle, Parallel
 from	.stream import Stream
-from	.tools import Plugin
+from	.tools import atob, Plugin
 #
-__all__ = ['Runtime', 'CLI']
+__all__ = ['Runtime', 'CLI', 'Preset', 'Locate']
 #
 logger = logging.getLogger (__name__)
+#
+_T = TypeVar ('_T', bound = Type[object])
 #
 def _expand_inline (args: List[str], environment: Optional[Dict[str, str]] = None) -> List[str]:
 	"""Expands element starting with an '@' from an environment variable or a file
@@ -196,9 +198,13 @@ def cleanup (self):
 	program_epilog: Optional[str] = None
 
 	@classmethod
-	def main (cls, *args: Any, **kwargs: Any) -> None:
+	def main (cls, *args: Any, **kwargs: Any) -> NoReturn:
 		rt = cls (*args, **kwargs)
-		sys.exit (0 if rt.run () else 1)
+		try:
+			sys.exit (0 if rt.run () else 1)
+		except error as e:
+			logger.error (f'{program}: failed: {e}')
+			sys.exit (1)
 
 	@dataclass
 	class Context:
@@ -280,7 +286,11 @@ def cleanup (self):
 						try:
 							return function.__name__
 						except AttributeError:
-							return str (function)
+							try:
+								return str (function)
+							except:
+								return program
+					#
 					if self.ctx.watchdog:
 						self.ctx.processtitle ('watchdog')
 						if executors is not None:
@@ -440,13 +450,14 @@ class CLI (Daemonic):
 	program_epilog: Optional[str] = None
 
 	@classmethod
-	def main (cls) -> None:
-		with Ignore ():
-			if os.isatty (sys.stdin.fileno ()):
-				interactive ()
+	def main (cls, silent: bool = False) -> None:
+		if not silent:
+			with Ignore ():
+				if os.isatty (sys.stdin.fileno ()):
+					interactive ()
 		rt = cls ()
 		sys.exit (0 if rt.run () else 1)
-
+	
 	def run (self) -> bool:
 		#
 		self.setup ()
@@ -486,3 +497,53 @@ class CLI (Daemonic):
 		return False
 	def cleanup (self, success: bool) -> None:
 		pass
+
+#
+#	Mixins
+#
+class Preset:
+	__slots__: List[str] = []
+	def preset (self, presets: Dict[str, str | Callable[..., Any]]) -> None:
+		rpresets: Dict[str, Callable[..., Any]] = (Stream (presets.items ())
+			.map (lambda kv: (kv[0], getattr (self, f'preset_{kv[1]}') if isinstance (kv[1], str) else kv[1]))
+			.dict ()
+		)
+		for (option, method) in rpresets.items ():
+			setattr (self, option, method ())
+		if (env := os.getenv (f'{program.upper ()}_OPTION')) is not None:
+			try:
+				for (option, value) in json.loads (env).items ():
+					if isinstance (value, type (getattr (self, option))):
+						setattr (self, option, value)
+			except json.decoder.JSONDecodeError:
+				for (option, value_repr) in Parameter (env).items ():
+					setattr (self, option, rpresets[option] (value_repr))
+	
+	def preset_bool (self, value: None | str = None) -> bool:
+		return False if value is None else atob (value)
+		
+	def preset_int (self, value: None | str = None) -> int:
+		return 0 if value is None else int (value)
+	
+	def preset_str (self, value: None | str = None) -> None | str:
+		return value
+
+class Locate:
+	__slots__: List[str] = []
+	@classmethod
+	def locate (cls,
+		subclasses_of: _T,
+		*,
+		use: None | str = None,
+		source: None | Dict[str, Any] = None,
+		skip: None | Sequence[str] | Set[str] = None,
+		exclude: None | Sequence[_T] | Set[_T] = None
+	) -> List[_T]:
+		return (Stream ((source if source is not None else cls.__dict__).items ())
+			.filter (lambda kv: not kv[0].startswith ('_') and (skip is None or kv[0] not in skip))
+			.map (lambda kv: kv[1])
+			.filter (lambda v: type (v) is type and issubclass (v, subclasses_of) and v is not subclasses_of)
+			.filter (lambda v: exclude is None or v not in exclude)
+			.filter (lambda v: use is None or (hasattr (v, use) and (method := getattr (v, use)) is not None and callable (method) and method ()))
+			.list ()
+		)

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -84,12 +84,17 @@ main (int argc, char **argv)
 	int		rc;
 	char		*orig, *target;
 	int		classic, basename, newline, sort;
+	char		**exclude;
+	int		esize, ecount;
 	
 	classic = 0;
 	basename = 0;
 	newline = 0;
 	sort = 0;
-	while ((n = getopt (argc, argv, "cbns?h")) != -1)
+	exclude = NULL;
+	esize = 0;
+	ecount = 0;
+	while ((n = getopt (argc, argv, "cbnsx:?h")) != -1)
 		switch (n) {
 		case 'c':
 			classic = 1;
@@ -102,6 +107,16 @@ main (int argc, char **argv)
 			break;
 		case 's':
 			sort = 1;
+			break;
+		case 'x':
+			if (ecount >= esize) {
+				esize += 8;
+				if (! (exclude = realloc (exclude, esize * sizeof (char *))))
+					return fprintf (stderr, "Failed to reallocate excludes for \"%s\": %m\n", optarg), 1;
+			}
+			if (! (exclude[ecount] = strdup (optarg)))
+				return fprintf (stderr, "Failed to allocate exclude for \"%s\": %m\n", optarg), 1;
+			++ecount;
 			break;
 		case '?':
 		case 'h':
@@ -120,13 +135,27 @@ main (int argc, char **argv)
 			if (ptr = strchr (ptr, ':'))
 				++ptr;
 		if (elements = (char **) malloc (sizeof (char *) * count)) {
-			int	m;
+			int		m;
+			const char	*filename;
 			
-			for (ptr = orig, n = 0; ptr; ++n) {
+			for (ptr = orig, n = 0; ptr; ) {
 				elements[n] = ptr;
 				if (ptr = strchr (ptr, ':'))
 					*ptr++ = '\0';
+				if (exclude) {
+					if (filename = strrchr (elements[n], '/'))
+						++filename;
+					else
+						filename = elements[n];
+					for (m = 0; m < ecount; ++m)
+						if (! strcmp (exclude[m], filename))
+							break;
+					if (m < ecount)
+						continue;
+				}
+				++n;
 			}
+			count = n;
 			if (classic) {
 				for (n = count - 1; n > 0; --n) {
 					for (m = n - 1; m >= 0; --m)
@@ -169,6 +198,11 @@ main (int argc, char **argv)
 		}
 		free (target);
 		free (orig);
+	}
+	if (exclude) {
+		for (n = 0; n < ecount; ++n)
+			free (exclude[n]);
+		free (exclude);
 	}
 	return rc;
 }

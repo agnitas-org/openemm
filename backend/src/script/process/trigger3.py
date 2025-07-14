@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -200,7 +200,7 @@ class Callback (XMLRPC.RObject):
 		rc = False
 		reason = []
 		proc = Processtable ()
-		be = proc.select (user = user, comm = 'java', rcmd = 'org.agnitas.backend.MailoutServerXMLRPC')
+		be = proc.select (user = user, comm = 'java', rcmd = 'com.agnitas.backend.MailoutServerXMLRPC')
 		if len (be) == 1:
 			err = self.__state_check (be[0])
 			if err is None:

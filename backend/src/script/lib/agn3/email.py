@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -33,6 +33,7 @@ from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
 from	.io import csv_default
+from	.mailkey import Key, MailKey
 from	.stream import Stream
 from	.tools import atob
 from	.uid import UID, UIDHandler
@@ -105,11 +106,11 @@ class EMail (IDs):
 	
 	@staticmethod
 	def from_string (content: str) -> EmailMessage:
-		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default))
+		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default)) # type: ignore[arg-type]
 
 	@staticmethod
 	def from_bytes (content: bytes) -> EmailMessage:
-		return cast (EmailMessage, email.message_from_bytes (content, policy = email.policy.default))
+		return cast (EmailMessage, email.message_from_bytes (content, policy = email.policy.default)) # type: ignore[arg-type]
 
 	nofold_policy = EmailPolicy (refold_source = 'none')
 	@staticmethod
@@ -169,56 +170,55 @@ class EMail (IDs):
 					emmcompany.set_company_id (company_id)
 				local_key = emmcompany.get ('dkim-local-key', company_id = company_id, default = False, convert = atob)
 				global_key = emmcompany.get ('dkim-global-key', company_id = company_id, default = False, convert = atob)
-				query = (
-					'SELECT company_id, domain, selector, domain_key '
-					'FROM dkim_key_tbl '
-					'WHERE company_id {compare} AND '
-					'      (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND '
-					'      (valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP) AND '
-					'	domain IS NOT NULL AND selector IS NOT NULL AND domain_key IS NOT NULL '
-					'ORDER BY company_id DESC, creation_date DESC'
-					.format (compare = 'IN (0, :company_id)' if company_id else '= 0')
-				)
-				data: Dict[str, Any] = {} if not company_id else {'company_id': company_id}
-				domain: Optional[str] = None
-				selector: Optional[str] = None
-				key: Optional[str] = None
-				for row in db.query (query, data):
-					if row.company_id == 0:
-						if global_key:
-							domain, selector, key = row.domain, row.selector, row.domain_key
-						break
-					elif local_key and company_id:
-						domain, selector, key = row.domain, row.selector, row.domain_key
-					elif row.domain in domains:
-						domain, selector, key = row.domain, row.selector, row.domain_key
-						break
-				if domain and selector and key:
-					logger.debug (f'Using {selector}._domainkey.{domain} for signing')
-					try:
-						signature = dkim.sign (
-							message = message.encode ('UTF-8'),
-							selector = selector.encode ('UTF-8'),
-							domain = domain.encode ('UTF-8'),
-							privkey = key.encode ('UTF-8'),
-							linesep = b'\n',
-							length = True
-						)
-					except Exception as e:
-						logger.warning (f'failed to sign message: {e}')
-					else:
-						if signature:
-							signature_string = signature.decode ('UTF-8')
-							if message[:5].lower () == 'from ':
-								with Ignore (ValueError):
-									(unixfrom, message) = message.split ('\n', 1)
-									message = f'{unixfrom}\n{signature_string}{message}'
-							else:
-								message = signature_string + message
+				if company_id or global_key:
+					mailkey = MailKey (company_id = company_id, db = db)
+					found: None | Key = None
+					for key in (_k for _k in mailkey.mailkeys if _k.method == 'dkim'):
+						if key.company_id == 0:
+							if global_key:
+								found = key
+								break
+						elif local_key:
+							found = key
+						elif (domain := key.get ('domain')) is not None and domain in domains:
+							found = key
+							break
+					if (
+						found is not None
+						and
+						(domain := found.get ('domain')) is not None
+						and
+						(selector := found.get ('selector')) is not None
+						and
+						(privkey := mailkey.key (found)) is not None
+					):
+						logger.debug (f'Using {selector}._domainkey.{domain} for signing')
+						try:
+							signature = dkim.sign (
+								message = message.encode ('UTF-8'),
+								selector = selector.encode ('UTF-8'),
+								domain = domain.encode ('UTF-8'),
+								privkey = privkey if isinstance (privkey, bytes) else privkey.encode ('UTF-8'),
+								linesep = b'\n',
+								length = True
+							)
+						except Exception as e:
+							logger.warning (f'failed to sign message: {e}')
 						else:
-							logger.error ('Mail NOT signed')
+							if signature:
+								signature_string = signature.decode ('UTF-8')
+								if message[:5].lower () == 'from ':
+									with Ignore (ValueError):
+										(unixfrom, message) = message.split ('\n', 1)
+										message = f'{unixfrom}\n{signature_string}{message}'
+								else:
+									message = signature_string + message
+							else:
+								logger.error ('Mail NOT signed')
+					else:
+						logger.debug ('signing: no dkim information found')
 				else:
-					logger.debug ('signing: no dkim information found')
+					logger.debug ('signing: no global fallback allowed')
 		return message
 
 	class Content:
@@ -440,8 +440,7 @@ class EMail (IDs):
 				nheaders.append (header.replace ('\n', ' '))
 		return (nheaders, charset)
 	
-	def build_mail (self) -> str:
-		"""Build the multipart mail and return it as a string"""
+	def build_message (self) -> EmailMessage:
 		(headers, charset) = self.__finalize_header ()
 		root = EmailMessage ()
 		for header in headers:
@@ -494,7 +493,11 @@ class EMail (IDs):
 				attachment.set_message (at, None)
 		for msg in msgs:
 			del msg['MIME-Version']
-		return EMail.sign (EMail.as_string (root, False) + '\n', sender = self.sender, company_id = self.company_id)
+		return root
+		
+	def build_mail (self) -> str:
+		"""Build the multipart mail and return it as a string"""
+		return EMail.sign (EMail.as_string (self.build_message (), False) + '\n', sender = self.sender, company_id = self.company_id)
 	
 	def send_mail (self) -> SentStatus:
 		"""Build and send the mail"""
@@ -962,7 +965,7 @@ overwritten to implement further logic for resolving the customer."""
 	
 	def get_origin (self) -> Optional[ParseEMail.Origin]:
 		"""Returns the most probable customer found in the mail"""
-		return cast (Optional[ParseEMail.Origin], Stream (self.get_origins ()).last (no = None))
+		return Stream (self.get_origins ()).last (no = None)
 
 	def parse_payload (self, message: Message, content: Optional[str], level: int) -> bool:
 		"""Hook for custom parsing"""

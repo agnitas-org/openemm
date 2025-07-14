@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -449,6 +449,7 @@ class Scan:
 	dsn: Optional[str] = None
 	etext: Optional[str] = None
 	cinfo: Optional[CustomerInfo] = None
+	pattern_raw_dsn: ClassVar[Pattern[str]] = re.compile ('^[0-9]{3}$')
 	def normalize (self) -> None:
 		def normalize (s: Optional[str]) -> Optional[str]:
 			if s is not None:
@@ -456,6 +457,8 @@ class Scan:
 			return s
 		self.reason = normalize (self.reason)
 		self.etext = normalize (self.etext)
+		if self.dsn is not None and self.pattern_raw_dsn.match (self.dsn) is not None:
+			self.dsn = '.'.join (self.dsn)
 
 class Rule:
 	__slots__ = ['rules', 'sections']
@@ -876,7 +879,14 @@ class BAV:
 			self.content[content_type.lower ()].append (content)
 
 	def mailtext (self, msg: EmailMessage, unixfrom: bool) -> str:
-		mailtext = EMail.as_string (msg, unixfrom)
+		try:
+			mailtext = EMail.as_string (msg, unixfrom)
+		except (UnicodeEncodeError, LookupError) as e:
+			logger.info (f'failed to recompile mail, fallback to incoming message due to {e}')
+			mailtext = self.raw.decode ('UTF-8', errors = 'backslashreplace')
+		except Exception as e:
+			logger.error (f'failed to recompile mail due to unexpected exception {e}')
+			raise
 		return mailtext if self.limit is None or self.limit <= 0 else mailtext[:self.limit]
 		
 	def save_message (self, action: str) -> None:
@@ -977,6 +987,8 @@ class BAV:
 					)
 					if cnt > 0:
 						logger.info ('Unsubscribed customer %d for company %d on mailinglist %d due to mailing %d using %s' % (customer_id, company_id, mailinglist_id, mailing_id, user_remark))
+					elif cnt == 0:
+						logger.info (f'No customer {customer_id} found for company {company_id} to be unsubscribed')
 					else:
 						logger.warning ('Failed to unsubscribe customer %d for company %d on mailinglist %d due to mailing %d, matching %d rows (expected one row)' % (customer_id, company_id, mailinglist_id, mailing_id, cnt))
 					db.sync ()
@@ -1127,7 +1139,7 @@ class BAV:
 						formname = None
 						rdir = None
 						company_token = None
-						for rec in db.query ('SELECT formname FROM userform_tbl WHERE form_id = %d AND company_id = %d' % (formular_id, company_id)):
+						for rec in db.query ('SELECT formname FROM userform_tbl WHERE form_id = %d AND company_id = %d AND deleted = 0' % (formular_id, company_id)):
 							if rec.formname:
 								formname = rec.formname
 						for rec in db.query ('SELECT rdir_domain FROM mailinglist_tbl WHERE mailinglist_id = %d' % mailinglist_id):

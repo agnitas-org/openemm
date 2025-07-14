@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, time
+import	logging, time, re
 from	collections import defaultdict
 from	dataclasses import dataclass, field
 from	datetime import datetime
@@ -27,7 +27,7 @@ from	..stream import Stream
 from	..systemconfig import Systemconfig
 from	..tools import atob, listsplit, listjoin
 #
-__all__ = ['EMMConfig', 'EMMCompany', 'EMMMailerset', 'Responsibility']
+__all__ = ['EMMConfig', 'EMMCompany', 'EMMMailerset', 'EMMMessages', 'Responsibility']
 #
 logger = logging.getLogger (__name__)
 #
@@ -61,6 +61,15 @@ class _Config:
 		if nr == 1:
 			return '= :key1'
 		return 'IN ({keylist})'.format (keylist = Stream (range (1, nr + 1)).map (lambda n: f':key{n}').join (', '))
+		
+	def patternlistclause (self, column: str, patterns: Sequence[str], data: Dict[str, str]) -> str:
+		parts: list[str] = []
+		for (nr, pattern) in enumerate (patterns, start = 1):
+			data[f'pat{nr}'] = pattern
+			parts.append (f'{column} LIKE :pat{nr}')
+		if len (parts) == 1:
+			return parts[0]
+		return Stream (parts).join (' OR ', finisher = lambda s: f'({s})')
 	
 	def retrieve (self, db: DB) -> None:
 		pass
@@ -348,7 +357,9 @@ class EMMCompany (_Config):
 			data = {}
 			query += ' WHERE cname {clause}'.format (clause = self.keylistclause (self.keys, data))
 		with db.request () as cursor:
+			rows = []
 			for row in cursor.query (query, data):
+				rows.append (row)
 				if row.cname is not None:
 					collect[(row.company_id, row.cname)][self.normalize_hostname (row.hostname)] = row.cvalue if row.cvalue is not None else ''
 			for ((company_id, name), value) in collect.items ():
@@ -573,6 +584,52 @@ class EMMMailerset (_Config):
 	def mailerset_stream (self) -> Stream[EMMMailerset.Mailerset]:
 		self.check ()
 		return Stream (self.mailersets.values ()).sorted (lambda m: m.id)
+
+class EMMMessages (_Config):
+	__slots__ = ['key_bases', 'messages']
+	class Message (NamedTuple):
+		translation: Dict[None | str, str]
+		def get (self, key: None | str) -> str:
+			return self.translation.get (key, self.translation[None])
+		
+	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None, key_bases: Optional[Sequence[str]] = None) -> None:
+		super ().__init__ (db, reread, selection)
+		self.key_bases = key_bases
+		self.messages: Dict[str, EMMMessages.Message] = {}
+	
+	def __enter__ (self) -> EMMMessages:
+		self.check (True)
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		return None
+
+	pattern_lang = re.compile ('^value_([a-z]{2})$', re.IGNORECASE)
+	def retrieve (self, db: DB) -> None:
+		self.messages.clear ()
+		query = (
+			'SELECT * '
+			'FROM messages_tbl '
+			'WHERE deleted = 0'
+		)
+		data: Dict[str, str] = {}
+		if self.key_bases is not None:
+			query += ' AND {pattern}'.format (
+				pattern = self.patternlistclause ('message_key', [f'{_k}.%' for _k in self.key_bases], data)
+			)
+		with db.request () as cursor:
+			for row in cursor.query (query, data):
+				self.messages[row.message_key] = message = EMMMessages.Message (translation = {
+					None: row.value_default
+				})
+				for (key, value) in row._asdict ().items ():
+					if (mtch := self.pattern_lang.match (key)) is not None and value is not None:
+						message.translation[mtch.group (1).lower ()] = value
+	
+	def scan (self, language: None | str = None) -> Iterator[Tuple[str, str]]:
+		lang = language.lower () if language else language
+		for (key, message) in self.messages.items ():
+			yield (key, message.get (lang))
 
 class Responsibility (_Config):
 	def __init__ (self, *args: Any, **kws: Any) -> None: pass

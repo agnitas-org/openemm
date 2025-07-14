@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -83,9 +83,6 @@ typedef struct code { /*{{{*/
 	void		(*ffree) (void *);
 	bool_t		(*fsetup) (void *, const char *, tag_t *, blockmail_t *);
 	bool_t		(*fproc) (void *, const char *, tag_t *, blockmail_t *, receiver_t *);
-	
-	int		success, fail;
-	bool_t		defect;
 	struct code	*next;
 	/*}}}*/
 }	code_t;
@@ -116,10 +113,6 @@ code_alloc (const char *cname, hash_t hval, void *priv,
 			code -> ffree = ffree;
 			code -> fsetup = fsetup;
 			code -> fproc = fproc;
-			
-			code -> success = 0;
-			code -> fail = 0;
-			code -> defect = false;
 			code -> next = NULL;
 		} else {
 			free (code);
@@ -295,30 +288,19 @@ tfunc_doit (void *dp) /*{{{*/
 static void
 tfunc_execute (tfunc_t *tf, code_t *code, const char *func, tag_t *tag, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
-	if (! code -> defect) {
-		tfpriv_t	tp;
+	tfpriv_t	tp;
 		
-		tp.code = code;
-		tp.func = func;
-		tp.tag = tag;
-		tp.blockmail = blockmail;
-		tp.rec = rec;
-		tp.rc = false;
-		if (timeout_exec (10, tfunc_doit, & tp)) {
-			if (tp.rc)
-				code -> success++;
-			else {
-				code -> fail++;
-				if ((code -> fail > 10) && (code -> success < code -> fail)) {
-					log_out (blockmail -> lg, LV_WARNING, "Tag \"%s\" failed %d times with %d times being successful, mark it as defect", tag -> cname, code -> fail, code -> success);
-					code -> defect = true;
-				}
-			}
-		} else {
-			log_out (blockmail -> lg, LV_WARNING, "Tag \"%s\" ran into timeout, mark it as defect", tag -> cname);
-			code -> defect = true;
-		}
-	}
+	tp.code = code;
+	tp.func = func;
+	tp.tag = tag;
+	tp.blockmail = blockmail;
+	tp.rec = rec;
+	tp.rc = false;
+	if (timeout_exec (10, tfunc_doit, & tp)) {
+		if (! tp.rc)
+			log_out (blockmail -> lg, LV_WARNING, "Tag \"%s\" execution failed", tag -> cname);
+	} else
+		log_out (blockmail -> lg, LV_WARNING, "Tag \"%s\" ran into timeout", tag -> cname);
 }/*}}}*/
 
 typedef struct { /*{{{*/

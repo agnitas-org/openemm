@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -13,6 +13,7 @@
  * This module offers routines to work with a buffer, memory
  * allocation, resizing etc. is handled here.
  */
+# define	_GNU_SOURCE
 # include	<stdlib.h>
 # include	<ctype.h>
 # include	"agn.h"
@@ -47,7 +48,7 @@ do_size (buffer_t *b, int nsize) /*{{{*/
 }/*}}}*/
 
 char *
-buffer_dump (buffer_t *b) /*{{{*/
+buffer_dump (const buffer_t *b) /*{{{*/
 {
 	buffer_t	*dump;
 	
@@ -592,34 +593,6 @@ buffer_strftime (buffer_t *b, const char *fmt, const struct tm *tt) /*{{{*/
 		b -> length += strftime ((char *) (b -> buffer + b -> length), b -> size - b -> length - 1, fmt, tt);
 	return b -> valid;
 }/*}}}*/
-/** Append content from file descriptor to buffer
- * @param b the buffer to use
- * @param size the amount of data to read, 0 means read all remaining data
- * @return true, if content added successful, false otherwise
- */
-bool_t
-buffer_read (buffer_t *b, int fd, int size) /*{{{*/
-{
-	if (size > 0) {
-		if (do_size (b, b -> length + size)) {
-			int	got;
-			
-			got = read (fd, b -> buffer + b -> length, size);
-			if (got > 0)
-				b -> length += got;
-		}
-	} else {
-		byte_t	scratch[4096];
-		int	n;
-		
-		while ((n = read (fd, scratch, sizeof (scratch))) > 0)
-			if (! buffer_append (b, scratch, n)) {
-				lseek (fd, -n, SEEK_CUR);
-				break;
-			}
-	}
-	return b -> valid;
-}/*}}}*/
 /** Cuts a piece of the buffer.
  * A part of the buffer is cut out, a new memory block is allocated
  * for the cut out copy to be returned (which must be freed using
@@ -773,6 +746,25 @@ buffer_endswithch (const buffer_t *b, char ch) /*{{{*/
 	return buffer_endswithsn (b, & ch, 1);
 }/*}}}*/
 
+const char *
+buffer_line (const buffer_t *b, int start, int *length) /*{{{*/
+{
+	const char	*rc;
+	
+	if (start < b -> length) {
+		int	n;
+		
+		rc = (const char *) b -> buffer + start;
+		for (n = start; (n < b -> length) && (b -> buffer[n] != '\n'); ++n)
+			;
+		if (n < b -> length)
+			++n;
+		if (length)
+			*length = n - start;
+	} else
+		rc = NULL;
+	return rc;
+}/*}}}*/
 /** remove leading/trailing whitespaces
  */
 void
@@ -805,7 +797,7 @@ buffer_trim (buffer_t *b) /*{{{*/
 	buffer_rtrim (b);
 	buffer_ltrim (b);
 }/*}}}*/
-void
+bool_t
 buffer_universal_newline (buffer_t *b, int start) /*{{{*/
 {
 	int	n;
@@ -822,6 +814,7 @@ buffer_universal_newline (buffer_t *b, int start) /*{{{*/
 			++src, ++dst;
 	if (src != dst)
 		b -> length -= src - dst;
+	return true;
 }/*}}}*/
 bool_t
 buffer_universal_crlf (buffer_t *b, int start) /*{{{*/
@@ -866,7 +859,90 @@ buffer_universal_crlf (buffer_t *b, int start) /*{{{*/
 			ok = false;
 	return ok;
 }/*}}}*/
+int
+buffer_replace (buffer_t *b, const byte_t *find, int find_length, const byte_t *replace, int replace_length) /*{{{*/
+{
+	int		rc;
+	buffer_t	*temp;
+
+	rc = -1;
+	if (b -> valid && (temp = buffer_alloc (b -> size + abs (replace_length - find_length) * ((b -> length / 4096) + 1)))) {
+		const byte_t	*ptr = b -> buffer;
+		int		len = b -> length;
+		bool_t		ok = true;
+		const byte_t	*pos;
+
+		rc = 0;
+		temp -> spare = b -> spare;
+		while (ok && (len > 0))
+			if (pos = memmem (ptr, len, find, find_length)) {
+				if (pos > ptr)
+					ok = buffer_stiff (temp, ptr, pos - ptr);
+				if (ok)
+					ok = buffer_stiff (temp, replace, replace_length);
+				len -= pos - ptr + find_length;
+				ptr = pos + find_length;
+				++rc;
+			} else {
+				ok = buffer_stiff (temp, ptr, len);
+				len = 0;
+			}
+		if (ok && (rc > 0))
+			if (temp -> valid) {
+				if (b -> buffer)
+					free (b -> buffer);
+				b -> length = temp -> length;
+				b -> size = temp -> size;
+				b -> buffer = temp -> buffer;
+				temp -> buffer = NULL;
+			} else
+				ok = false;
+		buffer_free (temp);
+		if (! ok)
+			rc = -1;
+	}
+	return rc;
+}/*}}}*/
+
+int
+buffer_write (const buffer_t *b, int fd) /*{{{*/
+{
+	const byte_t	*ptr;
+	int		remain;
+	int		written;
+	int		n;
 	
+	for (ptr = b -> buffer, remain = b -> length, written = 0; remain > 0; )
+		if ((n = write (fd, ptr, remain)) > 0) {
+			ptr += n;
+			remain -= n;
+			written += n;
+		} else
+			break;
+	return written;
+}/*}}}*/
+int
+buffer_read (buffer_t *b, int fd) /*{{{*/
+{
+	int	current = b -> length;
+	int	got = 0;
+	int	n;
+	byte_t	chunk[65536];
+	
+	while ((n = read (fd, chunk, sizeof (chunk))) > 0) {
+		if (! buffer_stiff (b, chunk, n)) {
+			n = -1;
+			break;
+		}
+		got += n;
+	}
+	if (n == -1) {
+		buffer_truncate (b, current);
+		return -1;
+	}
+	return got;
+}/*}}}*/
+
 struct pool { /*{{{*/
 	buffer_t	*root;
 	/*}}}*/
@@ -927,6 +1003,16 @@ pool_request (pool_t *p, int nsize) /*{{{*/
 	return buffer_alloc (nsize);
 }/*}}}*/
 buffer_t *
+pool_request_copy (pool_t *p, const buffer_t *source) /*{{{*/
+{
+	buffer_t	*b;
+	
+	if (b = pool_request (p, buffer_length (source)))
+		if (! buffer_setbuf (b, source))
+			b = buffer_free (b);
+	return b;
+}/*}}}*/
+buffer_t *
 pool_release (pool_t *p, buffer_t *b) /*{{{*/
 {
 	if ((! p -> root) || (p -> root -> size <= b -> size)) {
@@ -971,6 +1057,13 @@ buffer_request (int nsize) /*{{{*/
 {
 	if (pool || pool_init ())
 		return pool_request (pool, nsize);
+	return NULL;
+}/*}}}*/
+buffer_t *
+buffer_request_copy (const buffer_t *source) /*{{{*/
+{
+	if (pool || pool_init ())
+		return pool_request_copy (pool, source);
 	return NULL;
 }/*}}}*/
 buffer_t *

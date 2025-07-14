@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -12,7 +12,7 @@
 #
 from	__future__ import annotations
 import	argparse, logging
-import	sys, os, time
+import	sys, os, time, errno, re
 import	shlex, subprocess, signal
 from	dataclasses import dataclass, field
 from	datetime import datetime
@@ -22,8 +22,9 @@ from	typing import Dict, List, Set, Tuple
 from	io import StringIO
 from	agn3.config import Config
 from	agn3.db import DB
+from	agn3.dbconfig import DBConfig
 from	agn3.daemon import Signal
-from	agn3.definitions import licence, base, fqdn, user, syscfg
+from	agn3.definitions import licence, base, fqdn, user, home, syscfg
 from	agn3.emm.activator import Activator
 from	agn3.emm.build import spec
 from	agn3.exceptions import error
@@ -200,14 +201,66 @@ class Service:
 			raise
 		return self.call (name, 'active', (name, ), True)
 
+	def _sanity_python_modules (self) -> None:
+		try:
+			required: List[str] = []
+			for dbms in Stream (DBConfig ().values ()).mapignore (lambda r: r['dbms'], KeyError).distinct ():
+				try:
+					required.append ({
+						'oracle':	'cx_Oracle',
+						'mariadb':	'mariadb'
+					}[dbms])
+				except KeyError:
+					raise error (f'{dbms}: there is no known database driver for this dbms')
+		except OSError as e:
+			if e.errno not in {errno.EPERM, errno.ENOENT, errno.EACCES}:
+				raise
+			logger.debug (f'Sanity database modules check failed to access configuration: {e}')
+		else:
+			if required:
+				Sanity (modules = required)
+		
+	def _sanity_executables (self) -> None:
+		bin = os.path.join (home, 'bin')
+		if os.path.isdir (bin):
+			def command (cmd: list[str]) -> Tuple[int, str, str]:
+				pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
+				(out, err) = pp.communicate (None)
+				return (pp.returncode, out, err)
+			(status, out, err) = command (['file', '--dereference', '--preserve-date'] + Stream (os.listdir (bin)).map (lambda f: os.path.join (bin, f)).filter (lambda f: os.path.isfile (f)).list ())
+			if status == 0 and out:
+				failures: Set[str] = set ()
+				pattern = re.compile ('.*executable.*dynamically linked.*')
+				for prog in (Stream (out.split ('\n'))
+					.regexp (pattern)
+					.map (lambda l: os.path.join (bin, l.split (':', 1)[0]))
+					.filter (os.path.isfile)
+				):
+					(status, out, err) = command (['ldd', prog])
+					if status == 0 and out:
+						for lib in (Stream (out.split ('\n'))
+							.map (lambda l: tuple (_l.strip () for _l in l.split ('=>', 1)))
+							.filter (lambda t: len (t) == 2 and t[1] == 'not found')
+							.map (lambda t: t[0])
+						):
+							self.out (f'{prog}: missing shared library {lib}')
+							failures.add (prog)
+				if failures:
+					raise error ('missing libraries for {exe}'.format (
+						exe = Stream (failures).sorted ().join (', ')
+					))
+					
 	def sanity_check (self) -> bool:
 		rc = True
-		if self.command in ('start', 'restart') and self.active ('sanity', True):
+		if self.command in ('start', 'restart', 'status'):
 			try:
-				import	sanity3
+				self._sanity_python_modules ()
+				self._sanity_executables ()
+				if self.command in ('start', 'restart') and self.active ('sanity', True):
+					import	sanity3
 
-				for (name, check) in Stream (sanity3.__dict__.items ()).filter (lambda kv: isinstance (kv[1], type) and issubclass (kv[1], Sanity) and kv[0] != 'Sanity'):
-					check ()
+					for (name, check) in Stream (sanity3.__dict__.items ()).filter (lambda kv: isinstance (kv[1], type) and issubclass (kv[1], Sanity) and kv[0] != 'Sanity'):
+						check ()
 			except ImportError:
 				logger.debug (f'No sanity3 module for {user} available, no sanity check performed')
 			except error as e:

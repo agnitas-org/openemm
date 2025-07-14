@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -25,7 +25,7 @@ from	.io import copen, csv_default, csv_writer
 from	.parser import parse_timestamp, unit
 from	.stream import Stream
 #
-__all__ = ['Row', 'DBIgnore', 'DB', 'TempDB']
+__all__ = ['Row', 'DBIgnore', 'DB', 'TempDB', 'Cursor']
 #
 logger = logging.getLogger (__name__)
 #
@@ -61,7 +61,7 @@ handling."""
 		self._scratch_number = 0
 		self._cache = None
 		self._cached_description: Optional[List[Tuple[Any, ...]]] = None
-		self._checkpoints: Optional[Dict[str, DB.Checkpoint]] = None
+		self._checkpoints: Optional[Dict[Tuple[str, str], DB.Checkpoint]] = None
 		
 	def __del__ (self) -> None:
 		self.close ()
@@ -76,7 +76,7 @@ handling."""
 
 	def close (self, commit: bool = True) -> None:
 		"""Close the database driver if open, closing (and commiting changes, if ``commit'' is True) all open cursors and checkpoints, remove temp. tables"""
-		if self._checkpoints:
+		if self._checkpoints is not None:
 			for cp in self._checkpoints.values ():
 				cp.done (commit)
 			self._checkpoints = None
@@ -238,10 +238,11 @@ handling."""
 		parameter: Union[None, List[Any], Dict[str, Any]] = None,
 		commit: bool = False,
 		cleanup: bool = False,
-		sync_and_retry: bool = False
+		sync_and_retry: bool = False,
+		callback_between: Optional[Callable[[], Any]] = None
 	) -> int:
 		"""Update database content, a convenient method to complete the minimal cursor interface"""
-		return self.check_open_cursor ().update (statement, parameter, commit, cleanup, sync_and_retry)
+		return self.check_open_cursor ().update (statement, parameter, commit, cleanup, sync_and_retry, callback_between)
 	
 	def execute (self, statement: str) -> int:
 		"""Excecute a statement on the database"""
@@ -598,7 +599,7 @@ files to limit the size of each file."""
 		return (rc, ', '.join (msg))
 
 	class Checkpoint:
-		__slots__ = ['db', 'name', 'table', 'cursor', 'start', 'end', 'persist', 'finalized']
+		__slots__ = ['db', 'name', 'table', 'cursor', 'start', 'end', 'persist', 'phash', 'chash', 'finalized']
 		def __init__ (self, db: DB, name: str, table: str, cursor: Cursor, start: datetime, end: datetime) -> None:
 			self.db = db
 			self.name = name
@@ -607,6 +608,8 @@ files to limit the size of each file."""
 			self.start = start
 			self.end = end
 			self.persist: Optional[str] = None
+			self.phash = hash (self.persist)
+			self.chash = hash (None)
 			self.finalized = False
 			
 		def __del__ (self) -> None:
@@ -625,47 +628,51 @@ files to limit the size of each file."""
 			if rq is not None and rq.checkpoint is not None:
 				self.start = rq.checkpoint
 				self.persist = str (rq.persist) if rq.persist is not None else None
+				self.phash = hash (self.persist)
+				self.chash = hash (self.start)
 			
 		def done (self, commit: bool = True) -> None:
 			if not self.finalized:
 				self.finalized = True
 				if commit:
-					insert = False
-					if self.start < self.end:
-						query = f'UPDATE {self.table} SET checkpoint = :checkpoint, persist = :persist WHERE name = :name'
-						data = {
-							'name': self.name,
-							'checkpoint': self.end,
-							'persist': self.persist
-						}
-						if self.db.dbms == 'oracle':
-							self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
-						if self.cursor.update (query, data) == 0:
-							insert = True
-					else:
-						data = {
-							'name': self.name
-						}
-						query = f'SELECT count(*) FROM {self.table} WHERE name = :name'
-						rq = self.cursor.querys (query, data)
-						if rq is not None and rq[0] == 0:
-							data['checkpoint'] = self.start
-							data['persist'] = self.persist
-							insert = True
-					if insert:
-						query = f'INSERT INTO {self.table} (name, checkpoint, persist) VALUES (:name, :checkpoint, :persist)'
-						if self.db.dbms == 'oracle':
-							self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
-						if self.cursor.update (query, data) == 0:
-							raise error (f'failed to create new entry for {self.name} in {self.table}')
-					self.cursor.sync (True)
+					self.save ()
 				self.db.release (self.cursor)
 				self.db.uncheckpoint (self)
 		
+		def save (self) -> None:
+			insert = False
+			data = {
+				'name': self.name,
+				'checkpoint': self.end,
+				'persist': self.persist
+			}
+			phash = hash (self.persist)
+			chash = hash (self.end)
+			if chash != self.chash or phash != self.phash:
+				query = f'UPDATE {self.table} SET checkpoint = :checkpoint, persist = :persist WHERE name = :name'
+				if self.db.dbms == 'oracle':
+					self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
+				if self.cursor.update (query, data) == 0:
+					insert = True
+			else:
+				query = f'SELECT count(*) FROM {self.table} WHERE name = :name'
+				rq = self.cursor.querys (query, data, cleanup = True)
+				if rq is not None and rq[0] == 0:
+					insert = True
+			if insert:
+				query = f'INSERT INTO {self.table} (name, checkpoint, persist) VALUES (:name, :checkpoint, :persist)'
+				if self.db.dbms == 'oracle':
+					self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
+				if self.cursor.update (query, data) == 0:
+					raise error (f'failed to create new entry for {self.name} in {self.table}')
+			self.phash = phash
+			self.chash = chash
+			self.cursor.sync (True)
+		
 	def uncheckpoint (self, cp: DB.Checkpoint) -> None:
 		"""Releases a checkpoint"""
-		if self._checkpoints and cp.name in self._checkpoints and self._checkpoints[cp.name] is cp:
-			del self._checkpoints[cp.name]
+		if self._checkpoints and self._checkpoints.get ((cp.table, cp.name)) is cp:
+			del self._checkpoints[(cp.table, cp.name)]
 
 	def checkpoint (self,
 		table: str,
@@ -686,79 +693,77 @@ this checkpoint, ``start_expr'' is the start timestamp if the checkpoint is
 new (1970-01-01 by default), ``end_expr'' is the end for this delta
 (default is now). If ``fresh'' is True then the checkpoint behaves as
 if it had not existed."""
-		if self._checkpoints and name in self._checkpoints:
-			return self._checkpoints[name]
+		if self._checkpoints and (cp := self._checkpoints.get ((table, name))) is not None:
+			return cp
 		#
-		rc: Optional[DB.Checkpoint] = None
 		self.check_open ()
-		cursor = self.request ()
-		if not self.exists (table):
-			layout = cursor.qselect (
-				oracle = (
-					f'CREATE TABLE {table} (\n'
-					'	name		varchar2(100)	PRIMARY KEY NOT NULL,\n'
-					'	checkpoint	date		NOT NULL,\n'
-					'       persist         clob\n'
-					')' + self.tablespace (tablespace)
-				), mysql = (
-					f'CREATE TABLE {table} (\n'
-					'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
-					'	checkpoint	timestamp	NOT NULL,\n'
-					'       persist         longtext\n'
-					')'
-				), sqlite = (
-					f'CREATE TABLE {table} (\n'
-					'	name		text		PRIMARY KEY NOT NULL,\n'
-					'	checkpoint	timestamp	NOT NULL,\n'
-					'       persist         text\n'
-					')'
+		with self.request () as cursor:
+			if not self.exists (table):
+				layout = cursor.qselect (
+					oracle = (
+						f'CREATE TABLE {table} (\n'
+						'	name		varchar2(100)	PRIMARY KEY NOT NULL,\n'
+						'	checkpoint	date		NOT NULL,\n'
+						'       persist         clob\n'
+						')' + self.tablespace (tablespace)
+					), mysql = (
+						f'CREATE TABLE {table} (\n'
+						'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
+						'	checkpoint	timestamp	NOT NULL,\n'
+						'       persist         longtext\n'
+						')'
+					), sqlite = (
+						f'CREATE TABLE {table} (\n'
+						'	name		text		PRIMARY KEY NOT NULL,\n'
+						'	checkpoint	timestamp	NOT NULL,\n'
+						'       persist         text\n'
+						')'
+					)
 				)
-			)
-			cursor.execute (layout)
-		else:
-			cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
-			desc = cursor.description (normalize = True)
-			if desc is not None and 'persist' not in [_d[0] for _d in desc]:
-				cursor.execute (cursor.qselect (
-					oracle = f'ALTER TABLE {table} ADD persist clob',
-					mysql = f'ALTER TABLE {table} ADD persist longtext',
-					sqlite = f'ALTER TABLE {table} ADD persist text'
-				))
-		if self.exists (table) and name is not None:
-			start = parse_timestamp (start_expr)
-			if start is None:
-				start = epoch
-			end = parse_timestamp (end_expr)
-			if end is None:
-				now = datetime.now ()
-				end = datetime (now.year, now.month, now.day, now.hour, now.minute, now.second)
-				if endoffset is not None:
-					offset: int
-					if isinstance (endoffset, str):
-						parsed = unit.parse (endoffset, -1)
-						if parsed == -1:
-							raise error (f'{endoffset}: invalid offset expression')
-						offset = parsed
-					elif isinstance (endoffset, float):
-						offset = int (endoffset)
-					elif isinstance (endoffset, int):
-						offset = endoffset
-					else:
-						raise error ('{endoffset!r}: invalid offset type {typ}'.format (
-							endoffset = endoffset,
-							typ = type (endoffset)
-						))
-					if offset != 0:
-						end -= timedelta (seconds = offset)
-			rc = DB.Checkpoint (self, name, table, cursor, start, end)
-			if not fresh:
-				rc.setup ()
-			if self._checkpoints is None:
-				self._checkpoints = {}
-			self._checkpoints[name] = rc
-		self.release (cursor)
-		if rc is not None:
-			return rc
+				cursor.execute (layout)
+			else:
+				cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
+				desc = cursor.description (normalize = True)
+				if desc is not None and 'persist' not in [_d[0] for _d in desc]:
+					cursor.execute (cursor.qselect (
+						oracle = f'ALTER TABLE {table} ADD persist clob',
+						mysql = f'ALTER TABLE {table} ADD persist longtext',
+						sqlite = f'ALTER TABLE {table} ADD persist text'
+					))
+			if self.exists (table) and name is not None:
+				start = parse_timestamp (start_expr)
+				if start is None:
+					start = epoch
+				end = parse_timestamp (end_expr)
+				if end is None:
+					now = datetime.now ()
+					end = datetime (now.year, now.month, now.day, now.hour, now.minute, now.second)
+					if endoffset is not None:
+						offset: int
+						if isinstance (endoffset, str):
+							parsed = unit.parse (endoffset, -1)
+							if parsed == -1:
+								raise error (f'{endoffset}: invalid offset expression')
+							offset = parsed
+						elif isinstance (endoffset, float):
+							offset = int (endoffset)
+						elif isinstance (endoffset, int):
+							offset = endoffset
+						else:
+							raise error ('{endoffset!r}: invalid offset type {typ}'.format (
+								endoffset = endoffset,
+								typ = type (endoffset)
+							))
+						if offset != 0:
+							end -= timedelta (seconds = offset)
+				rc = DB.Checkpoint (self, name, table, cursor, start, end)
+				if not fresh:
+					rc.setup ()
+				if self._checkpoints is None:
+					self._checkpoints = {}
+				self._checkpoints[(table, name)] = rc
+				return rc
+		#
 		raise error ('failed to create checkpoint: {last_error}'.format (last_error = self.last_error ()))
 
 class TempDB:

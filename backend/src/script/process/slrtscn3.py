@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,6 +14,7 @@ from	__future__ import annotations
 import	os, logging, argparse
 import	time, re
 from	datetime import datetime, timedelta, tzinfo
+from	enum import Enum
 from	typing import Any, Callable, Final, Optional
 from	typing import Dict, List, Match, NamedTuple, Set, Tuple
 from	agn3.daemon import Daemonic
@@ -27,6 +28,7 @@ from	agn3.log import LogID, log, mark, log_filter
 from	agn3.mta import MTA
 from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
+from	agn3.stream import Stream
 from	agn3.tools import atob
 from	agn3.tracker import Key, Tracker
 from	agn3.uid import UIDHandler
@@ -35,6 +37,26 @@ logger = logging.getLogger (__name__)
 #
 class SlrtscnPlugin (Plugin):
 	plugin_version = '2.0'
+
+class ScanFor (Enum):
+	none = 'none'
+	all = 'all'
+	test = 'test'
+	regular = 'regular'
+	def __call__ (self, test: bool) -> bool:
+		match self:
+			case ScanFor.none:
+				return False
+			case ScanFor.all:
+				return True
+			case ScanFor.test:
+				return test
+			case ScanFor.regular:
+				return not test
+
+	@staticmethod
+	def default () -> ScanFor:
+		return ScanFor.all
 
 class SyslogParser:
 	__slots__ = ['parser', 'tzcache']
@@ -176,16 +198,20 @@ class SyslogParser:
 		return rc
 
 class Scanner:
-	__slots__ = ['maillog', 'save_file', 'bounce_log', 'deliver_log', 'provider_log', 'plugin', 'mtrack', 'fsdb', 'last_expired', 'last_processed']
+	__slots__ = [
+		'maillog', 'save_file', 'bounce_log', 'deliver_log', 'provider_log', 'scan_for',
+		'plugin', 'mtrack', 'fsdb', 'last_expired', 'last_processed'
+	]
 	tracker_path = ''
 	SEC_MTAID: Final[str] = 'mta-id'
 	KEY_LINES: Final[str] = '__lines__'
-	def __init__ (self, maillog: str, save_file: str, bounce_log: str, deliver_log: str, provider_log: str) -> None:
+	def __init__ (self, maillog: str, save_file: str, bounce_log: str, deliver_log: str, provider_log: str, scan_for: ScanFor) -> None:
 		self.maillog = maillog
 		self.save_file = save_file
 		self.bounce_log = bounce_log
 		self.deliver_log = deliver_log
 		self.provider_log = provider_log
+		self.scan_for = scan_for
 		self.plugin = SlrtscnPlugin (manager = LoggingManager)
 		self.mtrack = Tracker (self.tracker_path)
 		self.fsdb = FSDB ()
@@ -205,36 +231,40 @@ class Scanner:
 		reason: str,
 		queue_id: str,
 		relay: str,
-		recipient: str
+		recipient: str,
+		test: bool
 	) -> None:
-		try:
-			recipient = recipient.strip ('<>')
-			info = [
-				f'timestamp={timestamp.year:04d}-{timestamp.month:02d}-{timestamp.day:02d} {timestamp.hour:02d}:{timestamp.minute:02d}:{timestamp.second:02d}',
-				f'stat={reason}',
-				f'queue_id={queue_id}',
-				f'relay={relay}',
-				f'to={recipient}',
-				f'server={fqdn}'
-			]
-			self.plugin ().add_bounce_info (dsn, licence_id, mailing_id, customer_id, info)
-			with open (self.bounce_log, 'a') as fd:
-				fd.write ('%s;%d;%d;0;%d;%s\n' % (dsn, licence_id, mailing_id, customer_id, '\t'.join (info)))
-			if self.provider_log and dsn and dsn.count ('.') == 2:
-				try:
-					with open (self.provider_log, 'a') as fd:
-						fd.write ('%d;%s;%s;%s;%s%s\n' % (
-							time.mktime (timestamp.timetuple ()) if timestamp else time.time (),
-							fqdn,
-							dsn,
-							relay,
-							recipient.split ('@')[-1],
-							(f';{reason}' if not dsn.startswith ('2') else '')
-						))
-				except IOError as e:
-					logger.exception (f'Unable to write {self.provider_log}: {e}')
-		except IOError as e:
-			logger.exception (f'Unable to write {self.bounce_log}: {e}')
+		if self.scan_for (test):
+			try:
+				recipient = recipient.strip ('<>')
+				info = [
+					f'timestamp={timestamp.year:04d}-{timestamp.month:02d}-{timestamp.day:02d} {timestamp.hour:02d}:{timestamp.minute:02d}:{timestamp.second:02d}',
+					f'stat={reason}',
+					f'queue_id={queue_id}',
+					f'relay={relay}',
+					f'to={recipient}',
+					f'server={fqdn}'
+				]
+				if test:
+					info.append ('test=true')
+				self.plugin ().add_bounce_info (dsn, licence_id, mailing_id, customer_id, info)
+				with open (self.bounce_log, 'a') as fd:
+					fd.write ('%s;%d;%d;0;%d;%s\n' % (dsn, licence_id, mailing_id, customer_id, '\t'.join (info)))
+				if self.provider_log and dsn and dsn.count ('.') == 2:
+					try:
+						with open (self.provider_log, 'a') as fd:
+							fd.write ('%d;%s;%s;%s;%s%s\n' % (
+								time.mktime (timestamp.timetuple ()) if timestamp else time.time (),
+								fqdn,
+								dsn,
+								relay,
+								recipient.split ('@')[-1],
+								(f';{reason}' if not dsn.startswith ('2') else '')
+							))
+					except IOError as e:
+						logger.exception (f'Unable to write {self.provider_log}: {e}')
+			except IOError as e:
+				logger.exception (f'Unable to write {self.bounce_log}: {e}')
 	
 	def write_deliveries (self, record: Dict[str, Any], lines: List[Tuple[datetime, str]]) -> bool:
 		with Ignore (KeyError):
@@ -274,32 +304,35 @@ class Scanner:
 	def scan (self, is_active: Callable[[], bool]) -> None:
 		self.fsdb.clear ()
 		self.expire_tracker ()
-		try:
-			fp = Filepos (self.maillog, self.save_file, checkpoint = 1000)
-		except error as e:
-			logger.error (f'{self.maillog}: access failed: {e}')
-			return
-		#
-		self.mtrack.open ()
-		try:
-			sp = SyslogParser ()
-			for line in fp:
-				try:
-					info = sp (line)
-					if info is not None:
-						with log ('parse') as log_id:
-							if not self.parse (log_id, info, line):
-								logger.warning ('Unparsable line: %s (%r)' % (line, info))
-					else:
-						logger.warning ('Unparsable format: %s' % line)
-				except Exception as e:
-					logger.exception ('Failed to parse line: %s: %s' % (line, e))
-				if not is_active ():
-					break
-		finally:
-			fp.close ()
-			self.mtrack.close ()
-		self.process_completed ()
+		rerun = True
+		while rerun:
+			rerun = False
+			try:
+				with Filepos (self.maillog, self.save_file, checkpoint = 1000) as fp:
+					self.mtrack.open ()
+					try:
+						sp = SyslogParser ()
+						for (lineno, line) in enumerate (fp, start = 1):
+							try:
+								info = sp (line)
+								if info is not None:
+									with log ('parse') as log_id:
+										if not self.parse (log_id, info, line):
+											logger.warning ('Unparsable line: %s (%r)' % (line, info))
+								else:
+									logger.warning ('Unparsable format: %s' % line)
+							except Exception as e:
+								logger.exception ('Failed to parse line: %s: %s' % (line, e))
+							if not is_active ():
+								break
+							if lineno > 10000:
+								rerun = True
+								break
+					finally:
+						self.mtrack.close ()
+			except error as e:
+				logger.error (f'{self.maillog}: access failed: {e}')
+			self.process_completed ()
 	
 	def expire_tracker (self) -> None:
 		now = datetime.now ()
@@ -372,51 +405,10 @@ class ScannerPostfix (Scanner):
 		self.__handle_message_ids ()
 		super ().process_completed ()
 
-	def __message_id_usable (self, message_id: str) -> bool:
-		mid = ParseMessageID.match (message_id if message_id.startswith ('<') and message_id.endswith ('>') else f'<{message_id}>')
-		return mid is not None and not mid.is_blind_carbon_copy
-		
 	def __handle_message_ids (self) -> None:
 		if os.path.isfile (self.messageid_log):
-			pfname = '%s.%d' % (self.messageid_log, int (time.time ()))
-			nfname = pfname
-			n = 0
-			while os.path.isfile (nfname):
-				n += 1
-				nfname = '%s.%d' % (pfname, n)
-			try:
-				os.rename (self.messageid_log, nfname)
-				time.sleep (2)
-			except OSError as e:
-				logger.error ('Failed to rename %s to %s: %s' % (self.messageid_log, nfname, str (e)))
-				return
-			logger.debug ('Scanning input file %s' % nfname)
-			try:
-				with open (nfname, 'r') as fdi, open (log.data_filename ('messageid'), 'a') as fdo:
-					for line in fdi:
-						fdo.write (line)
-						line = line.strip ()
-						try:
-							parts = line.split (';', 5)
-							if len (parts) == 6:
-								rec = {
-									'licence_id': int (parts[0]),
-									'company_id': int (parts[1]),
-									'mailinglist_id': int (parts[2]),
-									'mailing_id': int (parts[3]),
-									'customer_id': int (parts[4]),
-									'use': self.__message_id_usable (parts[5])
-								}
-								self.mtrack[Key (self.SEC_MESSAGEID, parts[5])] = rec
-								logger.debug ('Saved licence_id=%s, company_id=%s, mailinglist_id=%s, mailing_id=%s, customer_id=%s for message-id %s' % (parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
-							else:
-								raise ValueError ('expect 6 elements, got only %d' % len (parts))
-						except ValueError as e:
-							logger.error ('Failed to parse %s: %s' % (line, str (e)))
-			except IOError as e:
-				logger.error ('Failed to write messagid file: %s' % str (e))
-			finally:
-				os.unlink (nfname)
+			with Ignore (OSError):
+				os.unlink (self.messageid_log)
 	
 	def __write_bounce (self, info: SyslogParser.Info, record: Dict[str, Any]) -> None:
 		try:
@@ -429,7 +421,8 @@ class ScannerPostfix (Scanner):
 				record.get ('status', ''),
 				info.queue_id,
 				record.get ('relay', ''),
-				record.get ('to', '')
+				record.get ('to', ''),
+				record.get ('test', False)
 			)
 		except KeyError as e:
 			logger.debug ('Ignore incomplete record <%s>: %s' % (record.get ('message_id', ''), e))
@@ -487,21 +480,19 @@ class ScannerPostfix (Scanner):
 				message_id = match.group (1)
 				if message_id:
 					rec = self.mtrack.get (key)
-					mid_key = Key (self.SEC_MESSAGEID, message_id)
 					try:
-						midinfo = self.mtrack[mid_key]
-						rec.update (midinfo)
-					except KeyError:
-						try:
-							uid = self.uid.parse (message_id.split ('@')[0], validate = False)
+						mid = ParseMessageID.match (message_id if message_id.startswith ('<') and message_id.endswith ('>') else f'<{message_id}>')
+						if mid is not None:
+							uid = self.uid.parse (mid.uid, validate = False)
 							rec.update ({
 								'licence_id': uid.licence_id,
 								'mailing_id': uid.mailing_id,
 								'customer_id': uid.customer_id,
-								'use': self.__message_id_usable (message_id)
+								'use': not mid.is_blind_carbon_copy,
+								'test': uid.status_field in {'A', 'T'}
 							})
-						except error as e:
-							logger.info (f'Failed to parse message_id <{message_id}>: {e}')
+					except error as e:
+						logger.info (f'Failed to parse message_id <{message_id}>: {e}')
 					rec['message_id'] = message_id
 					self.mtrack[key] = rec
 					logger.debug ('Found message_id=<%s>' % message_id)
@@ -582,8 +573,17 @@ class Slrtscn (Runtime):
 		parser.add_argument (
 			'-P', '--provider-log',
 			action = 'store', default = normalize_path (syscfg.get ('provider-log', os.path.join (base, 'log', 'provider.log'))),
-			help = 'Filename to store provider information ro',
+			help = 'Filename to store provider information to',
 			dest = 'provider_log'
+		)
+		parser.add_argument (
+			'--scan-for',
+			action = 'store',
+			help = 'explicit specify for scanning out of {available} [{current}]'.format (
+				available = Stream (ScanFor.__members__.keys ()).map (lambda n: f'"{n}"').join (', '),
+				current = ScanFor.default ().value
+			),
+			dest = 'scan_for'
 		)
 		
 	def use_arguments (self, args: argparse.Namespace) -> None:
@@ -592,10 +592,19 @@ class Slrtscn (Runtime):
 		self.bounce_log = args.bounce_log
 		self.deliver_log = args.deliver_log
 		self.provider_log = args.provider_log
+		self.scan_for: None | str = args.scan_for
 
 	def executor (self) -> bool:
+		if self.scan_for is None:
+			scan_for = ScanFor.default ()
+		else:
+			try:
+				scan_for = ScanFor.__members__[self.scan_for]
+			except KeyError:
+				raise error (f'{self.scan_for}: not supported')
+		#
 		mta = MTA ()
-		scanner = ScannerPostfix (self.maillog, self.save_file, self.bounce_log, self.deliver_log, self.provider_log)
+		scanner = ScannerPostfix (self.maillog, self.save_file, self.bounce_log, self.deliver_log, self.provider_log, scan_for)
 		logger.info ('Scanning for %s using %s' % (mta.mta, scanner.__class__.__name__))
 		while self.running:
 			time.sleep (1)

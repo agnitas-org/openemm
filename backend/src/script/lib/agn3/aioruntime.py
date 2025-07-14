@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -23,13 +23,13 @@ from	types import TracebackType
 from	typing import Any, Callable, Generic, Iterable, Literal, Optional, Sequence, TypeVar, Union
 from	typing import AsyncIterator, Coroutine, Deque, Dict, List, Set, Tuple, Type
 from	typing import cast, overload
-from	.exceptions import error, Timeout, Stop
+from	.exceptions import error, Stop
 from	.log import log
 from	.ignore import Ignore
-from	.runtime import Runtime
+from	.runtime import Runtime, Preset
 from	.stream import Stream
 #
-__all__ = ['AIORuntime']
+__all__ = ['AIORuntime', 'Preset']
 #
 logger = logging.getLogger (__name__)
 #
@@ -225,7 +225,7 @@ class AIORuntime (Runtime):
 			done, pending = await asyncio.wait (tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
 			Stream (pending).each (lambda t: t.cancel ())
 			if not done:
-				raise Timeout ('timeout exceeded')
+				raise TimeoutError ('timeout exceeded')
 			channel = done.pop ()
 			await channel
 			return channels[tasks.index (channel)]
@@ -235,7 +235,7 @@ class AIORuntime (Runtime):
 			done, pending = await asyncio.wait (tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
 			Stream (pending).each (lambda t: t.cancel ())
 			if not done:
-				raise Timeout ('timeout exceeded')
+				raise TimeoutError ('timeout exceeded')
 			channel = done.pop ()
 			return (channels[tasks.index (channel)], await channel)
 
@@ -269,10 +269,10 @@ class AIORuntime (Runtime):
 				if timeout is None:
 					return await self.task
 				return await asyncio.wait_for (self.task, timeout)
-			except asyncio.exceptions.TimeoutError:
+			except (asyncio.TimeoutError, TimeoutError):
 				if not silent:
 					raise error (f'{self.name}: timeout')
-			except asyncio.exceptions.CancelledError:
+			except asyncio.CancelledError:
 				if not silent:
 					raise error (f'{self.name}: canceled')
 			except Exception as e:
@@ -307,7 +307,7 @@ class AIORuntime (Runtime):
 			def remover (task: asyncio.Task[_T]) -> None:
 				with Ignore (KeyError):
 					myself = self.tasks.pop (task.get_name ())
-					with Ignore (asyncio.exceptions.CancelledError):
+					with Ignore (asyncio.CancelledError):
 						if (e := task.exception ()):
 							myself._log_exception (logger.debug, e)
 					logger.debug (f'{myself}: removed')
@@ -485,7 +485,7 @@ class AIORuntime (Runtime):
 									logger.info (f'{task}: protected task running, waiting for {protect.timeout} seconds to finish')
 									await asyncio.wait_for (task, protect.timeout)
 									logger.info (f'{task}: protected task finished within timeout {protect.timeout} seconds')
-								except asyncio.TimeoutError:
+								except (asyncio.TimeoutError, TimeoutError):
 									logger.info (f'{task}: protected task cancelled after reaching timeout {protect.timeout} seconds')
 							else:
 								logger.info (f'{task}: protected task running, waiting for finish')
@@ -497,7 +497,7 @@ class AIORuntime (Runtime):
 			await self.aioyield ()
 		try:
 			asyncio.run (execution (controller if controller is not None else self.controller), debug = self.ctx.debug)
-		except asyncio.exceptions.CancelledError as e:
+		except asyncio.CancelledError as e:
 			logger.exception (f'failed due to canceled task: {e}')
 		return True
 
@@ -537,9 +537,23 @@ class AIORuntime (Runtime):
 			elif not apply_delay and task is not None:
 				self._apply_delay.add (task)
 		return self.running
+
+	async def wait1 (self, tasks: list[asyncio.Task[_U]], timeout: None | int | float = None) -> Tuple[asyncio.Task[_U], _U]:
+		done, _ = await asyncio.wait ([self._stop] + tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
+		if self._stop in done:
+			raise Stop ()
+		try:
+			task = cast ('asyncio.Task[_U]', [_t for _t in done if not _t.cancelled ()][0])
+		except IndexError:
+			raise asyncio.CancelledError ()
+		else:
+			if (e := task.exception ()) is not None:
+				_log_exception (logger.error, e, task)
+				raise e
+			return (task, await task)
 		
 	async def wait (self, *tasks: asyncio.Task[_U], timeout: Union[None, int, float] = None) -> Tuple[asyncio.Task[_U], _U]:
-		done, pending = await self._wait (tasks, timeout = timeout)
+		done, _ = await self._wait (tasks, timeout = timeout)
 		task = done.pop ()
 		return (task, await task)
 		
@@ -565,14 +579,14 @@ class AIORuntime (Runtime):
 		return AIORuntime.Protect (asyncio.create_task (coro), timeout, self._protected)
 	
 	async def wait_task (self, tasks: List[AIORuntime.Task[_U]], timeout: Union[None, int, float] = None) -> Tuple[Optional[AIORuntime.Task[_U]], Optional[_U]]:
-		with Ignore (Timeout):
+		with Ignore (TimeoutError):
 			aio_tasks = [_t.task for _t in tasks]
 			task, rc = await self.wait (*aio_tasks, timeout = timeout)
 			return (tasks[aio_tasks.index (task)], rc)
 		return (None, None)
 	
 	async def watch (self, timeout: Union[None, int, float] = None, only_exceptions: bool = False) -> Optional[AIORuntime.Task[Any]]:
-		with Ignore (Timeout, Stop):
+		with Ignore (TimeoutError, Stop):
 			return (await self.wait (asyncio.create_task (self._tasks.watch (only_exceptions = only_exceptions)), timeout = timeout))[1]
 		return None
 	
@@ -661,7 +675,7 @@ class AIORuntime (Runtime):
 					else:
 						logger.debug (f'scan[{path}]: dropped "{filename}"')
 				with Ignore (Stop):
-					done, pending = await self._wait ([asyncio.create_task (inotify.get ())])
+					done, _ = await self._wait ([asyncio.create_task (inotify.get ())])
 					event = await done.pop ()
 					if event is not None and event.name is not None:
 						filename = str (event.name)
@@ -690,7 +704,7 @@ class AIORuntime (Runtime):
 		tasks: Iterable[asyncio.Task[_U]],
 		*,
 		timeout: None | int | float = None,
-		return_when: Literal['FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED'] = asyncio.FIRST_COMPLETED
+		return_when: str = asyncio.FIRST_COMPLETED
 	) -> tuple[set[asyncio.Task[_U]], set[asyncio.Task[_U]]]:
 		done, pending = await asyncio.wait (list (tasks) + [cast ('asyncio.Task[_U]', self._stop)], timeout = timeout, return_when = return_when)
 		Stream (pending).filter (lambda t: t is not self._stop).each (lambda t: t.cancel ())
@@ -698,5 +712,5 @@ class AIORuntime (Runtime):
 			done.remove (cast ('asyncio.Task[_U]', self._stop))
 			raise Stop ()
 		if not done:
-			raise Timeout ()
+			raise TimeoutError ()
 		return done, pending

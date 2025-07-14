@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -106,17 +106,6 @@
 # define	SP_DYNAMIC		0
 # define	SP_BLOCK		1
 
-/* possible reasons for inactive user */
-typedef enum { /*{{{*/
-	Reason_Unspec,
-	Reason_No_Media,
-	Reason_Empty_Document,
-	Reason_Unmatched_Media,
-	Reason_Reject,
-	Reason_Custom
-	/*}}}*/
-}	reason_t;
-
 typedef struct iflua	iflua_t;
 typedef enum { /*{{{*/
 	EncNone,
@@ -163,6 +152,7 @@ typedef struct block		block_t;
 typedef struct blockmail	blockmail_t;
 typedef struct receiver		receiver_t;
 typedef struct tag		tag_t;
+typedef struct reason		reason_t;
 typedef struct { /*{{{*/
 	xmlBufferPtr	name;		/* the name of this position	*/
 	long		hash;		/* the hashvalue		*/
@@ -450,9 +440,7 @@ struct blockmail { /*{{{*/
 	void		*outputdata;	/* output related private data	*/
 	counter_t	*counter;	/* counter for created mails	*/
 	bool_t		active;		/* if user is active		*/
-	reason_t	reason;		/* code, if user not active	*/
-	int		reason_detail;	/* specific reason, if available*/
-	char		*reason_custom;	/* custom reason text		*/
+	reason_t	*reason;	/* reason if user not active	*/
 	buffer_t	*control;	/* control block		*/
 	buffer_t	*body;		/* the body			*/
 	rblock_t	*rblocks;	/* the raw blocks		*/
@@ -785,6 +773,17 @@ extern void		blockmail_setup_anon (blockmail_t *b, bool_t anon, bool_t anon_pres
 extern void		blockmail_setup_selector (blockmail_t *b, const char *selector);
 extern void		blockmail_setup_preevaluated_targets (blockmail_t *blockmail);
 
+extern reason_t		*reason_alloc (void);
+extern reason_t		*reason_free (reason_t *r);
+extern void		reason_reset (reason_t *r);
+extern const char	*reason_build (reason_t *r, char *dsn, int dsnsize);
+extern void		reason_no_media (reason_t *r, mediatype_t mediatype);
+extern void		reason_unmatched_media (reason_t *r);
+extern void		reason_reject (reason_t *r, int exit_code);
+extern void		reason_empty_document (reason_t *r, block_t *block);
+extern void		reason_template_failure (reason_t *r, block_t *block, const char *message);
+extern void		reason_custom (reason_t *r, const char *custom);
+
 extern int		*tf_parse_date (const char *s);
 extern struct tm	tf_convert_date (int *date);
 
@@ -876,18 +875,13 @@ extern tracker_t	*tracker_free (tracker_t *tracker);
 extern bool_t		tracker_add (tracker_t *t, blockmail_t *blockmail, const char *name, xmlBufferPtr content);
 extern bool_t		tracker_fill (tracker_t *t, blockmail_t *blockmail, const xmlChar **url, int *ulength);
 
-extern head_t		*head_alloc (void);
-extern head_t		*head_free (head_t *h);
-extern head_t		*head_free_all (head_t *h);
 extern const char	*head_find_name (head_t *h, int *namelength);
-extern bool_t		head_add (head_t *h, const byte_t *chunk, int len);
 extern const char	*head_value (head_t *h);
 extern bool_t		head_set_value (head_t *h, buffer_t *value);
 extern bool_t		head_matchn (head_t *h, const char *name, int namelength);
 extern bool_t		head_match (head_t *h, const char *name);
 extern bool_t		head_startswithn (head_t *h, const char *name, int namelength);
 extern bool_t		head_startswith (head_t *h, const char *name);
-extern char		*head_is (head_t *h, const char *name);
 extern header_t		*header_alloc (void);
 extern header_t		*header_copy (header_t *source);
 extern header_t		*header_free (header_t *h);
@@ -898,15 +892,16 @@ extern bool_t		header_set_recipient (header_t *h, const char *recipient, bool_t 
 extern void		header_set_charset (header_t *h, cvt_t *cvt, const char *charset);
 extern bool_t		header_set_content (header_t *h, xmlBufferPtr source);
 extern bool_t		header_append_content (header_t *h, xmlBufferPtr source);
-extern bool_t		header_replace (header_t *h, xmlBufferPtr source);
+extern bool_t		header_replace_content (header_t *h, xmlBufferPtr source);
 extern bool_t		header_insert (header_t *h, const char *line, head_t *after);
+extern bool_t		header_append (header_t *h, const char *line);
 extern void		header_remove (header_t *h, const char *name);
 extern bool_t		header_revalidate_mfrom (header_t *h, void *spf);
 extern int		header_size (header_t *h);
 extern void		header_cleanup (header_t *h, bool_t remove_list_information);
 extern buffer_t		*header_encode (header_t *h, head_t *head);
-extern buffer_t		*header_create (header_t *h, bool_t raw);
-extern buffer_t		*header_create_sendmail_spoolfile_header (header_t *h);
+extern const buffer_t	*header_create (header_t *h, bool_t raw);
+extern const buffer_t	*header_create_sendmail_spoolfile_header (header_t *h);
 
 extern adkim_t		*adkim_alloc (void);
 extern adkim_t		*adkim_free (adkim_t *a);
@@ -957,7 +952,7 @@ extern bool_t		xmlSQLlike (const xmlChar *pattern, int plen,
 				    const xmlChar *string, int slen,
 				    const xmlChar *escape, int elen);
 
-extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id);
+extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field);
 extern char		*create_pubid (blockmail_t *blockmail, receiver_t *rec, const char *source, const char *parm);
 
 extern encrypt_t	*encrypt_alloc (blockmail_t *blockmail);

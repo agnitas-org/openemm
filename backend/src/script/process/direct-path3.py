@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -15,16 +15,14 @@ import	logging, argparse
 import	os, time, shutil
 import	asyncio
 from	dataclasses import dataclass
-from	typing import Callable, Final, Optional
-from	typing import Dict, List
+from	typing import Final, Optional
+from	typing import Dict
 from	agn3.aioruntime import AIORuntime
-from	agn3.config import Config
 from	agn3.definitions import base, syscfg
 from	agn3.emm.metafile import METAFile
 from	agn3.exceptions import error
 from	agn3.io import create_path, ArchiveDirectory
 from	agn3.mta import MTA
-from	agn3.rpc import XMLRPC
 #
 logger = logging.getLogger (__name__)
 #
@@ -53,22 +51,6 @@ class DPath (AIORuntime):
 			if path != os.devnull:
 				create_path (path)
 				
-	def executors (self) -> Optional[List[Callable[[], bool]]]:
-		return [
-			self.swallow,
-			self.executor
-		]
-	
-	def swallow (self) -> bool:
-		config = Config ()
-		config['xmlrpc.host'] = 'localhost'
-		config['xmlrpc.port'] = syscfg.get ('direct-path-port', '9400')
-		config['xmlrpc.allow_none'] = 'true'
-		server = XMLRPC (config)
-		server.add_method (lambda f: True, name = 'unpack')
-		server.run ()
-		return True
-	
 	async def controller (self) -> None:
 		self.mta = MTA ()
 		self.queue = self.channel ('incoming', XMLPack)

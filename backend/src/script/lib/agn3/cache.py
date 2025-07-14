@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -73,7 +73,7 @@ KeyError: "'a': expired"
 >>> len (c.cacheline)
 0
 """
-	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline', 'fill']
+	__slots__ = ['limit', 'timeout', 'fill', 'active', 'count', 'cache', 'cacheline']
 	class Entry (Generic[_E]):
 		"""Represents a single caching entry"""
 		__slots__ = ['created', 'value']
@@ -86,7 +86,11 @@ KeyError: "'a': expired"
 			"""if the entry is still valid"""
 			return self.created + timeout >= now
 
-	def __init__ (self, limit: int = 0, timeout: Union[None, int, float, str] = None) -> None:
+	def __init__ (self,
+		limit: int = 0,
+		timeout: Union[None, int, float, str] = None,
+		fill: Optional[Callable[[_K], _V]] = None
+	) -> None:
 		"""``limit'' is the maximum number of elements of the
 cache (use 0 for no limits) and ``timeout'' is the timeout for entries
 to be valid. ``timeout'' can either be specified as int or float in
@@ -98,11 +102,11 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 	2h 30m: dito, spaces are ignored and can be inserted for better readability"""
 		self.limit = limit
 		self.timeout: Union[float, int] = timeout if isinstance (timeout, float) else unit.parse (timeout, -1)
+		self.fill: Optional[Callable[[_K], _V]] = fill
 		self.active = self.timeout >= 0.0
 		self.count = 0
 		self.cache: Dict[_K, Cache.Entry[_V]] = {}
 		self.cacheline: Deque[_K] = collections.deque ()
-		self.fill: Optional[Callable[[_K], _V]] = None
 
 	def __getitem__ (self, key: _K) -> _V:
 		try:

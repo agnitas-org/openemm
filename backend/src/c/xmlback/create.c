@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -344,6 +344,8 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 						if (! append_raw (blockmail -> body, block -> bout))
 							st = false;
 					}
+					if (st && (! buffer_appendch (blockmail -> body, '\n')))
+						st = false;
 					if (! st)
 						log_out (blockmail -> lg, LV_ERROR, "Unable to append content of block %d for %d", block -> nr, rec -> customer_id);
 				}
@@ -372,12 +374,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	st = true;
 	m = NULL;
 	blockmail -> active = true;
-	blockmail -> reason = Reason_Unspec;
-	blockmail -> reason_detail = 0;
-	if (blockmail -> reason_custom) {
-		free (blockmail -> reason_custom);
-		blockmail -> reason_custom = NULL;
-	}
+	reason_reset (blockmail -> reason);
 	buffer_clear (blockmail -> control);
 	buffer_clear (blockmail -> body);
 	if (blockmail -> raw && blockmail -> rblocks)
@@ -416,8 +413,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 								}
 							} else {
 								blockmail -> active = false;
-								blockmail -> reason = Reason_No_Media;
-								blockmail -> reason_detail = type;
+								reason_no_media (blockmail -> reason, type);
 							}
 							break;
 						}
@@ -439,8 +435,7 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 		strcpy (rec -> mid, m ? media_typeid (m -> type)  : "?");
 		if ((! rec -> media) && blockmail -> active) {
 			blockmail -> active = false;
-			blockmail -> reason = Reason_Unmatched_Media;
-			blockmail -> reason_detail = 0;
+			reason_unmatched_media (blockmail -> reason);
 		}
 		if (blockmail -> active && docreate)
 			st = (*docreate) (blockmail, rec);

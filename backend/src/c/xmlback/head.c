@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -11,13 +11,18 @@
 # include	<ctype.h>
 # include	"xmlback.h"
 
-head_t *
-head_alloc (void) /*{{{*/
+static head_t	*head_free (head_t *h);
+static head_t	*head_free_all (head_t *h);
+static bool_t	head_add (head_t *h, const byte_t *chunk, int len);
+static bool_t	head_addsn (head_t *h, const char *s, int len);
+
+static head_t *
+head_alloc (int size) /*{{{*/
 {
 	head_t	*h;
 	
 	if (h = (head_t *) malloc (sizeof (head_t)))
-		if (h -> h = buffer_alloc (256)) {
+		if (h -> h = buffer_alloc (size)) {
 			h -> _name = NULL;
 			h -> _namelength = -1;
 			h -> _valuepos = -1;
@@ -29,11 +34,32 @@ head_alloc (void) /*{{{*/
 	return h;
 }/*}}}*/
 static head_t *
+head_newn (const char *line, int length) /*{{{*/
+{
+	head_t	*h;
+	
+	if ((length > 0) && (line[length - 1] == '\r'))
+		--length;
+	if (h = head_alloc (length + 1))
+		if (head_addsn (h, line, length)) {
+			if ((length == 0) || (line[length - 1] != '\n'))
+				if (! head_addsn (h, "\n", 1))
+					h = head_free (h);
+		} else
+			h = head_free (h);
+	return h;
+}/*}}}*/
+static head_t *
+head_new (const char *line) /*{{{*/
+{
+	return head_newn (line, strlen (line));
+}/*}}}*/
+static head_t *
 head_copy (head_t *source) /*{{{*/
 {
 	head_t	*h;
 	
-	if (h = head_alloc ()) {
+	if (h = head_alloc (buffer_length (source -> h))) {
 		if (! head_add (h, buffer_content (source -> h), buffer_length (source -> h)))
 			h = head_free (h);
 	}
@@ -57,7 +83,7 @@ head_copy_all (head_t *source) /*{{{*/
 		}
 	return root;
 }/*}}}*/
-head_t *
+static head_t *
 head_free (head_t *h) /*{{{*/
 {
 	if (h) {
@@ -69,7 +95,7 @@ head_free (head_t *h) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-head_t *
+static head_t *
 head_free_all (head_t *h) /*{{{*/
 {
 	head_t	*tmp;
@@ -122,7 +148,7 @@ head_empty (head_t *h) /*{{{*/
 		return true;
 	return false;
 }/*}}}*/
-bool_t
+static bool_t
 head_add (head_t *h, const byte_t *chunk, int len) /*{{{*/
 {
 	int	old_len = buffer_length (h -> h);
@@ -178,31 +204,6 @@ bool_t
 head_startswith (head_t *h, const char *name) /*{{{*/
 {
 	return head_startswithn (h, name, strlen (name));
-}/*}}}*/
-char *
-head_is (head_t *h, const char *name) /*{{{*/
-{
-	const byte_t	*content = buffer_content (h -> h);
-	int		length = buffer_length (h -> h);
-	char		*rc;
-	
-	while (*name && (length > 0)) {
-		if (tolower (*name) != tolower (*content))
-			break;
-		++name, ++content, --length;
-	}
-	if ((! *name) && (length > 0) && (*content == ':')) {
-		++content, --length;
-		while ((length > 0) && (*content == ' '))
-			++content, --length;
-		if (rc = malloc (length + 1)) {
-			if (length)
-				memcpy (rc, content, length);
-			rc[length] = '\0';
-			return rc;
-		}
-	}
-	return NULL;
 }/*}}}*/
 
 static bool_t
@@ -339,7 +340,7 @@ header_parse_raw (header_t *h, buffer_t *source, bool_t full) /*{{{*/
 			if (isspace (*ptr)) {
 				if ((len > 1) && current)
 					rc = head_add (current, ptr, len);
-			} else if (next = head_alloc ()) {
+			} else if (next = head_alloc (len)) {
 				if (current)
 					current -> next = next;
 				else
@@ -403,7 +404,7 @@ header_parse (header_t *h, buffer_t *source, bool_t full) /*{{{*/
 			} else
 				rc = false;
 		} else if (*ptr == 'H') {
-			head_t	*next = head_alloc ();
+			head_t	*next = head_alloc (len);
 			
 			if (next) {
 				++ptr, --len;
@@ -432,11 +433,11 @@ header_append_content (header_t *h, xmlBufferPtr source) /*{{{*/
 {
 	if (header_scratch (h, xmlBufferLength (source) + 128) &&
 	    buffer_set (h -> scratch, xmlBufferContent (source), xmlBufferLength (source)))
-			return header_parse (h, h -> scratch, false);
+		return header_parse (h, h -> scratch, false);
 	return false;
 }/*}}}*/
 bool_t
-header_replace (header_t *h, xmlBufferPtr source) /*{{{*/
+header_replace_content (header_t *h, xmlBufferPtr source) /*{{{*/
 {
 	if (header_scratch (h, xmlBufferLength (source) + 128) &&
 	    buffer_set (h -> scratch, xmlBufferContent (source), xmlBufferLength (source)))
@@ -448,20 +449,28 @@ header_insert (header_t *h, const char *line, head_t *after) /*{{{*/
 {
 	head_t	*tmp;
 	
-	if (tmp = head_alloc ()) {
-		int	llen = strlen (line);
-
-		if ((llen > 0) && (line[llen - 1] == '\r'))
-			--llen;
-		if (head_addsn (tmp, line, llen) && ((llen == 0) || (line[llen - 1] != '\n') ? head_addsn (tmp, "\n", 1) : true)) {
-			if (after) {
-				tmp -> next = after -> next;
-				after -> next = tmp;
-			} else {
-				tmp -> next = h -> head;
-				h -> head = tmp;
-			}
+	if (tmp = head_new (line))
+		if (after) {
+			tmp -> next = after -> next;
+			after -> next = tmp;
+		} else {
+			tmp -> next = h -> head;
+			h -> head = tmp;
 		}
+	return tmp ? true : false;
+}/*}}}*/
+bool_t
+header_append (header_t *h, const char *line) /*{{{*/
+{
+	head_t	*tmp, *prev;
+	
+	if (tmp = head_new (line)) {
+		if (h -> head) {
+			for (prev = h -> head; prev -> next; prev = prev -> next)
+				;
+			prev -> next = tmp;
+		} else
+			h -> head = tmp;
 	}
 	return tmp ? true : false;
 }/*}}}*/
@@ -565,7 +574,7 @@ header_encode (header_t *h, head_t *head) /*{{{*/
 		return h -> scratch;
 	return NULL;
 }/*}}}*/
-buffer_t *
+const buffer_t *
 header_create (header_t *h, bool_t raw) /*{{{*/
 {
 	if (header_scratch (h, 4096)) {
@@ -581,7 +590,7 @@ header_create (header_t *h, bool_t raw) /*{{{*/
 	}
 	return h -> scratch;
 }/*}}}*/
-buffer_t *
+const buffer_t *
 header_create_sendmail_spoolfile_header (header_t *h) /*{{{*/
 {
 	if (header_scratch (h, 4096)) {

@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -93,7 +93,7 @@ encode (char *buf, int buflen, const byte_t *data, int datalen) /*{{{*/
 	return pos;
 }/*}}}*/
 static byte_t *
-create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, size_t *size) /*{{{*/
+create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, bool_t add_status_field, size_t *size) /*{{{*/
 {
 	char		*data;
 	mpack_writer_t	writer;
@@ -127,6 +127,10 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, size_t *siz
 		mpack_write_cstr (& writer, "_s");
 		mpack_write_int (& writer, blockmail -> epoch);
 	}
+	if (add_status_field && blockmail -> status_field && (blockmail -> status_field != 'W')) {
+		mpack_write_cstr (& writer, "_f");
+		mpack_write_str (& writer, & blockmail -> status_field, 1);
+	}
 	if (url_id) {
 		mpack_write_cstr (& writer, "_u");
 		mpack_write_int (& writer, url_id);
@@ -139,7 +143,7 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, size_t *siz
 	return (byte_t *) data;
 }/*}}}*/
 static char *
-create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field) /*{{{*/
 {
 	const char	*rc;
 	enum {
@@ -293,7 +297,7 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 		len = snprintf (scratch, sizeof (scratch), "%d", uid_version_used);
 		buffer_stiffsn (blockmail -> secret_sig, scratch, len);
 		buffer_stiffch (blockmail -> secret_sig, '.');
-		if (packed = create_packed (blockmail, rec, url_id, & psize)) {
+		if (packed = create_packed (blockmail, rec, url_id, add_status_field, & psize)) {
 			if (encode_uid_parameter (packed, psize, blockmail -> secret_uid))
 				buffer_stiffch (blockmail -> secret_uid, '.');
 			buffer_stiff (blockmail -> secret_sig, packed, psize);
@@ -324,12 +328,12 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	return rc ? strdup (rc) : NULL;
 }/*}}}*/
 char *
-create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field) /*{{{*/
 {
 	if (blockmail -> force_ecs_uid) {
 		return create_ecs_uid (blockmail, uid_version, prefix, rec, url_id);
 	}
-	return create_xuid (blockmail, uid_version, prefix, rec, url_id);
+	return create_xuid (blockmail, uid_version, prefix, rec, url_id, add_status_field);
 }/*}}}*/
 
 char *

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, re
+import	os, re, json
 from	typing import Any, Final, Optional
 from	typing import Dict, Iterator, Tuple
 from	typing import overload
@@ -21,7 +21,8 @@ class DBConfig:
 
 reads and stores configuration from a configuration file"""
 	__slots__ = ['path', 'data', 'dbid_default']
-	config_environ: Final[str] = 'DBCFG_PATH'
+	config_env: Final[str] = 'DBCFG'
+	config_path_env: Final[str] = 'DBCFG_PATH'
 	default_config_path: Final[str] = '/opt/agnitas.com/etc/dbcfg'
 	def __init__ (self, path: Optional[str] = None) -> None:
 		self.path = self._findpath (path)
@@ -34,7 +35,7 @@ reads and stores configuration from a configuration file"""
 	def _findpath (self, path: Optional[str]) -> str:
 		if path is not None:
 			return path
-		if (path := os.environ.get (self.config_environ)) is not None:
+		if (path := os.environ.get (self.config_path_env)) is not None:
 			return path
 		path = os.path.join (base, 'etc', 'dbcfg')
 		if os.path.isfile (path):
@@ -44,7 +45,7 @@ reads and stores configuration from a configuration file"""
 	class DBRecord:
 		"""A Record for one database configuration line"""
 		__slots__ = ['dbid', 'data']
-		def __init__ (self, dbid: Optional[str], param: Optional[str] = None) -> None:
+		def __init__ (self, dbid: None | str, param: Optional[str] = None) -> None:
 			self.dbid = dbid
 			self.data: Dict[str, str] = {}
 			if param is not None:
@@ -53,6 +54,10 @@ reads and stores configuration from a configuration file"""
 					parts = [_e.strip () for _e in elem.split ('=', 1)]
 					if len (parts) == 2:
 						self.data[parts[0]] = parts[1]
+		
+		def __str__ (self) -> str:
+			return f'{self.__class__.__name__} (dbid = {self.dbid!r}, data = {self.data!r}'
+		__repr__ = __str__
 
 		def __getitem__ (self, id: str) -> str:
 			return self.data[id]
@@ -78,28 +83,38 @@ reads and stores configuration from a configuration file"""
 		
 		def copy (self) -> DBConfig.DBRecord:
 			rc = self.__class__ (self.dbid, None)
-			rc.data = self.data.copy ()
+			rc.update (self.data)
 			return rc
 
-	parseLine = re.compile ('([a-z0-9._+-]+):[ \t]*(.*)$', re.IGNORECASE)
+	parse_line = re.compile ('([a-z0-9._+-]+):[ \t]*(.*)$', re.IGNORECASE)
 	def read (self) -> None:
 		self.data.clear ()
-		if not os.path.isfile (self.path):
-			dbcfg = syscfg.get ('dbcfg')
-			if dbcfg is not None:
+		content: None | str = None
+		if (dbcfg := os.environ.get (self.config_env)) is not None:
+			try:
+				parsed = json.loads (dbcfg)
+				if isinstance (parsed, dict):
+					jid: str
+					jparam: str | dict[str, str]
+					for (jid, jparam) in parsed.items ():
+						self.data[jid] = record = DBConfig.DBRecord (jid, jparam if isinstance (jparam, str) else None)
+						if isinstance (jparam, dict):
+							record.update (jparam)
+			except Exception:
+				content = dbcfg
+		elif os.path.isfile (self.path):
+			with open (self.path) as fd:
+				content = fd.read ()
+		else:
+			if (dbcfg := syscfg.get ('dbcfg')) is not None:
 				self.data[self.dbid_default] = DBConfig.DBRecord (self.dbid_default, dbcfg)
-				return
+			return
 		#
-		with open (self.path, 'r') as fd:
-			for line in fd:
-				line = line.strip ()
-				if not line or line.startswith ('#'):
-					continue
-				mtch = self.parseLine.match (line)
-				if mtch is None:
-					continue
-				(id, param) = mtch.groups ()
-				self.data[id] = DBConfig.DBRecord (id, param)
+		if content is not None:
+			for line in (_l.strip () for _l in content.split ('\n')):
+				if line and not line.startswith ('#') and (mtch := self.parse_line.match (line)) is not None:
+					(id, param) = mtch.groups ()
+					self.data[id] = DBConfig.DBRecord (id, param)
 
 	def __getitem__ (self, id: Optional[str]) -> DBConfig.DBRecord:
 		return self.data[id if id is not None else self.dbid_default]
